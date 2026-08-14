@@ -5,6 +5,7 @@ import {
   assets,
   auditItems,
   auditSessions,
+  brands,
   companies,
   departments,
   divisions,
@@ -12,6 +13,7 @@ import {
   maintenanceTickets,
   type InsertUser,
   users,
+  vendors,
 } from "../drizzle/schema";
 import { ENV } from "./_core/env";
 
@@ -112,6 +114,56 @@ export async function updateDepartment(id: number, data: Partial<typeof departme
   const db = await getDb();
   if (!db) throw new Error("Database unavailable");
   await db.update(departments).set(data).where(eq(departments.id, id));
+}
+
+export async function listVendors() {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(vendors).where(eq(vendors.isActive, true)).orderBy(vendors.name);
+}
+
+export async function getVendorById(id: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+  return (await db.select().from(vendors).where(eq(vendors.id, id)).limit(1))[0];
+}
+
+export async function getVendorByName(name: string) {
+  const db = await getDb();
+  if (!db) return undefined;
+  return (await db.select().from(vendors).where(eq(vendors.name, name)).limit(1))[0];
+}
+
+export async function createVendor(data: typeof vendors.$inferInsert) {
+  const db = await getDb();
+  if (!db) throw new Error("Database unavailable");
+  const result = await db.insert(vendors).values(data);
+  return Number(result[0].insertId);
+}
+
+export async function listBrands() {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(brands).where(eq(brands.isActive, true)).orderBy(brands.name);
+}
+
+export async function getBrandById(id: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+  return (await db.select().from(brands).where(eq(brands.id, id)).limit(1))[0];
+}
+
+export async function getBrandByName(name: string) {
+  const db = await getDb();
+  if (!db) return undefined;
+  return (await db.select().from(brands).where(eq(brands.name, name)).limit(1))[0];
+}
+
+export async function createBrand(data: typeof brands.$inferInsert) {
+  const db = await getDb();
+  if (!db) throw new Error("Database unavailable");
+  const result = await db.insert(brands).values(data);
+  return Number(result[0].insertId);
 }
 
 export async function listDivisions() {

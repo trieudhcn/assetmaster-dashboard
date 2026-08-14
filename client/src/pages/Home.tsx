@@ -91,6 +91,9 @@ type Asset = {
   location?: string;
   serial?: string;
   supplier?: string;
+  vendorId?: number;
+  brand?: string;
+  brandId?: number;
   note?: string;
 };
 
@@ -221,7 +224,7 @@ export default function Home() {
   useEffect(() => {
     if (!assetQuery.data) return;
     setAssetRows(assetQuery.data.map((asset) => ({
-      code: asset.assetCode, qrToken: asset.qrToken, name: asset.name, category: "Chưa phân loại", holder: asset.holderName || "Chưa cấp phát", status: asset.status === "assigned" ? "Đang cấp phát" : asset.status === "maintenance" ? "Bảo trì" : "Sẵn có", statusType: asset.status === "assigned" ? "active" : asset.status === "maintenance" ? "maintenance" : "available", date: asset.purchaseDate ? new Date(asset.purchaseDate).toLocaleDateString("vi-VN") : "—", value: asset.purchaseValue ? String(asset.purchaseValue) : "0", location: asset.location || "", serial: asset.serialNumber || "", supplier: asset.vendor || "", note: asset.note || "",
+      code: asset.assetCode, qrToken: asset.qrToken, name: asset.name, category: "Chưa phân loại", holder: asset.holderName || "Chưa cấp phát", status: asset.status === "assigned" ? "Đang cấp phát" : asset.status === "maintenance" ? "Bảo trì" : "Sẵn có", statusType: asset.status === "assigned" ? "active" : asset.status === "maintenance" ? "maintenance" : "available", date: asset.purchaseDate ? new Date(asset.purchaseDate).toLocaleDateString("vi-VN") : "—", value: asset.purchaseValue ? String(asset.purchaseValue) : "0", location: asset.location || "", serial: asset.serialNumber || "", supplier: asset.vendor || "", vendorId: asset.vendorId || undefined, brandId: asset.brandId || undefined, note: asset.note || "",
     })));
   }, [assetQuery.data]);
 
@@ -253,7 +256,7 @@ export default function Home() {
   const openCreateModal = () => { setFormData({ code: `TS-${String(assetRows.length + 125).padStart(5, "0")}`, name: "", category: "CNTT", holder: "", status: "Sẵn có", statusType: "available", date: "14/02/2025", value: "", location: "", serial: "", supplier: "", note: "" }); setSelectedAsset(null); setAssetModal("create"); };
   const openEditModal = (asset: Asset) => { setSelectedAsset(asset); setFormData({ ...asset }); setAssetModal("edit"); };
   const openDetailModal = (asset: Asset) => { setSelectedAsset(asset); setAssetModal("detail"); };
-  const saveAsset = () => { if (!formData.name.trim() || !formData.value.trim()) { toast.error("Vui lòng nhập tên tài sản và giá trị."); return; } const payload = { assetCode: formData.code, name: formData.name, holderName: formData.holder || null, status: formData.statusType === "active" ? "assigned" as const : formData.statusType === "maintenance" ? "maintenance" as const : "available" as const, condition: "good" as const, purchaseValue: formData.value.replace(/[^0-9.]/g, "") || "0", vendor: formData.supplier || null, serialNumber: formData.serial || null, location: formData.location || null, note: formData.note || null, purchaseDate: null, warrantyUntil: null, categoryId: null, departmentId: null }; if (assetModal === "edit") { const target = assetQuery.data?.find((asset) => asset.assetCode === formData.code); if (!target) { toast.error("Không tìm thấy tài sản để cập nhật."); return; } updateAssetMutation.mutate({ id: target.id, ...payload }); } else { createAssetMutation.mutate(payload); } setAssetModal(null); toast.success("Đã gửi thay đổi tài sản để lưu vào hệ thống."); };
+  const saveAsset = () => { if (!formData.name.trim() || !formData.value.trim()) { toast.error("Vui lòng nhập tên tài sản và giá trị."); return; } const payload = { assetCode: formData.code, name: formData.name, holderName: formData.holder || null, status: formData.statusType === "active" ? "assigned" as const : formData.statusType === "maintenance" ? "maintenance" as const : "available" as const, condition: "good" as const, purchaseValue: formData.value.replace(/[^0-9.]/g, "") || "0", vendor: formData.supplier || null, vendorId: formData.vendorId || null, brandId: formData.brandId || null, serialNumber: formData.serial || null, location: formData.location || null, note: formData.note || null, purchaseDate: null, warrantyUntil: null, categoryId: null, departmentId: null }; if (assetModal === "edit") { const target = assetQuery.data?.find((asset) => asset.assetCode === formData.code); if (!target) { toast.error("Không tìm thấy tài sản để cập nhật."); return; } updateAssetMutation.mutate({ id: target.id, ...payload }); } else { createAssetMutation.mutate(payload); } setAssetModal(null); toast.success("Đã gửi thay đổi tài sản để lưu vào hệ thống."); };
   const showComingSoon = (label: string) => toast.info(`${label} sẽ được mở trong phiên bản tiếp theo.`, { description: "Bản xem trước hiện đang dùng dữ liệu mẫu để minh họa giao diện." });
   const navigateTo = (label: string) => {
     const viewByNav: Record<string, string> = { "Danh mục tài sản": "assets", "Bàn giao & Cấp phát": "handovers", "Bảo trì & Báo hỏng": "maintenance", "Kiểm kê": "audit", "Báo cáo": "reports", "Quản lý nhân viên": "employees", "Phòng Ban & Bộ Phận": "organization" };
@@ -370,7 +373,7 @@ function AssetCatalogPage({ assets, totalAssets, query, category, status, depart
 
 function PaginatedAssetCatalogPage({ assets, query, category, status, department, onQueryChange, onCategoryChange, onStatusChange, onDepartmentChange, onReset, onCreate, onEdit, onOpenDetail, onOpenQr, onAssign }: { assets: Asset[]; query: string; category: string; status: string; department: string; onQueryChange: (value: string) => void; onCategoryChange: (value: string) => void; onStatusChange: (value: string) => void; onDepartmentChange: (value: string) => void; onReset: () => void; onCreate: () => void; onEdit: (asset: Asset) => void; onOpenDetail: (asset: Asset) => void; onOpenQr: (asset: Asset) => void; onAssign: (asset: Asset) => void }) {
   const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(6);
+  const [pageSize, setPageSize] = useState(10);
   const [jumpPage, setJumpPage] = useState("1");
   const totalPages = Math.max(1, Math.ceil(assets.length / pageSize));
   const currentPage = Math.min(page, totalPages);
@@ -426,7 +429,7 @@ function PaginatedAssetCatalogPage({ assets, query, category, status, department
     controls.insertBefore(jumpControl, controls.firstChild?.nextSibling || nextButton);
     return () => jumpControl.remove();
   }, [currentPage, totalPages, assets.length]);
-  return <div className="relative"><AssetCatalogPage assets={pageAssets} totalAssets={assets.length} query={query} category={category} status={status} department={department} onQueryChange={onQueryChange} onCategoryChange={onCategoryChange} onStatusChange={onStatusChange} onDepartmentChange={onDepartmentChange} onReset={resetAndGoFirst} onCreate={onCreate} onEdit={onEdit} onOpenDetail={onOpenDetail} onOpenQr={onOpenQr} onAssign={onAssign} /><div className="relative z-10 -mt-16 px-4 pb-8 sm:px-6 lg:px-9 lg:pb-9"><div className="mx-auto flex max-w-[1500px] flex-col gap-3 rounded-xl border border-[#DFE9F0] bg-white p-4 shadow-[0_8px_24px_rgba(16,42,67,0.06)] sm:flex-row sm:items-center sm:justify-between"><div className="text-xs text-[#71869A]">Hiển thị <span className="font-bold text-[#193B57]">{startRecord}–{endRecord}</span> trên <span className="font-bold text-[#193B57]">{assets.length}</span> tài sản phù hợp</div><div className="flex flex-wrap items-center gap-2"><label className="flex items-center gap-2 text-xs font-semibold text-[#60758A]">Mỗi trang<select value={pageSize} onChange={(event) => setPageSize(Number(event.target.value))} className="h-8 rounded-md border border-[#DDE7F0] bg-white px-2 text-xs font-bold text-[#193B57]"><option value={6}>6</option><option value={10}>10</option><option value={20}>20</option></select></label><button disabled={currentPage === 1} onClick={() => setPage((current) => Math.max(1, current - 1))} className="h-8 rounded-md border border-[#DDE7F0] px-3 text-xs font-bold text-[#60758A] hover:bg-[#F7FAFC] disabled:cursor-not-allowed disabled:opacity-40">Trước</button>{pageNumbers.map((pageNumber, index) => <span key={pageNumber} className="flex items-center gap-1">{index > 0 && pageNumber - pageNumbers[index - 1] > 1 ? <span className="px-1 text-xs text-[#8AA0B6]">…</span> : null}<button onClick={() => setPage(pageNumber)} className={`grid h-8 min-w-8 place-items-center rounded-md px-2 text-xs font-bold ${currentPage === pageNumber ? "bg-[#102A43] text-white" : "border border-[#DDE7F0] text-[#60758A] hover:bg-[#F7FAFC]"}`}>{pageNumber}</button></span>)}<button disabled={currentPage === totalPages || assets.length === 0} onClick={() => setPage((current) => Math.min(totalPages, current + 1))} className="h-8 rounded-md border border-[#DDE7F0] px-3 text-xs font-bold text-[#60758A] hover:bg-[#F7FAFC] disabled:cursor-not-allowed disabled:opacity-40">Sau</button></div></div></div></div>;
+  return <div className="relative"><AssetCatalogPage assets={pageAssets} totalAssets={assets.length} query={query} category={category} status={status} department={department} onQueryChange={onQueryChange} onCategoryChange={onCategoryChange} onStatusChange={onStatusChange} onDepartmentChange={onDepartmentChange} onReset={resetAndGoFirst} onCreate={onCreate} onEdit={onEdit} onOpenDetail={onOpenDetail} onOpenQr={onOpenQr} onAssign={onAssign} /><div className="relative z-10 -mt-16 px-4 pb-8 sm:px-6 lg:px-9 lg:pb-9"><div className="mx-auto flex max-w-[1500px] flex-col gap-3 rounded-xl border border-[#DFE9F0] bg-white p-4 shadow-[0_8px_24px_rgba(16,42,67,0.06)] sm:flex-row sm:items-center sm:justify-between"><div className="text-xs text-[#71869A]">Hiển thị <span className="font-bold text-[#193B57]">{startRecord}–{endRecord}</span> trên <span className="font-bold text-[#193B57]">{assets.length}</span> tài sản phù hợp</div><div className="flex flex-wrap items-center gap-2"><label className="flex items-center gap-2 text-xs font-semibold text-[#60758A]">Mỗi trang<select value={pageSize} onChange={(event) => setPageSize(Number(event.target.value))} className="h-8 rounded-md border border-[#DDE7F0] bg-white px-2 text-xs font-bold text-[#193B57]"><option value={10}>10</option><option value={20}>20</option><option value={50}>50</option></select></label><button disabled={currentPage === 1} onClick={() => setPage((current) => Math.max(1, current - 1))} className="h-8 rounded-md border border-[#DDE7F0] px-3 text-xs font-bold text-[#60758A] hover:bg-[#F7FAFC] disabled:cursor-not-allowed disabled:opacity-40">Trước</button>{pageNumbers.map((pageNumber, index) => <span key={pageNumber} className="flex items-center gap-1">{index > 0 && pageNumber - pageNumbers[index - 1] > 1 ? <span className="px-1 text-xs text-[#8AA0B6]">…</span> : null}<button onClick={() => setPage(pageNumber)} className={`grid h-8 min-w-8 place-items-center rounded-md px-2 text-xs font-bold ${currentPage === pageNumber ? "bg-[#102A43] text-white" : "border border-[#DDE7F0] text-[#60758A] hover:bg-[#F7FAFC]"}`}>{pageNumber}</button></span>)}<button disabled={currentPage === totalPages || assets.length === 0} onClick={() => setPage((current) => Math.min(totalPages, current + 1))} className="h-8 rounded-md border border-[#DDE7F0] px-3 text-xs font-bold text-[#60758A] hover:bg-[#F7FAFC] disabled:cursor-not-allowed disabled:opacity-40">Sau</button></div></div></div></div>;
 }
 
 function CompanySettingsPage({ companyInfo, onSave }: { companyInfo: CompanyInfo; onSave: (next: CompanyInfo) => void }) {
@@ -639,6 +642,86 @@ function AssetModal({ mode, asset, formData, setFormData, onClose, onSave, onEdi
   const persistedAsset = assetsQuery.data?.find((candidate) => candidate.assetCode === asset?.code);
   const maintenanceHistoryQuery = trpc.maintenance.byAsset.useQuery({ assetId: persistedAsset?.id || 0 }, { enabled: isDetail && Boolean(persistedAsset?.id) });
   const utils = trpc.useUtils();
+  const [quickEntryType, setQuickEntryType] = useState<"vendor" | "brand" | null>(null);
+  const [quickEntryName, setQuickEntryName] = useState("");
+  const vendorsQuery = trpc.vendors.list.useQuery();
+  const brandsQuery = trpc.brands.list.useQuery();
+  const createVendorMutation = trpc.vendors.create.useMutation({
+    onSuccess: async (result) => {
+      const created = await vendorsQuery.refetch();
+      const vendor = created.data?.find((item) => item.id === result.id);
+      setFormData((current) => ({ ...current, vendorId: result.id, supplier: vendor?.name || quickEntryName }));
+      setQuickEntryName("");
+      setQuickEntryType(null);
+      toast.success("Đã thêm và chọn Nhà cung cấp mới.");
+    },
+    onError: (error) => toast.error(error.message || "Không thể thêm Nhà cung cấp."),
+  });
+  const createBrandMutation = trpc.brands.create.useMutation({
+    onSuccess: async (result) => {
+      const created = await brandsQuery.refetch();
+      const brand = created.data?.find((item) => item.id === result.id);
+      setFormData((current) => ({ ...current, brandId: result.id, brand: brand?.name || quickEntryName }));
+      setQuickEntryName("");
+      setQuickEntryType(null);
+      toast.success("Đã thêm và chọn Hãng mới.");
+    },
+    onError: (error) => toast.error(error.message || "Không thể thêm Hãng."),
+  });
+  useEffect(() => {
+    if (isDetail) return;
+    const dialog = document.querySelector('[role="dialog"][aria-label="Thêm tài sản mới"], [role="dialog"][aria-label="Chỉnh sửa tài sản"]');
+    const noteLabel = Array.from(dialog?.querySelectorAll("label") || []).find((label) => label.textContent?.trim() === "Ghi chú");
+    const noteContainer = noteLabel?.parentElement;
+    if (!noteContainer || noteContainer.parentElement?.querySelector("[data-vendor-brand-controls]")) return;
+    const controls = document.createElement("div");
+    controls.dataset.vendorBrandControls = "true";
+    controls.className = "sm:col-span-2 grid gap-3 rounded-xl border border-[#DDE7F0] bg-[#FBFCFD] p-4 sm:grid-cols-2";
+    const addPicker = (kind: "vendor" | "brand", label: string, items: Array<{ id: number; name: string }>, selectedId?: number) => {
+      const wrapper = document.createElement("div");
+      const heading = document.createElement("div");
+      heading.className = "mb-2 flex items-center justify-between gap-2";
+      const labelNode = document.createElement("label");
+      labelNode.className = "field-label mb-0";
+      labelNode.textContent = label;
+      const addButton = document.createElement("button");
+      addButton.type = "button";
+      addButton.className = "text-[11px] font-extrabold text-[#087A6A] underline decoration-[#8BCDC6] underline-offset-2";
+      addButton.textContent = kind === "vendor" ? "+ Thêm Nhà cung cấp" : "+ Thêm Hãng";
+      addButton.onclick = () => { setQuickEntryType(kind); setQuickEntryName(""); };
+      heading.append(labelNode, addButton);
+      const select = document.createElement("select");
+      select.className = "field-input";
+      const placeholder = document.createElement("option");
+      placeholder.value = "";
+      placeholder.textContent = kind === "vendor" ? "Chọn Nhà cung cấp" : "Chọn Hãng";
+      select.appendChild(placeholder);
+      items.forEach((item) => { const option = document.createElement("option"); option.value = String(item.id); option.textContent = item.name; option.selected = item.id === selectedId; select.appendChild(option); });
+      select.onchange = () => { const id = Number(select.value) || undefined; const selected = items.find((item) => item.id === id); setFormData((current) => kind === "vendor" ? { ...current, vendorId: id, supplier: selected?.name || "" } : { ...current, brandId: id, brand: selected?.name || "" }); };
+      wrapper.append(heading, select);
+      if (quickEntryType === kind) {
+        const quick = document.createElement("div");
+        quick.className = "mt-2 flex gap-2";
+        const input = document.createElement("input");
+        input.className = "field-input h-9";
+        input.placeholder = kind === "vendor" ? "Tên Nhà cung cấp mới" : "Tên Hãng mới";
+        input.value = quickEntryName;
+        input.oninput = () => setQuickEntryName(input.value);
+        const save = document.createElement("button");
+        save.type = "button";
+        save.textContent = "Lưu";
+        save.className = "rounded-lg bg-[#0F8C8C] px-3 text-xs font-bold text-white hover:bg-[#087A6A]";
+        save.onclick = () => { if (quickEntryName.trim().length < 2) { toast.error("Nhập tên tối thiểu 2 ký tự."); return; } if (kind === "vendor") createVendorMutation.mutate({ name: quickEntryName.trim(), contactName: null, phone: null, email: null }); else createBrandMutation.mutate({ name: quickEntryName.trim() }); };
+        input.onkeydown = (event) => { if (event.key === "Enter") save.click(); };
+        quick.append(input, save);
+        wrapper.appendChild(quick);
+      }
+      return wrapper;
+    };
+    controls.append(addPicker("vendor", "Nhà cung cấp", vendorsQuery.data || [], formData.vendorId), addPicker("brand", "Hãng", brandsQuery.data || [], formData.brandId));
+    noteContainer.before(controls);
+    return () => controls.remove();
+  }, [isDetail, vendorsQuery.data, brandsQuery.data, formData.vendorId, formData.brandId, quickEntryType, quickEntryName]);
   const createRepairMutation = trpc.maintenance.create.useMutation({
     onSuccess: () => {
       setRepairDescription("");
@@ -657,7 +740,6 @@ function AssetModal({ mode, asset, formData, setFormData, onClose, onSave, onEdi
     { key: "value", label: "Giá trị nguyên giá (VNĐ)", placeholder: "Ví dụ: 42.500.000" },
     { key: "location", label: "Vị trí lưu trữ", placeholder: "Ví dụ: Tầng 5 · Khu A" },
     { key: "serial", label: "Số serial / IMEI", placeholder: "Nhập số serial" },
-    { key: "supplier", label: "Nhà cung cấp", placeholder: "Nhập tên nhà cung cấp" },
   ];
   return <div className="fixed inset-0 z-[60] flex items-center justify-center bg-[#102A43]/40 px-4 py-6 backdrop-blur-sm" role="dialog" aria-modal="true" aria-label={title}>
     <div className={`max-h-[92vh] w-full overflow-y-auto rounded-2xl border border-[#DDE7F0] bg-white shadow-[0_24px_70px_rgba(16,42,67,0.22)] ${isDetail ? "max-w-[560px]" : "max-w-[720px]"}`}>

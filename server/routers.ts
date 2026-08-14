@@ -6,6 +6,7 @@ import { systemRouter } from "./_core/systemRouter";
 import { adminProcedure, protectedProcedure, publicProcedure, router } from "./_core/trpc";
 import {
   clearUserDivision,
+  createBrand,
   countActiveDivisionsByDepartment,
   createAsset,
   createAuditSession,
@@ -14,7 +15,10 @@ import {
   createDivision,
   createHandover,
   createMaintenanceTicket,
+  createVendor,
   getAssetById,
+  getBrandById,
+  getBrandByName,
   getActiveDepartmentById,
   getDepartmentById,
   getDepartmentByCode,
@@ -23,7 +27,10 @@ import {
   getCompany,
   getHandoverById,
   getMaintenanceTicket,
+  getVendorById,
+  getVendorByName,
   listAssets,
+  listBrands,
   listAuditItems,
   listAuditSessions,
   listActivityLogs,
@@ -35,6 +42,7 @@ import {
   listHandoversByRecipient,
   listMaintenanceTickets,
   listMaintenanceTicketsByAsset,
+  listVendors,
   listUsers,
   recordActivity,
   saveCompany,
@@ -58,7 +66,7 @@ const dateFromMs = z.number().int().nonnegative().optional().nullable().transfor
 const assetInput = z.object({
   assetCode: z.string().trim().min(2).max(64), name: z.string().trim().min(2).max(255), categoryId: z.number().int().positive().optional().nullable(), departmentId: z.number().int().positive().optional().nullable(), holderName: nullableText,
   status: z.enum(["available", "assigned", "maintenance", "retired", "lost"]).default("available"), condition: z.enum(["good", "fair", "needs_inspection", "damaged"]).default("good"),
-  purchaseDate: dateFromMs, purchaseValue: z.string().regex(/^\d+(\.\d{1,2})?$/).optional().nullable(), vendor: nullableText, serialNumber: nullableText, location: nullableText, warrantyUntil: dateFromMs, note: nullableText,
+  purchaseDate: dateFromMs, purchaseValue: z.string().regex(/^\d+(\.\d{1,2})?$/).optional().nullable(), vendor: nullableText, vendorId: z.number().int().positive().optional().nullable(), brandId: z.number().int().positive().optional().nullable(), serialNumber: nullableText, location: nullableText, warrantyUntil: dateFromMs, note: nullableText,
 });
 
 export const appRouter = router({
@@ -183,15 +191,37 @@ export const appRouter = router({
       return { success: true };
     }),
   }),
+  vendors: router({
+    list: protectedProcedure.query(() => listVendors()),
+    create: adminProcedure.input(z.object({ name: z.string().trim().min(2).max(160), contactName: nullableText, phone: nullableText, email: z.string().email().optional().nullable() })).mutation(async ({ input, ctx }) => {
+      if (await getVendorByName(input.name)) throw new TRPCError({ code: "BAD_REQUEST", message: "Nhà cung cấp này đã tồn tại." });
+      const id = await createVendor({ ...input, isActive: true });
+      await recordActivity({ entityType: "vendor", entityId: id, action: "created", actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: `Tạo Nhà cung cấp: ${input.name}` });
+      return { id };
+    }),
+  }),
+  brands: router({
+    list: protectedProcedure.query(() => listBrands()),
+    create: adminProcedure.input(z.object({ name: z.string().trim().min(2).max(160) })).mutation(async ({ input, ctx }) => {
+      if (await getBrandByName(input.name)) throw new TRPCError({ code: "BAD_REQUEST", message: "Hãng này đã tồn tại." });
+      const id = await createBrand({ name: input.name, isActive: true });
+      await recordActivity({ entityType: "brand", entityId: id, action: "created", actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: `Tạo Hãng: ${input.name}` });
+      return { id };
+    }),
+  }),
   assets: router({
     list: protectedProcedure.query(() => listAssets()),
     create: adminProcedure.input(assetInput).mutation(async ({ input, ctx }) => {
+      if (input.vendorId && !(await getVendorById(input.vendorId))?.isActive) throw new TRPCError({ code: "BAD_REQUEST", message: "Nhà cung cấp được chọn không tồn tại hoặc đã ngừng hoạt động." });
+      if (input.brandId && !(await getBrandById(input.brandId))?.isActive) throw new TRPCError({ code: "BAD_REQUEST", message: "Hãng được chọn không tồn tại hoặc đã ngừng hoạt động." });
       const id = await createAsset({ ...input, qrToken: crypto.randomUUID().replaceAll("-", ""), createdByUserId: ctx.user!.id });
       await recordActivity({ entityType: "asset", entityId: id, action: "created", actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: `Tạo tài sản ${input.assetCode}` });
       return { id };
     }),
     update: adminProcedure.input(assetInput.partial().extend({ id: z.number().int().positive() })).mutation(async ({ input, ctx }) => {
       const { id, ...changes } = input;
+      if (changes.vendorId && !(await getVendorById(changes.vendorId))?.isActive) throw new TRPCError({ code: "BAD_REQUEST", message: "Nhà cung cấp được chọn không tồn tại hoặc đã ngừng hoạt động." });
+      if (changes.brandId && !(await getBrandById(changes.brandId))?.isActive) throw new TRPCError({ code: "BAD_REQUEST", message: "Hãng được chọn không tồn tại hoặc đã ngừng hoạt động." });
       await updateAsset(id, changes);
       await recordActivity({ entityType: "asset", entityId: id, action: "updated", actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: "Cập nhật thông tin tài sản" });
       return { success: true };

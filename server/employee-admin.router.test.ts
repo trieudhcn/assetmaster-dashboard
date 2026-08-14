@@ -5,8 +5,14 @@ const mocks = vi.hoisted(() => ({
   countActiveDivisionsByDepartment: vi.fn(),
   createDepartment: vi.fn(),
   createDivision: vi.fn(),
+  createVendor: vi.fn(),
+  createBrand: vi.fn(),
   createHandover: vi.fn(),
   getAssetById: vi.fn(),
+  getVendorById: vi.fn(),
+  getVendorByName: vi.fn(),
+  getBrandById: vi.fn(),
+  getBrandByName: vi.fn(),
   getActiveDepartmentById: vi.fn(),
   getCompany: vi.fn(),
   getDepartmentById: vi.fn(),
@@ -18,6 +24,8 @@ const mocks = vi.hoisted(() => ({
   listAllDepartments: vi.fn(),
   listAllDivisions: vi.fn(),
   listDivisions: vi.fn(),
+  listVendors: vi.fn(),
+  listBrands: vi.fn(),
   recordActivity: vi.fn(),
   transitionHandoverStatus: vi.fn(),
   updateUserActiveStatus: vi.fn(),
@@ -35,10 +43,16 @@ vi.mock("./db", () => ({
   createAuditSession: vi.fn(),
   createDepartment: mocks.createDepartment,
   createDivision: mocks.createDivision,
+  createVendor: mocks.createVendor,
+  createBrand: mocks.createBrand,
   createHandover: mocks.createHandover,
   createMaintenanceTicket: vi.fn(),
   getActiveDepartmentById: mocks.getActiveDepartmentById,
   getAssetById: mocks.getAssetById,
+  getVendorById: mocks.getVendorById,
+  getVendorByName: mocks.getVendorByName,
+  getBrandById: mocks.getBrandById,
+  getBrandByName: mocks.getBrandByName,
   getCompany: mocks.getCompany,
   getDepartmentById: mocks.getDepartmentById,
   getDepartmentByCode: mocks.getDepartmentByCode,
@@ -53,6 +67,8 @@ vi.mock("./db", () => ({
   listAllDepartments: mocks.listAllDepartments,
   listAllDivisions: mocks.listAllDivisions,
   listDivisions: mocks.listDivisions,
+  listVendors: mocks.listVendors,
+  listBrands: mocks.listBrands,
   listHandovers: vi.fn(),
   listHandoversByRecipient: vi.fn(),
   listMaintenanceTickets: vi.fn(),
@@ -97,6 +113,14 @@ describe("employee administration", () => {
     mocks.countActiveDivisionsByDepartment.mockResolvedValue(0);
     mocks.createDepartment.mockResolvedValue(20);
     mocks.createDivision.mockResolvedValue(30);
+    mocks.createVendor.mockResolvedValue(41);
+    mocks.createBrand.mockResolvedValue(51);
+    mocks.getVendorById.mockResolvedValue({ id: 41, name: "Nhà cung cấp Minh Phát", isActive: true });
+    mocks.getBrandById.mockResolvedValue({ id: 51, name: "Dell", isActive: true });
+    mocks.getVendorByName.mockResolvedValue(undefined);
+    mocks.getBrandByName.mockResolvedValue(undefined);
+    mocks.listVendors.mockResolvedValue([{ id: 41, name: "Nhà cung cấp Minh Phát", isActive: true }]);
+    mocks.listBrands.mockResolvedValue([{ id: 51, name: "Dell", isActive: true }]);
     mocks.listDivisions.mockResolvedValue([]);
     mocks.updateUserActiveStatus.mockResolvedValue(undefined);
     mocks.updateUserDepartment.mockResolvedValue(undefined);
@@ -113,6 +137,20 @@ describe("employee administration", () => {
     await expect(caller.departments.list()).resolves.toEqual([
       { id: 12, code: "HCNS", name: "Hành chính - Nhân sự", isActive: true },
     ]);
+  });
+
+  it("allows administrators to create suppliers and brands while restricting employees", async () => {
+    const adminCaller = appRouter.createCaller(adminContext);
+
+    await expect(adminCaller.vendors.list()).resolves.toHaveLength(1);
+    await expect(adminCaller.brands.list()).resolves.toHaveLength(1);
+    await expect(adminCaller.vendors.create({ name: "Nhà cung cấp Minh Phát", contactName: null, phone: null, email: null })).resolves.toEqual({ id: 41 });
+    await expect(adminCaller.brands.create({ name: "Dell" })).resolves.toEqual({ id: 51 });
+    expect(mocks.createVendor).toHaveBeenCalledWith(expect.objectContaining({ name: "Nhà cung cấp Minh Phát", isActive: true }));
+    expect(mocks.createBrand).toHaveBeenCalledWith({ name: "Dell", isActive: true });
+
+    const employeeCaller = appRouter.createCaller({ ...adminContext, user: { ...adminContext.user, role: "user" } });
+    await expect(employeeCaller.vendors.create({ name: "Công ty khác", contactName: null, phone: null, email: null })).rejects.toMatchObject({ code: "FORBIDDEN" });
   });
 
   it("rejects the department list for a non-administrator", async () => {

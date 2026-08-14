@@ -250,3 +250,11 @@
 - [x] Thêm ô nhập số trang vào thanh phân trang Danh mục tài sản.
 - [x] Kiểm tra giới hạn trang và hỗ trợ Enter/nút xác nhận để chuyển trang nhanh.
 - [x] Kiểm thử responsive, TypeScript, build và phát hành checkpoint; 26 Vitest tests, TypeScript và production build thành công.
+
+## Nhà cung cấp, Hãng & kích thước trang
+
+- [x] Cập nhật dropdown kích thước trang với 10, 20 và 50 tài sản mỗi trang.
+- [x] Bổ sung mô hình dữ liệu, migration và API Admin cho Nhà cung cấp và Hãng.
+- [x] Tích hợp danh sách chọn Nhà cung cấp/Hãng vào form tạo và chỉnh sửa tài sản.
+- [x] Thêm luồng tạo nhanh Nhà cung cấp hoặc Hãng khi chưa có trong danh sách.
+- [x] Kiểm thử phân quyền, liên kết dữ liệu, responsive, TypeScript, build và phát hành checkpoint; 27 Vitest tests, TypeScript và production build thành công.

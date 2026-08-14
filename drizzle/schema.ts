@@ -58,6 +58,25 @@ export const assetCategories = mysqlTable("assetCategories", {
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
 
+export const vendors = mysqlTable("vendors", {
+  id: int("id").autoincrement().primaryKey(),
+  name: varchar("name", { length: 160 }).notNull().unique(),
+  contactName: varchar("contactName", { length: 160 }),
+  phone: varchar("phone", { length: 32 }),
+  email: varchar("email", { length: 320 }),
+  isActive: boolean("isActive").default(true).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export const brands = mysqlTable("brands", {
+  id: int("id").autoincrement().primaryKey(),
+  name: varchar("name", { length: 160 }).notNull().unique(),
+  isActive: boolean("isActive").default(true).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
 export const assets = mysqlTable("assets", {
   id: int("id").autoincrement().primaryKey(),
   assetCode: varchar("assetCode", { length: 64 }).notNull().unique(),
@@ -71,6 +90,8 @@ export const assets = mysqlTable("assets", {
   purchaseDate: timestamp("purchaseDate"),
   purchaseValue: decimal("purchaseValue", { precision: 15, scale: 2 }),
   vendor: varchar("vendor", { length: 255 }),
+  vendorId: int("vendorId").references(() => vendors.id, { onDelete: "set null", onUpdate: "cascade" }),
+  brandId: int("brandId").references(() => brands.id, { onDelete: "set null", onUpdate: "cascade" }),
   serialNumber: varchar("serialNumber", { length: 160 }),
   location: varchar("location", { length: 255 }),
   warrantyUntil: timestamp("warrantyUntil"),
@@ -85,6 +106,8 @@ export const assets = mysqlTable("assets", {
   index("assets_status_idx").on(table.status),
   index("assets_category_idx").on(table.categoryId),
   index("assets_department_idx").on(table.departmentId),
+  index("assets_vendor_idx").on(table.vendorId),
+  index("assets_brand_idx").on(table.brandId),
 ]);
 
 export const handovers = mysqlTable("handovers", {
