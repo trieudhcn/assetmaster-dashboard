@@ -220,3 +220,11 @@
 - [x] Rà soát dữ liệu hiện có và tạo các mã định danh mẫu không trùng lặp (`DEMO-*`).
 - [x] Tạo 10 tài sản thiết bị mẫu và 10 nhân sự mẫu có email `@company.com`.
 - [x] Kiểm tra số lượng và quan hệ dữ liệu: 3 Phòng Ban, 4 Bộ Phận, 10 nhân sự và 10 tài sản mẫu được tạo hợp lệ.
+
+## Phiếu cấp phát & lịch sử bảo trì tài sản
+
+- [x] Rà soát và mở rộng luồng tạo phiếu bàn giao khi cấp phát thiết bị cho nhân viên.
+- [x] Bổ sung thao tác in phiếu bàn giao từ dữ liệu phiếu thực, với định dạng in phù hợp và phương án tải PDF khi cửa sổ in bị chặn.
+- [x] Hiển thị lịch sử bảo trì theo từng tài sản và tạo yêu cầu sửa chữa trực tiếp từ hồ sơ tài sản.
+- [x] Kiểm thử phân quyền, dữ liệu, responsive và phát hành checkpoint; 26 Vitest tests, TypeScript và production build thành công.
+- [x] Điều chỉnh form tạo yêu cầu Bảo trì để không tràn ngang ở desktop và mobile khi đủ trường lịch định kỳ.

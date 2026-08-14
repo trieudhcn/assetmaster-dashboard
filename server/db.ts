@@ -319,6 +319,12 @@ export async function listMaintenanceTickets() {
   return db.select().from(maintenanceTickets).orderBy(desc(maintenanceTickets.openedAt));
 }
 
+export async function listMaintenanceTicketsByAsset(assetId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(maintenanceTickets).where(eq(maintenanceTickets.assetId, assetId)).orderBy(desc(maintenanceTickets.openedAt));
+}
+
 export async function getMaintenanceTicket(id: number) {
   const db = await getDb();
   if (!db) return null;

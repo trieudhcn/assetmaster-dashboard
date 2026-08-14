@@ -212,7 +212,7 @@ export function MaintenancePage() {
           <div className="mb-4 flex items-center gap-2 text-sm font-extrabold text-[#193B57]">
             <Wrench size={16} className="text-[#A86B00]" />Tạo yêu cầu mới
           </div>
-          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-[minmax(190px,1fr)_minmax(210px,1.25fr)_150px_150px_150px_145px_130px_auto]">
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
             <select value={assetId} onChange={(event) => setAssetId(event.target.value)} className="field-input" disabled={assetsQuery.isLoading}>
               <option value="">Chọn tài sản</option>
               {assets.map((asset) => <option key={asset.id} value={asset.id}>{asset.assetCode} · {asset.name}</option>)}

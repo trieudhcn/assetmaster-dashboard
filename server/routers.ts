@@ -34,6 +34,7 @@ import {
   listHandovers,
   listHandoversByRecipient,
   listMaintenanceTickets,
+  listMaintenanceTicketsByAsset,
   listUsers,
   recordActivity,
   saveCompany,
@@ -237,6 +238,7 @@ export const appRouter = router({
   }),
   maintenance: router({
     list: protectedProcedure.query(() => listMaintenanceTickets()),
+    byAsset: protectedProcedure.input(z.object({ assetId: z.number().int().positive() })).query(({ input }) => listMaintenanceTicketsByAsset(input.assetId)),
     create: protectedProcedure.input(z.object({ assetId: z.number().int().positive(), issueType: z.enum(["maintenance", "incident", "damage"]), priority: z.enum(["low", "medium", "high", "critical"]).default("medium"), description: z.string().trim().min(5).max(5000), estimatedCost: z.string().regex(/^\d+(\.\d{1,2})?$/).optional().nullable(), dueAt: dateFromMs, recurrenceDays: z.number().int().min(1).max(3650).optional().nullable() })).mutation(async ({ input, ctx }) => {
       const id = await createMaintenanceTicket({ ...input, ticketCode: `BT-${new Date().getFullYear()}-${crypto.randomUUID().slice(0, 8).toUpperCase()}`, reporterUserId: ctx.user!.id, reporterName: ctx.user!.name ?? "Người dùng", status: "open" });
       await recordActivity({ entityType: "maintenance", entityId: id, action: "reported", actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: "Tạo yêu cầu bảo trì / báo hỏng" });

@@ -9,6 +9,7 @@ const mocks = vi.hoisted(() => ({
   recordActivity: vi.fn(),
   getMaintenanceTicket: vi.fn(),
   listMaintenanceTickets: vi.fn(),
+  listMaintenanceTicketsByAsset: vi.fn(),
   listAuditSessions: vi.fn(),
   listActivityLogs: vi.fn(),
   storagePut: vi.fn(),
@@ -37,6 +38,7 @@ vi.mock("./db", () => ({
   listHandovers: vi.fn(),
   listHandoversByRecipient: vi.fn(),
   listMaintenanceTickets: mocks.listMaintenanceTickets,
+  listMaintenanceTicketsByAsset: mocks.listMaintenanceTicketsByAsset,
   listActivityLogs: mocks.listActivityLogs,
   listUsers: vi.fn(),
   recordActivity: mocks.recordActivity,
@@ -77,6 +79,7 @@ describe("operations management", () => {
     mocks.recordActivity.mockResolvedValue(undefined);
     mocks.getMaintenanceTicket.mockResolvedValue({ id: 30, ticketCode: "BT-2026-ABC12345" });
     mocks.listMaintenanceTickets.mockResolvedValue([]);
+    mocks.listMaintenanceTicketsByAsset.mockResolvedValue([]);
     mocks.listAuditSessions.mockResolvedValue([]);
     mocks.listActivityLogs.mockResolvedValue([]);
     mocks.storagePut.mockResolvedValue({ key: "maintenance/30/chung-tu.pdf", url: "/manus-storage/maintenance/30/chung-tu.pdf" });
@@ -104,6 +107,15 @@ describe("operations management", () => {
       ticketCode: expect.stringMatching(/^BT-\d{4}-[A-Z0-9]{8}$/),
     }));
     expect(mocks.recordActivity).toHaveBeenCalledWith(expect.objectContaining({ entityType: "maintenance", entityId: 30, action: "reported" }));
+  });
+
+  it("returns maintenance history scoped to the selected asset for protected users", async () => {
+    const ticket = { id: 31, assetId: 8, ticketCode: "BT-2026-HISTORY", status: "resolved", openedAt: new Date() };
+    mocks.listMaintenanceTicketsByAsset.mockResolvedValue([ticket]);
+
+    const caller = appRouter.createCaller(employeeContext);
+    await expect(caller.maintenance.byAsset({ assetId: 8 })).resolves.toEqual([ticket]);
+    expect(mocks.listMaintenanceTicketsByAsset).toHaveBeenCalledWith(8);
   });
 
   it("only allows administrators to assign a technician and record actual cost", async () => {
