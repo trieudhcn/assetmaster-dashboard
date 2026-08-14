@@ -88,3 +88,11 @@
 
 - [x] Kiểm tra desktop và mobile cho menu hồ sơ, gồm trạng thái mở/đóng và thông tin tài khoản.
 - [x] Lưu checkpoint mới sau khi xác nhận runtime menu hồ sơ và đăng xuất ổn định.
+
+## Employee Administration
+
+- [ ] Thêm dialog xác nhận trước khi thực hiện đăng xuất.
+- [ ] Thêm API admin để liệt kê tài khoản và cập nhật role.
+- [ ] Thêm trang Quản lý nhân viên có danh sách tài khoản, vai trò và thao tác đổi role.
+- [ ] Bảo vệ trang/thao tác quản trị theo role admin.
+- [ ] Thêm test quyền hạn, kiểm tra responsive, build và checkpoint.

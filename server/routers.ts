@@ -15,11 +15,13 @@ import {
   listAuditSessions,
   listHandovers,
   listMaintenanceTickets,
+  listUsers,
   recordActivity,
   saveCompany,
   updateAsset,
   updateHandover,
   updateMaintenanceTicket,
+  updateUserRole,
   updateAuditItem,
 } from "./db";
 import { storagePut } from "./storage";
@@ -45,6 +47,14 @@ export const appRouter = router({
       const id = await saveCompany(input);
       await recordActivity({ entityType: "company", entityId: id, action: "updated", actorUserId: ctx.user.id, actorName: ctx.user.name, summary: "Cập nhật thông tin công ty" });
       return { id };
+    }),
+  }),
+  employees: router({
+    list: adminProcedure.query(() => listUsers()),
+    updateRole: adminProcedure.input(z.object({ id: z.number().int().positive(), role: z.enum(["admin", "user"]) })).mutation(async ({ input, ctx }) => {
+      await updateUserRole(input.id, input.role);
+      await recordActivity({ entityType: "user", entityId: input.id, action: "role_updated", actorUserId: ctx.user.id, actorName: ctx.user.name, summary: `Cập nhật vai trò thành ${input.role}` });
+      return { success: true };
     }),
   }),
   assets: router({

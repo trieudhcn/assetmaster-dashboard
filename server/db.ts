@@ -33,6 +33,18 @@ export async function getUserByOpenId(openId: string) {
   return (await db.select().from(users).where(eq(users.openId, openId)).limit(1))[0];
 }
 
+export async function listUsers() {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(users).orderBy(desc(users.lastSignedIn));
+}
+
+export async function updateUserRole(id: number, role: "admin" | "user") {
+  const db = await getDb();
+  if (!db) throw new Error("Database unavailable");
+  await db.update(users).set({ role }).where(eq(users.id, id));
+}
+
 export async function listAssets() {
   const db = await getDb();
   if (!db) return [];
