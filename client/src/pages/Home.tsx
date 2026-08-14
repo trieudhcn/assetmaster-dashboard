@@ -57,6 +57,7 @@ const navItems = [
   { label: "Bảo trì & Báo hỏng", icon: Wrench, count: "12" },
   { label: "Kiểm kê", icon: ClipboardCheck },
   { label: "Báo cáo", icon: FileBarChart },
+  { label: "Quản lý nhân viên", icon: UserRound },
 ];
 
 type Asset = {
@@ -118,6 +119,13 @@ const statusStyles = {
   available: "bg-[#EAF3FF] text-[#2666A8] ring-[#C7DDF8]",
   maintenance: "bg-[#FFF5DC] text-[#A86B00] ring-[#F2D596]",
 };
+
+function EmployeeManagementPage() {
+  const usersQuery = trpc.employees.list.useQuery();
+  const utils = trpc.useUtils();
+  const updateRole = trpc.employees.updateRole.useMutation({ onSuccess: () => { utils.employees.list.invalidate(); toast.success("Đã cập nhật vai trò nhân viên."); } });
+  return <div className="min-h-screen bg-[#F4F7FB] px-4 py-7 sm:px-6 lg:px-9 lg:py-8"><div className="mx-auto max-w-[1500px]"><h1 className="font-display text-3xl font-extrabold text-[#102A43]">Quản lý nhân viên</h1><p className="mt-1 text-sm text-[#71869A]">Tài khoản và phân quyền truy cập hệ thống.</p><div className="mt-6 overflow-hidden rounded-xl border border-[#DFE9F0] bg-white"><table className="w-full text-left text-xs"><thead className="bg-[#FBFCFD] text-[#8AA0B6]"><tr><th className="p-4">Nhân viên</th><th>Email</th><th>Vai trò</th><th className="p-4">Thao tác</th></tr></thead><tbody>{usersQuery.data?.map((employee) => <tr key={employee.id} className="border-t border-[#EDF2F5]"><td className="p-4 font-bold text-[#193B57]">{employee.name || "Chưa đặt tên"}</td><td>{employee.email || "—"}</td><td>{employee.role === "admin" ? "Quản trị viên" : "Nhân viên"}</td><td className="p-4"><button onClick={() => updateRole.mutate({ id: employee.id, role: employee.role === "admin" ? "user" : "admin" })} className="rounded-md border border-[#CDE5E5] px-3 py-1.5 font-bold text-[#087A6A]">Đổi thành {employee.role === "admin" ? "nhân viên" : "quản trị viên"}</button></td></tr>)}</tbody></table>{!usersQuery.data?.length && <div className="p-10 text-center text-sm text-[#8AA0B6]">Chưa có tài khoản nào.</div>}</div></div></div>;
+}
 
 export default function Home() {
   // The useAuth hook provides authentication state.
@@ -242,6 +250,7 @@ export default function Home() {
         {activeNav === "Bảo trì & Báo hỏng" ? <MaintenancePage /> : null}
         {activeNav === "Kiểm kê" ? <AuditPage /> : null}
         {activeNav === "Báo cáo" ? <ReportsPage /> : null}
+        {activeNav === "Quản lý nhân viên" ? <EmployeeManagementPage /> : null}
         <div className={`relative overflow-hidden px-4 py-7 sm:px-6 lg:px-9 lg:py-8 ${["Bàn giao & Cấp phát", "Cài đặt", "Bảo trì & Báo hỏng", "Kiểm kê", "Báo cáo"].includes(activeNav) ? "hidden" : ""}`}>
           <div className="pointer-events-none absolute right-0 top-0 hidden h-[170px] w-[420px] opacity-60 lg:block"><img src="/manus-storage/assetmaster-dashboard-pattern_109e8935.png" alt="" className="h-full w-full object-cover object-left" /></div>
           <div className="relative mx-auto max-w-[1500px]"><div className="mb-5 flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.15em] text-[#A86B00]"><span className="h-px w-8 bg-[#F0A516]" /><span className="h-1.5 w-1.5 rounded-full bg-[#F0A516]" />System pulse · live inventory signal</div>
