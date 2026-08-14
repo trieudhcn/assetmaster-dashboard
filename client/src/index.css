@@ -93,3 +93,10 @@ button:not(:disabled), [role="button"]:not([aria-disabled="true"]), select:not(:
 
 @media (min-width: 640px) { .container { padding-inline: 1.5rem; } }
 @media (min-width: 1024px) { .container { max-width: 1280px; padding-inline: 2rem; } }
+
+/* Asset catalog form primitives: compact, high-contrast fields for operational data entry. */
+.field-label { display: block; margin-bottom: 0.4rem; color: #60758A; font-size: 0.68rem; font-weight: 800; letter-spacing: 0.02em; }
+.field-input { width: 100%; min-height: 2.45rem; border: 1px solid #DDE7F0; border-radius: 0.55rem; background: #FFFFFF; padding: 0.65rem 0.75rem; color: #193B57; font-size: 0.78rem; font-weight: 600; outline: none; transition: border-color 160ms ease-out, box-shadow 160ms ease-out; }
+.field-input::placeholder { color: #A8B8C5; font-weight: 500; }
+.field-input:focus { border-color: #0F8C8C; box-shadow: 0 0 0 3px rgba(15,140,140,0.11); }
+.field-input:disabled { cursor: not-allowed; }
