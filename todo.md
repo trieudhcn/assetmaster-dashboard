@@ -228,3 +228,11 @@
 - [x] Hiển thị lịch sử bảo trì theo từng tài sản và tạo yêu cầu sửa chữa trực tiếp từ hồ sơ tài sản.
 - [x] Kiểm thử phân quyền, dữ liệu, responsive và phát hành checkpoint; 26 Vitest tests, TypeScript và production build thành công.
 - [x] Điều chỉnh form tạo yêu cầu Bảo trì để không tràn ngang ở desktop và mobile khi đủ trường lịch định kỳ.
+
+## Tách Tổng quan & Danh mục tài sản
+
+- [x] Tách điều hướng và trạng thái hiển thị cho trang Tổng quan và Danh mục tài sản.
+- [x] Thiết kế lại trang Tổng quan với KPI điều hành, phân bổ tài sản và các công việc cần theo dõi.
+- [x] Xây dựng trang Danh mục tài sản độc lập cho tìm kiếm, lọc, thao tác QR, chỉnh sửa và hồ sơ tài sản.
+- [x] Kiểm thử deep-link, responsive desktop/mobile và phát hành checkpoint; 26 Vitest tests, TypeScript và production build thành công.
+- [x] Thay thông báo kiểm kê cố định trên Tổng quan bằng dữ liệu số lượng tài sản thực và điều hướng đến Kiểm kê.
