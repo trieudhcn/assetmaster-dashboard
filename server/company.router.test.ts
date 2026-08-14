@@ -14,7 +14,7 @@ describe("company.get", () => {
   beforeEach(() => mocks.getCompany.mockResolvedValue(null));
 
   it("returns null rather than undefined when no company record exists", async () => {
-    const caller = appRouter.createCaller({ user: { id: 1, openId: "admin", role: "admin", name: "Admin" }, req: {}, res: {} } as any);
+    const caller = appRouter.createCaller({ user: { id: 1, openId: "admin", role: "admin", name: "Admin", isActive: true }, req: {}, res: {} } as any);
     await expect(caller.company.get()).resolves.toBeNull();
   });
 });

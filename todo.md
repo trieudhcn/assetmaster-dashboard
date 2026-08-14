@@ -91,24 +91,24 @@
 
 ## Employee Administration
 
-- [ ] Thêm dialog xác nhận trước khi thực hiện đăng xuất.
-- [ ] Thêm API admin để liệt kê tài khoản và cập nhật role.
-- [ ] Thêm trang Quản lý nhân viên có danh sách tài khoản, vai trò và thao tác đổi role.
-- [ ] Bảo vệ trang/thao tác quản trị theo role admin.
-- [ ] Thêm test quyền hạn, kiểm tra responsive, build và checkpoint.
+- [x] Thêm dialog xác nhận trước khi thực hiện đăng xuất.
+- [x] Thêm API admin để liệt kê tài khoản và cập nhật role.
+- [x] Thêm trang Quản lý nhân viên có danh sách tài khoản, vai trò và thao tác đổi role.
+- [x] Bảo vệ trang/thao tác quản trị theo role admin.
+- [x] Thêm test quyền hạn, kiểm tra responsive, build và checkpoint.
 
 ## Employee Detail, Security & Filters
 
-- [ ] Thêm trạng thái khóa/vô hiệu hóa tài khoản và phòng ban cho hồ sơ nhân viên.
-- [ ] Thêm API admin xem chi tiết nhân viên cùng tài sản đang được cấp phát.
-- [ ] Thêm API khóa/mở khóa tài khoản, bảo đảm người dùng bị khóa không dùng được luồng bảo vệ.
-- [ ] Thêm tìm kiếm và lọc nhân viên theo phòng ban, vai trò, trạng thái tài khoản.
-- [ ] Thêm drawer hồ sơ nhân viên với danh sách tài sản đang được cấp phát.
-- [ ] Kiểm tra quyền hạn, responsive, TypeScript, test, build và checkpoint.
+- [x] Thêm trạng thái khóa/vô hiệu hóa tài khoản và phòng ban cho hồ sơ nhân viên.
+- [x] Thêm API admin xem chi tiết nhân viên cùng tài sản đang được cấp phát.
+- [x] Thêm API khóa/mở khóa tài khoản, bảo đảm người dùng bị khóa không dùng được luồng bảo vệ.
+- [x] Thêm tìm kiếm và lọc nhân viên theo phòng ban, vai trò, trạng thái tài khoản.
+- [x] Thêm drawer hồ sơ nhân viên với danh sách tài sản đang được cấp phát.
+- [x] Kiểm tra quyền hạn, responsive, TypeScript, test, build và checkpoint.
 
 ## Manual Department Assignment
 
-- [ ] Thêm thao tác admin gán hoặc đổi phòng ban thủ công cho từng nhân viên.
+- [x] Thêm thao tác admin gán hoặc đổi phòng ban thủ công cho từng nhân viên.
 
 ## Employee Asset History
 
@@ -120,6 +120,19 @@
 
 ## Employee Drawer Detail Follow-up
 
-- [ ] Mở rộng lịch sử tài sản với mã, tên, trạng thái và mốc thời gian đầy đủ.
-- [ ] Hiển thị phòng ban, vai trò và trạng thái tài khoản trong drawer hồ sơ nhân viên.
-- [ ] Kiểm tra preview/runtime drawer sau khi bổ sung dữ liệu chi tiết.
+- [x] Mở rộng lịch sử tài sản với mã, tên, trạng thái và mốc thời gian đầy đủ.
+- [x] Hiển thị phòng ban, vai trò và trạng thái tài khoản trong drawer hồ sơ nhân viên.
+- [x] Kiểm tra preview/runtime drawer sau khi bổ sung dữ liệu chi tiết.
+
+## Employee Administration Completion
+
+- [x] Thêm nút khóa/mở khóa có xác nhận trong drawer hồ sơ nhân viên.
+- [x] Thêm bộ lọc trạng thái tài khoản trong danh sách nhân viên.
+- [x] Thêm danh sách phòng ban và thao tác gán phòng ban thủ công từ drawer.
+- [x] Bổ sung kiểm thử API quản trị nhân viên, kiểm tra desktop/mobile, build và checkpoint phát hành.
+
+## Employee Administration Security Verification
+
+- [x] Chặn tài khoản quản trị đã khóa khỏi mọi API quản trị và bổ sung kiểm thử hồi quy.
+- [ ] Xác minh runtime drawer quản lý nhân viên bằng phiên đăng nhập quản trị trên desktop và mobile.
+- [ ] Lưu checkpoint phát hành sau khi hoàn tất xác minh quyền và giao diện.

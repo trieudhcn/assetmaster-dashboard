@@ -6,6 +6,7 @@ import {
   auditItems,
   auditSessions,
   companies,
+  departments,
   handovers,
   maintenanceTickets,
   type InsertUser,
@@ -49,6 +50,24 @@ export async function updateUserActiveStatus(id: number, isActive: boolean) {
   const db = await getDb();
   if (!db) throw new Error("Database unavailable");
   await db.update(users).set({ isActive }).where(eq(users.id, id));
+}
+
+export async function updateUserDepartment(id: number, departmentId: number | null) {
+  const db = await getDb();
+  if (!db) throw new Error("Database unavailable");
+  await db.update(users).set({ departmentId }).where(eq(users.id, id));
+}
+
+export async function listDepartments() {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(departments).where(eq(departments.isActive, true)).orderBy(departments.name);
+}
+
+export async function getActiveDepartmentById(id: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+  return (await db.select().from(departments).where(eq(departments.id, id)).limit(1))[0];
 }
 
 export async function listAssets() {
