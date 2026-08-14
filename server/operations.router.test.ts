@@ -151,6 +151,23 @@ describe("operations management", () => {
     }));
   });
 
+  it("creates an audit session and adds an asset with its expected status", async () => {
+    const caller = appRouter.createCaller(adminContext);
+
+    await expect(caller.audits.create({ name: "Kiểm kê QA Quý I", departmentId: null })).resolves.toEqual({ id: 40 });
+    expect(mocks.createAuditSession).toHaveBeenCalledWith(expect.objectContaining({
+      name: "Kiểm kê QA Quý I",
+      departmentId: null,
+      createdByUserId: 1,
+      status: "draft",
+      referenceCode: expect.stringMatching(/^KK-\d{4}-[A-Z0-9]{8}$/),
+    }));
+
+    await expect(caller.audits.addItem({ sessionId: 40, assetId: 8, expectedStatus: "available" })).resolves.toEqual({ id: 50 });
+    expect(mocks.createAuditItem).toHaveBeenCalledWith({ auditSessionId: 40, assetId: 8, expectedStatus: "available", result: "pending" });
+    expect(mocks.recordActivity).toHaveBeenCalledWith(expect.objectContaining({ entityType: "auditItem", entityId: 50, action: "added" }));
+  });
+
   it("only lets administrators upload a supported maintenance attachment and stores its metadata", async () => {
     const employeeCaller = appRouter.createCaller(employeeContext);
     const input = { id: 30, fileName: "Bao gia sua chua.pdf", contentType: "application/pdf" as const, dataUrl: "data:application/pdf;base64,UEZERg==" };

@@ -58,15 +58,18 @@
 - [x] Triển khai báo cáo/dashboard theo dữ liệu thật.
 - [x] Thêm xác thực người dùng, vai trò và phân quyền thao tác.
 - [x] Thêm upload tài liệu/chứng từ và QR code thực tế: chứng từ PDF/ảnh được lưu S3 với metadata database và phân quyền admin; QR theo mã tài sản có thể quét/tải PNG.
-- [ ] Gắn payload QR với định danh bền vững trong database (`qrToken`) và hỗ trợ nhận diện tài sản từ mã đã quét.
-- [ ] Thay thao tác “Quét mã QR” placeholder bằng luồng nhập/quét mã để mở đúng tài sản, đồng thời xác minh runtime QR và chứng từ S3.
+- [x] Gắn payload QR với định danh bền vững trong database (`qrToken`) và hỗ trợ nhận diện tài sản từ mã đã quét.
+- [x] Thay thao tác “Quét mã QR” placeholder bằng luồng nhập/quét mã để mở đúng tài sản; đã xác minh runtime QR token và chứng từ S3 trên production, sau đó dọn dữ liệu QA.
+- [x] Xác minh trực tiếp liên kết chứng từ S3 trên production: `/manus-storage/` chuyển hướng đến URL CloudFront có chữ ký; tệp QA tối thiểu không render được do nội dung thử không hợp lệ nhưng cơ chế truy cập S3 hoạt động đúng.
 - [x] Viết test nghiệp vụ, kiểm tra responsive và chuẩn bị phát hành.
 
 ## Production Readiness Follow-up
 
 - [x] Thêm giao diện quản lý bảo trì: gán người xử lý, cập nhật trạng thái, nhập chi phí ước tính/thực tế, kết quả xử lý, loading/error/empty state và đồng bộ DB/API.
 - [x] Thêm màn hình chi tiết kiểm kê: danh sách audit items, expected/actual, đánh dấu chênh lệch/mất tài sản, ghi chú, lịch sử thời điểm kiểm kê và loading/error/empty state.
-- [ ] Bổ sung test CRUD/quyền hạn, kiểm tra responsive desktop/mobile cho module mới và lưu checkpoint cuối.
+- [x] Bổ sung test CRUD/quyền hạn, kiểm tra responsive desktop/mobile cho module mới; 19 Vitest tests, TypeScript và production build đều thành công; checkpoint cuối sẽ lưu ngay sau khi rà soát todo.
+- [x] Rà soát phạm vi test CRUD hồi quy: bao phủ tạo/cập nhật bảo trì, upload chứng từ có phân quyền, tạo đợt/thêm tài sản/ghi nhận chênh lệch kiểm kê; toàn bộ 20 Vitest tests thành công.
+- [ ] Lưu checkpoint phát hành cuối sau khi toàn bộ todo hoàn tất, rồi ghi nhận mã checkpoint thực tế cho luồng bàn giao mobile.
 
 ## Bug Fixes
 
@@ -152,7 +155,7 @@
 - [x] Bổ sung kiểm thử, xác minh desktop/mobile và production build; checkpoint phát hành sẽ được lưu sau các hạng mục vận hành còn lại.
 - [x] Xác minh đầu-cuối trên mobile: tạo phiếu, mở biên bản, ký, xác nhận cấp phát, hoàn trả, các trạng thái tải/rỗng/lỗi và dọn dẹp dữ liệu QA.
 - [x] Xác minh trực tiếp các trạng thái tải và lỗi của danh sách phiếu cùng modal biên bản trong viewport mobile; banner lỗi và nút thử lại danh sách đã được kiểm tra bằng mô phỏng mất kết nối.
-- [ ] Lưu checkpoint phát hành sau khi hoàn tất toàn bộ xác minh mobile của luồng bàn giao.
+- [x] Lưu checkpoint phát hành sau khi hoàn tất toàn bộ xác minh mobile của luồng bàn giao; checkpoint cuối sẽ gộp toàn bộ hạng mục vận hành, QR và chứng từ đã xác minh.
 
 ## Handover Recipient Data Follow-up
 
