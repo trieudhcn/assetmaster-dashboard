@@ -160,3 +160,5 @@
 - [ ] Tạo dữ liệu thử tối thiểu đã được xác nhận để kiểm tra cấp phát, hoàn trả và lịch sử nhân viên trên bản phát hành.
 - [ ] Dọn dẹp toàn bộ bản ghi thử nghiệm sau khi hoàn tất xác minh đầu-cuối.
 - [x] Cho phép lập phiếu cho nhân viên chưa gán phòng ban, đồng thời lưu departmentId nullable đúng theo schema.
+- [ ] Làm mới dữ liệu chi tiết phiếu sau khi lưu chữ ký để nút xác nhận chuyển sang trạng thái cấp phát chính xác.
+- [ ] Xác minh trực tiếp sau khi lưu chữ ký rằng badge và nút hành động của modal chuyển sang trạng thái kế tiếp.
