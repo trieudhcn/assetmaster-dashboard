@@ -214,3 +214,9 @@
 - [x] Tổng hợp giá trị tài sản thực theo Bộ Phận của người đang giữ tài sản, tương thích bộ lọc cơ cấu hiện có.
 - [x] Hiển thị biểu đồ donut trực quan phân bổ giá trị tài sản theo Bộ Phận, có chú giải, tỷ trọng và trạng thái không có dữ liệu.
 - [x] Kiểm thử dữ liệu, responsive desktop/mobile, build và phát hành checkpoint; 25 Vitest tests, TypeScript và production build thành công.
+
+## Dữ liệu mẫu thiết bị và nhân sự
+
+- [x] Rà soát dữ liệu hiện có và tạo các mã định danh mẫu không trùng lặp (`DEMO-*`).
+- [x] Tạo 10 tài sản thiết bị mẫu và 10 nhân sự mẫu có email `@company.com`.
+- [x] Kiểm tra số lượng và quan hệ dữ liệu: 3 Phòng Ban, 4 Bộ Phận, 10 nhân sự và 10 tài sản mẫu được tạo hợp lệ.
