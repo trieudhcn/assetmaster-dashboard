@@ -36,3 +36,11 @@
 - [x] Tổ chức lại bố cục PDF thành tiêu đề, thông tin phiếu, bảng tài sản, xác nhận và chữ ký.
 - [x] Thêm thông tin doanh nghiệp, số trang và chân trang chuyên nghiệp.
 - [x] Kiểm tra build, preview và checkpoint mẫu PDF mới.
+
+## Company Settings & PDF Header
+
+- [x] Thêm mô hình thông tin công ty gồm tên, địa chỉ, mã số thuế và số điện thoại.
+- [x] Thêm giao diện cài đặt thông tin công ty trong khu vực Cài đặt hệ thống.
+- [x] Lưu và khôi phục thông tin công ty trong trình duyệt.
+- [x] Tự động điền thông tin công ty vào tiêu đề biên bản bàn giao PDF.
+- [x] Kiểm tra validation, build, responsive và checkpoint.
