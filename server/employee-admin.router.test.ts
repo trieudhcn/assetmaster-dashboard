@@ -1,24 +1,35 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
+  clearUserDivision: vi.fn(),
+  countActiveDivisionsByDepartment: vi.fn(),
   createDepartment: vi.fn(),
   createDivision: vi.fn(),
   createHandover: vi.fn(),
   getAssetById: vi.fn(),
   getActiveDepartmentById: vi.fn(),
   getCompany: vi.fn(),
+  getDepartmentById: vi.fn(),
   getDepartmentByCode: vi.fn(),
+  getDivisionById: vi.fn(),
   getDivisionByCode: vi.fn(),
   getHandoverById: vi.fn(),
   listDepartments: vi.fn(),
+  listAllDepartments: vi.fn(),
+  listAllDivisions: vi.fn(),
   listDivisions: vi.fn(),
   recordActivity: vi.fn(),
   transitionHandoverStatus: vi.fn(),
   updateUserActiveStatus: vi.fn(),
   updateUserDepartment: vi.fn(),
+  updateUserDivision: vi.fn(),
+  updateDepartment: vi.fn(),
+  updateDivision: vi.fn(),
 }));
 
 vi.mock("./db", () => ({
+  clearUserDivision: mocks.clearUserDivision,
+  countActiveDivisionsByDepartment: mocks.countActiveDivisionsByDepartment,
   createAsset: vi.fn(),
   createAuditItem: vi.fn(),
   createAuditSession: vi.fn(),
@@ -29,14 +40,18 @@ vi.mock("./db", () => ({
   getActiveDepartmentById: mocks.getActiveDepartmentById,
   getAssetById: mocks.getAssetById,
   getCompany: mocks.getCompany,
+  getDepartmentById: mocks.getDepartmentById,
   getDepartmentByCode: mocks.getDepartmentByCode,
   getDivisionByCode: mocks.getDivisionByCode,
+  getDivisionById: mocks.getDivisionById,
   getHandoverById: mocks.getHandoverById,
   getMaintenanceTicket: vi.fn(),
   listAssets: vi.fn(),
   listAuditItems: vi.fn(),
   listAuditSessions: vi.fn(),
   listDepartments: mocks.listDepartments,
+  listAllDepartments: mocks.listAllDepartments,
+  listAllDivisions: mocks.listAllDivisions,
   listDivisions: mocks.listDivisions,
   listHandovers: vi.fn(),
   listHandoversByRecipient: vi.fn(),
@@ -51,6 +66,9 @@ vi.mock("./db", () => ({
   transitionHandoverStatus: mocks.transitionHandoverStatus,
   updateUserActiveStatus: mocks.updateUserActiveStatus,
   updateUserDepartment: mocks.updateUserDepartment,
+  updateUserDivision: mocks.updateUserDivision,
+  updateDepartment: mocks.updateDepartment,
+  updateDivision: mocks.updateDivision,
   updateUserRole: vi.fn(),
 }));
 
@@ -74,11 +92,18 @@ describe("employee administration", () => {
     mocks.getActiveDepartmentById.mockResolvedValue({ id: 12, code: "HCNS", name: "Hành chính - Nhân sự", isActive: true });
     mocks.getDepartmentByCode.mockResolvedValue(undefined);
     mocks.getDivisionByCode.mockResolvedValue(undefined);
+    mocks.getDepartmentById.mockResolvedValue({ id: 12, code: "HCNS", name: "Hành chính - Nhân sự", isActive: true });
+    mocks.getDivisionById.mockResolvedValue({ id: 30, departmentId: 12, code: "KTTT", name: "Bộ Phận Kế Toán Thanh Toán", isActive: true });
+    mocks.countActiveDivisionsByDepartment.mockResolvedValue(0);
     mocks.createDepartment.mockResolvedValue(20);
     mocks.createDivision.mockResolvedValue(30);
     mocks.listDivisions.mockResolvedValue([]);
     mocks.updateUserActiveStatus.mockResolvedValue(undefined);
     mocks.updateUserDepartment.mockResolvedValue(undefined);
+    mocks.updateUserDivision.mockResolvedValue(undefined);
+    mocks.clearUserDivision.mockResolvedValue(undefined);
+    mocks.updateDepartment.mockResolvedValue(undefined);
+    mocks.updateDivision.mockResolvedValue(undefined);
     mocks.recordActivity.mockResolvedValue(undefined);
   });
 
@@ -115,6 +140,25 @@ describe("employee administration", () => {
     const adminCaller = appRouter.createCaller(adminContext);
     await expect(adminCaller.departments.createDivision({ departmentId: 999, name: "Bộ Phận Kế Toán Thanh Toán" })).rejects.toMatchObject({ code: "BAD_REQUEST" });
     expect(mocks.createDivision).not.toHaveBeenCalled();
+  });
+
+  it("assigns an employee to an active division and its owning department", async () => {
+    const caller = appRouter.createCaller(adminContext);
+
+    await expect(caller.employees.updateDivision({ id: 2, divisionId: 30 })).resolves.toEqual({ success: true });
+    expect(mocks.updateUserDivision).toHaveBeenCalledWith(2, 12, 30);
+    expect(mocks.recordActivity).toHaveBeenCalledWith(expect.objectContaining({ entityType: "user", entityId: 2, action: "division_updated" }));
+  });
+
+  it("rejects invalid divisions and prevents deactivating a department with divisions", async () => {
+    mocks.getDivisionById.mockResolvedValue({ id: 30, departmentId: 12, name: "Bộ Phận Kế Toán Thanh Toán", isActive: false });
+    const caller = appRouter.createCaller(adminContext);
+    await expect(caller.employees.updateDivision({ id: 2, divisionId: 30 })).rejects.toMatchObject({ code: "BAD_REQUEST" });
+    expect(mocks.updateUserDivision).not.toHaveBeenCalled();
+
+    mocks.countActiveDivisionsByDepartment.mockResolvedValue(1);
+    await expect(caller.departments.update({ id: 12, isActive: false })).rejects.toMatchObject({ code: "BAD_REQUEST" });
+    expect(mocks.updateDepartment).not.toHaveBeenCalled();
   });
 
   it("rejects protected API access for a locked account", async () => {

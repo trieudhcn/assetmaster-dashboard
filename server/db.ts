@@ -56,7 +56,19 @@ export async function updateUserActiveStatus(id: number, isActive: boolean) {
 export async function updateUserDepartment(id: number, departmentId: number | null) {
   const db = await getDb();
   if (!db) throw new Error("Database unavailable");
-  await db.update(users).set({ departmentId }).where(eq(users.id, id));
+  await db.update(users).set({ departmentId, divisionId: null }).where(eq(users.id, id));
+}
+
+export async function updateUserDivision(id: number, departmentId: number, divisionId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database unavailable");
+  await db.update(users).set({ departmentId, divisionId }).where(eq(users.id, id));
+}
+
+export async function clearUserDivision(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database unavailable");
+  await db.update(users).set({ divisionId: null }).where(eq(users.id, id));
 }
 
 export async function listDepartments() {
@@ -65,7 +77,19 @@ export async function listDepartments() {
   return db.select().from(departments).where(eq(departments.isActive, true)).orderBy(departments.name);
 }
 
+export async function listAllDepartments() {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(departments).orderBy(departments.name);
+}
+
 export async function getActiveDepartmentById(id: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+  return (await db.select().from(departments).where(eq(departments.id, id)).limit(1))[0];
+}
+
+export async function getDepartmentById(id: number) {
   const db = await getDb();
   if (!db) return undefined;
   return (await db.select().from(departments).where(eq(departments.id, id)).limit(1))[0];
@@ -82,6 +106,12 @@ export async function createDepartment(data: typeof departments.$inferInsert) {
   if (!db) throw new Error("Database unavailable");
   const result = await db.insert(departments).values(data);
   return Number(result[0].insertId);
+}
+
+export async function updateDepartment(id: number, data: Partial<typeof departments.$inferInsert>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database unavailable");
+  await db.update(departments).set(data).where(eq(departments.id, id));
 }
 
 export async function listDivisions() {
@@ -101,10 +131,33 @@ export async function listDivisions() {
   }).from(divisions).innerJoin(departments, eq(divisions.departmentId, departments.id)).where(eq(divisions.isActive, true)).orderBy(departments.name, divisions.name);
 }
 
+export async function listAllDivisions() {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select({
+    id: divisions.id,
+    departmentId: divisions.departmentId,
+    departmentName: departments.name,
+    departmentCode: departments.code,
+    code: divisions.code,
+    name: divisions.name,
+    managerUserId: divisions.managerUserId,
+    isActive: divisions.isActive,
+    createdAt: divisions.createdAt,
+    updatedAt: divisions.updatedAt,
+  }).from(divisions).innerJoin(departments, eq(divisions.departmentId, departments.id)).orderBy(departments.name, divisions.name);
+}
+
 export async function getDivisionByCode(code: string) {
   const db = await getDb();
   if (!db) return undefined;
   return (await db.select().from(divisions).where(eq(divisions.code, code)).limit(1))[0];
+}
+
+export async function getDivisionById(id: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+  return (await db.select().from(divisions).where(eq(divisions.id, id)).limit(1))[0];
 }
 
 export async function createDivision(data: typeof divisions.$inferInsert) {
@@ -112,6 +165,19 @@ export async function createDivision(data: typeof divisions.$inferInsert) {
   if (!db) throw new Error("Database unavailable");
   const result = await db.insert(divisions).values(data);
   return Number(result[0].insertId);
+}
+
+export async function updateDivision(id: number, data: Partial<typeof divisions.$inferInsert>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database unavailable");
+  await db.update(divisions).set(data).where(eq(divisions.id, id));
+}
+
+export async function countActiveDivisionsByDepartment(departmentId: number) {
+  const db = await getDb();
+  if (!db) return 0;
+  const result = await db.select({ id: divisions.id, isActive: divisions.isActive }).from(divisions).where(eq(divisions.departmentId, departmentId));
+  return result.filter((division) => division.isActive).length;
 }
 
 export async function listAssets() {

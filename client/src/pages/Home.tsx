@@ -18,6 +18,8 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { AuditPage, MaintenancePage, ReportsPage } from "./OperationsModules";
+import { EmployeeManagementView } from "./EmployeeManagementView";
+import { ReportsManagementView } from "./ReportsManagementView";
 import { OrganizationManagementPage } from "./OrganizationManagementPage";
 import {
   Archive,
@@ -311,8 +313,8 @@ export default function Home() {
         {activeNav === "Cài đặt" ? <CompanySettingsPage companyInfo={companyInfo} onSave={(next) => { setCompanyInfo(next); localStorage.setItem("assetmaster-company-info", JSON.stringify(next)); saveCompanyMutation.mutate({ name: next.name, address: next.address || null, taxCode: next.taxCode || null, phone: next.phone || null }); toast.success("Đã lưu thông tin công ty."); }} /> : null}
         {activeNav === "Bảo trì & Báo hỏng" ? <MaintenancePage /> : null}
         {activeNav === "Kiểm kê" ? <AuditPage /> : null}
-        {activeNav === "Báo cáo" ? <ReportsPage /> : null}
-        {activeNav === "Quản lý nhân viên" ? <EmployeeManagementPage /> : null}
+        {activeNav === "Báo cáo" ? <ReportsManagementView /> : null}
+        {activeNav === "Quản lý nhân viên" ? <EmployeeManagementView /> : null}
         {activeNav === "Phòng Ban & Bộ Phận" ? <OrganizationManagementPage /> : null}
         <div className={`relative overflow-hidden px-4 py-7 sm:px-6 lg:px-9 lg:py-8 ${["Bàn giao & Cấp phát", "Cài đặt", "Bảo trì & Báo hỏng", "Kiểm kê", "Báo cáo", "Quản lý nhân viên", "Phòng Ban & Bộ Phận"].includes(activeNav) ? "hidden" : ""}`}>
           <div className="pointer-events-none absolute right-0 top-0 hidden h-[170px] w-[420px] opacity-60 lg:block"><img src="/manus-storage/assetmaster-dashboard-pattern_109e8935.png" alt="" className="h-full w-full object-cover object-left" /></div>

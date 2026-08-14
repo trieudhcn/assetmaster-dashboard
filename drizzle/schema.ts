@@ -8,11 +8,12 @@ export const users = mysqlTable("users", {
   loginMethod: varchar("loginMethod", { length: 64 }),
   role: mysqlEnum("role", ["user", "admin"]).default("user").notNull(),
   departmentId: int("departmentId"),
+  divisionId: int("divisionId").references(() => divisions.id, { onDelete: "set null", onUpdate: "cascade" }),
   isActive: boolean("isActive").default(true).notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
   lastSignedIn: timestamp("lastSignedIn").defaultNow().notNull(),
-});
+}, (table) => [index("users_division_idx").on(table.divisionId)]);
 
 export const companies = mysqlTable("companies", {
   id: int("id").autoincrement().primaryKey(),

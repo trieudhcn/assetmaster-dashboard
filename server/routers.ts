@@ -5,6 +5,8 @@ import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { adminProcedure, protectedProcedure, publicProcedure, router } from "./_core/trpc";
 import {
+  clearUserDivision,
+  countActiveDivisionsByDepartment,
   createAsset,
   createAuditSession,
   createAuditItem,
@@ -14,7 +16,9 @@ import {
   createMaintenanceTicket,
   getAssetById,
   getActiveDepartmentById,
+  getDepartmentById,
   getDepartmentByCode,
+  getDivisionById,
   getDivisionByCode,
   getCompany,
   getHandoverById,
@@ -23,6 +27,8 @@ import {
   listAuditItems,
   listAuditSessions,
   listActivityLogs,
+  listAllDepartments,
+  listAllDivisions,
   listDepartments,
   listDivisions,
   listHandovers,
@@ -32,11 +38,14 @@ import {
   recordActivity,
   saveCompany,
   updateAsset,
+  updateDepartment,
+  updateDivision,
   updateHandover,
   updateMaintenanceTicket,
   updateUserRole,
   updateUserActiveStatus,
   updateUserDepartment,
+  updateUserDivision,
   updateAuditItem,
   transitionHandoverStatus,
 } from "./db";
@@ -92,10 +101,27 @@ export const appRouter = router({
       await recordActivity({ entityType: "user", entityId: input.id, action: "department_updated", actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: input.departmentId ? "Cập nhật phòng ban nhân viên" : "Xóa gán phòng ban nhân viên" });
       return { success: true };
     }),
+    updateDivision: adminProcedure.input(z.object({ id: z.number().int().positive(), divisionId: z.number().int().positive().nullable() })).mutation(async ({ input, ctx }) => {
+      if (!input.divisionId) {
+        await clearUserDivision(input.id);
+        await recordActivity({ entityType: "user", entityId: input.id, action: "division_cleared", actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: "Xóa gán Bộ Phận nhân viên" });
+        return { success: true };
+      }
+      const division = await getDivisionById(input.divisionId);
+      const department = division ? await getActiveDepartmentById(division.departmentId) : undefined;
+      if (!division?.isActive || !department?.isActive) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "Bộ Phận được chọn không tồn tại, đã ngừng hoạt động hoặc không thuộc Phòng Ban đang hoạt động." });
+      }
+      await updateUserDivision(input.id, department.id, division.id);
+      await recordActivity({ entityType: "user", entityId: input.id, action: "division_updated", actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: `Gán Bộ Phận ${division.name} thuộc ${department.name}` });
+      return { success: true };
+    }),
   }),
   departments: router({
     list: adminProcedure.query(() => listDepartments()),
     listDivisions: adminProcedure.query(() => listDivisions()),
+    listAll: adminProcedure.query(() => listAllDepartments()),
+    listAllDivisions: adminProcedure.query(() => listAllDivisions()),
     create: adminProcedure.input(z.object({
       name: z.string().trim().min(2).max(160),
       code: z.string().trim().min(2).max(40).optional(),
@@ -124,6 +150,36 @@ export const appRouter = router({
       const id = await createDivision({ departmentId: department.id, code, name: input.name, isActive: true });
       await recordActivity({ entityType: "division", entityId: id, action: "created", actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: `Tạo Bộ Phận: ${input.name} thuộc ${department.name}` });
       return { id, code };
+    }),
+    update: adminProcedure.input(z.object({ id: z.number().int().positive(), name: z.string().trim().min(2).max(160).optional(), code: z.string().trim().min(2).max(40).optional(), isActive: z.boolean().optional() })).mutation(async ({ input, ctx }) => {
+      const existing = await getDepartmentById(input.id);
+      if (!existing) throw new TRPCError({ code: "NOT_FOUND", message: "Không tìm thấy Phòng Ban." });
+      const code = input.code?.toUpperCase();
+      if (code && code !== existing.code && await getDepartmentByCode(code)) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "Mã Phòng Ban đã tồn tại." });
+      }
+      if (input.isActive === false && await countActiveDivisionsByDepartment(existing.id) > 0) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "Hãy vô hiệu hóa hoặc chuyển toàn bộ Bộ Phận trực thuộc trước khi ngừng hoạt động Phòng Ban." });
+      }
+      await updateDepartment(existing.id, { name: input.name, code, isActive: input.isActive });
+      const action = input.isActive === false ? "deactivated" : input.isActive === true ? "activated" : "updated";
+      await recordActivity({ entityType: "department", entityId: existing.id, action, actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: `${input.isActive === false ? "Vô hiệu hóa" : input.isActive === true ? "Kích hoạt" : "Cập nhật"} Phòng Ban: ${input.name || existing.name}` });
+      return { success: true };
+    }),
+    updateDivision: adminProcedure.input(z.object({ id: z.number().int().positive(), departmentId: z.number().int().positive().optional(), name: z.string().trim().min(2).max(160).optional(), code: z.string().trim().min(2).max(40).optional(), isActive: z.boolean().optional() })).mutation(async ({ input, ctx }) => {
+      const existing = await getDivisionById(input.id);
+      if (!existing) throw new TRPCError({ code: "NOT_FOUND", message: "Không tìm thấy Bộ Phận." });
+      const targetDepartmentId = input.departmentId ?? existing.departmentId;
+      const department = await getActiveDepartmentById(targetDepartmentId);
+      if (!department?.isActive) throw new TRPCError({ code: "BAD_REQUEST", message: "Phòng Ban được chọn không tồn tại hoặc đã ngừng hoạt động." });
+      const code = input.code?.toUpperCase();
+      if (code && code !== existing.code && await getDivisionByCode(code)) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "Mã Bộ Phận đã tồn tại." });
+      }
+      await updateDivision(existing.id, { departmentId: targetDepartmentId, name: input.name, code, isActive: input.isActive });
+      const action = input.isActive === false ? "deactivated" : input.isActive === true ? "activated" : "updated";
+      await recordActivity({ entityType: "division", entityId: existing.id, action, actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: `${input.isActive === false ? "Vô hiệu hóa" : input.isActive === true ? "Kích hoạt" : "Cập nhật"} Bộ Phận: ${input.name || existing.name}` });
+      return { success: true };
     }),
   }),
   assets: router({

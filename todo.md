@@ -199,3 +199,12 @@
 - [x] Thêm kiểm thử quan hệ Bộ Phận–Phòng Ban, phân quyền Admin và xác minh responsive trước phát hành; 23 Vitest tests, TypeScript và build đều thành công.
 - [x] Thêm trạng thái lỗi và thao tác thử lại khi không tải được danh sách Phòng Ban hoặc Bộ Phận.
 - [x] Lưu xác minh trực quan desktop và mobile 375px cho form chọn Phòng Ban bắt buộc và bố cục trang cơ cấu trong `verification.md`.
+
+## Nhân sự theo Bộ Phận & Bộ lọc báo cáo
+
+- [x] Mở rộng dữ liệu nhân viên với Bộ Phận, bảo đảm Bộ Phận được gán thuộc đúng Phòng Ban của nhân viên.
+- [x] Thêm API Admin cập nhật Bộ Phận nhân viên và chỉnh sửa/vô hiệu hóa Phòng Ban hoặc Bộ Phận, kèm kiểm tra ràng buộc dữ liệu.
+- [x] Cập nhật trang Quản lý nhân sự để lọc và gán nhân viên theo Phòng Ban/Bộ Phận.
+- [x] Cập nhật trang Phòng Ban & Bộ Phận để chỉnh sửa thông tin, vô hiệu hóa đơn vị và phản ánh trạng thái hoạt động.
+- [x] Thêm bộ lọc Phòng Ban và Bộ Phận cho Báo cáo tài sản, bao gồm thống kê và xuất Excel theo phạm vi lọc.
+- [x] Bổ sung test phân quyền/ràng buộc, xác minh responsive và phát hành checkpoint; 25 Vitest tests, TypeScript và production build thành công.
