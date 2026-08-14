@@ -236,3 +236,11 @@
 - [x] Xây dựng trang Danh mục tài sản độc lập cho tìm kiếm, lọc, thao tác QR, chỉnh sửa và hồ sơ tài sản.
 - [x] Kiểm thử deep-link, responsive desktop/mobile và phát hành checkpoint; 26 Vitest tests, TypeScript và production build thành công.
 - [x] Thay thông báo kiểm kê cố định trên Tổng quan bằng dữ liệu số lượng tài sản thực và điều hướng đến Kiểm kê.
+
+## Phân trang Danh mục tài sản
+
+- [x] Thêm trạng thái trang và kích thước trang cho Danh mục tài sản.
+- [x] Đồng bộ phân trang với tìm kiếm/bộ lọc, tự quay về trang đầu khi tiêu chí thay đổi.
+- [x] Hiển thị điều khiển chuyển trang, phạm vi bản ghi và trạng thái vô hiệu hóa phù hợp desktop/mobile.
+- [x] Kiểm thử hành vi phân trang, TypeScript, build và phát hành checkpoint; 26 Vitest tests, TypeScript và production build thành công.
+- [x] Loại bỏ thông tin số lượng trùng lặp giữa bảng danh mục và thanh phân trang trên mobile.
