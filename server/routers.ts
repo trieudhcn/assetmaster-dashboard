@@ -1,0 +1,115 @@
+import { z } from "zod";
+import { COOKIE_NAME } from "@shared/const";
+import { getSessionCookieOptions } from "./_core/cookies";
+import { systemRouter } from "./_core/systemRouter";
+import { adminProcedure, protectedProcedure, publicProcedure, router } from "./_core/trpc";
+import {
+  createAsset,
+  createAuditSession,
+  createAuditItem,
+  createHandover,
+  createMaintenanceTicket,
+  getCompany,
+  listAssets,
+  listAuditItems,
+  listAuditSessions,
+  listHandovers,
+  listMaintenanceTickets,
+  recordActivity,
+  saveCompany,
+  updateAsset,
+  updateHandover,
+  updateMaintenanceTicket,
+  updateAuditItem,
+} from "./db";
+
+const nullableText = z.string().trim().max(1000).optional().nullable();
+const dateFromMs = z.number().int().nonnegative().optional().nullable().transform((value) => value ? new Date(value) : null);
+
+const assetInput = z.object({
+  assetCode: z.string().trim().min(2).max(64), name: z.string().trim().min(2).max(255), categoryId: z.number().int().positive().optional().nullable(), departmentId: z.number().int().positive().optional().nullable(), holderName: nullableText,
+  status: z.enum(["available", "assigned", "maintenance", "retired", "lost"]).default("available"), condition: z.enum(["good", "fair", "needs_inspection", "damaged"]).default("good"),
+  purchaseDate: dateFromMs, purchaseValue: z.string().regex(/^\d+(\.\d{1,2})?$/).optional().nullable(), vendor: nullableText, serialNumber: nullableText, location: nullableText, warrantyUntil: dateFromMs, note: nullableText,
+});
+
+export const appRouter = router({
+  system: systemRouter,
+  auth: router({
+    me: publicProcedure.query(({ ctx }) => ctx.user),
+    logout: publicProcedure.mutation(({ ctx }) => { ctx.res.clearCookie(COOKIE_NAME, { ...getSessionCookieOptions(ctx.req), maxAge: -1 }); return { success: true } as const; }),
+  }),
+  company: router({
+    get: protectedProcedure.query(() => getCompany()),
+    save: adminProcedure.input(z.object({ name: z.string().trim().min(2).max(255), address: nullableText, taxCode: nullableText, phone: nullableText, email: z.string().email().optional().nullable(), logoUrl: nullableText })).mutation(async ({ input, ctx }) => {
+      const id = await saveCompany(input);
+      await recordActivity({ entityType: "company", entityId: id, action: "updated", actorUserId: ctx.user.id, actorName: ctx.user.name, summary: "Cập nhật thông tin công ty" });
+      return { id };
+    }),
+  }),
+  assets: router({
+    list: protectedProcedure.query(() => listAssets()),
+    create: adminProcedure.input(assetInput).mutation(async ({ input, ctx }) => {
+      const id = await createAsset({ ...input, qrToken: crypto.randomUUID().replaceAll("-", ""), createdByUserId: ctx.user.id });
+      await recordActivity({ entityType: "asset", entityId: id, action: "created", actorUserId: ctx.user.id, actorName: ctx.user.name, summary: `Tạo tài sản ${input.assetCode}` });
+      return { id };
+    }),
+    update: adminProcedure.input(assetInput.partial().extend({ id: z.number().int().positive() })).mutation(async ({ input, ctx }) => {
+      const { id, ...changes } = input;
+      await updateAsset(id, changes);
+      await recordActivity({ entityType: "asset", entityId: id, action: "updated", actorUserId: ctx.user.id, actorName: ctx.user.name, summary: "Cập nhật thông tin tài sản" });
+      return { success: true };
+    }),
+    archive: adminProcedure.input(z.object({ id: z.number().int().positive() })).mutation(async ({ input, ctx }) => {
+      await updateAsset(input.id, { isArchived: true });
+      await recordActivity({ entityType: "asset", entityId: input.id, action: "archived", actorUserId: ctx.user.id, actorName: ctx.user.name, summary: "Lưu trữ tài sản" });
+      return { success: true };
+    }),
+  }),
+  handovers: router({
+    list: protectedProcedure.query(() => listHandovers()),
+    create: adminProcedure.input(z.object({ assetId: z.number().int().positive(), recipientUserId: z.number().int().positive().optional().nullable(), recipientName: z.string().trim().min(2).max(160), recipientDepartmentId: z.number().int().positive().optional().nullable(), recipientDepartmentName: nullableText, handedOverAt: z.number().int().transform((value) => new Date(value)), dueBackAt: dateFromMs, conditionOut: nullableText, accessories: nullableText, note: nullableText })).mutation(async ({ input, ctx }) => {
+      const id = await createHandover({ ...input, referenceCode: `BG-${new Date().getFullYear()}-${crypto.randomUUID().slice(0, 8).toUpperCase()}`, handoverByUserId: ctx.user.id, handoverByName: ctx.user.name ?? "Quản trị viên", status: "draft" });
+      await recordActivity({ entityType: "handover", entityId: id, action: "created", actorUserId: ctx.user.id, actorName: ctx.user.name, summary: `Tạo phiếu bàn giao cho ${input.recipientName}` });
+      return { id };
+    }),
+    updateStatus: adminProcedure.input(z.object({ id: z.number().int().positive(), status: z.enum(["draft", "pending_signature", "active", "returned", "cancelled"]), recipientSignatureUrl: nullableText, handoverSignatureUrl: nullableText })).mutation(async ({ input, ctx }) => {
+      await updateHandover(input.id, { status: input.status, recipientSignatureUrl: input.recipientSignatureUrl, handoverSignatureUrl: input.handoverSignatureUrl, signedAt: input.status === "active" ? new Date() : null });
+      await recordActivity({ entityType: "handover", entityId: input.id, action: input.status, actorUserId: ctx.user.id, actorName: ctx.user.name, summary: `Cập nhật trạng thái phiếu: ${input.status}` });
+      return { success: true };
+    }),
+  }),
+  maintenance: router({
+    list: protectedProcedure.query(() => listMaintenanceTickets()),
+    create: protectedProcedure.input(z.object({ assetId: z.number().int().positive(), issueType: z.enum(["maintenance", "incident", "damage"]), priority: z.enum(["low", "medium", "high", "critical"]).default("medium"), description: z.string().trim().min(5).max(5000), estimatedCost: z.string().regex(/^\d+(\.\d{1,2})?$/).optional().nullable() })).mutation(async ({ input, ctx }) => {
+      const id = await createMaintenanceTicket({ ...input, ticketCode: `BT-${new Date().getFullYear()}-${crypto.randomUUID().slice(0, 8).toUpperCase()}`, reporterUserId: ctx.user.id, reporterName: ctx.user.name ?? "Người dùng", status: "open" });
+      await recordActivity({ entityType: "maintenance", entityId: id, action: "reported", actorUserId: ctx.user.id, actorName: ctx.user.name, summary: "Tạo yêu cầu bảo trì / báo hỏng" });
+      return { id };
+    }),
+    update: adminProcedure.input(z.object({ id: z.number().int().positive(), status: z.enum(["open", "in_progress", "resolved", "closed"]), assigneeUserId: z.number().int().positive().optional().nullable(), resolution: nullableText, estimatedCost: z.string().regex(/^\d+(\.\d{1,2})?$/).optional().nullable(), actualCost: z.string().regex(/^\d+(\.\d{1,2})?$/).optional().nullable() })).mutation(async ({ input, ctx }) => {
+      await updateMaintenanceTicket(input.id, { status: input.status, assigneeUserId: input.assigneeUserId, resolution: input.resolution, estimatedCost: input.estimatedCost, actualCost: input.actualCost, resolvedAt: input.status === "resolved" || input.status === "closed" ? new Date() : null });
+      await recordActivity({ entityType: "maintenance", entityId: input.id, action: input.status, actorUserId: ctx.user.id, actorName: ctx.user.name, summary: `Cập nhật yêu cầu bảo trì: ${input.status}` });
+      return { success: true };
+    }),
+  }),
+  audits: router({
+    list: protectedProcedure.query(() => listAuditSessions()),
+    getItems: protectedProcedure.input(z.object({ sessionId: z.number().int().positive() })).query(({ input }) => listAuditItems(input.sessionId)),
+    create: adminProcedure.input(z.object({ name: z.string().trim().min(3).max(255), departmentId: z.number().int().positive().optional().nullable() })).mutation(async ({ input, ctx }) => {
+      const id = await createAuditSession({ ...input, referenceCode: `KK-${new Date().getFullYear()}-${crypto.randomUUID().slice(0, 8).toUpperCase()}`, createdByUserId: ctx.user.id, status: "draft" });
+      await recordActivity({ entityType: "audit", entityId: id, action: "created", actorUserId: ctx.user.id, actorName: ctx.user.name, summary: `Tạo đợt kiểm kê ${input.name}` });
+      return { id };
+    }),
+    addItem: adminProcedure.input(z.object({ sessionId: z.number().int().positive(), assetId: z.number().int().positive(), expectedStatus: z.string().max(64).optional().nullable() })).mutation(async ({ input, ctx }) => {
+      const id = await createAuditItem({ auditSessionId: input.sessionId, assetId: input.assetId, expectedStatus: input.expectedStatus, result: "pending" });
+      await recordActivity({ entityType: "auditItem", entityId: id, action: "added", actorUserId: ctx.user.id, actorName: ctx.user.name, summary: "Thêm tài sản vào kiểm kê" });
+      return { id };
+    }),
+    recordItem: adminProcedure.input(z.object({ id: z.number().int().positive(), actualStatus: z.string().max(64).optional().nullable(), result: z.enum(["pending", "matched", "missing", "mismatch"]), note: nullableText })).mutation(async ({ input, ctx }) => {
+      await updateAuditItem(input.id, { actualStatus: input.actualStatus, result: input.result, note: input.note, checkedByUserId: ctx.user.id, checkedAt: new Date() });
+      await recordActivity({ entityType: "auditItem", entityId: input.id, action: input.result, actorUserId: ctx.user.id, actorName: ctx.user.name, summary: "Cập nhật kết quả kiểm kê" });
+      return { success: true };
+    }),
+  }),
+});
+
+export type AppRouter = typeof appRouter;

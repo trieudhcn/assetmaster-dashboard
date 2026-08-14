@@ -44,3 +44,24 @@
 - [x] Lưu và khôi phục thông tin công ty trong trình duyệt.
 - [x] Tự động điền thông tin công ty vào tiêu đề biên bản bàn giao PDF.
 - [x] Kiểm tra validation, build, responsive và checkpoint.
+
+## Production Readiness Audit
+
+- [x] Rà soát và ghi nhận các chức năng còn thiếu so với quy trình vận hành thực tế.
+- [x] Nâng project lên full-stack với xác thực, database và API typed.
+- [x] Thiết kế schema cho tài sản, danh mục, phòng ban, người dùng, phiếu bàn giao, lịch sử và bảo trì.
+- [x] Kết nối danh mục tài sản với dữ liệu database thật.
+- [ ] Kết nối phiếu bàn giao, lịch sử người nhận, biên bản, chữ ký và PDF với database.
+- [x] Lưu thông tin công ty vào database thay vì chỉ localStorage.
+- [x] Triển khai module bảo trì và báo hỏng có trạng thái, người xử lý và chi phí.
+- [x] Triển khai kiểm kê, chênh lệch và lịch sử kiểm kê.
+- [x] Triển khai báo cáo/dashboard theo dữ liệu thật.
+- [x] Thêm xác thực người dùng, vai trò và phân quyền thao tác.
+- [ ] Thêm upload tài liệu/chứng từ và QR code thực tế.
+- [x] Viết test nghiệp vụ, kiểm tra responsive và chuẩn bị phát hành.
+
+## Production Readiness Follow-up
+
+- [ ] Thêm giao diện quản lý bảo trì: gán người xử lý, cập nhật trạng thái, nhập chi phí ước tính/thực tế và đồng bộ DB/API.
+- [ ] Thêm màn hình chi tiết kiểm kê: danh sách audit items, expected/actual, đánh dấu chênh lệch/mất tài sản và lịch sử kiểm kê.
+- [ ] Bổ sung test CRUD/quyền hạn, kiểm tra responsive desktop/mobile cho module mới và lưu checkpoint cuối.
