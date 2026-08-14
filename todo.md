@@ -180,4 +180,6 @@
 - [x] Bổ sung hạn, chu kỳ định kỳ, dữ liệu thực và API phục vụ bảng nhắc việc.
 - [x] Xuất báo cáo tài sản Excel theo từng phòng ban với các cột nghiệp vụ và bộ lọc phù hợp.
 - [x] Thêm màn hình nhật ký hoạt động chi tiết với tìm kiếm và bộ lọc loại đối tượng/hành động.
-- [ ] Bổ sung kiểm thử CRUD/quyền hạn, xác minh desktop/mobile, production build và checkpoint phát hành.
+- [x] Bổ sung kiểm thử CRUD/quyền hạn, xác minh bố cục desktop/mobile, production build và checkpoint phát hành; 21 Vitest tests, TypeScript và build đều thành công.
+- [ ] Xác minh trực tiếp giao diện mới trên desktop và mobile: bảng nhắc việc, trường hạn/chu kỳ bảo trì & kiểm kê, khu vực xuất Excel và bảng nhật ký hoạt động.
+- [ ] Xác minh runtime trên production rằng bundle mới hiển thị đúng các tính năng nhắc lịch/xuất Excel/nhật ký sau checkpoint phát hành.
