@@ -10,8 +10,10 @@ import {
   createAuditItem,
   createHandover,
   createMaintenanceTicket,
+  getAssetById,
   getActiveDepartmentById,
   getCompany,
+  getHandoverById,
   listAssets,
   listAuditItems,
   listAuditSessions,
@@ -29,6 +31,7 @@ import {
   updateUserActiveStatus,
   updateUserDepartment,
   updateAuditItem,
+  transitionHandoverStatus,
 } from "./db";
 import { storagePut } from "./storage";
 
@@ -107,19 +110,34 @@ export const appRouter = router({
   }),
   handovers: router({
     list: protectedProcedure.query(() => listHandovers()),
+    get: protectedProcedure.input(z.object({ id: z.number().int().positive() })).query(async ({ input }) => {
+      const handover = await getHandoverById(input.id);
+      if (!handover) throw new TRPCError({ code: "NOT_FOUND", message: "Không tìm thấy phiếu bàn giao." });
+      return handover;
+    }),
     create: adminProcedure.input(z.object({ assetId: z.number().int().positive(), recipientUserId: z.number().int().positive().optional().nullable(), recipientName: z.string().trim().min(2).max(160), recipientDepartmentId: z.number().int().positive().optional().nullable(), recipientDepartmentName: nullableText, handedOverAt: z.number().int().transform((value) => new Date(value)), dueBackAt: dateFromMs, conditionOut: nullableText, accessories: nullableText, note: nullableText })).mutation(async ({ input, ctx }) => {
+      const asset = await getAssetById(input.assetId);
+      if (!asset || asset.isArchived) throw new TRPCError({ code: "NOT_FOUND", message: "Tài sản được chọn không tồn tại hoặc đã lưu trữ." });
+      if (asset.status !== "available") throw new TRPCError({ code: "BAD_REQUEST", message: "Chỉ có thể lập phiếu cho tài sản đang sẵn có." });
       const id = await createHandover({ ...input, referenceCode: `BG-${new Date().getFullYear()}-${crypto.randomUUID().slice(0, 8).toUpperCase()}`, handoverByUserId: ctx.user!.id, handoverByName: ctx.user!.name ?? "Quản trị viên", status: "draft" });
       await recordActivity({ entityType: "handover", entityId: id, action: "created", actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: `Tạo phiếu bàn giao cho ${input.recipientName}` });
       return { id };
     }),
     updateStatus: adminProcedure.input(z.object({ id: z.number().int().positive(), status: z.enum(["draft", "pending_signature", "active", "returned", "cancelled"]), recipientSignatureUrl: nullableText, handoverSignatureUrl: nullableText })).mutation(async ({ input, ctx }) => {
-      await updateHandover(input.id, { status: input.status, recipientSignatureUrl: input.recipientSignatureUrl, handoverSignatureUrl: input.handoverSignatureUrl, signedAt: input.status === "active" ? new Date() : null });
+      const existing = await getHandoverById(input.id);
+      if (!existing) throw new TRPCError({ code: "NOT_FOUND", message: "Không tìm thấy phiếu bàn giao." });
+      if (input.status === "active" && !(input.recipientSignatureUrl ?? existing.recipientSignatureUrl)) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "Cần có chữ ký người nhận trước khi xác nhận bàn giao." });
+      }
+      await transitionHandoverStatus(input.id, input.status, { recipientSignatureUrl: input.recipientSignatureUrl, handoverSignatureUrl: input.handoverSignatureUrl });
       await recordActivity({ entityType: "handover", entityId: input.id, action: input.status, actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: `Cập nhật trạng thái phiếu: ${input.status}` });
       return { success: true };
     }),
     saveRecipientSignature: adminProcedure.input(z.object({ id: z.number().int().positive(), dataUrl: z.string().startsWith("data:image/png;base64,") })).mutation(async ({ input, ctx }) => {
+      const handover = await getHandoverById(input.id);
+      if (!handover) throw new TRPCError({ code: "NOT_FOUND", message: "Không tìm thấy phiếu bàn giao." });
       const { url } = await storagePut(`handovers/${input.id}/recipient-${Date.now()}.png`, Buffer.from(input.dataUrl.split(",")[1], "base64"), "image/png");
-      await updateHandover(input.id, { recipientSignatureUrl: url, status: "pending_signature" });
+      await transitionHandoverStatus(input.id, "pending_signature", { recipientSignatureUrl: url });
       await recordActivity({ entityType: "handover", entityId: input.id, action: "signature_saved", actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: "Lưu chữ ký người nhận" });
       return { url };
     }),

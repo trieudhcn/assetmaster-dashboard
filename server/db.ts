@@ -76,6 +76,12 @@ export async function listAssets() {
   return db.select().from(assets).where(eq(assets.isArchived, false)).orderBy(desc(assets.updatedAt));
 }
 
+export async function getAssetById(id: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+  return (await db.select().from(assets).where(eq(assets.id, id)).limit(1))[0];
+}
+
 export async function createAsset(data: typeof assets.$inferInsert) {
   const db = await getDb();
   if (!db) throw new Error("Database unavailable");
@@ -110,6 +116,35 @@ export async function listHandovers() {
   return db.select().from(handovers).orderBy(desc(handovers.handedOverAt));
 }
 
+export async function getHandoverById(id: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+  return (await db.select({
+    id: handovers.id,
+    referenceCode: handovers.referenceCode,
+    assetId: handovers.assetId,
+    assetCode: assets.assetCode,
+    assetName: assets.name,
+    recipientUserId: handovers.recipientUserId,
+    recipientName: handovers.recipientName,
+    recipientDepartmentId: handovers.recipientDepartmentId,
+    recipientDepartmentName: handovers.recipientDepartmentName,
+    handoverByUserId: handovers.handoverByUserId,
+    handoverByName: handovers.handoverByName,
+    handedOverAt: handovers.handedOverAt,
+    dueBackAt: handovers.dueBackAt,
+    returnedAt: handovers.returnedAt,
+    status: handovers.status,
+    conditionOut: handovers.conditionOut,
+    conditionIn: handovers.conditionIn,
+    accessories: handovers.accessories,
+    note: handovers.note,
+    recipientSignatureUrl: handovers.recipientSignatureUrl,
+    handoverSignatureUrl: handovers.handoverSignatureUrl,
+    signedAt: handovers.signedAt,
+  }).from(handovers).innerJoin(assets, eq(handovers.assetId, assets.id)).where(eq(handovers.id, id)).limit(1))[0];
+}
+
 export async function listHandoversByRecipient(recipientUserId: number) {
   const db = await getDb();
   if (!db) return [];
@@ -127,6 +162,45 @@ export async function updateHandover(id: number, data: Partial<typeof handovers.
   const db = await getDb();
   if (!db) throw new Error("Database unavailable");
   await db.update(handovers).set(data).where(eq(handovers.id, id));
+}
+
+export async function transitionHandoverStatus(
+  id: number,
+  status: "draft" | "pending_signature" | "active" | "returned" | "cancelled",
+  changes: Partial<typeof handovers.$inferInsert>,
+) {
+  const db = await getDb();
+  if (!db) throw new Error("Database unavailable");
+
+  return db.transaction(async (tx) => {
+    const existing = (await tx.select().from(handovers).where(eq(handovers.id, id)).limit(1))[0];
+    if (!existing) throw new Error("Handover not found");
+
+    const handoverChanges: Partial<typeof handovers.$inferInsert> = { ...changes, status };
+    if (status === "active") handoverChanges.signedAt = changes.signedAt ?? new Date();
+    if (status === "returned") handoverChanges.returnedAt = changes.returnedAt ?? new Date();
+    await tx.update(handovers).set(handoverChanges).where(eq(handovers.id, id));
+
+    if (status === "active") {
+      await tx.update(assets).set({
+        status: "assigned",
+        holderUserId: existing.recipientUserId,
+        holderName: existing.recipientName,
+        departmentId: existing.recipientDepartmentId,
+      }).where(eq(assets.id, existing.assetId));
+    }
+
+    if (status === "returned" || status === "cancelled") {
+      await tx.update(assets).set({
+        status: "available",
+        holderUserId: null,
+        holderName: null,
+        departmentId: null,
+      }).where(eq(assets.id, existing.assetId));
+    }
+
+    return existing;
+  });
 }
 
 export async function listMaintenanceTickets() {

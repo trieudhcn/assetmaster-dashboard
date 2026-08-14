@@ -134,5 +134,26 @@
 ## Employee Administration Security Verification
 
 - [x] Chặn tài khoản quản trị đã khóa khỏi mọi API quản trị và bổ sung kiểm thử hồi quy.
-- [ ] Xác minh runtime drawer quản lý nhân viên bằng phiên đăng nhập quản trị trên desktop và mobile.
+- [x] Xác minh runtime drawer quản lý nhân viên bằng phiên đăng nhập quản trị trên desktop và mobile.
 - [ ] Lưu checkpoint phát hành sau khi hoàn tất xác minh quyền và giao diện.
+
+## Employee Mobile Drawer Verification
+
+- [x] Mở Quản lý nhân viên và drawer hồ sơ trong viewport mobile bằng phiên quản trị; xác minh bộ lọc, badge, phòng ban, lịch sử và nút khóa/mở khóa.
+
+## Handover Database Integration
+
+- [x] Thay danh sách phiếu bàn giao mẫu bằng truy vấn database và trạng thái tải/rỗng/lỗi.
+- [x] Lưu tạo phiếu bàn giao, người nhận, phòng ban, phụ kiện và ghi chú qua tRPC.
+- [x] Cập nhật trạng thái phiếu, hoàn trả và chữ ký qua database; đồng bộ lịch sử người nhận.
+- [x] Cập nhật biên bản/PDF dùng dữ liệu phiếu thực và thông tin công ty đã lưu.
+- [ ] Bổ sung kiểm thử, xác minh desktop/mobile, production build và checkpoint phát hành.
+
+## Handover Recipient Data Follow-up
+
+- [x] Thêm trạng thái lỗi rõ ràng cho truy vấn danh sách và chi tiết phiếu bàn giao.
+- [x] Chọn nhân viên/phòng ban thực khi tạo phiếu để lưu recipientUserId và recipientDepartmentId.
+- [ ] Xác minh lịch sử tài sản nhân viên phản ánh phiếu cấp phát và hoàn trả mới.
+- [x] Kết nối modal chi tiết với truy vấn handovers.get, gồm trạng thái tải/lỗi và thao tác thử lại.
+- [x] Dùng dữ liệu handovers.get làm nguồn hiển thị chính cho modal biên bản và chữ ký.
+- [x] Làm mới lịch sử tài sản nhân viên sau khi tạo phiếu, lưu chữ ký, xác nhận và hoàn trả.
