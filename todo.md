@@ -69,7 +69,7 @@
 - [x] Thêm màn hình chi tiết kiểm kê: danh sách audit items, expected/actual, đánh dấu chênh lệch/mất tài sản, ghi chú, lịch sử thời điểm kiểm kê và loading/error/empty state.
 - [x] Bổ sung test CRUD/quyền hạn, kiểm tra responsive desktop/mobile cho module mới; 19 Vitest tests, TypeScript và production build đều thành công; checkpoint cuối sẽ lưu ngay sau khi rà soát todo.
 - [x] Rà soát phạm vi test CRUD hồi quy: bao phủ tạo/cập nhật bảo trì, upload chứng từ có phân quyền, tạo đợt/thêm tài sản/ghi nhận chênh lệch kiểm kê; toàn bộ 20 Vitest tests thành công.
-- [ ] Lưu checkpoint phát hành cuối sau khi toàn bộ todo hoàn tất, rồi ghi nhận mã checkpoint thực tế cho luồng bàn giao mobile.
+- [x] Lưu checkpoint phát hành cuối `38ecd031` sau khi hoàn tất toàn bộ todo; phiên bản gộp xác minh mobile luồng bàn giao, module vận hành, QR token và chứng từ S3 đã được phát hành.
 
 ## Bug Fixes
 
