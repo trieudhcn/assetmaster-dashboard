@@ -265,3 +265,9 @@ export async function recordActivity(data: typeof activityLogs.$inferInsert) {
   if (!db) return;
   await db.insert(activityLogs).values(data);
 }
+
+export async function listActivityLogs(limit = 200) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(activityLogs).orderBy(desc(activityLogs.createdAt)).limit(limit);
+}

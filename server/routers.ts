@@ -18,6 +18,7 @@ import {
   listAssets,
   listAuditItems,
   listAuditSessions,
+  listActivityLogs,
   listDepartments,
   listHandovers,
   listHandoversByRecipient,
@@ -145,13 +146,13 @@ export const appRouter = router({
   }),
   maintenance: router({
     list: protectedProcedure.query(() => listMaintenanceTickets()),
-    create: protectedProcedure.input(z.object({ assetId: z.number().int().positive(), issueType: z.enum(["maintenance", "incident", "damage"]), priority: z.enum(["low", "medium", "high", "critical"]).default("medium"), description: z.string().trim().min(5).max(5000), estimatedCost: z.string().regex(/^\d+(\.\d{1,2})?$/).optional().nullable() })).mutation(async ({ input, ctx }) => {
+    create: protectedProcedure.input(z.object({ assetId: z.number().int().positive(), issueType: z.enum(["maintenance", "incident", "damage"]), priority: z.enum(["low", "medium", "high", "critical"]).default("medium"), description: z.string().trim().min(5).max(5000), estimatedCost: z.string().regex(/^\d+(\.\d{1,2})?$/).optional().nullable(), dueAt: dateFromMs, recurrenceDays: z.number().int().min(1).max(3650).optional().nullable() })).mutation(async ({ input, ctx }) => {
       const id = await createMaintenanceTicket({ ...input, ticketCode: `BT-${new Date().getFullYear()}-${crypto.randomUUID().slice(0, 8).toUpperCase()}`, reporterUserId: ctx.user!.id, reporterName: ctx.user!.name ?? "Người dùng", status: "open" });
       await recordActivity({ entityType: "maintenance", entityId: id, action: "reported", actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: "Tạo yêu cầu bảo trì / báo hỏng" });
       return { id };
     }),
-    update: adminProcedure.input(z.object({ id: z.number().int().positive(), status: z.enum(["open", "in_progress", "resolved", "closed"]), assigneeUserId: z.number().int().positive().optional().nullable(), resolution: nullableText, estimatedCost: z.string().regex(/^\d+(\.\d{1,2})?$/).optional().nullable(), actualCost: z.string().regex(/^\d+(\.\d{1,2})?$/).optional().nullable() })).mutation(async ({ input, ctx }) => {
-      await updateMaintenanceTicket(input.id, { status: input.status, assigneeUserId: input.assigneeUserId, resolution: input.resolution, estimatedCost: input.estimatedCost, actualCost: input.actualCost, resolvedAt: input.status === "resolved" || input.status === "closed" ? new Date() : null });
+    update: adminProcedure.input(z.object({ id: z.number().int().positive(), status: z.enum(["open", "in_progress", "resolved", "closed"]), assigneeUserId: z.number().int().positive().optional().nullable(), resolution: nullableText, estimatedCost: z.string().regex(/^\d+(\.\d{1,2})?$/).optional().nullable(), actualCost: z.string().regex(/^\d+(\.\d{1,2})?$/).optional().nullable(), dueAt: dateFromMs, recurrenceDays: z.number().int().min(1).max(3650).optional().nullable() })).mutation(async ({ input, ctx }) => {
+      await updateMaintenanceTicket(input.id, { status: input.status, assigneeUserId: input.assigneeUserId, resolution: input.resolution, estimatedCost: input.estimatedCost, actualCost: input.actualCost, dueAt: input.dueAt, recurrenceDays: input.recurrenceDays, resolvedAt: input.status === "resolved" || input.status === "closed" ? new Date() : null });
       await recordActivity({ entityType: "maintenance", entityId: input.id, action: input.status, actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: `Cập nhật yêu cầu bảo trì: ${input.status}` });
       return { success: true };
     }),
@@ -174,7 +175,7 @@ export const appRouter = router({
   audits: router({
     list: protectedProcedure.query(() => listAuditSessions()),
     getItems: protectedProcedure.input(z.object({ sessionId: z.number().int().positive() })).query(({ input }) => listAuditItems(input.sessionId)),
-    create: adminProcedure.input(z.object({ name: z.string().trim().min(3).max(255), departmentId: z.number().int().positive().optional().nullable() })).mutation(async ({ input, ctx }) => {
+    create: adminProcedure.input(z.object({ name: z.string().trim().min(3).max(255), departmentId: z.number().int().positive().optional().nullable(), scheduledAt: dateFromMs, recurrenceDays: z.number().int().min(1).max(3650).optional().nullable() })).mutation(async ({ input, ctx }) => {
       const id = await createAuditSession({ ...input, referenceCode: `KK-${new Date().getFullYear()}-${crypto.randomUUID().slice(0, 8).toUpperCase()}`, createdByUserId: ctx.user!.id, status: "draft" });
       await recordActivity({ entityType: "audit", entityId: id, action: "created", actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: `Tạo đợt kiểm kê ${input.name}` });
       return { id };
@@ -189,6 +190,21 @@ export const appRouter = router({
       await recordActivity({ entityType: "auditItem", entityId: input.id, action: input.result, actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: "Cập nhật kết quả kiểm kê" });
       return { success: true };
     }),
+  }),
+  reminders: router({
+    list: protectedProcedure.query(async () => {
+      const now = new Date();
+      const horizon = new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000);
+      const [tickets, audits] = await Promise.all([listMaintenanceTickets(), listAuditSessions()]);
+      const reminders = [
+        ...tickets.filter((ticket) => (ticket.status === "open" || ticket.status === "in_progress") && ticket.dueAt && ticket.dueAt <= horizon).map((ticket) => ({ id: `maintenance-${ticket.id}`, kind: "maintenance" as const, title: `Bảo trì ${ticket.ticketCode}`, dueAt: ticket.dueAt!, isOverdue: ticket.dueAt! < now, detail: ticket.description, recurrenceDays: ticket.recurrenceDays })),
+        ...audits.filter((audit) => (audit.status === "draft" || audit.status === "active") && audit.scheduledAt && audit.scheduledAt <= horizon).map((audit) => ({ id: `audit-${audit.id}`, kind: "audit" as const, title: audit.name, dueAt: audit.scheduledAt!, isOverdue: audit.scheduledAt! < now, detail: audit.referenceCode, recurrenceDays: audit.recurrenceDays })),
+      ];
+      return reminders.sort((left, right) => left.dueAt.getTime() - right.dueAt.getTime());
+    }),
+  }),
+  activity: router({
+    list: adminProcedure.input(z.object({ limit: z.number().int().min(1).max(300).default(100) })).query(({ input }) => listActivityLogs(input.limit)),
   }),
 });
 

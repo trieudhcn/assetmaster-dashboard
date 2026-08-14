@@ -8,6 +8,9 @@ const mocks = vi.hoisted(() => ({
   updateAuditItem: vi.fn(),
   recordActivity: vi.fn(),
   getMaintenanceTicket: vi.fn(),
+  listMaintenanceTickets: vi.fn(),
+  listAuditSessions: vi.fn(),
+  listActivityLogs: vi.fn(),
   storagePut: vi.fn(),
 }));
 
@@ -24,11 +27,12 @@ vi.mock("./db", () => ({
   getMaintenanceTicket: mocks.getMaintenanceTicket,
   listAssets: vi.fn(),
   listAuditItems: vi.fn(),
-  listAuditSessions: vi.fn(),
+  listAuditSessions: mocks.listAuditSessions,
   listDepartments: vi.fn(),
   listHandovers: vi.fn(),
   listHandoversByRecipient: vi.fn(),
-  listMaintenanceTickets: vi.fn(),
+  listMaintenanceTickets: mocks.listMaintenanceTickets,
+  listActivityLogs: mocks.listActivityLogs,
   listUsers: vi.fn(),
   recordActivity: mocks.recordActivity,
   saveCompany: vi.fn(),
@@ -67,6 +71,9 @@ describe("operations management", () => {
     mocks.updateAuditItem.mockResolvedValue(undefined);
     mocks.recordActivity.mockResolvedValue(undefined);
     mocks.getMaintenanceTicket.mockResolvedValue({ id: 30, ticketCode: "BT-2026-ABC12345" });
+    mocks.listMaintenanceTickets.mockResolvedValue([]);
+    mocks.listAuditSessions.mockResolvedValue([]);
+    mocks.listActivityLogs.mockResolvedValue([]);
     mocks.storagePut.mockResolvedValue({ key: "maintenance/30/chung-tu.pdf", url: "/manus-storage/maintenance/30/chung-tu.pdf" });
   });
 
@@ -188,5 +195,19 @@ describe("operations management", () => {
       attachmentContentType: "application/pdf",
     }));
     expect(mocks.recordActivity).toHaveBeenCalledWith(expect.objectContaining({ entityType: "maintenance", entityId: 30, action: "attachment_uploaded" }));
+  });
+
+  it("returns upcoming reminder items to protected users and restricts activity logs to administrators", async () => {
+    const tomorrow = new Date(Date.now() + 24 * 60 * 60 * 1000);
+    mocks.listMaintenanceTickets.mockResolvedValue([{ id: 30, ticketCode: "BT-2026-ABC12345", status: "open", dueAt: tomorrow, description: "Bảo trì định kỳ", recurrenceDays: 30 }]);
+    mocks.listAuditSessions.mockResolvedValue([{ id: 40, referenceCode: "KK-2026-ABC12345", name: "Kiểm kê quý", status: "draft", scheduledAt: tomorrow, recurrenceDays: 90 }]);
+    mocks.listActivityLogs.mockResolvedValue([{ id: 1, entityType: "asset", entityId: 8, action: "updated", createdAt: new Date() }]);
+
+    const employeeCaller = appRouter.createCaller(employeeContext);
+    await expect(employeeCaller.reminders.list()).resolves.toHaveLength(2);
+    await expect(employeeCaller.activity.list({ limit: 50 })).rejects.toMatchObject({ code: "FORBIDDEN" });
+
+    const adminCaller = appRouter.createCaller(adminContext);
+    await expect(adminCaller.activity.list({ limit: 50 })).resolves.toHaveLength(1);
   });
 });

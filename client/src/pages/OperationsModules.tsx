@@ -1,14 +1,20 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import {
   AlertTriangle,
+  BellRing,
+  CalendarClock,
   CheckCircle2,
   ClipboardCheck,
+  Download,
   FileBarChart,
+  History,
   Plus,
   Save,
+  Search,
   UserRound,
   Wrench,
 } from "lucide-react";
+import * as XLSX from "xlsx";
 import { toast } from "sonner";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
@@ -36,11 +42,25 @@ const issueTypeLabels = {
   damage: "Báo hỏng",
 } as const;
 
+const toDateInputValue = (value: Date | null | undefined) => value ? new Date(value).toISOString().slice(0, 10) : "";
+const dateInputToMs = (value: string) => value ? new Date(`${value}T09:00:00`).getTime() : null;
+
+function OperationalReminderPanel() {
+  const remindersQuery = trpc.reminders.list.useQuery();
+  const reminders = remindersQuery.data || [];
+  return <section className={`mb-5 ${card} overflow-hidden`}>
+    <div className="flex items-center justify-between border-b border-[#E7EEF3] px-5 py-4"><div><div className="flex items-center gap-2 text-sm font-extrabold text-[#193B57]"><BellRing size={16} className="text-[#A86B00]" />Nhắc việc vận hành</div><p className="mt-1 text-xs text-[#71869A]">Tự động tổng hợp hạn bảo trì và đợt kiểm kê trong 14 ngày tới.</p></div><span className="rounded-full bg-[#FFF9EB] px-2.5 py-1 text-[10px] font-extrabold text-[#A86B00]">{reminders.length} việc cần theo dõi</span></div>
+    {remindersQuery.isLoading ? <div className="px-5 py-6 text-xs text-[#71869A]">Đang tải nhắc việc...</div> : remindersQuery.isError ? <div className="px-5 py-6 text-xs text-[#B44545]">Không thể tải nhắc việc. <button onClick={() => remindersQuery.refetch()} className="font-bold underline">Thử lại</button></div> : reminders.length === 0 ? <div className="px-5 py-6 text-xs text-[#71869A]">Chưa có lịch bảo trì hoặc kiểm kê nào đến hạn trong 14 ngày tới.</div> : <div className="divide-y divide-[#EDF2F5]">{reminders.slice(0, 5).map((reminder) => <div key={reminder.id} className="flex flex-col gap-2 px-5 py-3 sm:flex-row sm:items-center sm:justify-between"><div className="flex items-start gap-2"><CalendarClock size={15} className={reminder.isOverdue ? "mt-0.5 text-[#B44545]" : "mt-0.5 text-[#A86B00]"} /><div><div className="text-xs font-bold text-[#193B57]">{reminder.title}</div><div className="mt-0.5 text-[11px] text-[#71869A]">{reminder.kind === "maintenance" ? "Bảo trì" : "Kiểm kê"} · {reminder.detail}{reminder.recurrenceDays ? ` · Lặp lại mỗi ${reminder.recurrenceDays} ngày` : ""}</div></div></div><span className={`w-fit rounded-full px-2 py-1 text-[10px] font-extrabold ${reminder.isOverdue ? "bg-[#FDEDEE] text-[#B44545]" : "bg-[#FFF9EB] text-[#A86B00]"}`}>{reminder.isOverdue ? "Đã quá hạn" : `Hạn ${new Date(reminder.dueAt).toLocaleDateString("vi-VN")}`}</span></div>)}</div>}
+  </section>;
+}
+
 type TicketDraft = {
   assigneeUserId: string;
   status: "open" | "in_progress" | "resolved" | "closed";
   estimatedCost: string;
   actualCost: string;
+  dueDate: string;
+  recurrenceDays: string;
   resolution: string;
 };
 
@@ -52,6 +72,8 @@ export function MaintenancePage() {
   const [issueType, setIssueType] = useState<"maintenance" | "incident" | "damage">("incident");
   const [priority, setPriority] = useState<"low" | "medium" | "high" | "critical">("medium");
   const [estimatedCost, setEstimatedCost] = useState("");
+  const [dueDate, setDueDate] = useState("");
+  const [recurrenceDays, setRecurrenceDays] = useState("");
   const [ticketEdits, setTicketEdits] = useState<Record<number, TicketDraft>>({});
 
   const assetsQuery = trpc.assets.list.useQuery();
@@ -65,6 +87,8 @@ export function MaintenancePage() {
       setAssetId("");
       setDescription("");
       setEstimatedCost("");
+      setDueDate("");
+      setRecurrenceDays("");
       setIssueType("incident");
       setPriority("medium");
       toast.success("Đã tạo yêu cầu bảo trì.");
@@ -104,6 +128,8 @@ export function MaintenancePage() {
       status: ticket.status,
       estimatedCost: ticket.estimatedCost ? String(ticket.estimatedCost) : "",
       actualCost: ticket.actualCost ? String(ticket.actualCost) : "",
+      dueDate: toDateInputValue(ticket.dueAt),
+      recurrenceDays: ticket.recurrenceDays ? String(ticket.recurrenceDays) : "",
       resolution: ticket.resolution || "",
     };
   };
@@ -117,6 +143,8 @@ export function MaintenancePage() {
           status: ticket.status,
           estimatedCost: ticket.estimatedCost ? String(ticket.estimatedCost) : "",
           actualCost: ticket.actualCost ? String(ticket.actualCost) : "",
+          dueDate: toDateInputValue(ticket.dueAt),
+          recurrenceDays: ticket.recurrenceDays ? String(ticket.recurrenceDays) : "",
           resolution: ticket.resolution || "",
         },
         ...(current[ticket.id] || {}),
@@ -134,6 +162,8 @@ export function MaintenancePage() {
       resolution: draft.resolution.trim() || null,
       estimatedCost: draft.estimatedCost.trim() || null,
       actualCost: draft.actualCost.trim() || null,
+      dueAt: dateInputToMs(draft.dueDate),
+      recurrenceDays: draft.recurrenceDays ? Number(draft.recurrenceDays) : null,
     });
   };
 
@@ -176,11 +206,13 @@ export function MaintenancePage() {
           </div>
         </div>
 
+        <OperationalReminderPanel />
+
         <section className={`${card} p-5`}>
           <div className="mb-4 flex items-center gap-2 text-sm font-extrabold text-[#193B57]">
             <Wrench size={16} className="text-[#A86B00]" />Tạo yêu cầu mới
           </div>
-          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-[minmax(190px,1fr)_minmax(210px,1.25fr)_150px_150px_150px_auto]">
+          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-[minmax(190px,1fr)_minmax(210px,1.25fr)_150px_150px_150px_145px_130px_auto]">
             <select value={assetId} onChange={(event) => setAssetId(event.target.value)} className="field-input" disabled={assetsQuery.isLoading}>
               <option value="">Chọn tài sản</option>
               {assets.map((asset) => <option key={asset.id} value={asset.id}>{asset.assetCode} · {asset.name}</option>)}
@@ -193,6 +225,8 @@ export function MaintenancePage() {
               {Object.entries(priorityLabels).map(([value, label]) => <option key={value} value={value}>{label} ưu tiên</option>)}
             </select>
             <input value={estimatedCost} onChange={(event) => setEstimatedCost(event.target.value)} placeholder="Chi phí dự kiến" inputMode="decimal" className="field-input" />
+            <input type="date" value={dueDate} onChange={(event) => setDueDate(event.target.value)} aria-label="Hạn bảo trì" className="field-input" />
+            <input value={recurrenceDays} onChange={(event) => setRecurrenceDays(event.target.value.replace(/\D/g, ""))} placeholder="Lặp lại (ngày)" inputMode="numeric" className="field-input" />
             <button
               disabled={createMutation.isPending}
               onClick={() => {
@@ -200,7 +234,7 @@ export function MaintenancePage() {
                   toast.error("Chọn tài sản và nhập mô tả tối thiểu 5 ký tự.");
                   return;
                 }
-                createMutation.mutate({ assetId: Number(assetId), description, issueType, priority, estimatedCost: estimatedCost.trim() || null });
+                createMutation.mutate({ assetId: Number(assetId), description, issueType, priority, estimatedCost: estimatedCost.trim() || null, dueAt: dateInputToMs(dueDate), recurrenceDays: recurrenceDays ? Number(recurrenceDays) : null });
               }}
               className="flex items-center justify-center gap-2 rounded-lg bg-[#0F8C8C] px-4 py-2 text-xs font-bold text-white transition hover:bg-[#087A6A] disabled:cursor-not-allowed disabled:opacity-60"
             >
@@ -329,6 +363,8 @@ export function AuditPage() {
   const { user } = useAuth();
   const isAdmin = user?.role === "admin";
   const [name, setName] = useState("");
+  const [scheduledDate, setScheduledDate] = useState("");
+  const [auditRecurrenceDays, setAuditRecurrenceDays] = useState("");
   const [selectedSessionId, setSelectedSessionId] = useState<number | null>(null);
   const [assetId, setAssetId] = useState("");
   const [itemEdits, setItemEdits] = useState<Record<number, AuditItemDraft>>({});
@@ -340,6 +376,8 @@ export function AuditPage() {
     onSuccess: ({ id }) => {
       void auditsQuery.refetch();
       setName("");
+      setScheduledDate("");
+      setAuditRecurrenceDays("");
       setSelectedSessionId(id);
       toast.success("Đã tạo đợt kiểm kê.");
     },
@@ -420,12 +458,16 @@ export function AuditPage() {
           <div className="rounded-lg border border-[#CDE5E5] bg-[#ECF8F7] px-3 py-2 text-xs font-semibold text-[#087A6A]">{isAdmin ? "Bạn có thể tạo đợt và ghi nhận kết quả kiểm kê." : "Chỉ quản trị viên có thể ghi nhận kết quả kiểm kê."}</div>
         </div>
 
+        <OperationalReminderPanel />
+
         <section className={`${card} p-5`}>
-          <div className="flex flex-col gap-3 sm:flex-row">
+          <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_155px_145px_auto]">
             <input value={name} onChange={(event) => setName(event.target.value)} placeholder="Tên đợt kiểm kê, ví dụ: Kiểm kê Quý I/2026" className="field-input flex-1" disabled={!isAdmin || createSessionMutation.isPending} />
+            <input type="date" value={scheduledDate} onChange={(event) => setScheduledDate(event.target.value)} aria-label="Ngày kiểm kê" className="field-input" disabled={!isAdmin || createSessionMutation.isPending} />
+            <input value={auditRecurrenceDays} onChange={(event) => setAuditRecurrenceDays(event.target.value.replace(/\D/g, ""))} placeholder="Chu kỳ (ngày)" inputMode="numeric" className="field-input" disabled={!isAdmin || createSessionMutation.isPending} />
             <button disabled={!isAdmin || createSessionMutation.isPending} onClick={() => {
               if (name.trim().length < 3) { toast.error("Nhập tên đợt kiểm kê tối thiểu 3 ký tự."); return; }
-              createSessionMutation.mutate({ name: name.trim() });
+              createSessionMutation.mutate({ name: name.trim(), scheduledAt: dateInputToMs(scheduledDate), recurrenceDays: auditRecurrenceDays ? Number(auditRecurrenceDays) : null });
             }} className="flex items-center justify-center gap-2 rounded-lg bg-[#0F8C8C] px-4 py-2 text-xs font-bold text-white transition hover:bg-[#087A6A] disabled:cursor-not-allowed disabled:opacity-60"><ClipboardCheck size={15} />{createSessionMutation.isPending ? "Đang tạo" : "Tạo đợt kiểm kê"}</button>
           </div>
         </section>
@@ -468,15 +510,25 @@ export function AuditPage() {
 }
 
 export function ReportsPage() {
+  const { user } = useAuth();
+  const isAdmin = user?.role === "admin";
+  const [departmentId, setDepartmentId] = useState("all");
+  const [activityQuery, setActivityQuery] = useState("");
+  const [activityType, setActivityType] = useState("all");
   const assets = trpc.assets.list.useQuery();
   const handovers = trpc.handovers.list.useQuery();
   const maintenance = trpc.maintenance.list.useQuery();
   const audits = trpc.audits.list.useQuery();
+  const departments = trpc.departments.list.useQuery(undefined, { enabled: isAdmin });
+  const activities = trpc.activity.list.useQuery({ limit: 150 }, { enabled: isAdmin });
+  const selectedAssets = useMemo(() => (assets.data || []).filter((asset) => departmentId === "all" || asset.departmentId === Number(departmentId)), [assets.data, departmentId]);
+  const filteredActivities = useMemo(() => (activities.data || []).filter((item) => (activityType === "all" || item.entityType === activityType) && `${item.summary || ""} ${item.actorName || ""} ${item.action}`.toLowerCase().includes(activityQuery.toLowerCase())), [activities.data, activityType, activityQuery]);
   const metrics = [
     { label: "Tài sản đang quản lý", value: assets.data?.length ?? 0 },
     { label: "Phiếu bàn giao", value: handovers.data?.length ?? 0 },
     { label: "Yêu cầu bảo trì", value: maintenance.data?.length ?? 0 },
     { label: "Đợt kiểm kê", value: audits.data?.length ?? 0 },
   ];
-  return <div className={shell}><div className="mx-auto max-w-[1500px]"><div className="mb-7"><div className="mb-2 flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.16em] text-[#2666A8]"><span className="h-1.5 w-1.5 rounded-full bg-[#2666A8]" />Live management data</div><h1 className="font-display text-[30px] font-extrabold tracking-[-0.04em] text-[#102A43]">Báo cáo vận hành</h1><p className="mt-1 text-sm text-[#71869A]">Tổng hợp chỉ số theo dữ liệu đã lưu trong hệ thống.</p></div><div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">{metrics.map((metric) => <div key={metric.label} className={`${card} p-5`}><FileBarChart size={19} className="text-[#2666A8]" /><div className="mt-5 text-xs font-semibold text-[#7890A5]">{metric.label}</div><div className="mt-1 font-display text-3xl font-extrabold text-[#102A43]">{metric.value}</div></div>)}</div></div></div>;
+  const exportExcel = () => { const departmentName = departmentId === "all" ? "Tất cả phòng ban" : departments.data?.find((department) => department.id === Number(departmentId))?.name || "Chưa gán"; const rows = selectedAssets.map((asset) => ({ "Mã tài sản": asset.assetCode, "Tên tài sản": asset.name, "Phòng ban": departments.data?.find((department) => department.id === asset.departmentId)?.name || "Chưa gán", "Người giữ": asset.holderName || "Chưa cấp phát", "Trạng thái": asset.status, "Tình trạng": asset.condition, "Vị trí": asset.location || "", "Serial/IMEI": asset.serialNumber || "", "Giá trị (VNĐ)": Number(asset.purchaseValue || 0), "Hạn bảo hành": asset.warrantyUntil ? new Date(asset.warrantyUntil).toLocaleDateString("vi-VN") : "" })); const workbook = XLSX.utils.book_new(); const sheet = XLSX.utils.json_to_sheet(rows); sheet["!cols"] = [{ wch: 16 }, { wch: 34 }, { wch: 22 }, { wch: 22 }, { wch: 16 }, { wch: 16 }, { wch: 22 }, { wch: 20 }, { wch: 18 }, { wch: 18 }]; XLSX.utils.book_append_sheet(workbook, sheet, "Tài sản"); XLSX.writeFile(workbook, `assetmaster-${departmentName.replace(/[^a-zA-Z0-9]/g, "-")}.xlsx`); };
+  return <div className={shell}><div className="mx-auto max-w-[1500px]"><div className="mb-7"><div className="mb-2 flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.16em] text-[#2666A8]"><span className="h-1.5 w-1.5 rounded-full bg-[#2666A8]" />Live management data</div><h1 className="font-display text-[30px] font-extrabold tracking-[-0.04em] text-[#102A43]">Báo cáo vận hành</h1><p className="mt-1 text-sm text-[#71869A]">Tổng hợp chỉ số, xuất dữ liệu phòng ban và tra cứu lịch sử thao tác.</p></div><div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">{metrics.map((metric) => <div key={metric.label} className={`${card} p-5`}><FileBarChart size={19} className="text-[#2666A8]" /><div className="mt-5 text-xs font-semibold text-[#7890A5]">{metric.label}</div><div className="mt-1 font-display text-3xl font-extrabold text-[#102A43]">{metric.value}</div></div>)}</div><section className={`mt-5 ${card} p-5`}><div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between"><div><div className="flex items-center gap-2 text-sm font-extrabold text-[#193B57]"><Download size={16} className="text-[#087A6A]" />Xuất tài sản theo phòng ban</div><p className="mt-1 text-xs text-[#71869A]">Tệp Excel gồm thông tin định danh, người giữ, trạng thái và giá trị tài sản.</p></div><div className="flex flex-col gap-2 sm:flex-row"><select value={departmentId} onChange={(event) => setDepartmentId(event.target.value)} disabled={!isAdmin || departments.isLoading} className="field-input min-w-[210px]"><option value="all">Tất cả phòng ban</option>{departments.data?.map((department) => <option key={department.id} value={department.id}>{department.name}</option>)}</select><button onClick={exportExcel} disabled={!isAdmin || selectedAssets.length === 0} className="inline-flex items-center justify-center gap-2 rounded-lg bg-[#0F8C8C] px-4 py-2 text-xs font-bold text-white hover:bg-[#087A6A] disabled:cursor-not-allowed disabled:opacity-60"><Download size={15} />Xuất Excel ({selectedAssets.length})</button></div></div>{!isAdmin && <p className="mt-3 text-xs text-[#A86B00]">Chỉ quản trị viên có thể xuất báo cáo theo phòng ban và xem nhật ký chi tiết.</p>}</section>{isAdmin && <section className={`mt-5 overflow-hidden ${card}`}><div className="border-b border-[#E7EEF3] px-5 py-4"><div className="flex items-center gap-2 text-sm font-extrabold text-[#193B57]"><History size={16} className="text-[#2666A8]" />Nhật ký hoạt động</div><p className="mt-1 text-xs text-[#71869A]">Theo dõi các thay đổi tài sản, bàn giao, bảo trì, kiểm kê và quản trị tài khoản.</p><div className="mt-4 grid gap-2 sm:grid-cols-[1fr_190px]"><div className="relative"><Search size={14} className="absolute left-3 top-2.5 text-[#8AA0B6]" /><input value={activityQuery} onChange={(event) => setActivityQuery(event.target.value)} placeholder="Tìm theo người thực hiện, nội dung hoặc thao tác..." className="field-input pl-9" /></div><select value={activityType} onChange={(event) => setActivityType(event.target.value)} className="field-input"><option value="all">Tất cả đối tượng</option>{[...new Set((activities.data || []).map((item) => item.entityType))].map((type) => <option key={type} value={type}>{type}</option>)}</select></div></div><div className="overflow-x-auto"><table className="w-full min-w-[780px] text-left text-xs"><thead className="bg-[#FBFCFD] text-[10px] uppercase tracking-[.12em] text-[#8AA0B6]"><tr><th className="px-5 py-3">Thời gian</th><th className="px-4 py-3">Người thực hiện</th><th className="px-4 py-3">Đối tượng</th><th className="px-4 py-3">Thao tác</th><th className="px-5 py-3">Chi tiết</th></tr></thead><tbody>{activities.isLoading && <tr><td colSpan={5} className="px-5 py-10 text-center text-sm text-[#71869A]">Đang tải nhật ký...</td></tr>}{!activities.isLoading && filteredActivities.map((item) => <tr key={item.id} className="border-t border-[#EDF2F5]"><td className="px-5 py-3 text-[#60758A]">{new Date(item.createdAt).toLocaleString("vi-VN")}</td><td className="px-4 py-3 font-semibold text-[#193B57]">{item.actorName || "Hệ thống"}</td><td className="px-4 py-3"><span className="rounded-full bg-[#F0F5F8] px-2 py-1 text-[10px] font-bold text-[#60758A]">{item.entityType} #{item.entityId}</span></td><td className="px-4 py-3 font-mono text-[10px] text-[#0F8C8C]">{item.action}</td><td className="px-5 py-3 text-[#60758A]">{item.summary || "—"}</td></tr>)}{!activities.isLoading && filteredActivities.length === 0 && <tr><td colSpan={5} className="px-5 py-10 text-center text-sm text-[#8AA0B6]">Không có nhật ký phù hợp.</td></tr>}</tbody></table></div></section>}</div></div>;
 }

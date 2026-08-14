@@ -173,3 +173,11 @@
 - [x] Đồng bộ trạng thái đã hoàn trả và thời gian hoàn trả vào lịch sử tài sản trong drawer nhân viên.
 - [x] Xác minh trực tiếp trên mobile trạng thái loading, lỗi và thử lại của modal biên bản (`handovers.get`); đã kiểm tra modal tải, mô phỏng lỗi và nút thử lại khôi phục đúng, sau đó dọn dữ liệu QA.
 - [x] Xác minh lại có kiểm soát trạng thái loading của modal biên bản (`handovers.get`) trên mobile bằng phản hồi làm chậm; màn hình “Đang tải chi tiết phiếu bàn giao...” hiển thị rõ ràng trước khi dữ liệu hoàn tất, sau đó đã dọn dữ liệu QA.
+
+## Operational Reminders, Exports & Activity Log
+
+- [x] Thêm nhắc việc trong giao diện cho bảo trì đến hạn/quá hạn và kiểm kê định kỳ sắp diễn ra.
+- [x] Bổ sung hạn, chu kỳ định kỳ, dữ liệu thực và API phục vụ bảng nhắc việc.
+- [x] Xuất báo cáo tài sản Excel theo từng phòng ban với các cột nghiệp vụ và bộ lọc phù hợp.
+- [x] Thêm màn hình nhật ký hoạt động chi tiết với tìm kiếm và bộ lọc loại đối tượng/hành động.
+- [ ] Bổ sung kiểm thử CRUD/quyền hạn, xác minh desktop/mobile, production build và checkpoint phát hành.
