@@ -258,3 +258,12 @@
 - [x] Tích hợp danh sách chọn Nhà cung cấp/Hãng vào form tạo và chỉnh sửa tài sản.
 - [x] Thêm luồng tạo nhanh Nhà cung cấp hoặc Hãng khi chưa có trong danh sách.
 - [x] Kiểm thử phân quyền, liên kết dữ liệu, responsive, TypeScript, build và phát hành checkpoint; 27 Vitest tests, TypeScript và production build thành công.
+
+## Quản trị Nhà cung cấp/Hãng, bộ lọc & báo cáo
+
+- [x] Bổ sung API Admin chỉnh sửa và vô hiệu hóa Nhà cung cấp/Hãng với kiểm tra dữ liệu liên kết.
+- [x] Xây dựng trang quản lý riêng cho Nhà cung cấp và Hãng trong điều hướng quản trị.
+- [x] Thêm bộ lọc Nhà cung cấp và Hãng cho Danh mục tài sản.
+- [x] Hiển thị Nhà cung cấp/Hãng trong hồ sơ chi tiết tài sản và dữ liệu danh mục.
+- [x] Bổ sung biểu đồ phân bổ giá trị tài sản theo Hãng trên trang Báo cáo.
+- [x] Kiểm thử phân quyền, lọc, biểu đồ, responsive, TypeScript, build và phát hành checkpoint; 28 Vitest tests, TypeScript và production build thành công.

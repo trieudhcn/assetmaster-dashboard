@@ -122,6 +122,12 @@ export async function listVendors() {
   return db.select().from(vendors).where(eq(vendors.isActive, true)).orderBy(vendors.name);
 }
 
+export async function listAllVendors() {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(vendors).orderBy(vendors.name);
+}
+
 export async function getVendorById(id: number) {
   const db = await getDb();
   if (!db) return undefined;
@@ -141,10 +147,22 @@ export async function createVendor(data: typeof vendors.$inferInsert) {
   return Number(result[0].insertId);
 }
 
+export async function updateVendor(id: number, data: Partial<typeof vendors.$inferInsert>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database unavailable");
+  await db.update(vendors).set(data).where(eq(vendors.id, id));
+}
+
 export async function listBrands() {
   const db = await getDb();
   if (!db) return [];
   return db.select().from(brands).where(eq(brands.isActive, true)).orderBy(brands.name);
+}
+
+export async function listAllBrands() {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(brands).orderBy(brands.name);
 }
 
 export async function getBrandById(id: number) {
@@ -164,6 +182,12 @@ export async function createBrand(data: typeof brands.$inferInsert) {
   if (!db) throw new Error("Database unavailable");
   const result = await db.insert(brands).values(data);
   return Number(result[0].insertId);
+}
+
+export async function updateBrand(id: number, data: Partial<typeof brands.$inferInsert>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database unavailable");
+  await db.update(brands).set(data).where(eq(brands.id, id));
 }
 
 export async function listDivisions() {

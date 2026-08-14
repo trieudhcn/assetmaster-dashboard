@@ -26,6 +26,8 @@ const mocks = vi.hoisted(() => ({
   listDivisions: vi.fn(),
   listVendors: vi.fn(),
   listBrands: vi.fn(),
+  listAllVendors: vi.fn(),
+  listAllBrands: vi.fn(),
   recordActivity: vi.fn(),
   transitionHandoverStatus: vi.fn(),
   updateUserActiveStatus: vi.fn(),
@@ -33,6 +35,8 @@ const mocks = vi.hoisted(() => ({
   updateUserDivision: vi.fn(),
   updateDepartment: vi.fn(),
   updateDivision: vi.fn(),
+  updateVendor: vi.fn(),
+  updateBrand: vi.fn(),
 }));
 
 vi.mock("./db", () => ({
@@ -69,6 +73,8 @@ vi.mock("./db", () => ({
   listDivisions: mocks.listDivisions,
   listVendors: mocks.listVendors,
   listBrands: mocks.listBrands,
+  listAllVendors: mocks.listAllVendors,
+  listAllBrands: mocks.listAllBrands,
   listHandovers: vi.fn(),
   listHandoversByRecipient: vi.fn(),
   listMaintenanceTickets: vi.fn(),
@@ -85,6 +91,8 @@ vi.mock("./db", () => ({
   updateUserDivision: mocks.updateUserDivision,
   updateDepartment: mocks.updateDepartment,
   updateDivision: mocks.updateDivision,
+  updateVendor: mocks.updateVendor,
+  updateBrand: mocks.updateBrand,
   updateUserRole: vi.fn(),
 }));
 
@@ -121,6 +129,10 @@ describe("employee administration", () => {
     mocks.getBrandByName.mockResolvedValue(undefined);
     mocks.listVendors.mockResolvedValue([{ id: 41, name: "Nhà cung cấp Minh Phát", isActive: true }]);
     mocks.listBrands.mockResolvedValue([{ id: 51, name: "Dell", isActive: true }]);
+    mocks.listAllVendors.mockResolvedValue([{ id: 41, name: "Nhà cung cấp Minh Phát", isActive: true }]);
+    mocks.listAllBrands.mockResolvedValue([{ id: 51, name: "Dell", isActive: true }]);
+    mocks.updateVendor.mockResolvedValue(undefined);
+    mocks.updateBrand.mockResolvedValue(undefined);
     mocks.listDivisions.mockResolvedValue([]);
     mocks.updateUserActiveStatus.mockResolvedValue(undefined);
     mocks.updateUserDepartment.mockResolvedValue(undefined);
@@ -151,6 +163,17 @@ describe("employee administration", () => {
 
     const employeeCaller = appRouter.createCaller({ ...adminContext, user: { ...adminContext.user, role: "user" } });
     await expect(employeeCaller.vendors.create({ name: "Công ty khác", contactName: null, phone: null, email: null })).rejects.toMatchObject({ code: "FORBIDDEN" });
+  });
+
+  it("allows administrators to edit or deactivate suppliers and brands", async () => {
+    const caller = appRouter.createCaller(adminContext);
+
+    await expect(caller.vendors.update({ id: 41, name: "Nhà cung cấp Minh Phát mới", contactName: "Lan", phone: null, email: null, isActive: false })).resolves.toEqual({ success: true });
+    expect(mocks.updateVendor).toHaveBeenCalledWith(41, expect.objectContaining({ name: "Nhà cung cấp Minh Phát mới", isActive: false }));
+
+    await expect(caller.brands.update({ id: 51, isActive: false })).resolves.toEqual({ success: true });
+    expect(mocks.updateBrand).toHaveBeenCalledWith(51, { isActive: false });
+    expect(mocks.recordActivity).toHaveBeenCalledWith(expect.objectContaining({ entityType: "brand", entityId: 51, action: "deactivated" }));
   });
 
   it("rejects the department list for a non-administrator", async () => {

@@ -31,6 +31,8 @@ import {
   getVendorByName,
   listAssets,
   listBrands,
+  listAllBrands,
+  listAllVendors,
   listAuditItems,
   listAuditSessions,
   listActivityLogs,
@@ -47,8 +49,10 @@ import {
   recordActivity,
   saveCompany,
   updateAsset,
+  updateBrand,
   updateDepartment,
   updateDivision,
+  updateVendor,
   updateHandover,
   updateMaintenanceTicket,
   updateUserRole,
@@ -193,20 +197,42 @@ export const appRouter = router({
   }),
   vendors: router({
     list: protectedProcedure.query(() => listVendors()),
+    listAll: adminProcedure.query(() => listAllVendors()),
     create: adminProcedure.input(z.object({ name: z.string().trim().min(2).max(160), contactName: nullableText, phone: nullableText, email: z.string().email().optional().nullable() })).mutation(async ({ input, ctx }) => {
       if (await getVendorByName(input.name)) throw new TRPCError({ code: "BAD_REQUEST", message: "Nhà cung cấp này đã tồn tại." });
       const id = await createVendor({ ...input, isActive: true });
       await recordActivity({ entityType: "vendor", entityId: id, action: "created", actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: `Tạo Nhà cung cấp: ${input.name}` });
       return { id };
     }),
+    update: adminProcedure.input(z.object({ id: z.number().int().positive(), name: z.string().trim().min(2).max(160).optional(), contactName: nullableText, phone: nullableText, email: z.string().email().optional().nullable(), isActive: z.boolean().optional() })).mutation(async ({ input, ctx }) => {
+      const existing = await getVendorById(input.id);
+      if (!existing) throw new TRPCError({ code: "NOT_FOUND", message: "Không tìm thấy Nhà cung cấp." });
+      if (input.name && input.name !== existing.name && await getVendorByName(input.name)) throw new TRPCError({ code: "BAD_REQUEST", message: "Tên Nhà cung cấp đã tồn tại." });
+      const { id, ...changes } = input;
+      await updateVendor(id, changes);
+      const action = input.isActive === false ? "deactivated" : input.isActive === true ? "activated" : "updated";
+      await recordActivity({ entityType: "vendor", entityId: id, action, actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: `${input.isActive === false ? "Vô hiệu hóa" : input.isActive === true ? "Kích hoạt" : "Cập nhật"} Nhà cung cấp: ${input.name || existing.name}` });
+      return { success: true };
+    }),
   }),
   brands: router({
     list: protectedProcedure.query(() => listBrands()),
+    listAll: adminProcedure.query(() => listAllBrands()),
     create: adminProcedure.input(z.object({ name: z.string().trim().min(2).max(160) })).mutation(async ({ input, ctx }) => {
       if (await getBrandByName(input.name)) throw new TRPCError({ code: "BAD_REQUEST", message: "Hãng này đã tồn tại." });
       const id = await createBrand({ name: input.name, isActive: true });
       await recordActivity({ entityType: "brand", entityId: id, action: "created", actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: `Tạo Hãng: ${input.name}` });
       return { id };
+    }),
+    update: adminProcedure.input(z.object({ id: z.number().int().positive(), name: z.string().trim().min(2).max(160).optional(), isActive: z.boolean().optional() })).mutation(async ({ input, ctx }) => {
+      const existing = await getBrandById(input.id);
+      if (!existing) throw new TRPCError({ code: "NOT_FOUND", message: "Không tìm thấy Hãng." });
+      if (input.name && input.name !== existing.name && await getBrandByName(input.name)) throw new TRPCError({ code: "BAD_REQUEST", message: "Tên Hãng đã tồn tại." });
+      const { id, ...changes } = input;
+      await updateBrand(id, changes);
+      const action = input.isActive === false ? "deactivated" : input.isActive === true ? "activated" : "updated";
+      await recordActivity({ entityType: "brand", entityId: id, action, actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: `${input.isActive === false ? "Vô hiệu hóa" : input.isActive === true ? "Kích hoạt" : "Cập nhật"} Hãng: ${input.name || existing.name}` });
+      return { success: true };
     }),
   }),
   assets: router({
