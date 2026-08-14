@@ -96,3 +96,12 @@
 - [ ] Thêm trang Quản lý nhân viên có danh sách tài khoản, vai trò và thao tác đổi role.
 - [ ] Bảo vệ trang/thao tác quản trị theo role admin.
 - [ ] Thêm test quyền hạn, kiểm tra responsive, build và checkpoint.
+
+## Employee Detail, Security & Filters
+
+- [ ] Thêm trạng thái khóa/vô hiệu hóa tài khoản và phòng ban cho hồ sơ nhân viên.
+- [ ] Thêm API admin xem chi tiết nhân viên cùng tài sản đang được cấp phát.
+- [ ] Thêm API khóa/mở khóa tài khoản, bảo đảm người dùng bị khóa không dùng được luồng bảo vệ.
+- [ ] Thêm tìm kiếm và lọc nhân viên theo phòng ban, vai trò, trạng thái tài khoản.
+- [ ] Thêm drawer hồ sơ nhân viên với danh sách tài sản đang được cấp phát.
+- [ ] Kiểm tra quyền hạn, responsive, TypeScript, test, build và checkpoint.

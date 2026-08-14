@@ -8,6 +8,13 @@
       "when": 1786688298761,
       "tag": "0000_safe_robin_chapel",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "5",
+      "when": 1786690396394,
+      "tag": "0001_neat_magneto",
+      "breakpoints": true
     }
   ]
 }

@@ -45,6 +45,12 @@ export async function updateUserRole(id: number, role: "admin" | "user") {
   await db.update(users).set({ role }).where(eq(users.id, id));
 }
 
+export async function updateUserActiveStatus(id: number, isActive: boolean) {
+  const db = await getDb();
+  if (!db) throw new Error("Database unavailable");
+  await db.update(users).set({ isActive }).where(eq(users.id, id));
+}
+
 export async function listAssets() {
   const db = await getDb();
   if (!db) return [];
