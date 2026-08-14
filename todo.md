@@ -19,3 +19,12 @@
 - [x] Thêm biên bản bàn giao chi tiết với thông tin hai bên và danh sách tài sản.
 - [x] Thêm các trạng thái Nháp, Chờ ký, Đã bàn giao và Đã hoàn trả.
 - [x] Kiểm tra responsive, TypeScript, production build, screenshot và checkpoint.
+
+## PDF Export & Electronic Signature
+
+- [x] Thêm thư viện tạo PDF phía trình duyệt và hàm xuất biên bản.
+- [x] Thiết kế bản PDF có tiêu đề, thông tin hai bên, tài sản, tình trạng và chữ ký.
+- [x] Thêm vùng canvas ký điện tử trực tiếp trên web.
+- [x] Hỗ trợ xóa/ký lại, xác nhận chữ ký và hiển thị trạng thái đã ký.
+- [x] Gắn chữ ký vào biên bản chi tiết và dữ liệu xuất PDF.
+- [x] Kiểm tra responsive, TypeScript, production build, screenshot và checkpoint.
