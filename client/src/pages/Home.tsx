@@ -371,6 +371,7 @@ function AssetCatalogPage({ assets, totalAssets, query, category, status, depart
 function PaginatedAssetCatalogPage({ assets, query, category, status, department, onQueryChange, onCategoryChange, onStatusChange, onDepartmentChange, onReset, onCreate, onEdit, onOpenDetail, onOpenQr, onAssign }: { assets: Asset[]; query: string; category: string; status: string; department: string; onQueryChange: (value: string) => void; onCategoryChange: (value: string) => void; onStatusChange: (value: string) => void; onDepartmentChange: (value: string) => void; onReset: () => void; onCreate: () => void; onEdit: (asset: Asset) => void; onOpenDetail: (asset: Asset) => void; onOpenQr: (asset: Asset) => void; onAssign: (asset: Asset) => void }) {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(6);
+  const [jumpPage, setJumpPage] = useState("1");
   const totalPages = Math.max(1, Math.ceil(assets.length / pageSize));
   const currentPage = Math.min(page, totalPages);
   const startIndex = assets.length === 0 ? 0 : (currentPage - 1) * pageSize;
@@ -379,12 +380,52 @@ function PaginatedAssetCatalogPage({ assets, query, category, status, department
   const endRecord = Math.min(startIndex + pageSize, assets.length);
   const pageNumbers = Array.from({ length: totalPages }, (_, index) => index + 1).filter((pageNumber) => totalPages <= 5 || pageNumber === 1 || pageNumber === totalPages || Math.abs(pageNumber - currentPage) <= 1);
   useEffect(() => { setPage(1); }, [query, category, status, department, pageSize]);
+  useEffect(() => { setJumpPage(String(currentPage)); }, [currentPage]);
   useEffect(() => {
     const legacyFooter = document.querySelector("section.overflow-hidden > div:last-child");
     legacyFooter?.classList.add("hidden");
     return () => legacyFooter?.classList.remove("hidden");
   }, []);
   const resetAndGoFirst = () => { setPage(1); onReset(); };
+  const submitJumpPage = (value = jumpPage) => {
+    const requestedPage = Number.parseInt(value, 10);
+    if (!Number.isFinite(requestedPage) || requestedPage < 1 || requestedPage > totalPages) {
+      toast.error(`Nhập số trang từ 1 đến ${totalPages}.`);
+      setJumpPage(String(currentPage));
+      return;
+    }
+    setPage(requestedPage);
+  };
+  useEffect(() => {
+    const nextButton = Array.from(document.querySelectorAll("button")).find((button) => button.textContent?.trim() === "Sau");
+    const controls = nextButton?.parentElement;
+    if (!controls || controls.querySelector("[data-page-jump]")) return;
+
+    const jumpControl = document.createElement("div");
+    jumpControl.dataset.pageJump = "true";
+    jumpControl.className = "flex items-center gap-1";
+    const label = document.createElement("label");
+    label.className = "text-xs font-semibold text-[#60758A]";
+    label.textContent = "Đến trang";
+    const input = document.createElement("input");
+    input.type = "number";
+    input.min = "1";
+    input.max = String(totalPages);
+    input.value = String(currentPage);
+    input.inputMode = "numeric";
+    input.setAttribute("aria-label", "Nhập số trang");
+    input.className = "h-8 w-12 rounded-md border border-[#DDE7F0] bg-white px-2 text-center text-xs font-bold text-[#193B57] outline-none focus:border-[#0F8C8C]";
+    const submitButton = document.createElement("button");
+    submitButton.type = "button";
+    submitButton.textContent = "Đi";
+    submitButton.className = "h-8 rounded-md border border-[#CDE5E5] px-2.5 text-xs font-bold text-[#087A6A] hover:bg-[#ECF8F7]";
+    const submit = () => { setJumpPage(input.value); submitJumpPage(input.value); };
+    submitButton.addEventListener("click", submit);
+    input.addEventListener("keydown", (event) => { if (event.key === "Enter") submit(); });
+    jumpControl.append(label, input, submitButton);
+    controls.insertBefore(jumpControl, controls.firstChild?.nextSibling || nextButton);
+    return () => jumpControl.remove();
+  }, [currentPage, totalPages, assets.length]);
   return <div className="relative"><AssetCatalogPage assets={pageAssets} totalAssets={assets.length} query={query} category={category} status={status} department={department} onQueryChange={onQueryChange} onCategoryChange={onCategoryChange} onStatusChange={onStatusChange} onDepartmentChange={onDepartmentChange} onReset={resetAndGoFirst} onCreate={onCreate} onEdit={onEdit} onOpenDetail={onOpenDetail} onOpenQr={onOpenQr} onAssign={onAssign} /><div className="relative z-10 -mt-16 px-4 pb-8 sm:px-6 lg:px-9 lg:pb-9"><div className="mx-auto flex max-w-[1500px] flex-col gap-3 rounded-xl border border-[#DFE9F0] bg-white p-4 shadow-[0_8px_24px_rgba(16,42,67,0.06)] sm:flex-row sm:items-center sm:justify-between"><div className="text-xs text-[#71869A]">Hiển thị <span className="font-bold text-[#193B57]">{startRecord}–{endRecord}</span> trên <span className="font-bold text-[#193B57]">{assets.length}</span> tài sản phù hợp</div><div className="flex flex-wrap items-center gap-2"><label className="flex items-center gap-2 text-xs font-semibold text-[#60758A]">Mỗi trang<select value={pageSize} onChange={(event) => setPageSize(Number(event.target.value))} className="h-8 rounded-md border border-[#DDE7F0] bg-white px-2 text-xs font-bold text-[#193B57]"><option value={6}>6</option><option value={10}>10</option><option value={20}>20</option></select></label><button disabled={currentPage === 1} onClick={() => setPage((current) => Math.max(1, current - 1))} className="h-8 rounded-md border border-[#DDE7F0] px-3 text-xs font-bold text-[#60758A] hover:bg-[#F7FAFC] disabled:cursor-not-allowed disabled:opacity-40">Trước</button>{pageNumbers.map((pageNumber, index) => <span key={pageNumber} className="flex items-center gap-1">{index > 0 && pageNumber - pageNumbers[index - 1] > 1 ? <span className="px-1 text-xs text-[#8AA0B6]">…</span> : null}<button onClick={() => setPage(pageNumber)} className={`grid h-8 min-w-8 place-items-center rounded-md px-2 text-xs font-bold ${currentPage === pageNumber ? "bg-[#102A43] text-white" : "border border-[#DDE7F0] text-[#60758A] hover:bg-[#F7FAFC]"}`}>{pageNumber}</button></span>)}<button disabled={currentPage === totalPages || assets.length === 0} onClick={() => setPage((current) => Math.min(totalPages, current + 1))} className="h-8 rounded-md border border-[#DDE7F0] px-3 text-xs font-bold text-[#60758A] hover:bg-[#F7FAFC] disabled:cursor-not-allowed disabled:opacity-40">Sau</button></div></div></div></div>;
 }
 

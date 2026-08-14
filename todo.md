@@ -244,3 +244,9 @@
 - [x] Hiển thị điều khiển chuyển trang, phạm vi bản ghi và trạng thái vô hiệu hóa phù hợp desktop/mobile.
 - [x] Kiểm thử hành vi phân trang, TypeScript, build và phát hành checkpoint; 26 Vitest tests, TypeScript và production build thành công.
 - [x] Loại bỏ thông tin số lượng trùng lặp giữa bảng danh mục và thanh phân trang trên mobile.
+
+## Chuyển nhanh theo số trang
+
+- [x] Thêm ô nhập số trang vào thanh phân trang Danh mục tài sản.
+- [x] Kiểm tra giới hạn trang và hỗ trợ Enter/nút xác nhận để chuyển trang nhanh.
+- [x] Kiểm thử responsive, TypeScript, build và phát hành checkpoint; 26 Vitest tests, TypeScript và production build thành công.
