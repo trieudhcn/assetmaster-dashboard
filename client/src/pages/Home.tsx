@@ -189,7 +189,11 @@ export default function Home() {
   // nonce cookie and must run only at the moment of navigation.
   let { user, loading, error, isAuthenticated, logout } = useAuth();
 
-  const [activeNav, setActiveNav] = useState("Tổng quan");
+  const [activeNav, setActiveNav] = useState(() => {
+    const view = new URLSearchParams(window.location.search).get("view");
+    const deepLinks: Record<string, string> = { maintenance: "Bảo trì & Báo hỏng", audit: "Kiểm kê", reports: "Báo cáo", employees: "Quản lý nhân viên", handovers: "Bàn giao & Cấp phát" };
+    return view ? deepLinks[view] || "Tổng quan" : "Tổng quan";
+  });
   const [assetRows, setAssetRows] = useState<Asset[]>([]);
   const [assetModal, setAssetModal] = useState<"create" | "edit" | "detail" | null>(null);
   const [selectedAsset, setSelectedAsset] = useState<Asset | null>(null);

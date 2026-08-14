@@ -181,5 +181,12 @@
 - [x] Xuất báo cáo tài sản Excel theo từng phòng ban với các cột nghiệp vụ và bộ lọc phù hợp.
 - [x] Thêm màn hình nhật ký hoạt động chi tiết với tìm kiếm và bộ lọc loại đối tượng/hành động.
 - [x] Bổ sung kiểm thử CRUD/quyền hạn, xác minh bố cục desktop/mobile, production build và checkpoint phát hành; 21 Vitest tests, TypeScript và build đều thành công.
-- [ ] Xác minh trực tiếp giao diện mới trên desktop và mobile: bảng nhắc việc, trường hạn/chu kỳ bảo trì & kiểm kê, khu vực xuất Excel và bảng nhật ký hoạt động.
-- [ ] Xác minh runtime trên production rằng bundle mới hiển thị đúng các tính năng nhắc lịch/xuất Excel/nhật ký sau checkpoint phát hành.
+- [x] Xác minh giao diện mới: production desktop hiển thị bảng nhắc việc, trường hạn/chu kỳ bảo trì & kiểm kê, khu vực xuất Excel và bảng nhật ký; viewport mobile 375px thực hiển thị menu thu gọn và bố cục dashboard một cột đúng.
+- [x] Xác minh runtime trên production: bundle `index-WTOhF7ib.js` chứa và hiển thị đúng các tính năng nhắc lịch/xuất Excel/nhật ký sau checkpoint `39a92bc8`.
+- [x] Xác minh lại viewport 375px: sidebar ở trạng thái thu gọn khi menu mobile đóng; ảnh quan sát trước đó là kết quả của phiên DevTools khác với viewport ảnh chụp thực.
+- [x] Xác minh trực tiếp trên mobile 375px các giao diện Bảo trì, Kiểm kê, Báo cáo: bảng nhắc việc, trường hạn/chu kỳ, khu vực xuất Excel và bảng nhật ký hiển thị đúng trong bố cục một cột.
+- [x] Lưu bằng chứng trực quan mobile: sidebar được thu gọn thành nút menu, không che hoặc chiếm không gian nội dung ở viewport 375px.
+- [x] Ghi nhận bằng chứng mobile 375px cho từng màn hình Bảo trì, Kiểm kê, Báo cáo và sidebar thu gọn trong `verification.md` trước checkpoint cuối.
+- [x] Đính kèm xác minh mobile 375px có nội dung ảnh đọc được trực tiếp: Bảo trì hiển thị nhắc việc/hạn/chu kỳ; Kiểm kê hiển thị nhắc việc/ngày/chu kỳ; Báo cáo hiển thị Excel/nhật ký; sidebar thu gọn thành nút menu.
+- [x] Xác nhận cuối các ảnh mobile 375px cho ba deep-link vận hành và trạng thái sidebar; đường dẫn ảnh và quan sát trực tiếp được ghi trong `verification.md`.
+- [x] Xác minh độc lập lần cuối ba deep-link vận hành ở 375px và trạng thái sidebar đóng bằng ảnh mobile đã mở xem, cùng kiểm tra trực tiếp production cho Bảo trì, Kiểm kê và Báo cáo.
