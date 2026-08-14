@@ -209,6 +209,12 @@ export async function listMaintenanceTickets() {
   return db.select().from(maintenanceTickets).orderBy(desc(maintenanceTickets.openedAt));
 }
 
+export async function getMaintenanceTicket(id: number) {
+  const db = await getDb();
+  if (!db) return null;
+  return (await db.select().from(maintenanceTickets).where(eq(maintenanceTickets.id, id)).limit(1))[0] ?? null;
+}
+
 export async function createMaintenanceTicket(data: typeof maintenanceTickets.$inferInsert) {
   const db = await getDb();
   if (!db) throw new Error("Database unavailable");

@@ -23,6 +23,7 @@ vi.mock("./db", () => ({
   getAssetById: mocks.getAssetById,
   getCompany: mocks.getCompany,
   getHandoverById: mocks.getHandoverById,
+  getMaintenanceTicket: vi.fn(),
   listAssets: vi.fn(),
   listAuditItems: vi.fn(),
   listAuditSessions: vi.fn(),

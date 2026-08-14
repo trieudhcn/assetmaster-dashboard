@@ -51,19 +51,21 @@
 - [x] Nâng project lên full-stack với xác thực, database và API typed.
 - [x] Thiết kế schema cho tài sản, danh mục, phòng ban, người dùng, phiếu bàn giao, lịch sử và bảo trì.
 - [x] Kết nối danh mục tài sản với dữ liệu database thật.
-- [ ] Kết nối phiếu bàn giao, lịch sử người nhận, biên bản, chữ ký và PDF với database.
+- [x] Kết nối phiếu bàn giao, lịch sử người nhận, biên bản, chữ ký và PDF với database.
 - [x] Lưu thông tin công ty vào database thay vì chỉ localStorage.
 - [x] Triển khai module bảo trì và báo hỏng có trạng thái, người xử lý và chi phí.
 - [x] Triển khai kiểm kê, chênh lệch và lịch sử kiểm kê.
 - [x] Triển khai báo cáo/dashboard theo dữ liệu thật.
 - [x] Thêm xác thực người dùng, vai trò và phân quyền thao tác.
-- [ ] Thêm upload tài liệu/chứng từ và QR code thực tế.
+- [x] Thêm upload tài liệu/chứng từ và QR code thực tế: chứng từ PDF/ảnh được lưu S3 với metadata database và phân quyền admin; QR theo mã tài sản có thể quét/tải PNG.
+- [ ] Gắn payload QR với định danh bền vững trong database (`qrToken`) và hỗ trợ nhận diện tài sản từ mã đã quét.
+- [ ] Thay thao tác “Quét mã QR” placeholder bằng luồng nhập/quét mã để mở đúng tài sản, đồng thời xác minh runtime QR và chứng từ S3.
 - [x] Viết test nghiệp vụ, kiểm tra responsive và chuẩn bị phát hành.
 
 ## Production Readiness Follow-up
 
-- [ ] Thêm giao diện quản lý bảo trì: gán người xử lý, cập nhật trạng thái, nhập chi phí ước tính/thực tế và đồng bộ DB/API.
-- [ ] Thêm màn hình chi tiết kiểm kê: danh sách audit items, expected/actual, đánh dấu chênh lệch/mất tài sản và lịch sử kiểm kê.
+- [x] Thêm giao diện quản lý bảo trì: gán người xử lý, cập nhật trạng thái, nhập chi phí ước tính/thực tế, kết quả xử lý, loading/error/empty state và đồng bộ DB/API.
+- [x] Thêm màn hình chi tiết kiểm kê: danh sách audit items, expected/actual, đánh dấu chênh lệch/mất tài sản, ghi chú, lịch sử thời điểm kiểm kê và loading/error/empty state.
 - [ ] Bổ sung test CRUD/quyền hạn, kiểm tra responsive desktop/mobile cho module mới và lưu checkpoint cuối.
 
 ## Bug Fixes
@@ -135,7 +137,7 @@
 
 - [x] Chặn tài khoản quản trị đã khóa khỏi mọi API quản trị và bổ sung kiểm thử hồi quy.
 - [x] Xác minh runtime drawer quản lý nhân viên bằng phiên đăng nhập quản trị trên desktop và mobile.
-- [ ] Lưu checkpoint phát hành sau khi hoàn tất xác minh quyền và giao diện.
+- [x] Lưu checkpoint phát hành sau khi hoàn tất xác minh quyền và giao diện.
 
 ## Employee Mobile Drawer Verification
 
@@ -147,18 +149,24 @@
 - [x] Lưu tạo phiếu bàn giao, người nhận, phòng ban, phụ kiện và ghi chú qua tRPC.
 - [x] Cập nhật trạng thái phiếu, hoàn trả và chữ ký qua database; đồng bộ lịch sử người nhận.
 - [x] Cập nhật biên bản/PDF dùng dữ liệu phiếu thực và thông tin công ty đã lưu.
-- [ ] Bổ sung kiểm thử, xác minh desktop/mobile, production build và checkpoint phát hành.
+- [x] Bổ sung kiểm thử, xác minh desktop/mobile và production build; checkpoint phát hành sẽ được lưu sau các hạng mục vận hành còn lại.
+- [x] Xác minh đầu-cuối trên mobile: tạo phiếu, mở biên bản, ký, xác nhận cấp phát, hoàn trả, các trạng thái tải/rỗng/lỗi và dọn dẹp dữ liệu QA.
+- [x] Xác minh trực tiếp các trạng thái tải và lỗi của danh sách phiếu cùng modal biên bản trong viewport mobile; banner lỗi và nút thử lại danh sách đã được kiểm tra bằng mô phỏng mất kết nối.
+- [ ] Lưu checkpoint phát hành sau khi hoàn tất toàn bộ xác minh mobile của luồng bàn giao.
 
 ## Handover Recipient Data Follow-up
 
 - [x] Thêm trạng thái lỗi rõ ràng cho truy vấn danh sách và chi tiết phiếu bàn giao.
 - [x] Chọn nhân viên/phòng ban thực khi tạo phiếu để lưu recipientUserId và recipientDepartmentId.
-- [ ] Xác minh lịch sử tài sản nhân viên phản ánh phiếu cấp phát và hoàn trả mới.
+- [x] Xác minh lịch sử tài sản nhân viên phản ánh phiếu cấp phát và hoàn trả mới.
 - [x] Kết nối modal chi tiết với truy vấn handovers.get, gồm trạng thái tải/lỗi và thao tác thử lại.
 - [x] Dùng dữ liệu handovers.get làm nguồn hiển thị chính cho modal biên bản và chữ ký.
 - [x] Làm mới lịch sử tài sản nhân viên sau khi tạo phiếu, lưu chữ ký, xác nhận và hoàn trả.
-- [ ] Tạo dữ liệu thử tối thiểu đã được xác nhận để kiểm tra cấp phát, hoàn trả và lịch sử nhân viên trên bản phát hành.
-- [ ] Dọn dẹp toàn bộ bản ghi thử nghiệm sau khi hoàn tất xác minh đầu-cuối.
+- [x] Tạo dữ liệu thử tối thiểu đã được xác nhận để kiểm tra cấp phát, hoàn trả và lịch sử nhân viên trên bản phát hành.
+- [x] Dọn dẹp toàn bộ bản ghi thử nghiệm sau khi hoàn tất xác minh đầu-cuối.
 - [x] Cho phép lập phiếu cho nhân viên chưa gán phòng ban, đồng thời lưu departmentId nullable đúng theo schema.
-- [ ] Làm mới dữ liệu chi tiết phiếu sau khi lưu chữ ký để nút xác nhận chuyển sang trạng thái cấp phát chính xác.
-- [ ] Xác minh trực tiếp sau khi lưu chữ ký rằng badge và nút hành động của modal chuyển sang trạng thái kế tiếp.
+- [x] Làm mới dữ liệu chi tiết phiếu sau khi lưu chữ ký để nút xác nhận chuyển sang trạng thái cấp phát chính xác.
+- [x] Xác minh trực tiếp sau khi lưu chữ ký rằng badge và nút hành động của modal chuyển sang trạng thái kế tiếp.
+- [x] Đồng bộ trạng thái đã hoàn trả và thời gian hoàn trả vào lịch sử tài sản trong drawer nhân viên.
+- [x] Xác minh trực tiếp trên mobile trạng thái loading, lỗi và thử lại của modal biên bản (`handovers.get`); đã kiểm tra modal tải, mô phỏng lỗi và nút thử lại khôi phục đúng, sau đó dọn dữ liệu QA.
+- [x] Xác minh lại có kiểm soát trạng thái loading của modal biên bản (`handovers.get`) trên mobile bằng phản hồi làm chậm; màn hình “Đang tải chi tiết phiếu bàn giao...” hiển thị rõ ràng trước khi dữ liệu hoàn tất, sau đó đã dọn dữ liệu QA.

@@ -14,6 +14,7 @@ import {
   getActiveDepartmentById,
   getCompany,
   getHandoverById,
+  getMaintenanceTicket,
   listAssets,
   listAuditItems,
   listAuditSessions,
@@ -153,6 +154,21 @@ export const appRouter = router({
       await updateMaintenanceTicket(input.id, { status: input.status, assigneeUserId: input.assigneeUserId, resolution: input.resolution, estimatedCost: input.estimatedCost, actualCost: input.actualCost, resolvedAt: input.status === "resolved" || input.status === "closed" ? new Date() : null });
       await recordActivity({ entityType: "maintenance", entityId: input.id, action: input.status, actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: `Cập nhật yêu cầu bảo trì: ${input.status}` });
       return { success: true };
+    }),
+    uploadAttachment: adminProcedure.input(z.object({
+      id: z.number().int().positive(),
+      fileName: z.string().trim().min(1).max(255),
+      contentType: z.enum(["application/pdf", "image/png", "image/jpeg", "image/webp"]),
+      dataUrl: z.string().max(7_000_000).regex(/^data:(application\/pdf|image\/(png|jpeg|webp));base64,/),
+    })).mutation(async ({ input, ctx }) => {
+      const ticket = await getMaintenanceTicket(input.id);
+      if (!ticket) throw new TRPCError({ code: "NOT_FOUND", message: "Không tìm thấy yêu cầu bảo trì." });
+      const extension = input.contentType === "application/pdf" ? "pdf" : input.contentType.split("/")[1].replace("jpeg", "jpg");
+      const safeBaseName = input.fileName.replace(/[^a-zA-Z0-9._-]/g, "-").replace(/-+/g, "-").slice(0, 120) || "chung-tu";
+      const { url } = await storagePut(`maintenance/${ticket.id}/${Date.now()}-${safeBaseName}.${extension}`, Buffer.from(input.dataUrl.split(",", 2)[1], "base64"), input.contentType);
+      await updateMaintenanceTicket(ticket.id, { attachmentUrl: url, attachmentName: input.fileName, attachmentContentType: input.contentType });
+      await recordActivity({ entityType: "maintenance", entityId: ticket.id, action: "attachment_uploaded", actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: `Tải chứng từ: ${input.fileName}` });
+      return { url, name: input.fileName, contentType: input.contentType };
     }),
   }),
   audits: router({
