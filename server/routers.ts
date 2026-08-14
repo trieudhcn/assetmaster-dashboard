@@ -23,6 +23,7 @@ import {
   updateHandover,
   updateMaintenanceTicket,
   updateUserRole,
+  updateUserActiveStatus,
   updateAuditItem,
 } from "./db";
 import { storagePut } from "./storage";
@@ -56,6 +57,11 @@ export const appRouter = router({
     updateRole: adminProcedure.input(z.object({ id: z.number().int().positive(), role: z.enum(["admin", "user"]) })).mutation(async ({ input, ctx }) => {
       await updateUserRole(input.id, input.role);
       await recordActivity({ entityType: "user", entityId: input.id, action: "role_updated", actorUserId: ctx.user.id, actorName: ctx.user.name, summary: `Cập nhật vai trò thành ${input.role}` });
+      return { success: true };
+    }),
+    updateActiveStatus: adminProcedure.input(z.object({ id: z.number().int().positive(), isActive: z.boolean() })).mutation(async ({ input, ctx }) => {
+      await updateUserActiveStatus(input.id, input.isActive);
+      await recordActivity({ entityType: "user", entityId: input.id, action: input.isActive ? "activated" : "deactivated", actorUserId: ctx.user.id, actorName: ctx.user.name, summary: input.isActive ? "Mở khóa tài khoản" : "Khóa tài khoản" });
       return { success: true };
     }),
   }),
