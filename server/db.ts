@@ -54,8 +54,8 @@ export async function updateAsset(id: number, data: Partial<typeof assets.$infer
 
 export async function getCompany() {
   const db = await getDb();
-  if (!db) return undefined;
-  return (await db.select().from(companies).orderBy(desc(companies.updatedAt)).limit(1))[0];
+  if (!db) return null;
+  return (await db.select().from(companies).orderBy(desc(companies.updatedAt)).limit(1))[0] ?? null;
 }
 
 export async function saveCompany(data: typeof companies.$inferInsert) {

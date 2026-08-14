@@ -65,3 +65,9 @@
 - [ ] Thêm giao diện quản lý bảo trì: gán người xử lý, cập nhật trạng thái, nhập chi phí ước tính/thực tế và đồng bộ DB/API.
 - [ ] Thêm màn hình chi tiết kiểm kê: danh sách audit items, expected/actual, đánh dấu chênh lệch/mất tài sản và lịch sử kiểm kê.
 - [ ] Bổ sung test CRUD/quyền hạn, kiểm tra responsive desktop/mobile cho module mới và lưu checkpoint cuối.
+
+## Bug Fixes
+
+- [x] Sửa company.get để luôn trả về null thay vì undefined khi chưa có bản ghi công ty.
+- [x] Kiểm tra giao diện Cài đặt/Dashboard xử lý đúng trạng thái chưa có thông tin công ty.
+- [x] Thêm test hồi quy cho company.get và kiểm tra build sau sửa lỗi.
