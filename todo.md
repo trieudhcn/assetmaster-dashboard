@@ -208,3 +208,9 @@
 - [x] Cập nhật trang Phòng Ban & Bộ Phận để chỉnh sửa thông tin, vô hiệu hóa đơn vị và phản ánh trạng thái hoạt động.
 - [x] Thêm bộ lọc Phòng Ban và Bộ Phận cho Báo cáo tài sản, bao gồm thống kê và xuất Excel theo phạm vi lọc.
 - [x] Bổ sung test phân quyền/ràng buộc, xác minh responsive và phát hành checkpoint; 25 Vitest tests, TypeScript và production build thành công.
+
+## Biểu đồ giá trị tài sản theo Bộ Phận
+
+- [x] Tổng hợp giá trị tài sản thực theo Bộ Phận của người đang giữ tài sản, tương thích bộ lọc cơ cấu hiện có.
+- [x] Hiển thị biểu đồ donut trực quan phân bổ giá trị tài sản theo Bộ Phận, có chú giải, tỷ trọng và trạng thái không có dữ liệu.
+- [x] Kiểm thử dữ liệu, responsive desktop/mobile, build và phát hành checkpoint; 25 Vitest tests, TypeScript và production build thành công.
