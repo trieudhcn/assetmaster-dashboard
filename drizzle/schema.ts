@@ -36,6 +36,17 @@ export const departments = mysqlTable("departments", {
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
 
+export const divisions = mysqlTable("divisions", {
+  id: int("id").autoincrement().primaryKey(),
+  departmentId: int("departmentId").notNull().references(() => departments.id, { onDelete: "restrict", onUpdate: "cascade" }),
+  code: varchar("code", { length: 40 }).notNull().unique(),
+  name: varchar("name", { length: 160 }).notNull(),
+  managerUserId: int("managerUserId"),
+  isActive: boolean("isActive").default(true).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+}, (table) => [index("divisions_department_idx").on(table.departmentId)]);
+
 export const assetCategories = mysqlTable("assetCategories", {
   id: int("id").autoincrement().primaryKey(),
   code: varchar("code", { length: 40 }).notNull().unique(),

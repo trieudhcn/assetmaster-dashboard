@@ -190,3 +190,12 @@
 - [x] Đính kèm xác minh mobile 375px có nội dung ảnh đọc được trực tiếp: Bảo trì hiển thị nhắc việc/hạn/chu kỳ; Kiểm kê hiển thị nhắc việc/ngày/chu kỳ; Báo cáo hiển thị Excel/nhật ký; sidebar thu gọn thành nút menu.
 - [x] Xác nhận cuối các ảnh mobile 375px cho ba deep-link vận hành và trạng thái sidebar; đường dẫn ảnh và quan sát trực tiếp được ghi trong `verification.md`.
 - [x] Xác minh độc lập lần cuối ba deep-link vận hành ở 375px và trạng thái sidebar đóng bằng ảnh mobile đã mở xem, cùng kiểm tra trực tiếp production cho Bảo trì, Kiểm kê và Báo cáo.
+
+## Phòng Ban & Bộ Phận
+
+- [x] Bổ sung mô hình Bộ Phận với quan hệ bắt buộc thuộc đúng một Phòng Ban và migration database tương ứng.
+- [x] Thêm API Admin tạo, liệt kê và quản lý Phòng Ban/Bộ Phận với kiểm tra quyền hạn và tính toàn vẹn dữ liệu.
+- [x] Xây dựng giao diện quản trị Phòng Ban & Bộ Phận, trong đó tạo Bộ Phận yêu cầu chọn Phòng Ban.
+- [x] Thêm kiểm thử quan hệ Bộ Phận–Phòng Ban, phân quyền Admin và xác minh responsive trước phát hành; 23 Vitest tests, TypeScript và build đều thành công.
+- [x] Thêm trạng thái lỗi và thao tác thử lại khi không tải được danh sách Phòng Ban hoặc Bộ Phận.
+- [x] Lưu xác minh trực quan desktop và mobile 375px cho form chọn Phòng Ban bắt buộc và bố cục trang cơ cấu trong `verification.md`.

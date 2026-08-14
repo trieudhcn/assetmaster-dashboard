@@ -30,3 +30,12 @@ Trên production, đã tạo dữ liệu QA tạm thời, dùng payload `ASSETMA
 - **Kiểm kê**: giao diện production hiển thị bảng “Nhắc việc vận hành”, trường “Ngày kiểm kê”, “Chu kỳ (ngày)” và CTA “Tạo đợt kiểm kê”.
 - Dữ liệu QA `assets.id=120001`, `maintenanceTickets.id=30001` và activity log liên quan đã được xóa bằng truy vấn theo đúng thứ tự phụ thuộc trước checkpoint cuối.
 - Kiểm tra cuối: **21/21 Vitest tests** đạt; `tsc --noEmit` và production build đạt. Build chỉ báo cảnh báo tối ưu kích thước chunk, không phát sinh lỗi biên dịch hoặc runtime.
+
+## Phòng Ban & Bộ Phận
+
+| Viewport | Bằng chứng | Kết quả quan sát |
+| --- | --- | --- |
+| Desktop 1280px | `webdev-preview-root-1786704380947449538-4345.png` | Hai form quản trị hiển thị cạnh nhau; form Bộ Phận có trường “Phòng Ban *”, chọn “Chọn Phòng Ban”, thông báo tạo Phòng Ban trước và sơ đồ quan hệ một–nhiều. |
+| Mobile 375px | `webdev-preview-root-1786704388651747561-4738.png` | Form xếp một cột, có nút menu thu gọn; trường chọn Phòng Ban bắt buộc hiển thị trước tên/mã Bộ Phận và không có tràn ngang. |
+
+Đã áp dụng migration `0004_flat_mariko_yashida.sql`: bảng `divisions` có khóa ngoại `departmentId` bắt buộc tham chiếu `departments.id` với chính sách xóa `RESTRICT`. Trang quản trị hiển thị trạng thái lỗi riêng và nút **Thử lại** khi không tải được danh sách Phòng Ban hoặc Bộ Phận.

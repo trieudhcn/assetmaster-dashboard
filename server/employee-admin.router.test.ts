@@ -1,12 +1,17 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
+  createDepartment: vi.fn(),
+  createDivision: vi.fn(),
   createHandover: vi.fn(),
   getAssetById: vi.fn(),
   getActiveDepartmentById: vi.fn(),
   getCompany: vi.fn(),
+  getDepartmentByCode: vi.fn(),
+  getDivisionByCode: vi.fn(),
   getHandoverById: vi.fn(),
   listDepartments: vi.fn(),
+  listDivisions: vi.fn(),
   recordActivity: vi.fn(),
   transitionHandoverStatus: vi.fn(),
   updateUserActiveStatus: vi.fn(),
@@ -17,17 +22,22 @@ vi.mock("./db", () => ({
   createAsset: vi.fn(),
   createAuditItem: vi.fn(),
   createAuditSession: vi.fn(),
+  createDepartment: mocks.createDepartment,
+  createDivision: mocks.createDivision,
   createHandover: mocks.createHandover,
   createMaintenanceTicket: vi.fn(),
   getActiveDepartmentById: mocks.getActiveDepartmentById,
   getAssetById: mocks.getAssetById,
   getCompany: mocks.getCompany,
+  getDepartmentByCode: mocks.getDepartmentByCode,
+  getDivisionByCode: mocks.getDivisionByCode,
   getHandoverById: mocks.getHandoverById,
   getMaintenanceTicket: vi.fn(),
   listAssets: vi.fn(),
   listAuditItems: vi.fn(),
   listAuditSessions: vi.fn(),
   listDepartments: mocks.listDepartments,
+  listDivisions: mocks.listDivisions,
   listHandovers: vi.fn(),
   listHandoversByRecipient: vi.fn(),
   listMaintenanceTickets: vi.fn(),
@@ -62,6 +72,11 @@ describe("employee administration", () => {
     mocks.createHandover.mockResolvedValue(99);
     mocks.transitionHandoverStatus.mockResolvedValue({ id: 99, assetId: 50 });
     mocks.getActiveDepartmentById.mockResolvedValue({ id: 12, code: "HCNS", name: "Hành chính - Nhân sự", isActive: true });
+    mocks.getDepartmentByCode.mockResolvedValue(undefined);
+    mocks.getDivisionByCode.mockResolvedValue(undefined);
+    mocks.createDepartment.mockResolvedValue(20);
+    mocks.createDivision.mockResolvedValue(30);
+    mocks.listDivisions.mockResolvedValue([]);
     mocks.updateUserActiveStatus.mockResolvedValue(undefined);
     mocks.updateUserDepartment.mockResolvedValue(undefined);
     mocks.recordActivity.mockResolvedValue(undefined);
@@ -79,6 +94,27 @@ describe("employee administration", () => {
     const caller = appRouter.createCaller({ ...adminContext, user: { ...adminContext.user, role: "user" } });
 
     await expect(caller.departments.list()).rejects.toMatchObject({ code: "FORBIDDEN" });
+  });
+
+  it("allows an administrator to create a department and a division under its selected department", async () => {
+    const caller = appRouter.createCaller(adminContext);
+
+    await expect(caller.departments.create({ name: "Ban Kế Toán", code: "BKT" })).resolves.toEqual({ id: 20, code: "BKT" });
+    expect(mocks.createDepartment).toHaveBeenCalledWith({ code: "BKT", name: "Ban Kế Toán", isActive: true });
+
+    await expect(caller.departments.createDivision({ departmentId: 12, name: "Bộ Phận Kế Toán Thanh Toán", code: "KTTT" })).resolves.toEqual({ id: 30, code: "KTTT" });
+    expect(mocks.createDivision).toHaveBeenCalledWith({ departmentId: 12, code: "KTTT", name: "Bộ Phận Kế Toán Thanh Toán", isActive: true });
+    expect(mocks.recordActivity).toHaveBeenCalledWith(expect.objectContaining({ entityType: "division", entityId: 30, action: "created" }));
+  });
+
+  it("requires an administrator and a valid department when creating a division", async () => {
+    const employeeCaller = appRouter.createCaller({ ...adminContext, user: { ...adminContext.user, role: "user" } });
+    await expect(employeeCaller.departments.createDivision({ departmentId: 12, name: "Bộ Phận Kế Toán Thanh Toán" })).rejects.toMatchObject({ code: "FORBIDDEN" });
+
+    mocks.getActiveDepartmentById.mockResolvedValue(undefined);
+    const adminCaller = appRouter.createCaller(adminContext);
+    await expect(adminCaller.departments.createDivision({ departmentId: 999, name: "Bộ Phận Kế Toán Thanh Toán" })).rejects.toMatchObject({ code: "BAD_REQUEST" });
+    expect(mocks.createDivision).not.toHaveBeenCalled();
   });
 
   it("rejects protected API access for a locked account", async () => {

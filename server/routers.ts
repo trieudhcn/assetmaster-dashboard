@@ -8,10 +8,14 @@ import {
   createAsset,
   createAuditSession,
   createAuditItem,
+  createDepartment,
+  createDivision,
   createHandover,
   createMaintenanceTicket,
   getAssetById,
   getActiveDepartmentById,
+  getDepartmentByCode,
+  getDivisionByCode,
   getCompany,
   getHandoverById,
   getMaintenanceTicket,
@@ -20,6 +24,7 @@ import {
   listAuditSessions,
   listActivityLogs,
   listDepartments,
+  listDivisions,
   listHandovers,
   listHandoversByRecipient,
   listMaintenanceTickets,
@@ -90,6 +95,36 @@ export const appRouter = router({
   }),
   departments: router({
     list: adminProcedure.query(() => listDepartments()),
+    listDivisions: adminProcedure.query(() => listDivisions()),
+    create: adminProcedure.input(z.object({
+      name: z.string().trim().min(2).max(160),
+      code: z.string().trim().min(2).max(40).optional(),
+    })).mutation(async ({ input, ctx }) => {
+      const code = (input.code || `PB-${crypto.randomUUID().slice(0, 8)}`).toUpperCase();
+      if (await getDepartmentByCode(code)) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "Mã phòng ban đã tồn tại." });
+      }
+      const id = await createDepartment({ code, name: input.name, isActive: true });
+      await recordActivity({ entityType: "department", entityId: id, action: "created", actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: `Tạo Phòng Ban: ${input.name}` });
+      return { id, code };
+    }),
+    createDivision: adminProcedure.input(z.object({
+      departmentId: z.number().int().positive(),
+      name: z.string().trim().min(2).max(160),
+      code: z.string().trim().min(2).max(40).optional(),
+    })).mutation(async ({ input, ctx }) => {
+      const department = await getActiveDepartmentById(input.departmentId);
+      if (!department?.isActive) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "Phòng Ban được chọn không tồn tại hoặc đã ngừng hoạt động." });
+      }
+      const code = (input.code || `BP-${crypto.randomUUID().slice(0, 8)}`).toUpperCase();
+      if (await getDivisionByCode(code)) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "Mã Bộ Phận đã tồn tại." });
+      }
+      const id = await createDivision({ departmentId: department.id, code, name: input.name, isActive: true });
+      await recordActivity({ entityType: "division", entityId: id, action: "created", actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: `Tạo Bộ Phận: ${input.name} thuộc ${department.name}` });
+      return { id, code };
+    }),
   }),
   assets: router({
     list: protectedProcedure.query(() => listAssets()),

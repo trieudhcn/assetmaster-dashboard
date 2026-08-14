@@ -18,6 +18,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { AuditPage, MaintenancePage, ReportsPage } from "./OperationsModules";
+import { OrganizationManagementPage } from "./OrganizationManagementPage";
 import {
   Archive,
   ArrowDownUp,
@@ -71,6 +72,7 @@ const navItems = [
   { label: "Kiểm kê", icon: ClipboardCheck },
   { label: "Báo cáo", icon: FileBarChart },
   { label: "Quản lý nhân viên", icon: UserRound },
+  { label: "Phòng Ban & Bộ Phận", icon: Building2 },
 ];
 
 type Asset = {
@@ -191,7 +193,7 @@ export default function Home() {
 
   const [activeNav, setActiveNav] = useState(() => {
     const view = new URLSearchParams(window.location.search).get("view");
-    const deepLinks: Record<string, string> = { maintenance: "Bảo trì & Báo hỏng", audit: "Kiểm kê", reports: "Báo cáo", employees: "Quản lý nhân viên", handovers: "Bàn giao & Cấp phát" };
+    const deepLinks: Record<string, string> = { maintenance: "Bảo trì & Báo hỏng", audit: "Kiểm kê", reports: "Báo cáo", employees: "Quản lý nhân viên", organization: "Phòng Ban & Bộ Phận", handovers: "Bàn giao & Cấp phát" };
     return view ? deepLinks[view] || "Tổng quan" : "Tổng quan";
   });
   const [assetRows, setAssetRows] = useState<Asset[]>([]);
@@ -311,7 +313,8 @@ export default function Home() {
         {activeNav === "Kiểm kê" ? <AuditPage /> : null}
         {activeNav === "Báo cáo" ? <ReportsPage /> : null}
         {activeNav === "Quản lý nhân viên" ? <EmployeeManagementPage /> : null}
-        <div className={`relative overflow-hidden px-4 py-7 sm:px-6 lg:px-9 lg:py-8 ${["Bàn giao & Cấp phát", "Cài đặt", "Bảo trì & Báo hỏng", "Kiểm kê", "Báo cáo", "Quản lý nhân viên"].includes(activeNav) ? "hidden" : ""}`}>
+        {activeNav === "Phòng Ban & Bộ Phận" ? <OrganizationManagementPage /> : null}
+        <div className={`relative overflow-hidden px-4 py-7 sm:px-6 lg:px-9 lg:py-8 ${["Bàn giao & Cấp phát", "Cài đặt", "Bảo trì & Báo hỏng", "Kiểm kê", "Báo cáo", "Quản lý nhân viên", "Phòng Ban & Bộ Phận"].includes(activeNav) ? "hidden" : ""}`}>
           <div className="pointer-events-none absolute right-0 top-0 hidden h-[170px] w-[420px] opacity-60 lg:block"><img src="/manus-storage/assetmaster-dashboard-pattern_109e8935.png" alt="" className="h-full w-full object-cover object-left" /></div>
           <div className="relative mx-auto max-w-[1500px]"><div className="mb-5 flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.15em] text-[#A86B00]"><span className="h-px w-8 bg-[#F0A516]" /><span className="h-1.5 w-1.5 rounded-full bg-[#F0A516]" />System pulse · live inventory signal</div>
             <div className="mb-7 flex flex-col justify-between gap-4 sm:flex-row sm:items-end"><div><div className="mb-2 flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.16em] text-[#0F8C8C]"><span className="h-1.5 w-1.5 rounded-full bg-[#F0A516] shadow-[0_0_0_4px_rgba(240,165,22,0.12)]" />Asset Operations</div><h1 className="font-display text-[28px] font-extrabold tracking-[-0.045em] text-[#102A43] sm:text-[34px]">Tổng quan tài sản</h1><p className="mt-1.5 text-sm text-[#71869A]">Theo dõi, quản lý và tối ưu toàn bộ tài sản doanh nghiệp.</p></div><div className="flex items-center gap-2 text-xs text-[#71869A]"><CalendarDays size={15} /><span>Dữ liệu cập nhật lúc 09:42, 14/02/2025</span><button onClick={() => toast.success("Dữ liệu đã được làm mới.")} className="rounded-md p-1.5 text-[#0F8C8C] hover:bg-[#E8F7F5]" aria-label="Làm mới"><ArrowDownUp size={14} /></button></div></div>

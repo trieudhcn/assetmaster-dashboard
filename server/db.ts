@@ -7,6 +7,7 @@ import {
   auditSessions,
   companies,
   departments,
+  divisions,
   handovers,
   maintenanceTickets,
   type InsertUser,
@@ -68,6 +69,49 @@ export async function getActiveDepartmentById(id: number) {
   const db = await getDb();
   if (!db) return undefined;
   return (await db.select().from(departments).where(eq(departments.id, id)).limit(1))[0];
+}
+
+export async function getDepartmentByCode(code: string) {
+  const db = await getDb();
+  if (!db) return undefined;
+  return (await db.select().from(departments).where(eq(departments.code, code)).limit(1))[0];
+}
+
+export async function createDepartment(data: typeof departments.$inferInsert) {
+  const db = await getDb();
+  if (!db) throw new Error("Database unavailable");
+  const result = await db.insert(departments).values(data);
+  return Number(result[0].insertId);
+}
+
+export async function listDivisions() {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select({
+    id: divisions.id,
+    departmentId: divisions.departmentId,
+    departmentName: departments.name,
+    departmentCode: departments.code,
+    code: divisions.code,
+    name: divisions.name,
+    managerUserId: divisions.managerUserId,
+    isActive: divisions.isActive,
+    createdAt: divisions.createdAt,
+    updatedAt: divisions.updatedAt,
+  }).from(divisions).innerJoin(departments, eq(divisions.departmentId, departments.id)).where(eq(divisions.isActive, true)).orderBy(departments.name, divisions.name);
+}
+
+export async function getDivisionByCode(code: string) {
+  const db = await getDb();
+  if (!db) return undefined;
+  return (await db.select().from(divisions).where(eq(divisions.code, code)).limit(1))[0];
+}
+
+export async function createDivision(data: typeof divisions.$inferInsert) {
+  const db = await getDb();
+  if (!db) throw new Error("Database unavailable");
+  const result = await db.insert(divisions).values(data);
+  return Number(result[0].insertId);
 }
 
 export async function listAssets() {
