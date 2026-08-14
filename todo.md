@@ -71,3 +71,20 @@
 - [x] Sửa company.get để luôn trả về null thay vì undefined khi chưa có bản ghi công ty.
 - [x] Kiểm tra giao diện Cài đặt/Dashboard xử lý đúng trạng thái chưa có thông tin công ty.
 - [x] Thêm test hồi quy cho company.get và kiểm tra build sau sửa lỗi.
+
+## Employee Profile Menu
+
+- [x] Thêm menu hồ sơ có thể mở từ nút dấu ba chấm của nhân viên.
+- [x] Hiển thị họ tên, email, vai trò và thông tin tài khoản đang đăng nhập.
+- [x] Kết nối nút đăng xuất với Manus OAuth và làm mới trạng thái giao diện.
+- [x] Kiểm tra responsive, type-check, test, build và checkpoint.
+
+## Employee Profile Menu Follow-up
+
+- [x] Kiểm tra responsive desktop/mobile cho menu hồ sơ nhân viên và luồng mở/đóng menu.
+- [x] Lưu checkpoint sau khi xác nhận menu hồ sơ và đăng xuất hoạt động ổn định.
+
+## Employee Profile Menu Verification
+
+- [x] Kiểm tra desktop và mobile cho menu hồ sơ, gồm trạng thái mở/đóng và thông tin tài khoản.
+- [x] Lưu checkpoint mới sau khi xác nhận runtime menu hồ sơ và đăng xuất ổn định.

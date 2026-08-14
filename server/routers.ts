@@ -22,6 +22,7 @@ import {
   updateMaintenanceTicket,
   updateAuditItem,
 } from "./db";
+import { storagePut } from "./storage";
 
 const nullableText = z.string().trim().max(1000).optional().nullable();
 const dateFromMs = z.number().int().nonnegative().optional().nullable().transform((value) => value ? new Date(value) : null);
@@ -76,6 +77,12 @@ export const appRouter = router({
       await updateHandover(input.id, { status: input.status, recipientSignatureUrl: input.recipientSignatureUrl, handoverSignatureUrl: input.handoverSignatureUrl, signedAt: input.status === "active" ? new Date() : null });
       await recordActivity({ entityType: "handover", entityId: input.id, action: input.status, actorUserId: ctx.user.id, actorName: ctx.user.name, summary: `Cập nhật trạng thái phiếu: ${input.status}` });
       return { success: true };
+    }),
+    saveRecipientSignature: adminProcedure.input(z.object({ id: z.number().int().positive(), dataUrl: z.string().startsWith("data:image/png;base64,") })).mutation(async ({ input, ctx }) => {
+      const { url } = await storagePut(`handovers/${input.id}/recipient-${Date.now()}.png`, Buffer.from(input.dataUrl.split(",")[1], "base64"), "image/png");
+      await updateHandover(input.id, { recipientSignatureUrl: url, status: "pending_signature" });
+      await recordActivity({ entityType: "handover", entityId: input.id, action: "signature_saved", actorUserId: ctx.user.id, actorName: ctx.user.name, summary: "Lưu chữ ký người nhận" });
+      return { url };
     }),
   }),
   maintenance: router({
