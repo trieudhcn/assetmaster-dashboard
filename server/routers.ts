@@ -14,6 +14,7 @@ import {
   listAuditItems,
   listAuditSessions,
   listHandovers,
+  listHandoversByRecipient,
   listMaintenanceTickets,
   listUsers,
   recordActivity,
@@ -51,6 +52,7 @@ export const appRouter = router({
   }),
   employees: router({
     list: adminProcedure.query(() => listUsers()),
+    assetHistory: adminProcedure.input(z.object({ userId: z.number().int().positive() })).query(({ input }) => listHandoversByRecipient(input.userId)),
     updateRole: adminProcedure.input(z.object({ id: z.number().int().positive(), role: z.enum(["admin", "user"]) })).mutation(async ({ input, ctx }) => {
       await updateUserRole(input.id, input.role);
       await recordActivity({ entityType: "user", entityId: input.id, action: "role_updated", actorUserId: ctx.user.id, actorName: ctx.user.name, summary: `Cập nhật vai trò thành ${input.role}` });

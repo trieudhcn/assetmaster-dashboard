@@ -105,3 +105,21 @@
 - [ ] Thêm tìm kiếm và lọc nhân viên theo phòng ban, vai trò, trạng thái tài khoản.
 - [ ] Thêm drawer hồ sơ nhân viên với danh sách tài sản đang được cấp phát.
 - [ ] Kiểm tra quyền hạn, responsive, TypeScript, test, build và checkpoint.
+
+## Manual Department Assignment
+
+- [ ] Thêm thao tác admin gán hoặc đổi phòng ban thủ công cho từng nhân viên.
+
+## Employee Asset History
+
+- [x] Hiển thị trong hồ sơ nhân viên cả tài sản đang cấp phát và tài sản đã hoàn trả, kèm trạng thái và thời gian.
+
+## Employee Detail Drawer
+
+- [x] Hiển thị hồ sơ và lịch sử tài sản nhân viên trong drawer bên phải.
+
+## Employee Drawer Detail Follow-up
+
+- [ ] Mở rộng lịch sử tài sản với mã, tên, trạng thái và mốc thời gian đầy đủ.
+- [ ] Hiển thị phòng ban, vai trò và trạng thái tài khoản trong drawer hồ sơ nhân viên.
+- [ ] Kiểm tra preview/runtime drawer sau khi bổ sung dữ liệu chi tiết.
