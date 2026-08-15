@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import * as XLSX from "xlsx";
 import { AlertTriangle, CheckCircle2, Download, FileSpreadsheet, LoaderCircle, Pencil, Upload, X } from "lucide-react";
 import { toast } from "sonner";
@@ -30,6 +30,18 @@ export function AssetImportModal({ onClose, onImported }: { onClose: () => void;
   const [confirmStep, setConfirmStep] = useState<0 | 1 | 2>(0);
   const [acknowledged, setAcknowledged] = useState(false);
   const assetsQuery = trpc.assets.list.useQuery();
+  useEffect(() => {
+    const handleOutside = (event: PointerEvent) => {
+      const target = event.target as Node;
+      const importModal = document.querySelector<HTMLElement>('[aria-label="Import tài sản từ Excel"]');
+      const importContent = importModal?.firstElementChild;
+      const confirmation = Array.from(document.querySelectorAll<HTMLElement>("div.fixed.inset-0")).find((element) => element.textContent?.includes("Xác nhận cập nhật hàng loạt"));
+      if (confirmStep > 0 && confirmation && event.target === confirmation) { setConfirmStep(0); return; }
+      if (confirmStep === 0 && phase !== "reading" && phase !== "importing" && importContent && !importContent.contains(target)) onClose();
+    };
+    document.addEventListener("pointerdown", handleOutside);
+    return () => document.removeEventListener("pointerdown", handleOutside);
+  }, [confirmStep, phase, onClose]);
   const importMutation = trpc.assets.import.useMutation({
     onSuccess: (result) => { setServerIssues(result.errors); setConfirmStep(0); setProgress(100); setPhase("complete"); if (result.created || result.updated) { toast.success(`Đã tạo ${result.created} và cập nhật ${result.updated} tài sản.`); onImported(); } if (result.errors.length) toast.warning(`Có ${result.errors.length} dòng chưa được xử lý.`); },
     onError: (error) => { setPhase("ready"); setProgress(100); toast.error(error.message || "Không thể import tài sản."); },

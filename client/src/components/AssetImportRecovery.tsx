@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { AlertTriangle, Clock3, RotateCcw, X } from "lucide-react";
 import { toast } from "sonner";
 import { trpc } from "@/lib/trpc";
@@ -7,6 +7,15 @@ export function LatestImportUndo({ onUndone }: { onUndone: () => void }) {
   const [confirm, setConfirm] = useState(false);
   const latest = trpc.assets.latestImport.useQuery();
   const undo = trpc.assets.undoLatestImport.useMutation({ onSuccess: () => { toast.success("Đã hoàn tác phiên import gần nhất."); setConfirm(false); void latest.refetch(); onUndone(); }, onError: (error) => toast.error(error.message || "Không thể hoàn tác phiên import.") });
+  useEffect(() => {
+    if (!confirm) return;
+    const closeOutside = (event: PointerEvent) => {
+      const layer = Array.from(document.querySelectorAll<HTMLElement>("div.fixed.inset-0")).find((element) => element.textContent?.includes("Hoàn tác import gần nhất?"));
+      if (layer && event.target === layer && !undo.isPending) setConfirm(false);
+    };
+    document.addEventListener("pointerdown", closeOutside);
+    return () => document.removeEventListener("pointerdown", closeOutside);
+  }, [confirm, undo.isPending]);
   const session = latest.data;
   if (!session || session.isUndone || (session.createdCount + session.updatedCount === 0)) return null;
   const canUndo = session.canUndo;

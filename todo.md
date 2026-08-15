@@ -536,3 +536,9 @@
 - [x] Rà soát trạng thái chưa đọc và bố cục biểu tượng chuông.
 - [x] Hiển thị huy hiệu số lượng chưa đọc trên biểu tượng chuông.
 - [x] Kiểm thử desktop/mobile, TypeScript, build và phát hành checkpoint.
+
+## Đóng popup và modal khi click ngoài
+
+- [x] Rà soát toàn bộ popup, menu hồ sơ và modal trong ứng dụng.
+- [x] Bổ sung đóng khi click ngoài vùng nội dung, trừ lúc đang xử lý thao tác.
+- [x] Kiểm thử desktop/mobile, TypeScript, build và phát hành checkpoint.
