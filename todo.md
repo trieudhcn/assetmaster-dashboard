@@ -469,3 +469,9 @@
 - [x] Thêm bảng thông báo chi tiết khi nhấp chuông.
 - [x] Thêm menu avatar với trang cá nhân và đăng xuất.
 - [x] Kiểm thử tương tác header, build và phát hành checkpoint.
+
+## Đánh dấu thông báo đã đọc
+
+- [x] Rà soát trạng thái bảng thông báo hiện có.
+- [x] Thêm thao tác đánh dấu tất cả là đã đọc và cập nhật trạng thái hiển thị.
+- [x] Kiểm thử tương tác thông báo, build và phát hành checkpoint.
