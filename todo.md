@@ -496,3 +496,9 @@
 - [x] Lưu tùy chọn bật/tắt từng loại thông báo của người dùng.
 - [x] Loại bỏ hoặc điều chỉnh tooltip bị che khuất ở khu vực thông tin người dùng.
 - [x] Kiểm thử desktop/mobile, TypeScript, build và phát hành checkpoint.
+
+## Thông báo kết quả hoàn trả
+
+- [x] Rà soát dữ liệu duyệt/từ chối yêu cầu hoàn trả hiện có.
+- [x] Hiển thị thông báo kết quả duyệt hoặc từ chối cho người dùng liên quan.
+- [x] Kiểm thử điều hướng, TypeScript, build và phát hành checkpoint.
