@@ -205,8 +205,9 @@ describe("employee administration", () => {
     mocks.getHandoverById.mockResolvedValue({ id: 99, assetCode: "TS-00099", recipientUserId: 8, status: "active", returnRequestStatus: "pending" });
     const caller = appRouter.createCaller(adminContext);
 
-    await expect(caller.handovers.resolveReturnRequest({ id: 99, decision: "approved", resolution: null })).resolves.toEqual({ success: true });
-    expect(mocks.transitionHandoverStatus).toHaveBeenCalledWith(99, "returned", expect.objectContaining({ returnRequestStatus: "approved", returnRequestResolvedByUserId: 1 }));
+    await expect(caller.handovers.resolveReturnRequest({ id: 99, decision: "approved", conditionIn: null, resolution: null })).rejects.toMatchObject({ code: "BAD_REQUEST" });
+    await expect(caller.handovers.resolveReturnRequest({ id: 99, decision: "approved", conditionIn: "Tốt", resolution: null })).resolves.toEqual({ success: true });
+    expect(mocks.transitionHandoverStatus).toHaveBeenCalledWith(99, "returned", expect.objectContaining({ returnRequestStatus: "approved", returnRequestResolvedByUserId: 1, conditionIn: "Tốt" }));
   });
 
   it("allows administrators to create suppliers and brands while restricting employees", async () => {

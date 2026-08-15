@@ -544,7 +544,12 @@ function AssignmentsPage({ showComingSoon, companyInfo }: { showComingSoon: (lab
       approveButton.type = "button";
       approveButton.className = "rounded-lg bg-[#0F8C8C] px-3 py-2 text-xs font-bold text-white hover:bg-[#087A6A]";
       approveButton.textContent = "Duyệt hoàn trả";
-      approveButton.onclick = () => { if (window.confirm(`Duyệt hoàn trả ${item.assetCode}? Tài sản sẽ trở về trạng thái sẵn có.`)) resolveReturnRequest.mutate({ id: item.id, decision: "approved", resolution: null }); };
+      approveButton.onclick = () => {
+        const conditionIn = window.prompt(`Ghi nhận tình trạng thực tế của ${item.assetCode} khi nhận lại:`, "Tốt");
+        if (conditionIn === null) return;
+        if (!conditionIn.trim()) { toast.error("Vui lòng ghi nhận tình trạng thực tế của tài sản."); return; }
+        if (window.confirm(`Duyệt hoàn trả ${item.assetCode}? Tài sản sẽ trở về trạng thái sẵn có.`)) resolveReturnRequest.mutate({ id: item.id, decision: "approved", conditionIn: conditionIn.trim(), resolution: null });
+      };
       actions.append(rejectButton, approveButton);
       row.appendChild(actions);
       queue.appendChild(row);

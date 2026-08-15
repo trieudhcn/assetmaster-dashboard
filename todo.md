@@ -315,3 +315,10 @@
 - [x] Hiển thị ngày nhận và hạn dự kiến hoàn trả trên từng tài sản của User.
 - [x] Cho phép User gửi yêu cầu hoàn trả; Admin nhận diện và xử lý yêu cầu trong Bàn giao.
 - [x] Thêm kiểm thử phân quyền, xác minh responsive, TypeScript, build và phát hành checkpoint.
+
+## Hoàn thiện trạng thái & lịch sử hoàn trả
+
+- [x] Rà soát dữ liệu yêu cầu hoàn trả và giao diện Admin/User hiện có.
+- [x] Hiển thị rõ trạng thái yêu cầu và lịch sử tài sản đã trả trên dashboard User.
+- [x] Cho phép Admin ghi chú tình trạng thực tế khi duyệt hoàn trả.
+- [x] Thêm kiểm thử luồng, xác minh responsive, TypeScript, build và phát hành checkpoint.
