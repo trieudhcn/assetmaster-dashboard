@@ -15,6 +15,8 @@ function getTooltipTarget(target: EventTarget | null) {
 
 export function FloatingActionTooltip() {
   const activeTargetRef = useRef<HTMLElement | null>(null);
+  const pendingTargetRef = useRef<HTMLElement | null>(null);
+  const showTimerRef = useRef<number | null>(null);
   const [tooltip, setTooltip] = useState<TooltipState | null>(null);
 
   const positionTooltip = (target: HTMLElement) => {
@@ -32,16 +34,35 @@ export function FloatingActionTooltip() {
   };
 
   useEffect(() => {
+    const clearPendingTooltip = () => {
+      if (showTimerRef.current) window.clearTimeout(showTimerRef.current);
+      showTimerRef.current = null;
+      pendingTargetRef.current = null;
+    };
+    const revealTooltip = (target: HTMLElement) => {
+      clearPendingTooltip();
+      activeTargetRef.current = target;
+      positionTooltip(target);
+    };
     const show = (event: Event) => {
       const target = getTooltipTarget(event.target);
       if (!target || target.matches(":disabled")) return;
-      activeTargetRef.current = target;
-      positionTooltip(target);
+      if (event.type === "focusin") {
+        revealTooltip(target);
+        return;
+      }
+      if (pendingTargetRef.current === target || activeTargetRef.current === target) return;
+      clearPendingTooltip();
+      pendingTargetRef.current = target;
+      showTimerRef.current = window.setTimeout(() => {
+        if (pendingTargetRef.current === target) revealTooltip(target);
+      }, 280);
     };
     const hide = (event: Event) => {
       const target = getTooltipTarget(event.target);
       const nextTarget = (event as MouseEvent | FocusEvent).relatedTarget;
       const remainsInsideTarget = nextTarget instanceof Node && target?.contains(nextTarget);
+      if (target && pendingTargetRef.current === target && !remainsInsideTarget) clearPendingTooltip();
       if (target && activeTargetRef.current === target && !remainsInsideTarget) {
         activeTargetRef.current = null;
         setTooltip(null);
@@ -64,6 +85,7 @@ export function FloatingActionTooltip() {
       document.removeEventListener("focusout", hide);
       window.removeEventListener("resize", reposition);
       document.removeEventListener("scroll", reposition, true);
+      clearPendingTooltip();
     };
   }, []);
 

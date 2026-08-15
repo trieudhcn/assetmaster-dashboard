@@ -576,3 +576,9 @@
 - [x] Rà soát lỗi tooltip che nội dung trong bảng thao tác bàn giao.
 - [x] Điều chỉnh khoảng cách và hướng hiển thị tooltip theo vùng trống thực tế.
 - [x] Bổ sung kiểm thử hồi quy, xác minh giao diện và phát hành checkpoint.
+
+## Độ trễ hover và tooltip mobile
+
+- [x] Thêm độ trễ ngắn trước khi hiển thị tooltip icon trên desktop.
+- [x] Tối ưu hành vi tooltip và vùng chạm icon cho màn hình thiết bị di động.
+- [x] Bổ sung kiểm thử hồi quy, xác minh responsive và phát hành checkpoint.

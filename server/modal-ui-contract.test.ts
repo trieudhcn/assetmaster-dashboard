@@ -12,6 +12,7 @@ describe("modal presentation contract", () => {
 
     expect(tooltipComponent).toContain("createPortal");
     expect(tooltipComponent).toContain("document.body");
+    expect(tooltipComponent).toContain("}, 280)");
     expect(home).toContain("<FloatingActionTooltip />");
   });
 
@@ -23,5 +24,7 @@ describe("modal presentation contract", () => {
     expect(stylesheet).toContain("overflow-y: auto");
     expect(stylesheet).toContain("overscroll-behavior: contain");
     expect(stylesheet).toContain("scrollbar-gutter: stable");
+    expect(stylesheet).toContain("@media (hover: none), (pointer: coarse)");
+    expect(stylesheet).toContain("min-width: 2.5rem");
   });
 });
