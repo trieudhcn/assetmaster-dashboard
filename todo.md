@@ -523,3 +523,10 @@
 - [x] Hiển thị lịch sử quyết định duyệt hoặc từ chối trong chi tiết phiếu.
 - [x] Sửa hiển thị bất thường trong trường tiêu đề website.
 - [x] Kiểm thử desktop/mobile, TypeScript, build và phát hành checkpoint.
+
+## Tinh gọn thao tác thông báo
+
+- [x] Rà soát các nút tùy chọn, đánh dấu đã đọc và mở phiếu trong bảng thông báo.
+- [x] Thay các thao tác phù hợp bằng biểu tượng có tooltip hover/focus.
+- [x] Điều chỉnh cỡ chữ và bố cục để các thao tác từng thông báo nằm cùng một hàng.
+- [x] Kiểm thử desktop/mobile, TypeScript, build và phát hành checkpoint.
