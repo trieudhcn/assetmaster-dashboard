@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { fieldChanges } from "./routers";
+import { canUndoImport, fieldChanges, getImportUndoDeadline } from "./routers";
 
 describe("asset field history", () => {
   it("records only the fields that changed during an import", () => {
@@ -17,5 +17,12 @@ describe("asset field history", () => {
       expect.objectContaining({ fieldName: "maintenanceReason", previousValue: "Thay pin", nextValue: null, source: "undo" }),
       expect.objectContaining({ fieldName: "isArchived", previousValue: "false", nextValue: "true" }),
     ]));
+  });
+
+  it("allows undo for 24 hours and rejects an expired import session", () => {
+    const createdAt = new Date("2026-08-15T00:00:00.000Z");
+    expect(getImportUndoDeadline(createdAt).toISOString()).toBe("2026-08-16T00:00:00.000Z");
+    expect(canUndoImport(createdAt, new Date("2026-08-15T23:59:59.999Z"))).toBe(true);
+    expect(canUndoImport(createdAt, new Date("2026-08-16T00:00:00.001Z"))).toBe(false);
   });
 });

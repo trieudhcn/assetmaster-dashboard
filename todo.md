@@ -422,3 +422,16 @@
 - [x] Triển khai API import, hoàn tác import gần nhất và truy vấn lịch sử.
 - [x] Bổ sung giao diện hoàn tác và lịch sử thay đổi trong hồ sơ tài sản.
 - [x] Thêm kiểm thử, xác minh giao diện, migration, build và phát hành checkpoint.
+
+## Sửa lỗi API phiên import gần nhất
+
+- [x] Rà soát phản hồi rỗng của API latestImport.
+- [x] Chuẩn hóa giá trị null và thêm kiểm thử hồi quy.
+- [x] Xác minh dashboard, build và phát hành checkpoint.
+
+## Thời hạn hoàn tác import
+
+- [x] Rà soát quy tắc thời hạn hoàn tác 24 giờ.
+- [x] Chặn API hoàn tác khi phiên import đã quá hạn.
+- [x] Hiển thị thời điểm hết hạn và trạng thái khóa trên giao diện.
+- [x] Thêm kiểm thử, xác minh build và phát hành checkpoint.

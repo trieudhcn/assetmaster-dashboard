@@ -124,6 +124,13 @@ export function fieldChanges(assetId: number, before: Record<string, unknown>, a
 function importAssetValues(row: z.infer<typeof assetImportRow>, brandId: number | null) {
   return { name: row.name, status: row.status, condition: row.condition, purchaseDate: row.purchaseDate, purchaseValue: row.purchaseValue, vendor: row.vendor, vendorId: null, brandId, serialNumber: row.serialNumber, location: row.location, warrantyUntil: row.warrantyUntil, metadata: row.category ? { category: row.category } : null, note: row.note, maintenanceReason: row.status === "maintenance" ? row.maintenanceReason : null, isArchived: false };
 }
+export const IMPORT_UNDO_WINDOW_MS = 24 * 60 * 60 * 1000;
+export function getImportUndoDeadline(createdAt: Date) {
+  return new Date(createdAt.getTime() + IMPORT_UNDO_WINDOW_MS);
+}
+export function canUndoImport(createdAt: Date, now = new Date()) {
+  return now.getTime() <= getImportUndoDeadline(createdAt).getTime();
+}
 
 export const appRouter = router({
   system: systemRouter,
@@ -363,12 +370,18 @@ export const appRouter = router({
       if (created || updated) await recordActivity({ entityType: "assetImport", entityId: sessionId, action: "imported", actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: `Import Excel: tạo ${created}, cập nhật ${updated} tài sản${errors.length ? `; bỏ qua ${errors.length} dòng lỗi` : ""}` });
       return { created, updated, errors, sessionId };
     }),
-    latestImport: adminProcedure.query(() => getLatestAssetImportSession()),
+    latestImport: adminProcedure.query(async () => {
+      const session = await getLatestAssetImportSession();
+      if (!session) return null;
+      const undoDeadline = getImportUndoDeadline(session.createdAt);
+      return { ...session, undoDeadline, canUndo: !session.isUndone && canUndoImport(session.createdAt) };
+    }),
     history: adminProcedure.input(z.object({ assetId: z.number().int().positive() })).query(({ input }) => listAssetFieldChanges(input.assetId)),
     undoLatestImport: adminProcedure.input(z.object({ sessionId: z.number().int().positive() })).mutation(async ({ input, ctx }) => {
       const latest = await getLatestAssetImportSession();
       if (!latest || latest.id !== input.sessionId) throw new TRPCError({ code: "BAD_REQUEST", message: "Chỉ có thể hoàn tác phiên import gần nhất." });
       if (latest.isUndone) throw new TRPCError({ code: "BAD_REQUEST", message: "Phiên import này đã được hoàn tác." });
+      if (!canUndoImport(latest.createdAt)) throw new TRPCError({ code: "BAD_REQUEST", message: "Đã quá thời hạn 24 giờ cho phép hoàn tác phiên import này." });
       const items = await listAssetImportItems(latest.id);
       for (const item of items) {
         const current = await getAssetById(item.assetId);
