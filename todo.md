@@ -435,3 +435,9 @@
 - [x] Chặn API hoàn tác khi phiên import đã quá hạn.
 - [x] Hiển thị thời điểm hết hạn và trạng thái khóa trên giao diện.
 - [x] Thêm kiểm thử, xác minh build và phát hành checkpoint.
+
+## Cảnh báo sắp hết hạn hoàn tác
+
+- [x] Rà soát dữ liệu thời hạn hoàn tác hiện có.
+- [x] Hiển thị cảnh báo rõ ràng khi còn ít thời gian hoàn tác.
+- [x] Thêm kiểm thử, xác minh build và phát hành checkpoint.
