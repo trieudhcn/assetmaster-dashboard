@@ -99,8 +99,19 @@ describe("modal presentation contract", () => {
     expect(home).toContain("Mở lịch chọn ngày mua");
     expect(home).toContain("dateInput.showPicker");
     expect(categories).toContain("trpc.assets.list.useQuery");
-    expect(categories).toContain("assetCountByCategory");
-    expect(categories).toContain("tài sản</span>");
+    expect(categories).toContain("assetStatsByCategory");
+    expect(categories).toContain("{stats.total} tài sản</button>");
     expect(stylesheet).toContain(".asset-date-input::-webkit-calendar-picker-indicator");
+  });
+
+  it("keeps category search clearing contained and safeguards categories with linked assets", () => {
+    const categories = readProjectFile("client/src/pages/AssetCategoryManagementPage.tsx");
+
+    expect(categories).toContain('<div className="relative mt-3"><input value={query}');
+    expect(categories).toContain("Vô hiệu hóa Phân loại đang có tài sản?");
+    expect(categories).toContain("Không thể xóa Phân loại đang có tài sản");
+    expect(categories).toContain("Đang sử dụng:");
+    expect(categories).toContain("Hỏng:");
+    expect(categories).toContain("Bảo trì:");
   });
 });

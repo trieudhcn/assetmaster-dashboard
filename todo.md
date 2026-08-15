@@ -656,3 +656,10 @@
 - [x] Thêm icon lịch có thể nhấp để mở chọn ngày trong form tài sản.
 - [x] Hiển thị số lượng tài sản thực tế trên từng Phân loại trong danh sách quản trị.
 - [x] Bổ sung kiểm thử giao diện, dữ liệu và phát hành checkpoint.
+
+## Trạng thái và an toàn Phân loại
+
+- [x] Đưa nút xóa nội dung về đúng bên trong ô tìm kiếm Phân loại.
+- [x] Hiển thị tooltip chi tiết số tài sản theo trạng thái trên huy hiệu Phân loại.
+- [x] Thêm xác nhận trước khi vô hiệu hóa hoặc xóa Phân loại đang có tài sản gắn liền.
+- [x] Bổ sung kiểm thử giao diện, dữ liệu và phát hành checkpoint.
