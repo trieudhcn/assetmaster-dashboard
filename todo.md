@@ -441,3 +441,10 @@
 - [x] Rà soát dữ liệu thời hạn hoàn tác hiện có.
 - [x] Hiển thị cảnh báo rõ ràng khi còn ít thời gian hoàn tác.
 - [x] Thêm kiểm thử, xác minh build và phát hành checkpoint.
+
+## Cài đặt thương hiệu công ty
+
+- [x] Rà soát dữ liệu công ty, giao diện cài đặt và luồng lưu logo hiện có.
+- [x] Mở rộng API lưu logo và tiêu đề website.
+- [x] Bổ sung giao diện thay đổi logo, tiêu đề và áp dụng toàn trang.
+- [x] Thêm kiểm thử, xác minh tải tệp, TypeScript, build và phát hành checkpoint.

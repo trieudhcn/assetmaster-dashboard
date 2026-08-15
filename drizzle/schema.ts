@@ -23,6 +23,7 @@ export const companies = mysqlTable("companies", {
   phone: varchar("phone", { length: 32 }),
   email: varchar("email", { length: 320 }),
   logoUrl: text("logoUrl"),
+  websiteTitle: varchar("websiteTitle", { length: 120 }),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });

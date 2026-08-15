@@ -1,0 +1,1 @@
+ALTER TABLE `companies` ADD `websiteTitle` varchar(120);

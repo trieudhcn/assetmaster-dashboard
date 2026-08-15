@@ -140,10 +140,19 @@ export const appRouter = router({
   }),
   company: router({
     get: adminProcedure.query(() => getCompany()),
-    save: adminProcedure.input(z.object({ name: z.string().trim().min(2).max(255), address: nullableText, taxCode: nullableText, phone: nullableText, email: z.string().email().optional().nullable(), logoUrl: nullableText })).mutation(async ({ input, ctx }) => {
+    save: adminProcedure.input(z.object({ name: z.string().trim().min(2).max(255), address: nullableText, taxCode: nullableText, phone: nullableText, email: z.string().email().optional().nullable(), logoUrl: nullableText, websiteTitle: z.string().trim().min(2).max(120).optional().nullable() })).mutation(async ({ input, ctx }) => {
       const id = await saveCompany(input);
       await recordActivity({ entityType: "company", entityId: id, action: "updated", actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: "Cập nhật thông tin công ty" });
       return { id };
+    }),
+    uploadLogo: adminProcedure.input(z.object({ fileName: z.string().trim().min(1).max(255), contentType: z.enum(["image/png", "image/jpeg", "image/webp"]), dataUrl: z.string().max(4_000_000).regex(/^data:image\/(png|jpeg|webp);base64,/) })).mutation(async ({ input, ctx }) => {
+      const base64 = input.dataUrl.split(",")[1];
+      const bytes = Buffer.from(base64 || "", "base64");
+      if (!bytes.length || bytes.length > 2 * 1024 * 1024) throw new TRPCError({ code: "BAD_REQUEST", message: "Logo phải là ảnh PNG, JPG hoặc WebP và không vượt quá 2 MB." });
+      const extension = input.contentType === "image/png" ? "png" : input.contentType === "image/jpeg" ? "jpg" : "webp";
+      const stored = await storagePut(`company-brand/logo-${crypto.randomUUID()}.${extension}`, bytes, input.contentType);
+      await recordActivity({ entityType: "company", entityId: 0, action: "logo_uploaded", actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: `Tải logo công ty ${input.fileName}` });
+      return { url: stored.url };
     }),
   }),
   employees: router({

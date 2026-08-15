@@ -29,6 +29,7 @@ import { LoginGateway } from "./LoginGateway";
 import { UserDashboard } from "./UserDashboard";
 import { AssetImportModal } from "@/components/AssetImportModal";
 import { AssetFieldHistoryDrawer, LatestImportUndo } from "@/components/AssetImportRecovery";
+import { CompanyBrandSettings } from "@/components/CompanyBrandSettings";
 import {
   Archive,
   ArrowDownUp,
@@ -112,6 +113,8 @@ type CompanyInfo = {
   address: string;
   taxCode: string;
   phone: string;
+  websiteTitle: string;
+  logoUrl: string;
 };
 
 const defaultCompanyInfo: CompanyInfo = {
@@ -119,6 +122,8 @@ const defaultCompanyInfo: CompanyInfo = {
   address: "Tầng 5, Tòa nhà Innovation, Quận Cầu Giấy, Hà Nội",
   taxCode: "0101234567",
   phone: "024 3789 2468",
+  websiteTitle: "AssetMaster – Hệ thống Quản lý Tài sản",
+  logoUrl: "",
 };
 
 function readCompanyInfo(): CompanyInfo {
@@ -260,8 +265,9 @@ export default function Home() {
 
   useEffect(() => {
     if (!companyQuery.data) return;
-    const next = { name: companyQuery.data.name, address: companyQuery.data.address || "", taxCode: companyQuery.data.taxCode || "", phone: companyQuery.data.phone || "" };
+    const next = { name: companyQuery.data.name, address: companyQuery.data.address || "", taxCode: companyQuery.data.taxCode || "", phone: companyQuery.data.phone || "", websiteTitle: companyQuery.data.websiteTitle || "AssetMaster – Hệ thống Quản lý Tài sản", logoUrl: companyQuery.data.logoUrl || "" };
     setCompanyInfo(next);
+    document.title = next.websiteTitle;
     localStorage.setItem("assetmaster-company-info", JSON.stringify(next));
   }, [companyQuery.data]);
 
@@ -376,11 +382,11 @@ export default function Home() {
       <aside className={`fixed inset-y-0 left-0 z-40 flex w-[264px] flex-col border-r border-[#DDE7F0] bg-[#102A43] px-4 py-5 shadow-[8px_0_30px_rgba(16,42,67,0.16)] transition-transform duration-200 lg:translate-x-0 ${mobileNavOpen ? "translate-x-0" : "-translate-x-full"}`}>
         <div className="flex items-center gap-3 px-3 pb-8">
           <div className="grid h-10 w-10 place-items-center rounded-[13px] bg-[#0F8C8C] shadow-[0_8px_18px_rgba(15,140,140,0.24)]">
-            <img src="/manus-storage/assetmaster-logo_f5d79b06.png" alt="" className="h-7 w-7 object-contain" />
+            <img src={companyInfo.logoUrl || "/manus-storage/assetmaster-logo_f5d79b06.png"} alt="Logo công ty" className="h-7 w-7 object-contain" />
           </div>
           <div>
-            <div className="font-display text-[18px] font-extrabold tracking-[-0.04em] text-white">Asset<span className="text-[#0F8C8C]">Master</span></div>
-            <div className="mt-0.5 text-[10px] font-bold uppercase tracking-[0.14em] text-[#A5C3D2]">Enterprise OS</div>
+            <div title={companyInfo.websiteTitle} className="max-w-[158px] truncate font-display text-[16px] font-extrabold tracking-[-0.04em] text-white">{companyInfo.websiteTitle}</div>
+            <div className="mt-0.5 text-[10px] font-bold uppercase tracking-[0.14em] text-[#A5C3D2]">{companyInfo.name}</div>
           </div>
           <button className="ml-auto rounded-lg p-1 text-[#8AA0B6] hover:bg-[#F0F5F8] lg:hidden" onClick={() => setMobileNavOpen(false)} aria-label="Đóng menu"><X size={18} /></button>
         </div>
@@ -426,7 +432,7 @@ export default function Home() {
         </header>
 
         {activeNav === "Bàn giao & Cấp phát" ? <AssignmentsPage showComingSoon={showComingSoon} companyInfo={companyInfo} /> : null}
-        {activeNav === "Cài đặt" ? <CompanySettingsPage companyInfo={companyInfo} onSave={(next) => { setCompanyInfo(next); localStorage.setItem("assetmaster-company-info", JSON.stringify(next)); saveCompanyMutation.mutate({ name: next.name, address: next.address || null, taxCode: next.taxCode || null, phone: next.phone || null }); toast.success("Đã lưu thông tin công ty."); }} /> : null}
+        {activeNav === "Cài đặt" ? <CompanyBrandSettings companyInfo={companyInfo} onSave={(next) => { setCompanyInfo(next); localStorage.setItem("assetmaster-company-info", JSON.stringify(next)); document.title = next.websiteTitle; saveCompanyMutation.mutate({ name: next.name, address: next.address || null, taxCode: next.taxCode || null, phone: next.phone || null, logoUrl: next.logoUrl || null, websiteTitle: next.websiteTitle || null }, { onSuccess: () => { void companyQuery.refetch(); toast.success("Đã lưu cài đặt thương hiệu."); }, onError: (error) => toast.error(error.message || "Không thể lưu cài đặt thương hiệu.") }); }} /> : null}
         {activeNav === "Bảo trì & Báo hỏng" ? <MaintenancePage /> : null}
         {activeNav === "Kiểm kê" ? <AuditPage /> : null}
         {activeNav === "Báo cáo" ? <ReportsManagementView /> : null}
