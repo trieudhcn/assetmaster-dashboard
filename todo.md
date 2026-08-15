@@ -563,3 +563,10 @@
 - [x] Rà soát lớp tooltip và sự kiện click ngoài của bảng thông báo.
 - [x] Đưa tooltip ra khỏi vùng bị cắt và bảo đảm bảng đóng khi click ngoài.
 - [x] Kiểm thử desktop/mobile, TypeScript, build và phát hành checkpoint.
+
+## Khung cuộn và tooltip của modal
+
+- [x] Rà soát toàn bộ modal, drawer và popover có vùng nội dung cuộn.
+- [x] Ngăn thanh cuộn hoặc nội dung tràn ra ngoài khung modal trên desktop/mobile.
+- [x] Đảm bảo tooltip thao tác hiển thị trên lớp modal, không bị cắt hoặc che khuất.
+- [x] Bổ sung kiểm thử hồi quy, xác minh giao diện và phát hành checkpoint.
