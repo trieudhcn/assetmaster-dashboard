@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { canCreateCatalogOption, filterNamedCatalogOptions, getPaginationWindow, matchesVietnameseSearch, normalizeVietnameseSearch } from "../client/src/lib/catalogUi";
+import { canCreateCatalogOption, filterNamedCatalogOptions, getPaginationWindow, matchesVietnameseSearch, normalizeVietnameseSearch, toggleMaintenanceStatusFilter } from "../client/src/lib/catalogUi";
 
 describe("Catalog UI helpers", () => {
   it("clamps pagination and preserves a non-overlapping final record range", () => {
@@ -25,5 +25,10 @@ describe("Catalog UI helpers", () => {
     expect(canCreateCatalogOption("Sao Mai", 0)).toBe(true);
     expect(canCreateCatalogOption("Sao Mai", 1)).toBe(false);
     expect(canCreateCatalogOption("S", 0)).toBe(false);
+  });
+
+  it("toggles the maintenance-only status filter without resetting other filters", () => {
+    expect(toggleMaintenanceStatusFilter("Tất cả trạng thái")).toBe("Bảo trì");
+    expect(toggleMaintenanceStatusFilter("Bảo trì")).toBe("Tất cả trạng thái");
   });
 });

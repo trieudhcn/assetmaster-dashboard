@@ -7,7 +7,7 @@ import QRCodeGenerator from "qrcode";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { startLogin } from "@/const";
 import { trpc } from "@/lib/trpc";
-import { canCreateCatalogOption, filterNamedCatalogOptions, getPaginationWindow, matchesVietnameseSearch } from "@/lib/catalogUi";
+import { canCreateCatalogOption, filterNamedCatalogOptions, getPaginationWindow, matchesVietnameseSearch, toggleMaintenanceStatusFilter } from "@/lib/catalogUi";
 import { handoverPdfFontUrl, registerVietnamesePdfFont } from "@/lib/handoverPdf";
 import {
   AlertDialog,
@@ -443,6 +443,21 @@ function PaginatedAssetCatalogPage({ assets, query, category, status, department
       if (tooltip) button.title = tooltip;
     });
   }, [pageAssets]);
+  useEffect(() => {
+    const resetButton = Array.from(document.querySelectorAll<HTMLButtonElement>("button")).find((button) => button.textContent?.trim() === "Đặt lại bộ lọc");
+    const controls = resetButton?.parentElement;
+    if (!controls) return;
+    const maintenanceButton = document.createElement("button");
+    maintenanceButton.type = "button";
+    maintenanceButton.dataset.maintenanceFilter = "true";
+    maintenanceButton.className = status === "Bảo trì" ? "flex h-9 items-center justify-center gap-2 rounded-lg bg-[#A86B00] px-3 text-xs font-bold text-white" : "flex h-9 items-center justify-center gap-2 rounded-lg border border-[#F2D596] bg-[#FFF9EB] px-3 text-xs font-bold text-[#A86B00] hover:bg-white";
+    maintenanceButton.textContent = "Tài sản bảo trì";
+    maintenanceButton.title = status === "Bảo trì" ? "Bỏ lọc tài sản đang bảo trì" : "Chỉ hiển thị tài sản đang bảo trì";
+    const toggleMaintenance = () => onStatusChange(toggleMaintenanceStatusFilter(status));
+    maintenanceButton.addEventListener("click", toggleMaintenance);
+    resetButton.before(maintenanceButton);
+    return () => { maintenanceButton.removeEventListener("click", toggleMaintenance); maintenanceButton.remove(); };
+  }, [status, onStatusChange]);
   useEffect(() => {
     const legacyFooter = document.querySelector("section.overflow-hidden > div:last-child");
     legacyFooter?.classList.add("hidden");
@@ -911,6 +926,22 @@ function AssetModal({ mode, asset, formData, setFormData, onClose, onSave, onEdi
     supplierCard.after(brandCard);
     return () => brandCard.remove();
   }, [isDetail, asset?.brand]);
+  useEffect(() => {
+    if (!isDetail || asset?.statusType !== "maintenance") return;
+    const dialog = document.querySelector('[role="dialog"][aria-label="Chi tiết tài sản"]');
+    const noteLabel = Array.from(dialog?.querySelectorAll("div") || []).find((node) => node.textContent === "Ghi chú");
+    const noteCard = noteLabel?.parentElement;
+    if (!noteCard || noteCard.parentElement?.querySelector("[data-asset-maintenance-reason]")) return;
+    const reasonCard = noteCard.cloneNode(true) as HTMLElement;
+    reasonCard.dataset.assetMaintenanceReason = "true";
+    const label = reasonCard.querySelector("div");
+    const value = label?.nextElementSibling;
+    if (label) label.textContent = "Lý do bảo trì";
+    if (value) value.textContent = asset.maintenanceReason?.trim() || "Chưa ghi nhận lý do";
+    reasonCard.classList.add("border-[#F2D596]", "bg-[#FFF9EB]");
+    noteCard.before(reasonCard);
+    return () => reasonCard.remove();
+  }, [isDetail, asset?.statusType, asset?.maintenanceReason]);
   const createVendorMutation = trpc.vendors.create.useMutation({
     onSuccess: async (result) => {
       const created = await vendorsQuery.refetch();

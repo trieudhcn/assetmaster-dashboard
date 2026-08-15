@@ -31,3 +31,7 @@ export function getPaginationWindow(totalItems: number, requestedPage: number, p
 export function filterNamedCatalogOptions<T extends NamedCatalogOption>(items: T[], keyword: string) {
   return items.filter((item) => matchesVietnameseSearch(item.name, keyword));
 }
+
+export function toggleMaintenanceStatusFilter(currentStatus: string) {
+  return currentStatus === "Bảo trì" ? "Tất cả trạng thái" : "Bảo trì";
+}

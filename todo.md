@@ -366,3 +366,10 @@
 - [x] Tự động mở modal bàn giao khi chọn trạng thái Đang cấp phát.
 - [x] Bắt buộc nhập và lưu lý do bảo trì khi chọn trạng thái Bảo trì.
 - [x] Thêm kiểm thử, xác minh responsive, TypeScript, build và phát hành checkpoint.
+
+## Theo dõi lý do & tài sản bảo trì
+
+- [x] Rà soát dữ liệu lý do bảo trì và bộ lọc Danh mục hiện có.
+- [x] Hiển thị rõ lý do bảo trì trong hồ sơ chi tiết tài sản.
+- [x] Bổ sung bộ lọc nhanh cho các tài sản đang Bảo trì/sửa chữa.
+- [x] Thêm kiểm thử, xác minh responsive, TypeScript, build và phát hành checkpoint.
