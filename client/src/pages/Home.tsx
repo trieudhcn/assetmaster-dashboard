@@ -28,6 +28,7 @@ import { VendorBrandManagementPage } from "./VendorBrandManagementPage";
 import { LoginGateway } from "./LoginGateway";
 import { UserDashboard } from "./UserDashboard";
 import { AssetImportModal } from "@/components/AssetImportModal";
+import { AssetFieldHistoryDrawer, LatestImportUndo } from "@/components/AssetImportRecovery";
 import {
   Archive,
   ArrowDownUp,
@@ -218,6 +219,7 @@ export default function Home() {
   const [handoverAssetCode, setHandoverAssetCode] = useState<string | null>(null);
   const [qrLookupOpen, setQrLookupOpen] = useState(false);
   const [assetImportOpen, setAssetImportOpen] = useState(false);
+  const [assetHistoryId, setAssetHistoryId] = useState<number | null>(null);
   const [formData, setFormData] = useState<Asset>({ code: "", name: "", category: "CNTT", holder: "", status: "Sẵn có", statusType: "available", date: "14/02/2025", value: "", location: "", serial: "", supplier: "", note: "" });
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState("Tất cả loại tài sản");
@@ -241,6 +243,12 @@ export default function Home() {
     const openImport = () => setAssetImportOpen(true);
     window.addEventListener("assetmaster:open-asset-import", openImport);
     return () => window.removeEventListener("assetmaster:open-asset-import", openImport);
+  }, []);
+
+  useEffect(() => {
+    const openHistory = (event: Event) => setAssetHistoryId(Number((event as CustomEvent<number>).detail) || null);
+    window.addEventListener("assetmaster:open-asset-history", openHistory);
+    return () => window.removeEventListener("assetmaster:open-asset-history", openHistory);
   }, []);
 
   useEffect(() => {
@@ -455,6 +463,8 @@ export default function Home() {
         </div>
         {assetModal && <AssetModal mode={assetModal} asset={selectedAsset} formData={formData} setFormData={setFormData} onClose={() => setAssetModal(null)} onSave={saveAsset} onEdit={() => selectedAsset && openEditModal(selectedAsset)} onStartHandover={(assetCode) => { setAssetModal(null); setHandoverAssetCode(assetCode); }} />}
         {assetImportOpen && <AssetImportModal onClose={() => setAssetImportOpen(false)} onImported={() => { void assetQuery.refetch(); }} />}
+        {isAdmin && <LatestImportUndo onUndone={() => { void assetQuery.refetch(); }} />}
+        {assetHistoryId && <AssetFieldHistoryDrawer assetId={assetHistoryId} onClose={() => setAssetHistoryId(null)} />}
         {qrAsset && <AssetQrModal asset={qrAsset} onClose={() => setQrAsset(null)} />}
         {qrLookupOpen && <QrLookupModal assets={assetRows} onClose={() => setQrLookupOpen(false)} onOpenAsset={(asset) => { setQrLookupOpen(false); setSelectedAsset(asset); setAssetModal("detail"); }} />}
         {handoverAssetCode && <AssetQuickHandoverModal assetCode={handoverAssetCode} onClose={() => setHandoverAssetCode(null)} />}
@@ -997,6 +1007,22 @@ function AssetModal({ mode, asset, formData, setFormData, onClose, onSave, onEdi
     supplierCard.after(brandCard);
     return () => brandCard.remove();
   }, [isDetail, asset?.brand]);
+  useEffect(() => {
+    if (!isDetail || !persistedAsset?.id) return;
+    const dialog = document.querySelector('[role="dialog"][aria-label="Chi tiết tài sản"]');
+    const closeButton = dialog?.querySelector('button[aria-label="Đóng"]');
+    const header = closeButton?.parentElement;
+    if (!header || header.querySelector("[data-asset-field-history]")) return;
+    const historyButton = document.createElement("button");
+    historyButton.type = "button";
+    historyButton.dataset.assetFieldHistory = "true";
+    historyButton.textContent = "Lịch sử thay đổi";
+    historyButton.className = "mr-2 rounded-lg border border-[#CDE5E5] px-3 py-2 text-[11px] font-bold text-[#087A6A] hover:bg-[#ECF8F7]";
+    const openHistory = () => window.dispatchEvent(new CustomEvent("assetmaster:open-asset-history", { detail: persistedAsset.id }));
+    historyButton.addEventListener("click", openHistory);
+    header.insertBefore(historyButton, closeButton);
+    return () => { historyButton.removeEventListener("click", openHistory); historyButton.remove(); };
+  }, [isDetail, persistedAsset?.id]);
   useEffect(() => {
     if (!isDetail || asset?.statusType !== "maintenance") return;
     const dialog = document.querySelector('[role="dialog"][aria-label="Chi tiết tài sản"]');

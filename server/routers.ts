@@ -7,6 +7,9 @@ import { adminProcedure, protectedProcedure, publicProcedure, router } from "./_
 import {
   clearUserDivision,
   createBrand,
+  createAssetFieldChanges,
+  createAssetImportItem,
+  createAssetImportSession,
   countActiveDivisionsByDepartment,
   createAsset,
   createAssetsBulk,
@@ -20,6 +23,7 @@ import {
   createVendorDocument,
   deleteVendorDocument,
   getAssetById,
+  getLatestAssetImportSession,
   getBrandById,
   getBrandByName,
   getActiveDepartmentById,
@@ -34,6 +38,7 @@ import {
   getVendorByName,
   getVendorDocumentById,
   listAssets,
+  listAssetFieldChanges,
   listAssetsByCodes,
   listAssetCodesByCodes,
   listBrands,
@@ -41,6 +46,7 @@ import {
   listAllVendors,
   listAuditItems,
   listAuditSessions,
+  listAssetImportItems,
   listActivityLogs,
   listAllDepartments,
   listAllDivisions,
@@ -56,6 +62,7 @@ import {
   recordActivity,
   saveCompany,
   updateAsset,
+  updateAssetImportSession,
   updateBrand,
   updateDepartment,
   updateDivision,
@@ -101,6 +108,22 @@ const assetImportRow = z.object({
   warrantyUntil: dateFromMs,
   note: nullableText,
 });
+
+const trackedAssetFields = ["name", "status", "condition", "purchaseDate", "purchaseValue", "vendor", "brandId", "serialNumber", "location", "warrantyUntil", "metadata", "note", "maintenanceReason", "isArchived"] as const;
+function assetSnapshot(asset: Record<string, unknown>) {
+  return Object.fromEntries(trackedAssetFields.map((field) => [field, asset[field] ?? null]));
+}
+function valueText(value: unknown) {
+  if (value === null || value === undefined) return null;
+  if (value instanceof Date) return value.toISOString();
+  return typeof value === "object" ? JSON.stringify(value) : String(value);
+}
+export function fieldChanges(assetId: number, before: Record<string, unknown>, after: Record<string, unknown>, source: "import" | "manual" | "undo", actorUserId: number, actorName: string | null | undefined, importSessionId?: number) {
+  return trackedAssetFields.filter((field) => valueText(before[field]) !== valueText(after[field])).map((field) => ({ assetId, importSessionId: importSessionId ?? null, fieldName: field, previousValue: valueText(before[field]), nextValue: valueText(after[field]), source, actorUserId, actorName: actorName ?? null }));
+}
+function importAssetValues(row: z.infer<typeof assetImportRow>, brandId: number | null) {
+  return { name: row.name, status: row.status, condition: row.condition, purchaseDate: row.purchaseDate, purchaseValue: row.purchaseValue, vendor: row.vendor, vendorId: null, brandId, serialNumber: row.serialNumber, location: row.location, warrantyUntil: row.warrantyUntil, metadata: row.category ? { category: row.category } : null, note: row.note, maintenanceReason: row.status === "maintenance" ? row.maintenanceReason : null, isArchived: false };
+}
 
 export const appRouter = router({
   system: systemRouter,
@@ -300,7 +323,7 @@ export const appRouter = router({
     import: adminProcedure.input(z.object({ rows: z.array(assetImportRow).min(1).max(100), updateExisting: z.boolean().default(false) })).mutation(async ({ input, ctx }) => {
       const existingByCode = new Map((await listAssetsByCodes(input.rows.map((row) => row.assetCode))).map((asset) => [asset.assetCode.toLocaleLowerCase("vi-VN"), asset]));
       const rowsToCreate: Array<typeof assetImportRow._output> = [];
-      const rowsToUpdate: Array<{ id: number; row: typeof assetImportRow._output }> = [];
+      const rowsToUpdate: Array<{ existing: NonNullable<ReturnType<typeof existingByCode.get>>; row: typeof assetImportRow._output }> = [];
       const errors: Array<{ rowNumber: number; message: string }> = [];
       const seenCodes = new Set<string>();
       for (const row of input.rows) {
@@ -312,15 +335,57 @@ export const appRouter = router({
         if (!hasRequiredMaintenanceReason(row.status, row.maintenanceReason)) { errors.push({ rowNumber: row.rowNumber, message: "Tài sản Bảo trì cần có Lý do bảo trì." }); continue; }
         if (row.brandName && !(await getBrandByName(row.brandName))?.isActive) { errors.push({ rowNumber: row.rowNumber, message: `Hãng ${row.brandName} không tồn tại hoặc đã ngừng hoạt động.` }); continue; }
         seenCodes.add(codeKey);
-        if (existing) rowsToUpdate.push({ id: existing.id, row }); else rowsToCreate.push(row);
+        if (existing) rowsToUpdate.push({ existing, row }); else rowsToCreate.push(row);
       }
+      const sessionId = await createAssetImportSession({ referenceCode: `IMP-${new Date().getFullYear()}-${crypto.randomUUID().slice(0, 8).toUpperCase()}`, createdByUserId: ctx.user!.id, createdByName: ctx.user!.name ?? "Quản trị viên" });
       const brandIds = new Map<string, number | null>();
       for (const row of [...rowsToCreate, ...rowsToUpdate.map((item) => item.row)]) if (row.brandName && !brandIds.has(row.brandName)) brandIds.set(row.brandName, (await getBrandByName(row.brandName))?.id || null);
-      const created = await createAssetsBulk(rowsToCreate.map((row) => ({ assetCode: row.assetCode, name: row.name, categoryId: null, departmentId: null, holderUserId: null, holderName: null, status: row.status, condition: row.condition, purchaseDate: row.purchaseDate, purchaseValue: row.purchaseValue, vendor: row.vendor, vendorId: null, brandId: row.brandName ? brandIds.get(row.brandName) || null : null, serialNumber: row.serialNumber, location: row.location, warrantyUntil: row.warrantyUntil, qrToken: crypto.randomUUID().replaceAll("-", ""), metadata: row.category ? { category: row.category } : null, note: row.note, maintenanceReason: row.status === "maintenance" ? row.maintenanceReason : null, isArchived: false, createdByUserId: ctx.user!.id })));
-      for (const { id, row } of rowsToUpdate) await updateAsset(id, { name: row.name, status: row.status, condition: row.condition, purchaseDate: row.purchaseDate, purchaseValue: row.purchaseValue, vendor: row.vendor, vendorId: null, brandId: row.brandName ? brandIds.get(row.brandName) || null : null, serialNumber: row.serialNumber, location: row.location, warrantyUntil: row.warrantyUntil, metadata: row.category ? { category: row.category } : null, note: row.note, maintenanceReason: row.status === "maintenance" ? row.maintenanceReason : null, isArchived: false });
-      const updated = rowsToUpdate.length;
-      if (created || updated) await recordActivity({ entityType: "asset", entityId: 0, action: "imported", actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: `Import Excel: tạo ${created}, cập nhật ${updated} tài sản${errors.length ? `; bỏ qua ${errors.length} dòng lỗi` : ""}` });
-      return { created, updated, errors };
+      let created = 0;
+      for (const row of rowsToCreate) {
+        const changes = importAssetValues(row, row.brandName ? brandIds.get(row.brandName) || null : null);
+        const id = await createAsset({ assetCode: row.assetCode, categoryId: null, departmentId: null, holderUserId: null, holderName: null, qrToken: crypto.randomUUID().replaceAll("-", ""), createdByUserId: ctx.user!.id, ...changes });
+        const after = assetSnapshot(changes);
+        await createAssetImportItem({ importSessionId: sessionId, assetId: id, action: "created", beforeSnapshot: null, afterSnapshot: after });
+        await createAssetFieldChanges(fieldChanges(id, {}, after, "import", ctx.user!.id, ctx.user!.name, sessionId));
+        created++;
+      }
+      let updated = 0;
+      for (const { existing, row } of rowsToUpdate) {
+        const before = assetSnapshot(existing as unknown as Record<string, unknown>);
+        const changes = importAssetValues(row, row.brandName ? brandIds.get(row.brandName) || null : null);
+        const after = { ...before, ...assetSnapshot(changes) };
+        await updateAsset(existing.id, changes);
+        await createAssetImportItem({ importSessionId: sessionId, assetId: existing.id, action: "updated", beforeSnapshot: before, afterSnapshot: after });
+        await createAssetFieldChanges(fieldChanges(existing.id, before, after, "import", ctx.user!.id, ctx.user!.name, sessionId));
+        updated++;
+      }
+      await updateAssetImportSession(sessionId, { createdCount: created, updatedCount: updated });
+      if (created || updated) await recordActivity({ entityType: "assetImport", entityId: sessionId, action: "imported", actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: `Import Excel: tạo ${created}, cập nhật ${updated} tài sản${errors.length ? `; bỏ qua ${errors.length} dòng lỗi` : ""}` });
+      return { created, updated, errors, sessionId };
+    }),
+    latestImport: adminProcedure.query(() => getLatestAssetImportSession()),
+    history: adminProcedure.input(z.object({ assetId: z.number().int().positive() })).query(({ input }) => listAssetFieldChanges(input.assetId)),
+    undoLatestImport: adminProcedure.input(z.object({ sessionId: z.number().int().positive() })).mutation(async ({ input, ctx }) => {
+      const latest = await getLatestAssetImportSession();
+      if (!latest || latest.id !== input.sessionId) throw new TRPCError({ code: "BAD_REQUEST", message: "Chỉ có thể hoàn tác phiên import gần nhất." });
+      if (latest.isUndone) throw new TRPCError({ code: "BAD_REQUEST", message: "Phiên import này đã được hoàn tác." });
+      const items = await listAssetImportItems(latest.id);
+      for (const item of items) {
+        const current = await getAssetById(item.assetId);
+        if (!current) continue;
+        const before = assetSnapshot(current as unknown as Record<string, unknown>);
+        if (item.action === "created") {
+          await updateAsset(item.assetId, { isArchived: true });
+          await createAssetFieldChanges(fieldChanges(item.assetId, before, { ...before, isArchived: true }, "undo", ctx.user!.id, ctx.user!.name, latest.id));
+        } else {
+          const restore = (item.beforeSnapshot || {}) as Record<string, unknown>;
+          await updateAsset(item.assetId, restore as any);
+          await createAssetFieldChanges(fieldChanges(item.assetId, before, restore, "undo", ctx.user!.id, ctx.user!.name, latest.id));
+        }
+      }
+      await updateAssetImportSession(latest.id, { isUndone: true, undoneAt: new Date(), undoneByUserId: ctx.user!.id });
+      await recordActivity({ entityType: "assetImport", entityId: latest.id, action: "undone", actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: `Hoàn tác phiên import ${latest.referenceCode}` });
+      return { success: true };
     }),
     create: adminProcedure.input(assetInput).mutation(async ({ input, ctx }) => {
       if (!hasRequiredMaintenanceReason(input.status, input.maintenanceReason)) throw new TRPCError({ code: "BAD_REQUEST", message: "Vui lòng nhập lý do bảo trì khi đưa tài sản vào Bảo trì." });

@@ -218,6 +218,42 @@ export const auditItems = mysqlTable("auditItems", {
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 }, (table) => [index("audit_items_session_idx").on(table.auditSessionId), index("audit_items_asset_idx").on(table.assetId)]);
 
+export const assetImportSessions = mysqlTable("assetImportSessions", {
+  id: int("id").autoincrement().primaryKey(),
+  referenceCode: varchar("referenceCode", { length: 64 }).notNull().unique(),
+  createdByUserId: int("createdByUserId"),
+  createdByName: varchar("createdByName", { length: 160 }),
+  createdCount: int("createdCount").default(0).notNull(),
+  updatedCount: int("updatedCount").default(0).notNull(),
+  isUndone: boolean("isUndone").default(false).notNull(),
+  undoneAt: timestamp("undoneAt"),
+  undoneByUserId: int("undoneByUserId"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+}, (table) => [index("asset_import_sessions_created_idx").on(table.createdAt)]);
+
+export const assetImportItems = mysqlTable("assetImportItems", {
+  id: int("id").autoincrement().primaryKey(),
+  importSessionId: int("importSessionId").notNull(),
+  assetId: int("assetId").notNull(),
+  action: mysqlEnum("action", ["created", "updated"]).notNull(),
+  beforeSnapshot: json("beforeSnapshot"),
+  afterSnapshot: json("afterSnapshot"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+}, (table) => [index("asset_import_items_session_idx").on(table.importSessionId), index("asset_import_items_asset_idx").on(table.assetId)]);
+
+export const assetFieldChanges = mysqlTable("assetFieldChanges", {
+  id: int("id").autoincrement().primaryKey(),
+  assetId: int("assetId").notNull(),
+  importSessionId: int("importSessionId"),
+  fieldName: varchar("fieldName", { length: 96 }).notNull(),
+  previousValue: text("previousValue"),
+  nextValue: text("nextValue"),
+  source: mysqlEnum("source", ["import", "manual", "undo"]).notNull(),
+  actorUserId: int("actorUserId"),
+  actorName: varchar("actorName", { length: 160 }),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+}, (table) => [index("asset_field_changes_asset_idx").on(table.assetId), index("asset_field_changes_session_idx").on(table.importSessionId)]);
+
 export const activityLogs = mysqlTable("activityLogs", {
   id: int("id").autoincrement().primaryKey(),
   entityType: varchar("entityType", { length: 64 }).notNull(),

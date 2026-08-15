@@ -414,3 +414,11 @@
 - [x] Cho phép chỉnh sửa trực tiếp dữ liệu trong bảng xem trước.
 - [x] Thêm hộp thoại xác nhận hai bước khi có cập nhật hàng loạt.
 - [x] Thêm kiểm thử, xác minh giao diện và phát hành checkpoint.
+
+## Hoàn tác import & lịch sử thay đổi
+
+- [x] Rà soát dữ liệu import và mô hình nhật ký tài sản hiện có.
+- [x] Thêm schema cho phiên import và lịch sử thay đổi theo trường.
+- [x] Triển khai API import, hoàn tác import gần nhất và truy vấn lịch sử.
+- [x] Bổ sung giao diện hoàn tác và lịch sử thay đổi trong hồ sơ tài sản.
+- [x] Thêm kiểm thử, xác minh giao diện, migration, build và phát hành checkpoint.

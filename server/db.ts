@@ -2,6 +2,9 @@ import { desc, eq, inArray } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import {
   activityLogs,
+  assetFieldChanges,
+  assetImportItems,
+  assetImportSessions,
   assets,
   auditItems,
   auditSessions,
@@ -325,6 +328,51 @@ export async function updateAsset(id: number, data: Partial<typeof assets.$infer
   const db = await getDb();
   if (!db) throw new Error("Database unavailable");
   await db.update(assets).set(data).where(eq(assets.id, id));
+}
+
+export async function createAssetImportSession(data: typeof assetImportSessions.$inferInsert) {
+  const db = await getDb();
+  if (!db) throw new Error("Database unavailable");
+  const result = await db.insert(assetImportSessions).values(data);
+  return Number(result[0].insertId);
+}
+
+export async function updateAssetImportSession(id: number, data: Partial<typeof assetImportSessions.$inferInsert>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database unavailable");
+  await db.update(assetImportSessions).set(data).where(eq(assetImportSessions.id, id));
+}
+
+export async function getLatestAssetImportSession() {
+  const db = await getDb();
+  if (!db) return undefined;
+  return (await db.select().from(assetImportSessions).orderBy(desc(assetImportSessions.createdAt)).limit(1))[0];
+}
+
+export async function createAssetImportItem(data: typeof assetImportItems.$inferInsert) {
+  const db = await getDb();
+  if (!db) throw new Error("Database unavailable");
+  const result = await db.insert(assetImportItems).values(data);
+  return Number(result[0].insertId);
+}
+
+export async function listAssetImportItems(sessionId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(assetImportItems).where(eq(assetImportItems.importSessionId, sessionId));
+}
+
+export async function createAssetFieldChanges(data: Array<typeof assetFieldChanges.$inferInsert>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database unavailable");
+  if (!data.length) return;
+  await db.insert(assetFieldChanges).values(data);
+}
+
+export async function listAssetFieldChanges(assetId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(assetFieldChanges).where(eq(assetFieldChanges.assetId, assetId)).orderBy(desc(assetFieldChanges.createdAt));
 }
 
 export async function getCompany() {
