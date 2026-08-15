@@ -509,3 +509,9 @@
 - [x] Cho phép nhân viên gửi phản hồi hoặc giải trình khi yêu cầu hoàn trả bị từ chối.
 - [x] Thêm nút Đã xem để ẩn banner kết quả sau khi đọc.
 - [x] Kiểm thử quyền hạn, TypeScript, build và phát hành checkpoint.
+
+## Chuẩn hóa hộp thoại trong ứng dụng
+
+- [x] Rà soát mọi lệnh alert, confirm và prompt trong giao diện.
+- [x] Thay thế hộp thoại mặc định bằng modal hoặc toast nội bộ.
+- [x] Kiểm thử luồng duyệt hoàn trả, TypeScript, build và phát hành checkpoint.
