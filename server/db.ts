@@ -307,6 +307,12 @@ export async function listAssetCodesByCodes(assetCodes: string[]) {
   return db.select({ assetCode: assets.assetCode }).from(assets).where(inArray(assets.assetCode, assetCodes));
 }
 
+export async function listAssetsByCodes(assetCodes: string[]) {
+  const db = await getDb();
+  if (!db || !assetCodes.length) return [];
+  return db.select().from(assets).where(inArray(assets.assetCode, assetCodes));
+}
+
 export async function createAssetsBulk(data: Array<typeof assets.$inferInsert>) {
   const db = await getDb();
   if (!db) throw new Error("Database unavailable");

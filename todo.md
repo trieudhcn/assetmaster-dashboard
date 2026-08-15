@@ -394,3 +394,10 @@
 - [x] Bổ sung API Admin lưu hàng loạt các tài sản hợp lệ vào database.
 - [x] Thêm giao diện tải template, tải tệp Excel và xem kết quả import.
 - [x] Thêm kiểm thử, xác minh desktop/mobile, TypeScript, build và phát hành checkpoint.
+
+## Nâng cấp import Excel tài sản
+
+- [x] Rà soát luồng import, quy tắc cập nhật theo mã và dữ liệu lỗi hiện có.
+- [x] Bổ sung API hỗ trợ tạo mới hoặc cập nhật tài sản theo mã đã tồn tại.
+- [x] Hiển thị tiến trình đọc/xử lý tệp và xuất Excel các dòng lỗi.
+- [x] Thêm kiểm thử, xác minh desktop/mobile, TypeScript, build và phát hành checkpoint.

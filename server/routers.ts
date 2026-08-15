@@ -34,6 +34,7 @@ import {
   getVendorByName,
   getVendorDocumentById,
   listAssets,
+  listAssetsByCodes,
   listAssetCodesByCodes,
   listBrands,
   listAllBrands,
@@ -296,24 +297,30 @@ export const appRouter = router({
   }),
   assets: router({
     list: adminProcedure.query(() => listAssets()),
-    import: adminProcedure.input(z.object({ rows: z.array(assetImportRow).min(1).max(100) })).mutation(async ({ input, ctx }) => {
-      const existingCodes = new Set((await listAssetCodesByCodes(input.rows.map((row) => row.assetCode))).map((item) => item.assetCode.toLocaleLowerCase("vi-VN")));
+    import: adminProcedure.input(z.object({ rows: z.array(assetImportRow).min(1).max(100), updateExisting: z.boolean().default(false) })).mutation(async ({ input, ctx }) => {
+      const existingByCode = new Map((await listAssetsByCodes(input.rows.map((row) => row.assetCode))).map((asset) => [asset.assetCode.toLocaleLowerCase("vi-VN"), asset]));
       const rowsToCreate: Array<typeof assetImportRow._output> = [];
+      const rowsToUpdate: Array<{ id: number; row: typeof assetImportRow._output }> = [];
       const errors: Array<{ rowNumber: number; message: string }> = [];
       const seenCodes = new Set<string>();
       for (const row of input.rows) {
         const codeKey = row.assetCode.toLocaleLowerCase("vi-VN");
-        if (seenCodes.has(codeKey) || existingCodes.has(codeKey)) { errors.push({ rowNumber: row.rowNumber, message: `Mã tài sản ${row.assetCode} đã tồn tại.` }); continue; }
+        const existing = existingByCode.get(codeKey);
+        if (seenCodes.has(codeKey)) { errors.push({ rowNumber: row.rowNumber, message: `Mã tài sản ${row.assetCode} bị lặp trong tệp.` }); continue; }
+        if (existing && !input.updateExisting) { errors.push({ rowNumber: row.rowNumber, message: `Mã tài sản ${row.assetCode} đã tồn tại. Chọn tùy chọn cập nhật để ghi đè thông tin.` }); continue; }
+        if (existing?.status === "assigned") { errors.push({ rowNumber: row.rowNumber, message: `Tài sản ${row.assetCode} đang cấp phát, không thể cập nhật qua import.` }); continue; }
         if (!hasRequiredMaintenanceReason(row.status, row.maintenanceReason)) { errors.push({ rowNumber: row.rowNumber, message: "Tài sản Bảo trì cần có Lý do bảo trì." }); continue; }
         if (row.brandName && !(await getBrandByName(row.brandName))?.isActive) { errors.push({ rowNumber: row.rowNumber, message: `Hãng ${row.brandName} không tồn tại hoặc đã ngừng hoạt động.` }); continue; }
         seenCodes.add(codeKey);
-        rowsToCreate.push(row);
+        if (existing) rowsToUpdate.push({ id: existing.id, row }); else rowsToCreate.push(row);
       }
       const brandIds = new Map<string, number | null>();
-      for (const row of rowsToCreate) if (row.brandName && !brandIds.has(row.brandName)) brandIds.set(row.brandName, (await getBrandByName(row.brandName))?.id || null);
+      for (const row of [...rowsToCreate, ...rowsToUpdate.map((item) => item.row)]) if (row.brandName && !brandIds.has(row.brandName)) brandIds.set(row.brandName, (await getBrandByName(row.brandName))?.id || null);
       const created = await createAssetsBulk(rowsToCreate.map((row) => ({ assetCode: row.assetCode, name: row.name, categoryId: null, departmentId: null, holderUserId: null, holderName: null, status: row.status, condition: row.condition, purchaseDate: row.purchaseDate, purchaseValue: row.purchaseValue, vendor: row.vendor, vendorId: null, brandId: row.brandName ? brandIds.get(row.brandName) || null : null, serialNumber: row.serialNumber, location: row.location, warrantyUntil: row.warrantyUntil, qrToken: crypto.randomUUID().replaceAll("-", ""), metadata: row.category ? { category: row.category } : null, note: row.note, maintenanceReason: row.status === "maintenance" ? row.maintenanceReason : null, isArchived: false, createdByUserId: ctx.user!.id })));
-      if (created) await recordActivity({ entityType: "asset", entityId: 0, action: "imported", actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: `Import ${created} tài sản từ tệp Excel${errors.length ? `; bỏ qua ${errors.length} dòng lỗi` : ""}` });
-      return { created, errors };
+      for (const { id, row } of rowsToUpdate) await updateAsset(id, { name: row.name, status: row.status, condition: row.condition, purchaseDate: row.purchaseDate, purchaseValue: row.purchaseValue, vendor: row.vendor, vendorId: null, brandId: row.brandName ? brandIds.get(row.brandName) || null : null, serialNumber: row.serialNumber, location: row.location, warrantyUntil: row.warrantyUntil, metadata: row.category ? { category: row.category } : null, note: row.note, maintenanceReason: row.status === "maintenance" ? row.maintenanceReason : null, isArchived: false });
+      const updated = rowsToUpdate.length;
+      if (created || updated) await recordActivity({ entityType: "asset", entityId: 0, action: "imported", actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: `Import Excel: tạo ${created}, cập nhật ${updated} tài sản${errors.length ? `; bỏ qua ${errors.length} dòng lỗi` : ""}` });
+      return { created, updated, errors };
     }),
     create: adminProcedure.input(assetInput).mutation(async ({ input, ctx }) => {
       if (!hasRequiredMaintenanceReason(input.status, input.maintenanceReason)) throw new TRPCError({ code: "BAD_REQUEST", message: "Vui lòng nhập lý do bảo trì khi đưa tài sản vào Bảo trì." });

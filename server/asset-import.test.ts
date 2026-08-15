@@ -22,4 +22,10 @@ describe("asset Excel import", () => {
     expect(parseVietnameseDate("15/08/2026")).toBe(new Date(2026, 7, 15).getTime());
     expect(parseVietnameseDate("không phải ngày")).toBeNull();
   });
+
+  it("keeps a valid asset code as a candidate so the server can apply update-by-code mode", () => {
+    const result = parseAssetImportRows([{ "Mã tài sản*": "TS-EXISTING-001", "Tên tài sản*": "Laptop cập nhật", "Trạng thái (Sẵn có/Bảo trì)": "Sẵn có", "Tình trạng": "Khá" }]);
+    expect(result.issues).toEqual([]);
+    expect(result.candidates[0]).toMatchObject({ assetCode: "TS-EXISTING-001", condition: "fair" });
+  });
 });
