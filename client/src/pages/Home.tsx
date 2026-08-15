@@ -585,6 +585,78 @@ function PersistedHandoverCreateModal({ form, assets, employees, departments, up
   const availableAssets = assets.filter((asset) => asset.status === "available");
   const recipients = employees.filter((employee) => employee.isActive);
   const selectedDepartment = departments.find((department) => department.id === form.recipientDepartmentId);
+  useEffect(() => {
+    const dialog = document.querySelector('[role="dialog"]');
+    const recipientLabel = Array.from(dialog?.querySelectorAll("label") || []).find((label) => label.textContent?.includes("Nhân viên nhận"));
+    const container = recipientLabel?.parentElement;
+    const select = container?.querySelector("select");
+    if (!container || !select || container.querySelector("[data-recipient-search-picker]")) return;
+
+    select.classList.add("hidden");
+    const picker = document.createElement("div");
+    picker.dataset.recipientSearchPicker = "true";
+    picker.className = "relative";
+    const trigger = document.createElement("button");
+    trigger.type = "button";
+    trigger.className = "field-input flex h-11 w-full items-center justify-between gap-3 text-left font-semibold text-[#193B57]";
+    trigger.setAttribute("aria-haspopup", "listbox");
+    trigger.setAttribute("aria-expanded", "false");
+    const triggerText = document.createElement("span");
+    const selectedEmployee = recipients.find((employee) => employee.id === form.recipientUserId);
+    triggerText.textContent = selectedEmployee?.name || selectedEmployee?.email || "Chọn nhân viên";
+    const triggerIcon = document.createElement("span");
+    triggerIcon.className = "text-base text-[#60758A]";
+    triggerIcon.textContent = "⌄";
+    trigger.append(triggerText, triggerIcon);
+
+    const menu = document.createElement("div");
+    menu.className = "absolute z-[70] mt-1 hidden w-full overflow-hidden rounded-xl border border-[#CDE5E5] bg-white p-2 shadow-[0_14px_34px_rgba(16,42,67,0.16)]";
+    menu.setAttribute("role", "listbox");
+    const search = document.createElement("input");
+    search.type = "search";
+    search.className = "field-input h-9";
+    search.placeholder = "Tìm tên hoặc email nhân viên...";
+    search.setAttribute("aria-label", "Tìm Nhân viên nhận");
+    const options = document.createElement("div");
+    options.className = "mt-2 max-h-52 overflow-y-auto";
+    const renderOptions = (keyword = "") => {
+      const matches = recipients.filter((employee) => matchesVietnameseSearch(`${employee.name || ""} ${employee.email || ""}`, keyword));
+      options.replaceChildren();
+      if (!matches.length) {
+        const empty = document.createElement("div");
+        empty.className = "px-3 py-3 text-center text-xs font-semibold text-[#8AA0B6]";
+        empty.textContent = "Không tìm thấy nhân viên phù hợp";
+        options.appendChild(empty);
+      }
+      matches.forEach((employee) => {
+        const option = document.createElement("button");
+        option.type = "button";
+        option.setAttribute("role", "option");
+        option.className = `flex w-full flex-col rounded-lg px-3 py-2 text-left transition hover:bg-[#ECF8F7] ${employee.id === form.recipientUserId ? "bg-[#E6F6F2]" : ""}`;
+        const name = document.createElement("span");
+        name.className = "text-xs font-bold text-[#193B57]";
+        name.textContent = employee.name || employee.email || `Nhân viên #${employee.id}`;
+        option.appendChild(name);
+        if (employee.email) { const email = document.createElement("span"); email.className = "mt-0.5 text-[10px] text-[#71869A]"; email.textContent = employee.email; option.appendChild(email); }
+        option.onclick = () => { select.value = String(employee.id); select.dispatchEvent(new Event("change", { bubbles: true })); menu.classList.add("hidden"); trigger.setAttribute("aria-expanded", "false"); };
+        options.appendChild(option);
+      });
+    };
+    renderOptions();
+    search.oninput = () => renderOptions(search.value);
+    trigger.onclick = () => {
+      const isOpen = !menu.classList.contains("hidden");
+      menu.classList.toggle("hidden", isOpen);
+      trigger.setAttribute("aria-expanded", String(!isOpen));
+      if (!isOpen) window.setTimeout(() => search.focus(), 0);
+    };
+    const closeOnOutside = (event: PointerEvent) => { if (!picker.contains(event.target as Node)) { menu.classList.add("hidden"); trigger.setAttribute("aria-expanded", "false"); } };
+    document.addEventListener("pointerdown", closeOnOutside);
+    picker.append(trigger, menu);
+    menu.append(search, options);
+    select.after(picker);
+    return () => { document.removeEventListener("pointerdown", closeOnOutside); picker.remove(); select.classList.remove("hidden"); };
+  }, [recipients, form.recipientUserId]);
   return <div className="fixed inset-0 z-[60] flex items-center justify-center bg-[#102A43]/40 px-4 py-6 backdrop-blur-sm"><div className="max-h-[92vh] w-full max-w-[720px] overflow-y-auto rounded-2xl border border-[#DDE7F0] bg-white shadow-[0_24px_70px_rgba(16,42,67,0.22)]"><div className="flex items-start justify-between border-b border-[#E7EEF3] px-6 py-5"><div><div className="mb-1 text-[10px] font-extrabold uppercase tracking-[0.16em] text-[#0F8C8C]">Dữ liệu bàn giao</div><h2 className="font-display text-xl font-extrabold tracking-[-0.03em] text-[#102A43]">Tạo phiếu bàn giao</h2><p className="mt-1 text-xs text-[#8AA0B6]">Người nhận được liên kết với hồ sơ nhân viên để cập nhật lịch sử tài sản.</p></div><button onClick={onClose} className="rounded-lg p-2 text-[#8AA0B6] hover:bg-[#F0F5F8]" aria-label="Đóng"><X size={18} /></button></div><div className="space-y-4 p-6"><div className="grid gap-4 sm:grid-cols-2"><div className="sm:col-span-2"><label className="field-label">Tài sản <span className="text-[#0F8C8C]">*</span></label><select value={form.assetCode} onChange={(event) => { const asset = availableAssets.find((candidate) => candidate.assetCode === event.target.value); update("assetCode", event.target.value); update("assetName", asset?.name || ""); }} className="field-input">{availableAssets.map((asset) => <option key={asset.assetCode} value={asset.assetCode}>{asset.assetCode} · {asset.name}</option>)}</select></div><div><label className="field-label">Nhân viên nhận <span className="text-[#0F8C8C]">*</span></label><select value={form.recipientUserId || ""} onChange={(event) => onRecipientChange(Number(event.target.value))} className="field-input"><option value="" disabled>Chọn nhân viên</option>{recipients.map((employee) => <option key={employee.id} value={employee.id}>{employee.name || employee.email || `Nhân viên #${employee.id}`}</option>)}</select></div><div><label className="field-label">Phòng ban</label><input value={selectedDepartment?.name || form.department || "Chưa gán phòng ban"} disabled className="field-input bg-[#F5F8FB] text-[#60758A]" /></div><div><label className="field-label">Tình trạng tài sản</label><select value={form.condition} onChange={(e) => update("condition", e.target.value)} className="field-input"><option>Tốt</option><option>Có hao mòn nhẹ</option><option>Cần kiểm tra</option></select></div><div><label className="field-label">Ngày lập phiếu</label><input value={form.date} disabled className="field-input bg-[#F5F8FB] text-[#8AA0B6]" /></div><div className="sm:col-span-2"><label className="field-label">Hạn dự kiến hoàn trả</label><input type="date" value={form.dueBackAt ? new Date(form.dueBackAt).toISOString().slice(0, 10) : ""} onChange={(event) => update("dueBackAt", event.target.value)} className="field-input" /><p className="mt-1 text-[10px] text-[#8AA0B6]">Hiển thị cho nhân viên tại tài sản đang giữ.</p></div><div className="sm:col-span-2"><label className="field-label">Phụ kiện đi kèm</label><input value={form.accessories} onChange={(e) => update("accessories", e.target.value)} placeholder="Ví dụ: Sạc, túi chống sốc, chuột không dây" className="field-input" /></div><div className="sm:col-span-2"><label className="field-label">Ghi chú</label><textarea value={form.note} onChange={(e) => update("note", e.target.value)} placeholder="Bổ sung lưu ý khi bàn giao..." className="field-input min-h-[76px] resize-y" /></div></div>{recipients.length === 0 && <div className="rounded-lg bg-[#FFF9EB] p-3 text-xs text-[#A86B00]">Chưa có nhân viên đang hoạt động để nhận tài sản.</div>}<div className="flex justify-end gap-2 border-t border-[#E7EEF3] pt-4"><button onClick={onClose} className="rounded-lg border border-[#DDE7F0] px-4 py-2 text-xs font-bold text-[#60758A]">Hủy</button><button disabled={saving || !form.recipientUserId || availableAssets.length === 0} onClick={onSave} className="rounded-lg bg-[#0F8C8C] px-4 py-2 text-xs font-bold text-white hover:bg-[#087A6A] disabled:cursor-not-allowed disabled:opacity-50">{saving ? "Đang lưu..." : "Lưu phiếu nháp"}</button></div></div></div></div>;
 }
 

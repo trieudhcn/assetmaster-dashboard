@@ -335,3 +335,9 @@
 - [x] Đưa tìm kiếm vào trực tiếp trong dropdown Nhà cung cấp/Hãng.
 - [x] Tạm hoãn email quyết định hoàn trả đến khi có dịch vụ email và API key phù hợp.
 - [x] Thêm kiểm thử, xác minh responsive, TypeScript, build và phát hành checkpoint cho dropdown có tìm kiếm.
+
+## Tìm kiếm Nhân viên nhận khi bàn giao
+
+- [x] Rà soát trường chọn Nhân viên nhận trong form bàn giao.
+- [x] Thay dropdown Nhân viên nhận bằng danh sách có tìm kiếm tiếng Việt không dấu.
+- [x] Thêm kiểm thử, xác minh responsive, TypeScript, build và phát hành checkpoint.
