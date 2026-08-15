@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { filterNamedCatalogOptions, getPaginationWindow } from "../client/src/lib/catalogUi";
+import { canCreateCatalogOption, filterNamedCatalogOptions, getPaginationWindow, matchesVietnameseSearch, normalizeVietnameseSearch } from "../client/src/lib/catalogUi";
 
 describe("Catalog UI helpers", () => {
   it("clamps pagination and preserves a non-overlapping final record range", () => {
@@ -12,7 +12,18 @@ describe("Catalog UI helpers", () => {
 
   it("finds vendor and brand names case-insensitively with Vietnamese locale matching", () => {
     const options = [{ id: 1, name: "Công ty Công nghệ Sao Mai" }, { id: 2, name: "Dell Technologies" }];
-    expect(filterNamedCatalogOptions(options, "công nghệ")).toEqual([options[0]]);
+    expect(filterNamedCatalogOptions(options, "cong nghe")).toEqual([options[0]]);
     expect(filterNamedCatalogOptions(options, "DELL")).toEqual([options[1]]);
+  });
+
+  it("normalizes Vietnamese diacritics, including the đ character, before matching", () => {
+    expect(normalizeVietnameseSearch("  Đặng  Hoàng   Long ")).toBe("dang hoang long");
+    expect(matchesVietnameseSearch("Thiết bị văn phòng", "thiet bi")).toBe(true);
+  });
+
+  it("offers creating a catalog option only for a meaningful empty search", () => {
+    expect(canCreateCatalogOption("Sao Mai", 0)).toBe(true);
+    expect(canCreateCatalogOption("Sao Mai", 1)).toBe(false);
+    expect(canCreateCatalogOption("S", 0)).toBe(false);
   });
 });

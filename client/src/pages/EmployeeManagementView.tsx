@@ -3,6 +3,7 @@ import { Building2, FolderTree, LockKeyhole, Search, ShieldCheck, UserRound, X }
 import { toast } from "sonner";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { trpc } from "@/lib/trpc";
+import { matchesVietnameseSearch } from "@/lib/catalogUi";
 
 export function EmployeeManagementView() {
   const { user, loading: authLoading } = useAuth();
@@ -22,7 +23,7 @@ export function EmployeeManagementView() {
   const divisionsById = new Map(divisions.map((item) => [item.id, item]));
   const filterDivisions = divisions.filter((item) => item.isActive && (departmentFilter === "all" || item.departmentId === Number(departmentFilter)));
   const filteredEmployees = useMemo(() => employees.filter((employee) => {
-    const matchesQuery = `${employee.name || ""} ${employee.email || ""}`.toLowerCase().includes(query.toLowerCase());
+    const matchesQuery = matchesVietnameseSearch(`${employee.name || ""} ${employee.email || ""}`, query);
     const matchesDepartment = departmentFilter === "all" || employee.departmentId === Number(departmentFilter);
     const matchesDivision = divisionFilter === "all" || employee.divisionId === Number(divisionFilter);
     return matchesQuery && matchesDepartment && matchesDivision;

@@ -18,6 +18,7 @@ import * as XLSX from "xlsx";
 import { toast } from "sonner";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
+import { matchesVietnameseSearch } from "@/lib/catalogUi";
 
 const shell = "min-h-screen bg-[#F4F7FB] px-4 py-7 sm:px-6 lg:px-9 lg:py-8";
 const card = "rounded-xl border border-[#DFE9F0] bg-white shadow-[0_8px_24px_rgba(16,42,67,0.045)]";
@@ -522,7 +523,7 @@ export function ReportsPage() {
   const departments = trpc.departments.list.useQuery(undefined, { enabled: isAdmin });
   const activities = trpc.activity.list.useQuery({ limit: 150 }, { enabled: isAdmin });
   const selectedAssets = useMemo(() => (assets.data || []).filter((asset) => departmentId === "all" || asset.departmentId === Number(departmentId)), [assets.data, departmentId]);
-  const filteredActivities = useMemo(() => (activities.data || []).filter((item) => (activityType === "all" || item.entityType === activityType) && `${item.summary || ""} ${item.actorName || ""} ${item.action}`.toLowerCase().includes(activityQuery.toLowerCase())), [activities.data, activityType, activityQuery]);
+  const filteredActivities = useMemo(() => (activities.data || []).filter((item) => (activityType === "all" || item.entityType === activityType) && matchesVietnameseSearch(`${item.summary || ""} ${item.actorName || ""} ${item.action}`, activityQuery)), [activities.data, activityType, activityQuery]);
   const metrics = [
     { label: "Tài sản đang quản lý", value: assets.data?.length ?? 0 },
     { label: "Phiếu bàn giao", value: handovers.data?.length ?? 0 },

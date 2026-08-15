@@ -7,7 +7,7 @@ import QRCodeGenerator from "qrcode";
 import notoSansVietnamese from "../assets/noto-sans-vietnamese.ttf";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { trpc } from "@/lib/trpc";
-import { filterNamedCatalogOptions, getPaginationWindow } from "@/lib/catalogUi";
+import { canCreateCatalogOption, filterNamedCatalogOptions, getPaginationWindow, matchesVietnameseSearch } from "@/lib/catalogUi";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -177,7 +177,7 @@ function EmployeeManagementPage() {
     const matchesRole = roleFilter === "all" || employee.role === roleFilter;
     const matchesStatus = accountStatusFilter === "all" || (accountStatusFilter === "active" ? employee.isActive : !employee.isActive);
     const matchesDepartment = departmentFilter === "all" || (departmentFilter === "unassigned" ? !employee.departmentId : employee.departmentId === Number(departmentFilter));
-    const matchesSearch = `${employee.name || ""} ${employee.email || ""}`.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSearch = matchesVietnameseSearch(`${employee.name || ""} ${employee.email || ""}`, searchTerm);
     return matchesRole && matchesStatus && matchesDepartment && matchesSearch;
   });
   const selectedEmployee = allEmployees.find((employee) => employee.id === selectedEmployeeId);
@@ -277,7 +277,7 @@ export default function Home() {
   }, []);
 
   const filteredAssets = useMemo(() => assetRows.filter((asset) => {
-    const matchesQuery = `${asset.code} ${asset.name} ${asset.holder}`.toLowerCase().includes(query.toLowerCase());
+    const matchesQuery = matchesVietnameseSearch(`${asset.code} ${asset.name} ${asset.holder}`, query);
     const matchesCategory = category === "Tất cả loại tài sản" || asset.category === category;
     const matchesStatus = status === "Tất cả trạng thái" || asset.status === status;
     const matchesDepartment = department === "Tất cả phòng ban" || asset.holder.includes(department);
@@ -497,7 +497,7 @@ function AssignmentsPage({ showComingSoon, companyInfo }: { showComingSoon: (lab
   const [selected, setSelected] = useState<Handover | null>(null);
   const [form, setForm] = useState<Handover>({ id: 0, referenceCode: "", assetCode: "", assetName: "", recipient: "", department: "", date: "", status: "Nháp", condition: "Tốt", handoverBy: "", note: "", accessories: "", recipientUserId: null, recipientDepartmentId: null });
   useEffect(() => { if (!handoversQuery.data) return; setHandovers(handoversQuery.data.map((item) => ({ id: item.id, referenceCode: item.referenceCode, assetCode: assignmentAssetsQuery.data?.find((asset) => asset.id === item.assetId)?.assetCode || `TS-${item.assetId}`, assetName: assignmentAssetsQuery.data?.find((asset) => asset.id === item.assetId)?.name || "Tài sản", recipient: item.recipientName, department: item.recipientDepartmentName || "Chưa xác định", date: new Date(item.handedOverAt).toLocaleDateString("vi-VN"), status: item.status === "active" ? "Đã bàn giao" : item.status === "pending_signature" ? "Chờ ký" : item.status === "returned" ? "Đã hoàn trả" : "Nháp", condition: item.conditionOut || "Tốt", handoverBy: item.handoverByName || "Quản trị viên", note: item.note || "", accessories: item.accessories || "", recipientSignatureUrl: item.recipientSignatureUrl }))); }, [handoversQuery.data, assignmentAssetsQuery.data]);
-  const filtered = handovers.filter((item) => `${item.id} ${item.assetName} ${item.recipient} ${item.department}`.toLowerCase().includes(query.toLowerCase()) && (statusFilter === "Tất cả trạng thái" || item.status === statusFilter));
+  const filtered = handovers.filter((item) => matchesVietnameseSearch(`${item.id} ${item.assetName} ${item.recipient} ${item.department}`, query) && (statusFilter === "Tất cả trạng thái" || item.status === statusFilter));
   const update = (key: keyof Handover, value: string) => setForm((current) => ({ ...current, [key]: value }));
   const createHandover = () => { const asset = assignmentAssetsQuery.data?.find((item) => item.assetCode === form.assetCode); if (!form.recipient.trim() || !form.recipientUserId || !asset) { toast.error("Vui lòng chọn tài sản và nhân viên nhận hợp lệ."); return; } createHandoverMutation.mutate({ assetId: asset.id, recipientName: form.recipient, recipientDepartmentName: form.department || null, handedOverAt: Date.now(), dueBackAt: null, conditionOut: form.condition, accessories: form.accessories || null, note: form.note || null, recipientUserId: form.recipientUserId, recipientDepartmentId: form.recipientDepartmentId || null }); setModal(null); };
   const openCreate = () => { const firstAsset = assignmentAssetsQuery.data?.find((asset) => asset.status === "available"); if (!firstAsset) { toast.error("Cần có ít nhất một tài sản sẵn có trước khi lập phiếu bàn giao."); return; } setForm({ id: 0, referenceCode: "", assetCode: firstAsset.assetCode, assetName: firstAsset.name, recipient: "", department: "", date: new Date().toLocaleDateString("vi-VN"), status: "Nháp", condition: "Tốt", handoverBy: "", note: "", accessories: "", recipientUserId: null, recipientDepartmentId: null }); setModal("create"); };
@@ -755,20 +755,34 @@ function AssetModal({ mode, asset, formData, setFormData, onClose, onSave, onEdi
       search.setAttribute("aria-label", kind === "vendor" ? "Tìm Nhà cung cấp" : "Tìm Hãng");
       const select = document.createElement("select");
       select.className = "field-input";
+      const emptyState = document.createElement("div");
+      emptyState.className = "mt-2 hidden items-center justify-between gap-3 rounded-lg border border-dashed border-[#CDE5E5] bg-[#F4FBFA] px-3 py-2.5";
+      const emptyMessage = document.createElement("span");
+      emptyMessage.className = "text-[11px] font-semibold text-[#4B8884]";
+      const createFromSearch = document.createElement("button");
+      createFromSearch.type = "button";
+      createFromSearch.className = "shrink-0 rounded-md border border-[#8BCDC6] bg-white px-2.5 py-1.5 text-[11px] font-extrabold text-[#087A6A] transition hover:bg-[#ECF8F7]";
+      createFromSearch.onclick = () => { const name = search.value.trim(); quickEntryNameRef.current = name; setQuickEntryName(name); setQuickEntryType(kind); };
+      emptyState.append(emptyMessage, createFromSearch);
       const renderOptions = (keyword = "") => {
         const matchedItems = filterNamedCatalogOptions(items, keyword);
+        const searchedName = keyword.trim();
+        const canCreate = canCreateCatalogOption(searchedName, matchedItems.length);
         select.replaceChildren();
         const placeholder = document.createElement("option");
         placeholder.value = "";
         placeholder.textContent = kind === "vendor" ? "Chọn Nhà cung cấp" : "Chọn Hãng";
         select.appendChild(placeholder);
         matchedItems.forEach((item) => { const option = document.createElement("option"); option.value = String(item.id); option.textContent = item.name; option.selected = item.id === selectedId; select.appendChild(option); });
-        if (!matchedItems.length) { const emptyOption = document.createElement("option"); emptyOption.disabled = true; emptyOption.textContent = "Không có dữ liệu phù hợp"; select.appendChild(emptyOption); }
+        if (!matchedItems.length) { const emptyOption = document.createElement("option"); emptyOption.disabled = true; emptyOption.textContent = searchedName ? "Không có dữ liệu phù hợp" : "Chưa có dữ liệu"; select.appendChild(emptyOption); }
+        emptyState.classList.toggle("hidden", !canCreate);
+        emptyState.classList.toggle("flex", canCreate);
+        if (canCreate) { emptyMessage.textContent = "Chưa có kết quả phù hợp."; createFromSearch.textContent = kind === "vendor" ? `+ Tạo “${searchedName}”` : `+ Tạo “${searchedName}”`; }
       };
       renderOptions();
       search.oninput = () => renderOptions(search.value);
       select.onchange = () => { const id = Number(select.value) || undefined; const selected = items.find((item) => item.id === id); setFormData((current) => kind === "vendor" ? { ...current, vendorId: id, supplier: selected?.name || "" } : { ...current, brandId: id, brand: selected?.name || "" }); };
-      wrapper.append(heading, search, select);
+      wrapper.append(heading, search, select, emptyState);
       if (quickEntryType === kind) {
         const quick = document.createElement("div");
         quick.className = "mt-2 flex gap-2";

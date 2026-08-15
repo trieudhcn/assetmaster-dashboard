@@ -288,3 +288,9 @@
 - [x] Thêm nút X xóa nhanh cho các ô tìm kiếm có nội dung.
 - [x] Thay dropdown Nhà cung cấp/Hãng trong biểu mẫu tài sản bằng điều khiển có tìm kiếm.
 - [x] Kiểm thử tương tác, responsive, TypeScript, build và phát hành checkpoint.
+
+## Tìm kiếm không dấu & tạo danh mục từ kết quả rỗng
+
+- [x] Chuẩn hóa tìm kiếm không dấu cho các ô tra cứu tiếng Việt trong ứng dụng.
+- [x] Bổ sung tạo Nhà cung cấp/Hãng ngay từ trạng thái tìm kiếm rỗng trong biểu mẫu tài sản.
+- [x] Thêm kiểm thử hồi quy, xác minh responsive, TypeScript, build và phát hành checkpoint.

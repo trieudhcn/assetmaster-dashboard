@@ -4,6 +4,7 @@ import * as XLSX from "xlsx";
 import { toast } from "sonner";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { trpc } from "@/lib/trpc";
+import { matchesVietnameseSearch } from "@/lib/catalogUi";
 
 const card = "rounded-xl border border-[#DFE9F0] bg-white shadow-[0_8px_24px_rgba(16,42,67,0.045)]";
 const divisionColors = ["#0F8C8C", "#2666A8", "#E59B24", "#7666B3", "#CF5C4B", "#3F9C6D", "#5B7FA3"];
@@ -73,7 +74,7 @@ export function ReportsManagementView() {
     });
     return [...buckets.values()].sort((left, right) => right.value - left.value).map((item, index) => ({ ...item, color: divisionColors[index % divisionColors.length] }));
   }, [selectedAssets, brandById]);
-  const filteredActivities = useMemo(() => (activitiesQuery.data || []).filter((item) => (activityType === "all" || item.entityType === activityType) && `${item.summary || ""} ${item.actorName || ""} ${item.action}`.toLowerCase().includes(activityQuery.toLowerCase())), [activitiesQuery.data, activityType, activityQuery]);
+  const filteredActivities = useMemo(() => (activitiesQuery.data || []).filter((item) => (activityType === "all" || item.entityType === activityType) && matchesVietnameseSearch(`${item.summary || ""} ${item.actorName || ""} ${item.action}`, activityQuery)), [activitiesQuery.data, activityType, activityQuery]);
   const hasOrgError = departmentsQuery.isError || divisionsQuery.isError || employeesQuery.isError;
 
   const exportExcel = () => {
