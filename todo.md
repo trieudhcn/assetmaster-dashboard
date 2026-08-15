@@ -616,3 +616,9 @@
 - [x] Ngăn vùng tạo Phân loại mới bị render lại làm mất focus khi nhập liệu.
 - [x] Chỉ hỏi xác nhận đóng form khi thực sự có thay đổi chưa lưu.
 - [x] Bổ sung kiểm thử hồi quy biểu mẫu và phát hành checkpoint.
+
+## Nhãn thao tác Bộ phận
+
+- [x] Rà soát icon thao tác Bộ phận và nhãn hover của Phòng Ban.
+- [x] Thêm nhãn hover/focus cho các icon chỉnh sửa và trạng thái Bộ phận.
+- [x] Bổ sung kiểm thử hồi quy và phát hành checkpoint.

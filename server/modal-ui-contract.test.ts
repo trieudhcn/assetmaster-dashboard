@@ -37,4 +37,13 @@ describe("modal presentation contract", () => {
     expect(home).toContain("categoryDraftRef.current = { ...categoryDraftRef.current, name: nameInput.value }");
     expect(home).not.toContain("data-purchase-date-icon");
   });
+
+  it("gives division action icons accessible labels for the shared hover tooltip", () => {
+    const organization = readProjectFile("client/src/pages/OrganizationManagementPage.tsx");
+
+    expect(organization).toContain('aria-label="Chỉnh sửa Bộ phận"');
+    expect(organization).toContain('"Vô hiệu hóa Bộ phận"');
+    expect(organization).toContain('"Kích hoạt Bộ phận"');
+    expect(organization).toContain('aria-label="Hủy chỉnh sửa Bộ phận"');
+  });
 });
