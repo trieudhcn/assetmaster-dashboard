@@ -475,3 +475,10 @@
 - [x] Rà soát trạng thái bảng thông báo hiện có.
 - [x] Thêm thao tác đánh dấu tất cả là đã đọc và cập nhật trạng thái hiển thị.
 - [x] Kiểm thử tương tác thông báo, build và phát hành checkpoint.
+
+## Hoàn thiện trải nghiệm chuông thông báo
+
+- [x] Rà soát và loại bỏ tooltip thừa hiển thị phía trên chuông thông báo.
+- [x] Hiển thị danh sách thông báo riêng lẻ, hỗ trợ đánh dấu đọc từng thông báo.
+- [x] Thêm hiệu ứng hoạt ảnh phù hợp cho chuông khi có thông báo chưa đọc.
+- [x] Kiểm thử hiển thị desktop/mobile, build và phát hành checkpoint.

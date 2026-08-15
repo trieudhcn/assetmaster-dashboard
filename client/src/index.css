@@ -82,6 +82,28 @@ button:not(:disabled), [role="button"]:not([aria-disabled="true"]), select:not(:
 @keyframes kpi-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
 .animate-kpi { animation: kpi-in 420ms cubic-bezier(.23,1,.32,1) both; }
 
+@keyframes notification-bell-ring {
+  0%, 66%, 100% { transform: rotate(0deg); }
+  72% { transform: rotate(12deg); }
+  78% { transform: rotate(-10deg); }
+  84% { transform: rotate(7deg); }
+  90% { transform: rotate(-4deg); }
+}
+
+@keyframes notification-dot-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.72; transform: scale(1.35); }
+}
+
+.notification-bell--unread svg {
+  transform-origin: 50% 10%;
+  animation: notification-bell-ring 2.8s cubic-bezier(0.77, 0, 0.175, 1) infinite;
+}
+
+.notification-bell--unread .notification-pulse {
+  animation: notification-dot-pulse 1.4s cubic-bezier(0.23, 1, 0.32, 1) infinite;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
 }

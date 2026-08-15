@@ -120,6 +120,13 @@ type CompanyInfo = {
   faviconUrl: string;
 };
 
+type HeaderNotification = {
+  id: string;
+  title: string;
+  description: string;
+  kind: "assignment" | "maintenance";
+};
+
 const defaultCompanyInfo: CompanyInfo = {
   name: "Công ty Cổ phần AssetMaster",
   address: "Tầng 5, Tòa nhà Innovation, Quận Cầu Giấy, Hà Nội",
@@ -240,7 +247,13 @@ export default function Home() {
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
-  const [notificationsRead, setNotificationsRead] = useState(() => localStorage.getItem("assetmaster-notifications-read") === "true");
+  const [readNotificationIds, setReadNotificationIds] = useState<string[]>(() => {
+    try {
+      return JSON.parse(localStorage.getItem("assetmaster-read-notification-ids") || "[]") as string[];
+    } catch {
+      return [];
+    }
+  });
   const [headerProfileOpen, setHeaderProfileOpen] = useState(false);
   const [companyInfo, setCompanyInfo] = useState<CompanyInfo>(readCompanyInfo);
   const isAdmin = user?.role === "admin";
@@ -329,6 +342,12 @@ export default function Home() {
     };
     const decorateActionTooltips = () => {
       document.querySelectorAll<HTMLElement>("button, a").forEach((element) => {
+        if (element.dataset.suppressIconTooltip === "true") {
+          element.classList.remove("icon-action-tooltip");
+          element.removeAttribute("data-tooltip");
+          element.removeAttribute("title");
+          return;
+        }
         const sourceLabel = element.getAttribute("aria-label")?.trim();
         const iconName = element.querySelector("svg")?.getAttribute("data-lucide") || "";
         const fallbackLabel = !sourceLabel && !element.textContent?.trim() ? iconFallbackLabels[iconName] : undefined;
@@ -359,6 +378,38 @@ export default function Home() {
   const profileName = user?.name || "Người dùng";
   const profileRole = user?.role === "admin" ? "Quản trị viên" : "Nhân viên";
   const profileInitials = profileName.split(" ").filter(Boolean).slice(-2).map((part) => part[0]).join("").toUpperCase() || "AM";
+  const headerNotifications = useMemo<HeaderNotification[]>(() => {
+    const maintenanceNotifications = assetRows.filter((asset) => asset.statusType === "maintenance").slice(0, 2).map((asset) => ({
+      id: `maintenance-${asset.code}`,
+      title: `${asset.code} đang bảo trì`,
+      description: asset.maintenanceReason?.trim() || `Theo dõi tiến độ xử lý cho ${asset.name}.`,
+      kind: "maintenance" as const,
+    }));
+    const assignedAssets = assetRows.filter((asset) => asset.statusType === "active");
+    const assignmentNotification = assignedAssets.length > 0 ? [{
+      id: `assignments-${assignedAssets.length}`,
+      title: `${assignedAssets.length} tài sản đang được cấp phát`,
+      description: "Theo dõi người nhận và lịch bàn giao trong mục Bàn giao & Cấp phát.",
+      kind: "assignment" as const,
+    }] : [];
+    return [...maintenanceNotifications, ...assignmentNotification];
+  }, [assetRows]);
+  const unreadNotifications = headerNotifications.filter((notification) => !readNotificationIds.includes(notification.id));
+  const hasUnreadNotifications = unreadNotifications.length > 0;
+  const markNotificationRead = (notificationId: string) => {
+    setReadNotificationIds((previous) => {
+      if (previous.includes(notificationId)) return previous;
+      const next = [...previous, notificationId];
+      localStorage.setItem("assetmaster-read-notification-ids", JSON.stringify(next));
+      return next;
+    });
+  };
+  const markAllNotificationsRead = () => {
+    const next = Array.from(new Set([...readNotificationIds, ...headerNotifications.map((notification) => notification.id)]));
+    setReadNotificationIds(next);
+    localStorage.setItem("assetmaster-read-notification-ids", JSON.stringify(next));
+    toast.success("Đã đánh dấu tất cả thông báo là đã đọc.");
+  };
   const dashboardKpis = [
     { label: "Tổng tài sản", value: String(assetRows.length), detail: "Theo dữ liệu đang quản lý", icon: Box, tone: "teal" },
     { label: "Đang sử dụng", value: String(assetRows.filter((asset) => asset.statusType === "active").length), detail: "Tài sản đã cấp phát", icon: UsersRound, tone: "blue" },
@@ -432,7 +483,7 @@ export default function Home() {
           <div className="flex items-center gap-2 sm:gap-3">
             <button onClick={() => setQrLookupOpen(true)} className="hidden h-9 items-center gap-2 rounded-lg border border-[#CDE5E5] bg-white px-3 text-xs font-bold text-[#087A6A] transition hover:bg-[#ECF8F7] sm:flex"><QrCode size={16} />Quét mã QR</button>
             <button onClick={openCreateModal} className="hidden h-9 items-center gap-2 rounded-lg bg-[#0F8C8C] px-3.5 text-xs font-bold text-white shadow-[0_5px_14px_rgba(15,140,140,0.22)] transition hover:-translate-y-0.5 hover:bg-[#087A6A] sm:flex"><Plus size={16} />Thêm tài sản mới</button>
-            <div className="relative"><button onClick={() => { setNotificationsOpen((current) => !current); setHeaderProfileOpen(false); }} className="relative rounded-lg p-2 text-[#60758A] hover:bg-[#F0F5F8]" aria-label="Thông báo" aria-expanded={notificationsOpen}><Bell size={19} />{!notificationsRead && <span className="absolute right-1.5 top-1.5 h-1.5 w-1.5 rounded-full bg-[#F0A516] ring-2 ring-white" />}</button>{notificationsOpen && <div className="absolute right-0 top-[calc(100%+10px)] z-50 w-[320px] overflow-hidden rounded-xl border border-[#DDE7F0] bg-white shadow-[0_18px_42px_rgba(16,42,67,0.18)]"><div className="flex items-center justify-between border-b border-[#E7EEF3] px-4 py-3"><div><div className="text-xs font-extrabold text-[#193B57]">Thông báo</div><div className="mt-0.5 text-[10px] text-[#8AA0B6]">Cập nhật hoạt động gần đây</div></div><button disabled={notificationsRead} onClick={() => { setNotificationsRead(true); localStorage.setItem("assetmaster-notifications-read", "true"); toast.success("Đã đánh dấu tất cả thông báo là đã đọc."); }} className="text-[10px] font-bold text-[#087A6A] disabled:text-[#9BAEC0]">{notificationsRead ? "Đã đọc tất cả" : "Đánh dấu đã đọc"}</button></div><div className="p-4"><div className="flex gap-3 rounded-lg bg-[#F7FAFC] p-3"><div className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-[#E6F6F2] text-[#087A6A]"><Bell size={15} /></div><div><div className="text-xs font-bold text-[#193B57]">{notificationsRead ? "Tất cả thông báo đã được đọc" : "Chưa có thông báo mới"}</div><p className="mt-1 text-[11px] leading-5 text-[#71869A]">Các cập nhật bàn giao, bảo trì và import sẽ xuất hiện tại đây.</p></div></div></div></div>}</div>
+            <div className="relative"><button data-suppress-icon-tooltip="true" onClick={() => { setNotificationsOpen((current) => !current); setHeaderProfileOpen(false); }} className={`notification-bell relative rounded-lg p-2 text-[#60758A] hover:bg-[#F0F5F8] ${hasUnreadNotifications ? "notification-bell--unread" : ""}`} aria-label="Thông báo" aria-expanded={notificationsOpen}><Bell size={19} />{hasUnreadNotifications && <span className="notification-pulse absolute right-1.5 top-1.5 h-1.5 w-1.5 rounded-full bg-[#F0A516] ring-2 ring-white" />}</button>{notificationsOpen && <div className="absolute right-0 top-[calc(100%+10px)] z-50 w-[min(320px,calc(100vw-2rem))] overflow-hidden rounded-xl border border-[#DDE7F0] bg-white shadow-[0_18px_42px_rgba(16,42,67,0.18)]"><div className="flex items-center justify-between gap-3 border-b border-[#E7EEF3] px-4 py-3"><div><div className="text-xs font-extrabold text-[#193B57]">Thông báo</div><div className="mt-0.5 text-[10px] text-[#8AA0B6]">{hasUnreadNotifications ? `${unreadNotifications.length} thông báo chưa đọc` : "Tất cả đã được đọc"}</div></div><button disabled={!hasUnreadNotifications} onClick={markAllNotificationsRead} className="shrink-0 text-[10px] font-bold text-[#087A6A] disabled:text-[#9BAEC0]">Đánh dấu tất cả</button></div><div className="max-h-[360px] overflow-y-auto p-2">{headerNotifications.length > 0 ? headerNotifications.map((notification) => { const isRead = readNotificationIds.includes(notification.id); const Icon = notification.kind === "maintenance" ? Wrench : PackageCheck; return <div key={notification.id} className={`flex gap-3 rounded-lg p-3 transition ${isRead ? "bg-white" : "bg-[#F2FAF8]"}`}><div className={`grid h-8 w-8 shrink-0 place-items-center rounded-lg ${notification.kind === "maintenance" ? "bg-[#FFF5DC] text-[#A86B00]" : "bg-[#E6F6F2] text-[#087A6A]"}`}><Icon size={15} /></div><div className="min-w-0 flex-1"><div className="flex items-start justify-between gap-2"><div className={`text-xs ${isRead ? "font-semibold text-[#527089]" : "font-extrabold text-[#193B57]"}`}>{notification.title}</div>{!isRead && <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-[#0F8C8C]" aria-label="Chưa đọc" />}</div><p className="mt-1 text-[11px] leading-5 text-[#71869A]">{notification.description}</p>{!isRead && <button onClick={() => markNotificationRead(notification.id)} className="mt-2 text-[10px] font-bold text-[#087A6A] hover:text-[#066254]">Đánh dấu đã đọc</button>}</div></div>; }) : <div className="p-4 text-center"><div className="text-xs font-bold text-[#193B57]">Chưa có thông báo mới</div><p className="mt-1 text-[11px] leading-5 text-[#71869A]">Các cập nhật bàn giao và bảo trì sẽ xuất hiện tại đây.</p></div>}</div></div>}</div>
             <div className="relative"><button onClick={() => { setHeaderProfileOpen((current) => !current); setNotificationsOpen(false); }} aria-label="Mở menu người dùng" aria-expanded={headerProfileOpen} className="grid h-8 w-8 place-items-center rounded-full bg-[#CFE7E4] text-[11px] font-extrabold text-[#087A6A] hover:ring-2 hover:ring-[#8BCDC6]">{profileInitials}</button>{headerProfileOpen && <div className="absolute right-0 top-[calc(100%+10px)] z-50 w-[250px] overflow-hidden rounded-xl border border-[#DDE7F0] bg-white shadow-[0_18px_42px_rgba(16,42,67,0.18)]"><div className="border-b border-[#E7EEF3] px-4 py-3"><div className="text-xs font-extrabold text-[#193B57]">{profileName}</div><div className="mt-1 truncate text-[10px] text-[#71869A]">{user?.email || "Chưa có email"}</div><div className="mt-2 inline-flex rounded-full bg-[#E6F6F2] px-2 py-1 text-[10px] font-bold text-[#087A6A]">{profileRole}</div></div><button onClick={() => { setHeaderProfileOpen(false); navigateTo("Cài đặt"); }} className="flex w-full items-center gap-2 px-4 py-3 text-left text-xs font-bold text-[#527089] hover:bg-[#F7FAFC]"><UserRound size={15} />Hồ sơ & cài đặt</button><button onClick={async () => { if (!window.confirm("Bạn có chắc chắn muốn đăng xuất?")) return; setHeaderProfileOpen(false); await logout(); toast.success("Đã đăng xuất khỏi AssetMaster."); }} className="flex w-full items-center gap-2 border-t border-[#E7EEF3] px-4 py-3 text-left text-xs font-bold text-[#B44545] hover:bg-[#FFF5F5]"><LogOut size={15} />Đăng xuất</button></div>}</div>
           </div>
         </header>
