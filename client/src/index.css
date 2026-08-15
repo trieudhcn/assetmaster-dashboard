@@ -136,6 +136,7 @@ button[aria-label="Mở menu người dùng"] + div { animation: popover-in 180m
 .field-input::placeholder { color: #A8B8C5; font-weight: 500; }
 .field-input:focus { border-color: #0F8C8C; box-shadow: 0 0 0 3px rgba(15,140,140,0.11); }
 .field-input:disabled { cursor: not-allowed; }
+.asset-date-input::-webkit-calendar-picker-indicator { position: absolute; right: 0; width: 2.75rem; height: 100%; opacity: 0; cursor: pointer; }
 
 /* Shared drawer close target: stable hit area, focus ring and hover affordance. */
 .drawer-close-action { display: inline-flex; min-width: 2.5rem; min-height: 2.5rem; align-items: center; justify-content: center; border-radius: 0.5rem; color: #71869A; transition: background-color 160ms ease-out, color 160ms ease-out, transform 160ms ease-out; }

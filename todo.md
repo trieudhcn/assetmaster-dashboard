@@ -649,3 +649,10 @@
 - [x] Thêm danh sách Phân loại có tìm kiếm theo tên hoặc tiền tố trong form tài sản.
 - [x] Thêm ô tìm kiếm và phân trang tương thích trong danh sách Phân loại.
 - [x] Bổ sung kiểm thử tìm kiếm, responsive và phát hành checkpoint.
+
+## Lịch mua và số lượng tài sản Phân loại
+
+- [x] Rà soát trường Ngày mua và nguồn dữ liệu số lượng tài sản theo Phân loại.
+- [x] Thêm icon lịch có thể nhấp để mở chọn ngày trong form tài sản.
+- [x] Hiển thị số lượng tài sản thực tế trên từng Phân loại trong danh sách quản trị.
+- [x] Bổ sung kiểm thử giao diện, dữ liệu và phát hành checkpoint.

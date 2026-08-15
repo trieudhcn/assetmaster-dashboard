@@ -1238,10 +1238,22 @@ function AssetModal({ mode, asset, formData, setFormData, onClose: dismiss, onSa
     const dateInput = dateLabel?.parentElement?.querySelector("input") as HTMLInputElement | null;
     if (dateInput) {
       const [day, month, year] = formData.date.split("/");
-      const normalized = /^\d{4}-\d{2}-\d{2}$/.test(formData.date) ? formData.date : day && month && year ? `${year}-${month.padStart(2, "0")}-${day.padStart(2, "0")}` : "";
+      const normalized = /^\d{4}-\d{2}-\d{2}$/.test(formData.date) ? formData.date : day && month && year ? `${year}-${month.padStart(2, "0")}` : "";
       dateInput.type = "date";
       dateInput.value = normalized;
       dateInput.title = "Chọn ngày mua";
+      dateInput.classList.add("asset-date-input", "pr-11");
+      const dateField = dateInput.parentElement;
+      dateField?.classList.add("relative");
+      dateField?.querySelector("[data-purchase-date-picker]")?.remove();
+      const calendarButton = document.createElement("button");
+      calendarButton.type = "button";
+      calendarButton.dataset.purchaseDatePicker = "true";
+      calendarButton.className = "absolute right-2 top-[calc(50%+0.55rem)] grid h-8 w-8 -translate-y-1/2 place-items-center rounded-md text-[#087A6A] transition hover:bg-[#ECF8F7] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0F8C8C]";
+      calendarButton.setAttribute("aria-label", "Mở lịch chọn ngày mua");
+      calendarButton.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true" class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4.5" width="18" height="16" rx="2"/><path d="M8 2.5v4M16 2.5v4M3 9.5h18"/></svg>';
+      calendarButton.onclick = () => { dateInput.focus(); if (typeof dateInput.showPicker === "function") dateInput.showPicker(); else dateInput.click(); };
+      dateField?.appendChild(calendarButton);
       dateInput.onchange = () => { setFormDirty(true); setFormData((current) => ({ ...current, date: dateInput.value })); };
     }
 

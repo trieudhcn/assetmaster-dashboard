@@ -89,4 +89,18 @@ describe("modal presentation contract", () => {
     expect(categories).toContain('aria-label="Tìm kiếm Phân loại"');
     expect(categories).toContain("filteredCategories.slice(pageStart, pageStart + PAGE_SIZE)");
   });
+
+  it("shows an interactive calendar affordance and live asset totals for categories", () => {
+    const home = readProjectFile("client/src/pages/Home.tsx");
+    const categories = readProjectFile("client/src/pages/AssetCategoryManagementPage.tsx");
+    const stylesheet = readProjectFile("client/src/index.css");
+
+    expect(home).toContain("data-purchase-date-picker");
+    expect(home).toContain("Mở lịch chọn ngày mua");
+    expect(home).toContain("dateInput.showPicker");
+    expect(categories).toContain("trpc.assets.list.useQuery");
+    expect(categories).toContain("assetCountByCategory");
+    expect(categories).toContain("tài sản</span>");
+    expect(stylesheet).toContain(".asset-date-input::-webkit-calendar-picker-indicator");
+  });
 });
