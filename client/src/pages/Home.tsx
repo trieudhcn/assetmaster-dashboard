@@ -27,6 +27,7 @@ import { OrganizationManagementPage } from "./OrganizationManagementPage";
 import { VendorBrandManagementPage } from "./VendorBrandManagementPage";
 import { LoginGateway } from "./LoginGateway";
 import { UserDashboard } from "./UserDashboard";
+import { AssetImportModal } from "@/components/AssetImportModal";
 import {
   Archive,
   ArrowDownUp,
@@ -216,6 +217,7 @@ export default function Home() {
   const [qrAsset, setQrAsset] = useState<Asset | null>(null);
   const [handoverAssetCode, setHandoverAssetCode] = useState<string | null>(null);
   const [qrLookupOpen, setQrLookupOpen] = useState(false);
+  const [assetImportOpen, setAssetImportOpen] = useState(false);
   const [formData, setFormData] = useState<Asset>({ code: "", name: "", category: "CNTT", holder: "", status: "Sẵn có", statusType: "available", date: "14/02/2025", value: "", location: "", serial: "", supplier: "", note: "" });
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState("Tất cả loại tài sản");
@@ -236,9 +238,15 @@ export default function Home() {
   const updateAssetMutation = trpc.assets.update.useMutation({ onSuccess: () => assetQuery.refetch() });
 
   useEffect(() => {
+    const openImport = () => setAssetImportOpen(true);
+    window.addEventListener("assetmaster:open-asset-import", openImport);
+    return () => window.removeEventListener("assetmaster:open-asset-import", openImport);
+  }, []);
+
+  useEffect(() => {
     if (!assetQuery.data) return;
     setAssetRows(assetQuery.data.map((asset) => ({
-      code: asset.assetCode, qrToken: asset.qrToken, name: asset.name, category: "Chưa phân loại", holder: asset.holderName || (asset.status === "maintenance" ? "Bảo trì" : asset.status === "available" ? "Chưa bàn giao" : "Chưa cấp phát"), status: asset.status === "assigned" ? "Đang cấp phát" : asset.status === "maintenance" ? "Bảo trì" : "Sẵn có", statusType: asset.status === "assigned" ? "active" : asset.status === "maintenance" ? "maintenance" : "available", date: asset.purchaseDate ? new Date(asset.purchaseDate).toLocaleDateString("vi-VN") : "—", value: asset.purchaseValue ? String(asset.purchaseValue) : "0", location: asset.location || "", serial: asset.serialNumber || "", maintenanceReason: asset.maintenanceReason || "", supplier: asset.vendor || vendorsQuery.data?.find((vendor) => vendor.id === asset.vendorId)?.name || "", vendorId: asset.vendorId || undefined, brand: brandsQuery.data?.find((brand) => brand.id === asset.brandId)?.name || "", brandId: asset.brandId || undefined, note: asset.note || "",
+      code: asset.assetCode, qrToken: asset.qrToken, name: asset.name, category: typeof (asset.metadata as { category?: unknown } | null)?.category === "string" ? String((asset.metadata as { category?: unknown }).category) : "Chưa phân loại", holder: asset.holderName || (asset.status === "maintenance" ? "Bảo trì" : asset.status === "available" ? "Chưa bàn giao" : "Chưa cấp phát"), status: asset.status === "assigned" ? "Đang cấp phát" : asset.status === "maintenance" ? "Bảo trì" : "Sẵn có", statusType: asset.status === "assigned" ? "active" : asset.status === "maintenance" ? "maintenance" : "available", date: asset.purchaseDate ? new Date(asset.purchaseDate).toLocaleDateString("vi-VN") : "—", value: asset.purchaseValue ? String(asset.purchaseValue) : "0", location: asset.location || "", serial: asset.serialNumber || "", maintenanceReason: asset.maintenanceReason || "", supplier: asset.vendor || vendorsQuery.data?.find((vendor) => vendor.id === asset.vendorId)?.name || "", vendorId: asset.vendorId || undefined, brand: brandsQuery.data?.find((brand) => brand.id === asset.brandId)?.name || "", brandId: asset.brandId || undefined, note: asset.note || "",
     })));
   }, [assetQuery.data, vendorsQuery.data, brandsQuery.data]);
 
@@ -446,6 +454,7 @@ export default function Home() {
           </div>
         </div>
         {assetModal && <AssetModal mode={assetModal} asset={selectedAsset} formData={formData} setFormData={setFormData} onClose={() => setAssetModal(null)} onSave={saveAsset} onEdit={() => selectedAsset && openEditModal(selectedAsset)} onStartHandover={(assetCode) => { setAssetModal(null); setHandoverAssetCode(assetCode); }} />}
+        {assetImportOpen && <AssetImportModal onClose={() => setAssetImportOpen(false)} onImported={() => { void assetQuery.refetch(); }} />}
         {qrAsset && <AssetQrModal asset={qrAsset} onClose={() => setQrAsset(null)} />}
         {qrLookupOpen && <QrLookupModal assets={assetRows} onClose={() => setQrLookupOpen(false)} onOpenAsset={(asset) => { setQrLookupOpen(false); setSelectedAsset(asset); setAssetModal("detail"); }} />}
         {handoverAssetCode && <AssetQuickHandoverModal assetCode={handoverAssetCode} onClose={() => setHandoverAssetCode(null)} />}
@@ -507,9 +516,18 @@ function PaginatedAssetCatalogPage({ assets, query, category, status, department
     exportButton.title = maintenanceExportRows.length ? "Xuất danh sách tài sản đang bảo trì ra Excel" : "Không có tài sản đang bảo trì trong phạm vi lọc hiện tại";
     exportButton.className = "flex h-9 items-center justify-center rounded-lg border border-[#CDE5E5] bg-white px-3 text-xs font-bold text-[#087A6A] hover:bg-[#ECF8F7] disabled:cursor-not-allowed disabled:opacity-50";
     exportButton.addEventListener("click", exportMaintenanceExcel);
+    const importButton = document.createElement("button");
+    importButton.type = "button";
+    importButton.dataset.assetExcelImport = "true";
+    importButton.textContent = "Nhập Excel";
+    importButton.title = "Tải template và import nhiều tài sản từ Excel";
+    importButton.className = "flex h-9 items-center justify-center rounded-lg bg-[#0F8C8C] px-3 text-xs font-bold text-white hover:bg-[#087A6A]";
+    const openAssetImport = () => window.dispatchEvent(new Event("assetmaster:open-asset-import"));
+    importButton.addEventListener("click", openAssetImport);
     resetButton.before(maintenanceButton);
     maintenanceButton.after(exportButton);
-    return () => { maintenanceButton.removeEventListener("click", toggleMaintenance); exportButton.removeEventListener("click", exportMaintenanceExcel); maintenanceButton.remove(); exportButton.remove(); };
+    exportButton.after(importButton);
+    return () => { maintenanceButton.removeEventListener("click", toggleMaintenance); exportButton.removeEventListener("click", exportMaintenanceExcel); importButton.removeEventListener("click", openAssetImport); maintenanceButton.remove(); exportButton.remove(); importButton.remove(); };
   }, [status, onStatusChange, maintenanceExportRows, exportMaintenanceExcel]);
   useEffect(() => {
     const legacyFooter = document.querySelector("section.overflow-hidden > div:last-child");

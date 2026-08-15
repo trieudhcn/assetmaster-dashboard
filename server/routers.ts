@@ -9,6 +9,7 @@ import {
   createBrand,
   countActiveDivisionsByDepartment,
   createAsset,
+  createAssetsBulk,
   createAuditSession,
   createAuditItem,
   createDepartment,
@@ -33,6 +34,7 @@ import {
   getVendorByName,
   getVendorDocumentById,
   listAssets,
+  listAssetCodesByCodes,
   listBrands,
   listAllBrands,
   listAllVendors,
@@ -79,6 +81,24 @@ const assetInput = z.object({
   assetCode: z.string().trim().min(2).max(64), name: z.string().trim().min(2).max(255), categoryId: z.number().int().positive().optional().nullable(), departmentId: z.number().int().positive().optional().nullable(), holderName: nullableText,
   status: z.enum(["available", "assigned", "maintenance", "retired", "lost"]).default("available"), condition: z.enum(["good", "fair", "needs_inspection", "damaged"]).default("good"),
   purchaseDate: dateFromMs, purchaseValue: z.string().regex(/^\d+(\.\d{1,2})?$/).optional().nullable(), vendor: nullableText, vendorId: z.number().int().positive().optional().nullable(), brandId: z.number().int().positive().optional().nullable(), serialNumber: nullableText, location: nullableText, warrantyUntil: dateFromMs, note: nullableText, maintenanceReason: nullableText,
+});
+
+const assetImportRow = z.object({
+  rowNumber: z.number().int().min(2),
+  assetCode: z.string().trim().min(2).max(64),
+  name: z.string().trim().min(2).max(255),
+  category: z.string().trim().max(160).nullable(),
+  status: z.enum(["available", "maintenance"]),
+  maintenanceReason: nullableText,
+  condition: z.enum(["good", "fair", "needs_inspection", "damaged"]),
+  purchaseDate: dateFromMs,
+  purchaseValue: z.string().regex(/^\d+(\.\d{1,2})?$/).optional().nullable(),
+  vendor: nullableText,
+  brandName: z.string().trim().max(160).nullable(),
+  serialNumber: nullableText,
+  location: nullableText,
+  warrantyUntil: dateFromMs,
+  note: nullableText,
 });
 
 export const appRouter = router({
@@ -276,6 +296,25 @@ export const appRouter = router({
   }),
   assets: router({
     list: adminProcedure.query(() => listAssets()),
+    import: adminProcedure.input(z.object({ rows: z.array(assetImportRow).min(1).max(100) })).mutation(async ({ input, ctx }) => {
+      const existingCodes = new Set((await listAssetCodesByCodes(input.rows.map((row) => row.assetCode))).map((item) => item.assetCode.toLocaleLowerCase("vi-VN")));
+      const rowsToCreate: Array<typeof assetImportRow._output> = [];
+      const errors: Array<{ rowNumber: number; message: string }> = [];
+      const seenCodes = new Set<string>();
+      for (const row of input.rows) {
+        const codeKey = row.assetCode.toLocaleLowerCase("vi-VN");
+        if (seenCodes.has(codeKey) || existingCodes.has(codeKey)) { errors.push({ rowNumber: row.rowNumber, message: `Mã tài sản ${row.assetCode} đã tồn tại.` }); continue; }
+        if (!hasRequiredMaintenanceReason(row.status, row.maintenanceReason)) { errors.push({ rowNumber: row.rowNumber, message: "Tài sản Bảo trì cần có Lý do bảo trì." }); continue; }
+        if (row.brandName && !(await getBrandByName(row.brandName))?.isActive) { errors.push({ rowNumber: row.rowNumber, message: `Hãng ${row.brandName} không tồn tại hoặc đã ngừng hoạt động.` }); continue; }
+        seenCodes.add(codeKey);
+        rowsToCreate.push(row);
+      }
+      const brandIds = new Map<string, number | null>();
+      for (const row of rowsToCreate) if (row.brandName && !brandIds.has(row.brandName)) brandIds.set(row.brandName, (await getBrandByName(row.brandName))?.id || null);
+      const created = await createAssetsBulk(rowsToCreate.map((row) => ({ assetCode: row.assetCode, name: row.name, categoryId: null, departmentId: null, holderUserId: null, holderName: null, status: row.status, condition: row.condition, purchaseDate: row.purchaseDate, purchaseValue: row.purchaseValue, vendor: row.vendor, vendorId: null, brandId: row.brandName ? brandIds.get(row.brandName) || null : null, serialNumber: row.serialNumber, location: row.location, warrantyUntil: row.warrantyUntil, qrToken: crypto.randomUUID().replaceAll("-", ""), metadata: row.category ? { category: row.category } : null, note: row.note, maintenanceReason: row.status === "maintenance" ? row.maintenanceReason : null, isArchived: false, createdByUserId: ctx.user!.id })));
+      if (created) await recordActivity({ entityType: "asset", entityId: 0, action: "imported", actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: `Import ${created} tài sản từ tệp Excel${errors.length ? `; bỏ qua ${errors.length} dòng lỗi` : ""}` });
+      return { created, errors };
+    }),
     create: adminProcedure.input(assetInput).mutation(async ({ input, ctx }) => {
       if (!hasRequiredMaintenanceReason(input.status, input.maintenanceReason)) throw new TRPCError({ code: "BAD_REQUEST", message: "Vui lòng nhập lý do bảo trì khi đưa tài sản vào Bảo trì." });
       if (input.vendorId && !(await getVendorById(input.vendorId))?.isActive) throw new TRPCError({ code: "BAD_REQUEST", message: "Nhà cung cấp được chọn không tồn tại hoặc đã ngừng hoạt động." });

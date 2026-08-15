@@ -1,4 +1,4 @@
-import { desc, eq } from "drizzle-orm";
+import { desc, eq, inArray } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import {
   activityLogs,
@@ -299,6 +299,20 @@ export async function createAsset(data: typeof assets.$inferInsert) {
   if (!db) throw new Error("Database unavailable");
   const result = await db.insert(assets).values(data);
   return Number(result[0].insertId);
+}
+
+export async function listAssetCodesByCodes(assetCodes: string[]) {
+  const db = await getDb();
+  if (!db || !assetCodes.length) return [];
+  return db.select({ assetCode: assets.assetCode }).from(assets).where(inArray(assets.assetCode, assetCodes));
+}
+
+export async function createAssetsBulk(data: Array<typeof assets.$inferInsert>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database unavailable");
+  if (!data.length) return 0;
+  await db.insert(assets).values(data);
+  return data.length;
 }
 
 export async function updateAsset(id: number, data: Partial<typeof assets.$inferInsert>) {

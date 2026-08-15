@@ -386,3 +386,11 @@
 - [x] Rà soát icon thao tác trong Bàn giao & Cấp phát và các màn hình quản trị.
 - [x] Bổ sung nhãn hover/focus mô tả rõ từng thao tác còn thiếu.
 - [x] Thêm kiểm thử, xác minh giao diện desktop/mobile, TypeScript, build và phát hành checkpoint.
+
+## Template & import Excel tài sản
+
+- [x] Rà soát mô hình dữ liệu tài sản và các quy tắc phân quyền import.
+- [x] Tạo template Excel chuẩn và kiểm tra từng dòng dữ liệu import.
+- [x] Bổ sung API Admin lưu hàng loạt các tài sản hợp lệ vào database.
+- [x] Thêm giao diện tải template, tải tệp Excel và xem kết quả import.
+- [x] Thêm kiểm thử, xác minh desktop/mobile, TypeScript, build và phát hành checkpoint.
