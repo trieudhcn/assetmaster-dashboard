@@ -602,3 +602,10 @@
 - [x] Tự sinh mã theo tiền tố phân loại, đồng thời hỗ trợ thêm, sửa và xóa phân loại.
 - [x] Thêm chọn ngày trực quan trong form và đồng bộ dữ liệu ngày mua.
 - [x] Bổ sung kiểm thử quyền hạn, giao diện responsive và phát hành checkpoint.
+
+## Import tài sản theo Phân loại
+
+- [x] Rà soát template Excel và quy tắc xác thực Mã tài sản hiện tại.
+- [x] Bỏ yêu cầu nhập Mã tài sản, yêu cầu Phân loại và tự sinh mã theo tiền tố.
+- [x] Cập nhật xem trước, thông báo lỗi và template tải xuống.
+- [x] Bổ sung kiểm thử import, hồi quy và phát hành checkpoint.

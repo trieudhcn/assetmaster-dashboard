@@ -1,7 +1,6 @@
 export const assetImportHeaders = [
-  "Mã tài sản*",
   "Tên tài sản*",
-  "Phân loại",
+  "Phân loại*",
   "Trạng thái (Sẵn có/Bảo trì)",
   "Lý do bảo trì",
   "Tình trạng",
@@ -19,7 +18,7 @@ export type AssetImportCandidate = {
   rowNumber: number;
   assetCode: string;
   name: string;
-  category: string | null;
+  category: string;
   status: "available" | "maintenance";
   maintenanceReason: string | null;
   condition: "good" | "fair" | "needs_inspection" | "damaged";
@@ -52,11 +51,11 @@ export function parseVietnameseDate(value: unknown) {
 export function parseAssetImportRows(rows: Array<Record<string, unknown>>) {
   const issues: AssetImportIssue[] = [];
   const candidates: AssetImportCandidate[] = [];
-  const seenCodes = new Set<string>();
   rows.forEach((row, index) => {
     const rowNumber = index + 2;
-    const assetCode = text(row["Mã tài sản*"]);
+    const assetCode = "";
     const name = text(row["Tên tài sản*"]);
+    const category = text(row["Phân loại*"]) || text(row["Phân loại"]);
     const statusText = text(row["Trạng thái (Sẵn có/Bảo trì)"]) || "Sẵn có";
     const conditionText = text(row["Tình trạng"]) || "Tốt";
     const status = statusText.toLocaleLowerCase("vi-VN") === "bảo trì" ? "maintenance" : statusText.toLocaleLowerCase("vi-VN") === "sẵn có" ? "available" : null;
@@ -68,8 +67,7 @@ export function parseAssetImportRows(rows: Array<Record<string, unknown>>) {
     const purchaseDate = parseVietnameseDate(purchaseDateSource);
     const warrantyUntil = parseVietnameseDate(warrantySource);
     const purchaseValueSource = text(row["Giá trị (VNĐ)"]).replace(/[,.\s]/g, "");
-    if (!assetCode || !name) issues.push({ rowNumber, message: "Cần nhập Mã tài sản và Tên tài sản." });
-    else if (seenCodes.has(assetCode.toLocaleLowerCase("vi-VN"))) issues.push({ rowNumber, message: `Mã tài sản ${assetCode} bị lặp trong tệp.` });
+    if (!name || !category) issues.push({ rowNumber, message: "Cần nhập Tên tài sản và Phân loại." });
     else if (!status) issues.push({ rowNumber, message: "Trạng thái chỉ nhận Sẵn có hoặc Bảo trì." });
     else if (!condition) issues.push({ rowNumber, message: "Tình trạng chỉ nhận Tốt, Khá, Cần kiểm tra hoặc Hư hỏng." });
     else if (status === "maintenance" && !maintenanceReason) issues.push({ rowNumber, message: "Tài sản Bảo trì cần có Lý do bảo trì." });
@@ -77,8 +75,7 @@ export function parseAssetImportRows(rows: Array<Record<string, unknown>>) {
     else if (warrantySource && !warrantyUntil) issues.push({ rowNumber, message: "Hạn bảo hành phải theo định dạng dd/mm/yyyy." });
     else if (purchaseValueSource && !/^\d+(\.\d{1,2})?$/.test(purchaseValueSource)) issues.push({ rowNumber, message: "Giá trị phải là số tiền hợp lệ." });
     else {
-      seenCodes.add(assetCode.toLocaleLowerCase("vi-VN"));
-      candidates.push({ rowNumber, assetCode, name, category: text(row["Phân loại"]) || null, status, maintenanceReason, condition, purchaseDate, purchaseValue: purchaseValueSource || null, vendor: text(row["Nhà cung cấp"]) || null, brandName: text(row["Hãng"]) || null, serialNumber: text(row["Serial/IMEI"]) || null, location: text(row["Vị trí"]) || null, warrantyUntil, note: text(row["Ghi chú"]) || null });
+      candidates.push({ rowNumber, assetCode, name, category, status, maintenanceReason, condition, purchaseDate, purchaseValue: purchaseValueSource || null, vendor: text(row["Nhà cung cấp"]) || null, brandName: text(row["Hãng"]) || null, serialNumber: text(row["Serial/IMEI"]) || null, location: text(row["Vị trí"]) || null, warrantyUntil, note: text(row["Ghi chú"]) || null });
     }
   });
   return { candidates, issues };

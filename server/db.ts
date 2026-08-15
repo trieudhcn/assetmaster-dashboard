@@ -323,6 +323,12 @@ export async function getAssetCategoryByCode(code: string) {
   return (await db.select().from(assetCategories).where(eq(assetCategories.code, code)).limit(1))[0];
 }
 
+export async function getAssetCategoryByName(name: string) {
+  const db = await getDb();
+  if (!db) return undefined;
+  return (await db.select().from(assetCategories).where(eq(assetCategories.name, name)).limit(1))[0];
+}
+
 export async function createAssetCategory(data: typeof assetCategories.$inferInsert) {
   const db = await getDb();
   if (!db) throw new Error("Database unavailable");
