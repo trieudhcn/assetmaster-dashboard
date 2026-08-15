@@ -63,7 +63,7 @@ describe("modal presentation contract", () => {
     const stylesheet = readProjectFile("client/src/index.css");
 
     expect(categories).toContain("const PAGE_SIZE = 5");
-    expect(categories).toContain("categories.slice(pageStart, pageStart + PAGE_SIZE)");
+    expect(categories).toContain("filteredCategories.slice(pageStart, pageStart + PAGE_SIZE)");
     expect(categories).toContain("min-h-[35rem]");
     expect(employees).toContain("drawer-close-action");
     expect(historyDrawer).toContain("drawer-close-action");
@@ -77,5 +77,16 @@ describe("modal presentation contract", () => {
     expect(home).toContain('aria-label="Điều hướng chính"');
     expect(home).toContain("min-h-0 flex-1 space-y-1 overflow-y-auto overscroll-contain");
     expect(home).toContain("mt-3 shrink-0 space-y-1 border-t");
+  });
+
+  it("supports category search in both the asset form and category management list", () => {
+    const home = readProjectFile("client/src/pages/Home.tsx");
+    const categories = readProjectFile("client/src/pages/AssetCategoryManagementPage.tsx");
+
+    expect(home).toContain("data-category-search-picker");
+    expect(home).toContain("Tìm tên hoặc tiền tố Phân loại...");
+    expect(categories).toContain("matchesVietnameseSearch");
+    expect(categories).toContain('aria-label="Tìm kiếm Phân loại"');
+    expect(categories).toContain("filteredCategories.slice(pageStart, pageStart + PAGE_SIZE)");
   });
 });

@@ -1249,6 +1249,7 @@ function AssetModal({ mode, asset, formData, setFormData, onClose: dismiss, onSa
     const categoryField = categoryLabel?.parentElement;
     const select = categoryField?.querySelector("select") as HTMLSelectElement | null;
     if (!categoryField || !select) return;
+    categoryField.querySelector("[data-category-search-picker]")?.remove();
     select.replaceChildren();
     const placeholder = document.createElement("option");
     placeholder.value = "";
@@ -1266,6 +1267,56 @@ function AssetModal({ mode, asset, formData, setFormData, onClose: dismiss, onSa
       setFormDirty(true);
       setFormData((current) => ({ ...current, categoryId: category?.id, category: category?.name || "", code: "" }));
     };
+    select.classList.add("sr-only");
+    select.tabIndex = -1;
+    select.setAttribute("aria-hidden", "true");
+    const selectedCategory = (categoriesQuery.data || []).find((item) => item.id === formData.categoryId);
+    const picker = document.createElement("div");
+    picker.dataset.categorySearchPicker = "true";
+    picker.className = "relative";
+    const searchInput = document.createElement("input");
+    searchInput.type = "text";
+    searchInput.className = "field-input";
+    searchInput.placeholder = "Tìm tên hoặc tiền tố Phân loại...";
+    searchInput.setAttribute("aria-label", "Tìm Phân loại");
+    searchInput.setAttribute("autocomplete", "off");
+    searchInput.value = selectedCategory ? `${selectedCategory.name} · ${selectedCategory.code}xxxxx` : "";
+    const results = document.createElement("div");
+    results.className = "absolute z-[70] mt-1 hidden max-h-52 w-full overflow-y-auto rounded-lg border border-[#CDE5E5] bg-white p-1 shadow-[0_14px_28px_rgba(16,42,67,0.16)]";
+    results.setAttribute("role", "listbox");
+    const renderResults = (search: string) => {
+      const normalized = search.trim().toLocaleLowerCase("vi");
+      const matches = (categoriesQuery.data || []).filter((category) => `${category.name} ${category.code}`.toLocaleLowerCase("vi").includes(normalized));
+      results.replaceChildren();
+      if (!matches.length) {
+        const empty = document.createElement("div");
+        empty.className = "px-3 py-2 text-xs font-semibold text-[#71869A]";
+        empty.textContent = "Không tìm thấy Phân loại phù hợp.";
+        results.appendChild(empty);
+        return;
+      }
+      matches.forEach((category) => {
+        const option = document.createElement("button");
+        option.type = "button";
+        option.className = "flex w-full items-center justify-between gap-3 rounded-md px-3 py-2 text-left text-xs font-semibold text-[#193B57] hover:bg-[#ECF8F7] hover:text-[#087A6A]";
+        option.setAttribute("role", "option");
+        option.setAttribute("aria-selected", String(category.id === formData.categoryId));
+        option.innerHTML = `<span class="truncate">${category.name}</span><span class="shrink-0 font-mono text-[10px] text-[#2666A8]">${category.code}xxxxx</span>`;
+        option.addEventListener("mousedown", (event) => event.preventDefault());
+        option.addEventListener("click", () => {
+          select.value = String(category.id);
+          select.dispatchEvent(new Event("change", { bubbles: true }));
+          searchInput.value = `${category.name} · ${category.code}xxxxx`;
+          results.classList.add("hidden");
+        });
+        results.appendChild(option);
+      });
+    };
+    searchInput.addEventListener("focus", () => { searchInput.value = ""; renderResults(""); results.classList.remove("hidden"); });
+    searchInput.addEventListener("input", () => { renderResults(searchInput.value); results.classList.remove("hidden"); });
+    searchInput.addEventListener("blur", () => window.setTimeout(() => { results.classList.add("hidden"); const current = (categoriesQuery.data || []).find((item) => item.id === formData.categoryId); searchInput.value = current ? `${current.name} · ${current.code}xxxxx` : ""; }, 150));
+    picker.append(searchInput, results);
+    select.before(picker);
     categoryField.querySelector("[data-category-creator]")?.remove();
     const creator = document.createElement("div");
     creator.dataset.categoryCreator = "true";

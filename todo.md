@@ -642,3 +642,10 @@
 - [x] Rà soát cấu trúc sidebar và các vùng gây tràn trên màn hình dọc.
 - [x] Tách vùng điều hướng cuộn, giữ header và hồ sơ người dùng trong bố cục phù hợp.
 - [x] Kiểm thử viewport chiều cao hạn chế, hồi quy và phát hành checkpoint.
+
+## Tìm kiếm Phân loại
+
+- [x] Rà soát chọn Phân loại trong form tạo/sửa tài sản và danh sách quản trị.
+- [x] Thêm danh sách Phân loại có tìm kiếm theo tên hoặc tiền tố trong form tài sản.
+- [x] Thêm ô tìm kiếm và phân trang tương thích trong danh sách Phân loại.
+- [x] Bổ sung kiểm thử tìm kiếm, responsive và phát hành checkpoint.
