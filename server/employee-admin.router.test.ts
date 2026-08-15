@@ -32,6 +32,7 @@ const mocks = vi.hoisted(() => ({
   listAllVendors: vi.fn(),
   listAllBrands: vi.fn(),
   listVendorDocuments: vi.fn(),
+  listHandoversByRecipient: vi.fn(),
   recordActivity: vi.fn(),
   storagePut: vi.fn(),
   transitionHandoverStatus: vi.fn(),
@@ -85,7 +86,7 @@ vi.mock("./db", () => ({
   listAllBrands: mocks.listAllBrands,
   listVendorDocuments: mocks.listVendorDocuments,
   listHandovers: vi.fn(),
-  listHandoversByRecipient: vi.fn(),
+  listHandoversByRecipient: mocks.listHandoversByRecipient,
   listMaintenanceTickets: vi.fn(),
   listUsers: vi.fn(),
   recordActivity: mocks.recordActivity,
@@ -111,6 +112,12 @@ import { appRouter } from "./routers";
 
 const adminContext = {
   user: { id: 1, openId: "admin", role: "admin", name: "Quản trị viên", isActive: true },
+  req: {},
+  res: {},
+} as any;
+
+const userContext = {
+  user: { id: 8, openId: "employee", role: "user", name: "Nhân viên", isActive: true },
   req: {},
   res: {},
 } as any;
@@ -156,6 +163,7 @@ describe("employee administration", () => {
     mocks.updateDepartment.mockResolvedValue(undefined);
     mocks.updateDivision.mockResolvedValue(undefined);
     mocks.recordActivity.mockResolvedValue(undefined);
+    mocks.listHandoversByRecipient.mockResolvedValue([{ id: 91, assetCode: "TS-00091", assetName: "Laptop cá nhân", status: "active" }]);
     mocks.storagePut.mockResolvedValue({ key: "vendors/41/documents/bao-gia.pdf", url: "/manus-storage/vendors/41/documents/bao-gia.pdf" });
   });
 
@@ -165,6 +173,18 @@ describe("employee administration", () => {
     await expect(caller.departments.list()).resolves.toEqual([
       { id: 12, code: "HCNS", name: "Hành chính - Nhân sự", isActive: true },
     ]);
+  });
+
+  it("returns asset history only for the signed-in employee", async () => {
+    const caller = appRouter.createCaller(userContext);
+
+    await expect(caller.employees.myAssetHistory()).resolves.toEqual([
+      { id: 91, assetCode: "TS-00091", assetName: "Laptop cá nhân", status: "active" },
+    ]);
+    expect(mocks.listHandoversByRecipient).toHaveBeenCalledWith(8);
+    await expect(caller.employees.assetHistory({ userId: 1 })).rejects.toMatchObject({ code: "FORBIDDEN" });
+    await expect(caller.assets.list()).rejects.toMatchObject({ code: "FORBIDDEN" });
+    await expect(caller.handovers.list()).rejects.toMatchObject({ code: "FORBIDDEN" });
   });
 
   it("allows administrators to create suppliers and brands while restricting employees", async () => {

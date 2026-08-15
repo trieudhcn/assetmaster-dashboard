@@ -84,7 +84,7 @@ export const appRouter = router({
     logout: publicProcedure.mutation(({ ctx }) => { ctx.res.clearCookie(COOKIE_NAME, { ...getSessionCookieOptions(ctx.req), maxAge: -1 }); return { success: true } as const; }),
   }),
   company: router({
-    get: protectedProcedure.query(() => getCompany()),
+    get: adminProcedure.query(() => getCompany()),
     save: adminProcedure.input(z.object({ name: z.string().trim().min(2).max(255), address: nullableText, taxCode: nullableText, phone: nullableText, email: z.string().email().optional().nullable(), logoUrl: nullableText })).mutation(async ({ input, ctx }) => {
       const id = await saveCompany(input);
       await recordActivity({ entityType: "company", entityId: id, action: "updated", actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: "Cập nhật thông tin công ty" });
@@ -94,6 +94,7 @@ export const appRouter = router({
   employees: router({
     list: adminProcedure.query(() => listUsers()),
     assetHistory: adminProcedure.input(z.object({ userId: z.number().int().positive() })).query(({ input }) => listHandoversByRecipient(input.userId)),
+    myAssetHistory: protectedProcedure.query(({ ctx }) => listHandoversByRecipient(ctx.user.id)),
     updateRole: adminProcedure.input(z.object({ id: z.number().int().positive(), role: z.enum(["admin", "user"]) })).mutation(async ({ input, ctx }) => {
       await updateUserRole(input.id, input.role);
       await recordActivity({ entityType: "user", entityId: input.id, action: "role_updated", actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: `Cập nhật vai trò thành ${input.role}` });
@@ -200,7 +201,7 @@ export const appRouter = router({
     }),
   }),
   vendors: router({
-    list: protectedProcedure.query(() => listVendors()),
+    list: adminProcedure.query(() => listVendors()),
     listAll: adminProcedure.query(() => listAllVendors()),
     documents: adminProcedure.input(z.object({ vendorId: z.number().int().positive() })).query(async ({ input }) => {
       if (!(await getVendorById(input.vendorId))) throw new TRPCError({ code: "NOT_FOUND", message: "Không tìm thấy Nhà cung cấp." });
@@ -250,7 +251,7 @@ export const appRouter = router({
     }),
   }),
   brands: router({
-    list: protectedProcedure.query(() => listBrands()),
+    list: adminProcedure.query(() => listBrands()),
     listAll: adminProcedure.query(() => listAllBrands()),
     create: adminProcedure.input(z.object({ name: z.string().trim().min(2).max(160) })).mutation(async ({ input, ctx }) => {
       if (await getBrandByName(input.name)) throw new TRPCError({ code: "BAD_REQUEST", message: "Hãng này đã tồn tại." });
@@ -270,7 +271,7 @@ export const appRouter = router({
     }),
   }),
   assets: router({
-    list: protectedProcedure.query(() => listAssets()),
+    list: adminProcedure.query(() => listAssets()),
     create: adminProcedure.input(assetInput).mutation(async ({ input, ctx }) => {
       if (input.vendorId && !(await getVendorById(input.vendorId))?.isActive) throw new TRPCError({ code: "BAD_REQUEST", message: "Nhà cung cấp được chọn không tồn tại hoặc đã ngừng hoạt động." });
       if (input.brandId && !(await getBrandById(input.brandId))?.isActive) throw new TRPCError({ code: "BAD_REQUEST", message: "Hãng được chọn không tồn tại hoặc đã ngừng hoạt động." });
@@ -293,8 +294,8 @@ export const appRouter = router({
     }),
   }),
   handovers: router({
-    list: protectedProcedure.query(() => listHandovers()),
-    get: protectedProcedure.input(z.object({ id: z.number().int().positive() })).query(async ({ input }) => {
+    list: adminProcedure.query(() => listHandovers()),
+    get: adminProcedure.input(z.object({ id: z.number().int().positive() })).query(async ({ input }) => {
       const handover = await getHandoverById(input.id);
       if (!handover) throw new TRPCError({ code: "NOT_FOUND", message: "Không tìm thấy phiếu bàn giao." });
       return handover;
@@ -356,8 +357,8 @@ export const appRouter = router({
     }),
   }),
   audits: router({
-    list: protectedProcedure.query(() => listAuditSessions()),
-    getItems: protectedProcedure.input(z.object({ sessionId: z.number().int().positive() })).query(({ input }) => listAuditItems(input.sessionId)),
+    list: adminProcedure.query(() => listAuditSessions()),
+    getItems: adminProcedure.input(z.object({ sessionId: z.number().int().positive() })).query(({ input }) => listAuditItems(input.sessionId)),
     create: adminProcedure.input(z.object({ name: z.string().trim().min(3).max(255), departmentId: z.number().int().positive().optional().nullable(), scheduledAt: dateFromMs, recurrenceDays: z.number().int().min(1).max(3650).optional().nullable() })).mutation(async ({ input, ctx }) => {
       const id = await createAuditSession({ ...input, referenceCode: `KK-${new Date().getFullYear()}-${crypto.randomUUID().slice(0, 8).toUpperCase()}`, createdByUserId: ctx.user!.id, status: "draft" });
       await recordActivity({ entityType: "audit", entityId: id, action: "created", actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: `Tạo đợt kiểm kê ${input.name}` });

@@ -300,3 +300,11 @@
 - [x] Rà soát luồng tạo preview, mở bản in và xuất PDF của phiếu bàn giao.
 - [x] Khắc phục lỗi nội dung tiếng Việt, logo và bố cục phiếu hiển thị thiếu hoặc sai.
 - [x] Xác minh preview/in/xuất với dữ liệu phiếu thực; chạy hồi quy và phát hành checkpoint.
+
+## Dashboard theo vai trò Admin & User
+
+- [x] Rà soát xác thực hiện có, trạng thái tài khoản và dữ liệu tài sản theo người dùng.
+- [x] Thêm cổng đăng nhập làm màn hình đầu tiên khi chưa có phiên đăng nhập.
+- [x] Điều hướng Admin vào dashboard quản trị và chặn User truy cập các màn hình quản trị.
+- [x] Xây dựng dashboard User với hồ sơ cá nhân và danh sách tài sản đang giữ.
+- [x] Thêm kiểm thử phân quyền, xác minh responsive, TypeScript, build và phát hành checkpoint.

@@ -39,3 +39,9 @@ Trên production, đã tạo dữ liệu QA tạm thời, dùng payload `ASSETMA
 | Mobile 375px | `webdev-preview-root-1786704388651747561-4738.png` | Form xếp một cột, có nút menu thu gọn; trường chọn Phòng Ban bắt buộc hiển thị trước tên/mã Bộ Phận và không có tràn ngang. |
 
 Đã áp dụng migration `0004_flat_mariko_yashida.sql`: bảng `divisions` có khóa ngoại `departmentId` bắt buộc tham chiếu `departments.id` với chính sách xóa `RESTRICT`. Trang quản trị hiển thị trạng thái lỗi riêng và nút **Thử lại** khi không tải được danh sách Phòng Ban hoặc Bộ Phận.
+
+## Dashboard theo vai trò
+
+- Cổng đăng nhập hiển thị đúng trong phiên chưa xác thực, gồm mô tả phạm vi cho Quản trị viên và Nhân viên cùng nút đăng nhập tổ chức.
+- Dashboard quản trị vẫn ổn định tại các màn hình Tổng quan, Danh mục tài sản và Bàn giao & Cấp phát sau khi tách phân luồng theo vai trò.
+- Kiểm thử API xác nhận `employees.myAssetHistory` luôn dùng ID của phiên đăng nhập. Nhân viên không thể gọi danh sách quản trị tài sản hoặc bàn giao.

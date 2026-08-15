@@ -5,6 +5,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { jsPDF } from "jspdf";
 import QRCodeGenerator from "qrcode";
 import { useAuth } from "@/_core/hooks/useAuth";
+import { startLogin } from "@/const";
 import { trpc } from "@/lib/trpc";
 import { canCreateCatalogOption, filterNamedCatalogOptions, getPaginationWindow, matchesVietnameseSearch } from "@/lib/catalogUi";
 import { handoverPdfFontUrl, registerVietnamesePdfFont } from "@/lib/handoverPdf";
@@ -23,6 +24,8 @@ import { EmployeeManagementView } from "./EmployeeManagementView";
 import { ReportsManagementView } from "./ReportsManagementView";
 import { OrganizationManagementPage } from "./OrganizationManagementPage";
 import { VendorBrandManagementPage } from "./VendorBrandManagementPage";
+import { LoginGateway } from "./LoginGateway";
+import { UserDashboard } from "./UserDashboard";
 import {
   Archive,
   ArrowDownUp,
@@ -220,10 +223,11 @@ export default function Home() {
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const [companyInfo, setCompanyInfo] = useState<CompanyInfo>(readCompanyInfo);
-  const assetQuery = trpc.assets.list.useQuery(undefined, { enabled: isAuthenticated });
-  const vendorsQuery = trpc.vendors.list.useQuery(undefined, { enabled: isAuthenticated });
-  const brandsQuery = trpc.brands.list.useQuery(undefined, { enabled: isAuthenticated });
-  const companyQuery = trpc.company.get.useQuery(undefined, { enabled: isAuthenticated });
+  const isAdmin = user?.role === "admin";
+  const assetQuery = trpc.assets.list.useQuery(undefined, { enabled: isAuthenticated && isAdmin });
+  const vendorsQuery = trpc.vendors.list.useQuery(undefined, { enabled: isAuthenticated && isAdmin });
+  const brandsQuery = trpc.brands.list.useQuery(undefined, { enabled: isAuthenticated && isAdmin });
+  const companyQuery = trpc.company.get.useQuery(undefined, { enabled: isAuthenticated && isAdmin });
   const saveCompanyMutation = trpc.company.save.useMutation({ onSuccess: () => companyQuery.refetch() });
   const createAssetMutation = trpc.assets.create.useMutation({ onSuccess: () => assetQuery.refetch() });
   const updateAssetMutation = trpc.assets.update.useMutation({ onSuccess: () => assetQuery.refetch() });
@@ -310,6 +314,10 @@ export default function Home() {
     setActiveNav(label);
     setMobileNavOpen(false);
   };
+
+  if (loading) return <div className="grid min-h-screen place-items-center bg-[#F4F7FB] px-6"><div className="text-center"><div className="mx-auto grid h-12 w-12 place-items-center rounded-2xl bg-[#0F8C8C] text-white shadow-[0_10px_22px_rgba(15,140,140,.24)]"><Box size={22} /></div><div className="mt-4 text-sm font-extrabold text-[#193B57]">Đang kiểm tra phiên đăng nhập...</div></div></div>;
+  if (!isAuthenticated) return <LoginGateway onLogin={startLogin} />;
+  if (!isAdmin && user) return <UserDashboard user={user} onLogout={logout} />;
 
   return (
     <div className="min-h-screen bg-[#F4F7FB] text-[#102A43] antialiased">
