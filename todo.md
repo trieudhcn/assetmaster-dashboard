@@ -329,3 +329,9 @@
 - [x] Cho phép Admin tải ảnh tình trạng thực tế khi duyệt hoàn trả và lưu tham chiếu an toàn.
 - [x] Hiển thị thông báo trực quan khi User có quyết định hoàn trả mới.
 - [x] Thêm kiểm thử tải ảnh/phân quyền, xác minh responsive, TypeScript, build và phát hành checkpoint.
+
+## Dropdown có tìm kiếm & email hoàn trả
+
+- [x] Đưa tìm kiếm vào trực tiếp trong dropdown Nhà cung cấp/Hãng.
+- [x] Tạm hoãn email quyết định hoàn trả đến khi có dịch vụ email và API key phù hợp.
+- [x] Thêm kiểm thử, xác minh responsive, TypeScript, build và phát hành checkpoint cho dropdown có tìm kiếm.

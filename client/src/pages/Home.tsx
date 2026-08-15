@@ -820,54 +820,84 @@ function AssetModal({ mode, asset, formData, setFormData, onClose, onSave, onEdi
     const controls = document.createElement("div");
     controls.dataset.vendorBrandControls = "true";
     controls.className = "sm:col-span-2 grid gap-3 rounded-xl border border-[#DDE7F0] bg-[#FBFCFD] p-4 sm:grid-cols-2";
+    const dropdownCleanups: Array<() => void> = [];
     const addPicker = (kind: "vendor" | "brand", label: string, items: Array<{ id: number; name: string }>, selectedId?: number) => {
       const wrapper = document.createElement("div");
+      wrapper.className = "relative";
       const heading = document.createElement("div");
       heading.className = "mb-2 flex items-center justify-between gap-2";
       const labelNode = document.createElement("label");
       labelNode.className = "field-label mb-0";
       labelNode.textContent = label;
-      const addButton = document.createElement("button");
-      addButton.type = "button";
-      addButton.className = "text-[11px] font-extrabold text-[#087A6A] underline decoration-[#8BCDC6] underline-offset-2";
-      addButton.textContent = kind === "vendor" ? "+ Thêm Nhà cung cấp" : "+ Thêm Hãng";
-      addButton.onclick = () => { quickEntryNameRef.current = ""; setQuickEntryType(kind); setQuickEntryName(""); };
-      heading.append(labelNode, addButton);
+      heading.append(labelNode);
+      const trigger = document.createElement("button");
+      trigger.type = "button";
+      trigger.className = "field-input flex h-11 w-full items-center justify-between gap-3 text-left font-semibold text-[#193B57]";
+      trigger.setAttribute("aria-haspopup", "listbox");
+      trigger.setAttribute("aria-expanded", "false");
+      const triggerText = document.createElement("span");
+      const triggerIcon = document.createElement("span");
+      triggerIcon.className = "text-base text-[#60758A]";
+      triggerIcon.textContent = "⌄";
+      trigger.append(triggerText, triggerIcon);
+      const menu = document.createElement("div");
+      menu.className = "absolute z-50 mt-1 hidden w-full overflow-hidden rounded-xl border border-[#CDE5E5] bg-white p-2 shadow-[0_14px_34px_rgba(16,42,67,0.16)]";
+      menu.setAttribute("role", "listbox");
       const search = document.createElement("input");
       search.type = "search";
-      search.className = "field-input mb-2 h-9";
-      search.placeholder = kind === "vendor" ? "Tìm Nhà cung cấp..." : "Tìm Hãng...";
+      search.className = "field-input h-9";
+      search.placeholder = kind === "vendor" ? "Tìm trong Nhà cung cấp..." : "Tìm trong Hãng...";
       search.setAttribute("aria-label", kind === "vendor" ? "Tìm Nhà cung cấp" : "Tìm Hãng");
-      const select = document.createElement("select");
-      select.className = "field-input";
-      const emptyState = document.createElement("div");
-      emptyState.className = "mt-2 hidden items-center justify-between gap-3 rounded-lg border border-dashed border-[#CDE5E5] bg-[#F4FBFA] px-3 py-2.5";
-      const emptyMessage = document.createElement("span");
-      emptyMessage.className = "text-[11px] font-semibold text-[#4B8884]";
+      const optionList = document.createElement("div");
+      optionList.className = "mt-2 max-h-48 overflow-y-auto";
       const createFromSearch = document.createElement("button");
       createFromSearch.type = "button";
-      createFromSearch.className = "shrink-0 rounded-md border border-[#8BCDC6] bg-white px-2.5 py-1.5 text-[11px] font-extrabold text-[#087A6A] transition hover:bg-[#ECF8F7]";
+      createFromSearch.className = "mt-2 hidden w-full rounded-lg border border-dashed border-[#8BCDC6] bg-[#F4FBFA] px-3 py-2 text-left text-[11px] font-extrabold text-[#087A6A] transition hover:bg-[#ECF8F7]";
       createFromSearch.onclick = () => { const name = search.value.trim(); quickEntryNameRef.current = name; setQuickEntryName(name); setQuickEntryType(kind); };
-      emptyState.append(emptyMessage, createFromSearch);
       const renderOptions = (keyword = "") => {
         const matchedItems = filterNamedCatalogOptions(items, keyword);
         const searchedName = keyword.trim();
         const canCreate = canCreateCatalogOption(searchedName, matchedItems.length);
-        select.replaceChildren();
-        const placeholder = document.createElement("option");
-        placeholder.value = "";
-        placeholder.textContent = kind === "vendor" ? "Chọn Nhà cung cấp" : "Chọn Hãng";
-        select.appendChild(placeholder);
-        matchedItems.forEach((item) => { const option = document.createElement("option"); option.value = String(item.id); option.textContent = item.name; option.selected = item.id === selectedId; select.appendChild(option); });
-        if (!matchedItems.length) { const emptyOption = document.createElement("option"); emptyOption.disabled = true; emptyOption.textContent = searchedName ? "Không có dữ liệu phù hợp" : "Chưa có dữ liệu"; select.appendChild(emptyOption); }
-        emptyState.classList.toggle("hidden", !canCreate);
-        emptyState.classList.toggle("flex", canCreate);
-        if (canCreate) { emptyMessage.textContent = "Chưa có kết quả phù hợp."; createFromSearch.textContent = kind === "vendor" ? `+ Tạo “${searchedName}”` : `+ Tạo “${searchedName}”`; }
+        optionList.replaceChildren();
+        if (!matchedItems.length) {
+          const empty = document.createElement("div");
+          empty.className = "px-3 py-3 text-center text-xs font-semibold text-[#8AA0B6]";
+          empty.textContent = searchedName ? "Không có dữ liệu phù hợp" : "Chưa có dữ liệu";
+          optionList.appendChild(empty);
+        }
+        matchedItems.forEach((item) => {
+          const option = document.createElement("button");
+          option.type = "button";
+          option.setAttribute("role", "option");
+          option.className = `flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-xs font-semibold transition hover:bg-[#ECF8F7] ${item.id === selectedId ? "bg-[#E6F6F2] text-[#087A6A]" : "text-[#193B57]"}`;
+          option.textContent = item.name;
+          option.onclick = () => {
+            setFormData((current) => kind === "vendor" ? { ...current, vendorId: item.id, supplier: item.name } : { ...current, brandId: item.id, brand: item.name });
+            menu.classList.add("hidden");
+            trigger.setAttribute("aria-expanded", "false");
+          };
+          optionList.appendChild(option);
+        });
+        createFromSearch.classList.toggle("hidden", !canCreate);
+        if (canCreate) createFromSearch.textContent = kind === "vendor" ? `+ Tạo Nhà cung cấp “${searchedName}”` : `+ Tạo Hãng “${searchedName}”`;
       };
+      const selected = items.find((item) => item.id === selectedId);
+      triggerText.textContent = selected?.name || (kind === "vendor" ? "Chọn Nhà cung cấp" : "Chọn Hãng");
       renderOptions();
       search.oninput = () => renderOptions(search.value);
-      select.onchange = () => { const id = Number(select.value) || undefined; const selected = items.find((item) => item.id === id); setFormData((current) => kind === "vendor" ? { ...current, vendorId: id, supplier: selected?.name || "" } : { ...current, brandId: id, brand: selected?.name || "" }); };
-      wrapper.append(heading, search, select, emptyState);
+      trigger.onclick = () => {
+        const isOpen = !menu.classList.contains("hidden");
+        menu.classList.toggle("hidden", isOpen);
+        trigger.setAttribute("aria-expanded", String(!isOpen));
+        if (!isOpen) window.setTimeout(() => search.focus(), 0);
+      };
+      const closeOnOutside = (event: PointerEvent) => {
+        if (!wrapper.contains(event.target as Node)) { menu.classList.add("hidden"); trigger.setAttribute("aria-expanded", "false"); }
+      };
+      document.addEventListener("pointerdown", closeOnOutside);
+      dropdownCleanups.push(() => document.removeEventListener("pointerdown", closeOnOutside));
+      wrapper.append(heading, trigger, menu);
+      menu.append(search, optionList, createFromSearch);
       if (quickEntryType === kind) {
         const quick = document.createElement("div");
         quick.className = "mt-2 flex gap-2";
@@ -894,7 +924,7 @@ function AssetModal({ mode, asset, formData, setFormData, onClose, onSave, onEdi
     };
     controls.append(addPicker("vendor", "Nhà cung cấp", vendorsQuery.data || [], formData.vendorId), addPicker("brand", "Hãng", brandsQuery.data || [], formData.brandId));
     noteContainer.before(controls);
-    return () => controls.remove();
+    return () => { dropdownCleanups.forEach((cleanup) => cleanup()); controls.remove(); };
   }, [isDetail, vendorsQuery.data, brandsQuery.data, formData.vendorId, formData.brandId, quickEntryType]);
   const createRepairMutation = trpc.maintenance.create.useMutation({
     onSuccess: () => {
