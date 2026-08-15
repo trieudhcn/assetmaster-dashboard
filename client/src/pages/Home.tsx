@@ -653,6 +653,7 @@ function AssetModal({ mode, asset, formData, setFormData, onClose, onSave, onEdi
   const utils = trpc.useUtils();
   const [quickEntryType, setQuickEntryType] = useState<"vendor" | "brand" | null>(null);
   const [quickEntryName, setQuickEntryName] = useState("");
+  const quickEntryNameRef = useRef("");
   const vendorsQuery = trpc.vendors.list.useQuery();
   const brandsQuery = trpc.brands.list.useQuery();
   useEffect(() => {
@@ -675,6 +676,7 @@ function AssetModal({ mode, asset, formData, setFormData, onClose, onSave, onEdi
       const created = await vendorsQuery.refetch();
       const vendor = created.data?.find((item) => item.id === result.id);
       setFormData((current) => ({ ...current, vendorId: result.id, supplier: vendor?.name || quickEntryName }));
+      quickEntryNameRef.current = "";
       setQuickEntryName("");
       setQuickEntryType(null);
       toast.success("Đã thêm và chọn Nhà cung cấp mới.");
@@ -686,6 +688,7 @@ function AssetModal({ mode, asset, formData, setFormData, onClose, onSave, onEdi
       const created = await brandsQuery.refetch();
       const brand = created.data?.find((item) => item.id === result.id);
       setFormData((current) => ({ ...current, brandId: result.id, brand: brand?.name || quickEntryName }));
+      quickEntryNameRef.current = "";
       setQuickEntryName("");
       setQuickEntryType(null);
       toast.success("Đã thêm và chọn Hãng mới.");
@@ -712,7 +715,7 @@ function AssetModal({ mode, asset, formData, setFormData, onClose, onSave, onEdi
       addButton.type = "button";
       addButton.className = "text-[11px] font-extrabold text-[#087A6A] underline decoration-[#8BCDC6] underline-offset-2";
       addButton.textContent = kind === "vendor" ? "+ Thêm Nhà cung cấp" : "+ Thêm Hãng";
-      addButton.onclick = () => { setQuickEntryType(kind); setQuickEntryName(""); };
+      addButton.onclick = () => { quickEntryNameRef.current = ""; setQuickEntryType(kind); setQuickEntryName(""); };
       heading.append(labelNode, addButton);
       const select = document.createElement("select");
       select.className = "field-input";
@@ -729,13 +732,13 @@ function AssetModal({ mode, asset, formData, setFormData, onClose, onSave, onEdi
         const input = document.createElement("input");
         input.className = "field-input h-9";
         input.placeholder = kind === "vendor" ? "Tên Nhà cung cấp mới" : "Tên Hãng mới";
-        input.value = quickEntryName;
-        input.oninput = () => setQuickEntryName(input.value);
+        input.value = quickEntryNameRef.current;
+        input.oninput = () => { quickEntryNameRef.current = input.value; };
         const save = document.createElement("button");
         save.type = "button";
         save.textContent = "Lưu";
         save.className = "rounded-lg bg-[#0F8C8C] px-3 text-xs font-bold text-white hover:bg-[#087A6A]";
-        save.onclick = () => { if (quickEntryName.trim().length < 2) { toast.error("Nhập tên tối thiểu 2 ký tự."); return; } if (kind === "vendor") createVendorMutation.mutate({ name: quickEntryName.trim(), contactName: null, phone: null, email: null }); else createBrandMutation.mutate({ name: quickEntryName.trim() }); };
+        save.onclick = () => { const name = quickEntryNameRef.current.trim(); if (name.length < 2) { toast.error("Nhập tên tối thiểu 2 ký tự."); return; } if (kind === "vendor") createVendorMutation.mutate({ name, contactName: null, phone: null, email: null }); else createBrandMutation.mutate({ name }); };
         input.onkeydown = (event) => { if (event.key === "Enter") save.click(); };
         quick.append(input, save);
         wrapper.appendChild(quick);
@@ -745,7 +748,7 @@ function AssetModal({ mode, asset, formData, setFormData, onClose, onSave, onEdi
     controls.append(addPicker("vendor", "Nhà cung cấp", vendorsQuery.data || [], formData.vendorId), addPicker("brand", "Hãng", brandsQuery.data || [], formData.brandId));
     noteContainer.before(controls);
     return () => controls.remove();
-  }, [isDetail, vendorsQuery.data, brandsQuery.data, formData.vendorId, formData.brandId, quickEntryType, quickEntryName]);
+  }, [isDetail, vendorsQuery.data, brandsQuery.data, formData.vendorId, formData.brandId, quickEntryType]);
   const createRepairMutation = trpc.maintenance.create.useMutation({
     onSuccess: () => {
       setRepairDescription("");

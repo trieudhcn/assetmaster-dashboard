@@ -274,3 +274,9 @@
 - [x] Thêm API Admin tải lên, liệt kê và quản lý tài liệu hợp đồng/báo giá theo Nhà cung cấp.
 - [x] Hiển thị hồ sơ Nhà cung cấp với khu vực tải lên, xem, tải xuống và gỡ tài liệu đính kèm.
 - [x] Kiểm thử phân quyền, loại tệp, metadata, responsive, TypeScript, build và phát hành checkpoint; 28 Vitest tests, TypeScript và production build thành công.
+
+## Sửa lỗi thêm nhanh Nhà cung cấp/Hãng
+
+- [x] Khắc phục mất focus khi nhập tên trong biểu mẫu thêm nhanh Nhà cung cấp hoặc Hãng của tài sản.
+- [x] Kiểm thử luồng nhập nhiều ký tự bằng trạng thái ref không tái dựng ô nhập; luồng lưu vẫn tự chọn dữ liệu vừa tạo và giữ bố cục desktop/mobile.
+- [x] Chạy TypeScript, hồi quy, build và phát hành checkpoint sửa lỗi; 28 Vitest tests, TypeScript và production build thành công.
