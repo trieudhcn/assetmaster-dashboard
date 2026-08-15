@@ -96,6 +96,7 @@ type Asset = {
   value: string;
   location?: string;
   serial?: string;
+  maintenanceReason?: string;
   supplier?: string;
   vendorId?: number;
   brand?: string;
@@ -236,7 +237,7 @@ export default function Home() {
   useEffect(() => {
     if (!assetQuery.data) return;
     setAssetRows(assetQuery.data.map((asset) => ({
-      code: asset.assetCode, qrToken: asset.qrToken, name: asset.name, category: "Chưa phân loại", holder: asset.holderName || (asset.status === "maintenance" ? "Bảo trì" : asset.status === "available" ? "Chưa bàn giao" : "Chưa cấp phát"), status: asset.status === "assigned" ? "Đang cấp phát" : asset.status === "maintenance" ? "Bảo trì" : "Sẵn có", statusType: asset.status === "assigned" ? "active" : asset.status === "maintenance" ? "maintenance" : "available", date: asset.purchaseDate ? new Date(asset.purchaseDate).toLocaleDateString("vi-VN") : "—", value: asset.purchaseValue ? String(asset.purchaseValue) : "0", location: asset.location || "", serial: asset.serialNumber || "", supplier: asset.vendor || vendorsQuery.data?.find((vendor) => vendor.id === asset.vendorId)?.name || "", vendorId: asset.vendorId || undefined, brand: brandsQuery.data?.find((brand) => brand.id === asset.brandId)?.name || "", brandId: asset.brandId || undefined, note: asset.note || "",
+      code: asset.assetCode, qrToken: asset.qrToken, name: asset.name, category: "Chưa phân loại", holder: asset.holderName || (asset.status === "maintenance" ? "Bảo trì" : asset.status === "available" ? "Chưa bàn giao" : "Chưa cấp phát"), status: asset.status === "assigned" ? "Đang cấp phát" : asset.status === "maintenance" ? "Bảo trì" : "Sẵn có", statusType: asset.status === "assigned" ? "active" : asset.status === "maintenance" ? "maintenance" : "available", date: asset.purchaseDate ? new Date(asset.purchaseDate).toLocaleDateString("vi-VN") : "—", value: asset.purchaseValue ? String(asset.purchaseValue) : "0", location: asset.location || "", serial: asset.serialNumber || "", maintenanceReason: asset.maintenanceReason || "", supplier: asset.vendor || vendorsQuery.data?.find((vendor) => vendor.id === asset.vendorId)?.name || "", vendorId: asset.vendorId || undefined, brand: brandsQuery.data?.find((brand) => brand.id === asset.brandId)?.name || "", brandId: asset.brandId || undefined, note: asset.note || "",
     })));
   }, [assetQuery.data, vendorsQuery.data, brandsQuery.data]);
 
@@ -301,10 +302,10 @@ export default function Home() {
     { label: "Tổng giá trị", value: assetValueTotal >= 1_000_000_000 ? `${(assetValueTotal / 1_000_000_000).toFixed(1)} Tỷ` : new Intl.NumberFormat("vi-VN").format(assetValueTotal), detail: "Giá trị nguyên giá", icon: Tags, tone: "navy" },
   ];
 
-  const openCreateModal = () => { setFormData({ code: `TS-${String(assetRows.length + 125).padStart(5, "0")}`, name: "", category: "CNTT", holder: "", status: "Sẵn có", statusType: "available", date: "14/02/2025", value: "", location: "", serial: "", supplier: "", note: "" }); setSelectedAsset(null); setAssetModal("create"); };
+  const openCreateModal = () => { setFormData({ code: `TS-${String(assetRows.length + 125).padStart(5, "0")}`, name: "", category: "CNTT", holder: "", status: "Sẵn có", statusType: "available", date: "14/02/2025", value: "", location: "", serial: "", maintenanceReason: "", supplier: "", note: "" }); setSelectedAsset(null); setAssetModal("create"); };
   const openEditModal = (asset: Asset) => { setSelectedAsset(asset); setFormData({ ...asset }); setAssetModal("edit"); };
   const openDetailModal = (asset: Asset) => { setSelectedAsset(asset); setAssetModal("detail"); };
-  const saveAsset = () => { if (!formData.name.trim() || !formData.value.trim()) { toast.error("Vui lòng nhập tên tài sản và giá trị."); return; } const payload = { assetCode: formData.code, name: formData.name, holderName: formData.statusType === "active" ? formData.holder || null : null, status: formData.statusType === "active" ? "assigned" as const : formData.statusType === "maintenance" ? "maintenance" as const : "available" as const, condition: "good" as const, purchaseValue: formData.value.replace(/[^0-9.]/g, "") || "0", vendor: formData.supplier || null, vendorId: formData.vendorId || null, brandId: formData.brandId || null, serialNumber: formData.serial || null, location: formData.location || null, note: formData.note || null, purchaseDate: null, warrantyUntil: null, categoryId: null, departmentId: null }; if (assetModal === "edit") { const target = assetQuery.data?.find((asset) => asset.assetCode === formData.code); if (!target) { toast.error("Không tìm thấy tài sản để cập nhật."); return; } updateAssetMutation.mutate({ id: target.id, ...payload }); } else { createAssetMutation.mutate(payload); } setAssetModal(null); toast.success("Đã gửi thay đổi tài sản để lưu vào hệ thống."); };
+  const saveAsset = () => { if (!formData.name.trim() || !formData.value.trim()) { toast.error("Vui lòng nhập tên tài sản và giá trị."); return; } if (formData.statusType === "maintenance" && !formData.maintenanceReason?.trim()) { toast.error("Vui lòng nhập lý do bảo trì trước khi lưu."); return; } const payload = { assetCode: formData.code, name: formData.name, holderName: formData.statusType === "active" ? formData.holder || null : null, status: formData.statusType === "active" ? "assigned" as const : formData.statusType === "maintenance" ? "maintenance" as const : "available" as const, condition: "good" as const, purchaseValue: formData.value.replace(/[^0-9.]/g, "") || "0", vendor: formData.supplier || null, vendorId: formData.vendorId || null, brandId: formData.brandId || null, serialNumber: formData.serial || null, location: formData.location || null, note: formData.note || null, maintenanceReason: formData.statusType === "maintenance" ? (formData.maintenanceReason || "").trim() : null, purchaseDate: null, warrantyUntil: null, categoryId: null, departmentId: null }; if (assetModal === "edit") { const target = assetQuery.data?.find((asset) => asset.assetCode === formData.code); if (!target) { toast.error("Không tìm thấy tài sản để cập nhật."); return; } updateAssetMutation.mutate({ id: target.id, ...payload }); } else { createAssetMutation.mutate(payload); } setAssetModal(null); toast.success("Đã gửi thay đổi tài sản để lưu vào hệ thống."); };
   const showComingSoon = (label: string) => toast.info(`${label} sẽ được mở trong phiên bản tiếp theo.`, { description: "Bản xem trước hiện đang dùng dữ liệu mẫu để minh họa giao diện." });
   const navigateTo = (label: string) => {
     const viewByNav: Record<string, string> = { "Danh mục tài sản": "assets", "Bàn giao & Cấp phát": "handovers", "Bảo trì & Báo hỏng": "maintenance", "Kiểm kê": "audit", "Báo cáo": "reports", "Quản lý nhân viên": "employees", "Phòng Ban & Bộ Phận": "organization", "Nhà cung cấp & Hãng": "vendors" };
@@ -410,7 +411,7 @@ export default function Home() {
             <div className="mt-5 flex items-center justify-between rounded-xl border border-[#CDE5E5] bg-[#ECF8F7] px-4 py-3.5"><div className="flex items-center gap-3"><div className="grid h-8 w-8 place-items-center rounded-lg bg-white text-[#0F8C8C] shadow-sm"><Sparkles size={15} /></div><div><div className="text-xs font-bold text-[#087A6A]">Kiểm kê và đối soát tài sản</div><div className="mt-0.5 text-[11px] text-[#4B8884]">{assetRows.length} tài sản đang được quản lý; mở Kiểm kê để lập đợt và ghi nhận kết quả thực tế.</div></div></div><button onClick={() => navigateTo("Kiểm kê")} className="hidden text-xs font-extrabold text-[#087A6A] underline decoration-[#8BCDC6] underline-offset-4 sm:block">Mở kiểm kê <span className="no-underline">→</span></button></div>
           </div>
         </div>
-        {assetModal && <AssetModal mode={assetModal} asset={selectedAsset} formData={formData} setFormData={setFormData} onClose={() => setAssetModal(null)} onSave={saveAsset} onEdit={() => selectedAsset && openEditModal(selectedAsset)} />}
+        {assetModal && <AssetModal mode={assetModal} asset={selectedAsset} formData={formData} setFormData={setFormData} onClose={() => setAssetModal(null)} onSave={saveAsset} onEdit={() => selectedAsset && openEditModal(selectedAsset)} onStartHandover={(assetCode) => { setAssetModal(null); setHandoverAssetCode(assetCode); }} />}
         {qrAsset && <AssetQrModal asset={qrAsset} onClose={() => setQrAsset(null)} />}
         {qrLookupOpen && <QrLookupModal assets={assetRows} onClose={() => setQrLookupOpen(false)} onOpenAsset={(asset) => { setQrLookupOpen(false); setSelectedAsset(asset); setAssetModal("detail"); }} />}
         {handoverAssetCode && <AssetQuickHandoverModal assetCode={handoverAssetCode} onClose={() => setHandoverAssetCode(null)} />}
@@ -881,7 +882,7 @@ function SignaturePad({ onSigned }: { onSigned: (dataUrl: string) => void }) {
   return <div><div className="overflow-hidden rounded-lg border border-dashed border-[#8BCDC6] bg-white"><canvas ref={canvasRef} width={900} height={180} onPointerDown={start} onPointerMove={move} onPointerUp={stop} onPointerLeave={stop} className="h-[120px] w-full touch-none cursor-crosshair" aria-label="Vùng ký điện tử" /></div><div className="mt-2 flex items-center justify-between"><span className="text-[10px] text-[#8AA0B6]">Dùng chuột hoặc ngón tay để ký</span><div className="flex gap-2"><button onClick={clear} className="text-[11px] font-bold text-[#60758A] hover:text-[#193B57]">Xóa / ký lại</button><button onClick={confirm} className="rounded-md bg-[#0F8C8C] px-3 py-1.5 text-[11px] font-bold text-white hover:bg-[#087A6A]">Xác nhận chữ ký</button></div></div></div>;
 }
 
-function AssetModal({ mode, asset, formData, setFormData, onClose, onSave, onEdit }: { mode: "create" | "edit" | "detail"; asset: Asset | null; formData: Asset; setFormData: React.Dispatch<React.SetStateAction<Asset>>; onClose: () => void; onSave: () => void; onEdit: () => void }) {
+function AssetModal({ mode, asset, formData, setFormData, onClose, onSave, onEdit, onStartHandover }: { mode: "create" | "edit" | "detail"; asset: Asset | null; formData: Asset; setFormData: React.Dispatch<React.SetStateAction<Asset>>; onClose: () => void; onSave: () => void; onEdit: () => void; onStartHandover: (assetCode: string) => void }) {
   const isDetail = mode === "detail";
   const [repairOpen, setRepairOpen] = useState(false);
   const [repairDescription, setRepairDescription] = useState("");
@@ -1080,6 +1081,41 @@ function AssetModal({ mode, asset, formData, setFormData, onClose, onSave, onEdi
     holderInput.classList.toggle("text-[#60758A]", formData.statusType !== "active");
     holderInput.title = formData.statusType === "active" ? "Nhập người hoặc phòng ban đang giữ tài sản" : `Tự động cập nhật theo trạng thái ${formData.status}`;
   }, [isDetail, formData.statusType, formData.status, formData.holder, setFormData]);
+  useEffect(() => {
+    if (isDetail || mode !== "edit") return;
+    const statusLabel = Array.from(document.querySelectorAll("label")).find((label) => label.textContent?.trim() === "Trạng thái");
+    const statusSelect = statusLabel?.parentElement?.querySelector("select");
+    if (!statusSelect) return;
+    const openHandover = (event: Event) => {
+      if ((event.target as HTMLSelectElement).value === "Đang cấp phát" && formData.statusType !== "active") window.setTimeout(() => onStartHandover(formData.code), 0);
+    };
+    statusSelect.addEventListener("change", openHandover);
+    return () => statusSelect.removeEventListener("change", openHandover);
+  }, [isDetail, mode, formData.statusType, formData.code, onStartHandover]);
+  useEffect(() => {
+    if (isDetail) return;
+    const statusLabel = Array.from(document.querySelectorAll("label")).find((label) => label.textContent?.trim() === "Trạng thái");
+    const statusField = statusLabel?.parentElement;
+    const grid = statusField?.parentElement;
+    if (!statusField || !grid) return;
+    grid.querySelector("[data-maintenance-reason]")?.remove();
+    if (formData.statusType !== "maintenance") return;
+    const field = document.createElement("div");
+    field.dataset.maintenanceReason = "true";
+    field.className = "sm:col-span-2";
+    const label = document.createElement("label");
+    label.className = "field-label";
+    label.innerHTML = 'Lý do bảo trì <span class="text-[#B44545]">*</span>';
+    const textarea = document.createElement("textarea");
+    textarea.required = true;
+    textarea.value = formData.maintenanceReason || "";
+    textarea.placeholder = "Mô tả lý do đưa tài sản vào bảo trì...";
+    textarea.className = "field-input mt-1 min-h-[78px] resize-y";
+    textarea.addEventListener("input", () => setFormData((current) => ({ ...current, maintenanceReason: textarea.value })));
+    field.append(label, textarea);
+    statusField.after(field);
+    return () => field.remove();
+  }, [isDetail, formData.statusType, setFormData]);
   const title = mode === "create" ? "Thêm tài sản mới" : mode === "edit" ? "Chỉnh sửa tài sản" : "Chi tiết tài sản";
   const fields: Array<{ key: keyof Asset; label: string; placeholder: string }> = [
     { key: "name", label: "Tên tài sản", placeholder: "Ví dụ: MacBook Pro 14-inch M3" },

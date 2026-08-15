@@ -112,6 +112,7 @@ export const assets = mysqlTable("assets", {
   qrToken: varchar("qrToken", { length: 96 }).notNull().unique(),
   metadata: json("metadata"),
   note: text("note"),
+  maintenanceReason: text("maintenanceReason"),
   isArchived: boolean("isArchived").default(false).notNull(),
   createdByUserId: int("createdByUserId"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),

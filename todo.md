@@ -359,3 +359,10 @@
 - [x] Rà soát form chỉnh sửa và quy tắc trạng thái/Người–Phòng giữ.
 - [x] Tự xóa người giữ, gán nhãn và khóa trường phù hợp khi tài sản Sẵn có hoặc Bảo trì.
 - [x] Thêm kiểm thử, xác minh responsive, TypeScript, build và phát hành checkpoint.
+
+## Bàn giao tự động & lý do bảo trì
+
+- [x] Rà soát luồng đổi trạng thái và dữ liệu bảo trì của tài sản.
+- [x] Tự động mở modal bàn giao khi chọn trạng thái Đang cấp phát.
+- [x] Bắt buộc nhập và lưu lý do bảo trì khi chọn trạng thái Bảo trì.
+- [x] Thêm kiểm thử, xác minh responsive, TypeScript, build và phát hành checkpoint.

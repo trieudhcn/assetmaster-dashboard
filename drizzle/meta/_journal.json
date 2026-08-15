@@ -71,6 +71,13 @@
       "when": 1786764339834,
       "tag": "0009_steady_titanium_man",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "5",
+      "when": 1786770635576,
+      "tag": "0010_green_norman_osborn",
+      "breakpoints": true
     }
   ]
 }
