@@ -3,11 +3,12 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { jsPDF } from "jspdf";
+import * as XLSX from "xlsx";
 import QRCodeGenerator from "qrcode";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { startLogin } from "@/const";
 import { trpc } from "@/lib/trpc";
-import { canCreateCatalogOption, filterNamedCatalogOptions, getPaginationWindow, matchesVietnameseSearch, toggleMaintenanceStatusFilter } from "@/lib/catalogUi";
+import { buildMaintenanceExportRows, canCreateCatalogOption, filterNamedCatalogOptions, getPaginationWindow, matchesVietnameseSearch, toggleMaintenanceStatusFilter } from "@/lib/catalogUi";
 import { handoverPdfFontUrl, registerVietnamesePdfFont } from "@/lib/handoverPdf";
 import {
   AlertDialog,
@@ -433,6 +434,16 @@ function PaginatedAssetCatalogPage({ assets, query, category, status, department
   const { currentPage, totalPages, startIndex, startRecord, endRecord } = getPaginationWindow(assets.length, page, pageSize);
   const pageAssets = assets.slice(startIndex, startIndex + pageSize);
   const pageNumbers = Array.from({ length: totalPages }, (_, index) => index + 1).filter((pageNumber) => totalPages <= 5 || pageNumber === 1 || pageNumber === totalPages || Math.abs(pageNumber - currentPage) <= 1);
+  const maintenanceExportRows = useMemo(() => buildMaintenanceExportRows(assets), [assets]);
+  const exportMaintenanceExcel = () => {
+    if (!maintenanceExportRows.length) { toast.info("Không có tài sản đang bảo trì trong phạm vi lọc hiện tại."); return; }
+    const workbook = XLSX.utils.book_new();
+    const sheet = XLSX.utils.json_to_sheet(maintenanceExportRows);
+    sheet["!cols"] = [{ wch: 16 }, { wch: 32 }, { wch: 18 }, { wch: 14 }, { wch: 42 }, { wch: 24 }, { wch: 24 }, { wch: 22 }, { wch: 26 }, { wch: 22 }, { wch: 16 }, { wch: 18 }, { wch: 34 }];
+    XLSX.utils.book_append_sheet(workbook, sheet, "Tài sản bảo trì");
+    XLSX.writeFile(workbook, `assetmaster-tai-san-bao-tri-${new Date().toISOString().slice(0, 10)}.xlsx`);
+    toast.success(`Đã xuất ${maintenanceExportRows.length} tài sản đang bảo trì ra Excel.`);
+  };
   useEffect(() => { setPage(1); }, [query, category, status, department, pageSize]);
   useEffect(() => { setJumpPage(String(currentPage)); }, [currentPage]);
   useEffect(() => {
@@ -455,9 +466,18 @@ function PaginatedAssetCatalogPage({ assets, query, category, status, department
     maintenanceButton.title = status === "Bảo trì" ? "Bỏ lọc tài sản đang bảo trì" : "Chỉ hiển thị tài sản đang bảo trì";
     const toggleMaintenance = () => onStatusChange(toggleMaintenanceStatusFilter(status));
     maintenanceButton.addEventListener("click", toggleMaintenance);
+    const exportButton = document.createElement("button");
+    exportButton.type = "button";
+    exportButton.dataset.maintenanceExcelExport = "true";
+    exportButton.disabled = !maintenanceExportRows.length;
+    exportButton.textContent = `Xuất Excel (${maintenanceExportRows.length})`;
+    exportButton.title = maintenanceExportRows.length ? "Xuất danh sách tài sản đang bảo trì ra Excel" : "Không có tài sản đang bảo trì trong phạm vi lọc hiện tại";
+    exportButton.className = "flex h-9 items-center justify-center rounded-lg border border-[#CDE5E5] bg-white px-3 text-xs font-bold text-[#087A6A] hover:bg-[#ECF8F7] disabled:cursor-not-allowed disabled:opacity-50";
+    exportButton.addEventListener("click", exportMaintenanceExcel);
     resetButton.before(maintenanceButton);
-    return () => { maintenanceButton.removeEventListener("click", toggleMaintenance); maintenanceButton.remove(); };
-  }, [status, onStatusChange]);
+    maintenanceButton.after(exportButton);
+    return () => { maintenanceButton.removeEventListener("click", toggleMaintenance); exportButton.removeEventListener("click", exportMaintenanceExcel); maintenanceButton.remove(); exportButton.remove(); };
+  }, [status, onStatusChange, maintenanceExportRows, exportMaintenanceExcel]);
   useEffect(() => {
     const legacyFooter = document.querySelector("section.overflow-hidden > div:last-child");
     legacyFooter?.classList.add("hidden");

@@ -373,3 +373,10 @@
 - [x] Hiển thị rõ lý do bảo trì trong hồ sơ chi tiết tài sản.
 - [x] Bổ sung bộ lọc nhanh cho các tài sản đang Bảo trì/sửa chữa.
 - [x] Thêm kiểm thử, xác minh responsive, TypeScript, build và phát hành checkpoint.
+
+## Xuất Excel tài sản bảo trì
+
+- [x] Rà soát định dạng báo cáo Excel và nguồn dữ liệu bảo trì.
+- [x] Tạo hàm xuất tệp Excel chỉ gồm tài sản đang Bảo trì.
+- [x] Thêm nút xuất báo cáo trong Danh mục tài sản.
+- [x] Thêm kiểm thử, xác minh responsive, TypeScript, build và phát hành checkpoint.

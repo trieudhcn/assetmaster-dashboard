@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { canCreateCatalogOption, filterNamedCatalogOptions, getPaginationWindow, matchesVietnameseSearch, normalizeVietnameseSearch, toggleMaintenanceStatusFilter } from "../client/src/lib/catalogUi";
+import { buildMaintenanceExportRows, canCreateCatalogOption, filterNamedCatalogOptions, getPaginationWindow, matchesVietnameseSearch, normalizeVietnameseSearch, toggleMaintenanceStatusFilter } from "../client/src/lib/catalogUi";
 
 describe("Catalog UI helpers", () => {
   it("clamps pagination and preserves a non-overlapping final record range", () => {
@@ -30,5 +30,14 @@ describe("Catalog UI helpers", () => {
   it("toggles the maintenance-only status filter without resetting other filters", () => {
     expect(toggleMaintenanceStatusFilter("Tất cả trạng thái")).toBe("Bảo trì");
     expect(toggleMaintenanceStatusFilter("Bảo trì")).toBe("Tất cả trạng thái");
+  });
+
+  it("creates maintenance export rows only for assets in maintenance with their reason", () => {
+    const rows = buildMaintenanceExportRows([
+      { statusType: "maintenance", code: "TS-001", name: "Máy in", category: "Thiết bị", holder: "Bảo trì", maintenanceReason: "Kẹt giấy liên tục", value: "3200000" },
+      { statusType: "active", code: "TS-002", name: "Laptop", category: "CNTT", holder: "Phòng Kế toán", maintenanceReason: "Không được xuất", value: "25000000" },
+    ]);
+    expect(rows).toHaveLength(1);
+    expect(rows[0]).toMatchObject({ "Mã tài sản": "TS-001", "Trạng thái": "Bảo trì", "Lý do bảo trì": "Kẹt giấy liên tục" });
   });
 });

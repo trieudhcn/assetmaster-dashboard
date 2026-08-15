@@ -35,3 +35,37 @@ export function filterNamedCatalogOptions<T extends NamedCatalogOption>(items: T
 export function toggleMaintenanceStatusFilter(currentStatus: string) {
   return currentStatus === "Bảo trì" ? "Tất cả trạng thái" : "Bảo trì";
 }
+
+export type MaintenanceExportAsset = {
+  statusType: string;
+  code: string;
+  name: string;
+  category: string;
+  holder: string;
+  location?: string;
+  serial?: string;
+  supplier?: string;
+  brand?: string;
+  maintenanceReason?: string;
+  date?: string;
+  value?: string;
+  note?: string;
+};
+
+export function buildMaintenanceExportRows<T extends MaintenanceExportAsset>(assets: T[]) {
+  return assets.filter((asset) => asset.statusType === "maintenance").map((asset) => ({
+    "Mã tài sản": asset.code,
+    "Tên tài sản": asset.name,
+    "Phân loại": asset.category || "Chưa phân loại",
+    "Trạng thái": "Bảo trì",
+    "Lý do bảo trì": asset.maintenanceReason?.trim() || "Chưa ghi nhận lý do",
+    "Người / Phòng giữ": asset.holder || "Bảo trì",
+    "Vị trí": asset.location || "Chưa cập nhật",
+    "Serial / IMEI": asset.serial || "Chưa cập nhật",
+    "Nhà cung cấp": asset.supplier || "Chưa cập nhật",
+    "Hãng": asset.brand || "Chưa cập nhật",
+    "Ngày mua": asset.date || "",
+    "Giá trị (VNĐ)": asset.value || "0",
+    "Ghi chú": asset.note || "",
+  }));
+}
