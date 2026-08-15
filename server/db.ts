@@ -15,6 +15,7 @@ import {
   handovers,
   maintenanceTickets,
   type InsertUser,
+  userNotificationPreferences,
   users,
   vendors,
   vendorDocuments,
@@ -57,6 +58,18 @@ export async function updateUserActiveStatus(id: number, isActive: boolean) {
   const db = await getDb();
   if (!db) throw new Error("Database unavailable");
   await db.update(users).set({ isActive }).where(eq(users.id, id));
+}
+
+export async function getUserNotificationPreferences(userId: number) {
+  const db = await getDb();
+  if (!db) return null;
+  return (await db.select().from(userNotificationPreferences).where(eq(userNotificationPreferences.userId, userId)).limit(1))[0] || null;
+}
+
+export async function saveUserNotificationPreferences(userId: number, preferences: { maintenanceEnabled: boolean; handoverEnabled: boolean; returnRequestEnabled: boolean }) {
+  const db = await getDb();
+  if (!db) throw new Error("Database unavailable");
+  await db.insert(userNotificationPreferences).values({ userId, ...preferences }).onDuplicateKeyUpdate({ set: { ...preferences, updatedAt: new Date() } });
 }
 
 export async function updateUserDepartment(id: number, departmentId: number | null) {

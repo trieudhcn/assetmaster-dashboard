@@ -23,6 +23,7 @@ const mocks = vi.hoisted(() => ({
   getDivisionById: vi.fn(),
   getDivisionByCode: vi.fn(),
   getHandoverById: vi.fn(),
+  getUserNotificationPreferences: vi.fn(),
   listDepartments: vi.fn(),
   listAllDepartments: vi.fn(),
   listAllDivisions: vi.fn(),
@@ -34,6 +35,7 @@ const mocks = vi.hoisted(() => ({
   listVendorDocuments: vi.fn(),
   listHandoversByRecipient: vi.fn(),
   recordActivity: vi.fn(),
+  saveUserNotificationPreferences: vi.fn(),
   storagePut: vi.fn(),
   transitionHandoverStatus: vi.fn(),
   updateUserActiveStatus: vi.fn(),
@@ -73,6 +75,7 @@ vi.mock("./db", () => ({
   getDivisionByCode: mocks.getDivisionByCode,
   getDivisionById: mocks.getDivisionById,
   getHandoverById: mocks.getHandoverById,
+  getUserNotificationPreferences: mocks.getUserNotificationPreferences,
   getMaintenanceTicket: vi.fn(),
   listAssets: vi.fn(),
   listAuditItems: vi.fn(),
@@ -92,6 +95,7 @@ vi.mock("./db", () => ({
   listUsers: vi.fn(),
   recordActivity: mocks.recordActivity,
   saveCompany: vi.fn(),
+  saveUserNotificationPreferences: mocks.saveUserNotificationPreferences,
   updateAsset: vi.fn(),
   updateAuditItem: vi.fn(),
   updateHandover: mocks.updateHandover,
@@ -128,6 +132,8 @@ describe("employee administration", () => {
     vi.clearAllMocks();
     mocks.getCompany.mockResolvedValue(null);
     mocks.getAssetById.mockResolvedValue({ id: 50, assetCode: "TS-00050", isArchived: false, status: "available" });
+    mocks.getUserNotificationPreferences.mockResolvedValue(null);
+    mocks.saveUserNotificationPreferences.mockResolvedValue(undefined);
     mocks.listDepartments.mockResolvedValue([{ id: 12, code: "HCNS", name: "Hành chính - Nhân sự", isActive: true }]);
     mocks.getHandoverById.mockResolvedValue({ id: 99, recipientSignatureUrl: "https://storage.example/signature.png" });
     mocks.createHandover.mockResolvedValue(99);
@@ -358,5 +364,13 @@ describe("employee administration", () => {
     await expect(caller.handovers.updateStatus({ id: 99, status: "returned", recipientSignatureUrl: null, handoverSignatureUrl: null })).resolves.toEqual({ success: true });
     expect(mocks.transitionHandoverStatus).toHaveBeenCalledWith(99, "returned", { recipientSignatureUrl: null, handoverSignatureUrl: null });
     expect(mocks.recordActivity).toHaveBeenCalledWith(expect.objectContaining({ entityType: "handover", entityId: 99, action: "returned" }));
+  });
+
+  it("returns defaults and saves notification preferences for the signed-in user", async () => {
+    const caller = appRouter.createCaller(userContext);
+
+    await expect(caller.notifications.preferences()).resolves.toEqual({ maintenanceEnabled: true, handoverEnabled: true, returnRequestEnabled: true });
+    await expect(caller.notifications.savePreferences({ maintenanceEnabled: false, handoverEnabled: true, returnRequestEnabled: false })).resolves.toEqual({ success: true });
+    expect(mocks.saveUserNotificationPreferences).toHaveBeenCalledWith(8, { maintenanceEnabled: false, handoverEnabled: true, returnRequestEnabled: false });
   });
 });

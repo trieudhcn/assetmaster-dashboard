@@ -488,3 +488,11 @@
 - [x] Rà soát đích điều hướng đến hồ sơ tài sản và phiếu bàn giao hiện có.
 - [x] Gắn liên kết trực tiếp từ từng thông báo đến bản ghi liên quan.
 - [x] Kiểm thử điều hướng, build và phát hành checkpoint.
+
+## Mở rộng thông báo và tùy chọn nhận tin
+
+- [x] Rà soát nguồn dữ liệu yêu cầu hoàn trả, mốc thời gian và tooltip người dùng.
+- [x] Hiển thị thông báo yêu cầu hoàn trả đang chờ duyệt cùng thời gian phát sinh.
+- [x] Lưu tùy chọn bật/tắt từng loại thông báo của người dùng.
+- [x] Loại bỏ hoặc điều chỉnh tooltip bị che khuất ở khu vực thông tin người dùng.
+- [x] Kiểm thử desktop/mobile, TypeScript, build và phát hành checkpoint.

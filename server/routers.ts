@@ -33,6 +33,7 @@ import {
   getDivisionByCode,
   getCompany,
   getHandoverById,
+  getUserNotificationPreferences,
   getMaintenanceTicket,
   getVendorById,
   getVendorByName,
@@ -61,6 +62,7 @@ import {
   listUsers,
   recordActivity,
   saveCompany,
+  saveUserNotificationPreferences,
   updateAsset,
   updateAssetImportSession,
   updateBrand,
@@ -137,6 +139,16 @@ export const appRouter = router({
   auth: router({
     me: publicProcedure.query(({ ctx }) => ctx.user),
     logout: publicProcedure.mutation(({ ctx }) => { ctx.res.clearCookie(COOKIE_NAME, { ...getSessionCookieOptions(ctx.req), maxAge: -1 }); return { success: true } as const; }),
+  }),
+  notifications: router({
+    preferences: protectedProcedure.query(async ({ ctx }) => {
+      const stored = await getUserNotificationPreferences(ctx.user.id);
+      return stored ? { maintenanceEnabled: stored.maintenanceEnabled, handoverEnabled: stored.handoverEnabled, returnRequestEnabled: stored.returnRequestEnabled } : { maintenanceEnabled: true, handoverEnabled: true, returnRequestEnabled: true };
+    }),
+    savePreferences: protectedProcedure.input(z.object({ maintenanceEnabled: z.boolean(), handoverEnabled: z.boolean(), returnRequestEnabled: z.boolean() })).mutation(async ({ input, ctx }) => {
+      await saveUserNotificationPreferences(ctx.user.id, input);
+      return { success: true };
+    }),
   }),
   company: router({
     get: adminProcedure.query(() => getCompany()),

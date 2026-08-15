@@ -15,6 +15,14 @@ export const users = mysqlTable("users", {
   lastSignedIn: timestamp("lastSignedIn").defaultNow().notNull(),
 }, (table) => [index("users_division_idx").on(table.divisionId)]);
 
+export const userNotificationPreferences = mysqlTable("userNotificationPreferences", {
+  userId: int("userId").primaryKey(),
+  maintenanceEnabled: boolean("maintenanceEnabled").default(true).notNull(),
+  handoverEnabled: boolean("handoverEnabled").default(true).notNull(),
+  returnRequestEnabled: boolean("returnRequestEnabled").default(true).notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
 export const companies = mysqlTable("companies", {
   id: int("id").autoincrement().primaryKey(),
   name: varchar("name", { length: 255 }).notNull(),
