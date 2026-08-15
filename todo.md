@@ -622,3 +622,10 @@
 - [x] Rà soát icon thao tác Bộ phận và nhãn hover của Phòng Ban.
 - [x] Thêm nhãn hover/focus cho các icon chỉnh sửa và trạng thái Bộ phận.
 - [x] Bổ sung kiểm thử hồi quy và phát hành checkpoint.
+
+## Chuẩn hóa nhãn hủy và thao tác nhân sự
+
+- [x] Rà soát nhãn hiển thị của tất cả nút hủy trên toàn hệ thống.
+- [x] Bổ sung tooltip/focus label cho icon thao tác trong Quản lý nhân sự.
+- [x] Loại bỏ icon tìm kiếm bị hiển thị chồng thừa trong tìm kiếm nhân sự.
+- [x] Bổ sung kiểm thử hồi quy và phát hành checkpoint.

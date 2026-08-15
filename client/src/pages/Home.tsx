@@ -398,8 +398,10 @@ export default function Home() {
           return;
         }
         const iconName = element.querySelector("svg")?.getAttribute("data-lucide") || "";
-        const fallbackLabel = !sourceLabel && !element.textContent?.trim() ? iconFallbackLabels[iconName] : undefined;
-        const label = sourceLabel ? handoverTooltipMap[sourceLabel] || sourceLabel : fallbackLabel;
+        const visibleText = element.textContent?.trim() || "";
+        const fallbackLabel = !sourceLabel && !visibleText ? iconFallbackLabels[iconName] : undefined;
+        const cancelLabel = !sourceLabel && /^(Hủy|Quay lại|Đóng)$/.test(visibleText) ? (visibleText === "Hủy" ? "Hủy thao tác" : visibleText) : undefined;
+        const label = sourceLabel ? handoverTooltipMap[sourceLabel] || sourceLabel : fallbackLabel || cancelLabel;
         if (!label) return;
         if (label !== sourceLabel) element.setAttribute("aria-label", label);
         element.dataset.tooltip = label;

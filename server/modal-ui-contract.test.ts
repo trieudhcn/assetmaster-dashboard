@@ -46,4 +46,13 @@ describe("modal presentation contract", () => {
     expect(organization).toContain('"Kích hoạt Bộ phận"');
     expect(organization).toContain('aria-label="Hủy chỉnh sửa Bộ phận"');
   });
+
+  it("standardizes cancel labels and employee management icon tooltips", () => {
+    const home = readProjectFile("client/src/pages/Home.tsx");
+    const employees = readProjectFile("client/src/pages/EmployeeManagementView.tsx");
+
+    expect(home).toContain('"Hủy thao tác"');
+    expect(employees).not.toContain("<Search size");
+    expect(employees).toContain('aria-label="Đóng phân bổ nhân sự"');
+  });
 });
