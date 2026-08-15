@@ -530,3 +530,9 @@
 - [x] Thay các thao tác phù hợp bằng biểu tượng có tooltip hover/focus.
 - [x] Điều chỉnh cỡ chữ và bố cục để các thao tác từng thông báo nằm cùng một hàng.
 - [x] Kiểm thử desktop/mobile, TypeScript, build và phát hành checkpoint.
+
+## Huy hiệu số thông báo chưa đọc
+
+- [x] Rà soát trạng thái chưa đọc và bố cục biểu tượng chuông.
+- [x] Hiển thị huy hiệu số lượng chưa đọc trên biểu tượng chuông.
+- [x] Kiểm thử desktop/mobile, TypeScript, build và phát hành checkpoint.
