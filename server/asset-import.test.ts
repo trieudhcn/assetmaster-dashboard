@@ -33,4 +33,10 @@ describe("asset Excel import", () => {
     const result = parseAssetImportRows([{ "Mã tài sản*": "TS-PREVIEW-001", "Tên tài sản*": "Màn hình xem trước", "Phân loại": "Thiết bị CNTT", "Vị trí": "Kho tầng 3", "Trạng thái (Sẵn có/Bảo trì)": "Sẵn có", "Tình trạng": "Tốt" }]);
     expect(result.candidates[0]).toMatchObject({ category: "Thiết bị CNTT", location: "Kho tầng 3" });
   });
+
+  it("keeps a corrected maintenance reason available for direct preview edits", () => {
+    const result = parseAssetImportRows([{ "Mã tài sản*": "TS-EDIT-001", "Tên tài sản*": "Thiết bị bảo trì", "Trạng thái (Sẵn có/Bảo trì)": "Bảo trì", "Lý do bảo trì": "Thay màn hình", "Tình trạng": "Cần kiểm tra" }]);
+    expect(result.issues).toEqual([]);
+    expect(result.candidates[0]).toMatchObject({ status: "maintenance", maintenanceReason: "Thay màn hình", condition: "needs_inspection" });
+  });
 });

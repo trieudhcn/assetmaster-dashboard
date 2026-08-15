@@ -407,3 +407,10 @@
 - [x] Rà soát modal import và dữ liệu xem trước hiện có.
 - [x] Hiển thị bảng xem trước đầy đủ, gồm hành động dự kiến theo từng dòng.
 - [x] Thêm kiểm thử, xác minh giao diện và phát hành checkpoint.
+
+## Chỉnh sửa và xác nhận import
+
+- [x] Rà soát luồng xem trước, dữ liệu chỉnh sửa và điểm xác nhận import.
+- [x] Cho phép chỉnh sửa trực tiếp dữ liệu trong bảng xem trước.
+- [x] Thêm hộp thoại xác nhận hai bước khi có cập nhật hàng loạt.
+- [x] Thêm kiểm thử, xác minh giao diện và phát hành checkpoint.
