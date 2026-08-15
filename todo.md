@@ -462,3 +462,10 @@
 - [x] Rà soát header, dữ liệu người dùng và hành vi thông báo.
 - [x] Bỏ ô tìm kiếm trên Tổng quan và sửa tương tác thông báo, hồ sơ.
 - [x] Thêm kiểm thử, xác minh desktop/mobile, build và phát hành checkpoint.
+
+## Thông báo và menu avatar header
+
+- [x] Rà soát cấu trúc header và nguyên nhân hiển thị thừa ở chuông.
+- [x] Thêm bảng thông báo chi tiết khi nhấp chuông.
+- [x] Thêm menu avatar với trang cá nhân và đăng xuất.
+- [x] Kiểm thử tương tác header, build và phát hành checkpoint.
