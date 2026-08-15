@@ -57,6 +57,13 @@
       "when": 1786753196302,
       "tag": "0007_breezy_sentry",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "5",
+      "when": 1786763101600,
+      "tag": "0008_aspiring_mattie_franklin",
+      "breakpoints": true
     }
   ]
 }

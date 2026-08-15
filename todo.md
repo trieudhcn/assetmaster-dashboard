@@ -308,3 +308,10 @@
 - [x] Điều hướng Admin vào dashboard quản trị và chặn User truy cập các màn hình quản trị.
 - [x] Xây dựng dashboard User với hồ sơ cá nhân và danh sách tài sản đang giữ.
 - [x] Thêm kiểm thử phân quyền, xác minh responsive, TypeScript, build và phát hành checkpoint.
+
+## Thời hạn & yêu cầu hoàn trả tài sản
+
+- [x] Rà soát dữ liệu bàn giao, trạng thái hoàn trả và luồng Admin xử lý hiện có.
+- [x] Hiển thị ngày nhận và hạn dự kiến hoàn trả trên từng tài sản của User.
+- [x] Cho phép User gửi yêu cầu hoàn trả; Admin nhận diện và xử lý yêu cầu trong Bàn giao.
+- [x] Thêm kiểm thử phân quyền, xác minh responsive, TypeScript, build và phát hành checkpoint.

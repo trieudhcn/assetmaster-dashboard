@@ -300,6 +300,26 @@ export const appRouter = router({
       if (!handover) throw new TRPCError({ code: "NOT_FOUND", message: "Không tìm thấy phiếu bàn giao." });
       return handover;
     }),
+    requestReturn: protectedProcedure.input(z.object({ id: z.number().int().positive(), note: z.string().trim().min(3).max(1000).optional().nullable() })).mutation(async ({ input, ctx }) => {
+      const handover = await getHandoverById(input.id);
+      if (!handover) throw new TRPCError({ code: "NOT_FOUND", message: "Không tìm thấy phiếu bàn giao." });
+      if (handover.recipientUserId !== ctx.user.id) throw new TRPCError({ code: "FORBIDDEN", message: "Bạn chỉ có thể yêu cầu hoàn trả tài sản đang được bàn giao cho mình." });
+      if (handover.status !== "active") throw new TRPCError({ code: "BAD_REQUEST", message: "Chỉ có thể yêu cầu hoàn trả tài sản đang được cấp phát." });
+      if (handover.returnRequestStatus === "pending") throw new TRPCError({ code: "BAD_REQUEST", message: "Yêu cầu hoàn trả cho tài sản này đang chờ xử lý." });
+      await updateHandover(input.id, { returnRequestStatus: "pending", returnRequestedAt: new Date(), returnRequestNote: input.note || null, returnRequestResolvedAt: null, returnRequestResolvedByUserId: null, returnRequestResolution: null });
+      await recordActivity({ entityType: "handover", entityId: input.id, action: "return_requested", actorUserId: ctx.user.id, actorName: ctx.user.name, summary: `Yêu cầu hoàn trả tài sản ${handover.assetCode}` });
+      return { success: true };
+    }),
+    resolveReturnRequest: adminProcedure.input(z.object({ id: z.number().int().positive(), decision: z.enum(["approved", "rejected"]), resolution: z.string().trim().max(1000).optional().nullable() })).mutation(async ({ input, ctx }) => {
+      const handover = await getHandoverById(input.id);
+      if (!handover) throw new TRPCError({ code: "NOT_FOUND", message: "Không tìm thấy phiếu bàn giao." });
+      if (handover.returnRequestStatus !== "pending") throw new TRPCError({ code: "BAD_REQUEST", message: "Phiếu này không có yêu cầu hoàn trả đang chờ xử lý." });
+      const changes = { returnRequestStatus: input.decision, returnRequestResolvedAt: new Date(), returnRequestResolvedByUserId: ctx.user.id, returnRequestResolution: input.resolution || null } as const;
+      if (input.decision === "approved") await transitionHandoverStatus(input.id, "returned", changes);
+      else await updateHandover(input.id, changes);
+      await recordActivity({ entityType: "handover", entityId: input.id, action: input.decision === "approved" ? "return_approved" : "return_rejected", actorUserId: ctx.user.id, actorName: ctx.user.name, summary: `${input.decision === "approved" ? "Duyệt" : "Từ chối"} yêu cầu hoàn trả ${handover.assetCode}` });
+      return { success: true };
+    }),
     create: adminProcedure.input(z.object({ assetId: z.number().int().positive(), recipientUserId: z.number().int().positive().optional().nullable(), recipientName: z.string().trim().min(2).max(160), recipientDepartmentId: z.number().int().positive().optional().nullable(), recipientDepartmentName: nullableText, handedOverAt: z.number().int().transform((value) => new Date(value)), dueBackAt: dateFromMs, conditionOut: nullableText, accessories: nullableText, note: nullableText })).mutation(async ({ input, ctx }) => {
       const asset = await getAssetById(input.assetId);
       if (!asset || asset.isArchived) throw new TRPCError({ code: "NOT_FOUND", message: "Tài sản được chọn không tồn tại hoặc đã lưu trữ." });

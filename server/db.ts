@@ -347,6 +347,12 @@ export async function getHandoverById(id: number) {
     dueBackAt: handovers.dueBackAt,
     returnedAt: handovers.returnedAt,
     status: handovers.status,
+    returnRequestStatus: handovers.returnRequestStatus,
+    returnRequestedAt: handovers.returnRequestedAt,
+    returnRequestNote: handovers.returnRequestNote,
+    returnRequestResolvedAt: handovers.returnRequestResolvedAt,
+    returnRequestResolvedByUserId: handovers.returnRequestResolvedByUserId,
+    returnRequestResolution: handovers.returnRequestResolution,
     conditionOut: handovers.conditionOut,
     conditionIn: handovers.conditionIn,
     accessories: handovers.accessories,
@@ -360,7 +366,7 @@ export async function getHandoverById(id: number) {
 export async function listHandoversByRecipient(recipientUserId: number) {
   const db = await getDb();
   if (!db) return [];
-  return db.select({ id: handovers.id, referenceCode: handovers.referenceCode, assetId: handovers.assetId, assetCode: assets.assetCode, assetName: assets.name, status: handovers.status, handedOverAt: handovers.handedOverAt, returnedAt: handovers.returnedAt, dueBackAt: handovers.dueBackAt, conditionOut: handovers.conditionOut, conditionIn: handovers.conditionIn }).from(handovers).innerJoin(assets, eq(handovers.assetId, assets.id)).where(eq(handovers.recipientUserId, recipientUserId)).orderBy(desc(handovers.handedOverAt));
+  return db.select({ id: handovers.id, referenceCode: handovers.referenceCode, assetId: handovers.assetId, assetCode: assets.assetCode, assetName: assets.name, status: handovers.status, handedOverAt: handovers.handedOverAt, returnedAt: handovers.returnedAt, dueBackAt: handovers.dueBackAt, returnRequestStatus: handovers.returnRequestStatus, returnRequestedAt: handovers.returnRequestedAt, returnRequestNote: handovers.returnRequestNote, returnRequestResolvedAt: handovers.returnRequestResolvedAt, returnRequestResolution: handovers.returnRequestResolution, conditionOut: handovers.conditionOut, conditionIn: handovers.conditionIn }).from(handovers).innerJoin(assets, eq(handovers.assetId, assets.id)).where(eq(handovers.recipientUserId, recipientUserId)).orderBy(desc(handovers.handedOverAt));
 }
 
 export async function createHandover(data: typeof handovers.$inferInsert) {

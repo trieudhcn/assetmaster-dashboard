@@ -41,6 +41,7 @@ const mocks = vi.hoisted(() => ({
   updateUserDivision: vi.fn(),
   updateDepartment: vi.fn(),
   updateDivision: vi.fn(),
+  updateHandover: vi.fn(),
   updateVendor: vi.fn(),
   updateBrand: vi.fn(),
 }));
@@ -93,7 +94,7 @@ vi.mock("./db", () => ({
   saveCompany: vi.fn(),
   updateAsset: vi.fn(),
   updateAuditItem: vi.fn(),
-  updateHandover: vi.fn(),
+  updateHandover: mocks.updateHandover,
   updateMaintenanceTicket: vi.fn(),
   transitionHandoverStatus: mocks.transitionHandoverStatus,
   updateUserActiveStatus: mocks.updateUserActiveStatus,
@@ -162,6 +163,7 @@ describe("employee administration", () => {
     mocks.clearUserDivision.mockResolvedValue(undefined);
     mocks.updateDepartment.mockResolvedValue(undefined);
     mocks.updateDivision.mockResolvedValue(undefined);
+    mocks.updateHandover.mockResolvedValue(undefined);
     mocks.recordActivity.mockResolvedValue(undefined);
     mocks.listHandoversByRecipient.mockResolvedValue([{ id: 91, assetCode: "TS-00091", assetName: "Laptop cá nhân", status: "active" }]);
     mocks.storagePut.mockResolvedValue({ key: "vendors/41/documents/bao-gia.pdf", url: "/manus-storage/vendors/41/documents/bao-gia.pdf" });
@@ -185,6 +187,26 @@ describe("employee administration", () => {
     await expect(caller.employees.assetHistory({ userId: 1 })).rejects.toMatchObject({ code: "FORBIDDEN" });
     await expect(caller.assets.list()).rejects.toMatchObject({ code: "FORBIDDEN" });
     await expect(caller.handovers.list()).rejects.toMatchObject({ code: "FORBIDDEN" });
+  });
+
+  it("lets a recipient request return only for their active handover", async () => {
+    mocks.getHandoverById.mockResolvedValue({ id: 99, assetCode: "TS-00099", recipientUserId: 8, status: "active", returnRequestStatus: "none" });
+    const caller = appRouter.createCaller(userContext);
+
+    await expect(caller.handovers.requestReturn({ id: 99, note: "Tôi có thể bàn giao lại vào thứ Sáu." })).resolves.toEqual({ success: true });
+    expect(mocks.updateHandover).toHaveBeenCalledWith(99, expect.objectContaining({ returnRequestStatus: "pending", returnRequestNote: "Tôi có thể bàn giao lại vào thứ Sáu." }));
+    expect(mocks.recordActivity).toHaveBeenCalledWith(expect.objectContaining({ action: "return_requested", actorUserId: 8 }));
+
+    mocks.getHandoverById.mockResolvedValue({ id: 100, assetCode: "TS-00100", recipientUserId: 7, status: "active", returnRequestStatus: "none" });
+    await expect(caller.handovers.requestReturn({ id: 100, note: null })).rejects.toMatchObject({ code: "FORBIDDEN" });
+  });
+
+  it("lets an administrator approve a pending return and release the asset", async () => {
+    mocks.getHandoverById.mockResolvedValue({ id: 99, assetCode: "TS-00099", recipientUserId: 8, status: "active", returnRequestStatus: "pending" });
+    const caller = appRouter.createCaller(adminContext);
+
+    await expect(caller.handovers.resolveReturnRequest({ id: 99, decision: "approved", resolution: null })).resolves.toEqual({ success: true });
+    expect(mocks.transitionHandoverStatus).toHaveBeenCalledWith(99, "returned", expect.objectContaining({ returnRequestStatus: "approved", returnRequestResolvedByUserId: 1 }));
   });
 
   it("allows administrators to create suppliers and brands while restricting employees", async () => {
