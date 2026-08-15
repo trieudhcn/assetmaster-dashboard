@@ -3,7 +3,7 @@ import { Building2, CheckCircle2, ImageUp, LoaderCircle, Monitor, Upload } from 
 import { toast } from "sonner";
 import { trpc } from "@/lib/trpc";
 
-export type CompanyBrandInfo = { name: string; address: string; taxCode: string; phone: string; websiteTitle: string; logoUrl: string };
+export type CompanyBrandInfo = { name: string; address: string; taxCode: string; phone: string; websiteTitle: string; logoUrl: string; brandColor: string; faviconUrl: string };
 
 export function CompanyBrandSettings({ companyInfo, onSave }: { companyInfo: CompanyBrandInfo; onSave: (next: CompanyBrandInfo) => void }) {
   const [draft, setDraft] = useState(companyInfo);

@@ -448,3 +448,11 @@
 - [x] Mở rộng API lưu logo và tiêu đề website.
 - [x] Bổ sung giao diện thay đổi logo, tiêu đề và áp dụng toàn trang.
 - [x] Thêm kiểm thử, xác minh tải tệp, TypeScript, build và phát hành checkpoint.
+
+## Nhận diện thương hiệu mở rộng
+
+- [x] Rà soát dữ liệu thương hiệu, cài đặt logo và áp dụng giao diện hiện có.
+- [x] Mở rộng lưu màu chủ đạo và favicon trong dữ liệu công ty.
+- [x] Thêm chọn màu, cắt logo và cấu hình favicon trong cài đặt.
+- [x] Áp dụng nhận diện thương hiệu toàn giao diện.
+- [x] Thêm kiểm thử, xác minh TypeScript, build và phát hành checkpoint.

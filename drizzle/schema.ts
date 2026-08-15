@@ -24,6 +24,8 @@ export const companies = mysqlTable("companies", {
   email: varchar("email", { length: 320 }),
   logoUrl: text("logoUrl"),
   websiteTitle: varchar("websiteTitle", { length: 120 }),
+  brandColor: varchar("brandColor", { length: 9 }),
+  faviconUrl: text("faviconUrl"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });

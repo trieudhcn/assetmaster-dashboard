@@ -21,7 +21,7 @@ describe("company.get", () => {
 
   it("persists the configured website title and logo URL", async () => {
     const caller = appRouter.createCaller({ user: { id: 1, openId: "admin", role: "admin", name: "Admin", isActive: true }, req: {}, res: {} } as any);
-    await caller.company.save({ name: "Công ty AssetMaster", address: null, taxCode: null, phone: null, email: null, logoUrl: "/manus-storage/company-brand/logo.webp", websiteTitle: "Cổng tài sản nội bộ" });
-    expect(mocks.saveCompany).toHaveBeenCalledWith(expect.objectContaining({ logoUrl: "/manus-storage/company-brand/logo.webp", websiteTitle: "Cổng tài sản nội bộ" }));
+    await caller.company.save({ name: "Công ty AssetMaster", address: null, taxCode: null, phone: null, email: null, logoUrl: "/manus-storage/company-brand/logo.webp", websiteTitle: "Cổng tài sản nội bộ", brandColor: "#175A9E", faviconUrl: "/manus-storage/company-brand/favicon.png" });
+    expect(mocks.saveCompany).toHaveBeenCalledWith(expect.objectContaining({ logoUrl: "/manus-storage/company-brand/logo.webp", websiteTitle: "Cổng tài sản nội bộ", brandColor: "#175A9E", faviconUrl: "/manus-storage/company-brand/favicon.png" }));
   });
 });

@@ -140,7 +140,7 @@ export const appRouter = router({
   }),
   company: router({
     get: adminProcedure.query(() => getCompany()),
-    save: adminProcedure.input(z.object({ name: z.string().trim().min(2).max(255), address: nullableText, taxCode: nullableText, phone: nullableText, email: z.string().email().optional().nullable(), logoUrl: nullableText, websiteTitle: z.string().trim().min(2).max(120).optional().nullable() })).mutation(async ({ input, ctx }) => {
+    save: adminProcedure.input(z.object({ name: z.string().trim().min(2).max(255), address: nullableText, taxCode: nullableText, phone: nullableText, email: z.string().email().optional().nullable(), logoUrl: nullableText, websiteTitle: z.string().trim().min(2).max(120).optional().nullable(), brandColor: z.string().regex(/^#[0-9a-fA-F]{6}$/).optional().nullable(), faviconUrl: nullableText })).mutation(async ({ input, ctx }) => {
       const id = await saveCompany(input);
       await recordActivity({ entityType: "company", entityId: id, action: "updated", actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: "Cập nhật thông tin công ty" });
       return { id };
@@ -152,6 +152,13 @@ export const appRouter = router({
       const extension = input.contentType === "image/png" ? "png" : input.contentType === "image/jpeg" ? "jpg" : "webp";
       const stored = await storagePut(`company-brand/logo-${crypto.randomUUID()}.${extension}`, bytes, input.contentType);
       await recordActivity({ entityType: "company", entityId: 0, action: "logo_uploaded", actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: `Tải logo công ty ${input.fileName}` });
+      return { url: stored.url };
+    }),
+    uploadFavicon: adminProcedure.input(z.object({ fileName: z.string().trim().min(1).max(255), dataUrl: z.string().max(1_000_000).regex(/^data:image\/png;base64,/) })).mutation(async ({ input, ctx }) => {
+      const bytes = Buffer.from(input.dataUrl.split(",")[1] || "", "base64");
+      if (!bytes.length || bytes.length > 256 * 1024) throw new TRPCError({ code: "BAD_REQUEST", message: "Favicon PNG không được vượt quá 256 KB." });
+      const stored = await storagePut(`company-brand/favicon-${crypto.randomUUID()}.png`, bytes, "image/png");
+      await recordActivity({ entityType: "company", entityId: 0, action: "favicon_uploaded", actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: `Tải favicon ${input.fileName}` });
       return { url: stored.url };
     }),
   }),
