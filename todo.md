@@ -542,3 +542,11 @@
 - [x] Rà soát toàn bộ popup, menu hồ sơ và modal trong ứng dụng.
 - [x] Bổ sung đóng khi click ngoài vùng nội dung, trừ lúc đang xử lý thao tác.
 - [x] Kiểm thử desktop/mobile, TypeScript, build và phát hành checkpoint.
+
+## Chuẩn hóa chuyển động và phím tắt cửa sổ
+
+- [x] Rà soát popup, modal, drawer và luồng import/hoàn tác cần xác nhận khi đóng.
+- [x] Chuẩn hóa hiệu ứng mở/đóng cho popup, modal và drawer.
+- [x] Bổ sung phím Esc để đóng nhanh toàn bộ popup, modal và drawer.
+- [x] Xác nhận trước khi đóng modal import hoặc hoàn tác có nguy cơ mất dữ liệu.
+- [x] Kiểm thử desktop/mobile, TypeScript, build và phát hành checkpoint.

@@ -19,7 +19,7 @@ function downloadTemplate() {
   XLSX.writeFile(book, "AssetMaster-Template-Import-TaiSan.xlsx");
 }
 
-export function AssetImportModal({ onClose, onImported }: { onClose: () => void; onImported: () => void }) {
+export function AssetImportModal({ onClose: closeModal, onImported }: { onClose: () => void; onImported: () => void }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [parsed, setParsed] = useState<ParsedFile | null>(null);
   const [draftRows, setDraftRows] = useState<AssetImportCandidate[]>([]);
@@ -30,6 +30,14 @@ export function AssetImportModal({ onClose, onImported }: { onClose: () => void;
   const [confirmStep, setConfirmStep] = useState<0 | 1 | 2>(0);
   const [acknowledged, setAcknowledged] = useState(false);
   const assetsQuery = trpc.assets.list.useQuery();
+  const onClose = () => {
+    if (phase === "reading" || phase === "importing") return;
+    if (parsed || draftRows.length || confirmStep > 0) {
+      toast.warning("Đóng phiên import?", { description: "Dữ liệu xem trước chưa được nhập sẽ bị hủy.", action: { label: "Bỏ dữ liệu", onClick: closeModal } });
+      return;
+    }
+    closeModal();
+  };
   useEffect(() => {
     const handleOutside = (event: PointerEvent) => {
       const target = event.target as Node;
@@ -41,6 +49,15 @@ export function AssetImportModal({ onClose, onImported }: { onClose: () => void;
     };
     document.addEventListener("pointerdown", handleOutside);
     return () => document.removeEventListener("pointerdown", handleOutside);
+  }, [confirmStep, phase, onClose]);
+  useEffect(() => {
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") return;
+      if (confirmStep > 0) { setConfirmStep(0); return; }
+      if (phase !== "reading" && phase !== "importing") onClose();
+    };
+    document.addEventListener("keydown", handleEscape);
+    return () => document.removeEventListener("keydown", handleEscape);
   }, [confirmStep, phase, onClose]);
   const importMutation = trpc.assets.import.useMutation({
     onSuccess: (result) => { setServerIssues(result.errors); setConfirmStep(0); setProgress(100); setPhase("complete"); if (result.created || result.updated) { toast.success(`Đã tạo ${result.created} và cập nhật ${result.updated} tài sản.`); onImported(); } if (result.errors.length) toast.warning(`Có ${result.errors.length} dòng chưa được xử lý.`); },
