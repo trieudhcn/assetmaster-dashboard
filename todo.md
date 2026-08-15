@@ -280,3 +280,11 @@
 - [x] Khắc phục mất focus khi nhập tên trong biểu mẫu thêm nhanh Nhà cung cấp hoặc Hãng của tài sản.
 - [x] Kiểm thử luồng nhập nhiều ký tự bằng trạng thái ref không tái dựng ô nhập; luồng lưu vẫn tự chọn dữ liệu vừa tạo và giữ bố cục desktop/mobile.
 - [x] Chạy TypeScript, hồi quy, build và phát hành checkpoint sửa lỗi; 28 Vitest tests, TypeScript và production build thành công.
+
+## Hoàn thiện phân trang & chọn Nhà cung cấp/Hãng
+
+- [x] Sửa thanh phân trang để không che dòng tài sản cuối cùng trong Danh mục.
+- [x] Thêm nút Hủy cho luồng thêm nhanh Nhà cung cấp và Hãng.
+- [x] Thêm nút X xóa nhanh cho các ô tìm kiếm có nội dung.
+- [x] Thay dropdown Nhà cung cấp/Hãng trong biểu mẫu tài sản bằng điều khiển có tìm kiếm.
+- [x] Kiểm thử tương tác, responsive, TypeScript, build và phát hành checkpoint.

@@ -7,6 +7,7 @@ import QRCodeGenerator from "qrcode";
 import notoSansVietnamese from "../assets/noto-sans-vietnamese.ttf";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { trpc } from "@/lib/trpc";
+import { filterNamedCatalogOptions, getPaginationWindow } from "@/lib/catalogUi";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -241,6 +242,40 @@ export default function Home() {
     localStorage.setItem("assetmaster-company-info", JSON.stringify(next));
   }, [companyQuery.data]);
 
+  useEffect(() => {
+    const searchableInputs = 'input[placeholder*="Tìm"], input[placeholder*="tìm"]';
+    const updateInputValue = (input: HTMLInputElement, value: string) => {
+      const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")?.set;
+      setter?.call(input, value);
+      input.dispatchEvent(new Event("input", { bubbles: true }));
+    };
+    const attachClearButtons = () => {
+      document.querySelectorAll<HTMLInputElement>(searchableInputs).forEach((input) => {
+        if (input.dataset.clearSearchReady === "true") return;
+        const container = input.parentElement;
+        if (!container) return;
+        input.dataset.clearSearchReady = "true";
+        input.classList.add("pr-11");
+        if (getComputedStyle(container).position === "static") container.classList.add("relative");
+        const clearButton = document.createElement("button");
+        clearButton.type = "button";
+        clearButton.dataset.clearSearchButton = "true";
+        clearButton.className = `absolute top-1/2 -translate-y-1/2 rounded-md p-1 text-[#8AA0B6] transition hover:bg-[#EDF4F6] hover:text-[#193B57] ${container.querySelector("kbd") ? "right-9" : "right-2"}`;
+        clearButton.setAttribute("aria-label", "Xóa nội dung tìm kiếm");
+        clearButton.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true" class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2.4"><path d="m6 6 12 12M18 6 6 18"/></svg>';
+        const syncVisibility = () => clearButton.classList.toggle("hidden", !input.value);
+        input.addEventListener("input", syncVisibility);
+        clearButton.addEventListener("click", () => { updateInputValue(input, ""); input.focus(); syncVisibility(); });
+        syncVisibility();
+        container.appendChild(clearButton);
+      });
+    };
+    attachClearButtons();
+    const observer = new MutationObserver(attachClearButtons);
+    observer.observe(document.body, { childList: true, subtree: true });
+    return () => observer.disconnect();
+  }, []);
+
   const filteredAssets = useMemo(() => assetRows.filter((asset) => {
     const matchesQuery = `${asset.code} ${asset.name} ${asset.holder}`.toLowerCase().includes(query.toLowerCase());
     const matchesCategory = category === "Tất cả loại tài sản" || asset.category === category;
@@ -384,12 +419,8 @@ function PaginatedAssetCatalogPage({ assets, query, category, status, department
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [jumpPage, setJumpPage] = useState("1");
-  const totalPages = Math.max(1, Math.ceil(assets.length / pageSize));
-  const currentPage = Math.min(page, totalPages);
-  const startIndex = assets.length === 0 ? 0 : (currentPage - 1) * pageSize;
+  const { currentPage, totalPages, startIndex, startRecord, endRecord } = getPaginationWindow(assets.length, page, pageSize);
   const pageAssets = assets.slice(startIndex, startIndex + pageSize);
-  const startRecord = assets.length === 0 ? 0 : startIndex + 1;
-  const endRecord = Math.min(startIndex + pageSize, assets.length);
   const pageNumbers = Array.from({ length: totalPages }, (_, index) => index + 1).filter((pageNumber) => totalPages <= 5 || pageNumber === 1 || pageNumber === totalPages || Math.abs(pageNumber - currentPage) <= 1);
   useEffect(() => { setPage(1); }, [query, category, status, department, pageSize]);
   useEffect(() => { setJumpPage(String(currentPage)); }, [currentPage]);
@@ -438,7 +469,7 @@ function PaginatedAssetCatalogPage({ assets, query, category, status, department
     controls.insertBefore(jumpControl, controls.firstChild?.nextSibling || nextButton);
     return () => jumpControl.remove();
   }, [currentPage, totalPages, assets.length]);
-  return <div className="relative"><AssetCatalogPage assets={pageAssets} totalAssets={assets.length} query={query} category={category} status={status} department={department} vendor={vendor} brand={brand} vendorOptions={vendorOptions} brandOptions={brandOptions} onQueryChange={onQueryChange} onCategoryChange={onCategoryChange} onStatusChange={onStatusChange} onDepartmentChange={onDepartmentChange} onVendorChange={onVendorChange} onBrandChange={onBrandChange} onReset={resetAndGoFirst} onCreate={onCreate} onEdit={onEdit} onOpenDetail={onOpenDetail} onOpenQr={onOpenQr} onAssign={onAssign} /><div className="relative z-10 -mt-16 px-4 pb-8 sm:px-6 lg:px-9 lg:pb-9"><div className="mx-auto flex max-w-[1500px] flex-col gap-3 rounded-xl border border-[#DFE9F0] bg-white p-4 shadow-[0_8px_24px_rgba(16,42,67,0.06)] sm:flex-row sm:items-center sm:justify-between"><div className="text-xs text-[#71869A]">Hiển thị <span className="font-bold text-[#193B57]">{startRecord}–{endRecord}</span> trên <span className="font-bold text-[#193B57]">{assets.length}</span> tài sản phù hợp</div><div className="flex flex-wrap items-center gap-2"><label className="flex items-center gap-2 text-xs font-semibold text-[#60758A]">Mỗi trang<select value={pageSize} onChange={(event) => setPageSize(Number(event.target.value))} className="h-8 rounded-md border border-[#DDE7F0] bg-white px-2 text-xs font-bold text-[#193B57]"><option value={10}>10</option><option value={20}>20</option><option value={50}>50</option></select></label><button disabled={currentPage === 1} onClick={() => setPage((current) => Math.max(1, current - 1))} className="h-8 rounded-md border border-[#DDE7F0] px-3 text-xs font-bold text-[#60758A] hover:bg-[#F7FAFC] disabled:cursor-not-allowed disabled:opacity-40">Trước</button>{pageNumbers.map((pageNumber, index) => <span key={pageNumber} className="flex items-center gap-1">{index > 0 && pageNumber - pageNumbers[index - 1] > 1 ? <span className="px-1 text-xs text-[#8AA0B6]">…</span> : null}<button onClick={() => setPage(pageNumber)} className={`grid h-8 min-w-8 place-items-center rounded-md px-2 text-xs font-bold ${currentPage === pageNumber ? "bg-[#102A43] text-white" : "border border-[#DDE7F0] text-[#60758A] hover:bg-[#F7FAFC]"}`}>{pageNumber}</button></span>)}<button disabled={currentPage === totalPages || assets.length === 0} onClick={() => setPage((current) => Math.min(totalPages, current + 1))} className="h-8 rounded-md border border-[#DDE7F0] px-3 text-xs font-bold text-[#60758A] hover:bg-[#F7FAFC] disabled:cursor-not-allowed disabled:opacity-40">Sau</button></div></div></div></div>;
+  return <div className="relative"><AssetCatalogPage assets={pageAssets} totalAssets={assets.length} query={query} category={category} status={status} department={department} vendor={vendor} brand={brand} vendorOptions={vendorOptions} brandOptions={brandOptions} onQueryChange={onQueryChange} onCategoryChange={onCategoryChange} onStatusChange={onStatusChange} onDepartmentChange={onDepartmentChange} onVendorChange={onVendorChange} onBrandChange={onBrandChange} onReset={resetAndGoFirst} onCreate={onCreate} onEdit={onEdit} onOpenDetail={onOpenDetail} onOpenQr={onOpenQr} onAssign={onAssign} /><div className="relative z-10 px-4 pb-8 pt-4 sm:px-6 lg:px-9 lg:pb-9"><div className="mx-auto flex max-w-[1500px] flex-col gap-3 rounded-xl border border-[#DFE9F0] bg-white p-4 shadow-[0_8px_24px_rgba(16,42,67,0.06)] sm:flex-row sm:items-center sm:justify-between"><div className="text-xs text-[#71869A]">Hiển thị <span className="font-bold text-[#193B57]">{startRecord}–{endRecord}</span> trên <span className="font-bold text-[#193B57]">{assets.length}</span> tài sản phù hợp</div><div className="flex flex-wrap items-center gap-2"><label className="flex items-center gap-2 text-xs font-semibold text-[#60758A]">Mỗi trang<select value={pageSize} onChange={(event) => setPageSize(Number(event.target.value))} className="h-8 rounded-md border border-[#DDE7F0] bg-white px-2 text-xs font-bold text-[#193B57]"><option value={10}>10</option><option value={20}>20</option><option value={50}>50</option></select></label><button disabled={currentPage === 1} onClick={() => setPage((current) => Math.max(1, current - 1))} className="h-8 rounded-md border border-[#DDE7F0] px-3 text-xs font-bold text-[#60758A] hover:bg-[#F7FAFC] disabled:cursor-not-allowed disabled:opacity-40">Trước</button>{pageNumbers.map((pageNumber, index) => <span key={pageNumber} className="flex items-center gap-1">{index > 0 && pageNumber - pageNumbers[index - 1] > 1 ? <span className="px-1 text-xs text-[#8AA0B6]">…</span> : null}<button onClick={() => setPage(pageNumber)} className={`grid h-8 min-w-8 place-items-center rounded-md px-2 text-xs font-bold ${currentPage === pageNumber ? "bg-[#102A43] text-white" : "border border-[#DDE7F0] text-[#60758A] hover:bg-[#F7FAFC]"}`}>{pageNumber}</button></span>)}<button disabled={currentPage === totalPages || assets.length === 0} onClick={() => setPage((current) => Math.min(totalPages, current + 1))} className="h-8 rounded-md border border-[#DDE7F0] px-3 text-xs font-bold text-[#60758A] hover:bg-[#F7FAFC] disabled:cursor-not-allowed disabled:opacity-40">Sau</button></div></div></div></div>;
 }
 
 function CompanySettingsPage({ companyInfo, onSave }: { companyInfo: CompanyInfo; onSave: (next: CompanyInfo) => void }) {
@@ -717,15 +748,27 @@ function AssetModal({ mode, asset, formData, setFormData, onClose, onSave, onEdi
       addButton.textContent = kind === "vendor" ? "+ Thêm Nhà cung cấp" : "+ Thêm Hãng";
       addButton.onclick = () => { quickEntryNameRef.current = ""; setQuickEntryType(kind); setQuickEntryName(""); };
       heading.append(labelNode, addButton);
+      const search = document.createElement("input");
+      search.type = "search";
+      search.className = "field-input mb-2 h-9";
+      search.placeholder = kind === "vendor" ? "Tìm Nhà cung cấp..." : "Tìm Hãng...";
+      search.setAttribute("aria-label", kind === "vendor" ? "Tìm Nhà cung cấp" : "Tìm Hãng");
       const select = document.createElement("select");
       select.className = "field-input";
-      const placeholder = document.createElement("option");
-      placeholder.value = "";
-      placeholder.textContent = kind === "vendor" ? "Chọn Nhà cung cấp" : "Chọn Hãng";
-      select.appendChild(placeholder);
-      items.forEach((item) => { const option = document.createElement("option"); option.value = String(item.id); option.textContent = item.name; option.selected = item.id === selectedId; select.appendChild(option); });
+      const renderOptions = (keyword = "") => {
+        const matchedItems = filterNamedCatalogOptions(items, keyword);
+        select.replaceChildren();
+        const placeholder = document.createElement("option");
+        placeholder.value = "";
+        placeholder.textContent = kind === "vendor" ? "Chọn Nhà cung cấp" : "Chọn Hãng";
+        select.appendChild(placeholder);
+        matchedItems.forEach((item) => { const option = document.createElement("option"); option.value = String(item.id); option.textContent = item.name; option.selected = item.id === selectedId; select.appendChild(option); });
+        if (!matchedItems.length) { const emptyOption = document.createElement("option"); emptyOption.disabled = true; emptyOption.textContent = "Không có dữ liệu phù hợp"; select.appendChild(emptyOption); }
+      };
+      renderOptions();
+      search.oninput = () => renderOptions(search.value);
       select.onchange = () => { const id = Number(select.value) || undefined; const selected = items.find((item) => item.id === id); setFormData((current) => kind === "vendor" ? { ...current, vendorId: id, supplier: selected?.name || "" } : { ...current, brandId: id, brand: selected?.name || "" }); };
-      wrapper.append(heading, select);
+      wrapper.append(heading, search, select);
       if (quickEntryType === kind) {
         const quick = document.createElement("div");
         quick.className = "mt-2 flex gap-2";
@@ -740,7 +783,12 @@ function AssetModal({ mode, asset, formData, setFormData, onClose, onSave, onEdi
         save.className = "rounded-lg bg-[#0F8C8C] px-3 text-xs font-bold text-white hover:bg-[#087A6A]";
         save.onclick = () => { const name = quickEntryNameRef.current.trim(); if (name.length < 2) { toast.error("Nhập tên tối thiểu 2 ký tự."); return; } if (kind === "vendor") createVendorMutation.mutate({ name, contactName: null, phone: null, email: null }); else createBrandMutation.mutate({ name }); };
         input.onkeydown = (event) => { if (event.key === "Enter") save.click(); };
-        quick.append(input, save);
+        const cancel = document.createElement("button");
+        cancel.type = "button";
+        cancel.textContent = "Hủy";
+        cancel.className = "rounded-lg border border-[#DDE7F0] bg-white px-3 text-xs font-bold text-[#60758A] hover:bg-[#F7FAFC]";
+        cancel.onclick = () => { quickEntryNameRef.current = ""; setQuickEntryName(""); setQuickEntryType(null); };
+        quick.append(input, cancel, save);
         wrapper.appendChild(quick);
       }
       return wrapper;
