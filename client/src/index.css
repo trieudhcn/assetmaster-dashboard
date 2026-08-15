@@ -162,3 +162,6 @@ button[aria-label="Mở menu người dùng"] + div { animation: popover-in 180m
 }
 .icon-action-tooltip:hover::after,
 .icon-action-tooltip:focus-visible::after { opacity: 1; transform: translate(-50%, 0); }
+
+/* Header popovers clip pseudo-tooltips; use the native title there instead. */
+header .icon-action-tooltip::after { display: none; }

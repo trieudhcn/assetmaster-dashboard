@@ -557,3 +557,9 @@
 - [x] Thêm hiệu ứng thoát đồng bộ cho popup, modal và drawer.
 - [x] Cảnh báo xác nhận khi đóng form còn thay đổi chưa lưu.
 - [x] Kiểm thử desktop/mobile, TypeScript, build và phát hành checkpoint.
+
+## Sửa tooltip và click ngoài bảng thông báo
+
+- [x] Rà soát lớp tooltip và sự kiện click ngoài của bảng thông báo.
+- [x] Đưa tooltip ra khỏi vùng bị cắt và bảo đảm bảng đóng khi click ngoài.
+- [x] Kiểm thử desktop/mobile, TypeScript, build và phát hành checkpoint.

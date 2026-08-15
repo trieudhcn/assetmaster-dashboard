@@ -267,6 +267,8 @@ export default function Home() {
   const sidebarProfileRef = useRef<HTMLDivElement>(null);
   const notificationsRef = useRef<HTMLDivElement>(null);
   const headerProfileRef = useRef<HTMLDivElement>(null);
+  const notificationsOpenRef = useRef(false);
+  const notificationCloseTimerRef = useRef<number | null>(null);
   const [readNotificationIds, setReadNotificationIds] = useState<string[]>(() => {
     try {
       return JSON.parse(localStorage.getItem("assetmaster-read-notification-ids") || "[]") as string[];
@@ -376,7 +378,6 @@ export default function Home() {
         if (element.dataset.suppressIconTooltip === "true") {
           element.classList.remove("icon-action-tooltip");
           element.removeAttribute("data-tooltip");
-          element.removeAttribute("title");
           return;
         }
         const sourceLabel = element.getAttribute("aria-label")?.trim();
@@ -415,10 +416,11 @@ export default function Home() {
   const profileName = user?.name || "Người dùng";
   const profileRole = user?.role === "admin" ? "Quản trị viên" : "Nhân viên";
   const profileInitials = profileName.split(" ").filter(Boolean).slice(-2).map((part) => part[0]).join("").toUpperCase() || "AM";
+  useEffect(() => { notificationsOpenRef.current = notificationsOpen; }, [notificationsOpen]);
   const closeNotifications = () => {
-    if (!notificationsOpen || notificationsClosing) return;
+    if (!notificationsOpenRef.current || notificationCloseTimerRef.current) return;
     setNotificationsClosing(true);
-    window.setTimeout(() => { setNotificationsOpen(false); setNotificationSettingsOpen(false); setNotificationsClosing(false); }, 170);
+    notificationCloseTimerRef.current = window.setTimeout(() => { setNotificationsOpen(false); setNotificationSettingsOpen(false); setNotificationsClosing(false); notificationCloseTimerRef.current = null; }, 170);
   };
   useEffect(() => {
     const closeOutsidePopups = (event: PointerEvent) => {
