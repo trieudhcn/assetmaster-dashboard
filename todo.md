@@ -594,3 +594,11 @@
 - [x] Rà soát trạng thái yêu cầu bảo trì mới và mức độ khẩn cấp hiện có.
 - [x] Hiển thị huy hiệu riêng với số lượng và màu theo mức khẩn cấp cao nhất.
 - [x] Bổ sung kiểm thử nghiệp vụ, xác minh giao diện và phát hành checkpoint.
+
+## Phân loại và mã tài sản tự động
+
+- [x] Rà soát form tạo/sửa tài sản, ngày mua và mô hình danh mục hiện có.
+- [x] Lưu phân loại tài sản do Admin quản lý, gồm tên và tiền tố mã duy nhất.
+- [x] Tự sinh mã theo tiền tố phân loại, đồng thời hỗ trợ thêm, sửa và xóa phân loại.
+- [x] Thêm chọn ngày trực quan trong form và đồng bộ dữ liệu ngày mua.
+- [x] Bổ sung kiểm thử quyền hạn, giao diện responsive và phát hành checkpoint.

@@ -12,6 +12,7 @@ import {
   createAssetImportSession,
   countActiveDivisionsByDepartment,
   createAsset,
+  createAssetCategory,
   createAssetsBulk,
   createAuditSession,
   createAuditItem,
@@ -21,8 +22,12 @@ import {
   createMaintenanceTicket,
   createVendor,
   createVendorDocument,
+  countAssetsByCategoryId,
+  deleteAssetCategory,
   deleteVendorDocument,
   getAssetById,
+  getAssetCategoryByCode,
+  getAssetCategoryById,
   getLatestAssetImportSession,
   getBrandById,
   getBrandByName,
@@ -33,12 +38,15 @@ import {
   getDivisionByCode,
   getCompany,
   getHandoverById,
+  getNextAssetCodeForPrefix,
   getUserNotificationPreferences,
   getMaintenanceTicket,
   getVendorById,
   getVendorByName,
   getVendorDocumentById,
   listAssets,
+  listAssetCategories,
+  listAllAssetCategories,
   listAssetFieldChanges,
   listAssetsByCodes,
   listAssetCodesByCodes,
@@ -65,6 +73,7 @@ import {
   saveCompany,
   saveUserNotificationPreferences,
   updateAsset,
+  updateAssetCategory,
   updateAssetImportSession,
   updateBrand,
   updateDepartment,
@@ -351,6 +360,40 @@ export const appRouter = router({
       await updateBrand(id, changes);
       const action = input.isActive === false ? "deactivated" : input.isActive === true ? "activated" : "updated";
       await recordActivity({ entityType: "brand", entityId: id, action, actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: `${input.isActive === false ? "Vô hiệu hóa" : input.isActive === true ? "Kích hoạt" : "Cập nhật"} Hãng: ${input.name || existing.name}` });
+      return { success: true };
+    }),
+  }),
+  assetCategories: router({
+    list: adminProcedure.query(() => listAssetCategories()),
+    listAll: adminProcedure.query(() => listAllAssetCategories()),
+    nextCode: adminProcedure.input(z.object({ categoryId: z.number().int().positive() })).query(async ({ input }) => {
+      const category = await getAssetCategoryById(input.categoryId);
+      if (!category || !category.isActive) throw new TRPCError({ code: "NOT_FOUND", message: "Không tìm thấy phân loại đang hoạt động." });
+      return { assetCode: await getNextAssetCodeForPrefix(category.code) };
+    }),
+    create: adminProcedure.input(z.object({ name: z.string().trim().min(2).max(160), code: z.string().trim().min(1).max(12).regex(/^[A-Za-z0-9-]+$/).transform((value) => value.toUpperCase()), description: nullableText })).mutation(async ({ input, ctx }) => {
+      if (await getAssetCategoryByCode(input.code)) throw new TRPCError({ code: "BAD_REQUEST", message: "Tiền tố mã này đã được sử dụng." });
+      const id = await createAssetCategory({ ...input, isActive: true });
+      await recordActivity({ entityType: "asset_category", entityId: id, action: "created", actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: `Tạo phân loại ${input.name} (${input.code})` });
+      return { id };
+    }),
+    update: adminProcedure.input(z.object({ id: z.number().int().positive(), name: z.string().trim().min(2).max(160).optional(), code: z.string().trim().min(1).max(12).regex(/^[A-Za-z0-9-]+$/).transform((value) => value.toUpperCase()).optional(), description: nullableText, isActive: z.boolean().optional() })).mutation(async ({ input, ctx }) => {
+      const existing = await getAssetCategoryById(input.id);
+      if (!existing) throw new TRPCError({ code: "NOT_FOUND", message: "Không tìm thấy phân loại." });
+      if (input.code && input.code !== existing.code) {
+        const duplicate = await getAssetCategoryByCode(input.code);
+        if (duplicate) throw new TRPCError({ code: "BAD_REQUEST", message: "Tiền tố mã này đã được sử dụng." });
+      }
+      await updateAssetCategory(input.id, { name: input.name, code: input.code, description: input.description, isActive: input.isActive });
+      await recordActivity({ entityType: "asset_category", entityId: input.id, action: "updated", actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: `Cập nhật phân loại ${input.name || existing.name}` });
+      return { success: true };
+    }),
+    delete: adminProcedure.input(z.object({ id: z.number().int().positive() })).mutation(async ({ input, ctx }) => {
+      const existing = await getAssetCategoryById(input.id);
+      if (!existing) throw new TRPCError({ code: "NOT_FOUND", message: "Không tìm thấy phân loại." });
+      if (await countAssetsByCategoryId(input.id)) throw new TRPCError({ code: "BAD_REQUEST", message: "Không thể xóa phân loại đang được gán cho tài sản." });
+      await deleteAssetCategory(input.id);
+      await recordActivity({ entityType: "asset_category", entityId: input.id, action: "deleted", actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: `Xóa phân loại ${existing.name}` });
       return { success: true };
     }),
   }),

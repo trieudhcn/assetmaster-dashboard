@@ -26,6 +26,7 @@ import { EmployeeManagementView } from "./EmployeeManagementView";
 import { ReportsManagementView } from "./ReportsManagementView";
 import { OrganizationManagementPage } from "./OrganizationManagementPage";
 import { VendorBrandManagementPage } from "./VendorBrandManagementPage";
+import { AssetCategoryManagementPage } from "./AssetCategoryManagementPage";
 import { LoginGateway } from "./LoginGateway";
 import { UserDashboard } from "./UserDashboard";
 import { AssetImportModal } from "@/components/AssetImportModal";
@@ -83,6 +84,7 @@ import { toast } from "sonner";
 const navItems = [
   { label: "Tổng quan", icon: LayoutDashboard },
   { label: "Danh mục tài sản", icon: Archive },
+  { label: "Phân loại tài sản", icon: Tags },
   { label: "Bàn giao & Cấp phát", icon: PackageCheck },
   { label: "Bảo trì & Báo hỏng", icon: Wrench },
   { label: "Kiểm kê", icon: ClipboardCheck },
@@ -97,6 +99,7 @@ type Asset = {
   qrToken?: string;
   name: string;
   category: string;
+  categoryId?: number;
   holder: string;
   status: string;
   statusType: "active" | "available" | "maintenance";
@@ -243,7 +246,7 @@ export default function Home() {
 
   const [activeNav, setActiveNav] = useState(() => {
     const view = new URLSearchParams(window.location.search).get("view");
-    const deepLinks: Record<string, string> = { assets: "Danh mục tài sản", maintenance: "Bảo trì & Báo hỏng", audit: "Kiểm kê", reports: "Báo cáo", employees: "Quản lý nhân viên", organization: "Phòng Ban & Bộ Phận", vendors: "Nhà cung cấp & Hãng", handovers: "Bàn giao & Cấp phát" };
+    const deepLinks: Record<string, string> = { assets: "Danh mục tài sản", categories: "Phân loại tài sản", maintenance: "Bảo trì & Báo hỏng", audit: "Kiểm kê", reports: "Báo cáo", employees: "Quản lý nhân viên", organization: "Phòng Ban & Bộ Phận", vendors: "Nhà cung cấp & Hãng", handovers: "Bàn giao & Cấp phát" };
     return view ? deepLinks[view] || "Tổng quan" : "Tổng quan";
   });
   const [assetRows, setAssetRows] = useState<Asset[]>([]);
@@ -254,7 +257,7 @@ export default function Home() {
   const [qrLookupOpen, setQrLookupOpen] = useState(false);
   const [assetImportOpen, setAssetImportOpen] = useState(false);
   const [assetHistoryId, setAssetHistoryId] = useState<number | null>(null);
-  const [formData, setFormData] = useState<Asset>({ code: "", name: "", category: "CNTT", holder: "", status: "Sẵn có", statusType: "available", date: "14/02/2025", value: "", location: "", serial: "", supplier: "", note: "" });
+  const [formData, setFormData] = useState<Asset>({ code: "", name: "", category: "", holder: "", status: "Sẵn có", statusType: "available", date: new Date().toISOString().slice(0, 10), value: "", location: "", serial: "", supplier: "", note: "" });
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState("Tất cả loại tài sản");
   const [status, setStatus] = useState("Tất cả trạng thái");
@@ -282,6 +285,7 @@ export default function Home() {
   const [companyInfo, setCompanyInfo] = useState<CompanyInfo>(readCompanyInfo);
   const isAdmin = user?.role === "admin";
   const assetQuery = trpc.assets.list.useQuery(undefined, { enabled: isAuthenticated && isAdmin });
+  const assetCategoriesQuery = trpc.assetCategories.list.useQuery(undefined, { enabled: isAuthenticated && isAdmin });
   const maintenanceTicketsQuery = trpc.maintenance.list.useQuery(undefined, { enabled: isAuthenticated && isAdmin });
   const vendorsQuery = trpc.vendors.list.useQuery(undefined, { enabled: isAuthenticated && isAdmin });
   const brandsQuery = trpc.brands.list.useQuery(undefined, { enabled: isAuthenticated && isAdmin });
@@ -319,9 +323,9 @@ export default function Home() {
   useEffect(() => {
     if (!assetQuery.data) return;
     setAssetRows(assetQuery.data.map((asset) => ({
-      code: asset.assetCode, qrToken: asset.qrToken, name: asset.name, category: typeof (asset.metadata as { category?: unknown } | null)?.category === "string" ? String((asset.metadata as { category?: unknown }).category) : "Chưa phân loại", holder: asset.holderName || (asset.status === "maintenance" ? "Bảo trì" : asset.status === "available" ? "Chưa bàn giao" : "Chưa cấp phát"), status: asset.status === "assigned" ? "Đang cấp phát" : asset.status === "maintenance" ? "Bảo trì" : "Sẵn có", statusType: asset.status === "assigned" ? "active" : asset.status === "maintenance" ? "maintenance" : "available", date: asset.purchaseDate ? new Date(asset.purchaseDate).toLocaleDateString("vi-VN") : "—", value: asset.purchaseValue ? String(asset.purchaseValue) : "0", location: asset.location || "", serial: asset.serialNumber || "", maintenanceReason: asset.maintenanceReason || "", supplier: asset.vendor || vendorsQuery.data?.find((vendor) => vendor.id === asset.vendorId)?.name || "", vendorId: asset.vendorId || undefined, brand: brandsQuery.data?.find((brand) => brand.id === asset.brandId)?.name || "", brandId: asset.brandId || undefined, note: asset.note || "",
+      code: asset.assetCode, qrToken: asset.qrToken, name: asset.name, category: asset.categoryId ? assetCategoriesQuery.data?.find((category) => category.id === asset.categoryId)?.name || "Chưa phân loại" : typeof (asset.metadata as { category?: unknown } | null)?.category === "string" ? String((asset.metadata as { category?: unknown }).category) : "Chưa phân loại", categoryId: asset.categoryId || undefined, holder: asset.holderName || (asset.status === "maintenance" ? "Bảo trì" : asset.status === "available" ? "Chưa bàn giao" : "Chưa cấp phát"), status: asset.status === "assigned" ? "Đang cấp phát" : asset.status === "maintenance" ? "Bảo trì" : "Sẵn có", statusType: asset.status === "assigned" ? "active" : asset.status === "maintenance" ? "maintenance" : "available", date: asset.purchaseDate ? new Date(asset.purchaseDate).toLocaleDateString("vi-VN") : "—", value: asset.purchaseValue ? String(asset.purchaseValue) : "0", location: asset.location || "", serial: asset.serialNumber || "", maintenanceReason: asset.maintenanceReason || "", supplier: asset.vendor || vendorsQuery.data?.find((vendor) => vendor.id === asset.vendorId)?.name || "", vendorId: asset.vendorId || undefined, brand: brandsQuery.data?.find((brand) => brand.id === asset.brandId)?.name || "", brandId: asset.brandId || undefined, note: asset.note || "",
     })));
-  }, [assetQuery.data, vendorsQuery.data, brandsQuery.data]);
+  }, [assetQuery.data, vendorsQuery.data, brandsQuery.data, assetCategoriesQuery.data]);
 
   useEffect(() => {
     if (!companyQuery.data) return;
@@ -522,13 +526,13 @@ export default function Home() {
     { label: "Tổng giá trị", value: assetValueTotal >= 1_000_000_000 ? `${(assetValueTotal / 1_000_000_000).toFixed(1)} Tỷ` : new Intl.NumberFormat("vi-VN").format(assetValueTotal), detail: "Giá trị nguyên giá", icon: Tags, tone: "navy" },
   ];
 
-  const openCreateModal = () => { setFormData({ code: `TS-${String(assetRows.length + 125).padStart(5, "0")}`, name: "", category: "CNTT", holder: "", status: "Sẵn có", statusType: "available", date: "14/02/2025", value: "", location: "", serial: "", maintenanceReason: "", supplier: "", note: "" }); setSelectedAsset(null); setAssetModal("create"); };
+  const openCreateModal = () => { setFormData({ code: "", name: "", category: "", holder: "", status: "Sẵn có", statusType: "available", date: new Date().toISOString().slice(0, 10), value: "", location: "", serial: "", maintenanceReason: "", supplier: "", note: "" }); setSelectedAsset(null); setAssetModal("create"); };
   const openEditModal = (asset: Asset) => { setSelectedAsset(asset); setFormData({ ...asset }); setAssetModal("edit"); };
   const openDetailModal = (asset: Asset) => { setSelectedAsset(asset); setAssetModal("detail"); };
-  const saveAsset = () => { if (!formData.name.trim() || !formData.value.trim()) { toast.error("Vui lòng nhập tên tài sản và giá trị."); return; } if (formData.statusType === "maintenance" && !formData.maintenanceReason?.trim()) { toast.error("Vui lòng nhập lý do bảo trì trước khi lưu."); return; } const payload = { assetCode: formData.code, name: formData.name, holderName: formData.statusType === "active" ? formData.holder || null : null, status: formData.statusType === "active" ? "assigned" as const : formData.statusType === "maintenance" ? "maintenance" as const : "available" as const, condition: "good" as const, purchaseValue: formData.value.replace(/[^0-9.]/g, "") || "0", vendor: formData.supplier || null, vendorId: formData.vendorId || null, brandId: formData.brandId || null, serialNumber: formData.serial || null, location: formData.location || null, note: formData.note || null, maintenanceReason: formData.statusType === "maintenance" ? (formData.maintenanceReason || "").trim() : null, purchaseDate: null, warrantyUntil: null, categoryId: null, departmentId: null }; if (assetModal === "edit") { const target = assetQuery.data?.find((asset) => asset.assetCode === formData.code); if (!target) { toast.error("Không tìm thấy tài sản để cập nhật."); return; } updateAssetMutation.mutate({ id: target.id, ...payload }); } else { createAssetMutation.mutate(payload); } setAssetModal(null); toast.success("Đã gửi thay đổi tài sản để lưu vào hệ thống."); };
+  const saveAsset = () => { if (!formData.name.trim() || !formData.value.trim()) { toast.error("Vui lòng nhập tên tài sản và giá trị."); return; } if (!formData.categoryId || !formData.code) { toast.error("Vui lòng chọn Phân loại để hệ thống tạo mã tài sản."); return; } if (formData.statusType === "maintenance" && !formData.maintenanceReason?.trim()) { toast.error("Vui lòng nhập lý do bảo trì trước khi lưu."); return; } const payload = { assetCode: formData.code, name: formData.name, holderName: formData.statusType === "active" ? formData.holder || null : null, status: formData.statusType === "active" ? "assigned" as const : formData.statusType === "maintenance" ? "maintenance" as const : "available" as const, condition: "good" as const, purchaseValue: formData.value.replace(/[^0-9.]/g, "") || "0", vendor: formData.supplier || null, vendorId: formData.vendorId || null, brandId: formData.brandId || null, serialNumber: formData.serial || null, location: formData.location || null, note: formData.note || null, maintenanceReason: formData.statusType === "maintenance" ? (formData.maintenanceReason || "").trim() : null, purchaseDate: formData.date ? new Date(`${formData.date}T00:00:00`).getTime() : null, warrantyUntil: null, categoryId: formData.categoryId, departmentId: null }; if (assetModal === "edit") { const target = assetQuery.data?.find((asset) => asset.assetCode === formData.code); if (!target) { toast.error("Không tìm thấy tài sản để cập nhật."); return; } updateAssetMutation.mutate({ id: target.id, ...payload }); } else { createAssetMutation.mutate(payload); } setAssetModal(null); toast.success("Đã gửi thay đổi tài sản để lưu vào hệ thống."); };
   const showComingSoon = (label: string) => toast.info(`${label} sẽ được mở trong phiên bản tiếp theo.`, { description: "Bản xem trước hiện đang dùng dữ liệu mẫu để minh họa giao diện." });
   const navigateTo = (label: string) => {
-    const viewByNav: Record<string, string> = { "Danh mục tài sản": "assets", "Bàn giao & Cấp phát": "handovers", "Bảo trì & Báo hỏng": "maintenance", "Kiểm kê": "audit", "Báo cáo": "reports", "Quản lý nhân viên": "employees", "Phòng Ban & Bộ Phận": "organization", "Nhà cung cấp & Hãng": "vendors" };
+    const viewByNav: Record<string, string> = { "Danh mục tài sản": "assets", "Phân loại tài sản": "categories", "Bàn giao & Cấp phát": "handovers", "Bảo trì & Báo hỏng": "maintenance", "Kiểm kê": "audit", "Báo cáo": "reports", "Quản lý nhân viên": "employees", "Phòng Ban & Bộ Phận": "organization", "Nhà cung cấp & Hãng": "vendors" };
     const url = new URL(window.location.href);
     const view = viewByNav[label];
     if (view) url.searchParams.set("view", view); else url.searchParams.delete("view");
@@ -612,6 +616,7 @@ export default function Home() {
         </header>
 
         {activeNav === "Bàn giao & Cấp phát" ? <AssignmentsPage showComingSoon={showComingSoon} companyInfo={companyInfo} /> : null}
+        {activeNav === "Phân loại tài sản" ? <AssetCategoryManagementPage /> : null}
         {activeNav === "Cài đặt" ? <><CompanyBrandSettings companyInfo={companyInfo} onSave={(next) => { setCompanyInfo(next); localStorage.setItem("assetmaster-company-info", JSON.stringify(next)); document.title = next.websiteTitle; saveCompanyMutation.mutate({ name: next.name, address: next.address || null, taxCode: next.taxCode || null, phone: next.phone || null, logoUrl: next.logoUrl || null, websiteTitle: next.websiteTitle || null, brandColor: next.brandColor || "#0F8C8C", faviconUrl: next.faviconUrl || null }, { onSuccess: () => { void companyQuery.refetch(); toast.success("Đã lưu cài đặt thương hiệu."); }, onError: (error) => toast.error(error.message || "Không thể lưu cài đặt thương hiệu.") }); }} /><BrandEnhancementsPanel info={companyInfo} onSave={(next) => { setCompanyInfo(next); localStorage.setItem("assetmaster-company-info", JSON.stringify(next)); document.documentElement.style.setProperty("--assetmaster-brand", next.brandColor); const favicon = document.querySelector<HTMLLinkElement>('link[rel="icon"]') || Object.assign(document.createElement("link"), { rel: "icon" }); if (next.faviconUrl) { favicon.href = next.faviconUrl; if (!favicon.parentNode) document.head.appendChild(favicon); } saveCompanyMutation.mutate({ name: next.name, address: next.address || null, taxCode: next.taxCode || null, phone: next.phone || null, logoUrl: next.logoUrl || null, websiteTitle: next.websiteTitle || null, brandColor: next.brandColor || "#0F8C8C", faviconUrl: next.faviconUrl || null }, { onSuccess: () => { void companyQuery.refetch(); } }); }} /></> : null}
         {activeNav === "Bảo trì & Báo hỏng" ? <MaintenancePage /> : null}
         {activeNav === "Kiểm kê" ? <AuditPage /> : null}
@@ -1206,6 +1211,109 @@ function AssetModal({ mode, asset, formData, setFormData, onClose: dismiss, onSa
   const quickEntryNameRef = useRef("");
   const vendorsQuery = trpc.vendors.list.useQuery();
   const brandsQuery = trpc.brands.list.useQuery();
+  const categoriesQuery = trpc.assetCategories.list.useQuery(undefined, { enabled: !isDetail });
+  const [categoryCreatorOpen, setCategoryCreatorOpen] = useState(false);
+  const [categoryDraft, setCategoryDraft] = useState({ name: "", code: "", description: "" });
+  const nextAssetCodeQuery = trpc.assetCategories.nextCode.useQuery({ categoryId: formData.categoryId || 0 }, { enabled: !isDetail && mode === "create" && Boolean(formData.categoryId) });
+  const createCategoryMutation = trpc.assetCategories.create.useMutation({
+    onSuccess: (result) => {
+      setFormData((current) => ({ ...current, categoryId: result.id, category: categoryDraft.name.trim(), code: "" }));
+      setCategoryDraft({ name: "", code: "", description: "" });
+      setCategoryCreatorOpen(false);
+      void utils.assetCategories.list.invalidate();
+      toast.success("Đã thêm Phân loại và áp dụng tiền tố mã mới.");
+    },
+    onError: (error) => toast.error(error.message || "Không thể thêm Phân loại."),
+  });
+  useEffect(() => {
+    if (isDetail || mode !== "create" || !nextAssetCodeQuery.data?.assetCode) return;
+    setFormData((current) => current.code === nextAssetCodeQuery.data!.assetCode ? current : { ...current, code: nextAssetCodeQuery.data!.assetCode });
+  }, [isDetail, mode, nextAssetCodeQuery.data?.assetCode, setFormData]);
+  useEffect(() => {
+    if (isDetail) return;
+    const dialog = document.querySelector('[role="dialog"][aria-label="Thêm tài sản mới"], [role="dialog"][aria-label="Chỉnh sửa tài sản"]');
+    const dateLabel = Array.from(dialog?.querySelectorAll("label") || []).find((label) => label.textContent?.trim() === "Ngày mua");
+    const dateInput = dateLabel?.parentElement?.querySelector("input") as HTMLInputElement | null;
+    if (dateInput) {
+      const [day, month, year] = formData.date.split("/");
+      const normalized = /^\d{4}-\d{2}-\d{2}$/.test(formData.date) ? formData.date : day && month && year ? `${year}-${month.padStart(2, "0")}-${day.padStart(2, "0")}` : "";
+      dateInput.type = "date";
+      dateInput.value = normalized;
+      dateInput.title = "Chọn ngày mua";
+      dateInput.classList.add("pl-9");
+      const dateField = dateInput.parentElement;
+      if (dateField && !dateField.querySelector("[data-purchase-date-icon]")) {
+        dateField.classList.add("relative");
+        const icon = document.createElement("span");
+        icon.dataset.purchaseDateIcon = "true";
+        icon.className = "pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[#0F8C8C]";
+        icon.textContent = "▣";
+        icon.setAttribute("aria-hidden", "true");
+        dateField.appendChild(icon);
+      }
+      dateInput.onchange = () => setFormData((current) => ({ ...current, date: dateInput.value }));
+    }
+
+    const categoryLabel = Array.from(dialog?.querySelectorAll("label") || []).find((label) => label.textContent?.trim() === "Phân loại");
+    const categoryField = categoryLabel?.parentElement;
+    const select = categoryField?.querySelector("select") as HTMLSelectElement | null;
+    if (!categoryField || !select) return;
+    select.replaceChildren();
+    const placeholder = document.createElement("option");
+    placeholder.value = "";
+    placeholder.textContent = categoriesQuery.isLoading ? "Đang tải Phân loại..." : "Chọn Phân loại";
+    select.appendChild(placeholder);
+    (categoriesQuery.data || []).forEach((category) => {
+      const option = document.createElement("option");
+      option.value = String(category.id);
+      option.textContent = `${category.name} · ${category.code}xxxxx`;
+      select.appendChild(option);
+    });
+    select.value = formData.categoryId ? String(formData.categoryId) : "";
+    select.onchange = () => {
+      const category = (categoriesQuery.data || []).find((item) => item.id === Number(select.value));
+      setFormData((current) => ({ ...current, categoryId: category?.id, category: category?.name || "", code: "" }));
+    };
+    categoryField.querySelector("[data-category-creator]")?.remove();
+    const creator = document.createElement("div");
+    creator.dataset.categoryCreator = "true";
+    creator.className = "mt-2";
+    const toggle = document.createElement("button");
+    toggle.type = "button";
+    toggle.className = "text-[11px] font-bold text-[#087A6A] hover:underline";
+    toggle.textContent = categoryCreatorOpen ? "Ẩn tạo Phân loại mới" : "+ Thêm Phân loại mới";
+    toggle.onclick = () => setCategoryCreatorOpen((current) => !current);
+    creator.appendChild(toggle);
+    if (categoryCreatorOpen) {
+      const form = document.createElement("div");
+      form.className = "mt-2 grid gap-2 rounded-lg border border-[#CDE5E5] bg-[#F4FBFA] p-2.5";
+      const nameInput = document.createElement("input");
+      nameInput.className = "field-input h-9";
+      nameInput.placeholder = "Tên Phân loại *";
+      nameInput.value = categoryDraft.name;
+      nameInput.oninput = () => setCategoryDraft((current) => ({ ...current, name: nameInput.value }));
+      const codeInput = document.createElement("input");
+      codeInput.className = "field-input h-9 font-mono uppercase";
+      codeInput.placeholder = "Tiền tố mã, ví dụ LT *";
+      codeInput.value = categoryDraft.code;
+      codeInput.oninput = () => setCategoryDraft((current) => ({ ...current, code: codeInput.value.toUpperCase().replace(/[^A-Z0-9-]/g, "") }));
+      const descriptionInput = document.createElement("input");
+      descriptionInput.className = "field-input h-9";
+      descriptionInput.placeholder = "Mô tả (không bắt buộc)";
+      descriptionInput.value = categoryDraft.description;
+      descriptionInput.oninput = () => setCategoryDraft((current) => ({ ...current, description: descriptionInput.value }));
+      const save = document.createElement("button");
+      save.type = "button";
+      save.className = "h-9 rounded-lg bg-[#0F8C8C] px-3 text-xs font-bold text-white hover:bg-[#087A6A]";
+      save.textContent = createCategoryMutation.isPending ? "Đang lưu..." : "Lưu Phân loại & tiền tố";
+      save.disabled = createCategoryMutation.isPending;
+      save.onclick = () => { const name = categoryDraft.name.trim(); const code = categoryDraft.code.trim(); if (name.length < 2 || !/^[A-Z0-9-]{1,12}$/.test(code)) { toast.error("Nhập tên và tiền tố 1–12 ký tự chữ/số hợp lệ."); return; } createCategoryMutation.mutate({ name, code, description: categoryDraft.description.trim() || null }); };
+      form.append(nameInput, codeInput, descriptionInput, save);
+      creator.appendChild(form);
+    }
+    categoryField.appendChild(creator);
+    return () => { creator.remove(); };
+  }, [isDetail, mode, formData.categoryId, formData.date, categoriesQuery.data, categoriesQuery.isLoading, categoryCreatorOpen, categoryDraft, createCategoryMutation.isPending, setFormData]);
   useEffect(() => {
     if (!isDetail || !asset?.brand) return;
     const dialog = document.querySelector('[role="dialog"][aria-label="Chi tiết tài sản"]');

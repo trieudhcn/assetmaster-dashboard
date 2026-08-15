@@ -1,10 +1,11 @@
-import { desc, eq, inArray } from "drizzle-orm";
+import { desc, eq, inArray, like } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import {
   activityLogs,
   assetFieldChanges,
   assetImportItems,
   assetImportSessions,
+  assetCategories,
   assets,
   auditItems,
   auditSessions,
@@ -296,6 +297,65 @@ export async function countActiveDivisionsByDepartment(departmentId: number) {
   if (!db) return 0;
   const result = await db.select({ id: divisions.id, isActive: divisions.isActive }).from(divisions).where(eq(divisions.departmentId, departmentId));
   return result.filter((division) => division.isActive).length;
+}
+
+export async function listAssetCategories() {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(assetCategories).where(eq(assetCategories.isActive, true)).orderBy(assetCategories.name);
+}
+
+export async function listAllAssetCategories() {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(assetCategories).orderBy(assetCategories.name);
+}
+
+export async function getAssetCategoryById(id: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+  return (await db.select().from(assetCategories).where(eq(assetCategories.id, id)).limit(1))[0];
+}
+
+export async function getAssetCategoryByCode(code: string) {
+  const db = await getDb();
+  if (!db) return undefined;
+  return (await db.select().from(assetCategories).where(eq(assetCategories.code, code)).limit(1))[0];
+}
+
+export async function createAssetCategory(data: typeof assetCategories.$inferInsert) {
+  const db = await getDb();
+  if (!db) throw new Error("Database unavailable");
+  const result = await db.insert(assetCategories).values(data);
+  return Number(result[0].insertId);
+}
+
+export async function updateAssetCategory(id: number, data: Partial<typeof assetCategories.$inferInsert>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database unavailable");
+  await db.update(assetCategories).set(data).where(eq(assetCategories.id, id));
+}
+
+export async function deleteAssetCategory(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database unavailable");
+  await db.delete(assetCategories).where(eq(assetCategories.id, id));
+}
+
+export async function countAssetsByCategoryId(categoryId: number) {
+  const db = await getDb();
+  if (!db) return 0;
+  const results = await db.select({ id: assets.id }).from(assets).where(eq(assets.categoryId, categoryId));
+  return results.length;
+}
+
+export async function getNextAssetCodeForPrefix(prefix: string) {
+  const db = await getDb();
+  if (!db) return `${prefix}00001`;
+  const codes = await db.select({ assetCode: assets.assetCode }).from(assets).where(like(assets.assetCode, `${prefix}%`));
+  const exactSuffix = new RegExp(`^${prefix.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}(\\d{5})$`);
+  const largestSequence = codes.reduce((largest, row) => Math.max(largest, Number(row.assetCode.match(exactSuffix)?.[1] || 0)), 0);
+  return `${prefix}${String(largestSequence + 1).padStart(5, "0")}`;
 }
 
 export async function listAssets() {
