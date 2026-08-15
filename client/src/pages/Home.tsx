@@ -8,7 +8,7 @@ import QRCodeGenerator from "qrcode";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { startLogin } from "@/const";
 import { trpc } from "@/lib/trpc";
-import { buildMaintenanceExportRows, canCreateCatalogOption, filterNamedCatalogOptions, getPaginationWindow, matchesVietnameseSearch, toggleMaintenanceStatusFilter } from "@/lib/catalogUi";
+import { buildMaintenanceExportRows, canCreateCatalogOption, filterNamedCatalogOptions, getHandoverActionTooltip, getPaginationWindow, matchesVietnameseSearch, toggleMaintenanceStatusFilter } from "@/lib/catalogUi";
 import { handoverPdfFontUrl, registerVietnamesePdfFont } from "@/lib/handoverPdf";
 import {
   AlertDialog,
@@ -280,6 +280,39 @@ export default function Home() {
     attachClearButtons();
     const observer = new MutationObserver(attachClearButtons);
     observer.observe(document.body, { childList: true, subtree: true });
+    return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
+    const handoverTooltipMap: Record<string, string> = {
+      "Xem biên bản": getHandoverActionTooltip("document"),
+      "Xuất biên bản": getHandoverActionTooltip("print"),
+      "Xem lịch sử": getHandoverActionTooltip("history"),
+    };
+    const iconFallbackLabels: Record<string, string> = {
+      x: "Đóng",
+      "x-circle": "Đóng",
+      "more-horizontal": "Mở menu tùy chọn",
+      "refresh-cw": "Làm mới dữ liệu",
+      "chevron-left": "Quay lại",
+      "chevron-right": "Tiếp tục",
+    };
+    const decorateActionTooltips = () => {
+      document.querySelectorAll<HTMLElement>("button, a").forEach((element) => {
+        const sourceLabel = element.getAttribute("aria-label")?.trim();
+        const iconName = element.querySelector("svg")?.getAttribute("data-lucide") || "";
+        const fallbackLabel = !sourceLabel && !element.textContent?.trim() ? iconFallbackLabels[iconName] : undefined;
+        const label = sourceLabel ? handoverTooltipMap[sourceLabel] || sourceLabel : fallbackLabel;
+        if (!label) return;
+        if (label !== sourceLabel) element.setAttribute("aria-label", label);
+        element.dataset.tooltip = label;
+        if (!element.title) element.title = label;
+        element.classList.add("icon-action-tooltip");
+      });
+    };
+    decorateActionTooltips();
+    const observer = new MutationObserver(decorateActionTooltips);
+    observer.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ["aria-label"] });
     return () => observer.disconnect();
   }, []);
 

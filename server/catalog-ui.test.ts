@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildMaintenanceExportRows, canCreateCatalogOption, filterNamedCatalogOptions, getPaginationWindow, matchesVietnameseSearch, normalizeVietnameseSearch, toggleMaintenanceStatusFilter } from "../client/src/lib/catalogUi";
+import { buildMaintenanceExportRows, canCreateCatalogOption, filterNamedCatalogOptions, getHandoverActionTooltip, getPaginationWindow, matchesVietnameseSearch, normalizeVietnameseSearch, toggleMaintenanceStatusFilter } from "../client/src/lib/catalogUi";
 
 describe("Catalog UI helpers", () => {
   it("clamps pagination and preserves a non-overlapping final record range", () => {
@@ -39,5 +39,11 @@ describe("Catalog UI helpers", () => {
     ]);
     expect(rows).toHaveLength(1);
     expect(rows[0]).toMatchObject({ "Mã tài sản": "TS-001", "Trạng thái": "Bảo trì", "Lý do bảo trì": "Kẹt giấy liên tục" });
+  });
+
+  it("uses clear action labels for the handover icon controls", () => {
+    expect(getHandoverActionTooltip("document")).toBe("Xem biên bản bàn giao");
+    expect(getHandoverActionTooltip("print")).toBe("In phiếu bàn giao");
+    expect(getHandoverActionTooltip("history")).toBe("Xem lịch sử bàn giao");
   });
 });

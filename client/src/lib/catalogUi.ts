@@ -69,3 +69,12 @@ export function buildMaintenanceExportRows<T extends MaintenanceExportAsset>(ass
     "Ghi chú": asset.note || "",
   }));
 }
+
+export function getHandoverActionTooltip(action: "document" | "print" | "history") {
+  const labels = {
+    document: "Xem biên bản bàn giao",
+    print: "In phiếu bàn giao",
+    history: "Xem lịch sử bàn giao",
+  } as const;
+  return labels[action];
+}

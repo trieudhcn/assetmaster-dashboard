@@ -380,3 +380,9 @@
 - [x] Tạo hàm xuất tệp Excel chỉ gồm tài sản đang Bảo trì.
 - [x] Thêm nút xuất báo cáo trong Danh mục tài sản.
 - [x] Thêm kiểm thử, xác minh responsive, TypeScript, build và phát hành checkpoint.
+
+## Nhãn hover cho icon thao tác
+
+- [x] Rà soát icon thao tác trong Bàn giao & Cấp phát và các màn hình quản trị.
+- [x] Bổ sung nhãn hover/focus mô tả rõ từng thao tác còn thiếu.
+- [x] Thêm kiểm thử, xác minh giao diện desktop/mobile, TypeScript, build và phát hành checkpoint.
