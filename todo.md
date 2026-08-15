@@ -588,3 +588,9 @@
 - [x] Rà soát nguồn dữ liệu và loại bỏ số huy hiệu cố định.
 - [x] Hiển thị huy hiệu theo số lượng bảo trì thực tế, tự ẩn khi bằng 0.
 - [x] Bổ sung kiểm thử hồi quy, xác minh giao diện và phát hành checkpoint.
+
+## Huy hiệu yêu cầu bảo trì mới
+
+- [x] Rà soát trạng thái yêu cầu bảo trì mới và mức độ khẩn cấp hiện có.
+- [x] Hiển thị huy hiệu riêng với số lượng và màu theo mức khẩn cấp cao nhất.
+- [x] Bổ sung kiểm thử nghiệp vụ, xác minh giao diện và phát hành checkpoint.

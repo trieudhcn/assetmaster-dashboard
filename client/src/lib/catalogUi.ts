@@ -40,6 +40,15 @@ export function getMaintenanceBadgeCount<T extends { statusType: string }>(asset
   return assets.reduce((count, asset) => count + (asset.statusType === "maintenance" ? 1 : 0), 0);
 }
 
+export type MaintenancePriority = "low" | "medium" | "high" | "critical";
+
+export function getNewMaintenanceRequestBadge<T extends { status: string; priority: MaintenancePriority }>(tickets: T[]) {
+  const priorityOrder: Record<MaintenancePriority, number> = { low: 1, medium: 2, high: 3, critical: 4 };
+  const openTickets = tickets.filter((ticket) => ticket.status === "open");
+  const priority = openTickets.reduce<MaintenancePriority | null>((highest, ticket) => !highest || priorityOrder[ticket.priority] > priorityOrder[highest] ? ticket.priority : highest, null);
+  return { count: openTickets.length, priority };
+}
+
 export type MaintenanceExportAsset = {
   statusType: string;
   code: string;
