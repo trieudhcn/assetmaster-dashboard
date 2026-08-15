@@ -347,3 +347,9 @@
 - [x] Hiển thị mô tả chức năng khi hover/focus từng icon thao tác tài sản.
 - [x] Mở modal tạo phiếu bàn giao ngay tại Danh mục với tài sản đã chọn sẵn.
 - [x] Thêm kiểm thử, xác minh responsive, TypeScript, build và phát hành checkpoint.
+
+## Xác nhận trước khi tạo phiếu bàn giao
+
+- [x] Rà soát dữ liệu và các điểm tạo phiếu bàn giao hiện có.
+- [x] Thêm hộp thoại xác nhận tóm tắt thông tin trước khi lưu phiếu.
+- [x] Thêm kiểm thử, xác minh responsive, TypeScript, build và phát hành checkpoint.
