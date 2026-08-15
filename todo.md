@@ -482,3 +482,9 @@
 - [x] Hiển thị danh sách thông báo riêng lẻ, hỗ trợ đánh dấu đọc từng thông báo.
 - [x] Thêm hiệu ứng hoạt ảnh phù hợp cho chuông khi có thông báo chưa đọc.
 - [x] Kiểm thử hiển thị desktop/mobile, build và phát hành checkpoint.
+
+## Điều hướng từ thông báo
+
+- [x] Rà soát đích điều hướng đến hồ sơ tài sản và phiếu bàn giao hiện có.
+- [x] Gắn liên kết trực tiếp từ từng thông báo đến bản ghi liên quan.
+- [x] Kiểm thử điều hướng, build và phát hành checkpoint.

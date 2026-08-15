@@ -9,6 +9,7 @@ import { useAuth } from "@/_core/hooks/useAuth";
 import { startLogin } from "@/const";
 import { trpc } from "@/lib/trpc";
 import { buildMaintenanceExportRows, canCreateCatalogOption, filterNamedCatalogOptions, getHandoverActionTooltip, getPaginationWindow, matchesVietnameseSearch, toggleMaintenanceStatusFilter } from "@/lib/catalogUi";
+import { getNotificationTargetLabel, type NotificationTarget } from "@/lib/notificationLinks";
 import { handoverPdfFontUrl, registerVietnamesePdfFont } from "@/lib/handoverPdf";
 import {
   AlertDialog,
@@ -125,6 +126,7 @@ type HeaderNotification = {
   title: string;
   description: string;
   kind: "assignment" | "maintenance";
+  target: NotificationTarget;
 };
 
 const defaultCompanyInfo: CompanyInfo = {
@@ -261,6 +263,7 @@ export default function Home() {
   const vendorsQuery = trpc.vendors.list.useQuery(undefined, { enabled: isAuthenticated && isAdmin });
   const brandsQuery = trpc.brands.list.useQuery(undefined, { enabled: isAuthenticated && isAdmin });
   const companyQuery = trpc.company.get.useQuery(undefined, { enabled: isAuthenticated && isAdmin });
+  const notificationHandoversQuery = trpc.handovers.list.useQuery(undefined, { enabled: isAuthenticated && isAdmin });
   const saveCompanyMutation = trpc.company.save.useMutation({ onSuccess: () => companyQuery.refetch() });
   const createAssetMutation = trpc.assets.create.useMutation({ onSuccess: () => assetQuery.refetch() });
   const updateAssetMutation = trpc.assets.update.useMutation({ onSuccess: () => assetQuery.refetch() });
@@ -384,16 +387,21 @@ export default function Home() {
       title: `${asset.code} đang bảo trì`,
       description: asset.maintenanceReason?.trim() || `Theo dõi tiến độ xử lý cho ${asset.name}.`,
       kind: "maintenance" as const,
+      target: { type: "asset" as const, assetCode: asset.code },
     }));
-    const assignedAssets = assetRows.filter((asset) => asset.statusType === "active");
-    const assignmentNotification = assignedAssets.length > 0 ? [{
-      id: `assignments-${assignedAssets.length}`,
-      title: `${assignedAssets.length} tài sản đang được cấp phát`,
-      description: "Theo dõi người nhận và lịch bàn giao trong mục Bàn giao & Cấp phát.",
-      kind: "assignment" as const,
-    }] : [];
-    return [...maintenanceNotifications, ...assignmentNotification];
-  }, [assetRows]);
+    const handoverNotifications = (notificationHandoversQuery.data || []).filter((handover) => handover.status !== "returned" && handover.status !== "cancelled").slice(0, 3).map((handover) => {
+      const asset = assetQuery.data?.find((item) => item.id === handover.assetId);
+      const statusLabel = handover.status === "active" ? "đã bàn giao" : handover.status === "pending_signature" ? "chờ ký xác nhận" : "đang ở trạng thái nháp";
+      return {
+        id: `handover-${handover.id}`,
+        title: `Phiếu ${handover.referenceCode} ${statusLabel}`,
+        description: `${asset?.assetCode || `Tài sản #${handover.assetId}`} · ${asset?.name || "Tài sản"} — ${handover.recipientName}.`,
+        kind: "assignment" as const,
+        target: { type: "handover" as const, handoverId: handover.id },
+      };
+    });
+    return [...maintenanceNotifications, ...handoverNotifications];
+  }, [assetQuery.data, assetRows, notificationHandoversQuery.data]);
   const unreadNotifications = headerNotifications.filter((notification) => !readNotificationIds.includes(notification.id));
   const hasUnreadNotifications = unreadNotifications.length > 0;
   const markNotificationRead = (notificationId: string) => {
@@ -409,6 +417,23 @@ export default function Home() {
     setReadNotificationIds(next);
     localStorage.setItem("assetmaster-read-notification-ids", JSON.stringify(next));
     toast.success("Đã đánh dấu tất cả thông báo là đã đọc.");
+  };
+  const openNotificationTarget = (notification: HeaderNotification) => {
+    markNotificationRead(notification.id);
+    setNotificationsOpen(false);
+    const target = notification.target;
+    if (target.type === "asset") {
+      const asset = assetRows.find((item) => item.code === target.assetCode);
+      if (!asset) {
+        toast.error("Không tìm thấy tài sản liên quan đến thông báo này.");
+        return;
+      }
+      navigateTo("Danh mục tài sản");
+      openDetailModal(asset);
+      return;
+    }
+    sessionStorage.setItem("assetmaster-open-handover-id", String(target.handoverId));
+    navigateTo("Bàn giao & Cấp phát");
   };
   const dashboardKpis = [
     { label: "Tổng tài sản", value: String(assetRows.length), detail: "Theo dữ liệu đang quản lý", icon: Box, tone: "teal" },
@@ -483,7 +508,23 @@ export default function Home() {
           <div className="flex items-center gap-2 sm:gap-3">
             <button onClick={() => setQrLookupOpen(true)} className="hidden h-9 items-center gap-2 rounded-lg border border-[#CDE5E5] bg-white px-3 text-xs font-bold text-[#087A6A] transition hover:bg-[#ECF8F7] sm:flex"><QrCode size={16} />Quét mã QR</button>
             <button onClick={openCreateModal} className="hidden h-9 items-center gap-2 rounded-lg bg-[#0F8C8C] px-3.5 text-xs font-bold text-white shadow-[0_5px_14px_rgba(15,140,140,0.22)] transition hover:-translate-y-0.5 hover:bg-[#087A6A] sm:flex"><Plus size={16} />Thêm tài sản mới</button>
-            <div className="relative"><button data-suppress-icon-tooltip="true" onClick={() => { setNotificationsOpen((current) => !current); setHeaderProfileOpen(false); }} className={`notification-bell relative rounded-lg p-2 text-[#60758A] hover:bg-[#F0F5F8] ${hasUnreadNotifications ? "notification-bell--unread" : ""}`} aria-label="Thông báo" aria-expanded={notificationsOpen}><Bell size={19} />{hasUnreadNotifications && <span className="notification-pulse absolute right-1.5 top-1.5 h-1.5 w-1.5 rounded-full bg-[#F0A516] ring-2 ring-white" />}</button>{notificationsOpen && <div className="absolute right-0 top-[calc(100%+10px)] z-50 w-[min(320px,calc(100vw-2rem))] overflow-hidden rounded-xl border border-[#DDE7F0] bg-white shadow-[0_18px_42px_rgba(16,42,67,0.18)]"><div className="flex items-center justify-between gap-3 border-b border-[#E7EEF3] px-4 py-3"><div><div className="text-xs font-extrabold text-[#193B57]">Thông báo</div><div className="mt-0.5 text-[10px] text-[#8AA0B6]">{hasUnreadNotifications ? `${unreadNotifications.length} thông báo chưa đọc` : "Tất cả đã được đọc"}</div></div><button disabled={!hasUnreadNotifications} onClick={markAllNotificationsRead} className="shrink-0 text-[10px] font-bold text-[#087A6A] disabled:text-[#9BAEC0]">Đánh dấu tất cả</button></div><div className="max-h-[360px] overflow-y-auto p-2">{headerNotifications.length > 0 ? headerNotifications.map((notification) => { const isRead = readNotificationIds.includes(notification.id); const Icon = notification.kind === "maintenance" ? Wrench : PackageCheck; return <div key={notification.id} className={`flex gap-3 rounded-lg p-3 transition ${isRead ? "bg-white" : "bg-[#F2FAF8]"}`}><div className={`grid h-8 w-8 shrink-0 place-items-center rounded-lg ${notification.kind === "maintenance" ? "bg-[#FFF5DC] text-[#A86B00]" : "bg-[#E6F6F2] text-[#087A6A]"}`}><Icon size={15} /></div><div className="min-w-0 flex-1"><div className="flex items-start justify-between gap-2"><div className={`text-xs ${isRead ? "font-semibold text-[#527089]" : "font-extrabold text-[#193B57]"}`}>{notification.title}</div>{!isRead && <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-[#0F8C8C]" aria-label="Chưa đọc" />}</div><p className="mt-1 text-[11px] leading-5 text-[#71869A]">{notification.description}</p>{!isRead && <button onClick={() => markNotificationRead(notification.id)} className="mt-2 text-[10px] font-bold text-[#087A6A] hover:text-[#066254]">Đánh dấu đã đọc</button>}</div></div>; }) : <div className="p-4 text-center"><div className="text-xs font-bold text-[#193B57]">Chưa có thông báo mới</div><p className="mt-1 text-[11px] leading-5 text-[#71869A]">Các cập nhật bàn giao và bảo trì sẽ xuất hiện tại đây.</p></div>}</div></div>}</div>
+            <div className="relative">
+              <button data-suppress-icon-tooltip="true" onClick={() => { setNotificationsOpen((current) => !current); setHeaderProfileOpen(false); }} className={`notification-bell relative rounded-lg p-2 text-[#60758A] hover:bg-[#F0F5F8] ${hasUnreadNotifications ? "notification-bell--unread" : ""}`} aria-label="Thông báo" aria-expanded={notificationsOpen}>
+                <Bell size={19} />
+                {hasUnreadNotifications && <span className="notification-pulse absolute right-1.5 top-1.5 h-1.5 w-1.5 rounded-full bg-[#F0A516] ring-2 ring-white" />}
+              </button>
+              {notificationsOpen && <div className="absolute right-0 top-[calc(100%+10px)] z-50 w-[min(320px,calc(100vw-2rem))] overflow-hidden rounded-xl border border-[#DDE7F0] bg-white shadow-[0_18px_42px_rgba(16,42,67,0.18)]">
+                <div className="flex items-center justify-between gap-3 border-b border-[#E7EEF3] px-4 py-3"><div><div className="text-xs font-extrabold text-[#193B57]">Thông báo</div><div className="mt-0.5 text-[10px] text-[#8AA0B6]">{hasUnreadNotifications ? `${unreadNotifications.length} thông báo chưa đọc` : "Tất cả đã được đọc"}</div></div><button disabled={!hasUnreadNotifications} onClick={markAllNotificationsRead} className="shrink-0 text-[10px] font-bold text-[#087A6A] disabled:text-[#9BAEC0]">Đánh dấu tất cả</button></div>
+                <div className="max-h-[360px] overflow-y-auto p-2">
+                  {headerNotifications.length > 0 ? headerNotifications.map((notification) => {
+                    const isRead = readNotificationIds.includes(notification.id);
+                    const Icon = notification.kind === "maintenance" ? Wrench : PackageCheck;
+                    const targetLabel = getNotificationTargetLabel(notification.target);
+                    return <div key={notification.id} className={`flex gap-3 rounded-lg p-3 transition ${isRead ? "bg-white" : "bg-[#F2FAF8]"}`}><div className={`grid h-8 w-8 shrink-0 place-items-center rounded-lg ${notification.kind === "maintenance" ? "bg-[#FFF5DC] text-[#A86B00]" : "bg-[#E6F6F2] text-[#087A6A]"}`}><Icon size={15} /></div><div className="min-w-0 flex-1"><div className="flex items-start justify-between gap-2"><div className={`text-xs ${isRead ? "font-semibold text-[#527089]" : "font-extrabold text-[#193B57]"}`}>{notification.title}</div>{!isRead && <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-[#0F8C8C]" aria-label="Chưa đọc" />}</div><p className="mt-1 text-[11px] leading-5 text-[#71869A]">{notification.description}</p><div className="mt-2 flex items-center gap-3"><button onClick={() => openNotificationTarget(notification)} className="text-[10px] font-bold text-[#2666A8] hover:text-[#1E5084]">{targetLabel} →</button>{!isRead && <button onClick={() => markNotificationRead(notification.id)} className="text-[10px] font-bold text-[#087A6A] hover:text-[#066254]">Đánh dấu đã đọc</button>}</div></div></div>;
+                  }) : <div className="p-4 text-center"><div className="text-xs font-bold text-[#193B57]">Chưa có thông báo mới</div><p className="mt-1 text-[11px] leading-5 text-[#71869A]">Các cập nhật bàn giao và bảo trì sẽ xuất hiện tại đây.</p></div>}
+                </div>
+              </div>}
+            </div>
             <div className="relative"><button onClick={() => { setHeaderProfileOpen((current) => !current); setNotificationsOpen(false); }} aria-label="Mở menu người dùng" aria-expanded={headerProfileOpen} className="grid h-8 w-8 place-items-center rounded-full bg-[#CFE7E4] text-[11px] font-extrabold text-[#087A6A] hover:ring-2 hover:ring-[#8BCDC6]">{profileInitials}</button>{headerProfileOpen && <div className="absolute right-0 top-[calc(100%+10px)] z-50 w-[250px] overflow-hidden rounded-xl border border-[#DDE7F0] bg-white shadow-[0_18px_42px_rgba(16,42,67,0.18)]"><div className="border-b border-[#E7EEF3] px-4 py-3"><div className="text-xs font-extrabold text-[#193B57]">{profileName}</div><div className="mt-1 truncate text-[10px] text-[#71869A]">{user?.email || "Chưa có email"}</div><div className="mt-2 inline-flex rounded-full bg-[#E6F6F2] px-2 py-1 text-[10px] font-bold text-[#087A6A]">{profileRole}</div></div><button onClick={() => { setHeaderProfileOpen(false); navigateTo("Cài đặt"); }} className="flex w-full items-center gap-2 px-4 py-3 text-left text-xs font-bold text-[#527089] hover:bg-[#F7FAFC]"><UserRound size={15} />Hồ sơ & cài đặt</button><button onClick={async () => { if (!window.confirm("Bạn có chắc chắn muốn đăng xuất?")) return; setHeaderProfileOpen(false); await logout(); toast.success("Đã đăng xuất khỏi AssetMaster."); }} className="flex w-full items-center gap-2 border-t border-[#E7EEF3] px-4 py-3 text-left text-xs font-bold text-[#B44545] hover:bg-[#FFF5F5]"><LogOut size={15} />Đăng xuất</button></div>}</div>
           </div>
         </header>
@@ -706,6 +747,15 @@ function AssignmentsPage({ showComingSoon, companyInfo }: { showComingSoon: (lab
   const [form, setForm] = useState<Handover>({ id: 0, referenceCode: "", assetCode: "", assetName: "", recipient: "", department: "", date: "", status: "Nháp", condition: "Tốt", handoverBy: "", note: "", accessories: "", recipientUserId: null, recipientDepartmentId: null });
   useEffect(() => { if (!handoversQuery.data) return; setHandovers(handoversQuery.data.map((item) => ({ id: item.id, referenceCode: item.referenceCode, assetCode: assignmentAssetsQuery.data?.find((asset) => asset.id === item.assetId)?.assetCode || `TS-${item.assetId}`, assetName: assignmentAssetsQuery.data?.find((asset) => asset.id === item.assetId)?.name || "Tài sản", recipient: item.recipientName, department: item.recipientDepartmentName || "Chưa xác định", date: new Date(item.handedOverAt).toLocaleDateString("vi-VN"), status: item.status === "active" ? "Đã bàn giao" : item.status === "pending_signature" ? "Chờ ký" : item.status === "returned" ? "Đã hoàn trả" : "Nháp", condition: item.conditionOut || "Tốt", handoverBy: item.handoverByName || "Quản trị viên", note: item.note || "", accessories: item.accessories || "", recipientSignatureUrl: item.recipientSignatureUrl }))); }, [handoversQuery.data, assignmentAssetsQuery.data]);
   useEffect(() => { if (!handoversQuery.data) return; setHandovers((current) => current.map((item) => { const source = handoversQuery.data.find((handover) => handover.id === item.id); return source ? { ...item, dueBackAt: source.dueBackAt, returnRequestStatus: source.returnRequestStatus, returnRequestedAt: source.returnRequestedAt, returnRequestNote: source.returnRequestNote } : item; })); }, [handoversQuery.data]);
+  useEffect(() => {
+    const selectedHandoverId = Number(sessionStorage.getItem("assetmaster-open-handover-id"));
+    if (!selectedHandoverId || handovers.length === 0) return;
+    const handover = handovers.find((item) => item.id === selectedHandoverId);
+    if (!handover) return;
+    setSelected(handover);
+    setModal("detail");
+    sessionStorage.removeItem("assetmaster-open-handover-id");
+  }, [handovers]);
   const filtered = handovers.filter((item) => matchesVietnameseSearch(`${item.id} ${item.assetName} ${item.recipient} ${item.department}`, query) && (statusFilter === "Tất cả trạng thái" || item.status === statusFilter));
   const update = (key: keyof Handover, value: string) => setForm((current) => ({ ...current, [key]: value }));
   const createHandover = () => { const asset = assignmentAssetsQuery.data?.find((item) => item.assetCode === form.assetCode); if (!form.recipient.trim() || !form.recipientUserId || !asset) { toast.error("Vui lòng chọn tài sản và nhân viên nhận hợp lệ."); return; } createHandoverMutation.mutate({ assetId: asset.id, recipientName: form.recipient, recipientDepartmentName: form.department || null, handedOverAt: Date.now(), dueBackAt: null, conditionOut: form.condition, accessories: form.accessories || null, note: form.note || null, recipientUserId: form.recipientUserId, recipientDepartmentId: form.recipientDepartmentId || null }); setModal(null); };
