@@ -401,3 +401,9 @@
 - [x] Bổ sung API hỗ trợ tạo mới hoặc cập nhật tài sản theo mã đã tồn tại.
 - [x] Hiển thị tiến trình đọc/xử lý tệp và xuất Excel các dòng lỗi.
 - [x] Thêm kiểm thử, xác minh desktop/mobile, TypeScript, build và phát hành checkpoint.
+
+## Xem trước import Excel
+
+- [x] Rà soát modal import và dữ liệu xem trước hiện có.
+- [x] Hiển thị bảng xem trước đầy đủ, gồm hành động dự kiến theo từng dòng.
+- [x] Thêm kiểm thử, xác minh giao diện và phát hành checkpoint.

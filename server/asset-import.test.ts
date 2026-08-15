@@ -28,4 +28,9 @@ describe("asset Excel import", () => {
     expect(result.issues).toEqual([]);
     expect(result.candidates[0]).toMatchObject({ assetCode: "TS-EXISTING-001", condition: "fair" });
   });
+
+  it("preserves category and location values for the import preview table", () => {
+    const result = parseAssetImportRows([{ "Mã tài sản*": "TS-PREVIEW-001", "Tên tài sản*": "Màn hình xem trước", "Phân loại": "Thiết bị CNTT", "Vị trí": "Kho tầng 3", "Trạng thái (Sẵn có/Bảo trì)": "Sẵn có", "Tình trạng": "Tốt" }]);
+    expect(result.candidates[0]).toMatchObject({ category: "Thiết bị CNTT", location: "Kho tầng 3" });
+  });
 });
