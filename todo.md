@@ -341,3 +341,9 @@
 - [x] Rà soát trường chọn Nhân viên nhận trong form bàn giao.
 - [x] Thay dropdown Nhân viên nhận bằng danh sách có tìm kiếm tiếng Việt không dấu.
 - [x] Thêm kiểm thử, xác minh responsive, TypeScript, build và phát hành checkpoint.
+
+## Thao tác Danh mục tài sản
+
+- [x] Hiển thị mô tả chức năng khi hover/focus từng icon thao tác tài sản.
+- [x] Mở modal tạo phiếu bàn giao ngay tại Danh mục với tài sản đã chọn sẵn.
+- [x] Thêm kiểm thử, xác minh responsive, TypeScript, build và phát hành checkpoint.

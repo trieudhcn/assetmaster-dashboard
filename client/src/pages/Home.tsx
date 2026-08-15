@@ -212,6 +212,7 @@ export default function Home() {
   const [assetModal, setAssetModal] = useState<"create" | "edit" | "detail" | null>(null);
   const [selectedAsset, setSelectedAsset] = useState<Asset | null>(null);
   const [qrAsset, setQrAsset] = useState<Asset | null>(null);
+  const [handoverAssetCode, setHandoverAssetCode] = useState<string | null>(null);
   const [qrLookupOpen, setQrLookupOpen] = useState(false);
   const [formData, setFormData] = useState<Asset>({ code: "", name: "", category: "CNTT", holder: "", status: "Sẵn có", statusType: "available", date: "14/02/2025", value: "", location: "", serial: "", supplier: "", note: "" });
   const [query, setQuery] = useState("");
@@ -381,7 +382,7 @@ export default function Home() {
         {activeNav === "Quản lý nhân viên" ? <EmployeeManagementView /> : null}
         {activeNav === "Phòng Ban & Bộ Phận" ? <OrganizationManagementPage /> : null}
         {activeNav === "Nhà cung cấp & Hãng" ? <VendorBrandManagementPage /> : null}
-        {activeNav === "Danh mục tài sản" ? <PaginatedAssetCatalogPage assets={filteredAssets} query={query} category={category} status={status} department={department} vendor={vendorFilter} brand={brandFilter} vendorOptions={["Tất cả nhà cung cấp", ...(vendorsQuery.data || []).map((item) => item.name)]} brandOptions={["Tất cả hãng", ...(brandsQuery.data || []).map((item) => item.name)]} onQueryChange={setQuery} onCategoryChange={setCategory} onStatusChange={setStatus} onDepartmentChange={setDepartment} onVendorChange={setVendorFilter} onBrandChange={setBrandFilter} onReset={() => { setQuery(""); setCategory("Tất cả loại tài sản"); setStatus("Tất cả trạng thái"); setDepartment("Tất cả phòng ban"); setVendorFilter("Tất cả nhà cung cấp"); setBrandFilter("Tất cả hãng"); }} onCreate={openCreateModal} onEdit={openEditModal} onOpenDetail={openDetailModal} onOpenQr={setQrAsset} onAssign={(asset) => { navigateTo("Bàn giao & Cấp phát"); toast.info(`Chọn ${asset.code} trong form tạo phiếu để tiếp tục cấp phát.`); }} /> : null}
+        {activeNav === "Danh mục tài sản" ? <PaginatedAssetCatalogPage assets={filteredAssets} query={query} category={category} status={status} department={department} vendor={vendorFilter} brand={brandFilter} vendorOptions={["Tất cả nhà cung cấp", ...(vendorsQuery.data || []).map((item) => item.name)]} brandOptions={["Tất cả hãng", ...(brandsQuery.data || []).map((item) => item.name)]} onQueryChange={setQuery} onCategoryChange={setCategory} onStatusChange={setStatus} onDepartmentChange={setDepartment} onVendorChange={setVendorFilter} onBrandChange={setBrandFilter} onReset={() => { setQuery(""); setCategory("Tất cả loại tài sản"); setStatus("Tất cả trạng thái"); setDepartment("Tất cả phòng ban"); setVendorFilter("Tất cả nhà cung cấp"); setBrandFilter("Tất cả hãng"); }} onCreate={openCreateModal} onEdit={openEditModal} onOpenDetail={openDetailModal} onOpenQr={setQrAsset} onAssign={(asset) => { if (asset.statusType !== "available") { toast.error("Chỉ có thể bàn giao tài sản đang sẵn có."); return; } setHandoverAssetCode(asset.code); }} /> : null}
         <div className={`relative overflow-hidden px-4 py-7 sm:px-6 lg:px-9 lg:py-8 ${activeNav === "Tổng quan" ? "" : "hidden"}`}>
           <div className="pointer-events-none absolute right-0 top-0 hidden h-[170px] w-[420px] opacity-60 lg:block"><img src="/manus-storage/assetmaster-dashboard-pattern_109e8935.png" alt="" className="h-full w-full object-cover object-left" /></div>
           <div className="relative mx-auto max-w-[1500px]"><div className="mb-5 flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.15em] text-[#A86B00]"><span className="h-px w-8 bg-[#F0A516]" /><span className="h-1.5 w-1.5 rounded-full bg-[#F0A516]" />System pulse · live inventory signal</div>
@@ -412,6 +413,7 @@ export default function Home() {
         {assetModal && <AssetModal mode={assetModal} asset={selectedAsset} formData={formData} setFormData={setFormData} onClose={() => setAssetModal(null)} onSave={saveAsset} onEdit={() => selectedAsset && openEditModal(selectedAsset)} />}
         {qrAsset && <AssetQrModal asset={qrAsset} onClose={() => setQrAsset(null)} />}
         {qrLookupOpen && <QrLookupModal assets={assetRows} onClose={() => setQrLookupOpen(false)} onOpenAsset={(asset) => { setQrLookupOpen(false); setSelectedAsset(asset); setAssetModal("detail"); }} />}
+        {handoverAssetCode && <AssetQuickHandoverModal assetCode={handoverAssetCode} onClose={() => setHandoverAssetCode(null)} />}
       </main>
     </div>
   );
@@ -432,6 +434,14 @@ function PaginatedAssetCatalogPage({ assets, query, category, status, department
   const pageNumbers = Array.from({ length: totalPages }, (_, index) => index + 1).filter((pageNumber) => totalPages <= 5 || pageNumber === 1 || pageNumber === totalPages || Math.abs(pageNumber - currentPage) <= 1);
   useEffect(() => { setPage(1); }, [query, category, status, department, pageSize]);
   useEffect(() => { setJumpPage(String(currentPage)); }, [currentPage]);
+  useEffect(() => {
+    const tooltipByPrefix: Array<[string, string]> = [["Hồ sơ", "Xem hồ sơ tài sản"], ["Chỉnh sửa", "Chỉnh sửa tài sản"], ["Mã QR", "Tạo / xem mã QR"], ["Cấp phát", "Tạo phiếu bàn giao"]];
+    document.querySelectorAll<HTMLButtonElement>("button[aria-label]").forEach((button) => {
+      const label = button.getAttribute("aria-label") || "";
+      const tooltip = tooltipByPrefix.find(([prefix]) => label.startsWith(prefix))?.[1];
+      if (tooltip) button.title = tooltip;
+    });
+  }, [pageAssets]);
   useEffect(() => {
     const legacyFooter = document.querySelector("section.overflow-hidden > div:last-child");
     legacyFooter?.classList.add("hidden");
@@ -487,6 +497,35 @@ function CompanySettingsPage({ companyInfo, onSave }: { companyInfo: CompanyInfo
 }
 
 type Handover = { id: number; referenceCode: string; assetCode: string; assetName: string; recipient: string; department: string; date: string; dueBackAt?: Date | string | null; returnRequestStatus?: "none" | "pending" | "approved" | "rejected"; returnRequestedAt?: Date | null; returnRequestNote?: string | null; status: "Đã bàn giao" | "Chờ ký" | "Nháp" | "Đã hoàn trả"; condition: string; handoverBy: string; note: string; accessories: string; recipientUserId?: number | null; recipientDepartmentId?: number | null; recipientSignatureUrl?: string | null; };
+
+function AssetQuickHandoverModal({ assetCode, onClose }: { assetCode: string; onClose: () => void }) {
+  const { user } = useAuth();
+  const isAdmin = user?.role === "admin";
+  const assetsQuery = trpc.assets.list.useQuery(undefined, { enabled: isAdmin });
+  const recipientsQuery = trpc.employees.list.useQuery(undefined, { enabled: isAdmin });
+  const departmentsQuery = trpc.departments.list.useQuery(undefined, { enabled: isAdmin });
+  const utils = trpc.useUtils();
+  const selectedAsset = assetsQuery.data?.find((asset) => asset.assetCode === assetCode);
+  const [form, setForm] = useState<Handover>({ id: 0, referenceCode: "", assetCode, assetName: "", recipient: "", department: "", date: new Date().toLocaleDateString("vi-VN"), status: "Nháp", condition: "Tốt", handoverBy: "", note: "", accessories: "", recipientUserId: null, recipientDepartmentId: null });
+  useEffect(() => { if (selectedAsset) setForm((current) => ({ ...current, assetCode: selectedAsset.assetCode, assetName: selectedAsset.name })); }, [selectedAsset?.id, selectedAsset?.assetCode, selectedAsset?.name]);
+  const createHandover = trpc.handovers.create.useMutation({
+    onSuccess: () => { void utils.handovers.list.invalidate(); void utils.assets.list.invalidate(); void utils.employees.assetHistory.invalidate(); void utils.employees.myAssetHistory.invalidate(); toast.success("Đã tạo phiếu bàn giao cho tài sản đã chọn."); onClose(); },
+    onError: (error) => toast.error(error.message || "Không thể tạo phiếu bàn giao."),
+  });
+  const update = (key: keyof Handover, value: string) => setForm((current) => ({ ...current, [key]: value }));
+  const chooseRecipient = (userId: number) => {
+    const recipient = recipientsQuery.data?.find((employee) => employee.id === userId);
+    const department = recipient?.departmentId ? departmentsQuery.data?.find((item) => item.id === recipient.departmentId) : undefined;
+    setForm((current) => ({ ...current, recipientUserId: recipient?.id || null, recipient: recipient?.name || recipient?.email || "", recipientDepartmentId: department?.id || null, department: department?.name || "" }));
+  };
+  const save = () => {
+    if (!selectedAsset || selectedAsset.status !== "available" || !form.recipientUserId || !form.recipient.trim()) { toast.error("Vui lòng chọn nhân viên nhận hợp lệ và kiểm tra tài sản còn sẵn có."); return; }
+    createHandover.mutate({ assetId: selectedAsset.id, recipientName: form.recipient, recipientDepartmentName: form.department || null, handedOverAt: Date.now(), dueBackAt: form.dueBackAt ? new Date(form.dueBackAt).getTime() : null, conditionOut: form.condition, accessories: form.accessories || null, note: form.note || null, recipientUserId: form.recipientUserId, recipientDepartmentId: form.recipientDepartmentId || null });
+  };
+  if (assetsQuery.isLoading || recipientsQuery.isLoading || departmentsQuery.isLoading) return <div className="fixed inset-0 z-[80] grid place-items-center bg-[#102A43]/40 p-4"><div className="rounded-xl bg-white px-5 py-4 text-sm font-bold text-[#193B57]">Đang chuẩn bị phiếu bàn giao...</div></div>;
+  if (!selectedAsset || selectedAsset.status !== "available") return <div className="fixed inset-0 z-[80] grid place-items-center bg-[#102A43]/40 p-4"><div className="w-full max-w-md rounded-xl bg-white p-6 text-center shadow-2xl"><div className="text-base font-extrabold text-[#102A43]">Tài sản không còn sẵn có</div><p className="mt-2 text-sm text-[#71869A]">Vui lòng làm mới Danh mục và chọn một tài sản đang sẵn có.</p><button onClick={onClose} className="mt-5 rounded-lg bg-[#0F8C8C] px-4 py-2 text-xs font-bold text-white">Đóng</button></div></div>;
+  return <PersistedHandoverCreateModal form={form} assets={[selectedAsset]} employees={recipientsQuery.data || []} departments={departmentsQuery.data || []} update={update} onRecipientChange={chooseRecipient} onClose={onClose} onSave={save} saving={createHandover.isPending} />;
+}
 
 function AssignmentsPage({ showComingSoon, companyInfo }: { showComingSoon: (label: string) => void; companyInfo: CompanyInfo }) {
   const { user } = useAuth();
@@ -586,8 +625,7 @@ function PersistedHandoverCreateModal({ form, assets, employees, departments, up
   const recipients = employees.filter((employee) => employee.isActive);
   const selectedDepartment = departments.find((department) => department.id === form.recipientDepartmentId);
   useEffect(() => {
-    const dialog = document.querySelector('[role="dialog"]');
-    const recipientLabel = Array.from(dialog?.querySelectorAll("label") || []).find((label) => label.textContent?.includes("Nhân viên nhận"));
+    const recipientLabel = Array.from(document.querySelectorAll("label")).find((label) => label.textContent?.includes("Nhân viên nhận"));
     const container = recipientLabel?.parentElement;
     const select = container?.querySelector("select");
     if (!container || !select || container.querySelector("[data-recipient-search-picker]")) return;
