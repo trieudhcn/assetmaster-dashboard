@@ -137,6 +137,12 @@ button[aria-label="Mở menu người dùng"] + div { animation: popover-in 180m
 .field-input:focus { border-color: #0F8C8C; box-shadow: 0 0 0 3px rgba(15,140,140,0.11); }
 .field-input:disabled { cursor: not-allowed; }
 
+/* Shared drawer close target: stable hit area, focus ring and hover affordance. */
+.drawer-close-action { display: inline-flex; min-width: 2.5rem; min-height: 2.5rem; align-items: center; justify-content: center; border-radius: 0.5rem; color: #71869A; transition: background-color 160ms ease-out, color 160ms ease-out, transform 160ms ease-out; }
+.drawer-close-action:hover { background: #F0F5F8; color: #193B57; }
+.drawer-close-action:focus-visible { outline: 2px solid #0F8C8C; outline-offset: 2px; }
+.drawer-close-action:active { transform: scale(0.97); }
+
 /* Tooltip labels use a body-level portal so modal scroll containers cannot clip them. */
 .floating-action-tooltip {
   position: fixed;

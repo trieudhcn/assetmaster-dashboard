@@ -629,3 +629,10 @@
 - [x] Bổ sung tooltip/focus label cho icon thao tác trong Quản lý nhân sự.
 - [x] Loại bỏ icon tìm kiếm bị hiển thị chồng thừa trong tìm kiếm nhân sự.
 - [x] Bổ sung kiểm thử hồi quy và phát hành checkpoint.
+
+## Drawer và phân trang Phân loại
+
+- [x] Rà soát tất cả drawer và nút đóng còn lại để áp dụng nhãn, kích thước, hover/focus thống nhất.
+- [x] Phân trang danh sách Phân loại 5 mục mỗi trang.
+- [x] Giữ chiều cao vùng danh sách Phân loại ổn định và đồng nhất với khung thêm mới.
+- [x] Bổ sung kiểm thử hồi quy, xác minh responsive và phát hành checkpoint.

@@ -55,4 +55,18 @@ describe("modal presentation contract", () => {
     expect(employees).not.toContain("<Search size");
     expect(employees).toContain('aria-label="Đóng phân bổ nhân sự"');
   });
+
+  it("keeps category pagination compact and drawer close actions consistent", () => {
+    const categories = readProjectFile("client/src/pages/AssetCategoryManagementPage.tsx");
+    const employees = readProjectFile("client/src/pages/EmployeeManagementView.tsx");
+    const historyDrawer = readProjectFile("client/src/components/AssetImportRecovery.tsx");
+    const stylesheet = readProjectFile("client/src/index.css");
+
+    expect(categories).toContain("const PAGE_SIZE = 5");
+    expect(categories).toContain("categories.slice(pageStart, pageStart + PAGE_SIZE)");
+    expect(categories).toContain("min-h-[35rem]");
+    expect(employees).toContain("drawer-close-action");
+    expect(historyDrawer).toContain("drawer-close-action");
+    expect(stylesheet).toContain(".drawer-close-action");
+  });
 });
