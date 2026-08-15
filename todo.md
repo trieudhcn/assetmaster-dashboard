@@ -636,3 +636,9 @@
 - [x] Phân trang danh sách Phân loại 5 mục mỗi trang.
 - [x] Giữ chiều cao vùng danh sách Phân loại ổn định và đồng nhất với khung thêm mới.
 - [x] Bổ sung kiểm thử hồi quy, xác minh responsive và phát hành checkpoint.
+
+## Sidebar responsive theo chiều cao
+
+- [x] Rà soát cấu trúc sidebar và các vùng gây tràn trên màn hình dọc.
+- [x] Tách vùng điều hướng cuộn, giữ header và hồ sơ người dùng trong bố cục phù hợp.
+- [x] Kiểm thử viewport chiều cao hạn chế, hồi quy và phát hành checkpoint.

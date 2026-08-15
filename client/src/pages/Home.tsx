@@ -550,8 +550,8 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-[#F4F7FB] text-[#102A43] antialiased">
       <FloatingActionTooltip />
-      <aside className={`fixed inset-y-0 left-0 z-40 flex w-[264px] flex-col border-r border-[#DDE7F0] bg-[#102A43] px-4 py-5 shadow-[8px_0_30px_rgba(16,42,67,0.16)] transition-transform duration-200 lg:translate-x-0 ${mobileNavOpen ? "translate-x-0" : "-translate-x-full"}`}>
-        <div className="flex items-center gap-3 px-3 pb-8">
+      <aside className={`fixed inset-y-0 left-0 z-40 flex w-[264px] flex-col overflow-hidden border-r border-[#DDE7F0] bg-[#102A43] px-4 py-5 shadow-[8px_0_30px_rgba(16,42,67,0.16)] transition-transform duration-200 lg:translate-x-0 ${mobileNavOpen ? "translate-x-0" : "-translate-x-full"}`}>
+        <div className="flex shrink-0 items-center gap-3 px-3 pb-6">
           <div style={{ backgroundColor: companyInfo.brandColor }} className="grid h-10 w-10 place-items-center rounded-[13px] shadow-[0_8px_18px_rgba(15,140,140,0.24)]">
             <img src={companyInfo.logoUrl || "/manus-storage/assetmaster-logo_f5d79b06.png"} alt="Logo công ty" className="h-7 w-7 object-contain" />
           </div>
@@ -562,8 +562,8 @@ export default function Home() {
           <button className="ml-auto rounded-lg p-1 text-[#8AA0B6] hover:bg-[#F0F5F8] lg:hidden" onClick={() => setMobileNavOpen(false)} aria-label="Đóng menu"><X size={18} /></button>
         </div>
 
-        <div className="mb-3 px-3 text-[10px] font-bold uppercase tracking-[0.18em] text-[#7FA0B8]">Workspace</div>
-        <nav className="space-y-1">
+        <div className="mb-3 shrink-0 px-3 text-[10px] font-bold uppercase tracking-[0.18em] text-[#7FA0B8]">Workspace</div>
+        <nav className="min-h-0 flex-1 space-y-1 overflow-y-auto overscroll-contain pr-1" aria-label="Điều hướng chính">
           {sidebarNavItems.map((item) => {
             const Icon = item.icon;
             const active = activeNav === item.label;
@@ -571,7 +571,7 @@ export default function Home() {
           })}
         </nav>
 
-        <div className="mt-auto space-y-1 border-t border-[#2A4D67] pt-4">
+        <div className="mt-3 shrink-0 space-y-1 border-t border-[#2A4D67] pt-3">
           <button onClick={() => showComingSoon("Trợ giúp")} className="flex w-full items-center gap-3 rounded-[10px] px-3 py-2.5 text-left text-[13px] font-semibold text-[#B5C8D5] hover:bg-[#1A405D] hover:text-white"><CircleHelp size={17} />Trợ giúp & hướng dẫn</button>
           <button onClick={() => navigateTo("Cài đặt")} className="flex w-full items-center gap-3 rounded-[10px] px-3 py-2.5 text-left text-[13px] font-semibold text-[#B5C8D5] hover:bg-[#1A405D] hover:text-white"><Settings2 size={17} />Cài đặt hệ thống</button>
           <div ref={sidebarProfileRef} className="relative mt-3">

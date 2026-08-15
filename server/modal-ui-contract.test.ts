@@ -69,4 +69,13 @@ describe("modal presentation contract", () => {
     expect(historyDrawer).toContain("drawer-close-action");
     expect(stylesheet).toContain(".drawer-close-action");
   });
+
+  it("keeps sidebar navigation scrollable without pushing the profile area off-screen", () => {
+    const home = readProjectFile("client/src/pages/Home.tsx");
+
+    expect(home).toContain("flex-col overflow-hidden");
+    expect(home).toContain('aria-label="Điều hướng chính"');
+    expect(home).toContain("min-h-0 flex-1 space-y-1 overflow-y-auto overscroll-contain");
+    expect(home).toContain("mt-3 shrink-0 space-y-1 border-t");
+  });
 });
