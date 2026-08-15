@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildMaintenanceExportRows, canCreateCatalogOption, filterNamedCatalogOptions, getHandoverActionTooltip, getPaginationWindow, matchesVietnameseSearch, normalizeVietnameseSearch, toggleMaintenanceStatusFilter } from "../client/src/lib/catalogUi";
+import { buildMaintenanceExportRows, canCreateCatalogOption, filterNamedCatalogOptions, getHandoverActionTooltip, getMaintenanceBadgeCount, getPaginationWindow, matchesVietnameseSearch, normalizeVietnameseSearch, toggleMaintenanceStatusFilter } from "../client/src/lib/catalogUi";
 
 describe("Catalog UI helpers", () => {
   it("clamps pagination and preserves a non-overlapping final record range", () => {
@@ -30,6 +30,11 @@ describe("Catalog UI helpers", () => {
   it("toggles the maintenance-only status filter without resetting other filters", () => {
     expect(toggleMaintenanceStatusFilter("Tất cả trạng thái")).toBe("Bảo trì");
     expect(toggleMaintenanceStatusFilter("Bảo trì")).toBe("Tất cả trạng thái");
+  });
+
+  it("counts only actual maintenance assets for the navigation badge", () => {
+    expect(getMaintenanceBadgeCount([{ statusType: "available" }, { statusType: "assigned" }])).toBe(0);
+    expect(getMaintenanceBadgeCount([{ statusType: "maintenance" }, { statusType: "maintenance" }, { statusType: "available" }])).toBe(2);
   });
 
   it("creates maintenance export rows only for assets in maintenance with their reason", () => {

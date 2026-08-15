@@ -8,7 +8,7 @@ import QRCodeGenerator from "qrcode";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { startLogin } from "@/const";
 import { trpc } from "@/lib/trpc";
-import { buildMaintenanceExportRows, canCreateCatalogOption, filterNamedCatalogOptions, getHandoverActionTooltip, getPaginationWindow, matchesVietnameseSearch, toggleMaintenanceStatusFilter } from "@/lib/catalogUi";
+import { buildMaintenanceExportRows, canCreateCatalogOption, filterNamedCatalogOptions, getHandoverActionTooltip, getMaintenanceBadgeCount, getPaginationWindow, matchesVietnameseSearch, toggleMaintenanceStatusFilter } from "@/lib/catalogUi";
 import { getNotificationTargetLabel, type NotificationTarget } from "@/lib/notificationLinks";
 import { handoverPdfFontUrl, registerVietnamesePdfFont } from "@/lib/handoverPdf";
 import {
@@ -84,7 +84,7 @@ const navItems = [
   { label: "Tổng quan", icon: LayoutDashboard },
   { label: "Danh mục tài sản", icon: Archive },
   { label: "Bàn giao & Cấp phát", icon: PackageCheck },
-  { label: "Bảo trì & Báo hỏng", icon: Wrench, count: "12" },
+  { label: "Bảo trì & Báo hỏng", icon: Wrench },
   { label: "Kiểm kê", icon: ClipboardCheck },
   { label: "Báo cáo", icon: FileBarChart },
   { label: "Quản lý nhân viên", icon: UserRound },
@@ -281,6 +281,8 @@ export default function Home() {
   const [notificationSettingsOpen, setNotificationSettingsOpen] = useState(false);
   const [companyInfo, setCompanyInfo] = useState<CompanyInfo>(readCompanyInfo);
   const isAdmin = user?.role === "admin";
+  const maintenanceBadgeCount = getMaintenanceBadgeCount(assetRows);
+  const sidebarNavItems = navItems.map((item) => ({ ...item, count: item.label === "Bảo trì & Báo hỏng" ? maintenanceBadgeCount : 0 }));
   const assetQuery = trpc.assets.list.useQuery(undefined, { enabled: isAuthenticated && isAdmin });
   const vendorsQuery = trpc.vendors.list.useQuery(undefined, { enabled: isAuthenticated && isAdmin });
   const brandsQuery = trpc.brands.list.useQuery(undefined, { enabled: isAuthenticated && isAdmin });
@@ -553,10 +555,10 @@ export default function Home() {
 
         <div className="mb-3 px-3 text-[10px] font-bold uppercase tracking-[0.18em] text-[#7FA0B8]">Workspace</div>
         <nav className="space-y-1">
-          {navItems.map((item) => {
+          {sidebarNavItems.map((item) => {
             const Icon = item.icon;
             const active = activeNav === item.label;
-            return <button key={item.label} onClick={() => navigateTo(item.label)} className={`group flex w-full items-center gap-3 rounded-[10px] px-3 py-2.5 text-left text-[13px] font-semibold transition-all duration-150 ${active ? "bg-[#E8F7F5] text-[#087A6A] shadow-[inset_3px_0_0_#0F8C8C]" : "text-[#B5C8D5] hover:bg-[#1A405D] hover:text-white"}`}><Icon size={17} strokeWidth={active ? 2.4 : 1.9} /><span className="flex-1">{item.label}</span>{item.count && <span className="rounded-full bg-[#FFF0C9] px-1.5 py-0.5 text-[10px] font-bold text-[#A86B00]">{item.count}</span>}</button>;
+            return <button key={item.label} onClick={() => navigateTo(item.label)} className={`group flex w-full items-center gap-3 rounded-[10px] px-3 py-2.5 text-left text-[13px] font-semibold transition-all duration-150 ${active ? "bg-[#E8F7F5] text-[#087A6A] shadow-[inset_3px_0_0_#0F8C8C]" : "text-[#B5C8D5] hover:bg-[#1A405D] hover:text-white"}`}><Icon size={17} strokeWidth={active ? 2.4 : 1.9} /><span className="flex-1">{item.label}</span>{item.count > 0 && <span className="rounded-full bg-[#FFF0C9] px-1.5 py-0.5 text-[10px] font-bold text-[#A86B00]">{item.count}</span>}</button>;
           })}
         </nav>
 

@@ -36,6 +36,10 @@ export function toggleMaintenanceStatusFilter(currentStatus: string) {
   return currentStatus === "Bảo trì" ? "Tất cả trạng thái" : "Bảo trì";
 }
 
+export function getMaintenanceBadgeCount<T extends { statusType: string }>(assets: T[]) {
+  return assets.reduce((count, asset) => count + (asset.statusType === "maintenance" ? 1 : 0), 0);
+}
+
 export type MaintenanceExportAsset = {
   statusType: string;
   code: string;

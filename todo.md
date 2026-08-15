@@ -582,3 +582,9 @@
 - [x] Thêm độ trễ ngắn trước khi hiển thị tooltip icon trên desktop.
 - [x] Tối ưu hành vi tooltip và vùng chạm icon cho màn hình thiết bị di động.
 - [x] Bổ sung kiểm thử hồi quy, xác minh responsive và phát hành checkpoint.
+
+## Huy hiệu Bảo trì & Báo hỏng
+
+- [x] Rà soát nguồn dữ liệu và loại bỏ số huy hiệu cố định.
+- [x] Hiển thị huy hiệu theo số lượng bảo trì thực tế, tự ẩn khi bằng 0.
+- [x] Bổ sung kiểm thử hồi quy, xác minh giao diện và phát hành checkpoint.
