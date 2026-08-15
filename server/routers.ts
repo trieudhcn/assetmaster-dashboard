@@ -49,6 +49,7 @@ import {
   listAuditSessions,
   listAssetImportItems,
   listActivityLogs,
+  listHandoverReturnDecisionHistory,
   listAllDepartments,
   listAllDivisions,
   listDepartments,
@@ -452,6 +453,11 @@ export const appRouter = router({
     }),
   }),
   handovers: router({
+    returnDecisionHistory: adminProcedure.input(z.object({ id: z.number().int().positive() })).query(async ({ input }) => {
+      const handover = await getHandoverById(input.id);
+      if (!handover) throw new TRPCError({ code: "NOT_FOUND", message: "Không tìm thấy phiếu bàn giao." });
+      return listHandoverReturnDecisionHistory(input.id);
+    }),
     list: adminProcedure.query(() => listHandovers()),
     get: adminProcedure.input(z.object({ id: z.number().int().positive() })).query(async ({ input }) => {
       const handover = await getHandoverById(input.id);

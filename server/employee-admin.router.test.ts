@@ -34,6 +34,7 @@ const mocks = vi.hoisted(() => ({
   listAllBrands: vi.fn(),
   listVendorDocuments: vi.fn(),
   listHandoversByRecipient: vi.fn(),
+  listHandoverReturnDecisionHistory: vi.fn(),
   recordActivity: vi.fn(),
   saveUserNotificationPreferences: vi.fn(),
   storagePut: vi.fn(),
@@ -91,6 +92,7 @@ vi.mock("./db", () => ({
   listVendorDocuments: mocks.listVendorDocuments,
   listHandovers: vi.fn(),
   listHandoversByRecipient: mocks.listHandoversByRecipient,
+  listHandoverReturnDecisionHistory: mocks.listHandoverReturnDecisionHistory,
   listMaintenanceTickets: vi.fn(),
   listUsers: vi.fn(),
   recordActivity: mocks.recordActivity,
@@ -136,6 +138,7 @@ describe("employee administration", () => {
     mocks.saveUserNotificationPreferences.mockResolvedValue(undefined);
     mocks.listDepartments.mockResolvedValue([{ id: 12, code: "HCNS", name: "Hành chính - Nhân sự", isActive: true }]);
     mocks.getHandoverById.mockResolvedValue({ id: 99, recipientSignatureUrl: "https://storage.example/signature.png" });
+    mocks.listHandoverReturnDecisionHistory.mockResolvedValue([]);
     mocks.createHandover.mockResolvedValue(99);
     mocks.transitionHandoverStatus.mockResolvedValue({ id: 99, assetId: 50 });
     mocks.getActiveDepartmentById.mockResolvedValue({ id: 12, code: "HCNS", name: "Hành chính - Nhân sự", isActive: true });
@@ -384,5 +387,14 @@ describe("employee administration", () => {
 
     await expect(caller.handovers.markReturnResultSeen({ id: 99 })).resolves.toEqual({ success: true });
     expect(mocks.updateHandover).toHaveBeenCalledWith(99, expect.objectContaining({ returnResultSeenAt: expect.any(Date) }));
+  });
+
+  it("returns the decision history for an existing handover to an administrator", async () => {
+    mocks.getHandoverById.mockResolvedValue({ id: 99, recipientUserId: 8 });
+    mocks.listHandoverReturnDecisionHistory.mockResolvedValue([{ id: 7, action: "return_approved", entityId: 99, actorName: "Quản trị viên", summary: "Duyệt yêu cầu hoàn trả TS-00099", createdAt: new Date("2026-08-15T07:00:00Z") }]);
+    const caller = appRouter.createCaller(adminContext);
+
+    await expect(caller.handovers.returnDecisionHistory({ id: 99 })).resolves.toEqual([expect.objectContaining({ action: "return_approved", entityId: 99 })]);
+    expect(mocks.listHandoverReturnDecisionHistory).toHaveBeenCalledWith(99);
   });
 });

@@ -515,3 +515,11 @@
 - [x] Rà soát mọi lệnh alert, confirm và prompt trong giao diện.
 - [x] Thay thế hộp thoại mặc định bằng modal hoặc toast nội bộ.
 - [x] Kiểm thử luồng duyệt hoàn trả, TypeScript, build và phát hành checkpoint.
+
+## Cải thiện modal và lịch sử hoàn trả
+
+- [x] Rà soát các modal, dữ liệu quyết định hoàn trả và trường tiêu đề website.
+- [x] Cho phép đóng modal bằng phím Esc hoặc click ngoài vùng nội dung.
+- [x] Hiển thị lịch sử quyết định duyệt hoặc từ chối trong chi tiết phiếu.
+- [x] Sửa hiển thị bất thường trong trường tiêu đề website.
+- [x] Kiểm thử desktop/mobile, TypeScript, build và phát hành checkpoint.

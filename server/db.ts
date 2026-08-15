@@ -583,3 +583,10 @@ export async function listActivityLogs(limit = 200) {
   if (!db) return [];
   return db.select().from(activityLogs).orderBy(desc(activityLogs.createdAt)).limit(limit);
 }
+
+export async function listHandoverReturnDecisionHistory(handoverId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  const rows = await db.select().from(activityLogs).where(eq(activityLogs.entityId, handoverId)).orderBy(desc(activityLogs.createdAt));
+  return rows.filter((row) => row.entityType === "handover" && (row.action === "return_approved" || row.action === "return_rejected"));
+}
