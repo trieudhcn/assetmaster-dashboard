@@ -502,3 +502,10 @@
 - [x] Rà soát dữ liệu duyệt/từ chối yêu cầu hoàn trả hiện có.
 - [x] Hiển thị thông báo kết quả duyệt hoặc từ chối cho người dùng liên quan.
 - [x] Kiểm thử điều hướng, TypeScript, build và phát hành checkpoint.
+
+## Giải trình hoàn trả bị từ chối
+
+- [x] Rà soát dữ liệu từ chối, phản hồi và banner kết quả hiện có.
+- [x] Cho phép nhân viên gửi phản hồi hoặc giải trình khi yêu cầu hoàn trả bị từ chối.
+- [x] Thêm nút Đã xem để ẩn banner kết quả sau khi đọc.
+- [x] Kiểm thử quyền hạn, TypeScript, build và phát hành checkpoint.

@@ -373,4 +373,16 @@ describe("employee administration", () => {
     await expect(caller.notifications.savePreferences({ maintenanceEnabled: false, handoverEnabled: true, returnRequestEnabled: false })).resolves.toEqual({ success: true });
     expect(mocks.saveUserNotificationPreferences).toHaveBeenCalledWith(8, { maintenanceEnabled: false, handoverEnabled: true, returnRequestEnabled: false });
   });
+
+  it("allows the recipient to submit a follow-up and mark a rejected return result as seen", async () => {
+    mocks.getHandoverById.mockResolvedValue({ id: 99, assetCode: "TS-00099", recipientUserId: 8, returnRequestStatus: "rejected" });
+    const caller = appRouter.createCaller(userContext);
+
+    await expect(caller.handovers.submitReturnFollowUp({ id: 99, note: "Tôi đã kiểm tra lại tình trạng thiết bị và xin được bàn giao vào ngày mai." })).resolves.toEqual({ success: true });
+    expect(mocks.updateHandover).toHaveBeenCalledWith(99, expect.objectContaining({ returnFollowUpNote: expect.stringContaining("Tôi đã kiểm tra") }));
+    expect(mocks.recordActivity).toHaveBeenCalledWith(expect.objectContaining({ action: "return_follow_up_submitted", actorUserId: 8 }));
+
+    await expect(caller.handovers.markReturnResultSeen({ id: 99 })).resolves.toEqual({ success: true });
+    expect(mocks.updateHandover).toHaveBeenCalledWith(99, expect.objectContaining({ returnResultSeenAt: expect.any(Date) }));
+  });
 });
