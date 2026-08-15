@@ -425,14 +425,12 @@ export default function Home() {
           <div className="flex min-w-0 items-center gap-3">
             <button className="rounded-lg p-2 text-[#527089] hover:bg-[#F0F5F8] lg:hidden" onClick={() => setMobileNavOpen(true)} aria-label="Mở menu"><Menu size={21} /></button>
             <div className="hidden items-center gap-2 text-sm text-[#8AA0B6] sm:flex"><span>Workspace</span><span className="text-[#C2D0DC]">/</span><span className="font-semibold text-[#193B57]">{activeNav}</span></div>
-            <div className="relative w-full sm:hidden"><Search className="absolute left-3 top-2.5 text-[#8AA0B6]" size={16} /><input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Tìm tài sản..." className="h-9 w-full rounded-lg border border-[#DDE7F0] bg-[#F7FAFC] pl-9 pr-3 text-xs outline-none focus:border-[#0F8C8C]" /></div>
           </div>
           <div className="flex items-center gap-2 sm:gap-3">
-            <div className="relative hidden w-[260px] md:block"><Search className="absolute left-3 top-2.5 text-[#8AA0B6]" size={16} /><input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Tìm theo mã, tên tài sản..." className="h-9 w-full rounded-lg border border-[#DDE7F0] bg-[#F7FAFC] pl-9 pr-3 text-xs outline-none transition focus:border-[#0F8C8C] focus:bg-white" /><kbd className="absolute right-2.5 top-2 rounded bg-white px-1.5 py-0.5 text-[9px] font-bold text-[#9BAEC0] shadow-sm">⌘ K</kbd></div>
             <button onClick={() => setQrLookupOpen(true)} className="hidden h-9 items-center gap-2 rounded-lg border border-[#CDE5E5] bg-white px-3 text-xs font-bold text-[#087A6A] transition hover:bg-[#ECF8F7] sm:flex"><QrCode size={16} />Quét mã QR</button>
             <button onClick={openCreateModal} className="hidden h-9 items-center gap-2 rounded-lg bg-[#0F8C8C] px-3.5 text-xs font-bold text-white shadow-[0_5px_14px_rgba(15,140,140,0.22)] transition hover:-translate-y-0.5 hover:bg-[#087A6A] sm:flex"><Plus size={16} />Thêm tài sản mới</button>
-            <button onClick={() => toast.info("Bạn không có thông báo mới.")} className="relative rounded-lg p-2 text-[#60758A] hover:bg-[#F0F5F8]" aria-label="Thông báo"><Bell size={19} /><span className="absolute right-1.5 top-1.5 h-1.5 w-1.5 rounded-full bg-[#F0A516] ring-2 ring-white" /></button>
-            <div className="grid h-8 w-8 place-items-center rounded-full bg-[#CFE7E4] text-[11px] font-extrabold text-[#087A6A]">MA</div>
+            <button onClick={() => toast.info("Bạn không có thông báo mới.")} className="group relative rounded-lg p-2 text-[#60758A] hover:bg-[#F0F5F8]" aria-label="Thông báo" title="Thông báo"><Bell size={19} /><span className="absolute right-1.5 top-1.5 h-1.5 w-1.5 rounded-full bg-[#F0A516] ring-2 ring-white" /><span role="tooltip" className="pointer-events-none absolute right-0 top-[calc(100%+8px)] z-50 w-max rounded-md bg-[#102A43] px-2 py-1 text-[10px] font-bold text-white opacity-0 shadow-lg transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100">Thông báo</span></button>
+            <div title={`${profileName} · ${profileRole}`} className="grid h-8 w-8 place-items-center rounded-full bg-[#CFE7E4] text-[11px] font-extrabold text-[#087A6A]">{profileInitials}</div>
           </div>
         </header>
 

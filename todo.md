@@ -456,3 +456,9 @@
 - [x] Thêm chọn màu, cắt logo và cấu hình favicon trong cài đặt.
 - [x] Áp dụng nhận diện thương hiệu toàn giao diện.
 - [x] Thêm kiểm thử, xác minh TypeScript, build và phát hành checkpoint.
+
+## Sửa header trang Tổng quan
+
+- [x] Rà soát header, dữ liệu người dùng và hành vi thông báo.
+- [x] Bỏ ô tìm kiếm trên Tổng quan và sửa tương tác thông báo, hồ sơ.
+- [x] Thêm kiểm thử, xác minh desktop/mobile, build và phát hành checkpoint.
