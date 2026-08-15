@@ -353,3 +353,9 @@
 - [x] Rà soát dữ liệu và các điểm tạo phiếu bàn giao hiện có.
 - [x] Thêm hộp thoại xác nhận tóm tắt thông tin trước khi lưu phiếu.
 - [x] Thêm kiểm thử, xác minh responsive, TypeScript, build và phát hành checkpoint.
+
+## Đồng bộ người giữ theo trạng thái tài sản
+
+- [x] Rà soát form chỉnh sửa và quy tắc trạng thái/Người–Phòng giữ.
+- [x] Tự xóa người giữ, gán nhãn và khóa trường phù hợp khi tài sản Sẵn có hoặc Bảo trì.
+- [x] Thêm kiểm thử, xác minh responsive, TypeScript, build và phát hành checkpoint.

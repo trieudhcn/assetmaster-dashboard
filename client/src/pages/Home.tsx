@@ -236,7 +236,7 @@ export default function Home() {
   useEffect(() => {
     if (!assetQuery.data) return;
     setAssetRows(assetQuery.data.map((asset) => ({
-      code: asset.assetCode, qrToken: asset.qrToken, name: asset.name, category: "Chưa phân loại", holder: asset.holderName || "Chưa cấp phát", status: asset.status === "assigned" ? "Đang cấp phát" : asset.status === "maintenance" ? "Bảo trì" : "Sẵn có", statusType: asset.status === "assigned" ? "active" : asset.status === "maintenance" ? "maintenance" : "available", date: asset.purchaseDate ? new Date(asset.purchaseDate).toLocaleDateString("vi-VN") : "—", value: asset.purchaseValue ? String(asset.purchaseValue) : "0", location: asset.location || "", serial: asset.serialNumber || "", supplier: asset.vendor || vendorsQuery.data?.find((vendor) => vendor.id === asset.vendorId)?.name || "", vendorId: asset.vendorId || undefined, brand: brandsQuery.data?.find((brand) => brand.id === asset.brandId)?.name || "", brandId: asset.brandId || undefined, note: asset.note || "",
+      code: asset.assetCode, qrToken: asset.qrToken, name: asset.name, category: "Chưa phân loại", holder: asset.holderName || (asset.status === "maintenance" ? "Bảo trì" : asset.status === "available" ? "Chưa bàn giao" : "Chưa cấp phát"), status: asset.status === "assigned" ? "Đang cấp phát" : asset.status === "maintenance" ? "Bảo trì" : "Sẵn có", statusType: asset.status === "assigned" ? "active" : asset.status === "maintenance" ? "maintenance" : "available", date: asset.purchaseDate ? new Date(asset.purchaseDate).toLocaleDateString("vi-VN") : "—", value: asset.purchaseValue ? String(asset.purchaseValue) : "0", location: asset.location || "", serial: asset.serialNumber || "", supplier: asset.vendor || vendorsQuery.data?.find((vendor) => vendor.id === asset.vendorId)?.name || "", vendorId: asset.vendorId || undefined, brand: brandsQuery.data?.find((brand) => brand.id === asset.brandId)?.name || "", brandId: asset.brandId || undefined, note: asset.note || "",
     })));
   }, [assetQuery.data, vendorsQuery.data, brandsQuery.data]);
 
@@ -304,7 +304,7 @@ export default function Home() {
   const openCreateModal = () => { setFormData({ code: `TS-${String(assetRows.length + 125).padStart(5, "0")}`, name: "", category: "CNTT", holder: "", status: "Sẵn có", statusType: "available", date: "14/02/2025", value: "", location: "", serial: "", supplier: "", note: "" }); setSelectedAsset(null); setAssetModal("create"); };
   const openEditModal = (asset: Asset) => { setSelectedAsset(asset); setFormData({ ...asset }); setAssetModal("edit"); };
   const openDetailModal = (asset: Asset) => { setSelectedAsset(asset); setAssetModal("detail"); };
-  const saveAsset = () => { if (!formData.name.trim() || !formData.value.trim()) { toast.error("Vui lòng nhập tên tài sản và giá trị."); return; } const payload = { assetCode: formData.code, name: formData.name, holderName: formData.holder || null, status: formData.statusType === "active" ? "assigned" as const : formData.statusType === "maintenance" ? "maintenance" as const : "available" as const, condition: "good" as const, purchaseValue: formData.value.replace(/[^0-9.]/g, "") || "0", vendor: formData.supplier || null, vendorId: formData.vendorId || null, brandId: formData.brandId || null, serialNumber: formData.serial || null, location: formData.location || null, note: formData.note || null, purchaseDate: null, warrantyUntil: null, categoryId: null, departmentId: null }; if (assetModal === "edit") { const target = assetQuery.data?.find((asset) => asset.assetCode === formData.code); if (!target) { toast.error("Không tìm thấy tài sản để cập nhật."); return; } updateAssetMutation.mutate({ id: target.id, ...payload }); } else { createAssetMutation.mutate(payload); } setAssetModal(null); toast.success("Đã gửi thay đổi tài sản để lưu vào hệ thống."); };
+  const saveAsset = () => { if (!formData.name.trim() || !formData.value.trim()) { toast.error("Vui lòng nhập tên tài sản và giá trị."); return; } const payload = { assetCode: formData.code, name: formData.name, holderName: formData.statusType === "active" ? formData.holder || null : null, status: formData.statusType === "active" ? "assigned" as const : formData.statusType === "maintenance" ? "maintenance" as const : "available" as const, condition: "good" as const, purchaseValue: formData.value.replace(/[^0-9.]/g, "") || "0", vendor: formData.supplier || null, vendorId: formData.vendorId || null, brandId: formData.brandId || null, serialNumber: formData.serial || null, location: formData.location || null, note: formData.note || null, purchaseDate: null, warrantyUntil: null, categoryId: null, departmentId: null }; if (assetModal === "edit") { const target = assetQuery.data?.find((asset) => asset.assetCode === formData.code); if (!target) { toast.error("Không tìm thấy tài sản để cập nhật."); return; } updateAssetMutation.mutate({ id: target.id, ...payload }); } else { createAssetMutation.mutate(payload); } setAssetModal(null); toast.success("Đã gửi thay đổi tài sản để lưu vào hệ thống."); };
   const showComingSoon = (label: string) => toast.info(`${label} sẽ được mở trong phiên bản tiếp theo.`, { description: "Bản xem trước hiện đang dùng dữ liệu mẫu để minh họa giao diện." });
   const navigateTo = (label: string) => {
     const viewByNav: Record<string, string> = { "Danh mục tài sản": "assets", "Bàn giao & Cấp phát": "handovers", "Bảo trì & Báo hỏng": "maintenance", "Kiểm kê": "audit", "Báo cáo": "reports", "Quản lý nhân viên": "employees", "Phòng Ban & Bộ Phận": "organization", "Nhà cung cấp & Hãng": "vendors" };
@@ -1060,6 +1060,26 @@ function AssetModal({ mode, asset, formData, setFormData, onClose, onSave, onEdi
     onError: (error) => toast.error(error.message || "Không thể tạo yêu cầu sửa chữa."),
   });
   const update = (key: keyof Asset, value: string) => setFormData((current) => ({ ...current, [key]: value }));
+  useEffect(() => {
+    if (isDetail) return;
+    const holderLabel = Array.from(document.querySelectorAll("label")).find((label) => label.textContent?.trim().startsWith("Người / Phòng giữ"));
+    const holderInput = holderLabel?.parentElement?.querySelector("input") as HTMLInputElement | null;
+    if (!holderInput) return;
+    const statusLabel = formData.statusType === "available" ? "Chưa bàn giao" : formData.statusType === "maintenance" ? "Bảo trì" : "";
+    if (statusLabel && formData.holder !== statusLabel) {
+      setFormData((current) => ({ ...current, holder: statusLabel }));
+      return;
+    }
+    if (formData.statusType === "active" && ["Chưa bàn giao", "Bảo trì"].includes(formData.holder)) {
+      setFormData((current) => ({ ...current, holder: "" }));
+      return;
+    }
+    holderInput.placeholder = formData.statusType === "active" ? "Nhập người hoặc phòng ban" : statusLabel;
+    holderInput.readOnly = formData.statusType !== "active";
+    holderInput.classList.toggle("bg-[#F5F8FB]", formData.statusType !== "active");
+    holderInput.classList.toggle("text-[#60758A]", formData.statusType !== "active");
+    holderInput.title = formData.statusType === "active" ? "Nhập người hoặc phòng ban đang giữ tài sản" : `Tự động cập nhật theo trạng thái ${formData.status}`;
+  }, [isDetail, formData.statusType, formData.status, formData.holder, setFormData]);
   const title = mode === "create" ? "Thêm tài sản mới" : mode === "edit" ? "Chỉnh sửa tài sản" : "Chi tiết tài sản";
   const fields: Array<{ key: keyof Asset; label: string; placeholder: string }> = [
     { key: "name", label: "Tên tài sản", placeholder: "Ví dụ: MacBook Pro 14-inch M3" },
