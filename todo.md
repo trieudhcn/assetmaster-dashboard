@@ -550,3 +550,10 @@
 - [x] Bổ sung phím Esc để đóng nhanh toàn bộ popup, modal và drawer.
 - [x] Xác nhận trước khi đóng modal import hoặc hoàn tác có nguy cơ mất dữ liệu.
 - [x] Kiểm thử desktop/mobile, TypeScript, build và phát hành checkpoint.
+
+## Hiệu ứng đóng và cảnh báo thay đổi chưa lưu
+
+- [x] Rà soát popup, modal, drawer và các form có trạng thái chỉnh sửa.
+- [x] Thêm hiệu ứng thoát đồng bộ cho popup, modal và drawer.
+- [x] Cảnh báo xác nhận khi đóng form còn thay đổi chưa lưu.
+- [x] Kiểm thử desktop/mobile, TypeScript, build và phát hành checkpoint.
