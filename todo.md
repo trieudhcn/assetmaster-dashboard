@@ -294,3 +294,9 @@
 - [x] Chuẩn hóa tìm kiếm không dấu cho các ô tra cứu tiếng Việt trong ứng dụng.
 - [x] Bổ sung tạo Nhà cung cấp/Hãng ngay từ trạng thái tìm kiếm rỗng trong biểu mẫu tài sản.
 - [x] Thêm kiểm thử hồi quy, xác minh responsive, TypeScript, build và phát hành checkpoint.
+
+## Sửa preview & in phiếu bàn giao
+
+- [x] Rà soát luồng tạo preview, mở bản in và xuất PDF của phiếu bàn giao.
+- [x] Khắc phục lỗi nội dung tiếng Việt, logo và bố cục phiếu hiển thị thiếu hoặc sai.
+- [x] Xác minh preview/in/xuất với dữ liệu phiếu thực; chạy hồi quy và phát hành checkpoint.

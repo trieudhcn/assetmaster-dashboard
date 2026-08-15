@@ -4,10 +4,10 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { jsPDF } from "jspdf";
 import QRCodeGenerator from "qrcode";
-import notoSansVietnamese from "../assets/noto-sans-vietnamese.ttf";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { trpc } from "@/lib/trpc";
 import { canCreateCatalogOption, filterNamedCatalogOptions, getPaginationWindow, matchesVietnameseSearch } from "@/lib/catalogUi";
+import { handoverPdfFontUrl, registerVietnamesePdfFont } from "@/lib/handoverPdf";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -519,22 +519,28 @@ function PersistedHandoverCreateModal({ form, assets, employees, departments, up
 
 function HandoverDetailModalLegacy({ item, onClose, onPrint, onHistory }: { item: Handover; onClose: () => void; onPrint: () => void; onHistory: () => void }) { return <div className="fixed inset-0 z-[60] flex items-center justify-center bg-[#102A43]/40 px-4 py-6 backdrop-blur-sm"><div className="max-h-[92vh] w-full max-w-[760px] overflow-y-auto rounded-2xl border border-[#DDE7F0] bg-white shadow-[0_24px_70px_rgba(16,42,67,0.22)]"><div className="flex items-start justify-between border-b border-[#E7EEF3] px-6 py-5"><div><div className="mb-1 flex items-center gap-2 text-[10px] font-extrabold uppercase tracking-[0.16em] text-[#0F8C8C]"><FileText size={13} />Biên bản bàn giao</div><h2 className="font-display text-xl font-extrabold tracking-[-0.03em] text-[#102A43]">{item.id}</h2><p className="mt-1 text-xs text-[#8AA0B6]">Biên bản chi tiết và lịch sử người nhận của tài sản.</p></div><button onClick={onClose} className="rounded-lg p-2 text-[#8AA0B6] hover:bg-[#F0F5F8]"><X size={18} /></button></div><div className="p-6"><div className="flex flex-col justify-between gap-4 rounded-xl bg-[#102A43] p-5 text-white sm:flex-row sm:items-center"><div><div className="text-[10px] font-bold uppercase tracking-[0.15em] text-[#A5C3D2]">Tài sản cấp phát</div><div className="mt-1 font-display text-lg font-extrabold">{item.assetName}</div><div className="mt-1 font-mono text-[11px] text-[#71D6CE]">{item.assetCode}</div></div><span className="inline-flex items-center gap-1.5 self-start rounded-full bg-white/10 px-3 py-1.5 text-[10px] font-extrabold text-[#BDF1E8]"><CheckCircle2 size={13} />{item.status}</span></div><div className="mt-5 grid gap-4 sm:grid-cols-2"><div className="rounded-xl border border-[#E7EEF3] p-4"><div className="mb-3 flex items-center gap-2 text-[10px] font-extrabold uppercase tracking-[0.12em] text-[#0F8C8C]"><UserCheck size={14} />Người nhận</div><div className="text-sm font-extrabold text-[#193B57]">{item.recipient}</div><div className="mt-1 text-xs text-[#71869A]">{item.department}</div></div><div className="rounded-xl border border-[#E7EEF3] p-4"><div className="mb-3 flex items-center gap-2 text-[10px] font-extrabold uppercase tracking-[0.12em] text-[#0F8C8C]"><CalendarDays size={14} />Thông tin bàn giao</div><div className="text-sm font-extrabold text-[#193B57]">{item.date}</div><div className="mt-1 text-xs text-[#71869A]">Người lập: {item.handoverBy}</div></div></div><div className="mt-5 rounded-xl border border-[#E7EEF3] p-4"><div className="mb-3 text-[10px] font-extrabold uppercase tracking-[0.12em] text-[#8AA0B6]">Tình trạng & phụ kiện</div><div className="grid gap-4 sm:grid-cols-2"><div><div className="text-xs text-[#8AA0B6]">Tình trạng lúc bàn giao</div><div className="mt-1 text-sm font-bold text-[#193B57]">{item.condition}</div></div><div><div className="text-xs text-[#8AA0B6]">Phụ kiện / ghi chú</div><div className="mt-1 text-sm font-bold text-[#193B57]">{item.note || "Không có ghi chú"}</div></div></div></div><div className="mt-5 rounded-xl border border-dashed border-[#C8D7E1] bg-[#FBFCFD] p-4"><div className="mb-3 flex items-center justify-between"><div className="flex items-center gap-2 text-[10px] font-extrabold uppercase tracking-[0.12em] text-[#8AA0B6]"><History size={14} />Lịch sử người nhận</div><button onClick={onHistory} className="text-[11px] font-bold text-[#0F8C8C] hover:underline">Xem đầy đủ</button></div><div className="flex items-center gap-3"><div className="h-2 w-2 rounded-full bg-[#0F8C8C] ring-4 ring-[#E6F6F2]" /><div className="flex-1"><div className="text-xs font-bold text-[#193B57]">{item.recipient} nhận tài sản</div><div className="mt-0.5 text-[10px] text-[#8AA0B6]">{item.date} · {item.condition}</div></div><div className="text-[10px] font-bold text-[#087A6A]">Hiện tại</div></div></div><div className="mt-5 flex flex-wrap justify-end gap-2 border-t border-[#E7EEF3] pt-4"><button onClick={onClose} className="rounded-lg border border-[#DDE7F0] px-4 py-2 text-xs font-bold text-[#60758A]">Đóng</button><button onClick={onPrint} className="flex items-center gap-2 rounded-lg border border-[#CDE5E5] px-4 py-2 text-xs font-bold text-[#087A6A]"><Printer size={14} />In biên bản</button><button onClick={() => toast.success("Đã gửi yêu cầu ký xác nhận.")} className="flex items-center gap-2 rounded-lg bg-[#0F8C8C] px-4 py-2 text-xs font-bold text-white hover:bg-[#087A6A]"><Signature size={14} />Gửi ký xác nhận</button></div></div></div></div>; }
 
-function arrayBufferToBase64(buffer: ArrayBuffer) { let binary = ""; const bytes = new Uint8Array(buffer); for (let index = 0; index < bytes.byteLength; index += 1) binary += String.fromCharCode(bytes[index]); return btoa(binary); }
+async function loadImageData(url: string) { const response = await fetch(url); if (!response.ok) throw new Error("Không thể tải ảnh dùng cho biên bản."); const blob = await response.blob(); return await new Promise<string>((resolve, reject) => { const reader = new FileReader(); reader.onloadend = () => resolve(String(reader.result)); reader.onerror = reject; reader.readAsDataURL(blob); }); }
 
-async function loadImageData(url: string) { const response = await fetch(url); const blob = await response.blob(); return await new Promise<string>((resolve, reject) => { const reader = new FileReader(); reader.onloadend = () => resolve(String(reader.result)); reader.onerror = reject; reader.readAsDataURL(blob); }); }
+async function loadHandoverPdfFont() { const response = await fetch(handoverPdfFontUrl); if (!response.ok) throw new Error("Không thể tải phông chữ tiếng Việt cho biên bản."); return response.arrayBuffer(); }
+
+function drawHandoverBrandMark(doc: jsPDF, x: number, y: number) {
+  doc.setFillColor(15, 140, 140);
+  doc.roundedRect(x, y - 12, 18, 18, 3, 3, "F");
+  doc.setFillColor(16, 42, 67);
+  doc.roundedRect(x + 3, y - 9, 12, 12, 2, 2, "F");
+  doc.setTextColor(255, 255, 255);
+  doc.setFontSize(7.5);
+  doc.text("AM", x + 9, y - 1, { align: "center" });
+}
 
 async function downloadHandoverPdf(item: Handover, signature: string | undefined, companyInfo: CompanyInfo, output: "download" | "print" = "download") {
   const doc = new jsPDF({ unit: "mm", format: "a4" });
-  const fontBuffer = await fetch(notoSansVietnamese).then((response) => response.arrayBuffer());
-  doc.addFileToVFS("NotoSansVietnamese.ttf", arrayBufferToBase64(fontBuffer));
-  doc.addFont("NotoSansVietnamese.ttf", "NotoSansVietnamese", "normal");
-  doc.setFont("NotoSansVietnamese", "normal");
-  const logo = await loadImageData("/manus-storage/assetmaster-logo_f5d79b06.png");
+  const fontBuffer = await loadHandoverPdfFont();
+  registerVietnamesePdfFont(doc, fontBuffer);
   const left = 18;
   let y = 22;
   doc.setTextColor(16, 42, 67);
-  doc.setFontSize(18);
-  doc.addImage(logo, "PNG", left, y - 12, 18, 18);
+  drawHandoverBrandMark(doc, left, y);
   doc.setFontSize(18);
   doc.text("AssetMaster", left + 24, y);
   doc.setFontSize(9);
@@ -546,11 +552,12 @@ async function downloadHandoverPdf(item: Handover, signature: string | undefined
   doc.text(`Địa chỉ: ${companyInfo.address}`, left + 24, y + 13);
   doc.text(`MST: ${companyInfo.taxCode} · Điện thoại: ${companyInfo.phone}`, left + 24, y + 19);
   doc.setTextColor(16, 42, 67);
-  doc.setFontSize(15);
-  doc.text("BIÊN BẢN BÀN GIAO TÀI SẢN", 105, y + 32, { align: "center" });
   doc.setDrawColor(15, 140, 140);
-  doc.line(left, y + 12, 192, y + 12);
-  y += 28;
+  doc.line(left, y + 24, 192, y + 24);
+  y += 42;
+  doc.setFontSize(15);
+  doc.text("BIÊN BẢN BÀN GIAO TÀI SẢN", 105, y, { align: "center" });
+  y += 12;
   doc.setTextColor(16, 42, 67);
   doc.setFontSize(14);
   doc.text(`Số phiếu: ${item.referenceCode}`, left, y);
@@ -567,7 +574,14 @@ async function downloadHandoverPdf(item: Handover, signature: string | undefined
     ["Ghi chú", item.note || "Không có"],
     ["Trạng thái", item.status],
   ];
-  rows.forEach(([label, value]) => { doc.setTextColor(112, 134, 154); doc.text(label, left, y); doc.setTextColor(25, 59, 87); doc.text(String(value).slice(0, 100), 70, y); y += 9; });
+  rows.forEach(([label, value]) => {
+    const wrappedValue = doc.splitTextToSize(String(value), 118);
+    doc.setTextColor(112, 134, 154);
+    doc.text(label, left, y);
+    doc.setTextColor(25, 59, 87);
+    doc.text(wrappedValue, 70, y);
+    y += Math.max(9, wrappedValue.length * 5 + 3);
+  });
   y += 8;
   doc.setDrawColor(221, 231, 240);
   doc.line(left, y, 192, y);
@@ -582,7 +596,7 @@ async function downloadHandoverPdf(item: Handover, signature: string | undefined
   if (signature) {
     try {
       const signatureImage = signature.startsWith("data:image/") ? signature : await loadImageData(signature);
-      doc.addImage(signatureImage, "PNG", 118, y + 4, 52, 24);
+      doc.addImage(signatureImage, 118, y + 4, 52, 24);
     } catch {
       // The biên bản remains downloadable even when a stored signature cannot be retrieved.
     }
