@@ -203,11 +203,13 @@ describe("employee administration", () => {
 
   it("lets an administrator approve a pending return and release the asset", async () => {
     mocks.getHandoverById.mockResolvedValue({ id: 99, assetCode: "TS-00099", recipientUserId: 8, status: "active", returnRequestStatus: "pending" });
+    mocks.storagePut.mockResolvedValue({ key: "handovers/99/return-conditions/tinh-trang.png", url: "/manus-storage/handovers/99/return-conditions/tinh-trang.png" });
     const caller = appRouter.createCaller(adminContext);
 
     await expect(caller.handovers.resolveReturnRequest({ id: 99, decision: "approved", conditionIn: null, resolution: null })).rejects.toMatchObject({ code: "BAD_REQUEST" });
-    await expect(caller.handovers.resolveReturnRequest({ id: 99, decision: "approved", conditionIn: "Tốt", resolution: null })).resolves.toEqual({ success: true });
-    expect(mocks.transitionHandoverStatus).toHaveBeenCalledWith(99, "returned", expect.objectContaining({ returnRequestStatus: "approved", returnRequestResolvedByUserId: 1, conditionIn: "Tốt" }));
+    await expect(caller.handovers.resolveReturnRequest({ id: 99, decision: "approved", conditionIn: "Tốt", resolution: null, conditionPhoto: { fileName: "tinh-trang.png", contentType: "image/png", dataUrl: "data:image/png;base64,UE5H" } })).resolves.toEqual({ success: true });
+    expect(mocks.storagePut).toHaveBeenCalledWith(expect.stringMatching(/^handovers\/99\/return-conditions\//), expect.any(Buffer), "image/png");
+    expect(mocks.transitionHandoverStatus).toHaveBeenCalledWith(99, "returned", expect.objectContaining({ returnRequestStatus: "approved", returnRequestResolvedByUserId: 1, conditionIn: "Tốt", returnConditionPhotoUrl: "/manus-storage/handovers/99/return-conditions/tinh-trang.png" }));
   });
 
   it("allows administrators to create suppliers and brands while restricting employees", async () => {

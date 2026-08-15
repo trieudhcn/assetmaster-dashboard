@@ -548,7 +548,24 @@ function AssignmentsPage({ showComingSoon, companyInfo }: { showComingSoon: (lab
         const conditionIn = window.prompt(`Ghi nhận tình trạng thực tế của ${item.assetCode} khi nhận lại:`, "Tốt");
         if (conditionIn === null) return;
         if (!conditionIn.trim()) { toast.error("Vui lòng ghi nhận tình trạng thực tế của tài sản."); return; }
-        if (window.confirm(`Duyệt hoàn trả ${item.assetCode}? Tài sản sẽ trở về trạng thái sẵn có.`)) resolveReturnRequest.mutate({ id: item.id, decision: "approved", conditionIn: conditionIn.trim(), resolution: null });
+        const submitApproval = (conditionPhoto: { fileName: string; contentType: "image/png" | "image/jpeg" | "image/webp"; dataUrl: string } | null) => {
+          if (window.confirm(`Duyệt hoàn trả ${item.assetCode}? Tài sản sẽ trở về trạng thái sẵn có.`)) resolveReturnRequest.mutate({ id: item.id, decision: "approved", conditionIn: conditionIn.trim(), conditionPhoto, resolution: null });
+        };
+        if (!window.confirm("Bạn có muốn tải ảnh tình trạng thực tế của tài sản không?")) { submitApproval(null); return; }
+        const fileInput = document.createElement("input");
+        fileInput.type = "file";
+        fileInput.accept = "image/png,image/jpeg,image/webp";
+        fileInput.onchange = () => {
+          const file = fileInput.files?.[0];
+          if (!file) return;
+          if (!["image/png", "image/jpeg", "image/webp"].includes(file.type)) { toast.error("Chỉ hỗ trợ ảnh PNG, JPG hoặc WebP."); return; }
+          if (file.size > 5 * 1024 * 1024) { toast.error("Ảnh tình trạng không được vượt quá 5 MB."); return; }
+          const reader = new FileReader();
+          reader.onload = () => submitApproval({ fileName: file.name, contentType: file.type as "image/png" | "image/jpeg" | "image/webp", dataUrl: String(reader.result) });
+          reader.onerror = () => toast.error("Không thể đọc ảnh tình trạng đã chọn.");
+          reader.readAsDataURL(file);
+        };
+        fileInput.click();
       };
       actions.append(rejectButton, approveButton);
       row.appendChild(actions);

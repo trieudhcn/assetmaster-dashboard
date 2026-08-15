@@ -310,12 +310,21 @@ export const appRouter = router({
       await recordActivity({ entityType: "handover", entityId: input.id, action: "return_requested", actorUserId: ctx.user.id, actorName: ctx.user.name, summary: `Yêu cầu hoàn trả tài sản ${handover.assetCode}` });
       return { success: true };
     }),
-    resolveReturnRequest: adminProcedure.input(z.object({ id: z.number().int().positive(), decision: z.enum(["approved", "rejected"]), conditionIn: z.string().trim().max(120).optional().nullable(), resolution: z.string().trim().max(1000).optional().nullable() })).mutation(async ({ input, ctx }) => {
+    resolveReturnRequest: adminProcedure.input(z.object({ id: z.number().int().positive(), decision: z.enum(["approved", "rejected"]), conditionIn: z.string().trim().max(120).optional().nullable(), resolution: z.string().trim().max(1000).optional().nullable(), conditionPhoto: z.object({ fileName: z.string().trim().min(1).max(255), contentType: z.enum(["image/png", "image/jpeg", "image/webp"]), dataUrl: z.string().max(7_000_000).regex(/^data:image\/(png|jpeg|webp);base64,/) }).optional().nullable() })).mutation(async ({ input, ctx }) => {
       const handover = await getHandoverById(input.id);
       if (!handover) throw new TRPCError({ code: "NOT_FOUND", message: "Không tìm thấy phiếu bàn giao." });
       if (handover.returnRequestStatus !== "pending") throw new TRPCError({ code: "BAD_REQUEST", message: "Phiếu này không có yêu cầu hoàn trả đang chờ xử lý." });
       if (input.decision === "approved" && !input.conditionIn) throw new TRPCError({ code: "BAD_REQUEST", message: "Vui lòng ghi nhận tình trạng thực tế của tài sản khi duyệt hoàn trả." });
-      const changes = { returnRequestStatus: input.decision, returnRequestResolvedAt: new Date(), returnRequestResolvedByUserId: ctx.user.id, returnRequestResolution: input.resolution || null, ...(input.decision === "approved" ? { conditionIn: input.conditionIn } : {}) };
+      let photoChanges = {};
+      if (input.conditionPhoto) {
+        const photoBytes = Buffer.from(input.conditionPhoto.dataUrl.split(",", 2)[1], "base64");
+        if (!photoBytes.length || photoBytes.length > 5 * 1024 * 1024) throw new TRPCError({ code: "BAD_REQUEST", message: "Ảnh tình trạng phải có dung lượng từ 1 byte đến 5 MB." });
+        const extension = input.conditionPhoto.contentType.split("/")[1].replace("jpeg", "jpg");
+        const safeFileName = input.conditionPhoto.fileName.replace(/[^a-zA-Z0-9._-]/g, "-").replace(/-+/g, "-").slice(0, 120) || "tinh-trang-hoan-tra";
+        const uploaded = await storagePut(`handovers/${handover.id}/return-conditions/${Date.now()}-${safeFileName}.${extension}`, photoBytes, input.conditionPhoto.contentType);
+        photoChanges = { returnConditionPhotoKey: uploaded.key, returnConditionPhotoUrl: uploaded.url, returnConditionPhotoName: input.conditionPhoto.fileName, returnConditionPhotoContentType: input.conditionPhoto.contentType };
+      }
+      const changes = { returnRequestStatus: input.decision, returnRequestResolvedAt: new Date(), returnRequestResolvedByUserId: ctx.user.id, returnRequestResolution: input.resolution || null, ...photoChanges, ...(input.decision === "approved" ? { conditionIn: input.conditionIn } : {}) };
       if (input.decision === "approved") await transitionHandoverStatus(input.id, "returned", changes);
       else await updateHandover(input.id, changes);
       await recordActivity({ entityType: "handover", entityId: input.id, action: input.decision === "approved" ? "return_approved" : "return_rejected", actorUserId: ctx.user.id, actorName: ctx.user.name, summary: `${input.decision === "approved" ? "Duyệt" : "Từ chối"} yêu cầu hoàn trả ${handover.assetCode}` });

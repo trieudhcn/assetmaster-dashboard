@@ -322,3 +322,10 @@
 - [x] Hiển thị rõ trạng thái yêu cầu và lịch sử tài sản đã trả trên dashboard User.
 - [x] Cho phép Admin ghi chú tình trạng thực tế khi duyệt hoàn trả.
 - [x] Thêm kiểm thử luồng, xác minh responsive, TypeScript, build và phát hành checkpoint.
+
+## Ảnh tình trạng & thông báo hoàn trả
+
+- [x] Rà soát dữ liệu hoàn trả, tải tệp S3 và thông báo hiện có.
+- [x] Cho phép Admin tải ảnh tình trạng thực tế khi duyệt hoàn trả và lưu tham chiếu an toàn.
+- [x] Hiển thị thông báo trực quan khi User có quyết định hoàn trả mới.
+- [x] Thêm kiểm thử tải ảnh/phân quyền, xác minh responsive, TypeScript, build và phát hành checkpoint.
