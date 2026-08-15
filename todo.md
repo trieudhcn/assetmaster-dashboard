@@ -570,3 +570,9 @@
 - [x] Ngăn thanh cuộn hoặc nội dung tràn ra ngoài khung modal trên desktop/mobile.
 - [x] Đảm bảo tooltip thao tác hiển thị trên lớp modal, không bị cắt hoặc che khuất.
 - [x] Bổ sung kiểm thử hồi quy, xác minh giao diện và phát hành checkpoint.
+
+## Tinh chỉnh vị trí tooltip thao tác
+
+- [x] Rà soát lỗi tooltip che nội dung trong bảng thao tác bàn giao.
+- [x] Điều chỉnh khoảng cách và hướng hiển thị tooltip theo vùng trống thực tế.
+- [x] Bổ sung kiểm thử hồi quy, xác minh giao diện và phát hành checkpoint.

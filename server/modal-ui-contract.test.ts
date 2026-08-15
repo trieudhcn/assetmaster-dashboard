@@ -18,6 +18,7 @@ describe("modal presentation contract", () => {
   it("keeps the modal shell clipped while assigning vertical scrolling to its content", () => {
     const stylesheet = readProjectFile("client/src/index.css");
 
+    expect(stylesheet).toContain(".floating-action-tooltip {\n  position: fixed;");
     expect(stylesheet).toContain("overflow: hidden");
     expect(stylesheet).toContain("overflow-y: auto");
     expect(stylesheet).toContain("overscroll-behavior: contain");

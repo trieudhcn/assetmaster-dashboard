@@ -139,7 +139,7 @@ button[aria-label="Mở menu người dùng"] + div { animation: popover-in 180m
 
 /* Tooltip labels use a body-level portal so modal scroll containers cannot clip them. */
 .floating-action-tooltip {
-  position: absolute;
+  position: fixed;
   z-index: 10000;
   max-width: min(17rem, calc(100vw - 2rem));
   padding: 0.42rem 0.56rem;
