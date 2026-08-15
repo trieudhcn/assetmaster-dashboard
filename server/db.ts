@@ -14,6 +14,7 @@ import {
   type InsertUser,
   users,
   vendors,
+  vendorDocuments,
 } from "../drizzle/schema";
 import { ENV } from "./_core/env";
 
@@ -151,6 +152,31 @@ export async function updateVendor(id: number, data: Partial<typeof vendors.$inf
   const db = await getDb();
   if (!db) throw new Error("Database unavailable");
   await db.update(vendors).set(data).where(eq(vendors.id, id));
+}
+
+export async function listVendorDocuments(vendorId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(vendorDocuments).where(eq(vendorDocuments.vendorId, vendorId)).orderBy(desc(vendorDocuments.createdAt));
+}
+
+export async function getVendorDocumentById(id: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+  return (await db.select().from(vendorDocuments).where(eq(vendorDocuments.id, id)).limit(1))[0];
+}
+
+export async function createVendorDocument(data: typeof vendorDocuments.$inferInsert) {
+  const db = await getDb();
+  if (!db) throw new Error("Database unavailable");
+  const result = await db.insert(vendorDocuments).values(data);
+  return Number(result[0].insertId);
+}
+
+export async function deleteVendorDocument(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database unavailable");
+  await db.delete(vendorDocuments).where(eq(vendorDocuments.id, id));
 }
 
 export async function listBrands() {

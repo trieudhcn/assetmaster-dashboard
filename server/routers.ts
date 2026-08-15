@@ -16,6 +16,8 @@ import {
   createHandover,
   createMaintenanceTicket,
   createVendor,
+  createVendorDocument,
+  deleteVendorDocument,
   getAssetById,
   getBrandById,
   getBrandByName,
@@ -29,6 +31,7 @@ import {
   getMaintenanceTicket,
   getVendorById,
   getVendorByName,
+  getVendorDocumentById,
   listAssets,
   listBrands,
   listAllBrands,
@@ -45,6 +48,7 @@ import {
   listMaintenanceTickets,
   listMaintenanceTicketsByAsset,
   listVendors,
+  listVendorDocuments,
   listUsers,
   recordActivity,
   saveCompany,
@@ -198,6 +202,10 @@ export const appRouter = router({
   vendors: router({
     list: protectedProcedure.query(() => listVendors()),
     listAll: adminProcedure.query(() => listAllVendors()),
+    documents: adminProcedure.input(z.object({ vendorId: z.number().int().positive() })).query(async ({ input }) => {
+      if (!(await getVendorById(input.vendorId))) throw new TRPCError({ code: "NOT_FOUND", message: "Không tìm thấy Nhà cung cấp." });
+      return listVendorDocuments(input.vendorId);
+    }),
     create: adminProcedure.input(z.object({ name: z.string().trim().min(2).max(160), contactName: nullableText, phone: nullableText, email: z.string().email().optional().nullable() })).mutation(async ({ input, ctx }) => {
       if (await getVendorByName(input.name)) throw new TRPCError({ code: "BAD_REQUEST", message: "Nhà cung cấp này đã tồn tại." });
       const id = await createVendor({ ...input, isActive: true });
@@ -212,6 +220,32 @@ export const appRouter = router({
       await updateVendor(id, changes);
       const action = input.isActive === false ? "deactivated" : input.isActive === true ? "activated" : "updated";
       await recordActivity({ entityType: "vendor", entityId: id, action, actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: `${input.isActive === false ? "Vô hiệu hóa" : input.isActive === true ? "Kích hoạt" : "Cập nhật"} Nhà cung cấp: ${input.name || existing.name}` });
+      return { success: true };
+    }),
+    uploadDocument: adminProcedure.input(z.object({
+      vendorId: z.number().int().positive(),
+      documentType: z.enum(["contract", "quotation", "other"]),
+      fileName: z.string().trim().min(1).max(255),
+      contentType: z.enum(["application/pdf", "image/png", "image/jpeg", "application/vnd.openxmlformats-officedocument.wordprocessingml.document", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"]),
+      dataUrl: z.string().max(7_500_000).regex(/^data:(application\/pdf|image\/(png|jpeg)|application\/vnd\.openxmlformats-officedocument\.(wordprocessingml\.document|spreadsheetml\.sheet));base64,/),
+    })).mutation(async ({ input, ctx }) => {
+      const vendor = await getVendorById(input.vendorId);
+      if (!vendor) throw new TRPCError({ code: "NOT_FOUND", message: "Không tìm thấy Nhà cung cấp." });
+      const buffer = Buffer.from(input.dataUrl.split(",", 2)[1], "base64");
+      if (!buffer.length || buffer.length > 5 * 1024 * 1024) throw new TRPCError({ code: "BAD_REQUEST", message: "Tài liệu phải có dung lượng từ 1 byte đến 5 MB." });
+      const extensionByContentType: Record<string, string> = { "application/pdf": "pdf", "image/png": "png", "image/jpeg": "jpg", "application/vnd.openxmlformats-officedocument.wordprocessingml.document": "docx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": "xlsx" };
+      const safeBaseName = input.fileName.replace(/[^a-zA-Z0-9._-]/g, "-").replace(/-+/g, "-").slice(0, 120) || "tai-lieu-nha-cung-cap";
+      const storageKey = `vendors/${vendor.id}/documents/${Date.now()}-${safeBaseName}.${extensionByContentType[input.contentType]}`;
+      const { url } = await storagePut(storageKey, buffer, input.contentType);
+      const id = await createVendorDocument({ vendorId: vendor.id, documentType: input.documentType, fileName: input.fileName, contentType: input.contentType, fileSize: buffer.length, storageKey, url, uploadedByUserId: ctx.user!.id, uploadedByName: ctx.user!.name ?? "Quản trị viên" });
+      await recordActivity({ entityType: "vendorDocument", entityId: id, action: "uploaded", actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: `Tải ${input.documentType === "contract" ? "hợp đồng" : input.documentType === "quotation" ? "báo giá" : "tài liệu"} cho Nhà cung cấp ${vendor.name}: ${input.fileName}` });
+      return { id, url, fileName: input.fileName, contentType: input.contentType, fileSize: buffer.length };
+    }),
+    removeDocument: adminProcedure.input(z.object({ id: z.number().int().positive() })).mutation(async ({ input, ctx }) => {
+      const document = await getVendorDocumentById(input.id);
+      if (!document) throw new TRPCError({ code: "NOT_FOUND", message: "Không tìm thấy tài liệu Nhà cung cấp." });
+      await deleteVendorDocument(document.id);
+      await recordActivity({ entityType: "vendorDocument", entityId: document.id, action: "removed", actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: `Gỡ tài liệu ${document.fileName}` });
       return { success: true };
     }),
   }),

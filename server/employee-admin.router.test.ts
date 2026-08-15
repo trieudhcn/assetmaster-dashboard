@@ -7,10 +7,13 @@ const mocks = vi.hoisted(() => ({
   createDivision: vi.fn(),
   createVendor: vi.fn(),
   createBrand: vi.fn(),
+  createVendorDocument: vi.fn(),
+  deleteVendorDocument: vi.fn(),
   createHandover: vi.fn(),
   getAssetById: vi.fn(),
   getVendorById: vi.fn(),
   getVendorByName: vi.fn(),
+  getVendorDocumentById: vi.fn(),
   getBrandById: vi.fn(),
   getBrandByName: vi.fn(),
   getActiveDepartmentById: vi.fn(),
@@ -28,7 +31,9 @@ const mocks = vi.hoisted(() => ({
   listBrands: vi.fn(),
   listAllVendors: vi.fn(),
   listAllBrands: vi.fn(),
+  listVendorDocuments: vi.fn(),
   recordActivity: vi.fn(),
+  storagePut: vi.fn(),
   transitionHandoverStatus: vi.fn(),
   updateUserActiveStatus: vi.fn(),
   updateUserDepartment: vi.fn(),
@@ -49,12 +54,15 @@ vi.mock("./db", () => ({
   createDivision: mocks.createDivision,
   createVendor: mocks.createVendor,
   createBrand: mocks.createBrand,
+  createVendorDocument: mocks.createVendorDocument,
+  deleteVendorDocument: mocks.deleteVendorDocument,
   createHandover: mocks.createHandover,
   createMaintenanceTicket: vi.fn(),
   getActiveDepartmentById: mocks.getActiveDepartmentById,
   getAssetById: mocks.getAssetById,
   getVendorById: mocks.getVendorById,
   getVendorByName: mocks.getVendorByName,
+  getVendorDocumentById: mocks.getVendorDocumentById,
   getBrandById: mocks.getBrandById,
   getBrandByName: mocks.getBrandByName,
   getCompany: mocks.getCompany,
@@ -75,6 +83,7 @@ vi.mock("./db", () => ({
   listBrands: mocks.listBrands,
   listAllVendors: mocks.listAllVendors,
   listAllBrands: mocks.listAllBrands,
+  listVendorDocuments: mocks.listVendorDocuments,
   listHandovers: vi.fn(),
   listHandoversByRecipient: vi.fn(),
   listMaintenanceTickets: vi.fn(),
@@ -95,6 +104,8 @@ vi.mock("./db", () => ({
   updateBrand: mocks.updateBrand,
   updateUserRole: vi.fn(),
 }));
+
+vi.mock("./storage", () => ({ storagePut: mocks.storagePut }));
 
 import { appRouter } from "./routers";
 
@@ -123,6 +134,8 @@ describe("employee administration", () => {
     mocks.createDivision.mockResolvedValue(30);
     mocks.createVendor.mockResolvedValue(41);
     mocks.createBrand.mockResolvedValue(51);
+    mocks.createVendorDocument.mockResolvedValue(71);
+    mocks.deleteVendorDocument.mockResolvedValue(undefined);
     mocks.getVendorById.mockResolvedValue({ id: 41, name: "Nhà cung cấp Minh Phát", isActive: true });
     mocks.getBrandById.mockResolvedValue({ id: 51, name: "Dell", isActive: true });
     mocks.getVendorByName.mockResolvedValue(undefined);
@@ -131,6 +144,8 @@ describe("employee administration", () => {
     mocks.listBrands.mockResolvedValue([{ id: 51, name: "Dell", isActive: true }]);
     mocks.listAllVendors.mockResolvedValue([{ id: 41, name: "Nhà cung cấp Minh Phát", isActive: true }]);
     mocks.listAllBrands.mockResolvedValue([{ id: 51, name: "Dell", isActive: true }]);
+    mocks.listVendorDocuments.mockResolvedValue([]);
+    mocks.getVendorDocumentById.mockResolvedValue({ id: 71, vendorId: 41, fileName: "bao-gia.pdf" });
     mocks.updateVendor.mockResolvedValue(undefined);
     mocks.updateBrand.mockResolvedValue(undefined);
     mocks.listDivisions.mockResolvedValue([]);
@@ -141,6 +156,7 @@ describe("employee administration", () => {
     mocks.updateDepartment.mockResolvedValue(undefined);
     mocks.updateDivision.mockResolvedValue(undefined);
     mocks.recordActivity.mockResolvedValue(undefined);
+    mocks.storagePut.mockResolvedValue({ key: "vendors/41/documents/bao-gia.pdf", url: "/manus-storage/vendors/41/documents/bao-gia.pdf" });
   });
 
   it("allows administrators to list active departments", async () => {
@@ -177,9 +193,18 @@ describe("employee administration", () => {
   });
 
   it("rejects the department list for a non-administrator", async () => {
+    const adminCaller = appRouter.createCaller(adminContext);
+    await expect(adminCaller.vendors.documents({ vendorId: 41 })).resolves.toEqual([]);
+    await expect(adminCaller.vendors.uploadDocument({ vendorId: 41, documentType: "quotation", fileName: "bao-gia.pdf", contentType: "application/pdf", dataUrl: "data:application/pdf;base64,SGVsbG8=" })).resolves.toMatchObject({ id: 71, fileName: "bao-gia.pdf" });
+    expect(mocks.storagePut).toHaveBeenCalledWith(expect.stringContaining("vendors/41/documents/"), expect.any(Buffer), "application/pdf");
+    expect(mocks.createVendorDocument).toHaveBeenCalledWith(expect.objectContaining({ vendorId: 41, documentType: "quotation", fileName: "bao-gia.pdf", fileSize: 5 }));
+    await expect(adminCaller.vendors.removeDocument({ id: 71 })).resolves.toEqual({ success: true });
+    expect(mocks.deleteVendorDocument).toHaveBeenCalledWith(71);
+
     const caller = appRouter.createCaller({ ...adminContext, user: { ...adminContext.user, role: "user" } });
 
     await expect(caller.departments.list()).rejects.toMatchObject({ code: "FORBIDDEN" });
+    await expect(caller.vendors.documents({ vendorId: 41 })).rejects.toMatchObject({ code: "FORBIDDEN" });
   });
 
   it("allows an administrator to create a department and a division under its selected department", async () => {

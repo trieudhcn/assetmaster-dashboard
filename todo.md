@@ -267,3 +267,10 @@
 - [x] Hiển thị Nhà cung cấp/Hãng trong hồ sơ chi tiết tài sản và dữ liệu danh mục.
 - [x] Bổ sung biểu đồ phân bổ giá trị tài sản theo Hãng trên trang Báo cáo.
 - [x] Kiểm thử phân quyền, lọc, biểu đồ, responsive, TypeScript, build và phát hành checkpoint; 28 Vitest tests, TypeScript và production build thành công.
+
+## Tài liệu Nhà cung cấp
+
+- [x] Bổ sung mô hình tài liệu Nhà cung cấp, migration và metadata tệp lưu S3.
+- [x] Thêm API Admin tải lên, liệt kê và quản lý tài liệu hợp đồng/báo giá theo Nhà cung cấp.
+- [x] Hiển thị hồ sơ Nhà cung cấp với khu vực tải lên, xem, tải xuống và gỡ tài liệu đính kèm.
+- [x] Kiểm thử phân quyền, loại tệp, metadata, responsive, TypeScript, build và phát hành checkpoint; 28 Vitest tests, TypeScript và production build thành công.

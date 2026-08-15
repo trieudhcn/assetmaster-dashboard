@@ -50,6 +50,13 @@
       "when": 1786709816121,
       "tag": "0006_colorful_mad_thinker",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "5",
+      "when": 1786753196302,
+      "tag": "0007_breezy_sentry",
+      "breakpoints": true
     }
   ]
 }

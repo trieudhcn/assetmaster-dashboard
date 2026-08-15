@@ -69,6 +69,20 @@ export const vendors = mysqlTable("vendors", {
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
 
+export const vendorDocuments = mysqlTable("vendorDocuments", {
+  id: int("id").autoincrement().primaryKey(),
+  vendorId: int("vendorId").notNull().references(() => vendors.id, { onDelete: "restrict", onUpdate: "cascade" }),
+  documentType: mysqlEnum("documentType", ["contract", "quotation", "other"]).default("other").notNull(),
+  fileName: varchar("fileName", { length: 255 }).notNull(),
+  contentType: varchar("contentType", { length: 128 }).notNull(),
+  fileSize: int("fileSize").notNull(),
+  storageKey: text("storageKey").notNull(),
+  url: text("url").notNull(),
+  uploadedByUserId: int("uploadedByUserId"),
+  uploadedByName: varchar("uploadedByName", { length: 160 }),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+}, (table) => [index("vendor_documents_vendor_idx").on(table.vendorId)]);
+
 export const brands = mysqlTable("brands", {
   id: int("id").autoincrement().primaryKey(),
   name: varchar("name", { length: 160 }).notNull().unique(),
