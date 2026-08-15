@@ -609,3 +609,10 @@
 - [x] Bỏ yêu cầu nhập Mã tài sản, yêu cầu Phân loại và tự sinh mã theo tiền tố.
 - [x] Cập nhật xem trước, thông báo lỗi và template tải xuống.
 - [x] Bổ sung kiểm thử import, hồi quy và phát hành checkpoint.
+
+## Ổn định biểu mẫu tài sản
+
+- [x] Loại bỏ biểu tượng lịch dư và giữ một cách chọn ngày rõ ràng.
+- [x] Ngăn vùng tạo Phân loại mới bị render lại làm mất focus khi nhập liệu.
+- [x] Chỉ hỏi xác nhận đóng form khi thực sự có thay đổi chưa lưu.
+- [x] Bổ sung kiểm thử hồi quy biểu mẫu và phát hành checkpoint.

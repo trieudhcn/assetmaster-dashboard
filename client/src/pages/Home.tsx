@@ -1192,11 +1192,10 @@ function SignaturePad({ onSigned }: { onSigned: (dataUrl: string) => void }) {
 function AssetModal({ mode, asset, formData, setFormData, onClose: dismiss, onSave, onEdit, onStartHandover }: { mode: "create" | "edit" | "detail"; asset: Asset | null; formData: Asset; setFormData: React.Dispatch<React.SetStateAction<Asset>>; onClose: () => void; onSave: () => void; onEdit: () => void; onStartHandover: (assetCode: string) => void }) {
   const isDetail = mode === "detail";
   const [repairOpen, setRepairOpen] = useState(false);
-  const initialFormRef = useRef("");
-  useEffect(() => { initialFormRef.current = JSON.stringify(formData); }, [mode, asset?.code]);
+  const [formDirty, setFormDirty] = useState(false);
+  useEffect(() => { setFormDirty(false); }, [mode, asset?.code]);
   const onClose = () => {
-    const hasUnsavedChanges = !isDetail && initialFormRef.current && initialFormRef.current !== JSON.stringify(formData);
-    if (hasUnsavedChanges) { toast.warning("Đóng form chưa lưu?", { description: "Các thay đổi tài sản hiện tại sẽ bị hủy.", action: { label: "Bỏ thay đổi", onClick: dismiss } }); return; }
+    if (!isDetail && formDirty) { toast.warning("Đóng form chưa lưu?", { description: "Các thay đổi tài sản hiện tại sẽ bị hủy.", action: { label: "Bỏ thay đổi", onClick: dismiss } }); return; }
     dismiss();
   };
   useModalDismiss(onClose);
@@ -1213,12 +1212,13 @@ function AssetModal({ mode, asset, formData, setFormData, onClose: dismiss, onSa
   const brandsQuery = trpc.brands.list.useQuery();
   const categoriesQuery = trpc.assetCategories.list.useQuery(undefined, { enabled: !isDetail });
   const [categoryCreatorOpen, setCategoryCreatorOpen] = useState(false);
-  const [categoryDraft, setCategoryDraft] = useState({ name: "", code: "", description: "" });
+  const categoryDraftRef = useRef({ name: "", code: "", description: "" });
   const nextAssetCodeQuery = trpc.assetCategories.nextCode.useQuery({ categoryId: formData.categoryId || 0 }, { enabled: !isDetail && mode === "create" && Boolean(formData.categoryId) });
   const createCategoryMutation = trpc.assetCategories.create.useMutation({
-    onSuccess: (result) => {
-      setFormData((current) => ({ ...current, categoryId: result.id, category: categoryDraft.name.trim(), code: "" }));
-      setCategoryDraft({ name: "", code: "", description: "" });
+    onSuccess: (result, variables) => {
+      setFormData((current) => ({ ...current, categoryId: result.id, category: variables.name, code: "" }));
+      categoryDraftRef.current = { name: "", code: "", description: "" };
+      setFormDirty(true);
       setCategoryCreatorOpen(false);
       void utils.assetCategories.list.invalidate();
       toast.success("Đã thêm Phân loại và áp dụng tiền tố mã mới.");
@@ -1240,18 +1240,7 @@ function AssetModal({ mode, asset, formData, setFormData, onClose: dismiss, onSa
       dateInput.type = "date";
       dateInput.value = normalized;
       dateInput.title = "Chọn ngày mua";
-      dateInput.classList.add("pl-9");
-      const dateField = dateInput.parentElement;
-      if (dateField && !dateField.querySelector("[data-purchase-date-icon]")) {
-        dateField.classList.add("relative");
-        const icon = document.createElement("span");
-        icon.dataset.purchaseDateIcon = "true";
-        icon.className = "pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[#0F8C8C]";
-        icon.textContent = "▣";
-        icon.setAttribute("aria-hidden", "true");
-        dateField.appendChild(icon);
-      }
-      dateInput.onchange = () => setFormData((current) => ({ ...current, date: dateInput.value }));
+      dateInput.onchange = () => { setFormDirty(true); setFormData((current) => ({ ...current, date: dateInput.value })); };
     }
 
     const categoryLabel = Array.from(dialog?.querySelectorAll("label") || []).find((label) => label.textContent?.trim() === "Phân loại");
@@ -1272,6 +1261,7 @@ function AssetModal({ mode, asset, formData, setFormData, onClose: dismiss, onSa
     select.value = formData.categoryId ? String(formData.categoryId) : "";
     select.onchange = () => {
       const category = (categoriesQuery.data || []).find((item) => item.id === Number(select.value));
+      setFormDirty(true);
       setFormData((current) => ({ ...current, categoryId: category?.id, category: category?.name || "", code: "" }));
     };
     categoryField.querySelector("[data-category-creator]")?.remove();
@@ -1285,35 +1275,36 @@ function AssetModal({ mode, asset, formData, setFormData, onClose: dismiss, onSa
     toggle.onclick = () => setCategoryCreatorOpen((current) => !current);
     creator.appendChild(toggle);
     if (categoryCreatorOpen) {
+      const draft = categoryDraftRef.current;
       const form = document.createElement("div");
       form.className = "mt-2 grid gap-2 rounded-lg border border-[#CDE5E5] bg-[#F4FBFA] p-2.5";
       const nameInput = document.createElement("input");
       nameInput.className = "field-input h-9";
       nameInput.placeholder = "Tên Phân loại *";
-      nameInput.value = categoryDraft.name;
-      nameInput.oninput = () => setCategoryDraft((current) => ({ ...current, name: nameInput.value }));
+      nameInput.value = draft.name;
+      nameInput.oninput = () => { categoryDraftRef.current = { ...categoryDraftRef.current, name: nameInput.value }; };
       const codeInput = document.createElement("input");
       codeInput.className = "field-input h-9 font-mono uppercase";
       codeInput.placeholder = "Tiền tố mã, ví dụ LT *";
-      codeInput.value = categoryDraft.code;
-      codeInput.oninput = () => setCategoryDraft((current) => ({ ...current, code: codeInput.value.toUpperCase().replace(/[^A-Z0-9-]/g, "") }));
+      codeInput.value = draft.code;
+      codeInput.oninput = () => { categoryDraftRef.current = { ...categoryDraftRef.current, code: codeInput.value.toUpperCase().replace(/[^A-Z0-9-]/g, "") }; };
       const descriptionInput = document.createElement("input");
       descriptionInput.className = "field-input h-9";
       descriptionInput.placeholder = "Mô tả (không bắt buộc)";
-      descriptionInput.value = categoryDraft.description;
-      descriptionInput.oninput = () => setCategoryDraft((current) => ({ ...current, description: descriptionInput.value }));
+      descriptionInput.value = draft.description;
+      descriptionInput.oninput = () => { categoryDraftRef.current = { ...categoryDraftRef.current, description: descriptionInput.value }; };
       const save = document.createElement("button");
       save.type = "button";
       save.className = "h-9 rounded-lg bg-[#0F8C8C] px-3 text-xs font-bold text-white hover:bg-[#087A6A]";
       save.textContent = createCategoryMutation.isPending ? "Đang lưu..." : "Lưu Phân loại & tiền tố";
       save.disabled = createCategoryMutation.isPending;
-      save.onclick = () => { const name = categoryDraft.name.trim(); const code = categoryDraft.code.trim(); if (name.length < 2 || !/^[A-Z0-9-]{1,12}$/.test(code)) { toast.error("Nhập tên và tiền tố 1–12 ký tự chữ/số hợp lệ."); return; } createCategoryMutation.mutate({ name, code, description: categoryDraft.description.trim() || null }); };
+      save.onclick = () => { const current = categoryDraftRef.current; const name = current.name.trim(); const code = current.code.trim(); if (name.length < 2 || !/^[A-Z0-9-]{1,12}$/.test(code)) { toast.error("Nhập tên và tiền tố 1–12 ký tự chữ/số hợp lệ."); return; } createCategoryMutation.mutate({ name, code, description: current.description.trim() || null }); };
       form.append(nameInput, codeInput, descriptionInput, save);
       creator.appendChild(form);
     }
     categoryField.appendChild(creator);
     return () => { creator.remove(); };
-  }, [isDetail, mode, formData.categoryId, formData.date, categoriesQuery.data, categoriesQuery.isLoading, categoryCreatorOpen, categoryDraft, createCategoryMutation.isPending, setFormData]);
+  }, [isDetail, mode, formData.categoryId, formData.date, categoriesQuery.data, categoriesQuery.isLoading, categoryCreatorOpen, createCategoryMutation.isPending, setFormData]);
   useEffect(() => {
     if (!isDetail || !asset?.brand) return;
     const dialog = document.querySelector('[role="dialog"][aria-label="Chi tiết tài sản"]');
@@ -1510,7 +1501,7 @@ function AssetModal({ mode, asset, formData, setFormData, onClose: dismiss, onSa
     },
     onError: (error) => toast.error(error.message || "Không thể tạo yêu cầu sửa chữa."),
   });
-  const update = (key: keyof Asset, value: string) => setFormData((current) => ({ ...current, [key]: value }));
+  const update = (key: keyof Asset, value: string) => { setFormDirty(true); setFormData((current) => ({ ...current, [key]: value })); };
   useEffect(() => {
     if (isDetail) return;
     const holderLabel = Array.from(document.querySelectorAll("label")).find((label) => label.textContent?.trim().startsWith("Người / Phòng giữ"));

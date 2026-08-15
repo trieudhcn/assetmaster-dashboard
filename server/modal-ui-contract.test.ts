@@ -27,4 +27,14 @@ describe("modal presentation contract", () => {
     expect(stylesheet).toContain("@media (hover: none), (pointer: coarse)");
     expect(stylesheet).toContain("min-width: 2.5rem");
   });
+
+  it("keeps category creator inputs stable and only confirms close after a real form change", () => {
+    const home = readProjectFile("client/src/pages/Home.tsx");
+
+    expect(home).toContain("const [formDirty, setFormDirty] = useState(false)");
+    expect(home).toContain("if (!isDetail && formDirty)");
+    expect(home).toContain("const categoryDraftRef = useRef");
+    expect(home).toContain("categoryDraftRef.current = { ...categoryDraftRef.current, name: nameInput.value }");
+    expect(home).not.toContain("data-purchase-date-icon");
+  });
 });
