@@ -821,3 +821,11 @@
 - [x] Tự động thêm dấu chấm phân cách hàng nghìn khi nhập số tiền, ví dụ 16000 thành 16.000.
 - [x] Áp dụng và kiểm tra chuẩn hóa cho tất cả các trường nhập giá tiền.
 - [x] Bổ sung hồi quy, chạy TypeScript, Vitest, production build và xác minh giao diện.
+
+## Current Session — Handover Filter, Mobile Currency & Excel Feedback
+
+- [x] Sửa lỗi dropdown bộ lọc trong danh sách phiếu bàn giao không làm vỡ khung và không bị che/tràn trên desktop/mobile.
+- [x] Tối ưu CurrencyInput trên mobile để tự bật bàn phím số khi focus ô tiền.
+- [x] Áp dụng loading/toast cho các luồng xuất Excel còn lại trong Báo cáo, Tài sản và Phân loại.
+- [x] Kiểm tra các bảng có cuộn ngang trên viewport mobile và sửa overflow/responsive nếu cần.
+- [x] Bổ sung hồi quy, chạy TypeScript, Vitest, production build và xác minh giao diện.

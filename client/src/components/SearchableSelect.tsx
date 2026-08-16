@@ -59,12 +59,12 @@ export function SearchableSelect({ value, onChange, options, placeholder = "Chá»
   }, [query, value, open]);
 
   return (
-    <div ref={rootRef} className={`relative min-w-0 ${className}`}>
+    <div ref={rootRef} className={`relative min-w-0 ${open ? "z-[96]" : "z-0"} ${className}`}>
       <button type="button" disabled={disabled} aria-haspopup="listbox" aria-expanded={open} onClick={() => setOpen((current) => !current)} className="field-input flex w-full items-center justify-between gap-2 text-left disabled:cursor-not-allowed disabled:opacity-60">
         <span className={`truncate ${selected ? "text-[#60758A]" : "text-[#8AA0B6]"}`}>{selected?.label || placeholder}</span>
         <ChevronDown size={16} className={`shrink-0 text-[#9BAEC0] transition-transform ${open ? "rotate-180" : ""}`} />
       </button>
-      {open && <div className="absolute left-0 top-[calc(100%+0.35rem)] z-[95] w-full min-w-[240px] overflow-hidden rounded-xl border border-[#CDE5E5] bg-white shadow-[0_16px_36px_rgba(16,42,67,0.18)]" role="listbox">
+      {open && <div className="absolute left-0 right-auto top-[calc(100%+0.35rem)] z-[95] w-full min-w-[240px] max-w-[calc(100vw-2rem)] overflow-hidden rounded-xl border border-[#CDE5E5] bg-white shadow-[0_16px_36px_rgba(16,42,67,0.18)]" role="listbox">
         <div className="border-b border-[#E7EEF3] p-2">
           <div className="relative">
             <Search size={15} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[#8AA0B6]" />

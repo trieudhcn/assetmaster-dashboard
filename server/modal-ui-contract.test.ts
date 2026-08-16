@@ -377,6 +377,22 @@ describe("currency input and scrollbar contract", () => {
     expect(currencyInput).toContain('className="absolute right-11 top-1/2 z-10');
     expect(currencyInput).toContain('text-[10px] font-medium leading-4 text-[#8AA0B6]');
     expect(stylesheet).toContain("scrollbar-color: #8BC9C5 #EEF5F6");
+    expect(currencyInput).toContain('inputMode="numeric"');
+    expect(currencyInput).toContain('pattern="[0-9]*"');
+    expect(currencyInput).toContain('enterKeyHint="done"');
+  });
+
+  it("keeps handover filters and exports responsive", () => {
+    const home = readProjectFile("client/src/pages/Home.tsx");
+    const searchableSelect = readProjectFile("client/src/components/SearchableSelect.tsx");
+    const reports = readProjectFile("client/src/pages/ReportsManagementView.tsx");
+    expect(home).toContain("overflow-visible rounded-xl border border-[#DFE9F0]");
+    expect(home).toContain("className=\"w-full sm:w-[180px]\"");
+    expect(searchableSelect).toContain('max-w-[calc(100vw-2rem)]');
+    expect(searchableSelect).toContain('open ? "z-[96]" : "z-0"');
+    expect(home).toContain("Đang tạo danh sách tài sản bảo trì...");
+    expect(reports).toContain("Đang tạo báo cáo tài sản...");
+    expect(reports).toContain("Đang tạo báo cáo tài sản trả nhà cung cấp...");
   });
 
   it("keeps vendor and brand searches inside directory headers", () => {
