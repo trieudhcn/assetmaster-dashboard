@@ -926,3 +926,10 @@
 - [x] Thêm chọn nhanh tháng/năm trong lịch AssetMaster.
 - [x] Cập nhật hồi quy, kiểm thử TypeScript, Vitest, production build và responsive.
 - [x] Lưu checkpoint phát hành cho phiên này.
+
+## Current Session — Asset Drawer Header & History Load More
+
+- [x] Giữ mô tả “Thông tin định danh và vòng đời của tài sản” trên một dòng trong header drawer khi có thể.
+- [x] Bổ sung nút “Tải thêm” cho lịch sử thay đổi tài sản, giữ phân trang hiện tại.
+- [x] Kiểm thử TypeScript, Vitest, production build và responsive.
+- [x] Lưu checkpoint phát hành cho phiên này.

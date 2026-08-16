@@ -535,7 +535,8 @@ it("keeps maintenance UI controls on the shared interaction contracts", () => {
 
   expect(db).toContain("limit(safePageSize).offset");
   expect(routers).toContain("pageSize: z.number().int().min(1).max(50)");
-  expect(historyDrawer).toContain("history.data?.items.map");
+  expect(historyDrawer).toContain("historyItems.map");
+  expect(historyDrawer).toContain('"Tải thêm"');
   expect(historyDrawer).toContain("Trang lịch sử trước");
   expect(categories).toContain("<SearchableSelect value={activityFilter}");
   expect(categories).toContain("<SearchableSelect value={assetFilter}");
