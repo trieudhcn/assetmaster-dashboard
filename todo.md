@@ -904,3 +904,11 @@
 - [x] Kiểm thử TypeScript, Vitest, production build và rà soát responsive cho dropdown/drawer.
 - [x] Lưu checkpoint phát hành sau khi hoàn tất xác minh phiên hiện tại.
 
+
+## Current Session — Maintenance Cost Field Display Fix
+
+- [x] Kiểm tra nguyên nhân ô Chi phí dự kiến/thực tế hiển thị chỉ còn hậu tố VNĐ trong bảng bảo trì.
+- [x] Sửa bố cục CurrencyInput trong bảng bảo trì, giữ định dạng tiền Việt Nam và khả năng chỉnh sửa hợp lệ.
+- [x] Kiểm thử TypeScript, Vitest, production build và responsive desktop/mobile.
+- [x] Lưu checkpoint phát hành cho bản sửa lỗi.
+
