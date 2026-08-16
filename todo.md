@@ -1009,3 +1009,10 @@
 - [x] Đồng bộ trạng thái, lý do bảo trì và chống tạo trùng yêu cầu đang mở.
 - [x] Bổ sung hồi quy, kiểm thử TypeScript, Vitest, production build và responsive.
 - [x] Lưu checkpoint phát hành cho phiên này.
+
+## Current Session — Category Filter Icon
+
+- [x] Xóa icon bộ lọc thừa ở bên trái dropdown trạng thái trong Danh sách Phân loại.
+- [x] Căn chỉnh lại khoảng cách và giữ nguyên chức năng lọc.
+- [x] Bổ sung hồi quy, kiểm thử TypeScript, Vitest, production build và responsive.
+- [x] Lưu checkpoint phát hành cho phiên này.
