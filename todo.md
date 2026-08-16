@@ -1107,3 +1107,11 @@
 - [x] Bảo đảm toàn bộ tài sản có thể mở, chỉnh sửa, đóng và lưu ổn định.
 - [x] Bổ sung hồi quy, kiểm thử TypeScript, Vitest, production build và responsive.
 - [x] Lưu checkpoint phát hành cho phiên này.
+
+## Current Session — Category Tooltip & Asset Save Loading
+
+- [x] Loại bỏ tooltip trùng khi hover vào huy hiệu số lượng tài sản trong Danh sách Phân loại.
+- [x] Giữ một tooltip đầy đủ, dễ đọc và có hỗ trợ truy cập cho huy hiệu số lượng.
+- [x] Hiển thị loading rõ ràng, khóa nút phù hợp khi lưu thay đổi tài sản.
+- [x] Bổ sung hồi quy, kiểm thử TypeScript, Vitest, production build và responsive.
+- [x] Lưu checkpoint phát hành cho phiên này.
