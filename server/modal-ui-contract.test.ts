@@ -104,6 +104,14 @@ describe("modal presentation contract", () => {
     expect(stylesheet).toContain(".asset-date-input::-webkit-calendar-picker-indicator");
   });
 
+  it("normalizes invalid purchase dates before updating asset status", () => {
+    const home = readProjectFile("client/src/pages/Home.tsx");
+
+    expect(home).toContain("function normalizePurchaseDate(value: unknown): number | null");
+    expect(home).toContain("return Number.isFinite(timestamp) ? timestamp : null");
+    expect(home).toContain("purchaseDate: normalizePurchaseDate(formData.date)");
+  });
+
   it("provides loading feedback and completion messaging for category Excel export", () => {
     const categories = readProjectFile("client/src/pages/AssetCategoryManagementPage.tsx");
 

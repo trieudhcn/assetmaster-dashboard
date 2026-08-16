@@ -678,3 +678,9 @@
 - [x] Thêm trạng thái tải khi tạo file Excel và khóa nút xuất trong lúc xử lý
 - [x] Hiển thị thông báo thành công hoặc lỗi rõ ràng sau khi xuất Excel
 - [x] Bổ sung kiểm thử hồi quy cho trạng thái xuất Excel và xác minh responsive
+
+## Current Session — Asset Status Date Validation
+
+- [x] Chuẩn hóa purchaseDate để giá trị rỗng/không hợp lệ gửi null thay vì NaN khi cập nhật tài sản
+- [x] Bổ sung kiểm thử hồi quy cho cập nhật trạng thái tài sản không có ngày mua
+- [x] Xác minh TypeScript, Vitest, build và thao tác cập nhật trạng thái trên giao diện
