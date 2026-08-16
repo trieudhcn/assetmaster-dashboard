@@ -291,3 +291,18 @@ describe("modal presentation contract", () => {
     expect(importModal).toContain("Tìm trạng thái...");
     expect(home).toContain("Tìm tên hoặc email nhân viên...");
   });
+
+
+  it("supports vendor and brand directory pagination and searchable-select keyboard affordances", () => {
+    const vendorPage = readProjectFile("client/src/pages/VendorBrandManagementPage.tsx");
+    const searchableSelect = readProjectFile("client/src/components/SearchableSelect.tsx");
+    expect(vendorPage).toContain("5 dòng/trang");
+    expect(vendorPage).toContain("Tìm Nhà cung cấp...");
+    expect(vendorPage).toContain("Tìm Hãng...");
+    expect(vendorPage).toContain("scrollIntoView");
+    expect(searchableSelect).toContain("ArrowDown");
+    expect(searchableSelect).toContain("ArrowUp");
+    expect(searchableSelect).toContain("event.key === \"Enter\"");
+    expect(searchableSelect).toContain("Xóa tìm kiếm trong dropdown");
+    expect(searchableSelect).toContain("Không tìm thấy kết quả");
+  });

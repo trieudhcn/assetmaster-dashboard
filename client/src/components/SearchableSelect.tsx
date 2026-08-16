@@ -29,20 +29,34 @@ export function SearchableSelect({ value, onChange, options, placeholder = "Chá»
   const rootRef = useRef<HTMLDivElement>(null);
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
+  const [highlightedIndex, setHighlightedIndex] = useState(0);
+  const searchInputRef = useRef<HTMLInputElement>(null);
   const selected = options.find((option) => option.value === value);
   const filteredOptions = useMemo(() => options.filter((option) => matchesVietnameseSearch(`${option.label} ${option.searchText || ""}`, query)), [options, query]);
+  const selectHighlighted = (index: number) => {
+    const option = filteredOptions[index];
+    if (!option) return;
+    onChange(option.value);
+    setOpen(false);
+  };
 
   useEffect(() => {
     if (!open) {
       setQuery("");
+      setHighlightedIndex(0);
       return;
     }
+    requestAnimationFrame(() => searchInputRef.current?.focus());
     const closeOnOutside = (event: PointerEvent) => {
       if (!rootRef.current?.contains(event.target as Node)) setOpen(false);
     };
     document.addEventListener("pointerdown", closeOnOutside);
     return () => document.removeEventListener("pointerdown", closeOnOutside);
   }, [open]);
+
+  useEffect(() => {
+    if (open) setHighlightedIndex(Math.max(0, filteredOptions.findIndex((option) => option.value === value)));
+  }, [query, value, open]);
 
   return (
     <div ref={rootRef} className={`relative min-w-0 ${className}`}>
@@ -54,12 +68,12 @@ export function SearchableSelect({ value, onChange, options, placeholder = "Chá»
         <div className="border-b border-[#E7EEF3] p-2">
           <div className="relative">
             <Search size={15} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[#8AA0B6]" />
-            <input autoFocus value={query} onChange={(event) => setQuery(event.target.value)} placeholder={searchPlaceholder} aria-label={searchPlaceholder} className="h-9 w-full rounded-lg border border-[#DDE7F0] bg-[#FBFCFD] pl-9 pr-9 text-xs font-semibold text-[#193B57] outline-none focus:border-[#0F8C8C]" />
+            <input ref={searchInputRef} value={query} onChange={(event) => { setQuery(event.target.value); setHighlightedIndex(0); }} onKeyDown={(event) => { if (event.key === "ArrowDown") { event.preventDefault(); setHighlightedIndex((current) => filteredOptions.length ? (current + 1) % filteredOptions.length : 0); } else if (event.key === "ArrowUp") { event.preventDefault(); setHighlightedIndex((current) => filteredOptions.length ? (current - 1 + filteredOptions.length) % filteredOptions.length : 0); } else if (event.key === "Enter") { event.preventDefault(); selectHighlighted(highlightedIndex); } else if (event.key === "Escape") { event.preventDefault(); setOpen(false); } }} placeholder={searchPlaceholder} aria-label={searchPlaceholder} aria-activedescendant={filteredOptions[highlightedIndex] ? `searchable-option-${filteredOptions[highlightedIndex].value}` : undefined} className="h-9 w-full rounded-lg border border-[#DDE7F0] bg-[#FBFCFD] pl-9 pr-9 text-xs font-semibold text-[#193B57] outline-none focus:border-[#0F8C8C]" />
             {query && <button type="button" aria-label="XÃ³a tÃ¬m kiáº¿m trong dropdown" onClick={() => setQuery("")} className="absolute right-2 top-1/2 grid h-6 w-6 -translate-y-1/2 place-items-center rounded-md text-[#8AA0B6] hover:bg-[#ECF8F7] hover:text-[#087A6A]"><X size={14} /></button>}
           </div>
         </div>
         <div className="max-h-64 overflow-y-auto p-1">
-          {filteredOptions.map((option) => <button type="button" role="option" aria-selected={option.value === value} key={option.value} onClick={() => { onChange(option.value); setOpen(false); }} className="flex w-full items-center justify-between gap-3 rounded-lg px-3 py-2.5 text-left text-xs font-semibold text-[#193B57] transition hover:bg-[#ECF8F7] aria-selected:bg-[#E6F6F2]">
+          {filteredOptions.map((option, index) => <button type="button" role="option" id={`searchable-option-${option.value}`} aria-selected={option.value === value} key={option.value} onMouseEnter={() => setHighlightedIndex(index)} onClick={() => selectHighlighted(index)} className={`flex w-full items-center justify-between gap-3 rounded-lg px-3 py-2.5 text-left text-xs font-semibold text-[#193B57] transition ${index === highlightedIndex ? "bg-[#ECF8F7]" : "hover:bg-[#ECF8F7]"} aria-selected:bg-[#E6F6F2]`}>
             <span className="min-w-0 truncate"><HighlightedLabel text={option.label} query={query} /></span>
             {option.value === value && <Check size={15} className="shrink-0 text-[#0F8C8C]" />}
           </button>)}

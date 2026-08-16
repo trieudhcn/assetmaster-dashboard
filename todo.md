@@ -748,3 +748,11 @@
 - [x] Áp dụng SearchableSelect cho toàn bộ dropdown đã xác định trong Bảo trì, Import, Bàn giao và các luồng Kiểm kê liên quan.
 - [x] Highlight từ khóa tìm kiếm trong danh sách kết quả của dropdown, kể cả truy vấn tiếng Việt không dấu.
 - [x] Bổ sung kiểm thử, xác minh responsive, TypeScript, Vitest và production build.
+
+## Current Session — Vendor/Brand Pagination & Dropdown Accessibility
+
+- [x] Thêm ô tìm kiếm riêng cho danh sách Nhà cung cấp và Hãng.
+- [x] Phân trang Nhà cung cấp và Hãng, mỗi trang 5 dòng.
+- [x] Tự động focus và cuộn đến khung hồ sơ khi mở hồ sơ Nhà cung cấp.
+- [x] Bổ sung nút X xóa nhanh, điều hướng mũi tên/Enter và thông báo không tìm thấy kết quả cho SearchableSelect.
+- [x] Bổ sung kiểm thử, xác minh responsive, TypeScript, Vitest và production build.
