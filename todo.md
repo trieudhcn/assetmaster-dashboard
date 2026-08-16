@@ -891,3 +891,17 @@
 - [x] Sửa SearchableSelect luôn mở menu xuống dưới, tự neo trái/phải theo vị trí bộ lọc.
 - [x] Sắp xếp lại cụm bộ lọc Danh mục tài sản gọn và cân đối như phiên bản trước.
 - [x] Bổ sung hồi quy, kiểm thử responsive, TypeScript, Vitest, production build và phát hành.
+
+## Current Session — Dropdown Consistency & History Pagination
+
+- [ ] Rà soát và đồng bộ các dropdown native/select và SearchableSelect theo cùng chuẩn giao diện.
+- [ ] Bổ sung phân trang hoặc tải thêm cho danh sách lịch sử thay đổi của phiếu bảo trì.
+- [ ] Bổ sung hồi quy, kiểm thử responsive, TypeScript, Vitest, production build và phát hành.
+
+## Dropdown Consistency & History Pagination
+
+- [x] Chuyển bộ lọc năm trong Quản lý bảo trì sang SearchableSelect, giữ tìm kiếm và định vị dropdown nhất quán.
+- [x] Thêm phân trang 10 bản ghi/trang cho drawer lịch sử thay đổi từng phiếu bảo trì.
+- [x] Kiểm thử TypeScript, Vitest, production build và rà soát responsive cho dropdown/drawer.
+- [x] Lưu checkpoint phát hành sau khi hoàn tất xác minh phiên hiện tại.
+
