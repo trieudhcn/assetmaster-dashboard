@@ -102,15 +102,15 @@ describe("modal presentation contract", () => {
   it("shows an interactive calendar affordance and live asset totals for categories", () => {
     const home = readProjectFile("client/src/pages/Home.tsx");
     const categories = readProjectFile("client/src/pages/AssetCategoryManagementPage.tsx");
-    const stylesheet = readProjectFile("client/src/index.css");
+    const datePicker = readProjectFile("client/src/components/DatePickerField.tsx");
 
     expect(home).toContain("data-purchase-date-picker");
-    expect(home).toContain("Mở lịch chọn ngày mua");
-    expect(home).toContain('input.showPicker');
+    expect(home).toContain('<DatePickerField value={dateInputValue(formData.date)}');
+    expect(datePicker).toContain('aria-label={`Mở lịch: ${label}`}');
+    expect(datePicker).toContain("Lịch AssetMaster");
     expect(categories).toContain("trpc.assets.list.useQuery");
     expect(categories).toContain("assetStatsByCategory");
     expect(categories).toContain("{stats.total} tài sản</button>");
-    expect(stylesheet).toContain(".asset-date-input::-webkit-calendar-picker-indicator");
   });
 
   it("exposes warranty date input and preserves purchase date after maintenance", () => {
@@ -208,17 +208,17 @@ describe("modal presentation contract", () => {
   });
 
 
-  it("opens the native purchase date picker from the branded calendar action", () => {
+  it("uses the AssetMaster calendar for purchase and operational dates", () => {
     const home = readProjectFile("client/src/pages/Home.tsx");
     const datePicker = readProjectFile("client/src/components/DatePickerField.tsx");
-    const stylesheet = readProjectFile("client/src/index.css");
-    expect(home).toContain('type="date" value={dateInputValue(formData.date)}');
+    expect(home).toContain('<DatePickerField value={dateInputValue(formData.date)}');
     expect(home).toContain('data-purchase-date-picker');
-    expect(home).toContain('CalendarDays size={16}');
+    expect(datePicker).toContain('<Popover open={open} onOpenChange={setOpen}>');
+    expect(datePicker).toContain('<Calendar');
+    expect(datePicker).toContain('locale={vi}');
+    expect(datePicker).toContain('Lịch AssetMaster');
+    expect(datePicker).toContain('toIsoDate(date)');
     expect(datePicker).toContain('text-[#087A6A]');
-    expect(datePicker).toContain('input.showPicker');
-    expect(stylesheet).toContain('input[type="date"]::-webkit-calendar-picker-indicator');
-    expect(stylesheet).toContain('display: none;');
   });
 
   it("requires detailed confirmation and supports supplier return evidence", () => {

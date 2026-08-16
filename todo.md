@@ -912,3 +912,9 @@
 - [x] Kiểm thử TypeScript, Vitest, production build và responsive desktop/mobile.
 - [x] Lưu checkpoint phát hành cho bản sửa lỗi.
 
+## Current Session — Asset Drawer & Branded Calendar
+
+- [x] Sửa phần mô tả bị che hoặc cắt trong drawer Chi tiết tài sản.
+- [x] Thay lịch chọn ngày của trình duyệt bằng lịch AssetMaster đồng bộ giao diện và thao tác bàn phím.
+- [x] Kiểm thử TypeScript, Vitest, production build và responsive desktop/mobile.
+- [x] Lưu checkpoint phát hành cho bản cập nhật giao diện.
