@@ -46,6 +46,20 @@ export function MobileTableControls() {
           applyColumn(columnIndex, hiddenColumns.has(columnIndex));
         });
 
+        const resetButton = document.createElement("button");
+        resetButton.type = "button";
+        resetButton.className = "mobile-column-reset";
+        resetButton.textContent = "Khôi phục mặc định";
+        resetButton.addEventListener("click", () => {
+          hiddenColumns.clear();
+          sessionStorage.removeItem(storageKey);
+          panel.querySelectorAll<HTMLInputElement>('input[type="checkbox"]').forEach((checkbox, offset) => {
+            checkbox.checked = true;
+            applyColumn(offset + 1, false);
+          });
+        });
+        panel.append(resetButton);
+
         controls.append(summary, panel);
         container.prepend(controls);
       });

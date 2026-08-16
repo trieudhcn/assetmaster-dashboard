@@ -851,3 +851,9 @@
 - [x] Áp dụng định vị thông minh theo chiều ngang và chiều dọc cho menu/popup dùng chung.
 - [x] Rà soát toàn bộ giao diện mobile, khắc phục overflow ngang ngoài ý muốn.
 - [x] Bổ sung hồi quy, kiểm thử mobile, chạy TypeScript, Vitest, production build và phát hành.
+
+## Current Session — Dropdown Animation & Column Reset
+
+- [x] Thêm animation mở/đóng mượt mà, ngắn và tôn trọng reduced-motion cho dropdown.
+- [x] Thêm nút Khôi phục mặc định trong menu Cột để hiện lại toàn bộ cột và xóa trạng thái đã lưu.
+- [x] Bổ sung hồi quy, chạy TypeScript, Vitest, production build và phát hành.
