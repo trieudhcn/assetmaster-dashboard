@@ -8,6 +8,7 @@ const mocks = vi.hoisted(() => ({
   updateAuditItem: vi.fn(),
   recordActivity: vi.fn(),
   getMaintenanceTicket: vi.fn(),
+  getNextMaintenanceTicketSequence: vi.fn(),
   getAssetById: vi.fn(),
   getAssetCategoryById: vi.fn(),
   updateAsset: vi.fn(),
@@ -43,6 +44,7 @@ vi.mock("./db", () => ({
   getBrandByName: vi.fn(),
   getHandoverById: vi.fn(),
   getMaintenanceTicket: mocks.getMaintenanceTicket,
+  getNextMaintenanceTicketSequence: mocks.getNextMaintenanceTicketSequence,
   listAssets: vi.fn(),
   listAuditItems: vi.fn(),
   listAuditSessions: mocks.listAuditSessions,
@@ -100,7 +102,8 @@ describe("operations management", () => {
     mocks.updateMaintenanceTicket.mockResolvedValue(undefined);
     mocks.updateAuditItem.mockResolvedValue(undefined);
     mocks.recordActivity.mockResolvedValue(undefined);
-    mocks.getMaintenanceTicket.mockResolvedValue({ id: 30, assetId: 8, ticketCode: "BT-2026-ABC12345", description: "Màn hình thiết bị bị nứt sau va chạm." });
+    mocks.getMaintenanceTicket.mockResolvedValue({ id: 30, assetId: 8, ticketCode: "BT-2026-002", ticketYear: 2026, ticketSequence: 2, status: "open", description: "Màn hình thiết bị bị nứt sau va chạm." });
+    mocks.getNextMaintenanceTicketSequence.mockResolvedValue(1);
     mocks.listMaintenanceTickets.mockResolvedValue([]);
     mocks.listMaintenanceTicketsByAsset.mockResolvedValue([]);
     mocks.listAuditSessions.mockResolvedValue([]);
@@ -130,7 +133,9 @@ describe("operations management", () => {
       priority: "high",
       status: "open",
       estimatedCost: "1250000.00",
-      ticketCode: expect.stringMatching(/^BT-\d{4}-[A-Z0-9]{8}$/),
+      ticketCode: expect.stringMatching(/^BT-\d{4}-\d{3}$/),
+      ticketYear: expect.any(Number),
+      ticketSequence: 1,
     }));
     expect(mocks.recordActivity).toHaveBeenCalledWith(expect.objectContaining({ entityType: "maintenance", entityId: 30, action: "reported" }));
     expect(mocks.updateAsset).toHaveBeenCalledWith(8, expect.objectContaining({ status: "maintenance", holderUserId: null, holderName: null, maintenanceReason: "Màn hình thiết bị bị nứt sau va chạm." }));
@@ -154,6 +159,13 @@ describe("operations management", () => {
     const caller = appRouter.createCaller(employeeContext);
     await expect(caller.maintenance.byAsset({ assetId: 8 })).resolves.toEqual([ticket]);
     expect(mocks.listMaintenanceTicketsByAsset).toHaveBeenCalledWith(8);
+  });
+
+  it("rejects every update for a ticket that is already closed", async () => {
+    mocks.getMaintenanceTicket.mockResolvedValue({ id: 30, assetId: 8, status: "closed", description: "Đã hoàn tất." });
+    const adminCaller = appRouter.createCaller(adminContext);
+    await expect(adminCaller.maintenance.update({ id: 30, status: "open", assigneeUserId: null, resolution: "", estimatedCost: "0", actualCost: "0" })).rejects.toMatchObject({ code: "CONFLICT" });
+    await expect(adminCaller.maintenance.uploadAttachment({ id: 30, fileName: "chung-tu.pdf", contentType: "application/pdf", dataUrl: "data:application/pdf;base64,UEZERg==" })).rejects.toMatchObject({ code: "CONFLICT" });
   });
 
   it("only allows administrators to assign a technician and record actual cost", async () => {

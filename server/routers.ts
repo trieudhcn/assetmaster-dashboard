@@ -42,6 +42,7 @@ import {
   getNextAssetCodeForPrefix,
   getUserNotificationPreferences,
   getMaintenanceTicket,
+  getNextMaintenanceTicketSequence,
   getVendorById,
   getVendorByName,
   getVendorDocumentById,
@@ -613,7 +614,10 @@ export const appRouter = router({
     create: protectedProcedure.input(z.object({ assetId: z.number().int().positive(), issueType: z.enum(["maintenance", "incident", "damage"]), priority: z.enum(["low", "medium", "high", "critical"]).default("medium"), description: z.string().trim().min(5).max(5000), estimatedCost: z.string().regex(/^\d+(\.\d{1,2})?$/).optional().nullable(), dueAt: dateFromMs, recurrenceDays: z.number().int().min(1).max(3650).optional().nullable() })).mutation(async ({ input, ctx }) => {
       const asset = await getAssetById(input.assetId);
       if (!asset || asset.isArchived) throw new TRPCError({ code: "NOT_FOUND", message: "Tài sản được chọn không tồn tại hoặc đã lưu trữ." });
-      const id = await createMaintenanceTicket({ ...input, ticketCode: `BT-${new Date().getFullYear()}-${crypto.randomUUID().slice(0, 8).toUpperCase()}`, reporterUserId: ctx.user!.id, reporterName: ctx.user!.name ?? "Người dùng", status: "open" });
+      const ticketYear = new Date().getFullYear();
+      const ticketSequence = await getNextMaintenanceTicketSequence(ticketYear);
+      const ticketCode = `BT-${ticketYear}-${String(ticketSequence).padStart(3, "0")}`;
+      const id = await createMaintenanceTicket({ ...input, ticketYear, ticketSequence, ticketCode, reporterUserId: ctx.user!.id, reporterName: ctx.user!.name ?? "Người dùng", status: "open" });
       await updateAsset(asset.id, { status: "maintenance", holderUserId: null, holderName: null, maintenanceReason: input.description.trim() });
       await recordActivity({ entityType: "maintenance", entityId: id, action: "reported", actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: "Tạo yêu cầu bảo trì / báo hỏng" });
       await recordActivity({ entityType: "asset", entityId: asset.id, action: "maintenance_reported", actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: `Đưa ${asset.assetCode} vào Bảo trì` });
@@ -622,6 +626,7 @@ export const appRouter = router({
     update: adminProcedure.input(z.object({ id: z.number().int().positive(), status: z.enum(["open", "in_progress", "resolved", "closed"]), assigneeUserId: z.number().int().positive().optional().nullable(), resolution: nullableText, estimatedCost: z.string().regex(/^\d+(\.\d{1,2})?$/).optional().nullable(), actualCost: z.string().regex(/^\d+(\.\d{1,2})?$/).optional().nullable(), dueAt: dateFromMs, recurrenceDays: z.number().int().min(1).max(3650).optional().nullable() })).mutation(async ({ input, ctx }) => {
       const ticket = await getMaintenanceTicket(input.id);
       if (!ticket) throw new TRPCError({ code: "NOT_FOUND", message: "Không tìm thấy yêu cầu bảo trì." });
+      if (ticket.status === "closed") throw new TRPCError({ code: "CONFLICT", message: "Phiếu đã đóng, không thể chỉnh sửa hoặc cập nhật thêm." });
       await updateMaintenanceTicket(input.id, { status: input.status, assigneeUserId: input.assigneeUserId, resolution: input.resolution, estimatedCost: input.estimatedCost, actualCost: input.actualCost, dueAt: input.dueAt, recurrenceDays: input.recurrenceDays, resolvedAt: input.status === "resolved" || input.status === "closed" ? new Date() : null });
       const asset = await getAssetById(ticket.assetId);
       if (asset) {
@@ -642,6 +647,7 @@ export const appRouter = router({
     })).mutation(async ({ input, ctx }) => {
       const ticket = await getMaintenanceTicket(input.id);
       if (!ticket) throw new TRPCError({ code: "NOT_FOUND", message: "Không tìm thấy yêu cầu bảo trì." });
+      if (ticket.status === "closed") throw new TRPCError({ code: "CONFLICT", message: "Phiếu đã đóng, không thể tải thêm chứng từ." });
       const extension = input.contentType === "application/pdf" ? "pdf" : input.contentType.split("/")[1].replace("jpeg", "jpg");
       const safeBaseName = input.fileName.replace(/[^a-zA-Z0-9._-]/g, "-").replace(/-+/g, "-").slice(0, 120) || "chung-tu";
       const { url } = await storagePut(`maintenance/${ticket.id}/${Date.now()}-${safeBaseName}.${extension}`, Buffer.from(input.dataUrl.split(",", 2)[1], "base64"), input.contentType);

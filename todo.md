@@ -876,3 +876,11 @@
 - [x] Thêm skeleton loading cho các bảng dữ liệu lớn trong modal.
 - [x] Bổ sung công tắc bật/tắt hiệu ứng chuyển động trong Cài đặt giao diện.
 - [x] Bổ sung hồi quy, chạy TypeScript, Vitest, production build, kiểm tra responsive và phát hành.
+
+## Current Session — Maintenance Pagination, Year Filter & Closed Lock
+
+- [x] Thêm phân trang cho danh sách quản lý bảo trì/báo hỏng.
+- [x] Thêm bộ lọc theo năm cho phiếu bảo trì.
+- [x] Khóa toàn bộ trường và thao tác cập nhật khi trạng thái là Đã đóng ở frontend và backend.
+- [x] Chuẩn hóa mã phiếu theo dạng BT-(năm)-001 và reset bộ đếm theo từng năm.
+- [x] Bổ sung migration/schema cần thiết, hồi quy, TypeScript, Vitest, production build và phát hành.

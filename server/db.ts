@@ -1,4 +1,4 @@
-import { desc, eq, inArray, like } from "drizzle-orm";
+import { desc, eq, inArray, like, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import {
   activityLogs,
@@ -579,6 +579,13 @@ export async function listMaintenanceTickets() {
   const db = await getDb();
   if (!db) return [];
   return db.select().from(maintenanceTickets).orderBy(desc(maintenanceTickets.openedAt));
+}
+
+export async function getNextMaintenanceTicketSequence(ticketYear: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database unavailable");
+  const result = await db.select({ maxSequence: sql<number>`COALESCE(MAX(${maintenanceTickets.ticketSequence}), 0)` }).from(maintenanceTickets).where(eq(maintenanceTickets.ticketYear, ticketYear));
+  return Number(result[0]?.maxSequence || 0) + 1;
 }
 
 export async function listMaintenanceTicketsByAsset(assetId: number) {

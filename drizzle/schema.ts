@@ -186,6 +186,8 @@ export const handovers = mysqlTable("handovers", {
 export const maintenanceTickets = mysqlTable("maintenanceTickets", {
   id: int("id").autoincrement().primaryKey(),
   ticketCode: varchar("ticketCode", { length: 64 }).notNull().unique(),
+  ticketYear: int("ticketYear"),
+  ticketSequence: int("ticketSequence"),
   assetId: int("assetId").notNull(),
   reporterUserId: int("reporterUserId"),
   reporterName: varchar("reporterName", { length: 160 }),
@@ -206,7 +208,7 @@ export const maintenanceTickets = mysqlTable("maintenanceTickets", {
   resolvedAt: timestamp("resolvedAt"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
-}, (table) => [index("maintenance_asset_idx").on(table.assetId), index("maintenance_status_idx").on(table.status)]);
+}, (table) => [index("maintenance_asset_idx").on(table.assetId), index("maintenance_status_idx").on(table.status), index("maintenance_year_sequence_idx").on(table.ticketYear, table.ticketSequence)]);
 
 export const auditSessions = mysqlTable("auditSessions", {
   id: int("id").autoincrement().primaryKey(),

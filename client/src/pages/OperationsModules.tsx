@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   AlertTriangle,
   BellRing,
@@ -83,6 +83,10 @@ export function MaintenancePage() {
   const [recurrenceDays, setRecurrenceDays] = useState("");
   const [ticketEdits, setTicketEdits] = useState<Record<number, TicketDraft>>({});
   const [isExportingCosts, setIsExportingCosts] = useState(false);
+  const currentYear = new Date().getFullYear();
+  const [maintenanceYear, setMaintenanceYear] = useState(String(currentYear));
+  const [maintenancePage, setMaintenancePage] = useState(1);
+  const maintenancePageSize = 5;
 
   const assetsQuery = trpc.assets.list.useQuery();
   const ticketsQuery = trpc.maintenance.list.useQuery();
@@ -127,9 +131,20 @@ export function MaintenancePage() {
 
   const assets = assetsQuery.data || [];
   const tickets = ticketsQuery.data || [];
+  const maintenanceYears = Array.from(new Set([currentYear, ...tickets.map((ticket) => ticket.ticketYear || new Date(ticket.openedAt).getFullYear())])).sort((left, right) => right - left);
+  const filteredTickets = tickets.filter((ticket) => maintenanceYear === "all" || (ticket.ticketYear || new Date(ticket.openedAt).getFullYear()) === Number(maintenanceYear));
+  const maintenanceTotalPages = Math.max(1, Math.ceil(filteredTickets.length / maintenancePageSize));
+  const pagedTickets = filteredTickets.slice((maintenancePage - 1) * maintenancePageSize, maintenancePage * maintenancePageSize);
   const employees = employeesQuery.data || [];
   const assetById = new Map(assets.map((asset) => [asset.id, asset]));
   const employeeById = new Map(employees.map((employee) => [employee.id, employee]));
+
+  useEffect(() => {
+    setMaintenancePage(1);
+  }, [maintenanceYear]);
+  useEffect(() => {
+    setMaintenancePage((page) => Math.min(page, maintenanceTotalPages));
+  }, [maintenanceTotalPages]);
 
   const draftFor = (ticket: (typeof tickets)[number]): TicketDraft => {
     return ticketEdits[ticket.id] || {
@@ -298,7 +313,7 @@ export function MaintenancePage() {
               <h2 className="text-sm font-extrabold text-[#193B57]">Quản lý yêu cầu</h2>
               <p className="mt-1 text-xs text-[#8AA0B6]">Phân công, tiến độ, chi phí dự kiến và chi phí thực tế được lưu tập trung.</p>
             </div>
-            <div className="flex items-center gap-2"><button type="button" onClick={exportMaintenanceCosts} disabled={ticketsQuery.isLoading || tickets.length === 0 || isExportingCosts} className="inline-flex items-center gap-2 rounded-lg border border-[#CDE5E5] bg-white px-3 py-2 text-xs font-bold text-[#087A6A] transition hover:bg-[#ECF8F7] disabled:cursor-not-allowed disabled:opacity-50"><Download size={14} className={isExportingCosts ? "animate-pulse" : ""} />{isExportingCosts ? "Đang xuất..." : "Xuất Excel chi phí"}</button><span className="text-xs font-bold text-[#60758A]">{tickets.length} yêu cầu</span></div>
+            <div className="flex flex-wrap items-center gap-2"><label className="flex items-center gap-2 text-xs font-bold text-[#60758A]"><span>Năm</span><select value={maintenanceYear} onChange={(event) => setMaintenanceYear(event.target.value)} className="h-9 rounded-lg border border-[#DDE7F0] bg-white px-3 text-xs font-semibold text-[#193B57] outline-none focus:border-[#0F8C8C]"><option value="all">Tất cả năm</option>{maintenanceYears.map((year) => <option key={year} value={year}>{year}</option>)}</select></label><button type="button" onClick={exportMaintenanceCosts} disabled={ticketsQuery.isLoading || tickets.length === 0 || isExportingCosts} className="inline-flex items-center gap-2 rounded-lg border border-[#CDE5E5] bg-white px-3 py-2 text-xs font-bold text-[#087A6A] transition hover:bg-[#ECF8F7] disabled:cursor-not-allowed disabled:opacity-50"><Download size={14} className={isExportingCosts ? "animate-pulse" : ""} />{isExportingCosts ? "Đang xuất..." : "Xuất Excel chi phí"}</button><span className="text-xs font-bold text-[#60758A]">{filteredTickets.length} yêu cầu</span></div>
           </div>
 
           {ticketsQuery.isError ? (
@@ -325,13 +340,15 @@ export function MaintenancePage() {
                 </thead>
                 <tbody>
                   {ticketsQuery.isLoading && <tr><td colSpan={9}><ModalTableSkeleton rows={5} columns={9} /></td></tr>}
-                  {!ticketsQuery.isLoading && tickets.map((ticket) => {
+                  {!ticketsQuery.isLoading && pagedTickets.map((ticket) => {
                     const draft = draftFor(ticket);
                     const asset = assetById.get(ticket.assetId);
                     const assignee = ticket.assigneeUserId ? employeeById.get(ticket.assigneeUserId) : undefined;
                     const priorityTone = ticket.priority === "critical" ? "bg-[#FDEDEE] text-[#B44545]" : ticket.priority === "high" ? "bg-[#FFF5DC] text-[#A86B00]" : ticket.priority === "medium" ? "bg-[#EAF3FF] text-[#2666A8]" : "bg-[#F0F5F8] text-[#60758A]";
+                    const isClosed = ticket.status === "closed";
+                    const canEditTicket = isAdmin && !isClosed;
                     return (
-                      <tr key={ticket.id} className="border-t border-[#EDF2F5] align-top">
+                      <tr key={ticket.id} className={`border-t border-[#EDF2F5] align-top ${isClosed ? "bg-[#FBFCFD]" : ""}`}>
                         <td className="px-5 py-4">
                           <div className="font-mono text-[11px] font-bold text-[#0F8C8C]">{ticket.ticketCode}</div>
                           <div className="mt-1 flex items-center gap-1.5 font-semibold text-[#193B57]"><Wrench size={13} className="text-[#A86B00]" />{asset?.name || `Tài sản #${ticket.assetId}`}</div>
@@ -340,27 +357,28 @@ export function MaintenancePage() {
                         <td className="max-w-[230px] px-4 py-4"><div className="font-semibold text-[#193B57]">{issueTypeLabels[ticket.issueType]}</div><p className="mt-1 leading-5 text-[#60758A]">{ticket.description}</p></td>
                         <td className="px-4 py-4"><span className={`inline-flex rounded-full px-2 py-1 text-[10px] font-extrabold ${priorityTone}`}>{priorityLabels[ticket.priority]}</span></td>
                         <td className="px-4 py-4">
-                          <SearchableSelect value={draft.assigneeUserId} onChange={(value) => updateDraft(ticket, { assigneeUserId: value })} disabled={!isAdmin || updateMutation.isPending || employeesQuery.isLoading} className="min-w-[155px]" placeholder="Chưa phân công" searchPlaceholder="Tìm người xử lý..." options={[{ value: "", label: "Chưa phân công" }, ...employees.map((employee) => ({ value: String(employee.id), label: `${employee.name || employee.email || `Nhân viên #${employee.id}`}${employee.isActive ? "" : " · Đã khóa"}`, searchText: employee.email || "" }))]} />
+                          <SearchableSelect value={draft.assigneeUserId} onChange={(value) => updateDraft(ticket, { assigneeUserId: value })} disabled={!canEditTicket || updateMutation.isPending || employeesQuery.isLoading} className="min-w-[155px]" placeholder="Chưa phân công" searchPlaceholder="Tìm người xử lý..." options={[{ value: "", label: "Chưa phân công" }, ...employees.map((employee) => ({ value: String(employee.id), label: `${employee.name || employee.email || `Nhân viên #${employee.id}`}${employee.isActive ? "" : " · Đã khóa"}`, searchText: employee.email || "" }))]} />
                           {assignee && <div className="mt-1 flex items-center gap-1 text-[10px] text-[#8AA0B6]"><UserRound size={11} />Đang giao: {assignee.name || assignee.email}</div>}
                         </td>
                         <td className="px-4 py-4">
-                          <SearchableSelect value={draft.status} onChange={(value) => updateDraft(ticket, { status: value as TicketDraft["status"] })} disabled={!isAdmin || updateMutation.isPending} className="min-w-[135px]" searchPlaceholder="Tìm trạng thái..." options={Object.entries(maintenanceStatusLabels).map(([value, label]) => ({ value, label }))} />
+                          <SearchableSelect value={draft.status} onChange={(value) => updateDraft(ticket, { status: value as TicketDraft["status"] })} disabled={!canEditTicket || updateMutation.isPending} className="min-w-[135px]" searchPlaceholder="Tìm trạng thái..." options={Object.entries(maintenanceStatusLabels).map(([value, label]) => ({ value, label }))} />
                         </td>
                         <td className="px-4 py-4">
-                          <div className="space-y-2"><label className="block text-[10px] font-bold text-[#8AA0B6]">Dự kiến<CurrencyInput disabled={!isAdmin || updateMutation.isPending} value={draft.estimatedCost} onChange={(value) => updateDraft(ticket, { estimatedCost: value })} placeholder="0" aria-label="Chi phí dự kiến" showWords className="mt-1 h-8 w-28 text-xs" /></label><label className="block text-[10px] font-bold text-[#8AA0B6]">Thực tế<CurrencyInput disabled={!isAdmin || updateMutation.isPending} value={draft.actualCost} onChange={(value) => updateDraft(ticket, { actualCost: value })} placeholder="0" aria-label="Chi phí thực tế" showWords className="mt-1 h-8 w-28 text-xs" /></label></div>
+                          <div className="space-y-2"><label className="block text-[10px] font-bold text-[#8AA0B6]">Dự kiến<CurrencyInput disabled={!canEditTicket || updateMutation.isPending} value={draft.estimatedCost} onChange={(value) => updateDraft(ticket, { estimatedCost: value })} placeholder="0" aria-label="Chi phí dự kiến" showWords className="mt-1 h-8 w-28 text-xs" /></label><label className="block text-[10px] font-bold text-[#8AA0B6]">Thực tế<CurrencyInput disabled={!canEditTicket || updateMutation.isPending} value={draft.actualCost} onChange={(value) => updateDraft(ticket, { actualCost: value })} placeholder="0" aria-label="Chi phí thực tế" showWords className="mt-1 h-8 w-28 text-xs" /></label></div>
                         </td>
                         <td className="px-4 py-4">
                           {ticket.attachmentUrl ? <a href={ticket.attachmentUrl} target="_blank" rel="noreferrer" className="block max-w-[160px] truncate text-xs font-bold text-[#087A6A] underline decoration-[#8BCDC6] underline-offset-2" title={ticket.attachmentName || "Mở chứng từ"}>{ticket.attachmentName || "Mở chứng từ"}</a> : <span className="text-[10px] text-[#8AA0B6]">Chưa có chứng từ</span>}
-                          {isAdmin && <label className="mt-2 inline-flex cursor-pointer items-center rounded-md border border-[#CDE5E5] px-2 py-1.5 text-[10px] font-bold text-[#087A6A] hover:bg-[#ECF8F7]"><input type="file" accept="application/pdf,image/png,image/jpeg,image/webp" className="sr-only" disabled={uploadAttachmentMutation.isPending} onChange={(event) => { uploadAttachment(ticket, event.target.files?.[0]); event.currentTarget.value = ""; }} />{uploadAttachmentMutation.isPending ? "Đang tải" : "Tải chứng từ"}</label>}
+                          {isAdmin && <label className={`mt-2 inline-flex items-center rounded-md border border-[#CDE5E5] px-2 py-1.5 text-[10px] font-bold ${canEditTicket ? "cursor-pointer text-[#087A6A] hover:bg-[#ECF8F7]" : "cursor-not-allowed text-[#8AA0B6] opacity-70"}`}><input type="file" accept="application/pdf,image/png,image/jpeg,image/webp" className="sr-only" disabled={!canEditTicket || uploadAttachmentMutation.isPending} onChange={(event) => { uploadAttachment(ticket, event.target.files?.[0]); event.currentTarget.value = ""; }} />{uploadAttachmentMutation.isPending ? "Đang tải" : isClosed ? "Phiếu đã đóng" : "Tải chứng từ"}</label>}
                         </td>
-                        <td className="px-4 py-4"><textarea disabled={!isAdmin || updateMutation.isPending} value={draft.resolution} onChange={(event) => updateDraft(ticket, { resolution: event.target.value })} placeholder="Nhập kết quả hoặc hướng xử lý..." className="min-h-[72px] w-[210px] resize-y rounded-md border border-[#DDE7F0] p-2 text-xs leading-5 text-[#193B57] outline-none focus:border-[#0F8C8C] disabled:cursor-not-allowed disabled:opacity-60" /></td>
-                        <td className="px-5 py-4 text-right"><button disabled={!isAdmin || updateMutation.isPending} onClick={() => saveTicket(ticket)} className="inline-flex items-center gap-1.5 rounded-md bg-[#0F8C8C] px-3 py-2 text-[10px] font-bold text-white hover:bg-[#087A6A] disabled:cursor-not-allowed disabled:opacity-60"><Save size={13} />{updateMutation.isPending ? "Đang lưu" : "Lưu"}</button></td>
+                        <td className="px-4 py-4"><textarea disabled={!canEditTicket || updateMutation.isPending} value={draft.resolution} onChange={(event) => updateDraft(ticket, { resolution: event.target.value })} placeholder="Nhập kết quả hoặc hướng xử lý..." className="min-h-[72px] w-[210px] resize-y rounded-md border border-[#DDE7F0] p-2 text-xs leading-5 text-[#193B57] outline-none focus:border-[#0F8C8C] disabled:cursor-not-allowed disabled:opacity-60" /></td>
+                        <td className="px-5 py-4 text-right"><button disabled={!canEditTicket || updateMutation.isPending} onClick={() => saveTicket(ticket)} className="inline-flex items-center gap-1.5 rounded-md bg-[#0F8C8C] px-3 py-2 text-[10px] font-bold text-white hover:bg-[#087A6A] disabled:cursor-not-allowed disabled:opacity-60"><Save size={13} />{updateMutation.isPending ? "Đang lưu" : isClosed ? "Đã đóng" : "Lưu"}</button></td>
                       </tr>
                     );
                   })}
                 </tbody>
               </table>
-              {!ticketsQuery.isLoading && tickets.length === 0 && <ModuleEmptyState module="maintenance" title="Chưa có yêu cầu bảo trì" description="Khi có sự cố hoặc lịch bảo trì mới, yêu cầu sẽ hiển thị tại đây để bạn theo dõi và xử lý." />}
+              {!ticketsQuery.isLoading && filteredTickets.length === 0 && <ModuleEmptyState module="maintenance" title="Chưa có yêu cầu bảo trì" description="Khi có sự cố hoặc lịch bảo trì mới, yêu cầu sẽ hiển thị tại đây để bạn theo dõi và xử lý." />}
+              {filteredTickets.length > 0 && <div className="flex flex-wrap items-center justify-between gap-3 border-t border-[#E7EEF3] px-5 py-4 text-xs text-[#8AA0B6]"><span>Trang <b className="text-[#60758A]">{maintenancePage}</b> / {maintenanceTotalPages}</span><div className="flex items-center gap-2"><button type="button" onClick={() => setMaintenancePage((page) => Math.max(1, page - 1))} disabled={maintenancePage === 1} className="rounded-md border border-[#DDE7F0] px-3 py-1.5 font-bold text-[#60758A] disabled:cursor-not-allowed disabled:opacity-40">‹</button><button type="button" onClick={() => setMaintenancePage((page) => Math.min(maintenanceTotalPages, page + 1))} disabled={maintenancePage === maintenanceTotalPages} className="rounded-md border border-[#DDE7F0] px-3 py-1.5 font-bold text-[#60758A] disabled:cursor-not-allowed disabled:opacity-40">›</button></div></div>}
             </div>
           )}
         </section>
