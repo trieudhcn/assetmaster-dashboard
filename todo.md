@@ -893,10 +893,9 @@
 - [x] Bổ sung hồi quy, kiểm thử responsive, TypeScript, Vitest, production build và phát hành.
 
 ## Current Session — Dropdown Consistency & History Pagination
-
-- [ ] Rà soát và đồng bộ các dropdown native/select và SearchableSelect theo cùng chuẩn giao diện.
-- [ ] Bổ sung phân trang hoặc tải thêm cho danh sách lịch sử thay đổi của phiếu bảo trì.
-- [ ] Bổ sung hồi quy, kiểm thử responsive, TypeScript, Vitest, production build và phát hành.
+- [x] Rà soát và đồng bộ các dropdown native/select và SearchableSelect theo cùng chuẩn giao diện.
+- [x] Bổ sung phân trang hoặc tải thêm cho danh sách lịch sử thay đổi của phiếu bảo trì.
+- [x] Bổ sung hồi quy, kiểm thử responsive, TypeScript, Vitest, production build và phát hành.
 
 ## Dropdown Consistency & History Pagination
 
