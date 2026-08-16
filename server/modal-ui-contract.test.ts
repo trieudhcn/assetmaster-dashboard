@@ -104,6 +104,18 @@ describe("modal presentation contract", () => {
     expect(stylesheet).toContain(".asset-date-input::-webkit-calendar-picker-indicator");
   });
 
+  it("shows readable date and status values in asset history", () => {
+    const history = readProjectFile("client/src/components/AssetImportRecovery.tsx");
+    const home = readProjectFile("client/src/pages/Home.tsx");
+
+    expect(history).toContain('fieldName === "status" || fieldName === "condition"');
+    expect(history).toContain('fieldName === "purchaseDate" || fieldName === "warrantyUntil"');
+    expect(history).toContain("Lịch sử thay đổi chi tiết");
+    expect(home).toContain("purchaseDate: normalizePurchaseDate(formData.date)");
+    expect(home).toContain("warrantyUntil: normalizePurchaseDate(formData.warrantyUntil)");
+    expect(home).toContain("dueBackAt: normalizePurchaseDate(form.dueBackAt)");
+  });
+
   it("normalizes invalid purchase dates before updating asset status", () => {
     const home = readProjectFile("client/src/pages/Home.tsx");
 

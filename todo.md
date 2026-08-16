@@ -684,3 +684,10 @@
 - [x] Chuẩn hóa purchaseDate để giá trị rỗng/không hợp lệ gửi null thay vì NaN khi cập nhật tài sản
 - [x] Bổ sung kiểm thử hồi quy cho cập nhật trạng thái tài sản không có ngày mua
 - [x] Xác minh TypeScript, Vitest, build và thao tác cập nhật trạng thái trên giao diện
+
+## Current Session — Asset Date & Status History
+
+- [x] Hiển thị lịch sử thay đổi ngày mua và trạng thái trong drawer chi tiết tài sản
+- [x] Chuẩn hóa hạn bảo hành và các trường ngày khi tạo/cập nhật tài sản
+- [x] Chuẩn hóa hạn hoàn trả trong luồng bàn giao để giá trị rỗng/không hợp lệ gửi null
+- [x] Bổ sung kiểm thử hồi quy, xác minh responsive và phát hành checkpoint
