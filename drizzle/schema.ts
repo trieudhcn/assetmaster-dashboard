@@ -120,6 +120,8 @@ export const assets = mysqlTable("assets", {
   serialNumber: varchar("serialNumber", { length: 160 }),
   location: varchar("location", { length: 255 }),
   warrantyUntil: timestamp("warrantyUntil"),
+  supplierReturnedAt: timestamp("supplierReturnedAt"),
+  supplierReturnReason: text("supplierReturnReason"),
   qrToken: varchar("qrToken", { length: 96 }).notNull().unique(),
   metadata: json("metadata"),
   note: text("note"),

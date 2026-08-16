@@ -706,3 +706,11 @@
 - [x] Hiển thị cảnh báo màu/icon cho tài sản sắp hết hạn hoặc hết hạn bảo hành
 - [x] Bổ sung bộ lọc tài sản đang bảo hành hoặc đã hết hạn
 - [x] Bổ sung kiểm thử hồi quy, xác minh responsive và phát hành checkpoint
+
+## Current Session — Supplier Return Details & Report
+
+- [x] Thêm cột Ngày trả nhà cung cấp vào schema và migration database
+- [x] Thêm cột Lý do trả nhà cung cấp vào schema và migration database
+- [x] Thêm trường ngày trả và lý do trả vào form chỉnh sửa/chi tiết tài sản
+- [x] Tạo báo cáo riêng cho tài sản trạng thái Trả nhà cung cấp
+- [x] Bổ sung kiểm thử hồi quy, xác minh responsive và phát hành checkpoint

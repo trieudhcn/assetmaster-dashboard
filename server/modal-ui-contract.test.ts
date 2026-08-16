@@ -112,7 +112,7 @@ describe("modal presentation contract", () => {
     expect(home).toContain('Hạn bảo hành');
     expect(home).toContain('type="date" value={dateInputValue(formData.warrantyUntil)}');
     expect(home).toContain('readOnly={preservePurchaseDate}');
-    expect(routers).toContain('const safeChanges = { ...persistedChanges, purchaseDate: current.purchaseDate }');
+    expect(routers).toContain('const safeChanges = { ...persistedChanges, ...supplierReturnChanges, purchaseDate: current.purchaseDate }');
     expect(routers).toContain('purchaseDate: current.purchaseDate');
   });
 
@@ -167,7 +167,7 @@ describe("modal presentation contract", () => {
     expect(home).toContain("Trả nhà cung cấp");
     expect(home).toContain('const preservePurchaseDate = mode === "edit" && Boolean(asset?.code)');
     expect(router).toContain('"returned_to_vendor"');
-    expect(router).toContain("const safeChanges = { ...persistedChanges, purchaseDate: current.purchaseDate }");
+    expect(router).toContain("const safeChanges = { ...persistedChanges, ...supplierReturnChanges, purchaseDate: current.purchaseDate }");
   });
 
   it("shows warranty expiry warnings and provides warranty filters in the asset catalog", () => {
@@ -180,3 +180,20 @@ describe("modal presentation contract", () => {
     expect(home).toContain('"Đã hết hạn"');
   });
 });
+
+
+  it("exposes supplier return date and reason in asset form and detail", () => {
+    const home = readProjectFile("client/src/pages/Home.tsx");
+    expect(home).toContain("Ngày trả nhà cung cấp");
+    expect(home).toContain("Lý do trả nhà cung cấp");
+    expect(home).toContain("supplierReturnedAt: normalizePurchaseDate");
+    expect(home).toContain("supplierReturnReason");
+  });
+
+  it("provides a dedicated supplier return report export", () => {
+    const reports = readProjectFile("client/src/pages/ReportsManagementView.tsx");
+    expect(reports).toContain('const supplierReturnedAssets = useMemo(() => selectedAssets.filter((asset) => asset.status === "returned_to_vendor")');
+    expect(reports).toContain("exportSupplierReturnExcel");
+    expect(reports).toContain("assetmaster-tai-san-tra-nha-cung-cap.xlsx");
+    expect(reports).toContain("Xuất báo cáo trả NCC");
+  });

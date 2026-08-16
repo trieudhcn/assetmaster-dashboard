@@ -44,6 +44,7 @@ export function ReportsManagementView() {
     return (departmentId === "all" || asset.departmentId === Number(departmentId)) && (divisionId === "all" || assetDivisionId === Number(divisionId));
   }), [assetsQuery.data, employeeById, departmentId, divisionId]);
   const selectedAssetIds = new Set(selectedAssets.map((item) => item.id));
+  const supplierReturnedAssets = useMemo(() => selectedAssets.filter((asset) => asset.status === "returned_to_vendor"), [selectedAssets]);
   const selectedHandoverCount = (handoversQuery.data || []).filter((item) => selectedAssetIds.has(item.assetId)).length;
   const selectedMaintenanceCount = (maintenanceQuery.data || []).filter((item) => selectedAssetIds.has(item.assetId)).length;
   const selectedValue = selectedAssets.reduce((sum, item) => sum + Number(item.purchaseValue || 0), 0);
@@ -77,6 +78,27 @@ export function ReportsManagementView() {
   const filteredActivities = useMemo(() => (activitiesQuery.data || []).filter((item) => (activityType === "all" || item.entityType === activityType) && matchesVietnameseSearch(`${item.summary || ""} ${item.actorName || ""} ${item.action}`, activityQuery)), [activitiesQuery.data, activityType, activityQuery]);
   const hasOrgError = departmentsQuery.isError || divisionsQuery.isError || employeesQuery.isError;
 
+  const exportSupplierReturnExcel = () => {
+    if (!supplierReturnedAssets.length) return;
+    const rows = supplierReturnedAssets.map((asset) => ({
+      "Mã tài sản": asset.assetCode,
+      "Tên tài sản": asset.name,
+      "Nhà cung cấp": asset.vendor || "Chưa cập nhật",
+      "Ngày mua": asset.purchaseDate ? new Date(asset.purchaseDate).toLocaleDateString("vi-VN") : "",
+      "Ngày trả nhà cung cấp": asset.supplierReturnedAt ? new Date(asset.supplierReturnedAt).toLocaleDateString("vi-VN") : "",
+      "Lý do trả nhà cung cấp": asset.supplierReturnReason || "",
+      "Giá trị (VNĐ)": Number(asset.purchaseValue || 0),
+      "Serial/IMEI": asset.serialNumber || "",
+      "Vị trí": asset.location || "",
+    }));
+    const workbook = XLSX.utils.book_new();
+    const sheet = XLSX.utils.json_to_sheet(rows);
+    sheet["!cols"] = [{ wch: 16 }, { wch: 34 }, { wch: 24 }, { wch: 16 }, { wch: 24 }, { wch: 42 }, { wch: 18 }, { wch: 20 }, { wch: 22 }];
+    XLSX.utils.book_append_sheet(workbook, sheet, "Trả nhà cung cấp");
+    XLSX.writeFile(workbook, "assetmaster-tai-san-tra-nha-cung-cap.xlsx");
+    toast.success(`Đã xuất ${supplierReturnedAssets.length} tài sản trả nhà cung cấp.`);
+  };
+
   const exportExcel = () => {
     if (!selectedAssets.length) return;
     const rows = selectedAssets.map((asset) => {
@@ -102,6 +124,7 @@ export function ReportsManagementView() {
       <DivisionValueChart data={divisionValueData} totalValue={selectedValue} isLoading={assetsQuery.isLoading || employeesQuery.isLoading || divisionsQuery.isLoading} scope={selectedDivision?.name || selectedDepartment?.name || "Tất cả cơ cấu"} />
       <BrandValueChart data={brandValueData} totalValue={selectedValue} isLoading={assetsQuery.isLoading || brandsQuery.isLoading} />
       <section className={`mt-5 ${card} p-5`}><div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between"><div><div className="flex items-center gap-2 text-sm font-extrabold text-[#193B57]"><Download size={16} className="text-[#087A6A]" />Xuất tài sản theo cơ cấu</div><p className="mt-1 text-xs text-[#71869A]">{selectedDepartment ? `Phòng Ban: ${selectedDepartment.name}` : "Tất cả Phòng Ban"}{selectedDivision ? ` · Bộ Phận: ${selectedDivision.name}` : ""}</p></div><button onClick={exportExcel} disabled={!isAdmin || !selectedAssets.length} className="inline-flex items-center justify-center gap-2 rounded-lg bg-[#0F8C8C] px-4 py-2.5 text-xs font-bold text-white hover:bg-[#087A6A] disabled:cursor-not-allowed disabled:opacity-60"><Download size={15} />Xuất Excel ({selectedAssets.length})</button></div></section>
+      <section className={`mt-5 ${card} border-[#F3C4C4] p-5`}><div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between"><div><div className="flex items-center gap-2 text-sm font-extrabold text-[#B44545]"><History size={16} />Tài sản đã trả nhà cung cấp</div><p className="mt-1 text-xs text-[#71869A]">Báo cáo riêng gồm ngày trả, lý do, giá trị và thông tin nhận diện của từng tài sản. Hiện có <b className="text-[#B44545]">{supplierReturnedAssets.length}</b> tài sản trong phạm vi lọc.</p></div><button onClick={exportSupplierReturnExcel} disabled={!isAdmin || !supplierReturnedAssets.length} className="inline-flex items-center justify-center gap-2 rounded-lg border border-[#E7A6A6] bg-[#FFF7F7] px-4 py-2.5 text-xs font-bold text-[#B44545] hover:bg-white disabled:cursor-not-allowed disabled:opacity-60"><Download size={15} />Xuất báo cáo trả NCC</button></div></section>
     </>}
     {isAdmin && <ActivityLog data={filteredActivities} loading={activitiesQuery.isLoading} query={activityQuery} type={activityType} onQueryChange={setActivityQuery} onTypeChange={setActivityType} allActivities={activitiesQuery.data || []} />}
   </div></div>;
