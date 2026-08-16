@@ -784,7 +784,7 @@
 
 ## Current Session — Scrollbars & Currency Input Polish
 
-- [ ] Tùy biến thanh cuộn (scrollbar) cho phù hợp với giao diện AssetMaster.
-- [ ] Hỗ trợ dán trực tiếp số tiền có chứa ký hiệu ₫ hoặc VNĐ vào ô nhập liệu mà không bị lỗi.
-- [ ] Thêm hậu tố VNĐ trực tiếp vào bên trong ô nhập giá trị nguyên giá.
-- [ ] Bổ sung kiểm thử nhập, dán, cuộn, responsive và production build.
+- [x] Tùy biến thanh cuộn (scrollbar) cho phù hợp với giao diện AssetMaster.
+- [x] Hỗ trợ dán trực tiếp số tiền có chứa ký hiệu ₫ hoặc VNĐ vào ô nhập liệu mà không bị lỗi.
+- [x] Thêm hậu tố VNĐ trực tiếp vào bên trong ô nhập giá trị nguyên giá.
+- [x] Bổ sung kiểm thử nhập, dán, cuộn, responsive và production build.

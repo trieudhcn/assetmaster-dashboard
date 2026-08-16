@@ -209,3 +209,48 @@ input[type="date"]::-webkit-calendar-picker-indicator,
 input[type="date"] {
   color-scheme: light;
 }
+
+/* Branded scrollbars: compact teal thumbs that match AssetMaster surfaces. */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #8BC9C5 #EEF5F6;
+}
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+*::-webkit-scrollbar-track {
+  background: #EEF5F6;
+  border-radius: 999px;
+}
+*::-webkit-scrollbar-thumb {
+  background: #8BC9C5;
+  border: 2px solid #EEF5F6;
+  border-radius: 999px;
+}
+*::-webkit-scrollbar-thumb:hover {
+  background: #0F8C8C;
+}
+*::-webkit-scrollbar-corner {
+  background: transparent;
+}
+.asset-currency-field {
+  position: relative;
+}
+.asset-currency-field > input {
+  padding-right: 4.5rem;
+}
+.asset-currency-suffix {
+  position: absolute;
+  top: 50%;
+  right: 0.8rem;
+  transform: translateY(-50%);
+  color: #087A6A;
+  font-size: 0.72rem;
+  font-weight: 800;
+  pointer-events: none;
+}
+@media (max-width: 639px) {
+  *::-webkit-scrollbar { width: 6px; height: 6px; }
+  .asset-currency-suffix { right: 0.65rem; }
+}

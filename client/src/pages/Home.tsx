@@ -11,7 +11,7 @@ import { trpc } from "@/lib/trpc";
 import { buildMaintenanceExportRows, canCreateCatalogOption, filterNamedCatalogOptions, getHandoverActionTooltip, getMaintenanceBadgeCount, getNewMaintenanceRequestBadge, getPaginationWindow, matchesVietnameseSearch, toggleMaintenanceStatusFilter } from "@/lib/catalogUi";
 import { getNotificationTargetLabel, type NotificationTarget } from "@/lib/notificationLinks";
 import { handoverPdfFontUrl, registerVietnamesePdfFont } from "@/lib/handoverPdf";
-import { formatVnd, formatVndInput } from "@/lib/formatters";
+import { formatVnd, formatVndInput, parseVndAmount } from "@/lib/formatters";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -1623,7 +1623,35 @@ function AssetModal({ mode, asset, formData, setFormData, onClose: dismiss, onSa
     if (isDetail) return;
     const valueLabel = Array.from(document.querySelectorAll("label")).find((label) => label.textContent?.trim().startsWith("Giá trị nguyên giá"));
     const valueInput = valueLabel?.parentElement?.querySelector("input") as HTMLInputElement | null;
-    if (valueInput) valueInput.value = formatVndInput(formData.value);
+    if (!valueInput) return;
+    valueInput.value = formatVndInput(formData.value);
+    valueInput.setAttribute("inputmode", "numeric");
+    valueInput.setAttribute("aria-describedby", "asset-value-currency");
+    const field = valueInput.parentElement;
+    if (!field) return;
+    field.classList.add("asset-currency-field");
+    let suffix = field.querySelector<HTMLElement>("[data-asset-value-currency]");
+    if (!suffix) {
+      suffix = document.createElement("span");
+      suffix.dataset.assetValueCurrency = "true";
+      suffix.id = "asset-value-currency";
+      suffix.textContent = "VNĐ";
+      suffix.className = "asset-currency-suffix";
+      field.appendChild(suffix);
+    }
+    const handlePaste = (event: ClipboardEvent) => {
+      const pasted = event.clipboardData?.getData("text") || "";
+      const parsed = parseVndAmount(pasted);
+      if (parsed === null) return;
+      event.preventDefault();
+      update("value", String(parsed));
+    };
+    valueInput.addEventListener("paste", handlePaste);
+    return () => {
+      valueInput.removeEventListener("paste", handlePaste);
+      suffix?.remove();
+      field.classList.remove("asset-currency-field");
+    };
   }, [isDetail, formData.value]);
   useEffect(() => {
     if (isDetail) return;

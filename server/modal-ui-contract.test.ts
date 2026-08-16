@@ -349,3 +349,17 @@ describe("modal presentation contract", () => {
     expect(reports).toContain('value: "billion"');
     expect(reports).toContain("currencyMode");
   });
+
+describe("currency input and scrollbar contract", () => {
+  it("accepts pasted VND symbols and keeps the in-field currency suffix", () => {
+    const home = readProjectFile("client/src/pages/Home.tsx");
+    const stylesheet = readProjectFile("client/src/index.css");
+    expect(parseVndAmount("160.000 ₫")).toBe(160000);
+    expect(parseVndAmount("160000 VNĐ")).toBe(160000);
+    expect(home).toContain('data-asset-value-currency');
+    expect(home).toContain('textContent = "VNĐ"');
+    expect(home).toContain('event.clipboardData?.getData("text")');
+    expect(stylesheet).toContain(".asset-currency-suffix");
+    expect(stylesheet).toContain("scrollbar-color: #8BC9C5 #EEF5F6");
+  });
+});
