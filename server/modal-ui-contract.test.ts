@@ -296,7 +296,11 @@ describe("modal presentation contract", () => {
   it("supports vendor and brand directory pagination and searchable-select keyboard affordances", () => {
     const vendorPage = readProjectFile("client/src/pages/VendorBrandManagementPage.tsx");
     const searchableSelect = readProjectFile("client/src/components/SearchableSelect.tsx");
-    expect(vendorPage).toContain("5 dòng/trang");
+    expect(vendorPage).toContain("min-h-[58px]");
+    expect(vendorPage).toContain("ChevronLeft");
+    expect(vendorPage).toContain("ChevronRight");
+    expect(vendorPage).toContain('aria-label="Trang trước"');
+    expect(vendorPage).toContain('aria-label="Trang sau"');
     expect(vendorPage).toContain("Tìm Nhà cung cấp...");
     expect(vendorPage).toContain("Tìm Hãng...");
     expect(vendorPage).toContain("scrollIntoView");
@@ -318,7 +322,11 @@ describe("modal presentation contract", () => {
     expect(home).toContain("formatVnd(asset.value)");
     expect(reports).toContain("formatCompactVnd");
     expect(vendorPage).toContain("min-h-[540px]");
-    expect(vendorPage).toContain("5 dòng/trang");
+    expect(vendorPage).toContain("min-h-[58px]");
+    expect(vendorPage).toContain("ChevronLeft");
+    expect(vendorPage).toContain("ChevronRight");
+    expect(vendorPage).toContain('aria-label="Trang trước"');
+    expect(vendorPage).toContain('aria-label="Trang sau"');
   });
 
 

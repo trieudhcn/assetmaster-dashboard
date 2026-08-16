@@ -769,3 +769,9 @@
 - [x] Thêm tổng giá trị tài sản theo từng Hãng trong Báo cáo.
 - [x] Thêm tùy chọn hiển thị tiền đầy đủ, triệu đồng hoặc tỷ đồng.
 - [x] Bổ sung kiểm thử, xác minh responsive, TypeScript, Vitest và production build.
+
+## Current Session — Fixed Vendor/Brand Pagination Bar
+
+- [x] Đồng bộ phân trang Nhà cung cấp và Hãng theo mẫu Danh sách Phân loại.
+- [x] Giữ thanh phân trang cố định ở đáy vùng danh sách, dùng icon ‹ › và hiển thị Trang x/y · tổng mục.
+- [x] Bổ sung kiểm thử chuyển trang, tìm kiếm, trạng thái đầu/cuối, responsive và production build.
