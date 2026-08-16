@@ -1123,3 +1123,11 @@
 - [x] Giữ hiệu ứng mở/đóng và khả năng click nền tối/Escape hoạt động ổn định.
 - [x] Bổ sung hồi quy, kiểm thử TypeScript, Vitest, production build và responsive.
 - [x] Lưu checkpoint phát hành cho phiên này.
+
+## Current Session — Confirm Dialog Mobile Centering & Blur
+
+- [x] Kiểm tra căn giữa hộp thoại xác nhận tại viewport mobile.
+- [x] Áp dụng cơ chế căn giữa viewport nhất quán cho tất cả AlertDialog xác nhận.
+- [x] Thêm backdrop blur phù hợp cho overlay hộp thoại xác nhận.
+- [x] Bổ sung hồi quy, kiểm thử TypeScript, Vitest, production build và responsive.
+- [x] Lưu checkpoint phát hành cho phiên này.

@@ -422,9 +422,10 @@ describe("currency input and scrollbar contract", () => {
     const searchableSelect = readProjectFile("client/src/components/SearchableSelect.tsx");
     const reports = readProjectFile("client/src/pages/ReportsManagementView.tsx");
     const alertDialog = readProjectFile("client/src/components/ui/alert-dialog.tsx");
-    expect(alertDialog).toContain("z-[100] bg-black/50");
+    expect(alertDialog).toContain("z-[100] bg-black/50 backdrop-blur-[3px]");
     expect(alertDialog).toContain("z-[101] grid");
     expect(alertDialog).toContain("fixed left-1/2 top-1/2 z-[101] grid h-fit");
+    expect(alertDialog).toContain("max-w-[calc(100%-2rem)]");
     expect(home).toContain("onPointerDownOutside={() => setSupplierReturnConfirmOpen(false)}");
     expect(home).toContain("onEscapeKeyDown={() => setSupplierReturnConfirmOpen(false)}");
     expect(home).toContain("isSaving={createAssetMutation.isPending || updateAssetMutation.isPending}");
