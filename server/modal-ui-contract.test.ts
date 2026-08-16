@@ -422,7 +422,14 @@ describe("currency input and scrollbar contract", () => {
     const searchableSelect = readProjectFile("client/src/components/SearchableSelect.tsx");
     const reports = readProjectFile("client/src/pages/ReportsManagementView.tsx");
     const alertDialog = readProjectFile("client/src/components/ui/alert-dialog.tsx");
+    const dialog = readProjectFile("client/src/components/ui/dialog.tsx");
+    const drawer = readProjectFile("client/src/components/ui/drawer.tsx");
+    const sheet = readProjectFile("client/src/components/ui/sheet.tsx");
     expect(alertDialog).toContain("z-[100] bg-black/50 backdrop-blur-[3px]");
+    expect(alertDialog).toContain('"min-h-11 w-full justify-center px-5 text-sm active:scale-[0.98] sm:w-auto"');
+    expect(dialog).toContain("z-50 bg-black/50 backdrop-blur-[3px]");
+    expect(drawer).toContain("z-50 bg-black/50 backdrop-blur-[3px]");
+    expect(sheet).toContain("z-50 bg-black/50 backdrop-blur-[3px]");
     expect(alertDialog).toContain("z-[101] grid");
     expect(alertDialog).toContain("fixed left-1/2 top-1/2 z-[101] grid h-fit");
     expect(alertDialog).toContain("max-w-[calc(100%-2rem)]");

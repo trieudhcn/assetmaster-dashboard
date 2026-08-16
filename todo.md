@@ -1131,3 +1131,11 @@
 - [x] Thêm backdrop blur phù hợp cho overlay hộp thoại xác nhận.
 - [x] Bổ sung hồi quy, kiểm thử TypeScript, Vitest, production build và responsive.
 - [x] Lưu checkpoint phát hành cho phiên này.
+
+## Current Session — Touch-friendly Confirm Actions & Unified Blur
+
+- [x] Tăng kích thước vùng chạm và khoảng cách nút trong hộp thoại xác nhận trên mobile.
+- [x] Áp dụng backdrop blur đồng nhất cho overlay của drawer và popup quan trọng.
+- [x] Giữ hiệu ứng mở/đóng, click ngoài vùng và Escape hoạt động ổn định.
+- [x] Bổ sung hồi quy, kiểm thử TypeScript, Vitest, production build và responsive.
+- [x] Lưu checkpoint phát hành cho phiên này.
