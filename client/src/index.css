@@ -97,6 +97,12 @@ button:not(:disabled), [role="button"]:not([aria-disabled="true"]), select:not(:
 .modal-loading-state { animation: modal-state-pulse 1.6s cubic-bezier(0.23, 1, 0.32, 1) infinite; }
 .modal-loading-state::after { content: ""; display: block; height: 0.18rem; margin-top: 0.65rem; border-radius: 999px; background: linear-gradient(90deg, transparent 0%, rgba(15,140,140,0.18) 35%, rgba(15,140,140,0.55) 50%, rgba(15,140,140,0.18) 65%, transparent 100%); background-size: 220% 100%; animation: modal-state-shimmer 1.4s ease-in-out infinite; }
 .modal-empty-state { animation: modal-empty-in 240ms cubic-bezier(0.23, 1, 0.32, 1) both; }
+.modal-skeleton-table { animation: modal-empty-in 220ms cubic-bezier(0.23, 1, 0.32, 1) both; }
+.modal-skeleton-line { display: block; height: 0.7rem; border-radius: 999px; background: linear-gradient(90deg, #EDF4F6 0%, #D8EEEB 45%, #EDF4F6 70%); background-size: 220% 100%; animation: modal-state-shimmer 1.35s ease-in-out infinite; }
+
+html[data-motion="off"] *,
+html[data-motion="off"] *::before,
+html[data-motion="off"] *::after { animation: none !important; transition: none !important; }
 
 @keyframes notification-dot-pulse {
   0%, 100% { opacity: 1; transform: scale(1); }

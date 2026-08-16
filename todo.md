@@ -869,3 +869,10 @@
 - [x] Rà soát các trạng thái loading và empty bên trong modal/drawer.
 - [x] Thêm animation dùng chung cho loading và empty state, có reduced-motion.
 - [x] Bổ sung hồi quy, chạy TypeScript, Vitest, production build và phát hành.
+
+## Current Session — Empty Illustrations, Modal Skeletons & Motion Preference
+
+- [x] Thiết kế và tích hợp empty illustration riêng cho Bảo trì, Bàn giao và Kiểm kê.
+- [x] Thêm skeleton loading cho các bảng dữ liệu lớn trong modal.
+- [x] Bổ sung công tắc bật/tắt hiệu ứng chuyển động trong Cài đặt giao diện.
+- [x] Bổ sung hồi quy, chạy TypeScript, Vitest, production build, kiểm tra responsive và phát hành.
