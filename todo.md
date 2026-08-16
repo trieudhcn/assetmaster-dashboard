@@ -741,3 +741,10 @@
 - [x] Rà soát toàn bộ dropdown dữ liệu; ưu tiên các bộ lọc tài sản, báo cáo, nhân sự, cơ cấu tổ chức và hồ sơ Nhà cung cấp.
 - [x] Chuẩn hóa các dropdown nghiệp vụ chính thành ô tìm kiếm trong menu xổ xuống, hỗ trợ tiếng Việt không dấu, trạng thái rỗng và xóa nhanh.
 - [x] Bổ sung kiểm thử hợp đồng, xác minh responsive, TypeScript, Vitest và production build.
+
+## Current Session — Remaining Dropdowns & Search Highlight
+
+- [x] Rà soát các dropdown còn lại trong form Bảo trì, Import và Bàn giao.
+- [x] Áp dụng SearchableSelect cho toàn bộ dropdown đã xác định trong Bảo trì, Import, Bàn giao và các luồng Kiểm kê liên quan.
+- [x] Highlight từ khóa tìm kiếm trong danh sách kết quả của dropdown, kể cả truy vấn tiếng Việt không dấu.
+- [x] Bổ sung kiểm thử, xác minh responsive, TypeScript, Vitest và production build.

@@ -4,6 +4,16 @@ import { matchesVietnameseSearch } from "@/lib/catalogUi";
 
 export type SearchableSelectOption = { value: string; label: string; searchText?: string };
 
+const normalizeForSearch = (value: string) => value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+
+function HighlightedLabel({ text, query }: { text: string; query: string }) {
+  const normalizedQuery = normalizeForSearch(query.trim());
+  if (!normalizedQuery) return <>{text}</>;
+  const start = normalizeForSearch(text).indexOf(normalizedQuery);
+  if (start < 0) return <>{text}</>;
+  return <>{text.slice(0, start)}<mark className="rounded bg-[#F8D978] px-0.5 text-[#6B4A00]">{text.slice(start, start + normalizedQuery.length)}</mark>{text.slice(start + normalizedQuery.length)}</>;
+}
+
 type SearchableSelectProps = {
   value: string;
   onChange: (value: string) => void;
@@ -50,7 +60,7 @@ export function SearchableSelect({ value, onChange, options, placeholder = "Chá»
         </div>
         <div className="max-h-64 overflow-y-auto p-1">
           {filteredOptions.map((option) => <button type="button" role="option" aria-selected={option.value === value} key={option.value} onClick={() => { onChange(option.value); setOpen(false); }} className="flex w-full items-center justify-between gap-3 rounded-lg px-3 py-2.5 text-left text-xs font-semibold text-[#193B57] transition hover:bg-[#ECF8F7] aria-selected:bg-[#E6F6F2]">
-            <span className="min-w-0 truncate">{option.label}</span>
+            <span className="min-w-0 truncate"><HighlightedLabel text={option.label} query={query} /></span>
             {option.value === value && <Check size={15} className="shrink-0 text-[#0F8C8C]" />}
           </button>)}
           {filteredOptions.length === 0 && <div className="px-3 py-6 text-center text-xs font-semibold text-[#8AA0B6]">{emptyText}</div>}

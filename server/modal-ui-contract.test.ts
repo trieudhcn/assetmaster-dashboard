@@ -277,3 +277,17 @@ describe("modal presentation contract", () => {
     expect(searchableSelect).toContain("Xóa tìm kiếm trong dropdown");
     expect(searchableSelect).toContain("Không tìm thấy kết quả");
   });
+
+
+  it("highlights searchable dropdown matches across maintenance, import, and handover flows", () => {
+    const searchableSelect = readProjectFile("client/src/components/SearchableSelect.tsx");
+    const operations = readProjectFile("client/src/pages/OperationsModules.tsx");
+    const importModal = readProjectFile("client/src/components/AssetImportModal.tsx");
+    const home = readProjectFile("client/src/pages/Home.tsx");
+    expect(searchableSelect).toContain("<mark className=\"rounded bg-[#F8D978]");
+    expect(searchableSelect).toContain("HighlightedLabel");
+    expect(operations).toContain("Tìm mã hoặc tên tài sản...");
+    expect(operations).toContain("Tìm người xử lý...");
+    expect(importModal).toContain("Tìm trạng thái...");
+    expect(home).toContain("Tìm tên hoặc email nhân viên...");
+  });
