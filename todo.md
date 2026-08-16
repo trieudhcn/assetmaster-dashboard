@@ -1147,3 +1147,10 @@
 - [x] Xác minh truy vấn dữ liệu lịch sử theo đúng tài sản đang xem.
 - [x] Bổ sung hồi quy, kiểm thử TypeScript, Vitest, production build và responsive.
 - [x] Lưu checkpoint phát hành cho phiên này.
+
+## Current Session — Asset History Count Badge
+
+- [x] Hiển thị tổng số thay đổi thực tế trên nút Lịch sử thay đổi trong chi tiết tài sản.
+- [x] Đồng bộ huy hiệu với trạng thái tải và cập nhật dữ liệu lịch sử theo tài sản đang xem.
+- [x] Bổ sung hồi quy, kiểm thử TypeScript, Vitest, production build và responsive.
+- [x] Lưu checkpoint phát hành cho phiên này.
