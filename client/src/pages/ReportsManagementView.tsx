@@ -43,14 +43,15 @@ export function ReportsManagementView() {
     const assetDivisionId = asset.holderUserId ? employeeById.get(asset.holderUserId)?.divisionId : null;
     return (departmentId === "all" || asset.departmentId === Number(departmentId)) && (divisionId === "all" || assetDivisionId === Number(divisionId));
   }), [assetsQuery.data, employeeById, departmentId, divisionId]);
-  const selectedAssetIds = new Set(selectedAssets.map((item) => item.id));
+  const inventoryAssets = useMemo(() => selectedAssets.filter((asset) => asset.status !== "returned_to_vendor"), [selectedAssets]);
+  const selectedAssetIds = new Set(inventoryAssets.map((item) => item.id));
   const supplierReturnedAssets = useMemo(() => selectedAssets.filter((asset) => asset.status === "returned_to_vendor"), [selectedAssets]);
   const selectedHandoverCount = (handoversQuery.data || []).filter((item) => selectedAssetIds.has(item.assetId)).length;
   const selectedMaintenanceCount = (maintenanceQuery.data || []).filter((item) => selectedAssetIds.has(item.assetId)).length;
-  const selectedValue = selectedAssets.reduce((sum, item) => sum + Number(item.purchaseValue || 0), 0);
+  const selectedValue = inventoryAssets.reduce((sum, item) => sum + Number(item.purchaseValue || 0), 0);
   const divisionValueData = useMemo<DivisionValue[]>(() => {
     const buckets = new Map<string, Omit<DivisionValue, "color">>();
-    selectedAssets.forEach((asset) => {
+    inventoryAssets.forEach((asset) => {
       const holder = asset.holderUserId ? employeeById.get(asset.holderUserId) : undefined;
       const division = holder?.divisionId ? divisionById.get(holder.divisionId) : undefined;
       const id = division ? String(division.id) : "unassigned";
@@ -61,10 +62,10 @@ export function ReportsManagementView() {
       buckets.set(id, current);
     });
     return [...buckets.values()].sort((left, right) => right.value - left.value).map((item, index) => ({ ...item, color: divisionColors[index % divisionColors.length] }));
-  }, [selectedAssets, employeeById, divisionById]);
+  }, [inventoryAssets, employeeById, divisionById]);
   const brandValueData = useMemo<BrandValue[]>(() => {
     const buckets = new Map<string, Omit<BrandValue, "color">>();
-    selectedAssets.forEach((asset) => {
+    inventoryAssets.forEach((asset) => {
       const brand = asset.brandId ? brandById.get(asset.brandId) : undefined;
       const id = brand ? String(brand.id) : "unassigned";
       const name = brand?.name || "Chưa gán Hãng";
@@ -74,7 +75,7 @@ export function ReportsManagementView() {
       buckets.set(id, current);
     });
     return [...buckets.values()].sort((left, right) => right.value - left.value).map((item, index) => ({ ...item, color: divisionColors[index % divisionColors.length] }));
-  }, [selectedAssets, brandById]);
+  }, [inventoryAssets, brandById]);
   const filteredActivities = useMemo(() => (activitiesQuery.data || []).filter((item) => (activityType === "all" || item.entityType === activityType) && matchesVietnameseSearch(`${item.summary || ""} ${item.actorName || ""} ${item.action}`, activityQuery)), [activitiesQuery.data, activityType, activityQuery]);
   const hasOrgError = departmentsQuery.isError || divisionsQuery.isError || employeesQuery.isError;
 
@@ -100,8 +101,8 @@ export function ReportsManagementView() {
   };
 
   const exportExcel = () => {
-    if (!selectedAssets.length) return;
-    const rows = selectedAssets.map((asset) => {
+    if (!inventoryAssets.length) return;
+    const rows = inventoryAssets.map((asset) => {
       const holder = asset.holderUserId ? employeeById.get(asset.holderUserId) : undefined;
       const division = holder?.divisionId ? divisionById.get(holder.divisionId) : undefined;
       const department = asset.departmentId ? departmentById.get(asset.departmentId) : undefined;
@@ -113,17 +114,17 @@ export function ReportsManagementView() {
     XLSX.utils.book_append_sheet(workbook, sheet, "Tài sản");
     const scope = selectedDivision?.name || selectedDepartment?.name || "tat-ca";
     XLSX.writeFile(workbook, `assetmaster-${scope.replace(/[^a-zA-Z0-9]/g, "-")}.xlsx`);
-    toast.success(`Đã xuất ${selectedAssets.length} tài sản theo phạm vi lọc.`);
+    toast.success(`Đã xuất ${inventoryAssets.length} tài sản theo phạm vi lọc.`);
   };
 
   return <div className="min-h-screen bg-[#F4F7FB] px-4 py-7 sm:px-6 lg:px-9 lg:py-8"><div className="mx-auto max-w-[1500px]">
     <div className="mb-7"><div className="mb-2 flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.16em] text-[#2666A8]"><span className="h-1.5 w-1.5 rounded-full bg-[#2666A8]" />Live management data</div><h1 className="font-display text-[30px] font-extrabold tracking-[-0.04em] text-[#102A43]">Báo cáo tài sản</h1><p className="mt-1 text-sm text-[#71869A]">Thống kê, trực quan hóa và xuất danh mục tài sản theo Phòng Ban hoặc Bộ Phận của người sử dụng.</p></div>
     {hasOrgError ? <section className="rounded-xl border border-[#F2D596] bg-[#FFF9EB] p-5"><div className="font-bold text-[#A86B00]">Không thể tải bộ lọc cơ cấu tổ chức</div><button onClick={() => { void employeesQuery.refetch(); void departmentsQuery.refetch(); void divisionsQuery.refetch(); }} className="mt-3 rounded-lg border border-[#F2D596] bg-white px-3 py-2 text-xs font-bold text-[#A86B00]">Thử lại</button></section> : <>
       <section className={`${card} p-5`}><div className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between"><div><div className="flex items-center gap-2 text-sm font-extrabold text-[#193B57]"><SlidersHorizontal size={16} className="text-[#2666A8]" />Phạm vi thống kê</div><p className="mt-1 text-xs text-[#71869A]">Bộ Phận được lọc theo nhân sự đang giữ tài sản và luôn thuộc Phòng Ban đã chọn.</p></div><div className="grid gap-2 sm:grid-cols-3"><select value={departmentId} onChange={(event) => { setDepartmentId(event.target.value); setDivisionId("all"); }} disabled={!isAdmin || departmentsQuery.isLoading} className="field-input min-w-[200px]"><option value="all">Tất cả Phòng Ban</option>{departments.filter((item) => item.isActive).map((department) => <option key={department.id} value={department.id}>{department.name}</option>)}</select><select value={divisionId} onChange={(event) => setDivisionId(event.target.value)} disabled={!isAdmin || divisionsQuery.isLoading} className="field-input min-w-[200px]"><option value="all">Tất cả Bộ Phận</option>{availableDivisions.map((division) => <option key={division.id} value={division.id}>{division.name}</option>)}</select><button onClick={() => { setDepartmentId("all"); setDivisionId("all"); }} className="rounded-lg border border-[#DDE7F0] bg-white px-4 text-xs font-bold text-[#60758A] hover:bg-[#F7FAFC]">Đặt lại</button></div></div></section>
-      <div className="mt-5 grid gap-4 sm:grid-cols-2 xl:grid-cols-4"><Metric label="Tài sản trong phạm vi" value={String(selectedAssets.length)} /><Metric label="Giá trị tài sản" value={currency(selectedValue)} /><Metric label="Phiếu bàn giao liên quan" value={String(selectedHandoverCount)} /><Metric label="Yêu cầu bảo trì liên quan" value={String(selectedMaintenanceCount)} /></div>
+      <div className="mt-5 grid gap-4 sm:grid-cols-2 xl:grid-cols-4"><Metric label="Tài sản trong phạm vi" value={String(inventoryAssets.length)} /><Metric label="Giá trị tài sản" value={currency(selectedValue)} /><Metric label="Phiếu bàn giao liên quan" value={String(selectedHandoverCount)} /><Metric label="Yêu cầu bảo trì liên quan" value={String(selectedMaintenanceCount)} /></div>
       <DivisionValueChart data={divisionValueData} totalValue={selectedValue} isLoading={assetsQuery.isLoading || employeesQuery.isLoading || divisionsQuery.isLoading} scope={selectedDivision?.name || selectedDepartment?.name || "Tất cả cơ cấu"} />
       <BrandValueChart data={brandValueData} totalValue={selectedValue} isLoading={assetsQuery.isLoading || brandsQuery.isLoading} />
-      <section className={`mt-5 ${card} p-5`}><div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between"><div><div className="flex items-center gap-2 text-sm font-extrabold text-[#193B57]"><Download size={16} className="text-[#087A6A]" />Xuất tài sản theo cơ cấu</div><p className="mt-1 text-xs text-[#71869A]">{selectedDepartment ? `Phòng Ban: ${selectedDepartment.name}` : "Tất cả Phòng Ban"}{selectedDivision ? ` · Bộ Phận: ${selectedDivision.name}` : ""}</p></div><button onClick={exportExcel} disabled={!isAdmin || !selectedAssets.length} className="inline-flex items-center justify-center gap-2 rounded-lg bg-[#0F8C8C] px-4 py-2.5 text-xs font-bold text-white hover:bg-[#087A6A] disabled:cursor-not-allowed disabled:opacity-60"><Download size={15} />Xuất Excel ({selectedAssets.length})</button></div></section>
+      <section className={`mt-5 ${card} p-5`}><div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between"><div><div className="flex items-center gap-2 text-sm font-extrabold text-[#193B57]"><Download size={16} className="text-[#087A6A]" />Xuất tài sản theo cơ cấu</div><p className="mt-1 text-xs text-[#71869A]">{selectedDepartment ? `Phòng Ban: ${selectedDepartment.name}` : "Tất cả Phòng Ban"}{selectedDivision ? ` · Bộ Phận: ${selectedDivision.name}` : ""}</p></div><button onClick={exportExcel} disabled={!isAdmin || !inventoryAssets.length} className="inline-flex items-center justify-center gap-2 rounded-lg bg-[#0F8C8C] px-4 py-2.5 text-xs font-bold text-white hover:bg-[#087A6A] disabled:cursor-not-allowed disabled:opacity-60"><Download size={15} />Xuất Excel ({inventoryAssets.length})</button></div></section>
       <section className={`mt-5 ${card} border-[#F3C4C4] p-5`}><div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between"><div><div className="flex items-center gap-2 text-sm font-extrabold text-[#B44545]"><History size={16} />Tài sản đã trả nhà cung cấp</div><p className="mt-1 text-xs text-[#71869A]">Báo cáo riêng gồm ngày trả, lý do, giá trị và thông tin nhận diện của từng tài sản. Hiện có <b className="text-[#B44545]">{supplierReturnedAssets.length}</b> tài sản trong phạm vi lọc.</p></div><button onClick={exportSupplierReturnExcel} disabled={!isAdmin || !supplierReturnedAssets.length} className="inline-flex items-center justify-center gap-2 rounded-lg border border-[#E7A6A6] bg-[#FFF7F7] px-4 py-2.5 text-xs font-bold text-[#B44545] hover:bg-white disabled:cursor-not-allowed disabled:opacity-60"><Download size={15} />Xuất báo cáo trả NCC</button></div></section>
     </>}
     {isAdmin && <ActivityLog data={filteredActivities} loading={activitiesQuery.isLoading} query={activityQuery} type={activityType} onQueryChange={setActivityQuery} onTypeChange={setActivityType} allActivities={activitiesQuery.data || []} />}

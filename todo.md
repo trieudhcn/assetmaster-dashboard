@@ -722,3 +722,10 @@
 - [x] Thêm upload hình ảnh hoặc biên bản xác nhận khi chuyển sang Trả nhà cung cấp
 - [x] Lưu metadata/tệp đính kèm trả NCC vào database và storage an toàn
 - [x] Bổ sung kiểm thử hồi quy, xác minh responsive và phát hành checkpoint
+
+## Current Session — Returned Vendor Assets & Evidence Preview
+
+- [x] Loại tài sản Trả nhà cung cấp khỏi tổng số tài sản tồn của công ty và các thống kê tồn liên quan, bao gồm Báo cáo tài sản
+- [x] Hiển thị lịch sử quyết định trả NCC và các tệp đã tải lên trong chi tiết tài sản
+- [x] Thêm xem trước hình ảnh/PDF trong dialog xác nhận trả NCC
+- [x] Bổ sung kiểm thử hồi quy, xác minh TypeScript, responsive và production build

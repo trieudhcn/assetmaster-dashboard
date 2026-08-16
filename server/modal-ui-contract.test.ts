@@ -220,3 +220,30 @@ describe("modal presentation contract", () => {
     expect(schema).toContain("supplierReturnAttachmentName");
     expect(schema).toContain("supplierReturnAttachmentContentType");
   });
+
+
+  it("excludes returned vendor assets from company inventory statistics", () => {
+    const home = readProjectFile("client/src/pages/Home.tsx");
+    const categories = readProjectFile("client/src/pages/AssetCategoryManagementPage.tsx");
+    expect(home).toContain('const inventoryAssetRows = useMemo(() => assetRows.filter((asset) => asset.statusType !== "returned")');
+    expect(home).toContain('detail: "Tài sản còn thuộc công ty"');
+    expect(categories).toContain('asset.status === "returned_to_vendor"');
+  });
+
+  it("shows supplier return decision history and evidence preview in asset detail", () => {
+    const home = readProjectFile("client/src/pages/Home.tsx");
+    expect(home).toContain("Lịch sử quyết định trả nhà cung cấp");
+    expect(home).toContain("assetFieldHistoryQuery.data");
+    expect(home).toContain("Tệp xác nhận đã tải lên");
+    expect(home).toContain("Xem trước tệp");
+    expect(home).toContain('title="Xem trước biên bản trả nhà cung cấp"');
+    expect(home).toContain('alt="Xem trước hình ảnh xác nhận trả nhà cung cấp"');
+  });
+
+  it("keeps supplier-return report separate from company inventory report", () => {
+    const reports = readProjectFile("client/src/pages/ReportsManagementView.tsx");
+    expect(reports).toContain('const inventoryAssets = useMemo(() => selectedAssets.filter((asset) => asset.status !== "returned_to_vendor")');
+    expect(reports).toContain('const supplierReturnedAssets = useMemo(() => selectedAssets.filter((asset) => asset.status === "returned_to_vendor")');
+    expect(reports).toContain('const selectedValue = inventoryAssets.reduce');
+    expect(reports).toContain('const rows = inventoryAssets.map');
+  });
