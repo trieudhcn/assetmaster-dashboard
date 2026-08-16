@@ -356,6 +356,17 @@ describe("employee administration", () => {
     expect(mocks.createHandover).toHaveBeenCalledWith(expect.objectContaining({ assetId: 50, recipientUserId: 7, recipientDepartmentId: 12, recipientName: "Nguyễn Văn A", recipientDepartmentName: "Hành chính - Nhân sự", status: "draft" }));
   });
 
+  it("retries a duplicate handover code and advances the yearly sequence", async () => {
+    mocks.getNextHandoverSequence.mockReset();
+    mocks.getNextHandoverSequence.mockResolvedValueOnce(1).mockResolvedValueOnce(2);
+    mocks.createHandover.mockReset();
+    mocks.createHandover.mockRejectedValueOnce(Object.assign(new Error("Duplicate entry"), { code: "ER_DUP_ENTRY" })).mockResolvedValueOnce(100);
+    const caller = appRouter.createCaller(adminContext);
+
+    await expect(caller.handovers.create({ assetId: 50, recipientUserId: 7, recipientName: "Nguyễn Văn A", recipientDepartmentId: 12, recipientDepartmentName: "Hành chính - Nhân sự", handedOverAt: Date.now(), dueBackAt: null, conditionOut: "Tốt", accessories: null, note: null })).resolves.toEqual({ id: 100 });
+    expect(mocks.createHandover).toHaveBeenNthCalledWith(2, expect.objectContaining({ referenceCode: expect.stringMatching(/^BG-\d{4}-002$/) }));
+  });
+
   it("requires a recipient signature before activating a handover", async () => {
     mocks.getHandoverById.mockResolvedValue({ id: 99, recipientSignatureUrl: null });
     const caller = appRouter.createCaller(adminContext);

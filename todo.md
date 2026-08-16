@@ -1040,3 +1040,13 @@
 - [x] Hiển thị trạng thái không có kết quả phù hợp khi lọc theo năm.
 - [x] Bổ sung hồi quy, kiểm thử TypeScript, Vitest, production build và responsive.
 - [x] Lưu checkpoint phát hành cho phiên này.
+
+## Current Session — Handover Pagination, Concurrency & Export
+
+- [x] Ổn định popup bộ lọc năm, loại bỏ hiện tượng chớp và thanh cuộn ngang tạm thời khi mở.
+- [x] Thêm phân trang danh sách phiếu bàn giao, 10 phiếu mỗi trang, điều hướng bằng mũi tên <>.
+- [x] Giữ bộ lọc năm/trạng thái và tìm kiếm đồng bộ với phân trang.
+- [x] Thêm cơ chế chống trùng mã BG khi nhiều người dùng tạo phiếu đồng thời.
+- [x] Thêm xuất Excel danh sách phiếu bàn giao theo năm đang chọn.
+- [x] Bổ sung hồi quy, kiểm thử TypeScript, Vitest, production build và responsive.
+- [x] Lưu checkpoint phát hành cho phiên này.

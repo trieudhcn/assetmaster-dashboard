@@ -588,9 +588,18 @@ export const appRouter = router({
       if (!asset || asset.isArchived) throw new TRPCError({ code: "NOT_FOUND", message: "Tài sản được chọn không tồn tại hoặc đã lưu trữ." });
       if (asset.status !== "available") throw new TRPCError({ code: "BAD_REQUEST", message: "Chỉ có thể lập phiếu cho tài sản đang sẵn có." });
       const handoverYear = input.handedOverAt.getFullYear();
-      const handoverSequence = await getNextHandoverSequence(handoverYear);
-      const referenceCode = `BG-${handoverYear}-${String(handoverSequence).padStart(3, "0")}`;
-      const id = await createHandover({ ...input, referenceCode, handoverByUserId: ctx.user!.id, handoverByName: ctx.user!.name ?? "Quản trị viên", status: "draft" });
+      let id: number | undefined;
+      for (let attempt = 0; attempt < 5 && id === undefined; attempt += 1) {
+        const handoverSequence = await getNextHandoverSequence(handoverYear);
+        const referenceCode = `BG-${handoverYear}-${String(handoverSequence).padStart(3, "0")}`;
+        try {
+          id = await createHandover({ ...input, referenceCode, handoverByUserId: ctx.user!.id, handoverByName: ctx.user!.name ?? "Quản trị viên", status: "draft" });
+        } catch (error) {
+          const duplicateCode = typeof error === "object" && error !== null && (("code" in error && error.code === "ER_DUP_ENTRY") || ("errno" in error && Number(error.errno) === 1062));
+          if (!duplicateCode || attempt === 4) throw error;
+        }
+      }
+      if (id === undefined) throw new TRPCError({ code: "CONFLICT", message: "Không thể tạo mã phiếu bàn giao duy nhất. Vui lòng thử lại." });
       await recordActivity({ entityType: "handover", entityId: id, action: "created", actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: `Tạo phiếu bàn giao cho ${input.recipientName}` });
       return { id };
     }),

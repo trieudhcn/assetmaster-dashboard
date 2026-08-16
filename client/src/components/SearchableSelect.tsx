@@ -34,17 +34,20 @@ export function SearchableSelect({ value, onChange, options, placeholder = "Chá»
   const [query, setQuery] = useState("");
   const [highlightedIndex, setHighlightedIndex] = useState(0);
   const [menuAlign, setMenuAlign] = useState<"left" | "right">("left");
+  const [menuReady, setMenuReady] = useState(false);
   const closeTimerRef = useRef<number | null>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const selected = options.find((option) => option.value === value);
   const filteredOptions = useMemo(() => options.filter((option) => matchesVietnameseSearch(`${option.label} ${option.searchText || ""}`, query)), [options, query]);
   const closeMenu = () => {
     setOpen(false);
+    setMenuReady(false);
     if (closeTimerRef.current) window.clearTimeout(closeTimerRef.current);
     closeTimerRef.current = window.setTimeout(() => setMenuMounted(false), 180);
   };
   const openMenu = () => {
     if (closeTimerRef.current) window.clearTimeout(closeTimerRef.current);
+    setMenuReady(false);
     setMenuMounted(true);
     requestAnimationFrame(() => setOpen(true));
   };
@@ -66,6 +69,7 @@ export function SearchableSelect({ value, onChange, options, placeholder = "Chá»
       if (!rect) return;
       const estimatedMenuWidth = Math.min(280, Math.max(240, rect.width));
       setMenuAlign(rect.right + estimatedMenuWidth > window.innerWidth - 12 ? "right" : "left");
+      setMenuReady(true);
     };
     requestAnimationFrame(() => { measureMenu(); searchInputRef.current?.focus(); });
     window.addEventListener("resize", measureMenu);
@@ -86,7 +90,7 @@ export function SearchableSelect({ value, onChange, options, placeholder = "Chá»
         <span className={`truncate ${selected ? "text-[#60758A]" : "text-[#8AA0B6]"}`}>{selected?.label || placeholder}</span>
         <ChevronDown size={16} className={`shrink-0 text-[#9BAEC0] transition-transform ${open ? "rotate-180" : ""}`} />
       </button>
-      {menuMounted && <div className={`absolute ${menuAlign === "right" ? "right-0 left-auto" : "left-0 right-auto"} top-[calc(100%+0.35rem)] origin-top z-[95] w-[min(280px,calc(100vw-1rem))] min-w-0 overflow-hidden rounded-xl border border-[#CDE5E5] bg-white shadow-[0_16px_36px_rgba(16,42,67,0.18)] transition-[opacity,transform] duration-180 ease-[cubic-bezier(0.23,1,0.32,1)] ${open ? "translate-y-0 scale-100 opacity-100" : "pointer-events-none -translate-y-1 scale-[0.98] opacity-0"}`} role="listbox">
+      {menuMounted && menuReady && <div className={`absolute ${menuAlign === "right" ? "right-0 left-auto" : "left-0 right-auto"} top-[calc(100%+0.35rem)] origin-top z-[95] w-[min(280px,calc(100vw-1rem))] min-w-0 overflow-hidden rounded-xl border border-[#CDE5E5] bg-white shadow-[0_16px_36px_rgba(16,42,67,0.18)] transition-[opacity,transform] duration-180 ease-[cubic-bezier(0.23,1,0.32,1)] ${open ? "translate-y-0 scale-100 opacity-100" : "pointer-events-none -translate-y-1 scale-[0.98] opacity-0"}`} role="listbox">
         <div className="border-b border-[#E7EEF3] p-2">
           <div className="relative">
             <Search size={15} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[#8AA0B6]" />
