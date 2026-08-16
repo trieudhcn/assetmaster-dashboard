@@ -422,6 +422,8 @@ describe("currency input and scrollbar contract", () => {
     expect(alertDialog).toContain("z-[101] grid");
     expect(home).toContain("overflow-visible rounded-xl border border-[#DFE9F0]");
     expect(home).toContain('className="w-full shrink-0 sm:w-[180px]"');
+    expect(home).toContain('className="flex flex-wrap items-center gap-2 border-b border-[#E7EEF3] bg-[#FBFCFD] px-5 py-4"');
+    expect(home).toContain('className="relative min-w-0 flex-[2_1_420px]"');
     expect(home).toContain("handoverYearFilter");
     expect(home).toContain("handoverYears");
     expect(home).toContain("referenceCode.match(/^BG-(\\\\d{4})-/)");
@@ -570,10 +572,10 @@ describe("maintenance history and filter layout contract", () => {
     expect(searchableSelect).toContain('menuAlign === "right" ? "right-0 left-auto"');
   });
 
-  it("uses a compact four-column asset filter grid with a wide search field", () => {
+  it("uses a compact wrapped asset filter row with a wide search field", () => {
     const home = readProjectFile("client/src/pages/Home.tsx");
-    expect(home).toContain('sm:grid-cols-2 xl:grid-cols-4');
-    expect(home).toContain('sm:col-span-2 xl:col-span-2');
+    expect(home).toContain('flex flex-wrap items-center gap-2 border-b border-[#E7EEF3] bg-[#FBFCFD] px-5 py-4');
+    expect(home).toContain('relative min-w-0 flex-[2_1_420px]');
   });
 });
 

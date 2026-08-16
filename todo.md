@@ -1076,3 +1076,11 @@
 - [x] Bảo đảm trạng thái loading, thành công và lỗi của luồng Trả NCC kết thúc đúng cách.
 - [x] Bổ sung hồi quy, kiểm thử TypeScript, Vitest, production build và responsive.
 - [x] Lưu checkpoint phát hành cho phiên này.
+
+## Current Session — Asset Catalog Filter Spacing
+
+- [x] Thu gọn khoảng cách giữa ô tìm kiếm và các bộ lọc Danh mục tài sản.
+- [x] Chuẩn hóa grid để các bộ lọc phân bố sát nhau, cân đối trên desktop.
+- [x] Bảo đảm bố cục không tràn ngang và vẫn dễ thao tác trên mobile.
+- [x] Bổ sung hồi quy, kiểm thử TypeScript, Vitest, production build và responsive.
+- [x] Lưu checkpoint phát hành cho phiên này.
