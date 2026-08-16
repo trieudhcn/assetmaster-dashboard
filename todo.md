@@ -837,3 +837,9 @@
 - [x] Cố định cột đầu tiên của các bảng dữ liệu khi cuộn ngang trên mobile.
 - [x] Thêm loading và toast cho nút xuất file lỗi trong modal Import Excel.
 - [x] Bổ sung hồi quy, chạy TypeScript, Vitest, production build và xác minh mobile.
+
+## Current Session — Handover Dropdown Overflow Fix
+
+- [x] Cho dropdown trạng thái tự neo sang trái khi trigger ở gần mép phải viewport.
+- [x] Giới hạn chiều rộng dropdown và ngăn thanh cuộn ngang ngoài ý muốn ở khung phiếu bàn giao.
+- [x] Bổ sung hồi quy, kiểm thử responsive, chạy TypeScript, Vitest, production build và phát hành.

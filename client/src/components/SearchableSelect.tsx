@@ -30,6 +30,7 @@ export function SearchableSelect({ value, onChange, options, placeholder = "Chá»
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [highlightedIndex, setHighlightedIndex] = useState(0);
+  const [menuAlign, setMenuAlign] = useState<"left" | "right">("left");
   const searchInputRef = useRef<HTMLInputElement>(null);
   const selected = options.find((option) => option.value === value);
   const filteredOptions = useMemo(() => options.filter((option) => matchesVietnameseSearch(`${option.label} ${option.searchText || ""}`, query)), [options, query]);
@@ -46,12 +47,19 @@ export function SearchableSelect({ value, onChange, options, placeholder = "Chá»
       setHighlightedIndex(0);
       return;
     }
-    requestAnimationFrame(() => searchInputRef.current?.focus());
+    const measureMenu = () => {
+      const rect = rootRef.current?.getBoundingClientRect();
+      if (!rect) return;
+      const estimatedMenuWidth = Math.min(280, Math.max(240, rect.width));
+      setMenuAlign(rect.right + estimatedMenuWidth > window.innerWidth - 12 ? "right" : "left");
+    };
+    requestAnimationFrame(() => { measureMenu(); searchInputRef.current?.focus(); });
+    window.addEventListener("resize", measureMenu);
     const closeOnOutside = (event: PointerEvent) => {
       if (!rootRef.current?.contains(event.target as Node)) setOpen(false);
     };
     document.addEventListener("pointerdown", closeOnOutside);
-    return () => document.removeEventListener("pointerdown", closeOnOutside);
+    return () => { document.removeEventListener("pointerdown", closeOnOutside); window.removeEventListener("resize", measureMenu); };
   }, [open]);
 
   useEffect(() => {
@@ -64,7 +72,7 @@ export function SearchableSelect({ value, onChange, options, placeholder = "Chá»
         <span className={`truncate ${selected ? "text-[#60758A]" : "text-[#8AA0B6]"}`}>{selected?.label || placeholder}</span>
         <ChevronDown size={16} className={`shrink-0 text-[#9BAEC0] transition-transform ${open ? "rotate-180" : ""}`} />
       </button>
-      {open && <div className="absolute left-0 right-auto top-[calc(100%+0.35rem)] z-[95] w-full min-w-[240px] max-w-[calc(100vw-2rem)] overflow-hidden rounded-xl border border-[#CDE5E5] bg-white shadow-[0_16px_36px_rgba(16,42,67,0.18)]" role="listbox">
+      {open && <div className={`absolute ${menuAlign === "right" ? "right-0 left-auto" : "left-0 right-auto"} top-[calc(100%+0.35rem)] z-[95] w-[min(280px,calc(100vw-1rem))] min-w-0 overflow-hidden rounded-xl border border-[#CDE5E5] bg-white shadow-[0_16px_36px_rgba(16,42,67,0.18)]`} role="listbox">
         <div className="border-b border-[#E7EEF3] p-2">
           <div className="relative">
             <Search size={15} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[#8AA0B6]" />
