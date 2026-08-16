@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Check, ChevronDown, Search, X } from "lucide-react";
+import { Check, ChevronDown, Plus, Search, X } from "lucide-react";
 import { matchesVietnameseSearch } from "@/lib/catalogUi";
 
 export type SearchableSelectOption = { value: string; label: string; searchText?: string };
@@ -23,9 +23,11 @@ type SearchableSelectProps = {
   disabled?: boolean;
   className?: string;
   emptyText?: string;
+  emptyActionLabel?: string;
+  onEmptyAction?: () => void;
 };
 
-export function SearchableSelect({ value, onChange, options, placeholder = "Chọn một giá trị", searchPlaceholder = "Tìm trong danh sách...", disabled = false, className = "", emptyText = "Không tìm thấy kết quả" }: SearchableSelectProps) {
+export function SearchableSelect({ value, onChange, options, placeholder = "Chọn một giá trị", searchPlaceholder = "Tìm trong danh sách...", disabled = false, className = "", emptyText = "Không tìm thấy kết quả", emptyActionLabel, onEmptyAction }: SearchableSelectProps) {
   const rootRef = useRef<HTMLDivElement>(null);
   const [open, setOpen] = useState(false);
   const [menuMounted, setMenuMounted] = useState(false);
@@ -97,7 +99,7 @@ export function SearchableSelect({ value, onChange, options, placeholder = "Ch�
             <span className="min-w-0 truncate"><HighlightedLabel text={option.label} query={query} /></span>
             {option.value === value && <Check size={15} className="shrink-0 text-[#0F8C8C]" />}
           </button>)}
-          {filteredOptions.length === 0 && <div className="px-3 py-6 text-center text-xs font-semibold text-[#8AA0B6]">{emptyText}</div>}
+          {filteredOptions.length === 0 && <div className="px-3 py-5 text-center text-xs font-semibold text-[#8AA0B6]"><div>{emptyText}</div>{onEmptyAction && <button type="button" onClick={onEmptyAction} className="mt-3 inline-flex items-center gap-1.5 rounded-lg border border-dashed border-[#8BCDC6] bg-[#F4FBFA] px-3 py-2 text-[11px] font-extrabold text-[#087A6A] transition hover:bg-[#ECF8F7]"><Plus size={13} />{emptyActionLabel || "Tạo mới"}</button>}</div>}
         </div>
       </div>}
     </div>

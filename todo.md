@@ -986,3 +986,10 @@
 - [x] Giữ tìm kiếm, highlight, phím tắt, nút xóa nhanh và luồng tạo Phân loại mới.
 - [x] Kiểm thử TypeScript, Vitest, production build và responsive.
 - [x] Lưu checkpoint phát hành cho phiên này.
+
+## Current Session — Category Empty Action & Asset Form Layout
+
+- [x] Thêm nút tạo Phân loại mới ngay trong dropdown khi tìm kiếm không có kết quả.
+- [x] Đưa Phân loại nằm ngang Mã tài sản và sắp xếp lại đầu form để không có hàng trống thừa.
+- [x] Kiểm thử TypeScript, Vitest, production build và responsive.
+- [x] Lưu checkpoint phát hành cho phiên này.

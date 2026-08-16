@@ -94,8 +94,11 @@ describe("modal presentation contract", () => {
 
     expect(home).toContain("categoriesQuery");
     expect(home).toContain("assetCategories.list");
-    expect(home).toContain("<SearchableSelect value={formData.categoryId");
-    expect(home).toContain("Tìm tên hoặc tiền tố Phân loại...");
+    expect(home).toContain("<AssetCategoryPicker value={formData.categoryId");
+    const categoryPicker = readProjectFile("client/src/components/AssetCategoryPicker.tsx");
+    expect(categoryPicker).toContain("<SearchableSelect");
+    expect(categoryPicker).toContain("Tìm tên hoặc tiền tố Phân loại...");
+    expect(categoryPicker).toContain("Tạo Phân loại mới");
     expect(categories).toContain("matchesVietnameseSearch");
     expect(categories).toContain('aria-label="Tìm kiếm Phân loại"');
     expect(categories).toContain("filteredCategories.slice(pageStart, pageStart + PAGE_SIZE)");
