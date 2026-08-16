@@ -499,6 +499,22 @@ export const appRouter = router({
       await recordActivity({ entityType: "asset", entityId: id, action: "updated", actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: "Cập nhật thông tin tài sản" });
       return { success: true };
     }),
+    uploadSupplierReturnAttachment: adminProcedure.input(z.object({
+      id: z.number().int().positive(),
+      fileName: z.string().trim().min(1).max(255),
+      contentType: z.enum(["application/pdf", "image/png", "image/jpeg", "image/webp"]),
+      dataUrl: z.string().max(7_000_000).regex(/^data:(application\/pdf|image\/(png|jpeg|webp));base64,/),
+    })).mutation(async ({ input, ctx }) => {
+      const asset = await getAssetById(input.id);
+      if (!asset) throw new TRPCError({ code: "NOT_FOUND", message: "Không tìm thấy tài sản." });
+      if (asset.status !== "returned_to_vendor") throw new TRPCError({ code: "BAD_REQUEST", message: "Chỉ tài sản đang ở trạng thái Trả nhà cung cấp mới được đính kèm biên bản trả." });
+      const extension = input.contentType === "application/pdf" ? "pdf" : input.contentType.split("/")[1].replace("jpeg", "jpg");
+      const safeBaseName = input.fileName.replace(/[^a-zA-Z0-9._-]/g, "-").replace(/-+/g, "-").slice(0, 120) || "xac-nhan-tra-ncc";
+      const { url } = await storagePut(`assets/${asset.id}/supplier-return/${Date.now()}-${safeBaseName}.${extension}`, Buffer.from(input.dataUrl.split(",", 2)[1], "base64"), input.contentType);
+      await updateAsset(asset.id, { supplierReturnAttachmentUrl: url, supplierReturnAttachmentName: input.fileName, supplierReturnAttachmentContentType: input.contentType });
+      await recordActivity({ entityType: "asset", entityId: asset.id, action: "supplier_return_attachment_uploaded", actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: `Đính kèm xác nhận trả NCC: ${input.fileName}` });
+      return { url, name: input.fileName, contentType: input.contentType };
+    }),
     archive: adminProcedure.input(z.object({ id: z.number().int().positive() })).mutation(async ({ input, ctx }) => {
       await updateAsset(input.id, { isArchived: true });
       await recordActivity({ entityType: "asset", entityId: input.id, action: "archived", actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: "Lưu trữ tài sản" });

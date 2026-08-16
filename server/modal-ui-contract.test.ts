@@ -97,7 +97,7 @@ describe("modal presentation contract", () => {
 
     expect(home).toContain("data-purchase-date-picker");
     expect(home).toContain("Mở lịch chọn ngày mua");
-    expect(home).toContain("dateInput.showPicker");
+    expect(home).toContain('input.showPicker');
     expect(categories).toContain("trpc.assets.list.useQuery");
     expect(categories).toContain("assetStatsByCategory");
     expect(categories).toContain("{stats.total} tài sản</button>");
@@ -111,7 +111,7 @@ describe("modal presentation contract", () => {
     expect(home).toContain('const preservePurchaseDate = mode === "edit" && Boolean(asset?.code)');
     expect(home).toContain('Hạn bảo hành');
     expect(home).toContain('type="date" value={dateInputValue(formData.warrantyUntil)}');
-    expect(home).toContain('readOnly={preservePurchaseDate}');
+    expect(home).toContain('disabled={preservePurchaseDate}');
     expect(routers).toContain('const safeChanges = { ...persistedChanges, ...supplierReturnChanges, purchaseDate: current.purchaseDate }');
     expect(routers).toContain('purchaseDate: current.purchaseDate');
   });
@@ -196,4 +196,27 @@ describe("modal presentation contract", () => {
     expect(reports).toContain("exportSupplierReturnExcel");
     expect(reports).toContain("assetmaster-tai-san-tra-nha-cung-cap.xlsx");
     expect(reports).toContain("Xuất báo cáo trả NCC");
+  });
+
+
+  it("opens the native purchase date picker from the calendar action", () => {
+    const home = readProjectFile("client/src/pages/Home.tsx");
+    expect(home).toContain('type="date" value={dateInputValue(formData.date)}');
+    expect(home).toContain('data-purchase-date-picker');
+    expect(home).toContain('input.showPicker');
+  });
+
+  it("requires detailed confirmation and supports supplier return evidence", () => {
+    const home = readProjectFile("client/src/pages/Home.tsx");
+    const routers = readProjectFile("server/routers.ts");
+    const schema = readProjectFile("drizzle/schema.ts");
+    expect(home).toContain("supplierReturnConfirmOpen");
+    expect(home).toContain("Xác nhận trả nhà cung cấp");
+    expect(home).toContain('accept="application/pdf,image/png,image/jpeg,image/webp"');
+    expect(home).toContain("Tệp không được vượt quá 5 MB.");
+    expect(routers).toContain("uploadSupplierReturnAttachment");
+    expect(routers).toContain("storagePut(`assets/${asset.id}/supplier-return/");
+    expect(schema).toContain("supplierReturnAttachmentUrl");
+    expect(schema).toContain("supplierReturnAttachmentName");
+    expect(schema).toContain("supplierReturnAttachmentContentType");
   });

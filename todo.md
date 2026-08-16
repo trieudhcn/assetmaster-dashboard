@@ -714,3 +714,11 @@
 - [x] Thêm trường ngày trả và lý do trả vào form chỉnh sửa/chi tiết tài sản
 - [x] Tạo báo cáo riêng cho tài sản trạng thái Trả nhà cung cấp
 - [x] Bổ sung kiểm thử hồi quy, xác minh responsive và phát hành checkpoint
+
+## Current Session — Supplier Return Confirmation & Attachments
+
+- [x] Sửa icon calendar để mở được bộ chọn Ngày mua trong form thêm tài sản
+- [x] Thêm hộp thoại xác nhận chi tiết trước khi chuyển tài sản sang Trả nhà cung cấp
+- [x] Thêm upload hình ảnh hoặc biên bản xác nhận khi chuyển sang Trả nhà cung cấp
+- [x] Lưu metadata/tệp đính kèm trả NCC vào database và storage an toàn
+- [x] Bổ sung kiểm thử hồi quy, xác minh responsive và phát hành checkpoint
