@@ -993,3 +993,11 @@
 - [x] Đưa Phân loại nằm ngang Mã tài sản và sắp xếp lại đầu form để không có hàng trống thừa.
 - [x] Kiểm thử TypeScript, Vitest, production build và responsive.
 - [x] Lưu checkpoint phát hành cho phiên này.
+
+## Current Session — Purchase Date & Maintenance Reason Regression
+
+- [x] Nạp và hiển thị ngày mua đã lưu từ cơ sở dữ liệu khi mở form chỉnh sửa tài sản.
+- [x] Khôi phục ô nội dung bảo trì bắt buộc khi chọn trạng thái Bảo trì.
+- [x] Đảm bảo validation, reset trạng thái và lưu dữ liệu đúng logic cũ.
+- [x] Kiểm thử TypeScript, Vitest, production build và responsive.
+- [x] Lưu checkpoint phát hành cho phiên này.

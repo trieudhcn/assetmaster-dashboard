@@ -104,6 +104,15 @@ describe("modal presentation contract", () => {
     expect(categories).toContain("filteredCategories.slice(pageStart, pageStart + PAGE_SIZE)");
   });
 
+  it("keeps purchase date sourced from persisted assets and restores the maintenance reason field", () => {
+    const home = readProjectFile("client/src/pages/Home.tsx");
+    expect(home).toContain("purchaseDate: asset.purchaseDate ? dateInputValue(asset.purchaseDate)");
+    expect(home).toContain("date: dateInputValue(asset.purchaseDate || asset.date)");
+    expect(home).toContain("Nội dung cần bảo trì");
+    expect(home).toContain("aria-label=\"Nội dung cần bảo trì\"");
+    expect(home).toContain("formData.statusType === \"maintenance\"");
+  });
+
   it("shows an interactive calendar affordance and live asset totals for categories", () => {
     const home = readProjectFile("client/src/pages/Home.tsx");
     const categories = readProjectFile("client/src/pages/AssetCategoryManagementPage.tsx");
