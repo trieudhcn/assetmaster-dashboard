@@ -1084,3 +1084,10 @@
 - [x] Bảo đảm bố cục không tràn ngang và vẫn dễ thao tác trên mobile.
 - [x] Bổ sung hồi quy, kiểm thử TypeScript, Vitest, production build và responsive.
 - [x] Lưu checkpoint phát hành cho phiên này.
+
+## Current Session — Supplier Return Dialog Centering
+
+- [x] Căn giữa overlay và hộp thoại xác nhận Trả nhà cung cấp theo cả chiều ngang và dọc.
+- [x] Bảo đảm hộp thoại không bị lệch hoặc tràn trên màn hình nhỏ.
+- [x] Bổ sung hồi quy, kiểm thử TypeScript, Vitest, production build và responsive.
+- [x] Lưu checkpoint phát hành cho phiên này.
