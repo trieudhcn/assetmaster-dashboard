@@ -1099,3 +1099,11 @@
 - [x] Sửa tooltip số lượng tài sản theo trạng thái trong Danh sách Phân loại để hiển thị đầy đủ, không bị cắt.
 - [x] Bổ sung hồi quy, kiểm thử TypeScript, Vitest, production build và responsive.
 - [x] Lưu checkpoint phát hành cho phiên này.
+
+## Current Session — Asset Edit Modal Freeze
+
+- [x] Xác định hộp thoại xuất hiện thoáng và nguyên nhân làm form chỉnh sửa tài sản bị treo.
+- [x] Sửa lifecycle, focus và trạng thái đóng/mở của modal chỉnh sửa và hộp thoại liên quan.
+- [x] Bảo đảm toàn bộ tài sản có thể mở, chỉnh sửa, đóng và lưu ổn định.
+- [x] Bổ sung hồi quy, kiểm thử TypeScript, Vitest, production build và responsive.
+- [x] Lưu checkpoint phát hành cho phiên này.

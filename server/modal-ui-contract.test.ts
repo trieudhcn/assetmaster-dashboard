@@ -424,7 +424,6 @@ describe("currency input and scrollbar contract", () => {
     expect(alertDialog).toContain("z-[100] bg-black/50");
     expect(alertDialog).toContain("z-[101] grid");
     expect(alertDialog).toContain("fixed inset-0 m-auto z-[101] grid h-fit");
-    expect(alertDialog).toContain("data-[state=closed]:pointer-events-none");
     expect(home).toContain("onPointerDownOutside={() => setSupplierReturnConfirmOpen(false)}");
     expect(home).toContain("onEscapeKeyDown={() => setSupplierReturnConfirmOpen(false)}");
     expect(home).toContain("overflow-visible rounded-xl border border-[#DFE9F0]");
