@@ -113,6 +113,19 @@ describe("modal presentation contract", () => {
     expect(home).toContain("formData.statusType === \"maintenance\"");
   });
 
+  it("surfaces maintenance assets with a quick request action and prevents duplicate open tickets", () => {
+    const operations = readProjectFile("client/src/pages/OperationsModules.tsx");
+    const routers = readProjectFile("server/routers.ts");
+    expect(operations).toContain('const maintenanceAssets = assets.filter((asset) => asset.status === "maintenance")');
+    expect(operations).toContain("Tài sản đang cần bảo trì");
+    expect(operations).toContain("Tạo yêu cầu nhanh");
+    expect(operations).toContain('issueType: "maintenance"');
+    expect(operations).toContain("asset.maintenanceReason");
+    expect(routers).toContain("listMaintenanceTicketsByAsset(input.assetId)");
+    expect(routers).toContain('code: "CONFLICT"');
+    expect(routers).toContain("Tài sản này đã có yêu cầu bảo trì đang mở.");
+  });
+
   it("shows an interactive calendar affordance and live asset totals for categories", () => {
     const home = readProjectFile("client/src/pages/Home.tsx");
     const categories = readProjectFile("client/src/pages/AssetCategoryManagementPage.tsx");

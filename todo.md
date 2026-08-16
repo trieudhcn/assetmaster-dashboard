@@ -1001,3 +1001,11 @@
 - [x] Đảm bảo validation, reset trạng thái và lưu dữ liệu đúng logic cũ.
 - [x] Kiểm thử TypeScript, Vitest, production build và responsive.
 - [x] Lưu checkpoint phát hành cho phiên này.
+
+## Current Session — Maintenance Asset Sync
+
+- [x] Hiển thị các tài sản đang ở trạng thái Bảo trì trong danh mục Bảo trì/Báo hỏng.
+- [x] Thêm nút tạo yêu cầu bảo trì nhanh từ từng tài sản đang Bảo trì.
+- [x] Đồng bộ trạng thái, lý do bảo trì và chống tạo trùng yêu cầu đang mở.
+- [x] Bổ sung hồi quy, kiểm thử TypeScript, Vitest, production build và responsive.
+- [x] Lưu checkpoint phát hành cho phiên này.

@@ -39,9 +39,11 @@ import {
   getDivisionByCode,
   getCompany,
   getHandoverById,
+  getMaintenanceTicket,
   getNextAssetCodeForPrefix,
   getUserNotificationPreferences,
-  getMaintenanceTicket,
+  listMaintenanceTickets,
+  listMaintenanceTicketsByAsset,
   getNextMaintenanceTicketSequence,
   listActivityLogsByEntity,
   getVendorById,
@@ -67,8 +69,6 @@ import {
   listDivisions,
   listHandovers,
   listHandoversByRecipient,
-  listMaintenanceTickets,
-  listMaintenanceTicketsByAsset,
   listVendors,
   listVendorDocuments,
   listUsers,
@@ -620,6 +620,10 @@ export const appRouter = router({
     create: protectedProcedure.input(z.object({ assetId: z.number().int().positive(), issueType: z.enum(["maintenance", "incident", "damage"]), priority: z.enum(["low", "medium", "high", "critical"]).default("medium"), description: z.string().trim().min(5).max(5000), estimatedCost: z.string().regex(/^\d+(\.\d{1,2})?$/).optional().nullable(), dueAt: dateFromMs, recurrenceDays: z.number().int().min(1).max(3650).optional().nullable() })).mutation(async ({ input, ctx }) => {
       const asset = await getAssetById(input.assetId);
       if (!asset || asset.isArchived) throw new TRPCError({ code: "NOT_FOUND", message: "Tài sản được chọn không tồn tại hoặc đã lưu trữ." });
+      const existingTickets = await listMaintenanceTicketsByAsset(input.assetId);
+      if (existingTickets.some((ticket) => ticket.status === "open" || ticket.status === "in_progress")) {
+        throw new TRPCError({ code: "CONFLICT", message: "Tài sản này đã có yêu cầu bảo trì đang mở." });
+      }
       const ticketYear = new Date().getFullYear();
       const ticketSequence = await getNextMaintenanceTicketSequence(ticketYear);
       const ticketCode = `BT-${ticketYear}-${String(ticketSequence).padStart(3, "0")}`;
