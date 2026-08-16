@@ -735,3 +735,9 @@
 - [x] Kiểm tra và hoàn thiện nút xuất Excel riêng cho báo cáo tài sản đã trả nhà cung cấp; báo cáo dùng file `assetmaster-tai-san-tra-nha-cung-cap.xlsx`.
 - [x] Chuẩn hóa toàn bộ icon lịch thành màu xanh, loại bỏ icon lịch hệ thống màu đen bị chồng lên.
 - [x] Bổ sung kiểm thử hồi quy, xác minh responsive, TypeScript, Vitest và production build.
+
+## Current Session — Searchable Dropdowns Across the App
+
+- [x] Rà soát toàn bộ dropdown dữ liệu; ưu tiên các bộ lọc tài sản, báo cáo, nhân sự, cơ cấu tổ chức và hồ sơ Nhà cung cấp.
+- [x] Chuẩn hóa các dropdown nghiệp vụ chính thành ô tìm kiếm trong menu xổ xuống, hỗ trợ tiếng Việt không dấu, trạng thái rỗng và xóa nhanh.
+- [x] Bổ sung kiểm thử hợp đồng, xác minh responsive, TypeScript, Vitest và production build.

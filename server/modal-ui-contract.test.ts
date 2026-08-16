@@ -261,3 +261,19 @@ describe("modal presentation contract", () => {
     expect(reports).toContain('const selectedValue = inventoryAssets.reduce');
     expect(reports).toContain('const rows = inventoryAssets.map');
   });
+
+
+  it("uses searchable dropdowns for core asset and organization filters", () => {
+    const home = readProjectFile("client/src/pages/Home.tsx");
+    const reports = readProjectFile("client/src/pages/ReportsManagementView.tsx");
+    const employees = readProjectFile("client/src/pages/EmployeeManagementView.tsx");
+    const organization = readProjectFile("client/src/pages/OrganizationManagementPage.tsx");
+    const searchableSelect = readProjectFile("client/src/components/SearchableSelect.tsx");
+    expect(home).toContain("return <SearchableSelect");
+    expect(reports).toContain("<SearchableSelect value={departmentId}");
+    expect(employees).toContain("<SearchableSelect value={departmentFilter}");
+    expect(organization).toContain("<SearchableSelect value={divisionDraft.departmentId}");
+    expect(searchableSelect).toContain("matchesVietnameseSearch");
+    expect(searchableSelect).toContain("Xóa tìm kiếm trong dropdown");
+    expect(searchableSelect).toContain("Không tìm thấy kết quả");
+  });
