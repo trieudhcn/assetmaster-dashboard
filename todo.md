@@ -963,3 +963,10 @@
 - [x] Tạo và xác thực kỹ năng tái sử dụng theo hướng dẫn Skill Creator.
 - [x] Kiểm thử TypeScript, Vitest, production build và responsive.
 - [x] Lưu checkpoint phát hành cho ứng dụng và bàn giao kỹ năng.
+
+## Current Session — Vendor & Brand Dropdown Consistency
+
+- [x] Rà soát và xác định các dropdown Hãng/Nhà cung cấp đang lệch chuẩn.
+- [x] Đồng bộ chúng với SearchableSelect chung, gồm tìm kiếm, highlight, bàn phím, xóa nhanh và định vị responsive.
+- [x] Kiểm thử TypeScript, Vitest, production build và responsive.
+- [x] Lưu checkpoint phát hành cho phiên này.

@@ -554,4 +554,7 @@ it("keeps maintenance UI controls on the shared interaction contracts", () => {
   expect(datePicker).toContain("[--cell-size:1.55rem]");
   expect(brandEnhancements).toContain("image/png,image/jpeg,image/webp");
   expect(brandEnhancements).toContain("bg-[#F7FAFC]");
+  expect(home).toContain("w-[min(280px,calc(100vw-1rem))]");
+  expect(home).toContain("top-[calc(100%+0.35rem)]");
+  expect(home).toContain("max-h-64 overflow-y-auto p-1");
 });

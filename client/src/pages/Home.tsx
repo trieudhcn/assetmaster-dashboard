@@ -1040,7 +1040,7 @@ function PersistedHandoverCreateModal({ form, assets, employees, departments, up
     picker.className = "relative";
     const trigger = document.createElement("button");
     trigger.type = "button";
-    trigger.className = "field-input flex h-11 w-full items-center justify-between gap-3 text-left font-semibold text-[#193B57]";
+    trigger.className = "field-input flex w-full items-center justify-between gap-2 text-left";
     trigger.setAttribute("aria-haspopup", "listbox");
     trigger.setAttribute("aria-expanded", "false");
     const triggerText = document.createElement("span");
@@ -1056,7 +1056,7 @@ function PersistedHandoverCreateModal({ form, assets, employees, departments, up
     menu.setAttribute("role", "listbox");
     const search = document.createElement("input");
     search.type = "search";
-    search.className = "field-input h-9";
+    search.className = "h-9 w-full rounded-lg border border-[#DDE7F0] bg-[#FBFCFD] px-3 text-xs font-semibold text-[#193B57] outline-none focus:border-[#0F8C8C]";
     search.placeholder = "Tìm tên hoặc email nhân viên...";
     search.setAttribute("aria-label", "Tìm Nhân viên nhận");
     const options = document.createElement("div");
@@ -1563,7 +1563,7 @@ function AssetModal({ mode, asset, formData, setFormData, onClose: dismiss, onSa
       heading.append(labelNode);
       const trigger = document.createElement("button");
       trigger.type = "button";
-      trigger.className = "field-input flex h-11 w-full items-center justify-between gap-3 text-left font-semibold text-[#193B57]";
+      trigger.className = "field-input flex w-full items-center justify-between gap-2 text-left";
       trigger.setAttribute("aria-haspopup", "listbox");
       trigger.setAttribute("aria-expanded", "false");
       const triggerText = document.createElement("span");
@@ -1572,15 +1572,15 @@ function AssetModal({ mode, asset, formData, setFormData, onClose: dismiss, onSa
       triggerIcon.textContent = "⌄";
       trigger.append(triggerText, triggerIcon);
       const menu = document.createElement("div");
-      menu.className = "absolute z-50 hidden min-w-0 overflow-hidden rounded-xl border border-[#CDE5E5] bg-white p-2 shadow-[0_14px_34px_rgba(16,42,67,0.16)]";
+      menu.className = "absolute top-[calc(100%+0.35rem)] z-[95] hidden w-[min(280px,calc(100vw-1rem))] min-w-0 origin-top overflow-hidden rounded-xl border border-[#CDE5E5] bg-white shadow-[0_16px_36px_rgba(16,42,67,0.18)]";
       menu.setAttribute("role", "listbox");
       const search = document.createElement("input");
       search.type = "search";
-      search.className = "field-input h-9";
+      search.className = "h-9 w-full rounded-lg border border-[#DDE7F0] bg-[#FBFCFD] px-3 text-xs font-semibold text-[#193B57] outline-none focus:border-[#0F8C8C]";
       search.placeholder = kind === "vendor" ? "Tìm trong Nhà cung cấp..." : "Tìm trong Hãng...";
       search.setAttribute("aria-label", kind === "vendor" ? "Tìm Nhà cung cấp" : "Tìm Hãng");
       const optionList = document.createElement("div");
-      optionList.className = "mt-2 max-h-48 overflow-y-auto";
+      optionList.className = "max-h-64 overflow-y-auto p-1";
       const createFromSearch = document.createElement("button");
       createFromSearch.type = "button";
       createFromSearch.className = "mt-2 hidden w-full rounded-lg border border-dashed border-[#8BCDC6] bg-[#F4FBFA] px-3 py-2 text-left text-[11px] font-extrabold text-[#087A6A] transition hover:bg-[#ECF8F7]";
@@ -1600,7 +1600,7 @@ function AssetModal({ mode, asset, formData, setFormData, onClose: dismiss, onSa
           const option = document.createElement("button");
           option.type = "button";
           option.setAttribute("role", "option");
-          option.className = `flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-xs font-semibold transition hover:bg-[#ECF8F7] ${item.id === selectedId ? "bg-[#E6F6F2] text-[#087A6A]" : "text-[#193B57]"}`;
+          option.className = `flex w-full items-center justify-between gap-3 rounded-lg px-3 py-2.5 text-left text-xs font-semibold text-[#193B57] transition hover:bg-[#ECF8F7] ${item.id === selectedId ? "bg-[#E6F6F2] text-[#087A6A]" : ""}`;
           option.textContent = item.name;
           option.onclick = () => {
             setFormData((current) => kind === "vendor" ? { ...current, vendorId: item.id, supplier: item.name } : { ...current, brandId: item.id, brand: item.name });
@@ -1620,11 +1620,10 @@ function AssetModal({ mode, asset, formData, setFormData, onClose: dismiss, onSa
         const rect = trigger.getBoundingClientRect();
         const menuWidth = Math.min(280, Math.max(220, rect.width));
         const openLeft = rect.right + menuWidth > window.innerWidth - 12;
-        const openUp = rect.bottom + 280 > window.innerHeight - 12 && rect.top > 280;
         menu.style.width = `${menuWidth}px`;
         menu.style.maxWidth = "calc(100vw - 1rem)";
-        menu.classList.remove("left-0", "right-0", "top-[calc(100%+0.35rem)]", "bottom-[calc(100%+0.35rem)]");
-        menu.classList.add(openLeft ? "right-0" : "left-0", openUp ? "bottom-[calc(100%+0.35rem)]" : "top-[calc(100%+0.35rem)]");
+        menu.classList.remove("left-0", "right-0");
+        menu.classList.add(openLeft ? "right-0" : "left-0");
       };
       trigger.onclick = () => {
         const isOpen = !menu.classList.contains("hidden");
