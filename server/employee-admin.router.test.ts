@@ -23,6 +23,7 @@ const mocks = vi.hoisted(() => ({
   getDivisionById: vi.fn(),
   getDivisionByCode: vi.fn(),
   getHandoverById: vi.fn(),
+  getNextHandoverSequence: vi.fn(),
   getUserNotificationPreferences: vi.fn(),
   listDepartments: vi.fn(),
   listAllDepartments: vi.fn(),
@@ -76,6 +77,7 @@ vi.mock("./db", () => ({
   getDivisionByCode: mocks.getDivisionByCode,
   getDivisionById: mocks.getDivisionById,
   getHandoverById: mocks.getHandoverById,
+  getNextHandoverSequence: mocks.getNextHandoverSequence,
   getUserNotificationPreferences: mocks.getUserNotificationPreferences,
   getMaintenanceTicket: vi.fn(),
   listAssets: vi.fn(),
@@ -138,6 +140,7 @@ describe("employee administration", () => {
     mocks.saveUserNotificationPreferences.mockResolvedValue(undefined);
     mocks.listDepartments.mockResolvedValue([{ id: 12, code: "HCNS", name: "Hành chính - Nhân sự", isActive: true }]);
     mocks.getHandoverById.mockResolvedValue({ id: 99, recipientSignatureUrl: "https://storage.example/signature.png" });
+    mocks.getNextHandoverSequence.mockResolvedValue(1);
     mocks.listHandoverReturnDecisionHistory.mockResolvedValue([]);
     mocks.createHandover.mockResolvedValue(99);
     mocks.transitionHandoverStatus.mockResolvedValue({ id: 99, assetId: 50 });

@@ -423,6 +423,14 @@ describe("currency input and scrollbar contract", () => {
     expect(home).toContain("handoverYears");
     expect(home).toContain("referenceCode.match(/^BG-(\\\\d{4})-/)");
     expect(home).toContain("Tất cả các năm");
+    const operations = readProjectFile("client/src/pages/OperationsModules.tsx");
+    const routers = readProjectFile("server/routers.ts");
+    const db = readProjectFile("server/db.ts");
+    expect(operations).toContain("Mở phiếu vừa tạo");
+    expect(operations).toContain("recentlyCreatedTicketId");
+    expect(routers).toContain("getNextHandoverSequence");
+    expect(routers).toContain("BG-${handoverYear}-${String(handoverSequence).padStart(3, \"0\")}");
+    expect(db).toContain("export async function getNextHandoverSequence");
     expect(searchableSelect).toContain('w-[min(280px,calc(100vw-1rem))]');
     expect(searchableSelect).toContain('open ? "z-[96]" : "z-0"');
     expect(searchableSelect).toContain('menuAlign === "right" ? "right-0 left-auto" : "left-0 right-auto"');

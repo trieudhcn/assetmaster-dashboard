@@ -529,6 +529,17 @@ export async function listHandoversByRecipient(recipientUserId: number) {
   return db.select({ id: handovers.id, referenceCode: handovers.referenceCode, assetId: handovers.assetId, assetCode: assets.assetCode, assetName: assets.name, status: handovers.status, handedOverAt: handovers.handedOverAt, returnedAt: handovers.returnedAt, dueBackAt: handovers.dueBackAt, returnRequestStatus: handovers.returnRequestStatus, returnRequestedAt: handovers.returnRequestedAt, returnRequestNote: handovers.returnRequestNote, returnRequestResolvedAt: handovers.returnRequestResolvedAt, returnRequestResolution: handovers.returnRequestResolution, returnFollowUpNote: handovers.returnFollowUpNote, returnFollowUpAt: handovers.returnFollowUpAt, returnResultSeenAt: handovers.returnResultSeenAt, returnConditionPhotoUrl: handovers.returnConditionPhotoUrl, returnConditionPhotoName: handovers.returnConditionPhotoName, conditionOut: handovers.conditionOut, conditionIn: handovers.conditionIn }).from(handovers).innerJoin(assets, eq(handovers.assetId, assets.id)).where(eq(handovers.recipientUserId, recipientUserId)).orderBy(desc(handovers.handedOverAt));
 }
 
+export async function getNextHandoverSequence(handoverYear: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database unavailable");
+  const rows = await db.select({ referenceCode: handovers.referenceCode }).from(handovers).where(like(handovers.referenceCode, `BG-${handoverYear}-%`));
+  const maxSequence = rows.reduce((maximum, row) => {
+    const match = row.referenceCode.match(new RegExp(`^BG-${handoverYear}-(\\\\d+)$`));
+    return Math.max(maximum, match ? Number(match[1]) : 0);
+  }, 0);
+  return maxSequence + 1;
+}
+
 export async function createHandover(data: typeof handovers.$inferInsert) {
   const db = await getDb();
   if (!db) throw new Error("Database unavailable");

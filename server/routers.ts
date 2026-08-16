@@ -39,6 +39,7 @@ import {
   getDivisionByCode,
   getCompany,
   getHandoverById,
+  getNextHandoverSequence,
   getMaintenanceTicket,
   getNextAssetCodeForPrefix,
   getUserNotificationPreferences,
@@ -586,7 +587,10 @@ export const appRouter = router({
       const asset = await getAssetById(input.assetId);
       if (!asset || asset.isArchived) throw new TRPCError({ code: "NOT_FOUND", message: "Tài sản được chọn không tồn tại hoặc đã lưu trữ." });
       if (asset.status !== "available") throw new TRPCError({ code: "BAD_REQUEST", message: "Chỉ có thể lập phiếu cho tài sản đang sẵn có." });
-      const id = await createHandover({ ...input, referenceCode: `BG-${new Date().getFullYear()}-${crypto.randomUUID().slice(0, 8).toUpperCase()}`, handoverByUserId: ctx.user!.id, handoverByName: ctx.user!.name ?? "Quản trị viên", status: "draft" });
+      const handoverYear = input.handedOverAt.getFullYear();
+      const handoverSequence = await getNextHandoverSequence(handoverYear);
+      const referenceCode = `BG-${handoverYear}-${String(handoverSequence).padStart(3, "0")}`;
+      const id = await createHandover({ ...input, referenceCode, handoverByUserId: ctx.user!.id, handoverByName: ctx.user!.name ?? "Quản trị viên", status: "draft" });
       await recordActivity({ entityType: "handover", entityId: id, action: "created", actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: `Tạo phiếu bàn giao cho ${input.recipientName}` });
       return { id };
     }),
