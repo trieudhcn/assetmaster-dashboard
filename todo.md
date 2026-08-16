@@ -941,3 +941,10 @@
 - [x] Đưa mô tả và thông tin định danh tài sản về bố cục phía trên giống form chỉnh sửa.
 - [x] Kiểm thử TypeScript, Vitest, production build và responsive.
 - [x] Lưu checkpoint phát hành cho phiên này.
+
+## Current Session — Compact AssetMaster Calendar
+
+- [x] Thu nhỏ popover lịch, ô ngày và khoảng cách hiển thị trên mobile.
+- [x] Giữ nguyên bộ chọn nhanh tháng/năm và khả năng thao tác rõ ràng.
+- [x] Kiểm thử TypeScript, Vitest, production build và responsive.
+- [x] Lưu checkpoint phát hành cho phiên này.
