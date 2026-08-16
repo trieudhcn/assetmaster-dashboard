@@ -756,3 +756,9 @@
 - [x] Tự động focus và cuộn đến khung hồ sơ khi mở hồ sơ Nhà cung cấp.
 - [x] Bổ sung nút X xóa nhanh, điều hướng mũi tên/Enter và thông báo không tìm thấy kết quả cho SearchableSelect.
 - [x] Bổ sung kiểm thử, xác minh responsive, TypeScript, Vitest và production build.
+
+## Current Session — Vietnamese Currency Formatting & Balanced Vendor/Brand Layout
+
+- [x] Chuẩn hóa hiển thị số tiền sang VNĐ, bỏ phần thập phân .00 và dùng dấu chấm phân cách hàng nghìn/triệu/tỷ.
+- [x] Cân chiều cao hai khu vực Nhà cung cấp và Hãng, giữ phân trang 5 dòng/trang và bố cục ổn định khi dữ liệu ít.
+- [x] Bổ sung kiểm thử, xác minh responsive, TypeScript, Vitest và production build.

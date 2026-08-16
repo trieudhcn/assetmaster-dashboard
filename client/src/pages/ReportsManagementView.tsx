@@ -6,10 +6,11 @@ import { useAuth } from "@/_core/hooks/useAuth";
 import { trpc } from "@/lib/trpc";
 import { matchesVietnameseSearch } from "@/lib/catalogUi";
 import { SearchableSelect } from "@/components/SearchableSelect";
+import { formatVnd } from "@/lib/formatters";
 
 const card = "rounded-xl border border-[#DFE9F0] bg-white shadow-[0_8px_24px_rgba(16,42,67,0.045)]";
 const divisionColors = ["#0F8C8C", "#2666A8", "#E59B24", "#7666B3", "#CF5C4B", "#3F9C6D", "#5B7FA3"];
-const currency = (value: number) => `${new Intl.NumberFormat("vi-VN").format(value)} ₫`;
+const currency = (value: number) => `${formatVnd(value)} VNĐ`;
 type DivisionValue = { id: string; name: string; value: number; assetCount: number; color: string };
 type BrandValue = { id: string; name: string; value: number; assetCount: number; color: string };
 

@@ -306,3 +306,17 @@ describe("modal presentation contract", () => {
     expect(searchableSelect).toContain("Xóa tìm kiếm trong dropdown");
     expect(searchableSelect).toContain("Không tìm thấy kết quả");
   });
+
+
+  it("formats Vietnamese currency without decimal zeros and keeps vendor-brand panels balanced", () => {
+    const formatter = readProjectFile("client/src/lib/formatters.ts");
+    const vendorPage = readProjectFile("client/src/pages/VendorBrandManagementPage.tsx");
+    const home = readProjectFile("client/src/pages/Home.tsx");
+    const reports = readProjectFile("client/src/pages/ReportsManagementView.tsx");
+    expect(formatter).toContain("maximumFractionDigits: 0");
+    expect(formatter).toContain("Intl.NumberFormat(\"vi-VN\"");
+    expect(home).toContain("formatVnd(asset.value)");
+    expect(reports).toContain("formatVnd(value)");
+    expect(vendorPage).toContain("min-h-[540px]");
+    expect(vendorPage).toContain("5 dòng/trang");
+  });
