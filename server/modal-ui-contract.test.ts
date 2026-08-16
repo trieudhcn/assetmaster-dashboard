@@ -94,6 +94,8 @@ describe("modal presentation contract", () => {
 
     expect(home).toContain("categoriesQuery");
     expect(home).toContain("assetCategories.list");
+    expect(home).toContain("<SearchableSelect value={formData.categoryId");
+    expect(home).toContain("Tìm tên hoặc tiền tố Phân loại...");
     expect(categories).toContain("matchesVietnameseSearch");
     expect(categories).toContain('aria-label="Tìm kiếm Phân loại"');
     expect(categories).toContain("filteredCategories.slice(pageStart, pageStart + PAGE_SIZE)");

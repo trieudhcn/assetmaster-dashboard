@@ -979,3 +979,10 @@
 - [x] Giữ luồng tạo nhanh Hãng/Nhà cung cấp và cập nhật trạng thái tài sản.
 - [x] Kiểm thử TypeScript, Vitest, production build và responsive.
 - [x] Lưu checkpoint phát hành cho phiên này.
+
+## Current Session — Category Dropdown React Refactor
+
+- [x] Chuyển dropdown Phân loại trong form tài sản sang SearchableSelect React.
+- [x] Giữ tìm kiếm, highlight, phím tắt, nút xóa nhanh và luồng tạo Phân loại mới.
+- [x] Kiểm thử TypeScript, Vitest, production build và responsive.
+- [x] Lưu checkpoint phát hành cho phiên này.
