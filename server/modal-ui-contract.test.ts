@@ -383,6 +383,8 @@ describe("currency input and scrollbar contract", () => {
     expect(vendorBrand).toContain('aria-label="Tìm Hãng"');
     expect(vendorBrand).toContain("Danh sách Nhà cung cấp");
     expect(vendorBrand).toContain("Danh sách Hãng");
+    expect(vendorBrand).toContain("selectedVendor ? <VendorDocuments");
+    expect(vendorBrand).toContain("    </div>\n    {selectedVendor ?");
   });
 
   it("exports maintenance costs with numeric and Vietnamese words columns", () => {
@@ -391,5 +393,8 @@ describe("currency input and scrollbar contract", () => {
     expect(operations).toContain('"Chi phí dự kiến bằng chữ"');
     expect(operations).toContain('"Chi phí thực tế bằng chữ"');
     expect(operations).toContain("assetmaster-chi-phi-bao-tri-");
+    expect(operations).toContain("isExportingCosts");
+    expect(operations).toContain("toast.loading");
+    expect(operations).toContain("Đang xuất...");
   });
 });

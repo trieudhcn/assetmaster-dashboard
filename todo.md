@@ -807,3 +807,9 @@
 - [x] Đưa ô tìm kiếm Nhà cung cấp và Hãng lên cùng hàng với tiêu đề/danh sách tương ứng.
 - [x] Thêm xuất Excel chi phí bảo trì, gồm chi phí dự kiến, chi phí thực tế và số tiền bằng chữ.
 - [x] Bổ sung kiểm thử dữ liệu, responsive, TypeScript, Vitest và production build.
+
+## Current Session — Full-width Vendor Documents & Excel Export Feedback
+
+- [x] Mở rộng Hồ sơ tài liệu Nhà cung cấp full-width như các phiên bản trước.
+- [x] Thêm loading và toast trạng thái cho luồng xuất Excel chi phí bảo trì.
+- [x] Bổ sung kiểm thử giao diện, TypeScript, Vitest và production build.
