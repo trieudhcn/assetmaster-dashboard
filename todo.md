@@ -1115,3 +1115,11 @@
 - [x] Hiển thị loading rõ ràng, khóa nút phù hợp khi lưu thay đổi tài sản.
 - [x] Bổ sung hồi quy, kiểm thử TypeScript, Vitest, production build và responsive.
 - [x] Lưu checkpoint phát hành cho phiên này.
+
+## Current Session — Supplier Return Dialog Viewport Centering
+
+- [x] Xác định vì sao hộp thoại Trả nhà cung cấp đang căn theo vùng trái thay vì toàn bộ viewport.
+- [x] Cố định hộp thoại tại đúng tâm viewport theo chiều ngang và dọc, không bị ảnh hưởng bởi modal nền.
+- [x] Giữ hiệu ứng mở/đóng và khả năng click nền tối/Escape hoạt động ổn định.
+- [x] Bổ sung hồi quy, kiểm thử TypeScript, Vitest, production build và responsive.
+- [x] Lưu checkpoint phát hành cho phiên này.
