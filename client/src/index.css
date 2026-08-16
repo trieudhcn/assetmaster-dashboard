@@ -254,3 +254,32 @@ input[type="date"] {
   *::-webkit-scrollbar { width: 6px; height: 6px; }
   .asset-currency-suffix { right: 0.65rem; }
 }
+
+/* Mobile data tables: keep the first identifier column visible while the remaining columns scroll horizontally. */
+.mobile-table-scroll { position: relative; }
+@media (max-width: 639px) {
+  .mobile-table-scroll::before {
+    content: "Vuốt ngang để xem thêm";
+    display: block;
+    padding: 0.55rem 0.85rem;
+    border-bottom: 1px solid #E7EEF3;
+    background: #F7FAFC;
+    color: #71869A;
+    font-size: 0.65rem;
+    font-weight: 700;
+    letter-spacing: 0.01em;
+    text-align: right;
+  }
+  .mobile-table-scroll table th:first-child,
+  .mobile-table-scroll table td:first-child {
+    position: sticky;
+    left: 0;
+    z-index: 2;
+    background: #FFFFFF;
+    box-shadow: 2px 0 7px rgba(16, 42, 67, 0.08);
+  }
+  .mobile-table-scroll table thead th:first-child {
+    z-index: 4;
+    background: #FCFDFE;
+  }
+}

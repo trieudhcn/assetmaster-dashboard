@@ -380,6 +380,8 @@ describe("currency input and scrollbar contract", () => {
     expect(currencyInput).toContain('inputMode="numeric"');
     expect(currencyInput).toContain('pattern="[0-9]*"');
     expect(currencyInput).toContain('enterKeyHint="done"');
+    expect(currencyInput).toContain('<div className="relative w-full">');
+    expect(currencyInput).toContain('leading-none text-[#087A6A]');
   });
 
   it("keeps handover filters and exports responsive", () => {
@@ -393,6 +395,12 @@ describe("currency input and scrollbar contract", () => {
     expect(home).toContain("Đang tạo danh sách tài sản bảo trì...");
     expect(reports).toContain("Đang tạo báo cáo tài sản...");
     expect(reports).toContain("Đang tạo báo cáo tài sản trả nhà cung cấp...");
+    expect(readProjectFile("client/src/index.css")).toContain("Vuốt ngang để xem thêm");
+    expect(readProjectFile("client/src/index.css")).toContain("position: sticky");
+    const importModal = readProjectFile("client/src/components/AssetImportModal.tsx");
+    expect(importModal).toContain("isExportingErrors");
+    expect(importModal).toContain("Đang tạo tệp Excel các dòng lỗi...");
+    expect(importModal).toContain("Đang xuất...");
   });
 
   it("keeps vendor and brand searches inside directory headers", () => {

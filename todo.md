@@ -829,3 +829,11 @@
 - [x] Áp dụng loading/toast cho các luồng xuất Excel còn lại trong Báo cáo, Tài sản và Phân loại.
 - [x] Kiểm tra các bảng có cuộn ngang trên viewport mobile và sửa overflow/responsive nếu cần.
 - [x] Bổ sung hồi quy, chạy TypeScript, Vitest, production build và xác minh giao diện.
+
+## Current Session — Currency Alignment, Mobile Tables & Import Error Export
+
+- [x] Căn giữa dọc nút Xóa và hậu tố VNĐ trong CurrencyInput.
+- [x] Thêm chỉ báo “Vuốt ngang để xem thêm” cho bảng dữ liệu trên màn hình mobile.
+- [x] Cố định cột đầu tiên của các bảng dữ liệu khi cuộn ngang trên mobile.
+- [x] Thêm loading và toast cho nút xuất file lỗi trong modal Import Excel.
+- [x] Bổ sung hồi quy, chạy TypeScript, Vitest, production build và xác minh mobile.
