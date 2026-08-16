@@ -857,3 +857,9 @@
 - [x] Thêm animation mở/đóng mượt mà, ngắn và tôn trọng reduced-motion cho dropdown.
 - [x] Thêm nút Khôi phục mặc định trong menu Cột để hiện lại toàn bộ cột và xóa trạng thái đã lưu.
 - [x] Bổ sung hồi quy, chạy TypeScript, Vitest, production build và phát hành.
+
+## Current Session — Modal & Drawer Animation
+
+- [x] Đồng bộ animation mở/đóng cho toàn bộ modal và drawer tự dựng.
+- [x] Chuẩn hóa animation cho component Dialog, AlertDialog, Sheet và Drawer dùng chung.
+- [x] Bổ sung hỗ trợ reduced-motion, hồi quy, TypeScript, Vitest, production build và phát hành.

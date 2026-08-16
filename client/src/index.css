@@ -98,6 +98,22 @@ button:not(:disabled), [role="button"]:not([aria-disabled="true"]), select:not(:
 @keyframes overlay-in { from { opacity: 0; } to { opacity: 1; } }
 @keyframes modal-in { from { opacity: 0; transform: translateY(0.65rem) scale(0.97); } to { opacity: 1; transform: translateY(0) scale(1); } }
 @keyframes drawer-in { from { opacity: 0; transform: translateX(1.25rem); } to { opacity: 1; transform: translateX(0); } }
+@keyframes assetmaster-modal-in { from { opacity: 0; transform: translate(-50%, -48%) scale(0.97); } to { opacity: 1; transform: translate(-50%, -50%) scale(1); } }
+@keyframes assetmaster-modal-out { from { opacity: 1; transform: translate(-50%, -50%) scale(1); } to { opacity: 0; transform: translate(-50%, -48%) scale(0.98); } }
+@keyframes assetmaster-overlay-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes assetmaster-overlay-out { from { opacity: 1; } to { opacity: 0; } }
+@keyframes assetmaster-drawer-in { from { opacity: 0; transform: translate3d(1.5rem, 0, 0); } to { opacity: 1; transform: translate3d(0, 0, 0); } }
+@keyframes assetmaster-drawer-out { from { opacity: 1; transform: translate3d(0, 0, 0); } to { opacity: 0; transform: translate3d(1.5rem, 0, 0); } }
+
+.assetmaster-overlay-motion { animation-duration: 220ms; animation-timing-function: cubic-bezier(0.23, 1, 0.32, 1); animation-fill-mode: both; }
+.assetmaster-overlay-motion[data-state="open"] { animation-name: assetmaster-overlay-in; }
+.assetmaster-overlay-motion[data-state="closed"] { animation-name: assetmaster-overlay-out; }
+.assetmaster-modal-motion { animation-duration: 240ms; animation-timing-function: cubic-bezier(0.23, 1, 0.32, 1); animation-fill-mode: both; }
+.assetmaster-modal-motion[data-state="open"] { animation-name: assetmaster-modal-in; }
+.assetmaster-modal-motion[data-state="closed"] { animation-name: assetmaster-modal-out; }
+.assetmaster-drawer-motion { animation-duration: 260ms; animation-timing-function: cubic-bezier(0.23, 1, 0.32, 1); animation-fill-mode: both; }
+.assetmaster-drawer-motion[data-state="open"] { animation-name: assetmaster-drawer-in; }
+.assetmaster-drawer-motion[data-state="closed"] { animation-name: assetmaster-drawer-out; }
 @keyframes popover-in { from { opacity: 0; transform: translateY(-0.35rem) scale(0.97); } to { opacity: 1; transform: translateY(0) scale(1); } }
 @keyframes popover-out { from { opacity: 1; transform: translateY(0) scale(1); } to { opacity: 0; transform: translateY(-0.25rem) scale(0.98); } }
 

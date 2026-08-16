@@ -435,3 +435,23 @@ describe("currency input and scrollbar contract", () => {
     expect(operations).toContain("Đang xuất...");
   });
 });
+
+
+describe("modal and drawer motion contract", () => {
+  it("uses the shared AssetMaster motion markers across overlay primitives", () => {
+    const stylesheet = readProjectFile("client/src/index.css");
+    const dialog = readProjectFile("client/src/components/ui/dialog.tsx");
+    const alertDialog = readProjectFile("client/src/components/ui/alert-dialog.tsx");
+    const drawer = readProjectFile("client/src/components/ui/drawer.tsx");
+    const sheet = readProjectFile("client/src/components/ui/sheet.tsx");
+
+    expect(stylesheet).toContain(".assetmaster-overlay-motion[data-state=\"closed\"]");
+    expect(stylesheet).toContain(".assetmaster-modal-motion[data-state=\"closed\"]");
+    expect(stylesheet).toContain(".assetmaster-drawer-motion[data-state=\"closed\"]");
+    expect(stylesheet).toContain("@media (prefers-reduced-motion: reduce)");
+    expect(dialog).toContain("assetmaster-modal-motion");
+    expect(alertDialog).toContain("assetmaster-modal-motion");
+    expect(drawer).toContain("assetmaster-drawer-motion");
+    expect(sheet).toContain("assetmaster-drawer-motion");
+  });
+});
