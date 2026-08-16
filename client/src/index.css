@@ -198,3 +198,14 @@ button[aria-label="Mở menu người dùng"] + div { animation: popover-in 180m
     max-height: calc(100dvh - 2rem);
   }
 }
+
+/* Unified date controls: the native Chromium glyph is hidden so only the branded teal action is visible. */
+input[type="date"]::-webkit-calendar-picker-indicator,
+.date-picker-input::-webkit-calendar-picker-indicator {
+  opacity: 0;
+  display: none;
+}
+
+input[type="date"] {
+  color-scheme: light;
+}

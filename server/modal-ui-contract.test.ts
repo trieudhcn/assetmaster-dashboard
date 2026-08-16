@@ -110,7 +110,7 @@ describe("modal presentation contract", () => {
 
     expect(home).toContain('const preservePurchaseDate = mode === "edit" && Boolean(asset?.code)');
     expect(home).toContain('Hạn bảo hành');
-    expect(home).toContain('type="date" value={dateInputValue(formData.warrantyUntil)}');
+    expect(home).toContain('DatePickerField value={dateInputValue(formData.warrantyUntil)}');
     expect(home).toContain('disabled={preservePurchaseDate}');
     expect(routers).toContain('const safeChanges = { ...persistedChanges, ...supplierReturnChanges, purchaseDate: current.purchaseDate }');
     expect(routers).toContain('purchaseDate: current.purchaseDate');
@@ -199,11 +199,17 @@ describe("modal presentation contract", () => {
   });
 
 
-  it("opens the native purchase date picker from the calendar action", () => {
+  it("opens the native purchase date picker from the branded calendar action", () => {
     const home = readProjectFile("client/src/pages/Home.tsx");
+    const datePicker = readProjectFile("client/src/components/DatePickerField.tsx");
+    const stylesheet = readProjectFile("client/src/index.css");
     expect(home).toContain('type="date" value={dateInputValue(formData.date)}');
     expect(home).toContain('data-purchase-date-picker');
-    expect(home).toContain('input.showPicker');
+    expect(home).toContain('CalendarDays size={16}');
+    expect(datePicker).toContain('text-[#087A6A]');
+    expect(datePicker).toContain('input.showPicker');
+    expect(stylesheet).toContain('input[type="date"]::-webkit-calendar-picker-indicator');
+    expect(stylesheet).toContain('display: none;');
   });
 
   it("requires detailed confirmation and supports supplier return evidence", () => {
@@ -238,6 +244,14 @@ describe("modal presentation contract", () => {
     expect(home).toContain("Xem trước tệp");
     expect(home).toContain('title="Xem trước biên bản trả nhà cung cấp"');
     expect(home).toContain('alt="Xem trước hình ảnh xác nhận trả nhà cung cấp"');
+  });
+
+  it("keeps a dedicated supplier-return Excel export", () => {
+    const reports = readProjectFile("client/src/pages/ReportsManagementView.tsx");
+    expect(reports).toContain('const supplierReturnedAssets = useMemo(() => selectedAssets.filter((asset) => asset.status === "returned_to_vendor")');
+    expect(reports).toContain("exportSupplierReturnExcel");
+    expect(reports).toContain("assetmaster-tai-san-tra-nha-cung-cap.xlsx");
+    expect(reports).toContain("Xuất báo cáo trả NCC");
   });
 
   it("keeps supplier-return report separate from company inventory report", () => {

@@ -17,6 +17,7 @@ import {
 import * as XLSX from "xlsx";
 import { toast } from "sonner";
 import { trpc } from "@/lib/trpc";
+import { DatePickerField } from "@/components/DatePickerField";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { matchesVietnameseSearch } from "@/lib/catalogUi";
 
@@ -51,7 +52,7 @@ function OperationalReminderPanel() {
   const reminders = remindersQuery.data || [];
   return <section className={`mb-5 ${card} overflow-hidden`}>
     <div className="flex items-center justify-between border-b border-[#E7EEF3] px-5 py-4"><div><div className="flex items-center gap-2 text-sm font-extrabold text-[#193B57]"><BellRing size={16} className="text-[#A86B00]" />Nhắc việc vận hành</div><p className="mt-1 text-xs text-[#71869A]">Tổng hợp tự động hạn bảo trì và đợt kiểm kê trong 14 ngày tới.</p></div><span className="rounded-full bg-[#FFF9EB] px-2.5 py-1 text-[10px] font-extrabold text-[#A86B00]">{reminders.length} việc cần theo dõi</span></div>
-    {remindersQuery.isLoading ? <div className="px-5 py-6 text-xs text-[#71869A]">Đang tải nhắc việc...</div> : remindersQuery.isError ? <div className="px-5 py-6 text-xs text-[#B44545]">Không thể tải nhắc việc. <button onClick={() => remindersQuery.refetch()} className="font-bold underline">Thử lại</button></div> : reminders.length === 0 ? <div className="px-5 py-6 text-xs text-[#71869A]">Chưa có lịch bảo trì hoặc kiểm kê nào đến hạn trong 14 ngày tới.</div> : <div className="divide-y divide-[#EDF2F5]">{reminders.slice(0, 5).map((reminder) => <div key={reminder.id} className="flex flex-col gap-2 px-5 py-3 sm:flex-row sm:items-center sm:justify-between"><div className="flex items-start gap-2"><CalendarClock size={15} className={reminder.isOverdue ? "mt-0.5 text-[#B44545]" : "mt-0.5 text-[#A86B00]"} /><div><div className="text-xs font-bold text-[#193B57]">{reminder.title}</div><div className="mt-0.5 text-[11px] text-[#71869A]">{reminder.kind === "maintenance" ? "Bảo trì" : "Kiểm kê"} · {reminder.detail}{reminder.recurrenceDays ? ` · Lặp lại mỗi ${reminder.recurrenceDays} ngày` : ""}</div></div></div><span className={`w-fit rounded-full px-2 py-1 text-[10px] font-extrabold ${reminder.isOverdue ? "bg-[#FDEDEE] text-[#B44545]" : "bg-[#FFF9EB] text-[#A86B00]"}`}>{reminder.isOverdue ? "Đã quá hạn" : `Hạn ${new Date(reminder.dueAt).toLocaleDateString("vi-VN")}`}</span></div>)}</div>}
+    {remindersQuery.isLoading ? <div className="px-5 py-6 text-xs text-[#71869A]">Đang tải nhắc việc...</div> : remindersQuery.isError ? <div className="px-5 py-6 text-xs text-[#B44545]">Không thể tải nhắc việc. <button onClick={() => remindersQuery.refetch()} className="font-bold underline">Thử lại</button></div> : reminders.length === 0 ? <div className="px-5 py-6 text-xs text-[#71869A]">Chưa có lịch bảo trì hoặc kiểm kê nào đến hạn trong 14 ngày tới.</div> : <div className="divide-y divide-[#EDF2F5]">{reminders.slice(0, 5).map((reminder) => <div key={reminder.id} className="flex flex-col gap-2 px-5 py-3 sm:flex-row sm:items-center sm:justify-between"><div className="flex items-start gap-2"><CalendarClock size={15} className="mt-0.5 text-[#0F8C8C]" /><div><div className="text-xs font-bold text-[#193B57]">{reminder.title}</div><div className="mt-0.5 text-[11px] text-[#71869A]">{reminder.kind === "maintenance" ? "Bảo trì" : "Kiểm kê"} · {reminder.detail}{reminder.recurrenceDays ? ` · Lặp lại mỗi ${reminder.recurrenceDays} ngày` : ""}</div></div></div><span className={`w-fit rounded-full px-2 py-1 text-[10px] font-extrabold ${reminder.isOverdue ? "bg-[#FDEDEE] text-[#B44545]" : "bg-[#FFF9EB] text-[#A86B00]"}`}>{reminder.isOverdue ? "Đã quá hạn" : `Hạn ${new Date(reminder.dueAt).toLocaleDateString("vi-VN")}`}</span></div>)}</div>}
   </section>;
 }
 
@@ -227,7 +228,7 @@ export function MaintenancePage() {
               {Object.entries(priorityLabels).map(([value, label]) => <option key={value} value={value}>{label} ưu tiên</option>)}
             </select>
             <input value={estimatedCost} onChange={(event) => setEstimatedCost(event.target.value)} placeholder="Chi phí dự kiến" inputMode="decimal" className="field-input" />
-            <input type="date" value={dueDate} onChange={(event) => setDueDate(event.target.value)} aria-label="Hạn bảo trì" className="field-input" />
+            <DatePickerField value={dueDate} onChange={setDueDate} aria-label="Hạn bảo trì" />
             <input value={recurrenceDays} onChange={(event) => setRecurrenceDays(event.target.value.replace(/\D/g, ""))} placeholder="Lặp lại (ngày)" inputMode="numeric" className="field-input" />
             <button
               disabled={createMutation.isPending}
@@ -465,7 +466,7 @@ export function AuditPage() {
         <section className={`${card} p-5`}>
           <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_155px_145px_auto]">
             <input value={name} onChange={(event) => setName(event.target.value)} placeholder="Tên đợt kiểm kê, ví dụ: Kiểm kê Quý I/2026" className="field-input flex-1" disabled={!isAdmin || createSessionMutation.isPending} />
-            <input type="date" value={scheduledDate} onChange={(event) => setScheduledDate(event.target.value)} aria-label="Ngày kiểm kê" className="field-input" disabled={!isAdmin || createSessionMutation.isPending} />
+            <DatePickerField value={scheduledDate} onChange={setScheduledDate} aria-label="Ngày kiểm kê" disabled={!isAdmin || createSessionMutation.isPending} />
             <input value={auditRecurrenceDays} onChange={(event) => setAuditRecurrenceDays(event.target.value.replace(/\D/g, ""))} placeholder="Chu kỳ (ngày)" inputMode="numeric" className="field-input" disabled={!isAdmin || createSessionMutation.isPending} />
             <button disabled={!isAdmin || createSessionMutation.isPending} onClick={() => {
               if (name.trim().length < 3) { toast.error("Nhập tên đợt kiểm kê tối thiểu 3 ký tự."); return; }

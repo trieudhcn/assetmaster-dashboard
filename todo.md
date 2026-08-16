@@ -729,3 +729,9 @@
 - [x] Hiển thị lịch sử quyết định trả NCC và các tệp đã tải lên trong chi tiết tài sản
 - [x] Thêm xem trước hình ảnh/PDF trong dialog xác nhận trả NCC
 - [x] Bổ sung kiểm thử hồi quy, xác minh TypeScript, responsive và production build
+
+## Current Session — Supplier Return Excel & Calendar Icon Consistency
+
+- [x] Kiểm tra và hoàn thiện nút xuất Excel riêng cho báo cáo tài sản đã trả nhà cung cấp; báo cáo dùng file `assetmaster-tai-san-tra-nha-cung-cap.xlsx`.
+- [x] Chuẩn hóa toàn bộ icon lịch thành màu xanh, loại bỏ icon lịch hệ thống màu đen bị chồng lên.
+- [x] Bổ sung kiểm thử hồi quy, xác minh responsive, TypeScript, Vitest và production build.
