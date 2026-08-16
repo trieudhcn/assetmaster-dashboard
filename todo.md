@@ -801,3 +801,9 @@
 - [x] Hiển thị số tiền bằng chữ dưới Chi phí dự kiến trong form Bảo trì.
 - [x] Hiển thị số tiền bằng chữ dưới Chi phí thực tế trong form Bảo trì.
 - [x] Bổ sung kiểm thử, xác minh responsive, TypeScript, Vitest và production build.
+
+## Current Session — Vendor/Brand Search Layout & Maintenance Cost Export
+
+- [x] Đưa ô tìm kiếm Nhà cung cấp và Hãng lên cùng hàng với tiêu đề/danh sách tương ứng.
+- [x] Thêm xuất Excel chi phí bảo trì, gồm chi phí dự kiến, chi phí thực tế và số tiền bằng chữ.
+- [x] Bổ sung kiểm thử dữ liệu, responsive, TypeScript, Vitest và production build.

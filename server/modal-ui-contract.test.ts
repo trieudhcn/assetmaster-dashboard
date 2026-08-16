@@ -375,4 +375,21 @@ describe("currency input and scrollbar contract", () => {
     expect(stylesheet).toContain(".asset-currency-suffix");
     expect(stylesheet).toContain("scrollbar-color: #8BC9C5 #EEF5F6");
   });
+
+  it("keeps vendor and brand searches inside directory headers", () => {
+    const vendorBrand = readProjectFile("client/src/pages/VendorBrandManagementPage.tsx");
+    expect(vendorBrand).toContain("headerAccessory");
+    expect(vendorBrand).toContain('aria-label="Tìm Nhà cung cấp"');
+    expect(vendorBrand).toContain('aria-label="Tìm Hãng"');
+    expect(vendorBrand).toContain("Danh sách Nhà cung cấp");
+    expect(vendorBrand).toContain("Danh sách Hãng");
+  });
+
+  it("exports maintenance costs with numeric and Vietnamese words columns", () => {
+    const operations = readProjectFile("client/src/pages/OperationsModules.tsx");
+    expect(operations).toContain("exportMaintenanceCosts");
+    expect(operations).toContain('"Chi phí dự kiến bằng chữ"');
+    expect(operations).toContain('"Chi phí thực tế bằng chữ"');
+    expect(operations).toContain("assetmaster-chi-phi-bao-tri-");
+  });
 });

@@ -22,6 +22,7 @@ import { SearchableSelect } from "@/components/SearchableSelect";
 import { CurrencyInput } from "@/components/CurrencyInput";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { matchesVietnameseSearch } from "@/lib/catalogUi";
+import { numberToVietnameseWords, parseVndAmount } from "@/lib/formatters";
 
 const shell = "min-h-screen bg-[#F4F7FB] px-4 py-7 sm:px-6 lg:px-9 lg:py-8";
 const card = "rounded-xl border border-[#DFE9F0] bg-white shadow-[0_8px_24px_rgba(16,42,67,0.045)]";
@@ -172,6 +173,41 @@ export function MaintenancePage() {
     });
   };
 
+  const exportMaintenanceCosts = () => {
+    if (tickets.length === 0) {
+      toast.info("Chưa có dữ liệu chi phí bảo trì để xuất.");
+      return;
+    }
+    const rows = tickets.map((ticket) => {
+      const estimated = parseVndAmount(String(ticket.estimatedCost ?? ""));
+      const actual = parseVndAmount(String(ticket.actualCost ?? ""));
+      const asset = assetById.get(ticket.assetId);
+      return {
+        "Mã phiếu": `BT-${ticket.id}`,
+        "Mã tài sản": asset?.assetCode || "",
+        "Tên tài sản": asset?.name || "",
+        "Loại yêu cầu": issueTypeLabels[ticket.issueType as keyof typeof issueTypeLabels] || ticket.issueType,
+        "Mức ưu tiên": priorityLabels[ticket.priority as keyof typeof priorityLabels] || ticket.priority,
+        "Trạng thái": maintenanceStatusLabels[ticket.status as keyof typeof maintenanceStatusLabels] || ticket.status,
+        "Chi phí dự kiến (VNĐ)": estimated || null,
+        "Chi phí dự kiến bằng chữ": estimated ? numberToVietnameseWords(estimated) : "Chưa ghi nhận",
+        "Chi phí thực tế (VNĐ)": actual || null,
+        "Chi phí thực tế bằng chữ": actual ? numberToVietnameseWords(actual) : "Chưa ghi nhận",
+        "Ngày tạo": ticket.createdAt ? new Date(ticket.createdAt).toLocaleDateString("vi-VN") : "",
+        "Hạn bảo trì": ticket.dueAt ? new Date(ticket.dueAt).toLocaleDateString("vi-VN") : "",
+        "Người xử lý": ticket.assigneeUserId ? employeeById.get(ticket.assigneeUserId)?.name || "" : "Chưa phân công",
+        "Mô tả": ticket.description,
+        "Kết quả xử lý": ticket.resolution || "",
+      };
+    });
+    const worksheet = XLSX.utils.json_to_sheet(rows);
+    worksheet["!cols"] = [{ wch: 14 }, { wch: 16 }, { wch: 24 }, { wch: 18 }, { wch: 14 }, { wch: 16 }, { wch: 20 }, { wch: 32 }, { wch: 20 }, { wch: 32 }, { wch: 14 }, { wch: 14 }, { wch: 22 }, { wch: 42 }, { wch: 42 }];
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Chi phí bảo trì");
+    XLSX.writeFile(workbook, `assetmaster-chi-phi-bao-tri-${new Date().toISOString().slice(0, 10)}.xlsx`);
+    toast.success(`Đã xuất ${rows.length} dòng chi phí bảo trì.`);
+  };
+
   const uploadAttachment = (ticket: (typeof tickets)[number], file: File | undefined) => {
     if (!file) return;
     const supportedTypes = ["application/pdf", "image/png", "image/jpeg", "image/webp"] as const;
@@ -248,7 +284,7 @@ export function MaintenancePage() {
               <h2 className="text-sm font-extrabold text-[#193B57]">Quản lý yêu cầu</h2>
               <p className="mt-1 text-xs text-[#8AA0B6]">Phân công, tiến độ, chi phí dự kiến và chi phí thực tế được lưu tập trung.</p>
             </div>
-            <span className="text-xs font-bold text-[#60758A]">{tickets.length} yêu cầu</span>
+            <div className="flex items-center gap-2"><button type="button" onClick={exportMaintenanceCosts} disabled={ticketsQuery.isLoading || tickets.length === 0} className="inline-flex items-center gap-2 rounded-lg border border-[#CDE5E5] bg-white px-3 py-2 text-xs font-bold text-[#087A6A] transition hover:bg-[#ECF8F7] disabled:cursor-not-allowed disabled:opacity-50"><Download size={14} />Xuất Excel chi phí</button><span className="text-xs font-bold text-[#60758A]">{tickets.length} yêu cầu</span></div>
           </div>
 
           {ticketsQuery.isError ? (
