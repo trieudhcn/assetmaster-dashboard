@@ -394,11 +394,16 @@ describe("currency input and scrollbar contract", () => {
     expect(searchableSelect).toContain('open ? "z-[96]" : "z-0"');
     expect(searchableSelect).toContain('menuAlign === "right" ? "right-0 left-auto" : "left-0 right-auto"');
     expect(searchableSelect).toContain('estimatedMenuWidth');
+    expect(searchableSelect).toContain('estimatedMenuHeight');
+    expect(searchableSelect).toContain('menuVertical === "top"');
     expect(home).toContain("Đang tạo danh sách tài sản bảo trì...");
     expect(reports).toContain("Đang tạo báo cáo tài sản...");
     expect(reports).toContain("Đang tạo báo cáo tài sản trả nhà cung cấp...");
     expect(readProjectFile("client/src/index.css")).toContain("Vuốt ngang để xem thêm");
     expect(readProjectFile("client/src/index.css")).toContain("position: sticky");
+    expect(readProjectFile("client/src/index.css")).toContain("linear-gradient(90deg");
+    expect(readProjectFile("client/src/components/MobileTableControls.tsx")).toContain("mobile-column-controls");
+    expect(readProjectFile("client/src/components/MobileTableControls.tsx")).toContain("sessionStorage");
     const importModal = readProjectFile("client/src/components/AssetImportModal.tsx");
     expect(importModal).toContain("isExportingErrors");
     expect(importModal).toContain("Đang tạo tệp Excel các dòng lỗi...");

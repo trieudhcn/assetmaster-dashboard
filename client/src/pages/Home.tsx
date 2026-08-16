@@ -1360,7 +1360,7 @@ function AssetModal({ mode, asset, formData, setFormData, onClose: dismiss, onSa
     searchInput.setAttribute("autocomplete", "off");
     searchInput.value = selectedCategory ? `${selectedCategory.name} · ${selectedCategory.code}xxxxx` : "";
     const results = document.createElement("div");
-    results.className = "absolute z-[70] mt-1 hidden max-h-52 w-full overflow-y-auto rounded-lg border border-[#CDE5E5] bg-white p-1 shadow-[0_14px_28px_rgba(16,42,67,0.16)]";
+    results.className = "absolute z-[70] hidden max-h-52 min-w-0 overflow-y-auto rounded-lg border border-[#CDE5E5] bg-white p-1 shadow-[0_14px_28px_rgba(16,42,67,0.16)]";
     results.setAttribute("role", "listbox");
     const renderResults = (search: string) => {
       const normalized = search.trim().toLocaleLowerCase("vi");
@@ -1390,8 +1390,18 @@ function AssetModal({ mode, asset, formData, setFormData, onClose: dismiss, onSa
         results.appendChild(option);
       });
     };
-    searchInput.addEventListener("focus", () => { searchInput.value = ""; renderResults(""); results.classList.remove("hidden"); });
-    searchInput.addEventListener("input", () => { renderResults(searchInput.value); results.classList.remove("hidden"); });
+    const positionResults = () => {
+      const rect = searchInput.getBoundingClientRect();
+      const menuWidth = Math.min(280, Math.max(220, rect.width));
+      const openLeft = rect.right + menuWidth > window.innerWidth - 12;
+      const openUp = rect.bottom + 240 > window.innerHeight - 12 && rect.top > 240;
+      results.style.width = `${menuWidth}px`;
+      results.style.maxWidth = "calc(100vw - 1rem)";
+      results.classList.remove("left-0", "right-0", "top-[calc(100%+0.35rem)]", "bottom-[calc(100%+0.35rem)]");
+      results.classList.add(openLeft ? "right-0" : "left-0", openUp ? "bottom-[calc(100%+0.35rem)]" : "top-[calc(100%+0.35rem)]");
+    };
+    searchInput.addEventListener("focus", () => { searchInput.value = ""; renderResults(""); positionResults(); results.classList.remove("hidden"); });
+    searchInput.addEventListener("input", () => { renderResults(searchInput.value); positionResults(); results.classList.remove("hidden"); });
     searchInput.addEventListener("blur", () => window.setTimeout(() => { results.classList.add("hidden"); const current = (categoriesQuery.data || []).find((item) => item.id === formData.categoryId); searchInput.value = current ? `${current.name} · ${current.code}xxxxx` : ""; }, 150));
     picker.append(searchInput, results);
     select.before(picker);
@@ -1434,7 +1444,8 @@ function AssetModal({ mode, asset, formData, setFormData, onClose: dismiss, onSa
       creator.appendChild(form);
     }
     categoryField.appendChild(creator);
-    return () => { creator.remove(); };
+    window.addEventListener("resize", positionResults);
+    return () => { window.removeEventListener("resize", positionResults); creator.remove(); };
   }, [isDetail, mode, formData.categoryId, formData.date, preservePurchaseDate, categoriesQuery.data, categoriesQuery.isLoading, categoryCreatorOpen, createCategoryMutation.isPending, setFormData]);
   useEffect(() => {
     if (!isDetail || !asset?.brand) return;
@@ -1537,7 +1548,7 @@ function AssetModal({ mode, asset, formData, setFormData, onClose: dismiss, onSa
       triggerIcon.textContent = "⌄";
       trigger.append(triggerText, triggerIcon);
       const menu = document.createElement("div");
-      menu.className = "absolute z-50 mt-1 hidden w-full overflow-hidden rounded-xl border border-[#CDE5E5] bg-white p-2 shadow-[0_14px_34px_rgba(16,42,67,0.16)]";
+      menu.className = "absolute z-50 hidden min-w-0 overflow-hidden rounded-xl border border-[#CDE5E5] bg-white p-2 shadow-[0_14px_34px_rgba(16,42,67,0.16)]";
       menu.setAttribute("role", "listbox");
       const search = document.createElement("input");
       search.type = "search";
@@ -1581,17 +1592,28 @@ function AssetModal({ mode, asset, formData, setFormData, onClose: dismiss, onSa
       triggerText.textContent = selected?.name || (kind === "vendor" ? "Chọn Nhà cung cấp" : "Chọn Hãng");
       renderOptions();
       search.oninput = () => renderOptions(search.value);
+      const positionMenu = () => {
+        const rect = trigger.getBoundingClientRect();
+        const menuWidth = Math.min(280, Math.max(220, rect.width));
+        const openLeft = rect.right + menuWidth > window.innerWidth - 12;
+        const openUp = rect.bottom + 280 > window.innerHeight - 12 && rect.top > 280;
+        menu.style.width = `${menuWidth}px`;
+        menu.style.maxWidth = "calc(100vw - 1rem)";
+        menu.classList.remove("left-0", "right-0", "top-[calc(100%+0.35rem)]", "bottom-[calc(100%+0.35rem)]");
+        menu.classList.add(openLeft ? "right-0" : "left-0", openUp ? "bottom-[calc(100%+0.35rem)]" : "top-[calc(100%+0.35rem)]");
+      };
       trigger.onclick = () => {
         const isOpen = !menu.classList.contains("hidden");
         menu.classList.toggle("hidden", isOpen);
         trigger.setAttribute("aria-expanded", String(!isOpen));
-        if (!isOpen) window.setTimeout(() => search.focus(), 0);
+        if (!isOpen) { positionMenu(); window.setTimeout(() => search.focus(), 0); }
       };
       const closeOnOutside = (event: PointerEvent) => {
         if (!wrapper.contains(event.target as Node)) { menu.classList.add("hidden"); trigger.setAttribute("aria-expanded", "false"); }
       };
       document.addEventListener("pointerdown", closeOnOutside);
-      dropdownCleanups.push(() => document.removeEventListener("pointerdown", closeOnOutside));
+      window.addEventListener("resize", positionMenu);
+      dropdownCleanups.push(() => { document.removeEventListener("pointerdown", closeOnOutside); window.removeEventListener("resize", positionMenu); });
       wrapper.append(heading, trigger, menu);
       menu.append(search, optionList, createFromSearch);
       if (quickEntryType === kind) {

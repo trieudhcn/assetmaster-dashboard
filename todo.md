@@ -843,3 +843,11 @@
 - [x] Cho dropdown trạng thái tự neo sang trái khi trigger ở gần mép phải viewport.
 - [x] Giới hạn chiều rộng dropdown và ngăn thanh cuộn ngang ngoài ý muốn ở khung phiếu bàn giao.
 - [x] Bổ sung hồi quy, kiểm thử responsive, chạy TypeScript, Vitest, production build và phát hành.
+
+## Current Session — Mobile Tables, Smart Menus & Overflow Audit
+
+- [x] Thêm gradient gợi ý ở mép bảng còn có thể vuốt ngang trên mobile.
+- [x] Bổ sung tùy chọn ẩn/hiện cột trên mobile cho bảng có nhiều trường.
+- [x] Áp dụng định vị thông minh theo chiều ngang và chiều dọc cho menu/popup dùng chung.
+- [x] Rà soát toàn bộ giao diện mobile, khắc phục overflow ngang ngoài ý muốn.
+- [x] Bổ sung hồi quy, kiểm thử mobile, chạy TypeScript, Vitest, production build và phát hành.

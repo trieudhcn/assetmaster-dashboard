@@ -257,7 +257,14 @@ input[type="date"] {
 
 /* Mobile data tables: keep the first identifier column visible while the remaining columns scroll horizontally. */
 .mobile-table-scroll { position: relative; }
+.mobile-column-controls { display: none; }
 @media (max-width: 639px) {
+  html,
+  body,
+  #root {
+    max-width: 100%;
+    overflow-x: clip;
+  }
   .mobile-table-scroll::before {
     content: "Vuốt ngang để xem thêm";
     display: block;
@@ -270,6 +277,60 @@ input[type="date"] {
     letter-spacing: 0.01em;
     text-align: right;
   }
+  .mobile-table-scroll::after {
+    content: "";
+    position: absolute;
+    z-index: 5;
+    top: 2rem;
+    right: 0;
+    bottom: 0;
+    width: 2.5rem;
+    pointer-events: none;
+    background: linear-gradient(90deg, rgba(255,255,255,0), rgba(255,255,255,0.97));
+  }
+  .mobile-column-controls {
+    position: absolute;
+    z-index: 8;
+    top: 0.32rem;
+    left: 0.55rem;
+    display: block;
+    color: #087A6A;
+    font-size: 0.65rem;
+    font-weight: 800;
+  }
+  .mobile-column-controls > summary {
+    cursor: pointer;
+    list-style: none;
+    border: 1px solid #CDE5E5;
+    border-radius: 0.45rem;
+    background: #FFFFFF;
+    padding: 0.22rem 0.48rem;
+    box-shadow: 0 2px 8px rgba(16, 42, 67, 0.08);
+  }
+  .mobile-column-controls > summary::-webkit-details-marker { display: none; }
+  .mobile-column-controls-panel {
+    position: absolute;
+    top: calc(100% + 0.35rem);
+    left: 0;
+    width: min(15rem, calc(100vw - 2rem));
+    max-height: 13rem;
+    overflow-y: auto;
+    border: 1px solid #CDE5E5;
+    border-radius: 0.6rem;
+    background: #FFFFFF;
+    padding: 0.35rem;
+    box-shadow: 0 12px 28px rgba(16, 42, 67, 0.16);
+  }
+  .mobile-column-option {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    padding: 0.38rem 0.45rem;
+    color: #193B57;
+    font-size: 0.7rem;
+    font-weight: 650;
+  }
+  .mobile-column-hidden { display: none !important; }
   .mobile-table-scroll table th:first-child,
   .mobile-table-scroll table td:first-child {
     position: sticky;
