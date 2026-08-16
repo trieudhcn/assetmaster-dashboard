@@ -933,3 +933,11 @@
 - [x] Bổ sung nút “Tải thêm” cho lịch sử thay đổi tài sản, giữ phân trang hiện tại.
 - [x] Kiểm thử TypeScript, Vitest, production build và responsive.
 - [x] Lưu checkpoint phát hành cho phiên này.
+
+## Current Session — Asset History Collapse, Infinite Load & Detail Header
+
+- [x] Thêm nút thu gọn/mở rộng danh sách lịch sử thay đổi đã tải.
+- [x] Tự động tải thêm lịch sử khi cuộn đến gần cuối drawer.
+- [x] Đưa mô tả và thông tin định danh tài sản về bố cục phía trên giống form chỉnh sửa.
+- [x] Kiểm thử TypeScript, Vitest, production build và responsive.
+- [x] Lưu checkpoint phát hành cho phiên này.
