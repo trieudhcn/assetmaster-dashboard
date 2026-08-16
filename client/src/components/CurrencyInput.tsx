@@ -1,14 +1,15 @@
 import { useEffect, useState } from "react";
 import { X } from "lucide-react";
-import { formatVndInput, parseVndAmount } from "@/lib/formatters";
+import { formatVndInput, numberToVietnameseWords, parseVndAmount } from "@/lib/formatters";
 
 type CurrencyInputProps = Omit<React.InputHTMLAttributes<HTMLInputElement>, "value" | "onChange"> & {
   value: string;
   onChange: (value: string) => void;
   suffix?: string;
+  showWords?: boolean;
 };
 
-export function CurrencyInput({ value, onChange, suffix = "VNĐ", className = "", ...props }: CurrencyInputProps) {
+export function CurrencyInput({ value, onChange, suffix = "VNĐ", showWords = false, className = "", ...props }: CurrencyInputProps) {
   const [displayValue, setDisplayValue] = useState(() => formatVndInput(value));
   useEffect(() => setDisplayValue(formatVndInput(value)), [value]);
 
@@ -40,6 +41,7 @@ export function CurrencyInput({ value, onChange, suffix = "VNĐ", className = ""
         </button>
       )}
       <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[11px] font-extrabold text-[#087A6A]">{suffix}</span>
+      {showWords && displayValue && <p className="mt-1 text-[10px] font-semibold text-[#71869A]">{numberToVietnameseWords(displayValue)}</p>}
     </div>
   );
 }

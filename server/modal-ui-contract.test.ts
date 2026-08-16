@@ -358,6 +358,7 @@ describe("currency input and scrollbar contract", () => {
     expect(operations).toContain('import { CurrencyInput }');
     expect(operations).toContain('aria-label="Chi phí dự kiến"');
     expect(operations).toContain('aria-label="Chi phí thực tế"');
+    expect((operations.match(/showWords/g) || []).length).toBeGreaterThanOrEqual(3);
     expect(currencyInput).toContain('aria-label="Xóa số tiền"');
     expect(currencyInput).toContain('event.clipboardData.getData("text")');
     expect(currencyInput).toContain('suffix = "VNĐ"');

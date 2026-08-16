@@ -795,3 +795,9 @@
 - [x] Thêm nút X xóa nhanh cho các trường nhập tiền.
 - [x] Áp dụng hậu tố VNĐ và hỗ trợ dán tiền cho chi phí bảo trì; giá trị báo cáo tiếp tục dùng formatter VNĐ/compact thống nhất.
 - [x] Bổ sung kiểm thử nhập, dán, xóa, chuyển đổi bằng chữ, responsive và production build.
+
+## Current Session — Maintenance Cost in Words
+
+- [x] Hiển thị số tiền bằng chữ dưới Chi phí dự kiến trong form Bảo trì.
+- [x] Hiển thị số tiền bằng chữ dưới Chi phí thực tế trong form Bảo trì.
+- [x] Bổ sung kiểm thử, xác minh responsive, TypeScript, Vitest và production build.
