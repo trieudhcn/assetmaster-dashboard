@@ -316,7 +316,20 @@ describe("modal presentation contract", () => {
     expect(formatter).toContain("maximumFractionDigits: 0");
     expect(formatter).toContain("Intl.NumberFormat(\"vi-VN\"");
     expect(home).toContain("formatVnd(asset.value)");
-    expect(reports).toContain("formatVnd(value)");
+    expect(reports).toContain("formatCompactVnd");
     expect(vendorPage).toContain("min-h-[540px]");
     expect(vendorPage).toContain("5 dòng/trang");
+  });
+
+
+  it("supports supplier and brand value reports with compact currency modes", () => {
+    const formatter = readProjectFile("client/src/lib/formatters.ts");
+    const reports = readProjectFile("client/src/pages/ReportsManagementView.tsx");
+    expect(formatter).toContain('mode === "million"');
+    expect(formatter).toContain('mode === "billion"');
+    expect(reports).toContain("supplierValueData");
+    expect(reports).toContain("Phân bổ giá trị theo Nhà cung cấp");
+    expect(reports).toContain('value: "million"');
+    expect(reports).toContain('value: "billion"');
+    expect(reports).toContain("currencyMode");
   });

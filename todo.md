@@ -762,3 +762,10 @@
 - [x] Chuẩn hóa hiển thị số tiền sang VNĐ, bỏ phần thập phân .00 và dùng dấu chấm phân cách hàng nghìn/triệu/tỷ.
 - [x] Cân chiều cao hai khu vực Nhà cung cấp và Hãng, giữ phân trang 5 dòng/trang và bố cục ổn định khi dữ liệu ít.
 - [x] Bổ sung kiểm thử, xác minh responsive, TypeScript, Vitest và production build.
+
+## Current Session — Supplier/Brand Value Reports & Compact Currency
+
+- [x] Thêm tổng giá trị tài sản theo từng Nhà cung cấp trong Báo cáo.
+- [x] Thêm tổng giá trị tài sản theo từng Hãng trong Báo cáo.
+- [x] Thêm tùy chọn hiển thị tiền đầy đủ, triệu đồng hoặc tỷ đồng.
+- [x] Bổ sung kiểm thử, xác minh responsive, TypeScript, Vitest và production build.
