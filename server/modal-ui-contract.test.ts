@@ -455,3 +455,20 @@ describe("modal and drawer motion contract", () => {
     expect(sheet).toContain("assetmaster-drawer-motion");
   });
 });
+
+
+describe("modal loading and empty motion contract", () => {
+  it("provides shared loading and empty motion markers with reduced-motion support", () => {
+    const stylesheet = readProjectFile("client/src/index.css");
+    const empty = readProjectFile("client/src/components/ui/empty.tsx");
+    const recovery = readProjectFile("client/src/components/AssetImportRecovery.tsx");
+
+    expect(stylesheet).toContain("@keyframes modal-state-pulse");
+    expect(stylesheet).toContain("@keyframes modal-empty-in");
+    expect(stylesheet).toContain(".modal-loading-state::after");
+    expect(stylesheet).toContain("prefers-reduced-motion");
+    expect(empty).toContain("modal-empty-state");
+    expect(recovery).toContain("modal-loading-state");
+    expect(recovery).toContain("modal-empty-state");
+  });
+});

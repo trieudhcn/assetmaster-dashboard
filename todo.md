@@ -863,3 +863,9 @@
 - [x] Đồng bộ animation mở/đóng cho toàn bộ modal và drawer tự dựng.
 - [x] Chuẩn hóa animation cho component Dialog, AlertDialog, Sheet và Drawer dùng chung.
 - [x] Bổ sung hỗ trợ reduced-motion, hồi quy, TypeScript, Vitest, production build và phát hành.
+
+## Current Session — Modal Loading & Empty Motion
+
+- [x] Rà soát các trạng thái loading và empty bên trong modal/drawer.
+- [x] Thêm animation dùng chung cho loading và empty state, có reduced-motion.
+- [x] Bổ sung hồi quy, chạy TypeScript, Vitest, production build và phát hành.
