@@ -104,6 +104,18 @@ describe("modal presentation contract", () => {
     expect(stylesheet).toContain(".asset-date-input::-webkit-calendar-picker-indicator");
   });
 
+  it("exposes warranty date input and preserves purchase date after maintenance", () => {
+    const home = readProjectFile("client/src/pages/Home.tsx");
+    const routers = readProjectFile("server/routers.ts");
+
+    expect(home).toContain('const preservePurchaseDate = mode === "edit" && asset?.statusType === "maintenance" && formData.statusType === "available"');
+    expect(home).toContain('Hạn bảo hành');
+    expect(home).toContain('type="date" value={dateInputValue(formData.warrantyUntil)}');
+    expect(home).toContain('readOnly={preservePurchaseDate}');
+    expect(routers).toContain('const preservePurchaseDate = current.status === "maintenance" && changes.status === "available"');
+    expect(routers).toContain('purchaseDate: current.purchaseDate');
+  });
+
   it("shows readable date and status values in asset history", () => {
     const history = readProjectFile("client/src/components/AssetImportRecovery.tsx");
     const home = readProjectFile("client/src/pages/Home.tsx");

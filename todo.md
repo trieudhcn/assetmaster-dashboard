@@ -691,3 +691,10 @@
 - [x] Chuẩn hóa hạn bảo hành và các trường ngày khi tạo/cập nhật tài sản
 - [x] Chuẩn hóa hạn hoàn trả trong luồng bàn giao để giá trị rỗng/không hợp lệ gửi null
 - [x] Bổ sung kiểm thử hồi quy, xác minh responsive và phát hành checkpoint
+
+## Current Session — Warranty & Maintenance Date Rules
+
+- [x] Thêm trường Hạn bảo hành dạng chọn ngày vào form thêm mới và chỉnh sửa tài sản
+- [x] Giữ nguyên Ngày mua khi chuyển từ Bảo trì sang Sẵn có và khóa trường ngày mua trong trường hợp này
+- [x] Chỉ ghi nhận thời điểm cập nhật báo hỏng/bảo trì, không ghi đè Ngày mua
+- [x] Bổ sung kiểm thử hồi quy, xác minh responsive và phát hành checkpoint
