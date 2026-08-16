@@ -428,6 +428,10 @@ describe("currency input and scrollbar contract", () => {
     expect(home).toContain("handoverRecipientFilter");
     expect(home).toContain("Tất cả phòng ban");
     expect(home).toContain("Tất cả người nhận");
+    expect(home).toContain("Phiếu theo phòng ban");
+    expect(home).toContain("Phiếu theo người nhận");
+    expect(home).toContain("handoverDepartmentStats");
+    expect(home).toContain("handoverRecipientStats");
     expect(home).toContain("Đã trả NCC");
     expect(home).toContain("Xuất Excel");
     expect(home).toContain("danh-sach-phieu-ban-giao-");

@@ -1060,3 +1060,11 @@
 - [x] Đồng bộ các bộ lọc mới với tìm kiếm, năm, trạng thái và phân trang.
 - [x] Bổ sung hồi quy, kiểm thử TypeScript, Vitest, production build và responsive.
 - [x] Lưu checkpoint phát hành cho phiên này.
+
+## Current Session — Handover Summary Statistics
+
+- [x] Thống kê tổng số phiếu bàn giao theo từng phòng ban.
+- [x] Thống kê tổng số phiếu bàn giao theo từng người nhận.
+- [x] Hiển thị thống kê trong bố cục responsive, đồng bộ phong cách trang Bàn giao.
+- [x] Bổ sung hồi quy, kiểm thử TypeScript, Vitest, production build và responsive.
+- [x] Lưu checkpoint phát hành cho phiên này.
