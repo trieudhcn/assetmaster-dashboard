@@ -108,11 +108,11 @@ describe("modal presentation contract", () => {
     const home = readProjectFile("client/src/pages/Home.tsx");
     const routers = readProjectFile("server/routers.ts");
 
-    expect(home).toContain('const preservePurchaseDate = mode === "edit" && asset?.statusType === "maintenance" && formData.statusType === "available"');
+    expect(home).toContain('const preservePurchaseDate = mode === "edit" && Boolean(asset?.code)');
     expect(home).toContain('Hạn bảo hành');
     expect(home).toContain('type="date" value={dateInputValue(formData.warrantyUntil)}');
     expect(home).toContain('readOnly={preservePurchaseDate}');
-    expect(routers).toContain('const preservePurchaseDate = current.status === "maintenance" && changes.status === "available"');
+    expect(routers).toContain('const safeChanges = { ...persistedChanges, purchaseDate: current.purchaseDate }');
     expect(routers).toContain('purchaseDate: current.purchaseDate');
   });
 
@@ -158,5 +158,25 @@ describe("modal presentation contract", () => {
     expect(categories).toContain("Bảo trì:");
     expect(categories).toContain("bulkMoveAssets");
     expect(categories).toContain("Xuất Excel");
+  });
+
+  it("supports supplier return status and immutable purchase date after asset creation", () => {
+    const home = readProjectFile("client/src/pages/Home.tsx");
+    const router = readProjectFile("server/routers.ts");
+
+    expect(home).toContain("Trả nhà cung cấp");
+    expect(home).toContain('const preservePurchaseDate = mode === "edit" && Boolean(asset?.code)');
+    expect(router).toContain('"returned_to_vendor"');
+    expect(router).toContain("const safeChanges = { ...persistedChanges, purchaseDate: current.purchaseDate }");
+  });
+
+  it("shows warranty expiry warnings and provides warranty filters in the asset catalog", () => {
+    const home = readProjectFile("client/src/pages/Home.tsx");
+
+    expect(home).toContain('type WarrantyState = "none" | "active" | "expiring" | "expired"');
+    expect(home).toContain('getWarrantyState(asset.warrantyUntil) === "expired"');
+    expect(home).toContain('getWarrantyState(asset.warrantyUntil) === "expiring"');
+    expect(home).toContain('"Sắp hết hạn"');
+    expect(home).toContain('"Đã hết hạn"');
   });
 });

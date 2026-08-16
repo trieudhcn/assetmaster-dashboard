@@ -100,7 +100,7 @@ export function hasRequiredMaintenanceReason(status: string | undefined, mainten
 
 const assetInput = z.object({
   assetCode: z.string().trim().min(2).max(64), name: z.string().trim().min(2).max(255), categoryId: z.number().int().positive().optional().nullable(), departmentId: z.number().int().positive().optional().nullable(), holderName: nullableText,
-  status: z.enum(["available", "assigned", "maintenance", "retired", "lost"]).default("available"), condition: z.enum(["good", "fair", "needs_inspection", "damaged"]).default("good"),
+  status: z.enum(["available", "assigned", "maintenance", "retired", "lost", "returned_to_vendor"]).default("available"), condition: z.enum(["good", "fair", "needs_inspection", "damaged"]).default("good"),
   purchaseDate: dateFromMs, purchaseValue: z.string().regex(/^\d+(\.\d{1,2})?$/).optional().nullable(), vendor: nullableText, vendorId: z.number().int().positive().optional().nullable(), brandId: z.number().int().positive().optional().nullable(), serialNumber: nullableText, location: nullableText, warrantyUntil: dateFromMs, note: nullableText, maintenanceReason: nullableText,
 });
 
@@ -489,8 +489,8 @@ export const appRouter = router({
       if (changes.vendorId && !(await getVendorById(changes.vendorId))?.isActive) throw new TRPCError({ code: "BAD_REQUEST", message: "Nhà cung cấp được chọn không tồn tại hoặc đã ngừng hoạt động." });
       if (changes.brandId && !(await getBrandById(changes.brandId))?.isActive) throw new TRPCError({ code: "BAD_REQUEST", message: "Hãng được chọn không tồn tại hoặc đã ngừng hoạt động." });
       const persistedChanges = changes.status && changes.status !== "maintenance" ? { ...changes, maintenanceReason: null } : changes;
-      const preservePurchaseDate = current.status === "maintenance" && changes.status === "available";
-      const safeChanges = preservePurchaseDate ? { ...persistedChanges, purchaseDate: current.purchaseDate } : persistedChanges;
+      // Ngày mua là dữ liệu gốc từ lúc nhập kho; không được thay đổi sau khi tài sản đã tạo/import.
+      const safeChanges = { ...persistedChanges, purchaseDate: current.purchaseDate };
       await updateAsset(id, safeChanges);
       await createAssetFieldChanges(fieldChanges(id, assetSnapshot(current as unknown as Record<string, unknown>), assetSnapshot({ ...(current as unknown as Record<string, unknown>), ...safeChanges }), "manual", ctx.user!.id, ctx.user!.name));
       await recordActivity({ entityType: "asset", entityId: id, action: "updated", actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: "Cập nhật thông tin tài sản" });

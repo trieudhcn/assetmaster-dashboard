@@ -1,0 +1,1 @@
+ALTER TABLE `assets` MODIFY COLUMN `status` enum('available','assigned','maintenance','retired','lost','returned_to_vendor') NOT NULL DEFAULT 'available';

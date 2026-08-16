@@ -698,3 +698,11 @@
 - [x] Giữ nguyên Ngày mua khi chuyển từ Bảo trì sang Sẵn có và khóa trường ngày mua trong trường hợp này
 - [x] Chỉ ghi nhận thời điểm cập nhật báo hỏng/bảo trì, không ghi đè Ngày mua
 - [x] Bổ sung kiểm thử hồi quy, xác minh responsive và phát hành checkpoint
+
+## Current Session — Supplier Return & Warranty Filters
+
+- [x] Thêm trạng thái Trả nhà cung cấp vào form chỉnh sửa và dữ liệu tài sản
+- [x] Khóa Ngày mua vĩnh viễn sau khi tài sản được tạo hoặc import
+- [x] Hiển thị cảnh báo màu/icon cho tài sản sắp hết hạn hoặc hết hạn bảo hành
+- [x] Bổ sung bộ lọc tài sản đang bảo hành hoặc đã hết hạn
+- [x] Bổ sung kiểm thử hồi quy, xác minh responsive và phát hành checkpoint

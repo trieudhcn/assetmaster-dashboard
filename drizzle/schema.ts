@@ -110,7 +110,7 @@ export const assets = mysqlTable("assets", {
   departmentId: int("departmentId"),
   holderUserId: int("holderUserId"),
   holderName: varchar("holderName", { length: 160 }),
-  status: mysqlEnum("status", ["available", "assigned", "maintenance", "retired", "lost"]).default("available").notNull(),
+  status: mysqlEnum("status", ["available", "assigned", "maintenance", "retired", "lost", "returned_to_vendor"]).default("available").notNull(),
   condition: mysqlEnum("condition", ["good", "fair", "needs_inspection", "damaged"]).default("good").notNull(),
   purchaseDate: timestamp("purchaseDate"),
   purchaseValue: decimal("purchaseValue", { precision: 15, scale: 2 }),
