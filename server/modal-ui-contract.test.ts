@@ -532,6 +532,7 @@ it("keeps maintenance UI controls on the shared interaction contracts", () => {
   const historyDrawer = readProjectFile("client/src/components/AssetImportRecovery.tsx");
   const categories = readProjectFile("client/src/pages/AssetCategoryManagementPage.tsx");
   const datePicker = readProjectFile("client/src/components/DatePickerField.tsx");
+  const home = readProjectFile("client/src/pages/Home.tsx");
 
   expect(db).toContain("limit(safePageSize).offset");
   expect(routers).toContain("pageSize: z.number().int().min(1).max(50)");
@@ -544,5 +545,8 @@ it("keeps maintenance UI controls on the shared interaction contracts", () => {
   expect(categories).toContain("<SearchableSelect value={assetFilter}");
   expect(datePicker).toContain('captionLayout="dropdown"');
   expect(datePicker).toContain("fromYear={new Date().getFullYear() - 10}");
-  expect(readProjectFile("client/src/pages/Home.tsx")).toContain("relative border-b border-[#E7EEF3]");
+  expect(home).toContain("relative border-b border-[#E7EEF3]");
+  expect(home).toContain('link[rel="icon"]');
+  expect(home).toContain("companyInfo.logoUrl");
+  expect(home).toContain("doc.addImage(logoDataUrl");
 });

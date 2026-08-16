@@ -376,8 +376,21 @@ export default function Home() {
     const next = { name: companyQuery.data.name, address: companyQuery.data.address || "", taxCode: companyQuery.data.taxCode || "", phone: companyQuery.data.phone || "", websiteTitle: companyQuery.data.websiteTitle || "AssetMaster – Hệ thống Quản lý Tài sản", logoUrl: companyQuery.data.logoUrl || "", brandColor: companyQuery.data.brandColor || "#0F8C8C", faviconUrl: companyQuery.data.faviconUrl || "" };
     setCompanyInfo(next);
     document.title = next.websiteTitle;
+    const favicon = document.querySelector<HTMLLinkElement>('link[rel="icon"]') || Object.assign(document.createElement("link"), { rel: "icon", type: "image/png" });
+    if (next.faviconUrl) {
+      favicon.href = `${next.faviconUrl}${next.faviconUrl.includes("?") ? "&" : "?"}v=${encodeURIComponent(next.faviconUrl)}`;
+      if (!favicon.parentNode) document.head.appendChild(favicon);
+    }
     localStorage.setItem("assetmaster-company-info", JSON.stringify(next));
   }, [companyQuery.data]);
+
+  useEffect(() => {
+    document.title = companyInfo.websiteTitle;
+    if (!companyInfo.faviconUrl) return;
+    const favicon = document.querySelector<HTMLLinkElement>('link[rel="icon"]') || Object.assign(document.createElement("link"), { rel: "icon", type: "image/png" });
+    favicon.href = `${companyInfo.faviconUrl}${companyInfo.faviconUrl.includes("?") ? "&" : "?"}v=${encodeURIComponent(companyInfo.faviconUrl)}`;
+    if (!favicon.parentNode) document.head.appendChild(favicon);
+  }, [companyInfo.websiteTitle, companyInfo.faviconUrl]);
 
   useEffect(() => {
     const searchableInputs = 'input[placeholder*="Tìm"], input[placeholder*="tìm"]';
@@ -1095,7 +1108,15 @@ async function loadImageData(url: string) { const response = await fetch(url); i
 
 async function loadHandoverPdfFont() { const response = await fetch(handoverPdfFontUrl); if (!response.ok) throw new Error("Không thể tải phông chữ tiếng Việt cho biên bản."); return response.arrayBuffer(); }
 
-function drawHandoverBrandMark(doc: jsPDF, x: number, y: number) {
+function drawHandoverBrandMark(doc: jsPDF, x: number, y: number, logoDataUrl?: string) {
+  if (logoDataUrl) {
+    try {
+      doc.addImage(logoDataUrl, "PNG", x, y - 12, 18, 18, undefined, "FAST");
+      return;
+    } catch {
+      // Fall back to the branded vector mark when the configured image cannot be embedded.
+    }
+  }
   doc.setFillColor(15, 140, 140);
   doc.roundedRect(x, y - 12, 18, 18, 3, 3, "F");
   doc.setFillColor(16, 42, 67);
@@ -1109,10 +1130,11 @@ async function downloadHandoverPdf(item: Handover, signature: string | undefined
   const doc = new jsPDF({ unit: "mm", format: "a4" });
   const fontBuffer = await loadHandoverPdfFont();
   registerVietnamesePdfFont(doc, fontBuffer);
+  const logoDataUrl = companyInfo.logoUrl ? await loadImageData(companyInfo.logoUrl).catch(() => undefined) : undefined;
   const left = 18;
   let y = 22;
   doc.setTextColor(16, 42, 67);
-  drawHandoverBrandMark(doc, left, y);
+  drawHandoverBrandMark(doc, left, y, logoDataUrl);
   doc.setFontSize(18);
   doc.text("AssetMaster", left + 24, y);
   doc.setFontSize(9);

@@ -948,3 +948,10 @@
 - [x] Giữ nguyên bộ chọn nhanh tháng/năm và khả năng thao tác rõ ràng.
 - [x] Kiểm thử TypeScript, Vitest, production build và responsive.
 - [x] Lưu checkpoint phát hành cho phiên này.
+
+## Current Session — Favicon & Company Logo Documents
+
+- [x] Sửa việc favicon không cập nhật sau khi người dùng upload ảnh.
+- [x] Đưa logo công ty đã cài đặt vào header các file văn bản khi in hoặc xuất.
+- [x] Bổ sung hồi quy cho favicon và logo tài liệu; kiểm thử TypeScript, Vitest, production build.
+- [x] Lưu checkpoint phát hành cho phiên này.
