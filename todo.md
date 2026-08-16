@@ -918,3 +918,11 @@
 - [x] Thay lịch chọn ngày của trình duyệt bằng lịch AssetMaster đồng bộ giao diện và thao tác bàn phím.
 - [x] Kiểm thử TypeScript, Vitest, production build và responsive desktop/mobile.
 - [x] Lưu checkpoint phát hành cho bản cập nhật giao diện.
+
+## Current Session — Asset History, Category Dropdown & Calendar Quick Navigation
+
+- [x] Phân trang lịch sử thay đổi tài sản theo 10 dòng/trang, có tổng số và điều hướng.
+- [x] Đồng bộ bộ lọc native tại Danh sách Phân loại bằng SearchableSelect.
+- [x] Thêm chọn nhanh tháng/năm trong lịch AssetMaster.
+- [x] Cập nhật hồi quy, kiểm thử TypeScript, Vitest, production build và responsive.
+- [x] Lưu checkpoint phát hành cho phiên này.

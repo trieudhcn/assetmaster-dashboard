@@ -448,10 +448,16 @@ export async function createAssetFieldChanges(data: Array<typeof assetFieldChang
   await db.insert(assetFieldChanges).values(data);
 }
 
-export async function listAssetFieldChanges(assetId: number) {
+export async function listAssetFieldChanges(assetId: number, page = 1, pageSize = 10) {
   const db = await getDb();
-  if (!db) return [];
-  return db.select().from(assetFieldChanges).where(eq(assetFieldChanges.assetId, assetId)).orderBy(desc(assetFieldChanges.createdAt));
+  const safePage = Math.max(1, Math.floor(page));
+  const safePageSize = Math.min(50, Math.max(1, Math.floor(pageSize)));
+  if (!db) return { items: [], total: 0, page: safePage, pageSize: safePageSize, totalPages: 0 };
+  const where = eq(assetFieldChanges.assetId, assetId);
+  const [{ total }] = await db.select({ total: sql<number>`count(*)` }).from(assetFieldChanges).where(where);
+  const items = await db.select().from(assetFieldChanges).where(where).orderBy(desc(assetFieldChanges.createdAt)).limit(safePageSize).offset((safePage - 1) * safePageSize);
+  const totalNumber = Number(total || 0);
+  return { items, total: totalNumber, page: safePage, pageSize: safePageSize, totalPages: Math.ceil(totalNumber / safePageSize) };
 }
 
 export async function getCompany() {

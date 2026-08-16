@@ -59,9 +59,12 @@ export function DatePickerField({ value, onChange, className = "", disabled, pla
           <Calendar
             mode="single"
             locale={vi}
+            captionLayout="dropdown"
+            fromYear={new Date().getFullYear() - 10}
+            toYear={new Date().getFullYear() + 10}
             selected={selectedDate}
             onSelect={(date) => { if (!date) return; onChange(toIsoDate(date)); setOpen(false); }}
-            className="w-full p-0 [--cell-size:2.25rem] [&_[data-selected-single=true]]:bg-[#0F8C8C] [&_[data-selected-single=true]]:text-white [&_[data-selected-single=true]]:shadow-[0_4px_10px_rgba(15,140,140,0.25)] [&_.rdp-button:hover]:bg-[#E6F6F2] [&_.rdp-caption_label]:font-extrabold [&_.rdp-caption_label]:text-[#193B57] [&_.rdp-weekday]:text-[10px] [&_.rdp-weekday]:font-extrabold [&_.rdp-weekday]:uppercase [&_.rdp-weekday]:tracking-[0.08em] [&_.rdp-weekday]:text-[#8AA0B6]"
+            className="w-full p-0 [--cell-size:2.25rem] [&_[data-selected-single=true]]:bg-[#0F8C8C] [&_[data-selected-single=true]]:text-white [&_[data-selected-single=true]]:shadow-[0_4px_10px_rgba(15,140,140,0.25)] [&_.rdp-button:hover]:bg-[#E6F6F2] [&_.rdp-caption_label]:font-extrabold [&_.rdp-caption_label]:font-extrabold [&_.rdp-caption_label]:text-[#193B57] [&_.rdp-dropdown]:rounded-md [&_.rdp-dropdown]:border-[#CDE5E5] [&_.rdp-dropdown]:bg-white [&_.rdp-dropdown]:px-1.5 [&_.rdp-dropdown]:py-1 [&_.rdp-dropdown]:text-xs [&_.rdp-dropdown]:font-bold [&_.rdp-dropdown]:text-[#193B57] [&_.rdp-dropdown]:outline-none [&_.rdp-dropdown]:focus:ring-2 [&_.rdp-dropdown]:focus:ring-[#A9DDD6] [&_.rdp-caption_label]:font-extrabold [&_.rdp-caption_label]:text-[#193B57] [&_.rdp-weekday]:text-[10px] [&_.rdp-weekday]:font-extrabold [&_.rdp-weekday]:uppercase [&_.rdp-weekday]:tracking-[0.08em] [&_.rdp-weekday]:text-[#8AA0B6]"
           />
         </div>
         <div className="flex items-center justify-between border-t border-[#E7EEF3] px-4 py-2.5">

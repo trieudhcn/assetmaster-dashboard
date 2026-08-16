@@ -515,3 +515,30 @@ describe("maintenance history and filter layout contract", () => {
     expect(home).toContain('sm:col-span-2 xl:col-span-2');
   });
 });
+
+
+  it("serves the configured AssetMaster title from the UI endpoint", async () => {
+    const response = await fetch("http://localhost:3000/");
+    expect(response.ok).toBe(true);
+    const html = await response.text();
+    expect(html).toContain("AssetMaster");
+    expect(process.env.VITE_APP_TITLE).toBe("AssetMaster – Hệ thống Quản lý Tài sản");
+  });
+
+
+it("keeps maintenance UI controls on the shared interaction contracts", () => {
+  const db = readProjectFile("server/db.ts");
+  const routers = readProjectFile("server/routers.ts");
+  const historyDrawer = readProjectFile("client/src/components/AssetImportRecovery.tsx");
+  const categories = readProjectFile("client/src/pages/AssetCategoryManagementPage.tsx");
+  const datePicker = readProjectFile("client/src/components/DatePickerField.tsx");
+
+  expect(db).toContain("limit(safePageSize).offset");
+  expect(routers).toContain("pageSize: z.number().int().min(1).max(50)");
+  expect(historyDrawer).toContain("history.data?.items.map");
+  expect(historyDrawer).toContain("Trang lịch sử trước");
+  expect(categories).toContain("<SearchableSelect value={activityFilter}");
+  expect(categories).toContain("<SearchableSelect value={assetFilter}");
+  expect(datePicker).toContain('captionLayout="dropdown"');
+  expect(datePicker).toContain("fromYear={new Date().getFullYear() - 10}");
+});

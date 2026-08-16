@@ -451,7 +451,7 @@ export const appRouter = router({
       const undoDeadline = getImportUndoDeadline(session.createdAt);
       return { ...session, undoDeadline, canUndo: !session.isUndone && canUndoImport(session.createdAt) };
     }),
-    history: adminProcedure.input(z.object({ assetId: z.number().int().positive() })).query(({ input }) => listAssetFieldChanges(input.assetId)),
+    history: adminProcedure.input(z.object({ assetId: z.number().int().positive(), page: z.number().int().positive().default(1), pageSize: z.number().int().min(1).max(50).default(10) })).query(({ input }) => listAssetFieldChanges(input.assetId, input.page, input.pageSize)),
     undoLatestImport: adminProcedure.input(z.object({ sessionId: z.number().int().positive() })).mutation(async ({ input, ctx }) => {
       const latest = await getLatestAssetImportSession();
       if (!latest || latest.id !== input.sessionId) throw new TRPCError({ code: "BAD_REQUEST", message: "Chỉ có thể hoàn tác phiên import gần nhất." });
