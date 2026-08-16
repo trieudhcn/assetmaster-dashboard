@@ -1050,3 +1050,13 @@
 - [x] Thêm xuất Excel danh sách phiếu bàn giao theo năm đang chọn.
 - [x] Bổ sung hồi quy, kiểm thử TypeScript, Vitest, production build và responsive.
 - [x] Lưu checkpoint phát hành cho phiên này.
+
+## Current Session — Supplier Return & Handover Filters
+
+- [x] Khi trạng thái tài sản là Trả nhà cung cấp, tự đặt Người/Phòng giữ thành Đã trả NCC.
+- [x] Khóa trường Người/Phòng giữ để không thể chỉnh sửa khi tài sản Trả nhà cung cấp.
+- [x] Thêm bộ lọc theo Phòng ban trong Danh sách phiếu bàn giao.
+- [x] Thêm bộ lọc theo Người nhận trong Danh sách phiếu bàn giao.
+- [x] Đồng bộ các bộ lọc mới với tìm kiếm, năm, trạng thái và phân trang.
+- [x] Bổ sung hồi quy, kiểm thử TypeScript, Vitest, production build và responsive.
+- [x] Lưu checkpoint phát hành cho phiên này.
