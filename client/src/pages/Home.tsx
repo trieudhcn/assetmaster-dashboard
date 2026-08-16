@@ -11,7 +11,7 @@ import { trpc } from "@/lib/trpc";
 import { buildMaintenanceExportRows, canCreateCatalogOption, filterNamedCatalogOptions, getHandoverActionTooltip, getMaintenanceBadgeCount, getNewMaintenanceRequestBadge, getPaginationWindow, matchesVietnameseSearch, toggleMaintenanceStatusFilter } from "@/lib/catalogUi";
 import { getNotificationTargetLabel, type NotificationTarget } from "@/lib/notificationLinks";
 import { handoverPdfFontUrl, registerVietnamesePdfFont } from "@/lib/handoverPdf";
-import { formatVnd } from "@/lib/formatters";
+import { formatVnd, formatVndInput } from "@/lib/formatters";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -1618,7 +1618,13 @@ function AssetModal({ mode, asset, formData, setFormData, onClose: dismiss, onSa
     },
     onError: (error) => toast.error(error.message || "Không thể tạo yêu cầu sửa chữa."),
   });
-  const update = (key: keyof Asset, value: string) => { setFormDirty(true); setFormData((current) => ({ ...current, [key]: value })); };
+  const update = (key: keyof Asset, value: string) => { setFormDirty(true); setFormData((current) => ({ ...current, [key]: key === "value" ? value.replace(/\D/g, "") : value })); };
+  useEffect(() => {
+    if (isDetail) return;
+    const valueLabel = Array.from(document.querySelectorAll("label")).find((label) => label.textContent?.trim().startsWith("Giá trị nguyên giá"));
+    const valueInput = valueLabel?.parentElement?.querySelector("input") as HTMLInputElement | null;
+    if (valueInput) valueInput.value = formatVndInput(formData.value);
+  }, [isDetail, formData.value]);
   useEffect(() => {
     if (isDetail) return;
     const holderLabel = Array.from(document.querySelectorAll("label")).find((label) => label.textContent?.trim().startsWith("Người / Phòng giữ"));

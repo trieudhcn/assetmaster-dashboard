@@ -775,3 +775,9 @@
 - [x] Đồng bộ phân trang Nhà cung cấp và Hãng theo mẫu Danh sách Phân loại.
 - [x] Giữ thanh phân trang cố định ở đáy vùng danh sách, dùng icon ‹ › và hiển thị Trang x/y · tổng mục.
 - [x] Bổ sung kiểm thử chuyển trang, tìm kiếm, trạng thái đầu/cuối, responsive và production build.
+
+## Current Session — Correct VND Input Parsing & Formatting
+
+- [x] Sửa diễn giải giá trị VNĐ để không tự nhân thêm hai số 0 khi lưu.
+- [x] Hiển thị dấu chấm phân cách hàng nghìn trực tiếp trong trường nhập giá trị nguyên giá.
+- [x] Bổ sung kiểm thử nhập, chỉnh sửa, hiển thị và export giá trị VNĐ.

@@ -1,11 +1,19 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
+import { formatVnd, parseVndAmount } from "../client/src/lib/formatters";
 
 const projectRoot = resolve(import.meta.dirname, "..");
 const readProjectFile = (relativePath: string) => readFileSync(resolve(projectRoot, relativePath), "utf8");
 
 describe("modal presentation contract", () => {
+  it("parses database decimals and Vietnamese separators as the same VND integer amount", () => {
+    expect(parseVndAmount("160000.00")).toBe(160000);
+    expect(parseVndAmount("160.000")).toBe(160000);
+    expect(parseVndAmount("160000")).toBe(160000);
+    expect(formatVnd("160000.00")).toBe("160.000");
+  });
+
   it("renders action tooltip from a body-level portal rather than a clipping pseudo-element", () => {
     const tooltipComponent = readProjectFile("client/src/components/FloatingActionTooltip.tsx");
     const home = readProjectFile("client/src/pages/Home.tsx");
