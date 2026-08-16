@@ -417,6 +417,9 @@ describe("currency input and scrollbar contract", () => {
     const home = readProjectFile("client/src/pages/Home.tsx");
     const searchableSelect = readProjectFile("client/src/components/SearchableSelect.tsx");
     const reports = readProjectFile("client/src/pages/ReportsManagementView.tsx");
+    const alertDialog = readProjectFile("client/src/components/ui/alert-dialog.tsx");
+    expect(alertDialog).toContain("z-[100] bg-black/50");
+    expect(alertDialog).toContain("z-[101] grid");
     expect(home).toContain("overflow-visible rounded-xl border border-[#DFE9F0]");
     expect(home).toContain('className="w-full shrink-0 sm:w-[180px]"');
     expect(home).toContain("handoverYearFilter");

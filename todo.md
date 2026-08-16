@@ -1068,3 +1068,11 @@
 - [x] Hiển thị thống kê trong bố cục responsive, đồng bộ phong cách trang Bàn giao.
 - [x] Bổ sung hồi quy, kiểm thử TypeScript, Vitest, production build và responsive.
 - [x] Lưu checkpoint phát hành cho phiên này.
+
+## Current Session — Supplier Return Save Hang
+
+- [x] Xác định nguyên nhân nút Lưu thay đổi bị treo khi tài sản ở trạng thái Trả nhà cung cấp.
+- [x] Sửa lớp hiển thị của hộp thoại xác nhận/thông báo để không bị ẩn sau form chỉnh sửa.
+- [x] Bảo đảm trạng thái loading, thành công và lỗi của luồng Trả NCC kết thúc đúng cách.
+- [x] Bổ sung hồi quy, kiểm thử TypeScript, Vitest, production build và responsive.
+- [x] Lưu checkpoint phát hành cho phiên này.
