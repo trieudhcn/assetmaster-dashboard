@@ -116,9 +116,11 @@ describe("modal presentation contract", () => {
   it("surfaces maintenance assets with a quick request action and prevents duplicate open tickets", () => {
     const operations = readProjectFile("client/src/pages/OperationsModules.tsx");
     const routers = readProjectFile("server/routers.ts");
-    expect(operations).toContain('const maintenanceAssets = assets.filter((asset) => asset.status === "maintenance")');
+    expect(operations).toContain('const maintenanceAssets = assets.filter((asset) => asset.status === "maintenance" && !assetsWithOpenTickets.has(asset.id) && !queuedMaintenanceAssetIds.has(asset.id))');
     expect(operations).toContain("Tài sản đang cần bảo trì");
     expect(operations).toContain("Tạo yêu cầu nhanh");
+    expect(operations).toContain("setQueuedMaintenanceAssetIds");
+    expect(operations).toContain("overflow-x-auto overscroll-x-contain");
     expect(operations).toContain('issueType: "maintenance"');
     expect(operations).toContain("asset.maintenanceReason");
     expect(routers).toContain("listMaintenanceTicketsByAsset(input.assetId)");

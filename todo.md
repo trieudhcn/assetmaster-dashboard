@@ -1016,3 +1016,10 @@
 - [x] Căn chỉnh lại khoảng cách và giữ nguyên chức năng lọc.
 - [x] Bổ sung hồi quy, kiểm thử TypeScript, Vitest, production build và responsive.
 - [x] Lưu checkpoint phát hành cho phiên này.
+
+## Current Session — Maintenance Queue UX
+
+- [x] Sau khi tạo nhanh yêu cầu bảo trì thành công, loại tài sản đó khỏi danh sách tài sản đang chờ tạo yêu cầu.
+- [x] Thêm vùng cuộn ngang cho danh sách tài sản cần bảo trì khi số lượng vượt chiều rộng màn hình.
+- [x] Kiểm thử hồi quy, TypeScript, Vitest, production build và responsive.
+- [x] Lưu checkpoint phát hành cho phiên này.

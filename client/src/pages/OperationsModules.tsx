@@ -87,6 +87,7 @@ export function MaintenancePage() {
   const [maintenanceYear, setMaintenanceYear] = useState(String(currentYear));
   const [maintenancePage, setMaintenancePage] = useState(1);
   const [historyTicket, setHistoryTicket] = useState<(typeof tickets)[number] | null>(null);
+  const [queuedMaintenanceAssetIds, setQueuedMaintenanceAssetIds] = useState<Set<number>>(() => new Set());
   const maintenancePageSize = 5;
 
   const assetsQuery = trpc.assets.list.useQuery();
@@ -103,7 +104,12 @@ export function MaintenancePage() {
   const utils = trpc.useUtils();
 
   const createMutation = trpc.maintenance.create.useMutation({
-    onSuccess: () => {
+    onSuccess: (_, variables) => {
+      setQueuedMaintenanceAssetIds((current) => {
+        const next = new Set(current);
+        next.add(variables.assetId);
+        return next;
+      });
       void ticketsQuery.refetch();
       void utils.assets.list.invalidate();
       setAssetId("");
@@ -140,8 +146,8 @@ export function MaintenancePage() {
 
   const assets = assetsQuery.data || [];
   const tickets = ticketsQuery.data || [];
-  const maintenanceAssets = assets.filter((asset) => asset.status === "maintenance");
   const assetsWithOpenTickets = new Set(tickets.filter((ticket) => ticket.status === "open" || ticket.status === "in_progress").map((ticket) => ticket.assetId));
+  const maintenanceAssets = assets.filter((asset) => asset.status === "maintenance" && !assetsWithOpenTickets.has(asset.id) && !queuedMaintenanceAssetIds.has(asset.id));
   const maintenanceYears = Array.from(new Set([currentYear, ...tickets.map((ticket) => ticket.ticketYear || new Date(ticket.openedAt).getFullYear())])).sort((left, right) => right - left);
   const filteredTickets = tickets.filter((ticket) => maintenanceYear === "all" || (ticket.ticketYear || new Date(ticket.openedAt).getFullYear()) === Number(maintenanceYear));
   const maintenanceTotalPages = Math.max(1, Math.ceil(filteredTickets.length / maintenancePageSize));
@@ -294,7 +300,7 @@ export function MaintenancePage() {
             <div><div className="flex items-center gap-2 text-sm font-extrabold text-[#193B57]"><Wrench size={16} className="text-[#A86B00]" />Tài sản đang cần bảo trì</div><p className="mt-1 text-xs text-[#8AA0B6]">Các tài sản vừa được chuyển sang trạng thái Bảo trì từ Danh mục tài sản.</p></div>
             <span className="rounded-full bg-[#FFF5DC] px-2.5 py-1 text-[10px] font-extrabold text-[#A86B00]">{maintenanceAssets.length} tài sản</span>
           </div>
-          {assetsQuery.isLoading ? <div className="px-5 py-6 text-xs text-[#8AA0B6]">Đang tải tài sản...</div> : maintenanceAssets.length === 0 ? <div className="px-5 py-7 text-center text-xs font-semibold text-[#8AA0B6]">Chưa có tài sản nào ở trạng thái Bảo trì.</div> : <div className="grid gap-3 p-4 sm:grid-cols-2 xl:grid-cols-3">{maintenanceAssets.map((asset) => { const hasOpenTicket = assetsWithOpenTickets.has(asset.id); const quickDescription = asset.maintenanceReason?.trim() || `Kiểm tra và xử lý tình trạng bảo trì của ${asset.name}.`; return <div key={asset.id} className="rounded-xl border border-[#F2D596] bg-[#FFFDF7] p-4"><div className="flex items-start justify-between gap-3"><div className="min-w-0"><div className="font-mono text-[10px] font-bold text-[#A86B00]">{asset.assetCode}</div><div className="mt-1 truncate text-sm font-extrabold text-[#193B57]">{asset.name}</div></div><span className="shrink-0 rounded-full bg-[#FFF0C8] px-2 py-1 text-[10px] font-extrabold text-[#A86B00]">Bảo trì</span></div><p className="mt-3 line-clamp-2 text-xs leading-5 text-[#60758A]">{quickDescription}</p><button type="button" disabled={hasOpenTicket || createMutation.isPending} onClick={() => createMutation.mutate({ assetId: asset.id, issueType: "maintenance", priority: "medium", description: quickDescription, estimatedCost: null, dueAt: null, recurrenceDays: null })} className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-lg border border-[#D7B65B] bg-white px-3 py-2 text-xs font-extrabold text-[#A86B00] transition hover:bg-[#FFF5DC] disabled:cursor-not-allowed disabled:opacity-60"><Plus size={14} />{hasOpenTicket ? "Đã có yêu cầu đang mở" : createMutation.isPending ? "Đang tạo yêu cầu..." : "Tạo yêu cầu nhanh"}</button></div>; })}</div>}
+          {assetsQuery.isLoading ? <div className="px-5 py-6 text-xs text-[#8AA0B6]">Đang tải tài sản...</div> : maintenanceAssets.length === 0 ? <div className="px-5 py-7 text-center text-xs font-semibold text-[#8AA0B6]">Chưa có tài sản nào ở trạng thái Bảo trì.</div> : <div className="overflow-x-auto overscroll-x-contain"><div className="flex min-w-max gap-3 p-4">{maintenanceAssets.map((asset) => { const quickDescription = asset.maintenanceReason?.trim() || `Kiểm tra và xử lý tình trạng bảo trì của ${asset.name}.`; return <div key={asset.id} className="w-[280px] shrink-0 rounded-xl border border-[#F2D596] bg-[#FFFDF7] p-4 sm:w-[320px]"><div className="flex items-start justify-between gap-3"><div className="min-w-0"><div className="font-mono text-[10px] font-bold text-[#A86B00]">{asset.assetCode}</div><div className="mt-1 truncate text-sm font-extrabold text-[#193B57]">{asset.name}</div></div><span className="shrink-0 rounded-full bg-[#FFF0C8] px-2 py-1 text-[10px] font-extrabold text-[#A86B00]">Bảo trì</span></div><p className="mt-3 line-clamp-2 text-xs leading-5 text-[#60758A]">{quickDescription}</p><button type="button" disabled={createMutation.isPending} onClick={() => createMutation.mutate({ assetId: asset.id, issueType: "maintenance", priority: "medium", description: quickDescription, estimatedCost: null, dueAt: null, recurrenceDays: null })} className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-lg border border-[#D7B65B] bg-white px-3 py-2 text-xs font-extrabold text-[#A86B00] transition hover:bg-[#FFF5DC] disabled:cursor-not-allowed disabled:opacity-60"><Plus size={14} />{createMutation.isPending ? "Đang tạo yêu cầu..." : "Tạo yêu cầu nhanh"}</button></div>; })}</div></div>}
         </section>
 
         <section className={`${card} p-5`}>
