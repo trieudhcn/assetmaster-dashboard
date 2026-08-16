@@ -884,3 +884,10 @@
 - [x] Khóa toàn bộ trường và thao tác cập nhật khi trạng thái là Đã đóng ở frontend và backend.
 - [x] Chuẩn hóa mã phiếu theo dạng BT-(năm)-001 và reset bộ đếm theo từng năm.
 - [x] Bổ sung migration/schema cần thiết, hồi quy, TypeScript, Vitest, production build và phát hành.
+
+## Current Session — Maintenance History, Dropdown Downward & Asset Filters
+
+- [x] Thêm nhật ký lịch sử thay đổi chi tiết cho từng phiếu bảo trì.
+- [x] Sửa SearchableSelect luôn mở menu xuống dưới, tự neo trái/phải theo vị trí bộ lọc.
+- [x] Sắp xếp lại cụm bộ lọc Danh mục tài sản gọn và cân đối như phiên bản trước.
+- [x] Bổ sung hồi quy, kiểm thử responsive, TypeScript, Vitest, production build và phát hành.

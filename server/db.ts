@@ -657,6 +657,13 @@ export async function listActivityLogs(limit = 200) {
   return db.select().from(activityLogs).orderBy(desc(activityLogs.createdAt)).limit(limit);
 }
 
+export async function listActivityLogsByEntity(entityType: string, entityId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  const rows = await db.select().from(activityLogs).where(eq(activityLogs.entityId, entityId)).orderBy(desc(activityLogs.createdAt));
+  return rows.filter((row) => row.entityType === entityType);
+}
+
 export async function listHandoverReturnDecisionHistory(handoverId: number) {
   const db = await getDb();
   if (!db) return [];

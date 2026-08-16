@@ -86,10 +86,12 @@ export function MaintenancePage() {
   const currentYear = new Date().getFullYear();
   const [maintenanceYear, setMaintenanceYear] = useState(String(currentYear));
   const [maintenancePage, setMaintenancePage] = useState(1);
+  const [historyTicket, setHistoryTicket] = useState<(typeof tickets)[number] | null>(null);
   const maintenancePageSize = 5;
 
   const assetsQuery = trpc.assets.list.useQuery();
   const ticketsQuery = trpc.maintenance.list.useQuery();
+  const historyQuery = trpc.maintenance.history.useQuery({ id: historyTicket?.id || 0 }, { enabled: Boolean(historyTicket) });
   const employeesQuery = trpc.employees.list.useQuery(undefined, { enabled: isAdmin });
   const utils = trpc.useUtils();
 
@@ -353,6 +355,7 @@ export function MaintenancePage() {
                           <div className="font-mono text-[11px] font-bold text-[#0F8C8C]">{ticket.ticketCode}</div>
                           <div className="mt-1 flex items-center gap-1.5 font-semibold text-[#193B57]"><Wrench size={13} className="text-[#A86B00]" />{asset?.name || `Tài sản #${ticket.assetId}`}</div>
                           <div className="mt-1 text-[10px] text-[#8AA0B6]">{asset?.assetCode || "Mã tài sản không còn khả dụng"} · Báo bởi {ticket.reporterName || "Người dùng"}</div>
+                          <button type="button" onClick={() => setHistoryTicket(ticket)} className="mt-2 inline-flex items-center gap-1 rounded-md border border-[#CDE5E5] px-2 py-1 text-[10px] font-bold text-[#087A6A] transition hover:bg-[#ECF8F7]" aria-label={`Xem lịch sử ${ticket.ticketCode}`}><History size={12} />Xem lịch sử</button>
                         </td>
                         <td className="max-w-[230px] px-4 py-4"><div className="font-semibold text-[#193B57]">{issueTypeLabels[ticket.issueType]}</div><p className="mt-1 leading-5 text-[#60758A]">{ticket.description}</p></td>
                         <td className="px-4 py-4"><span className={`inline-flex rounded-full px-2 py-1 text-[10px] font-extrabold ${priorityTone}`}>{priorityLabels[ticket.priority]}</span></td>
@@ -382,6 +385,7 @@ export function MaintenancePage() {
             </div>
           )}
         </section>
+        {historyTicket && <div className="fixed inset-0 z-[140] flex justify-end bg-[#102A43]/30 p-0 backdrop-blur-[2px]" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) setHistoryTicket(null); }}><aside className="motion-drawer-panel h-full w-full max-w-[480px] overflow-y-auto bg-white p-5 shadow-[-12px_0_32px_rgba(16,42,67,0.18)]" role="dialog" aria-modal="true" aria-label={`Lịch sử phiếu ${historyTicket.ticketCode}`}><div className="flex items-start justify-between gap-3 border-b border-[#E7EEF3] pb-4"><div><div className="font-mono text-xs font-extrabold text-[#0F8C8C]">{historyTicket.ticketCode}</div><h2 className="mt-1 text-base font-extrabold text-[#193B57]">Lịch sử thay đổi</h2><p className="mt-1 text-xs text-[#71869A]">Theo dõi toàn bộ thao tác và cập nhật của phiếu bảo trì.</p></div><button type="button" onClick={() => setHistoryTicket(null)} className="grid h-8 w-8 place-items-center rounded-lg text-xl text-[#60758A] hover:bg-[#ECF8F7] hover:text-[#087A6A]" aria-label="Đóng lịch sử">×</button></div><div className="mt-5 space-y-3">{historyQuery.isLoading ? <div className="rounded-xl bg-[#F6FAFC] px-4 py-8 text-center text-xs font-semibold text-[#8AA0B6]">Đang tải lịch sử...</div> : historyQuery.isError ? <div className="rounded-xl border border-[#F2D596] bg-[#FFF9EB] px-4 py-5 text-xs text-[#A86B00]">Không thể tải lịch sử phiếu. <button type="button" onClick={() => historyQuery.refetch()} className="font-bold underline">Thử lại</button></div> : historyQuery.data?.length ? historyQuery.data.map((entry) => <div key={entry.id} className="relative rounded-xl border border-[#E7EEF3] bg-white p-4 shadow-[0_4px_14px_rgba(16,42,67,0.04)]"><div className="flex items-start justify-between gap-3"><div className="text-xs font-extrabold text-[#193B57]">{entry.summary || entry.action}</div><span className="shrink-0 text-[10px] font-semibold text-[#8AA0B6]">{new Date(entry.createdAt).toLocaleString("vi-VN")}</span></div><div className="mt-2 flex flex-wrap gap-2 text-[10px] text-[#60758A]"><span className="rounded-full bg-[#ECF8F7] px-2 py-1 font-bold text-[#087A6A]">{entry.action}</span><span>Thực hiện bởi: <b>{entry.actorName || "Hệ thống"}</b></span></div></div>) : <div className="rounded-xl border border-dashed border-[#CDE5E5] bg-[#F8FCFC] px-4 py-8 text-center text-xs font-semibold text-[#8AA0B6]">Chưa có lịch sử thay đổi cho phiếu này.</div>}</div></aside></div>}
       </div>
     </div>
   );

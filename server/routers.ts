@@ -43,6 +43,7 @@ import {
   getUserNotificationPreferences,
   getMaintenanceTicket,
   getNextMaintenanceTicketSequence,
+  listActivityLogsByEntity,
   getVendorById,
   getVendorByName,
   getVendorDocumentById,
@@ -611,6 +612,11 @@ export const appRouter = router({
   maintenance: router({
     list: protectedProcedure.query(() => listMaintenanceTickets()),
     byAsset: protectedProcedure.input(z.object({ assetId: z.number().int().positive() })).query(({ input }) => listMaintenanceTicketsByAsset(input.assetId)),
+    history: protectedProcedure.input(z.object({ id: z.number().int().positive() })).query(async ({ input }) => {
+      const ticket = await getMaintenanceTicket(input.id);
+      if (!ticket) throw new TRPCError({ code: "NOT_FOUND", message: "Không tìm thấy yêu cầu bảo trì." });
+      return listActivityLogsByEntity("maintenance", input.id);
+    }),
     create: protectedProcedure.input(z.object({ assetId: z.number().int().positive(), issueType: z.enum(["maintenance", "incident", "damage"]), priority: z.enum(["low", "medium", "high", "critical"]).default("medium"), description: z.string().trim().min(5).max(5000), estimatedCost: z.string().regex(/^\d+(\.\d{1,2})?$/).optional().nullable(), dueAt: dateFromMs, recurrenceDays: z.number().int().min(1).max(3650).optional().nullable() })).mutation(async ({ input, ctx }) => {
       const asset = await getAssetById(input.assetId);
       if (!asset || asset.isArchived) throw new TRPCError({ code: "NOT_FOUND", message: "Tài sản được chọn không tồn tại hoặc đã lưu trữ." });

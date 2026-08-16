@@ -394,8 +394,8 @@ describe("currency input and scrollbar contract", () => {
     expect(searchableSelect).toContain('open ? "z-[96]" : "z-0"');
     expect(searchableSelect).toContain('menuAlign === "right" ? "right-0 left-auto" : "left-0 right-auto"');
     expect(searchableSelect).toContain('estimatedMenuWidth');
-    expect(searchableSelect).toContain('estimatedMenuHeight');
-    expect(searchableSelect).toContain('menuVertical === "top"');
+    expect(searchableSelect).toContain('top-[calc(100%+0.35rem)]');
+    expect(searchableSelect).not.toContain('menuVertical');
     expect(searchableSelect).toContain('transition-[opacity,transform]');
     expect(searchableSelect).toContain('closeTimerRef');
     expect(home).toContain("Đang tạo danh sách tài sản bảo trì...");
@@ -486,5 +486,32 @@ describe("empty illustration, modal skeleton and motion preference", () => {
     const settings = readProjectFile("client/src/components/CompanyBrandSettings.tsx");
     expect(settings).toContain("assetmaster-motion");
     expect(settings).toContain('role="switch"');
+  });
+});
+
+
+describe("maintenance history and filter layout contract", () => {
+  it("exposes a per-maintenance-ticket history drawer and protected history query", () => {
+    const operations = readProjectFile("client/src/pages/OperationsModules.tsx");
+    const router = readProjectFile("server/routers.ts");
+    const db = readProjectFile("server/db.ts");
+    expect(operations).toContain("trpc.maintenance.history.useQuery");
+    expect(operations).toContain("Lịch sử thay đổi");
+    expect(operations).toContain("Xem lịch sử");
+    expect(router).toContain("history: protectedProcedure");
+    expect(db).toContain("listActivityLogsByEntity");
+  });
+
+  it("keeps searchable dropdowns below the trigger and aligns them horizontally", () => {
+    const searchableSelect = readProjectFile("client/src/components/SearchableSelect.tsx");
+    expect(searchableSelect).toContain('top-[calc(100%+0.35rem)]');
+    expect(searchableSelect).not.toContain('bottom-[calc(100%+0.35rem)]');
+    expect(searchableSelect).toContain('menuAlign === "right" ? "right-0 left-auto"');
+  });
+
+  it("uses a compact four-column asset filter grid with a wide search field", () => {
+    const home = readProjectFile("client/src/pages/Home.tsx");
+    expect(home).toContain('sm:grid-cols-2 xl:grid-cols-4');
+    expect(home).toContain('sm:col-span-2 xl:col-span-2');
   });
 });
