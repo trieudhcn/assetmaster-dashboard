@@ -1363,6 +1363,22 @@ function AssetModal({ mode, asset, formData, setFormData, isSaving, onClose: dis
   const persistedAsset = assetsQuery.data?.find((candidate) => candidate.assetCode === asset?.code);
   const maintenanceHistoryQuery = trpc.maintenance.byAsset.useQuery({ assetId: persistedAsset?.id || 0 }, { enabled: isDetail && Boolean(persistedAsset?.id) });
   const assetFieldHistoryQuery = trpc.assets.history.useQuery({ assetId: persistedAsset?.id || 0 }, { enabled: isDetail && Boolean(persistedAsset?.id) });
+  useEffect(() => {
+    if (!isDetail || !persistedAsset?.id) return;
+    const dialog = document.querySelector('[role="dialog"][aria-label="Chi tiết tài sản"]');
+    const closeButton = dialog?.querySelector('button[aria-label="Đóng"]');
+    const header = closeButton?.parentElement;
+    if (!header || header.querySelector("[data-asset-field-history]")) return;
+    const historyButton = document.createElement("button");
+    historyButton.type = "button";
+    historyButton.dataset.assetFieldHistory = "true";
+    historyButton.textContent = "Lịch sử thay đổi";
+    historyButton.className = "mr-2 min-h-10 rounded-lg border border-[#CDE5E5] px-3 py-2 text-[11px] font-bold text-[#087A6A] transition hover:bg-[#ECF8F7] active:scale-[0.98]";
+    const openHistory = () => window.dispatchEvent(new CustomEvent("assetmaster:open-asset-history", { detail: persistedAsset.id }));
+    historyButton.addEventListener("click", openHistory);
+    header.insertBefore(historyButton, closeButton);
+    return () => { historyButton.removeEventListener("click", openHistory); historyButton.remove(); };
+  }, [isDetail, persistedAsset?.id]);
   const utils = trpc.useUtils();
   const [quickEntryType, setQuickEntryType] = useState<"vendor" | "brand" | null>(null);
   const [quickEntryName, setQuickEntryName] = useState("");

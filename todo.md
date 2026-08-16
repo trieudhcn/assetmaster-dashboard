@@ -1139,3 +1139,11 @@
 - [x] Giữ hiệu ứng mở/đóng, click ngoài vùng và Escape hoạt động ổn định.
 - [x] Bổ sung hồi quy, kiểm thử TypeScript, Vitest, production build và responsive.
 - [x] Lưu checkpoint phát hành cho phiên này.
+
+## Current Session — Restore Asset Edit History
+
+- [x] Xác định nguyên nhân vùng Lịch sử thay đổi không còn hiển thị trong drawer chi tiết tài sản.
+- [x] Khôi phục danh sách lịch sử, trạng thái tải/rỗng/lỗi và hành vi tải thêm hiện có.
+- [x] Xác minh truy vấn dữ liệu lịch sử theo đúng tài sản đang xem.
+- [x] Bổ sung hồi quy, kiểm thử TypeScript, Vitest, production build và responsive.
+- [x] Lưu checkpoint phát hành cho phiên này.

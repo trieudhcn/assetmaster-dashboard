@@ -438,6 +438,9 @@ describe("currency input and scrollbar contract", () => {
     expect(home).toContain("isSaving={createAssetMutation.isPending || updateAssetMutation.isPending}");
     expect(home).toContain("Đang lưu...");
     expect(home).toContain("disabled={isSaving}");
+    expect(home).toContain('data-asset-field-history');
+    expect(home).toContain('historyButton.textContent = "Lịch sử thay đổi"');
+    expect(home).toContain('new CustomEvent("assetmaster:open-asset-history"');
     expect(home).toContain("overflow-visible rounded-xl border border-[#DFE9F0]");
     expect(home).toContain('className="w-full shrink-0 sm:w-[180px]"');
     expect(home).toContain('className="flex flex-wrap items-center gap-2 border-b border-[#E7EEF3] bg-[#FBFCFD] px-5 py-4"');
