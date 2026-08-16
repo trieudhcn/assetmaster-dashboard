@@ -1023,3 +1023,20 @@
 - [x] Thêm vùng cuộn ngang cho danh sách tài sản cần bảo trì khi số lượng vượt chiều rộng màn hình.
 - [x] Kiểm thử hồi quy, TypeScript, Vitest, production build và responsive.
 - [x] Lưu checkpoint phát hành cho phiên này.
+
+## Current Session — Maintenance Detail & Handover Numbering
+
+- [ ] Thêm nút “Mở phiếu vừa tạo” sau khi tạo nhanh yêu cầu bảo trì thành công.
+- [ ] Khi bấm nút, mở đúng chi tiết phiếu bảo trì vừa tạo trong giao diện hiện tại.
+- [ ] Chuẩn hóa mã phiếu bàn giao theo cấu trúc BG-(năm)-001.
+- [ ] Đảm bảo bộ đếm mã bàn giao quay lại 001 khi sang năm mới và tăng tuần tự trong cùng năm.
+- [ ] Bổ sung hồi quy, kiểm thử TypeScript, Vitest, production build và responsive.
+- [ ] Lưu checkpoint phát hành cho phiên này.
+
+## Current Session — Handover Year Filter
+
+- [x] Thêm bộ lọc theo năm trong Danh sách phiếu bàn giao.
+- [x] Lấy năm từ mã phiếu BG hoặc ngày bàn giao và đồng bộ với tìm kiếm/phân trang hiện có.
+- [x] Hiển thị trạng thái không có kết quả phù hợp khi lọc theo năm.
+- [x] Bổ sung hồi quy, kiểm thử TypeScript, Vitest, production build và responsive.
+- [x] Lưu checkpoint phát hành cho phiên này.

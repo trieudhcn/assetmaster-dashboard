@@ -418,7 +418,11 @@ describe("currency input and scrollbar contract", () => {
     const searchableSelect = readProjectFile("client/src/components/SearchableSelect.tsx");
     const reports = readProjectFile("client/src/pages/ReportsManagementView.tsx");
     expect(home).toContain("overflow-visible rounded-xl border border-[#DFE9F0]");
-    expect(home).toContain("className=\"w-full sm:w-[180px]\"");
+    expect(home).toContain('className="w-full sm:w-[180px]"');
+    expect(home).toContain("handoverYearFilter");
+    expect(home).toContain("handoverYears");
+    expect(home).toContain("referenceCode.match(/^BG-(\\\\d{4})-/)");
+    expect(home).toContain("Tất cả các năm");
     expect(searchableSelect).toContain('w-[min(280px,calc(100vw-1rem))]');
     expect(searchableSelect).toContain('open ? "z-[96]" : "z-0"');
     expect(searchableSelect).toContain('menuAlign === "right" ? "right-0 left-auto" : "left-0 right-auto"');
