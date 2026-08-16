@@ -549,4 +549,9 @@ it("keeps maintenance UI controls on the shared interaction contracts", () => {
   expect(home).toContain('link[rel="icon"]');
   expect(home).toContain("companyInfo.logoUrl");
   expect(home).toContain("doc.addImage(logoDataUrl");
+  const brandEnhancements = readProjectFile("client/src/components/BrandEnhancementsPanel.tsx");
+  expect(datePicker).toContain("w-[238px]");
+  expect(datePicker).toContain("[--cell-size:1.55rem]");
+  expect(brandEnhancements).toContain("image/png,image/jpeg,image/webp");
+  expect(brandEnhancements).toContain("bg-[#F7FAFC]");
 });

@@ -955,3 +955,11 @@
 - [x] Đưa logo công ty đã cài đặt vào header các file văn bản khi in hoặc xuất.
 - [x] Bổ sung hồi quy cho favicon và logo tài liệu; kiểm thử TypeScript, Vitest, production build.
 - [x] Lưu checkpoint phát hành cho phiên này.
+
+## Current Session — Compact Calendar, Logo Formats & Reusable Skill
+
+- [x] Thu nhỏ lịch thực tế hơn trên mobile, không chỉ giảm nhẹ kích thước.
+- [x] Kiểm tra và chuẩn hóa hiển thị logo PNG, JPG, WebP, bao gồm nền trong suốt.
+- [x] Tạo và xác thực kỹ năng tái sử dụng theo hướng dẫn Skill Creator.
+- [x] Kiểm thử TypeScript, Vitest, production build và responsive.
+- [x] Lưu checkpoint phát hành cho ứng dụng và bàn giao kỹ năng.
