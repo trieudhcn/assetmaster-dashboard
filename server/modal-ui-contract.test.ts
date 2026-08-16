@@ -364,15 +364,18 @@ describe("currency input and scrollbar contract", () => {
     expect(currencyInput).toContain('suffix = "VNĐ"');
   });
 
-  it("accepts pasted VND symbols and keeps the in-field currency suffix", () => {
+  it("formats typed and pasted VND values in the asset form", () => {
     const home = readProjectFile("client/src/pages/Home.tsx");
+    const currencyInput = readProjectFile("client/src/components/CurrencyInput.tsx");
     const stylesheet = readProjectFile("client/src/index.css");
     expect(parseVndAmount("160.000 ₫")).toBe(160000);
     expect(parseVndAmount("160000 VNĐ")).toBe(160000);
-    expect(home).toContain('data-asset-value-currency');
-    expect(home).toContain('textContent = "VNĐ"');
-    expect(home).toContain('event.clipboardData?.getData("text")');
-    expect(stylesheet).toContain(".asset-currency-suffix");
+    expect(formatVnd(16000)).toBe("16.000");
+    expect(home).toContain('<CurrencyInput value={String(formData.value || "")}');
+    expect(home).toContain('showWords />');
+    expect(currencyInput).toContain('formatVndInput(value)');
+    expect(currencyInput).toContain('className="absolute right-11 top-1/2 z-10');
+    expect(currencyInput).toContain('text-[10px] font-medium leading-4 text-[#8AA0B6]');
     expect(stylesheet).toContain("scrollbar-color: #8BC9C5 #EEF5F6");
   });
 

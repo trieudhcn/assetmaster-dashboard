@@ -813,3 +813,11 @@
 - [x] Mở rộng Hồ sơ tài liệu Nhà cung cấp full-width như các phiên bản trước.
 - [x] Thêm loading và toast trạng thái cho luồng xuất Excel chi phí bảo trì.
 - [x] Bổ sung kiểm thử giao diện, TypeScript, Vitest và production build.
+
+## Current Session — Currency Input Layout & Formatting Fixes
+
+- [x] Sửa nút X của CurrencyInput không bị rơi xuống dòng và giữ đúng vị trí trong ô nhập.
+- [x] Hiển thị số tiền bằng chữ ngay dưới ô nhập với font nhỏ, màu nhạt và khoảng cách gọn.
+- [x] Tự động thêm dấu chấm phân cách hàng nghìn khi nhập số tiền, ví dụ 16000 thành 16.000.
+- [x] Áp dụng và kiểm tra chuẩn hóa cho tất cả các trường nhập giá tiền.
+- [x] Bổ sung hồi quy, chạy TypeScript, Vitest, production build và xác minh giao diện.
