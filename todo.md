@@ -1091,3 +1091,11 @@
 - [x] Bảo đảm hộp thoại không bị lệch hoặc tràn trên màn hình nhỏ.
 - [x] Bổ sung hồi quy, kiểm thử TypeScript, Vitest, production build và responsive.
 - [x] Lưu checkpoint phát hành cho phiên này.
+
+## Current Session — Modal Motion & Category Count Tooltip
+
+- [x] Thêm hiệu ứng fade-in/fade-out khi mở và đóng hộp thoại xác nhận Trả nhà cung cấp.
+- [x] Cho phép đóng hộp thoại khi click ra vùng nền tối hoặc nhấn phím Escape.
+- [x] Sửa tooltip số lượng tài sản theo trạng thái trong Danh sách Phân loại để hiển thị đầy đủ, không bị cắt.
+- [x] Bổ sung hồi quy, kiểm thử TypeScript, Vitest, production build và responsive.
+- [x] Lưu checkpoint phát hành cho phiên này.

@@ -194,6 +194,9 @@ describe("modal presentation contract", () => {
     expect(categories).toContain("Đang sử dụng:");
     expect(categories).toContain("Hỏng:");
     expect(categories).toContain("Bảo trì:");
+    expect(categories).toContain('role="tooltip"');
+    expect(categories).toContain("max-w-[min(92vw,23rem)]");
+    expect(categories).toContain("group-hover/status:opacity-100");
     expect(categories).toContain("bulkMoveAssets");
     expect(categories).toContain("Xuất Excel");
   });
@@ -421,6 +424,9 @@ describe("currency input and scrollbar contract", () => {
     expect(alertDialog).toContain("z-[100] bg-black/50");
     expect(alertDialog).toContain("z-[101] grid");
     expect(alertDialog).toContain("fixed inset-0 m-auto z-[101] grid h-fit");
+    expect(alertDialog).toContain("data-[state=closed]:pointer-events-none");
+    expect(home).toContain("onPointerDownOutside={() => setSupplierReturnConfirmOpen(false)}");
+    expect(home).toContain("onEscapeKeyDown={() => setSupplierReturnConfirmOpen(false)}");
     expect(home).toContain("overflow-visible rounded-xl border border-[#DFE9F0]");
     expect(home).toContain('className="w-full shrink-0 sm:w-[180px]"');
     expect(home).toContain('className="flex flex-wrap items-center gap-2 border-b border-[#E7EEF3] bg-[#FBFCFD] px-5 py-4"');
