@@ -32,6 +32,7 @@ import { LoginGateway } from "./LoginGateway";
 import { UserDashboard } from "./UserDashboard";
 import { AssetImportModal } from "@/components/AssetImportModal";
 import { AssetFieldHistoryDrawer, LatestImportUndo } from "@/components/AssetImportRecovery";
+import { AssetCatalogDropdowns } from "@/components/AssetCatalogDropdowns";
 import { CompanyBrandSettings } from "@/components/CompanyBrandSettings";
 import { ModuleEmptyState } from "@/components/ModuleEmptyState";
 import { ModalTableSkeleton } from "@/components/ModalTableSkeleton";
@@ -1322,6 +1323,30 @@ function AssetModal({ mode, asset, formData, setFormData, onClose: dismiss, onSa
   const [quickEntryType, setQuickEntryType] = useState<"vendor" | "brand" | null>(null);
   const [quickEntryName, setQuickEntryName] = useState("");
   const quickEntryNameRef = useRef("");
+  const createVendorMutation = trpc.vendors.create.useMutation({
+    onSuccess: async (result) => {
+      const created = await vendorsQuery.refetch();
+      const vendor = created.data?.find((item) => item.id === result.id);
+      setFormData((current) => ({ ...current, vendorId: result.id, supplier: vendor?.name || quickEntryNameRef.current }));
+      quickEntryNameRef.current = "";
+      setQuickEntryName("");
+      setQuickEntryType(null);
+      toast.success("Đã thêm và chọn Nhà cung cấp mới.");
+    },
+    onError: (error) => toast.error(error.message || "Không thể thêm Nhà cung cấp."),
+  });
+  const createBrandMutation = trpc.brands.create.useMutation({
+    onSuccess: async (result) => {
+      const created = await brandsQuery.refetch();
+      const brand = created.data?.find((item) => item.id === result.id);
+      setFormData((current) => ({ ...current, brandId: result.id, brand: brand?.name || quickEntryNameRef.current }));
+      quickEntryNameRef.current = "";
+      setQuickEntryName("");
+      setQuickEntryType(null);
+      toast.success("Đã thêm và chọn Hãng mới.");
+    },
+    onError: (error) => toast.error(error.message || "Không thể thêm Hãng."),
+  });
   const vendorsQuery = trpc.vendors.list.useQuery();
   const brandsQuery = trpc.brands.list.useQuery();
   const categoriesQuery = trpc.assetCategories.list.useQuery(undefined, { enabled: !isDetail });
@@ -1343,330 +1368,6 @@ function AssetModal({ mode, asset, formData, setFormData, onClose: dismiss, onSa
     if (isDetail || mode !== "create" || !nextAssetCodeQuery.data?.assetCode) return;
     setFormData((current) => current.code === nextAssetCodeQuery.data!.assetCode ? current : { ...current, code: nextAssetCodeQuery.data!.assetCode });
   }, [isDetail, mode, nextAssetCodeQuery.data?.assetCode, setFormData]);
-  useEffect(() => {
-    if (isDetail) return;
-    const dialog = document.querySelector('[role="dialog"][aria-label="Thêm tài sản mới"], [role="dialog"][aria-label="Chỉnh sửa tài sản"]');
-
-    const categoryLabel = Array.from(dialog?.querySelectorAll("label") || []).find((label) => label.textContent?.trim() === "Phân loại");
-    const categoryField = categoryLabel?.parentElement;
-    const select = categoryField?.querySelector("select") as HTMLSelectElement | null;
-    if (!categoryField || !select) return;
-    categoryField.querySelector("[data-category-search-picker]")?.remove();
-    select.replaceChildren();
-    const placeholder = document.createElement("option");
-    placeholder.value = "";
-    placeholder.textContent = categoriesQuery.isLoading ? "Đang tải Phân loại..." : "Chọn Phân loại";
-    select.appendChild(placeholder);
-    (categoriesQuery.data || []).forEach((category) => {
-      const option = document.createElement("option");
-      option.value = String(category.id);
-      option.textContent = `${category.name} · ${category.code}xxxxx`;
-      select.appendChild(option);
-    });
-    select.value = formData.categoryId ? String(formData.categoryId) : "";
-    select.onchange = () => {
-      const category = (categoriesQuery.data || []).find((item) => item.id === Number(select.value));
-      setFormDirty(true);
-      setFormData((current) => ({ ...current, categoryId: category?.id, category: category?.name || "", code: "" }));
-    };
-    select.classList.add("sr-only");
-    select.tabIndex = -1;
-    select.setAttribute("aria-hidden", "true");
-    const selectedCategory = (categoriesQuery.data || []).find((item) => item.id === formData.categoryId);
-    const picker = document.createElement("div");
-    picker.dataset.categorySearchPicker = "true";
-    picker.className = "relative";
-    const searchInput = document.createElement("input");
-    searchInput.type = "text";
-    searchInput.className = "field-input";
-    searchInput.placeholder = "Tìm tên hoặc tiền tố Phân loại...";
-    searchInput.setAttribute("aria-label", "Tìm Phân loại");
-    searchInput.setAttribute("autocomplete", "off");
-    searchInput.value = selectedCategory ? `${selectedCategory.name} · ${selectedCategory.code}xxxxx` : "";
-    const results = document.createElement("div");
-    results.className = "absolute z-[70] hidden max-h-52 min-w-0 overflow-y-auto rounded-lg border border-[#CDE5E5] bg-white p-1 shadow-[0_14px_28px_rgba(16,42,67,0.16)]";
-    results.setAttribute("role", "listbox");
-    const renderResults = (search: string) => {
-      const normalized = search.trim().toLocaleLowerCase("vi");
-      const matches = (categoriesQuery.data || []).filter((category) => `${category.name} ${category.code}`.toLocaleLowerCase("vi").includes(normalized));
-      results.replaceChildren();
-      if (!matches.length) {
-        const empty = document.createElement("div");
-        empty.className = "px-3 py-2 text-xs font-semibold text-[#71869A]";
-        empty.textContent = "Không tìm thấy Phân loại phù hợp.";
-        results.appendChild(empty);
-        return;
-      }
-      matches.forEach((category) => {
-        const option = document.createElement("button");
-        option.type = "button";
-        option.className = "flex w-full items-center justify-between gap-3 rounded-md px-3 py-2 text-left text-xs font-semibold text-[#193B57] hover:bg-[#ECF8F7] hover:text-[#087A6A]";
-        option.setAttribute("role", "option");
-        option.setAttribute("aria-selected", String(category.id === formData.categoryId));
-        option.innerHTML = `<span class="truncate">${category.name}</span><span class="shrink-0 font-mono text-[10px] text-[#2666A8]">${category.code}xxxxx</span>`;
-        option.addEventListener("mousedown", (event) => event.preventDefault());
-        option.addEventListener("click", () => {
-          select.value = String(category.id);
-          select.dispatchEvent(new Event("change", { bubbles: true }));
-          searchInput.value = `${category.name} · ${category.code}xxxxx`;
-          results.classList.add("hidden");
-        });
-        results.appendChild(option);
-      });
-    };
-    const positionResults = () => {
-      const rect = searchInput.getBoundingClientRect();
-      const menuWidth = Math.min(280, Math.max(220, rect.width));
-      const openLeft = rect.right + menuWidth > window.innerWidth - 12;
-      const openUp = rect.bottom + 240 > window.innerHeight - 12 && rect.top > 240;
-      results.style.width = `${menuWidth}px`;
-      results.style.maxWidth = "calc(100vw - 1rem)";
-      results.classList.remove("left-0", "right-0", "top-[calc(100%+0.35rem)]", "bottom-[calc(100%+0.35rem)]");
-      results.classList.add(openLeft ? "right-0" : "left-0", openUp ? "bottom-[calc(100%+0.35rem)]" : "top-[calc(100%+0.35rem)]");
-    };
-    searchInput.addEventListener("focus", () => { searchInput.value = ""; renderResults(""); positionResults(); results.classList.remove("hidden"); });
-    searchInput.addEventListener("input", () => { renderResults(searchInput.value); positionResults(); results.classList.remove("hidden"); });
-    searchInput.addEventListener("blur", () => window.setTimeout(() => { results.classList.add("hidden"); const current = (categoriesQuery.data || []).find((item) => item.id === formData.categoryId); searchInput.value = current ? `${current.name} · ${current.code}xxxxx` : ""; }, 150));
-    picker.append(searchInput, results);
-    select.before(picker);
-    categoryField.querySelector("[data-category-creator]")?.remove();
-    const creator = document.createElement("div");
-    creator.dataset.categoryCreator = "true";
-    creator.className = "mt-2";
-    const toggle = document.createElement("button");
-    toggle.type = "button";
-    toggle.className = "text-[11px] font-bold text-[#087A6A] hover:underline";
-    toggle.textContent = categoryCreatorOpen ? "Ẩn tạo Phân loại mới" : "+ Thêm Phân loại mới";
-    toggle.onclick = () => setCategoryCreatorOpen((current) => !current);
-    creator.appendChild(toggle);
-    if (categoryCreatorOpen) {
-      const draft = categoryDraftRef.current;
-      const form = document.createElement("div");
-      form.className = "mt-2 grid gap-2 rounded-lg border border-[#CDE5E5] bg-[#F4FBFA] p-2.5";
-      const nameInput = document.createElement("input");
-      nameInput.className = "field-input h-9";
-      nameInput.placeholder = "Tên Phân loại *";
-      nameInput.value = draft.name;
-      nameInput.oninput = () => { categoryDraftRef.current = { ...categoryDraftRef.current, name: nameInput.value }; };
-      const codeInput = document.createElement("input");
-      codeInput.className = "field-input h-9 font-mono uppercase";
-      codeInput.placeholder = "Tiền tố mã, ví dụ LT *";
-      codeInput.value = draft.code;
-      codeInput.oninput = () => { categoryDraftRef.current = { ...categoryDraftRef.current, code: codeInput.value.toUpperCase().replace(/[^A-Z0-9-]/g, "") }; };
-      const descriptionInput = document.createElement("input");
-      descriptionInput.className = "field-input h-9";
-      descriptionInput.placeholder = "Mô tả (không bắt buộc)";
-      descriptionInput.value = draft.description;
-      descriptionInput.oninput = () => { categoryDraftRef.current = { ...categoryDraftRef.current, description: descriptionInput.value }; };
-      const save = document.createElement("button");
-      save.type = "button";
-      save.className = "h-9 rounded-lg bg-[#0F8C8C] px-3 text-xs font-bold text-white hover:bg-[#087A6A]";
-      save.textContent = createCategoryMutation.isPending ? "Đang lưu..." : "Lưu Phân loại & tiền tố";
-      save.disabled = createCategoryMutation.isPending;
-      save.onclick = () => { const current = categoryDraftRef.current; const name = current.name.trim(); const code = current.code.trim(); if (name.length < 2 || !/^[A-Z0-9-]{1,12}$/.test(code)) { toast.error("Nhập tên và tiền tố 1–12 ký tự chữ/số hợp lệ."); return; } createCategoryMutation.mutate({ name, code, description: current.description.trim() || null }); };
-      form.append(nameInput, codeInput, descriptionInput, save);
-      creator.appendChild(form);
-    }
-    categoryField.appendChild(creator);
-    window.addEventListener("resize", positionResults);
-    return () => { window.removeEventListener("resize", positionResults); creator.remove(); };
-  }, [isDetail, mode, formData.categoryId, formData.date, preservePurchaseDate, categoriesQuery.data, categoriesQuery.isLoading, categoryCreatorOpen, createCategoryMutation.isPending, setFormData]);
-  useEffect(() => {
-    if (!isDetail || !asset?.brand) return;
-    const dialog = document.querySelector('[role="dialog"][aria-label="Chi tiết tài sản"]');
-    const supplierLabel = Array.from(dialog?.querySelectorAll("div") || []).find((node) => node.textContent === "Nhà cung cấp");
-    const supplierCard = supplierLabel?.parentElement;
-    if (!supplierCard || supplierCard.parentElement?.querySelector("[data-asset-brand]")) return;
-    const brandCard = supplierCard.cloneNode(true) as HTMLElement;
-    brandCard.dataset.assetBrand = "true";
-    const label = brandCard.querySelector("div");
-    const value = label?.nextElementSibling;
-    if (label) label.textContent = "Hãng";
-    if (value) value.textContent = asset.brand;
-    supplierCard.after(brandCard);
-    return () => brandCard.remove();
-  }, [isDetail, asset?.brand]);
-  useEffect(() => {
-    if (!isDetail || !persistedAsset?.id) return;
-    const dialog = document.querySelector('[role="dialog"][aria-label="Chi tiết tài sản"]');
-    const closeButton = dialog?.querySelector('button[aria-label="Đóng"]');
-    const header = closeButton?.parentElement;
-    if (!header || header.querySelector("[data-asset-field-history]")) return;
-    const historyButton = document.createElement("button");
-    historyButton.type = "button";
-    historyButton.dataset.assetFieldHistory = "true";
-    historyButton.textContent = "Lịch sử thay đổi";
-    historyButton.className = "mr-2 rounded-lg border border-[#CDE5E5] px-3 py-2 text-[11px] font-bold text-[#087A6A] hover:bg-[#ECF8F7]";
-    const openHistory = () => window.dispatchEvent(new CustomEvent("assetmaster:open-asset-history", { detail: persistedAsset.id }));
-    historyButton.addEventListener("click", openHistory);
-    header.insertBefore(historyButton, closeButton);
-    return () => { historyButton.removeEventListener("click", openHistory); historyButton.remove(); };
-  }, [isDetail, persistedAsset?.id]);
-  useEffect(() => {
-    if (!isDetail || asset?.statusType !== "maintenance") return;
-    const dialog = document.querySelector('[role="dialog"][aria-label="Chi tiết tài sản"]');
-    const noteLabel = Array.from(dialog?.querySelectorAll("div") || []).find((node) => node.textContent === "Ghi chú");
-    const noteCard = noteLabel?.parentElement;
-    if (!noteCard || noteCard.parentElement?.querySelector("[data-asset-maintenance-reason]")) return;
-    const reasonCard = noteCard.cloneNode(true) as HTMLElement;
-    reasonCard.dataset.assetMaintenanceReason = "true";
-    const label = reasonCard.querySelector("div");
-    const value = label?.nextElementSibling;
-    if (label) label.textContent = "Lý do bảo trì";
-    if (value) value.textContent = asset.maintenanceReason?.trim() || "Chưa ghi nhận lý do";
-    reasonCard.classList.add("border-[#F2D596]", "bg-[#FFF9EB]");
-    noteCard.before(reasonCard);
-    return () => reasonCard.remove();
-  }, [isDetail, asset?.statusType, asset?.maintenanceReason]);
-  const createVendorMutation = trpc.vendors.create.useMutation({
-    onSuccess: async (result) => {
-      const created = await vendorsQuery.refetch();
-      const vendor = created.data?.find((item) => item.id === result.id);
-      setFormData((current) => ({ ...current, vendorId: result.id, supplier: vendor?.name || quickEntryName }));
-      quickEntryNameRef.current = "";
-      setQuickEntryName("");
-      setQuickEntryType(null);
-      toast.success("Đã thêm và chọn Nhà cung cấp mới.");
-    },
-    onError: (error) => toast.error(error.message || "Không thể thêm Nhà cung cấp."),
-  });
-  const createBrandMutation = trpc.brands.create.useMutation({
-    onSuccess: async (result) => {
-      const created = await brandsQuery.refetch();
-      const brand = created.data?.find((item) => item.id === result.id);
-      setFormData((current) => ({ ...current, brandId: result.id, brand: brand?.name || quickEntryName }));
-      quickEntryNameRef.current = "";
-      setQuickEntryName("");
-      setQuickEntryType(null);
-      toast.success("Đã thêm và chọn Hãng mới.");
-    },
-    onError: (error) => toast.error(error.message || "Không thể thêm Hãng."),
-  });
-  useEffect(() => {
-    if (isDetail) return;
-    const dialog = document.querySelector('[role="dialog"][aria-label="Thêm tài sản mới"], [role="dialog"][aria-label="Chỉnh sửa tài sản"]');
-    const noteLabel = Array.from(dialog?.querySelectorAll("label") || []).find((label) => label.textContent?.trim() === "Ghi chú");
-    const noteContainer = noteLabel?.parentElement;
-    if (!noteContainer || noteContainer.parentElement?.querySelector("[data-vendor-brand-controls]")) return;
-    const controls = document.createElement("div");
-    controls.dataset.vendorBrandControls = "true";
-    controls.className = "sm:col-span-2 grid gap-3 rounded-xl border border-[#DDE7F0] bg-[#FBFCFD] p-4 sm:grid-cols-2";
-    const dropdownCleanups: Array<() => void> = [];
-    const addPicker = (kind: "vendor" | "brand", label: string, items: Array<{ id: number; name: string }>, selectedId?: number) => {
-      const wrapper = document.createElement("div");
-      wrapper.className = "relative";
-      const heading = document.createElement("div");
-      heading.className = "mb-2 flex items-center justify-between gap-2";
-      const labelNode = document.createElement("label");
-      labelNode.className = "field-label mb-0";
-      labelNode.textContent = label;
-      heading.append(labelNode);
-      const trigger = document.createElement("button");
-      trigger.type = "button";
-      trigger.className = "field-input flex w-full items-center justify-between gap-2 text-left";
-      trigger.setAttribute("aria-haspopup", "listbox");
-      trigger.setAttribute("aria-expanded", "false");
-      const triggerText = document.createElement("span");
-      const triggerIcon = document.createElement("span");
-      triggerIcon.className = "text-base text-[#60758A]";
-      triggerIcon.textContent = "⌄";
-      trigger.append(triggerText, triggerIcon);
-      const menu = document.createElement("div");
-      menu.className = "absolute top-[calc(100%+0.35rem)] z-[95] hidden w-[min(280px,calc(100vw-1rem))] min-w-0 origin-top overflow-hidden rounded-xl border border-[#CDE5E5] bg-white shadow-[0_16px_36px_rgba(16,42,67,0.18)]";
-      menu.setAttribute("role", "listbox");
-      const search = document.createElement("input");
-      search.type = "search";
-      search.className = "h-9 w-full rounded-lg border border-[#DDE7F0] bg-[#FBFCFD] px-3 text-xs font-semibold text-[#193B57] outline-none focus:border-[#0F8C8C]";
-      search.placeholder = kind === "vendor" ? "Tìm trong Nhà cung cấp..." : "Tìm trong Hãng...";
-      search.setAttribute("aria-label", kind === "vendor" ? "Tìm Nhà cung cấp" : "Tìm Hãng");
-      const optionList = document.createElement("div");
-      optionList.className = "max-h-64 overflow-y-auto p-1";
-      const createFromSearch = document.createElement("button");
-      createFromSearch.type = "button";
-      createFromSearch.className = "mt-2 hidden w-full rounded-lg border border-dashed border-[#8BCDC6] bg-[#F4FBFA] px-3 py-2 text-left text-[11px] font-extrabold text-[#087A6A] transition hover:bg-[#ECF8F7]";
-      createFromSearch.onclick = () => { const name = search.value.trim(); quickEntryNameRef.current = name; setQuickEntryName(name); setQuickEntryType(kind); };
-      const renderOptions = (keyword = "") => {
-        const matchedItems = filterNamedCatalogOptions(items, keyword);
-        const searchedName = keyword.trim();
-        const canCreate = canCreateCatalogOption(searchedName, matchedItems.length);
-        optionList.replaceChildren();
-        if (!matchedItems.length) {
-          const empty = document.createElement("div");
-          empty.className = "px-3 py-3 text-center text-xs font-semibold text-[#8AA0B6]";
-          empty.textContent = searchedName ? "Không có dữ liệu phù hợp" : "Chưa có dữ liệu";
-          optionList.appendChild(empty);
-        }
-        matchedItems.forEach((item) => {
-          const option = document.createElement("button");
-          option.type = "button";
-          option.setAttribute("role", "option");
-          option.className = `flex w-full items-center justify-between gap-3 rounded-lg px-3 py-2.5 text-left text-xs font-semibold text-[#193B57] transition hover:bg-[#ECF8F7] ${item.id === selectedId ? "bg-[#E6F6F2] text-[#087A6A]" : ""}`;
-          option.textContent = item.name;
-          option.onclick = () => {
-            setFormData((current) => kind === "vendor" ? { ...current, vendorId: item.id, supplier: item.name } : { ...current, brandId: item.id, brand: item.name });
-            menu.classList.add("hidden");
-            trigger.setAttribute("aria-expanded", "false");
-          };
-          optionList.appendChild(option);
-        });
-        createFromSearch.classList.toggle("hidden", !canCreate);
-        if (canCreate) createFromSearch.textContent = kind === "vendor" ? `+ Tạo Nhà cung cấp “${searchedName}”` : `+ Tạo Hãng “${searchedName}”`;
-      };
-      const selected = items.find((item) => item.id === selectedId);
-      triggerText.textContent = selected?.name || (kind === "vendor" ? "Chọn Nhà cung cấp" : "Chọn Hãng");
-      renderOptions();
-      search.oninput = () => renderOptions(search.value);
-      const positionMenu = () => {
-        const rect = trigger.getBoundingClientRect();
-        const menuWidth = Math.min(280, Math.max(220, rect.width));
-        const openLeft = rect.right + menuWidth > window.innerWidth - 12;
-        menu.style.width = `${menuWidth}px`;
-        menu.style.maxWidth = "calc(100vw - 1rem)";
-        menu.classList.remove("left-0", "right-0");
-        menu.classList.add(openLeft ? "right-0" : "left-0");
-      };
-      trigger.onclick = () => {
-        const isOpen = !menu.classList.contains("hidden");
-        menu.classList.toggle("hidden", isOpen);
-        trigger.setAttribute("aria-expanded", String(!isOpen));
-        if (!isOpen) { positionMenu(); window.setTimeout(() => search.focus(), 0); }
-      };
-      const closeOnOutside = (event: PointerEvent) => {
-        if (!wrapper.contains(event.target as Node)) { menu.classList.add("hidden"); trigger.setAttribute("aria-expanded", "false"); }
-      };
-      document.addEventListener("pointerdown", closeOnOutside);
-      window.addEventListener("resize", positionMenu);
-      dropdownCleanups.push(() => { document.removeEventListener("pointerdown", closeOnOutside); window.removeEventListener("resize", positionMenu); });
-      wrapper.append(heading, trigger, menu);
-      menu.append(search, optionList, createFromSearch);
-      if (quickEntryType === kind) {
-        const quick = document.createElement("div");
-        quick.className = "mt-2 flex gap-2";
-        const input = document.createElement("input");
-        input.className = "field-input h-9";
-        input.placeholder = kind === "vendor" ? "Tên Nhà cung cấp mới" : "Tên Hãng mới";
-        input.value = quickEntryNameRef.current;
-        input.oninput = () => { quickEntryNameRef.current = input.value; };
-        const save = document.createElement("button");
-        save.type = "button";
-        save.textContent = "Lưu";
-        save.className = "rounded-lg bg-[#0F8C8C] px-3 text-xs font-bold text-white hover:bg-[#087A6A]";
-        save.onclick = () => { const name = quickEntryNameRef.current.trim(); if (name.length < 2) { toast.error("Nhập tên tối thiểu 2 ký tự."); return; } if (kind === "vendor") createVendorMutation.mutate({ name, contactName: null, phone: null, email: null }); else createBrandMutation.mutate({ name }); };
-        input.onkeydown = (event) => { if (event.key === "Enter") save.click(); };
-        const cancel = document.createElement("button");
-        cancel.type = "button";
-        cancel.textContent = "Hủy";
-        cancel.className = "rounded-lg border border-[#DDE7F0] bg-white px-3 text-xs font-bold text-[#60758A] hover:bg-[#F7FAFC]";
-        cancel.onclick = () => { quickEntryNameRef.current = ""; setQuickEntryName(""); setQuickEntryType(null); };
-        quick.append(input, cancel, save);
-        wrapper.appendChild(quick);
-      }
-      return wrapper;
-    };
-    controls.append(addPicker("vendor", "Nhà cung cấp", vendorsQuery.data || [], formData.vendorId), addPicker("brand", "Hãng", brandsQuery.data || [], formData.brandId));
-    noteContainer.before(controls);
-    return () => { dropdownCleanups.forEach((cleanup) => cleanup()); controls.remove(); };
-  }, [isDetail, vendorsQuery.data, brandsQuery.data, formData.vendorId, formData.brandId, quickEntryType]);
   const createRepairMutation = trpc.maintenance.create.useMutation({
     onSuccess: () => {
       setRepairDescription("");
@@ -1698,17 +1399,6 @@ function AssetModal({ mode, asset, formData, setFormData, onClose: dismiss, onSa
     holderInput.classList.toggle("text-[#60758A]", formData.statusType !== "active");
     holderInput.title = formData.statusType === "active" ? "Nhập người hoặc phòng ban đang giữ tài sản" : `Tự động cập nhật theo trạng thái ${formData.status}`;
   }, [isDetail, formData.statusType, formData.status, formData.holder, setFormData]);
-  useEffect(() => {
-    if (isDetail || mode !== "edit") return;
-    const statusLabel = Array.from(document.querySelectorAll("label")).find((label) => label.textContent?.trim() === "Trạng thái");
-    const statusSelect = statusLabel?.parentElement?.querySelector("select");
-    if (!statusSelect) return;
-    const openHandover = (event: Event) => {
-      if ((event.target as HTMLSelectElement).value === "Đang cấp phát" && formData.statusType !== "active") window.setTimeout(() => onStartHandover(formData.code), 0);
-    };
-    statusSelect.addEventListener("change", openHandover);
-    return () => statusSelect.removeEventListener("change", openHandover);
-  }, [isDetail, mode, formData.statusType, formData.code, onStartHandover]);
   useEffect(() => {
     if (isDetail) return;
     const statusLabel = Array.from(document.querySelectorAll("label")).find((label) => label.textContent?.trim() === "Trạng thái");
@@ -1744,7 +1434,7 @@ function AssetModal({ mode, asset, formData, setFormData, onClose: dismiss, onSa
   return <div onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }} className="fixed inset-0 z-[60] flex items-center justify-center bg-[#102A43]/40 px-4 py-6 backdrop-blur-sm" role="dialog" aria-modal="true" aria-label={title}>
     <div className={`max-h-[92vh] w-full overflow-y-auto rounded-2xl border border-[#DDE7F0] bg-white shadow-[0_24px_70px_rgba(16,42,67,0.22)] ${isDetail ? "max-w-[560px]" : "max-w-[720px]"}`}>
       <div className="relative border-b border-[#E7EEF3] px-6 py-5"><div className="min-w-0 pr-14"><div className="mb-1 text-[10px] font-extrabold uppercase tracking-[0.16em] text-[#0F8C8C]">Asset catalog</div><h2 className="font-display text-xl font-extrabold tracking-[-0.03em] text-[#102A43]">{title}</h2><p className="mt-1 max-w-full truncate whitespace-nowrap text-xs leading-5 text-[#8AA0B6]" title={isDetail ? "Thông tin định danh và vòng đời của tài sản." : "Cập nhật dữ liệu để hệ thống luôn chính xác."}>{isDetail ? "Thông tin định danh và vòng đời của tài sản." : "Cập nhật dữ liệu để hệ thống luôn chính xác."}</p></div><button onClick={onClose} className="absolute right-6 top-5 shrink-0 rounded-lg p-2 text-[#8AA0B6] hover:bg-[#F0F5F8]" aria-label="Đóng"><X size={18} /></button></div>
-      {isDetail && asset ? <div className="space-y-5 p-6"><div className="flex items-center gap-4 rounded-xl bg-[#F5F9FB] p-4"><div className="grid h-14 w-14 place-items-center rounded-xl bg-[#E6F6F2] text-[#0F8C8C]"><Laptop size={24} /></div><div className="min-w-0 flex-1"><div className="font-display text-base font-extrabold text-[#193B57]">{asset.name}</div><div className="mt-1 font-mono text-[11px] font-bold text-[#0F8C8C]">{asset.code}</div></div><span className={`rounded-full px-2.5 py-1 text-[10px] font-extrabold ring-1 ring-inset ${statusStyles[asset.statusType]}`}>{asset.status}</span></div><div className="grid gap-4 sm:grid-cols-2">{[["Phân loại", asset.category], ["Người / Phòng giữ", asset.holder || "Chưa cấp phát"], ["Ngày mua", asset.date], ["Giá trị", `${formatVnd(asset.value)} VNĐ`], ["Vị trí", asset.location || "Chưa cập nhật"], ["Serial / IMEI", asset.serial || "Chưa cập nhật"], ["Nhà cung cấp", asset.supplier || "Chưa cập nhật"], ["Ngày trả nhà cung cấp", asset.supplierReturnedAt ? dateInputValue(asset.supplierReturnedAt) : "Chưa ghi nhận"], ["Lý do trả nhà cung cấp", asset.supplierReturnReason || "Chưa ghi nhận"], ["Ghi chú", asset.note || "Không có ghi chú"]].map(([label, value]) => <div key={label} className="min-w-0 rounded-lg border border-[#E7EEF3] px-3.5 py-3"><div className="text-[10px] font-bold uppercase tracking-[0.1em] text-[#9BAEC0]">{label}</div><div className="mt-1.5 break-words text-sm font-semibold leading-5 text-[#193B57]">{value}</div></div>)}</div><section className="rounded-xl border border-[#E7EEF3] bg-[#FBFCFD] p-4"><div className="flex items-center gap-2 text-[11px] font-extrabold uppercase tracking-[0.12em] text-[#B44545]"><History size={14} />Lịch sử quyết định trả nhà cung cấp</div>{asset.statusType === "returned" ? <><p className="mt-1 text-xs text-[#71869A]">Các thay đổi trạng thái, ngày trả và lý do được ghi nhận từ database.</p><div className="mt-3 space-y-2">{(assetFieldHistoryQuery.data?.items || []).filter((change) => ["status", "supplierReturnedAt", "supplierReturnReason"].includes(change.fieldName)).map((change) => <div key={change.id} className="rounded-lg border border-[#E7EEF3] bg-white px-3 py-2.5"><div className="flex items-center justify-between gap-3"><span className="text-xs font-bold text-[#193B57]">{change.fieldName === "status" ? "Trạng thái" : change.fieldName === "supplierReturnedAt" ? "Ngày trả nhà cung cấp" : "Lý do trả nhà cung cấp"}</span><span className="text-[10px] text-[#8AA0B6]">{new Date(change.createdAt).toLocaleString("vi-VN")}</span></div><div className="mt-1 text-xs text-[#60758A]">{change.fieldName === "status" ? `${change.previousValue || "—"} → ${change.nextValue || "—"}` : change.nextValue || "—"}</div><div className="mt-1 text-[10px] text-[#9BAEC0]">Người thực hiện: {change.actorName || "Quản trị viên"}</div></div>)}</div><div className="mt-4 border-t border-[#E7EEF3] pt-3"><div className="text-[10px] font-extrabold uppercase tracking-[0.12em] text-[#9BAEC0]">Tệp xác nhận đã tải lên</div>{asset.supplierReturnAttachmentUrl ? <a href={asset.supplierReturnAttachmentUrl} target="_blank" rel="noreferrer" className="mt-2 inline-flex items-center gap-2 rounded-lg border border-[#CDE5E5] bg-white px-3 py-2 text-xs font-bold text-[#087A6A] hover:bg-[#ECF8F7]"><Paperclip size={14} />{asset.supplierReturnAttachmentName || "Mở tệp xác nhận"}</a> : <p className="mt-2 text-xs text-[#8AA0B6]">Chưa có tệp xác nhận.</p>}</div></> : <p className="mt-2 text-xs text-[#8AA0B6]">Chưa có quyết định trả nhà cung cấp.</p>}</section><section className="rounded-xl border border-[#E7EEF3] p-4"><div className="flex flex-wrap items-start justify-between gap-3"><div><div className="flex items-center gap-2 text-[11px] font-extrabold uppercase tracking-[0.12em] text-[#A86B00]"><Wrench size={14} />Lịch sử bảo trì & sửa chữa</div><p className="mt-1 text-xs text-[#71869A]">Các yêu cầu kỹ thuật phát sinh cho riêng tài sản này.</p></div><button disabled={!persistedAsset || createRepairMutation.isPending} onClick={() => setRepairOpen((current) => !current)} className="rounded-lg border border-[#F2D596] bg-[#FFF9EB] px-3 py-2 text-xs font-bold text-[#A86B00] hover:bg-white disabled:opacity-50">{repairOpen ? "Đóng form" : "Tạo yêu cầu sửa chữa"}</button></div>{repairOpen && <div className="mt-4 rounded-lg border border-[#F2D596] bg-[#FFFDF7] p-3"><label className="field-label">Mô tả sự cố <span className="text-[#B44545]">*</span></label><textarea value={repairDescription} onChange={(event) => setRepairDescription(event.target.value)} placeholder="Ví dụ: Thiết bị không khởi động, cần kiểm tra nguồn và bo mạch..." className="field-input min-h-[74px] resize-y" /><div className="mt-3 flex flex-col gap-2 sm:flex-row"><select value={repairPriority} onChange={(event) => setRepairPriority(event.target.value as typeof repairPriority)} className="field-input sm:max-w-[170px]"><option value="low">Ưu tiên thấp</option><option value="medium">Ưu tiên trung bình</option><option value="high">Ưu tiên cao</option><option value="critical">Ưu tiên khẩn cấp</option></select><button disabled={!persistedAsset || createRepairMutation.isPending} onClick={() => { if (!persistedAsset || repairDescription.trim().length < 5) { toast.error("Nhập mô tả sự cố tối thiểu 5 ký tự."); return; } createRepairMutation.mutate({ assetId: persistedAsset.id, issueType: "damage", priority: repairPriority, description: repairDescription.trim(), estimatedCost: null, dueAt: null, recurrenceDays: null }); }} className="rounded-lg bg-[#A86B00] px-4 py-2 text-xs font-bold text-white hover:bg-[#8A5900] disabled:opacity-50">{createRepairMutation.isPending ? "Đang tạo..." : "Gửi yêu cầu sửa chữa"}</button></div></div>}{assetsQuery.isLoading || maintenanceHistoryQuery.isLoading ? <p className="mt-4 text-xs text-[#71869A]">Đang tải lịch sử bảo trì...</p> : maintenanceHistoryQuery.isError ? <p className="mt-4 rounded-lg bg-[#FDEDEE] px-3 py-2 text-xs font-semibold text-[#B44545]">Không thể tải lịch sử. <button onClick={() => maintenanceHistoryQuery.refetch()} className="underline">Thử lại</button></p> : maintenanceHistoryQuery.data?.length ? <div className="mt-4 space-y-2">{maintenanceHistoryQuery.data.map((ticket) => <div key={ticket.id} className="rounded-lg border border-[#E7EEF3] bg-[#FBFCFD] p-3"><div className="flex items-start justify-between gap-3"><div><div className="font-mono text-[10px] font-bold text-[#A86B00]">{ticket.ticketCode}</div><div className="mt-1 text-xs font-bold text-[#193B57]">{ticket.issueType === "damage" ? "Sửa chữa" : ticket.issueType === "maintenance" ? "Bảo trì định kỳ" : "Sự cố"}</div><p className="mt-1 text-xs leading-5 text-[#60758A]">{ticket.description}</p></div><span className="rounded-full bg-[#F0F5F8] px-2 py-1 text-[10px] font-bold text-[#60758A]">{ticket.status === "resolved" ? "Đã xử lý" : ticket.status === "closed" ? "Đã đóng" : ticket.status === "in_progress" ? "Đang xử lý" : "Mới tiếp nhận"}</span></div><div className="mt-2 text-[10px] text-[#8AA0B6]">Tạo ngày {new Date(ticket.openedAt).toLocaleDateString("vi-VN")}{ticket.resolution ? ` · Kết quả: ${ticket.resolution}` : ""}</div></div>)}</div> : <p className="mt-4 text-xs text-[#8AA0B6]">Chưa có lịch sử bảo trì hoặc sửa chữa cho tài sản này.</p>}</section><div className="flex justify-end gap-2 border-t border-[#E7EEF3] pt-4"><button onClick={onClose} className="rounded-lg border border-[#DDE7F0] px-4 py-2 text-xs font-bold text-[#60758A] hover:bg-[#F7FAFC]">Đóng</button><button onClick={onEdit} className="rounded-lg bg-[#0F8C8C] px-4 py-2 text-xs font-bold text-white hover:bg-[#087A6A]">Chỉnh sửa tài sản</button></div></div> : <div className="p-6"><div className="mb-5 grid gap-4 sm:grid-cols-2"><div><label className="field-label">Mã tài sản</label><input value={formData.code} disabled className="field-input bg-[#F5F8FB] text-[#8AA0B6]" /></div><div><label className="field-label">Ngày mua</label><DatePickerField value={dateInputValue(formData.date)} onChange={(value) => update("date", value)} disabled={preservePurchaseDate} data-purchase-date-picker aria-label="Ngày mua" className={preservePurchaseDate ? "bg-[#F5F8FB] text-[#71869A]" : ""} /><p className="mt-1 text-[10px] text-[#8AA0B6]">{preservePurchaseDate ? "Được giữ nguyên sau khi tài sản được tạo." : "Ngày gốc của tài sản."}</p></div><div><label className="field-label">Hạn bảo hành</label><DatePickerField value={dateInputValue(formData.warrantyUntil)} onChange={(value) => update("warrantyUntil", value)} aria-label="Hạn bảo hành" /><p className="mt-1 text-[10px] text-[#8AA0B6]">Ngày hết hiệu lực bảo hành.</p></div>{formData.statusType === "returned" && <><div><label className="field-label">Ngày trả nhà cung cấp <span className="text-[#B44545]">*</span></label><DatePickerField value={dateInputValue(formData.supplierReturnedAt)} onChange={(value) => update("supplierReturnedAt", value)} aria-label="Ngày trả nhà cung cấp" /><p className="mt-1 text-[10px] text-[#8AA0B6]">Ngày thực tế gửi trả hàng.</p></div><div><label className="field-label">Lý do trả nhà cung cấp <span className="text-[#B44545]">*</span></label><textarea value={formData.supplierReturnReason || ""} onChange={(e) => update("supplierReturnReason", e.target.value)} placeholder="Ví dụ: Hàng lỗi khi tiếp nhận, sai cấu hình..." className="field-input min-h-[74px] resize-y" /><label className="mt-2 block text-[10px] font-bold text-[#60758A]">Ảnh hoặc biên bản xác nhận <span className="font-normal text-[#8AA0B6]">(PDF, PNG, JPG, WEBP; tối đa 5 MB)</span></label><input type="file" accept="application/pdf,image/png,image/jpeg,image/webp" onChange={(e) => { const file = e.target.files?.[0] || null; if (file && file.size > 5 * 1024 * 1024) { toast.error("Tệp không được vượt quá 5 MB."); e.currentTarget.value = ""; setSupplierReturnFile(null); return; } setSupplierReturnFile(file); setFormDirty(true); }} className="mt-1 block w-full text-xs text-[#60758A] file:mr-3 file:rounded-md file:border-0 file:bg-[#ECF8F7] file:px-3 file:py-2 file:text-xs file:font-bold file:text-[#087A6A]" />{supplierReturnFile && <p className="mt-1 text-[10px] font-semibold text-[#087A6A]">Đã chọn: {supplierReturnFile.name}</p>}</div></>}{fields.slice(0, 2).map((field) => <div key={field.key}><label className="field-label">{field.label}<span className="text-[#0F8C8C]"> *</span></label><input value={String(formData[field.key] || "")} onChange={(e) => update(field.key, e.target.value)} placeholder={field.placeholder} className="field-input" /></div>)}<div><label className="field-label">Phân loại</label><select value={formData.category} onChange={(e) => update("category", e.target.value)} className="field-input"><option>CNTT</option><option>Văn phòng</option><option>Thiết bị</option></select></div><div><label className="field-label">Trạng thái</label><select value={formData.status} onChange={(e) => { const value = e.target.value; update("status", value); update("statusType", value === "Sẵn có" ? "available" : value === "Bảo trì" ? "maintenance" : value === "Trả nhà cung cấp" ? "returned" : "active"); }} className="field-input"><option>Sẵn có</option><option>Đang cấp phát</option><option>Bảo trì</option><option>Trả nhà cung cấp</option></select></div>{fields.slice(2).map((field) => <div key={field.key}><label className="field-label">{field.label}</label>{field.key === "value" ? <CurrencyInput value={String(formData.value || "")} onChange={(value) => update("value", value)} placeholder={field.placeholder} aria-label={field.label} showWords /> : <input value={String(formData[field.key] || "")} onChange={(e) => update(field.key, e.target.value)} placeholder={field.placeholder} className="field-input" />}</div>)}<div className="sm:col-span-2"><label className="field-label">Ghi chú</label><textarea value={formData.note || ""} onChange={(e) => update("note", e.target.value)} placeholder="Bổ sung thông tin cần lưu ý..." className="field-input min-h-[80px] resize-y" /></div></div><div className="flex justify-end gap-2 border-t border-[#E7EEF3] pt-4"><button onClick={onClose} className="rounded-lg border border-[#DDE7F0] px-4 py-2 text-xs font-bold text-[#60758A] hover:bg-[#F7FAFC]">Hủy</button><button onClick={requestSave} className="rounded-lg bg-[#0F8C8C] px-4 py-2 text-xs font-bold text-white shadow-[0_5px_14px_rgba(15,140,140,0.2)] hover:bg-[#087A6A]">{mode === "edit" ? "Lưu thay đổi" : "Tạo tài sản"}</button></div></div>}
+      {isDetail && asset ? <div className="space-y-5 p-6"><div className="flex items-center gap-4 rounded-xl bg-[#F5F9FB] p-4"><div className="grid h-14 w-14 place-items-center rounded-xl bg-[#E6F6F2] text-[#0F8C8C]"><Laptop size={24} /></div><div className="min-w-0 flex-1"><div className="font-display text-base font-extrabold text-[#193B57]">{asset.name}</div><div className="mt-1 font-mono text-[11px] font-bold text-[#0F8C8C]">{asset.code}</div></div><span className={`rounded-full px-2.5 py-1 text-[10px] font-extrabold ring-1 ring-inset ${statusStyles[asset.statusType]}`}>{asset.status}</span></div><div className="grid gap-4 sm:grid-cols-2">{[["Phân loại", asset.category], ["Người / Phòng giữ", asset.holder || "Chưa cấp phát"], ["Ngày mua", asset.date], ["Giá trị", `${formatVnd(asset.value)} VNĐ`], ["Vị trí", asset.location || "Chưa cập nhật"], ["Serial / IMEI", asset.serial || "Chưa cập nhật"], ["Nhà cung cấp", asset.supplier || "Chưa cập nhật"], ["Ngày trả nhà cung cấp", asset.supplierReturnedAt ? dateInputValue(asset.supplierReturnedAt) : "Chưa ghi nhận"], ["Lý do trả nhà cung cấp", asset.supplierReturnReason || "Chưa ghi nhận"], ["Ghi chú", asset.note || "Không có ghi chú"]].map(([label, value]) => <div key={label} className="min-w-0 rounded-lg border border-[#E7EEF3] px-3.5 py-3"><div className="text-[10px] font-bold uppercase tracking-[0.1em] text-[#9BAEC0]">{label}</div><div className="mt-1.5 break-words text-sm font-semibold leading-5 text-[#193B57]">{value}</div></div>)}</div><section className="rounded-xl border border-[#E7EEF3] bg-[#FBFCFD] p-4"><div className="flex items-center gap-2 text-[11px] font-extrabold uppercase tracking-[0.12em] text-[#B44545]"><History size={14} />Lịch sử quyết định trả nhà cung cấp</div>{asset.statusType === "returned" ? <><p className="mt-1 text-xs text-[#71869A]">Các thay đổi trạng thái, ngày trả và lý do được ghi nhận từ database.</p><div className="mt-3 space-y-2">{(assetFieldHistoryQuery.data?.items || []).filter((change) => ["status", "supplierReturnedAt", "supplierReturnReason"].includes(change.fieldName)).map((change) => <div key={change.id} className="rounded-lg border border-[#E7EEF3] bg-white px-3 py-2.5"><div className="flex items-center justify-between gap-3"><span className="text-xs font-bold text-[#193B57]">{change.fieldName === "status" ? "Trạng thái" : change.fieldName === "supplierReturnedAt" ? "Ngày trả nhà cung cấp" : "Lý do trả nhà cung cấp"}</span><span className="text-[10px] text-[#8AA0B6]">{new Date(change.createdAt).toLocaleString("vi-VN")}</span></div><div className="mt-1 text-xs text-[#60758A]">{change.fieldName === "status" ? `${change.previousValue || "—"} → ${change.nextValue || "—"}` : change.nextValue || "—"}</div><div className="mt-1 text-[10px] text-[#9BAEC0]">Người thực hiện: {change.actorName || "Quản trị viên"}</div></div>)}</div><div className="mt-4 border-t border-[#E7EEF3] pt-3"><div className="text-[10px] font-extrabold uppercase tracking-[0.12em] text-[#9BAEC0]">Tệp xác nhận đã tải lên</div>{asset.supplierReturnAttachmentUrl ? <a href={asset.supplierReturnAttachmentUrl} target="_blank" rel="noreferrer" className="mt-2 inline-flex items-center gap-2 rounded-lg border border-[#CDE5E5] bg-white px-3 py-2 text-xs font-bold text-[#087A6A] hover:bg-[#ECF8F7]"><Paperclip size={14} />{asset.supplierReturnAttachmentName || "Mở tệp xác nhận"}</a> : <p className="mt-2 text-xs text-[#8AA0B6]">Chưa có tệp xác nhận.</p>}</div></> : <p className="mt-2 text-xs text-[#8AA0B6]">Chưa có quyết định trả nhà cung cấp.</p>}</section><section className="rounded-xl border border-[#E7EEF3] p-4"><div className="flex flex-wrap items-start justify-between gap-3"><div><div className="flex items-center gap-2 text-[11px] font-extrabold uppercase tracking-[0.12em] text-[#A86B00]"><Wrench size={14} />Lịch sử bảo trì & sửa chữa</div><p className="mt-1 text-xs text-[#71869A]">Các yêu cầu kỹ thuật phát sinh cho riêng tài sản này.</p></div><button disabled={!persistedAsset || createRepairMutation.isPending} onClick={() => setRepairOpen((current) => !current)} className="rounded-lg border border-[#F2D596] bg-[#FFF9EB] px-3 py-2 text-xs font-bold text-[#A86B00] hover:bg-white disabled:opacity-50">{repairOpen ? "Đóng form" : "Tạo yêu cầu sửa chữa"}</button></div>{repairOpen && <div className="mt-4 rounded-lg border border-[#F2D596] bg-[#FFFDF7] p-3"><label className="field-label">Mô tả sự cố <span className="text-[#B44545]">*</span></label><textarea value={repairDescription} onChange={(event) => setRepairDescription(event.target.value)} placeholder="Ví dụ: Thiết bị không khởi động, cần kiểm tra nguồn và bo mạch..." className="field-input min-h-[74px] resize-y" /><div className="mt-3 flex flex-col gap-2 sm:flex-row"><select value={repairPriority} onChange={(event) => setRepairPriority(event.target.value as typeof repairPriority)} className="field-input sm:max-w-[170px]"><option value="low">Ưu tiên thấp</option><option value="medium">Ưu tiên trung bình</option><option value="high">Ưu tiên cao</option><option value="critical">Ưu tiên khẩn cấp</option></select><button disabled={!persistedAsset || createRepairMutation.isPending} onClick={() => { if (!persistedAsset || repairDescription.trim().length < 5) { toast.error("Nhập mô tả sự cố tối thiểu 5 ký tự."); return; } createRepairMutation.mutate({ assetId: persistedAsset.id, issueType: "damage", priority: repairPriority, description: repairDescription.trim(), estimatedCost: null, dueAt: null, recurrenceDays: null }); }} className="rounded-lg bg-[#A86B00] px-4 py-2 text-xs font-bold text-white hover:bg-[#8A5900] disabled:opacity-50">{createRepairMutation.isPending ? "Đang tạo..." : "Gửi yêu cầu sửa chữa"}</button></div></div>}{assetsQuery.isLoading || maintenanceHistoryQuery.isLoading ? <p className="mt-4 text-xs text-[#71869A]">Đang tải lịch sử bảo trì...</p> : maintenanceHistoryQuery.isError ? <p className="mt-4 rounded-lg bg-[#FDEDEE] px-3 py-2 text-xs font-semibold text-[#B44545]">Không thể tải lịch sử. <button onClick={() => maintenanceHistoryQuery.refetch()} className="underline">Thử lại</button></p> : maintenanceHistoryQuery.data?.length ? <div className="mt-4 space-y-2">{maintenanceHistoryQuery.data.map((ticket) => <div key={ticket.id} className="rounded-lg border border-[#E7EEF3] bg-[#FBFCFD] p-3"><div className="flex items-start justify-between gap-3"><div><div className="font-mono text-[10px] font-bold text-[#A86B00]">{ticket.ticketCode}</div><div className="mt-1 text-xs font-bold text-[#193B57]">{ticket.issueType === "damage" ? "Sửa chữa" : ticket.issueType === "maintenance" ? "Bảo trì định kỳ" : "Sự cố"}</div><p className="mt-1 text-xs leading-5 text-[#60758A]">{ticket.description}</p></div><span className="rounded-full bg-[#F0F5F8] px-2 py-1 text-[10px] font-bold text-[#60758A]">{ticket.status === "resolved" ? "Đã xử lý" : ticket.status === "closed" ? "Đã đóng" : ticket.status === "in_progress" ? "Đang xử lý" : "Mới tiếp nhận"}</span></div><div className="mt-2 text-[10px] text-[#8AA0B6]">Tạo ngày {new Date(ticket.openedAt).toLocaleDateString("vi-VN")}{ticket.resolution ? ` · Kết quả: ${ticket.resolution}` : ""}</div></div>)}</div> : <p className="mt-4 text-xs text-[#8AA0B6]">Chưa có lịch sử bảo trì hoặc sửa chữa cho tài sản này.</p>}</section><div className="flex justify-end gap-2 border-t border-[#E7EEF3] pt-4"><button onClick={onClose} className="rounded-lg border border-[#DDE7F0] px-4 py-2 text-xs font-bold text-[#60758A] hover:bg-[#F7FAFC]">Đóng</button><button onClick={onEdit} className="rounded-lg bg-[#0F8C8C] px-4 py-2 text-xs font-bold text-white hover:bg-[#087A6A]">Chỉnh sửa tài sản</button></div></div> : <div className="p-6"><div className="mb-5 grid gap-4 sm:grid-cols-2"><div><label className="field-label">Mã tài sản</label><input value={formData.code} disabled className="field-input bg-[#F5F8FB] text-[#8AA0B6]" /></div><div><label className="field-label">Ngày mua</label><DatePickerField value={dateInputValue(formData.date)} onChange={(value) => update("date", value)} disabled={preservePurchaseDate} data-purchase-date-picker aria-label="Ngày mua" className={preservePurchaseDate ? "bg-[#F5F8FB] text-[#71869A]" : ""} /><p className="mt-1 text-[10px] text-[#8AA0B6]">{preservePurchaseDate ? "Được giữ nguyên sau khi tài sản được tạo." : "Ngày gốc của tài sản."}</p></div><div><label className="field-label">Hạn bảo hành</label><DatePickerField value={dateInputValue(formData.warrantyUntil)} onChange={(value) => update("warrantyUntil", value)} aria-label="Hạn bảo hành" /><p className="mt-1 text-[10px] text-[#8AA0B6]">Ngày hết hiệu lực bảo hành.</p></div>{formData.statusType === "returned" && <><div><label className="field-label">Ngày trả nhà cung cấp <span className="text-[#B44545]">*</span></label><DatePickerField value={dateInputValue(formData.supplierReturnedAt)} onChange={(value) => update("supplierReturnedAt", value)} aria-label="Ngày trả nhà cung cấp" /><p className="mt-1 text-[10px] text-[#8AA0B6]">Ngày thực tế gửi trả hàng.</p></div><div><label className="field-label">Lý do trả nhà cung cấp <span className="text-[#B44545]">*</span></label><textarea value={formData.supplierReturnReason || ""} onChange={(e) => update("supplierReturnReason", e.target.value)} placeholder="Ví dụ: Hàng lỗi khi tiếp nhận, sai cấu hình..." className="field-input min-h-[74px] resize-y" /><label className="mt-2 block text-[10px] font-bold text-[#60758A]">Ảnh hoặc biên bản xác nhận <span className="font-normal text-[#8AA0B6]">(PDF, PNG, JPG, WEBP; tối đa 5 MB)</span></label><input type="file" accept="application/pdf,image/png,image/jpeg,image/webp" onChange={(e) => { const file = e.target.files?.[0] || null; if (file && file.size > 5 * 1024 * 1024) { toast.error("Tệp không được vượt quá 5 MB."); e.currentTarget.value = ""; setSupplierReturnFile(null); return; } setSupplierReturnFile(file); setFormDirty(true); }} className="mt-1 block w-full text-xs text-[#60758A] file:mr-3 file:rounded-md file:border-0 file:bg-[#ECF8F7] file:px-3 file:py-2 file:text-xs file:font-bold file:text-[#087A6A]" />{supplierReturnFile && <p className="mt-1 text-[10px] font-semibold text-[#087A6A]">Đã chọn: {supplierReturnFile.name}</p>}</div></>}{fields.slice(0, 2).map((field) => <div key={field.key}><label className="field-label">{field.label}<span className="text-[#0F8C8C]"> *</span></label><input value={String(formData[field.key] || "")} onChange={(e) => update(field.key, e.target.value)} placeholder={field.placeholder} className="field-input" /></div>)}<AssetCatalogDropdowns vendorId={formData.vendorId} brandId={formData.brandId} vendorOptions={vendorsQuery.data || []} brandOptions={brandsQuery.data || []} quickEntryType={quickEntryType} quickEntryName={quickEntryName} onQuickEntryTypeChange={setQuickEntryType} onQuickEntryNameChange={(value) => { quickEntryNameRef.current = value; setQuickEntryName(value); }} onVendorChange={(item) => { setFormDirty(true); setFormData((current) => ({ ...current, vendorId: item?.id, supplier: item?.name || "" })); }} onBrandChange={(item) => { setFormDirty(true); setFormData((current) => ({ ...current, brandId: item?.id, brand: item?.name || "" })); }} onCreateVendor={(name) => createVendorMutation.mutate({ name, contactName: null, phone: null, email: null })} onCreateBrand={(name) => createBrandMutation.mutate({ name })} creatingVendor={createVendorMutation.isPending} creatingBrand={createBrandMutation.isPending} /><div><label className="field-label">Phân loại</label><select value={formData.category} onChange={(e) => update("category", e.target.value)} className="field-input"><option>CNTT</option><option>Văn phòng</option><option>Thiết bị</option></select></div><div><label className="field-label">Trạng thái</label><SearchableSelect value={formData.statusType} onChange={(value) => { const next = value as Asset["statusType"]; const label = next === "available" ? "Sẵn có" : next === "maintenance" ? "Bảo trì" : next === "returned" ? "Trả nhà cung cấp" : "Đang cấp phát"; update("status", label); update("statusType", next); if (next === "active" && formData.statusType !== "active") window.setTimeout(() => onStartHandover(formData.code), 0); }} options={[{ value: "available", label: "Sẵn có" }, { value: "active", label: "Đang cấp phát" }, { value: "maintenance", label: "Bảo trì" }, { value: "returned", label: "Trả nhà cung cấp" }]} placeholder="Chọn trạng thái" searchPlaceholder="Tìm trạng thái..." /></div>{fields.slice(2).map((field) => <div key={field.key}><label className="field-label">{field.label}</label>{field.key === "value" ? <CurrencyInput value={String(formData.value || "")} onChange={(value) => update("value", value)} placeholder={field.placeholder} aria-label={field.label} showWords /> : <input value={String(formData[field.key] || "")} onChange={(e) => update(field.key, e.target.value)} placeholder={field.placeholder} className="field-input" />}</div>)}<div className="sm:col-span-2"><label className="field-label">Ghi chú</label><textarea value={formData.note || ""} onChange={(e) => update("note", e.target.value)} placeholder="Bổ sung thông tin cần lưu ý..." className="field-input min-h-[80px] resize-y" /></div></div><div className="flex justify-end gap-2 border-t border-[#E7EEF3] pt-4"><button onClick={onClose} className="rounded-lg border border-[#DDE7F0] px-4 py-2 text-xs font-bold text-[#60758A] hover:bg-[#F7FAFC]">Hủy</button><button onClick={requestSave} className="rounded-lg bg-[#0F8C8C] px-4 py-2 text-xs font-bold text-white shadow-[0_5px_14px_rgba(15,140,140,0.2)] hover:bg-[#087A6A]">{mode === "edit" ? "Lưu thay đổi" : "Tạo tài sản"}</button></div></div>}
           </div>
       <AlertDialog open={supplierReturnConfirmOpen} onOpenChange={setSupplierReturnConfirmOpen}><AlertDialogContent><AlertDialogHeader><AlertDialogTitle>Xác nhận trả nhà cung cấp</AlertDialogTitle><AlertDialogDescription>Thao tác này sẽ chuyển tài sản <strong>{formData.code}</strong> sang Trả nhà cung cấp và loại khỏi các luồng cấp phát đang hoạt động. Hãy kiểm tra kỹ trước khi tiếp tục.</AlertDialogDescription></AlertDialogHeader><div className="space-y-2 rounded-lg border border-[#F2D596] bg-[#FFF9EB] p-3 text-xs text-[#7A5A00]"><div><b>Ngày trả:</b> {formData.supplierReturnedAt ? dateInputValue(formData.supplierReturnedAt) : "Chưa nhập"}</div><div><b>Lý do:</b> {formData.supplierReturnReason || "Chưa nhập"}</div><div><b>Tệp xác nhận:</b> {supplierReturnFile?.name || "Không đính kèm"}</div></div>{supplierReturnFile && supplierReturnPreviewUrl && <div className="overflow-hidden rounded-lg border border-[#DDE7F0] bg-[#F7FAFC] p-2"><div className="mb-2 text-[10px] font-extrabold uppercase tracking-[0.12em] text-[#60758A]">Xem trước tệp</div>{supplierReturnFile.type === "application/pdf" ? <iframe src={supplierReturnPreviewUrl} title="Xem trước biên bản trả nhà cung cấp" className="h-56 w-full rounded border-0" /> : <img src={supplierReturnPreviewUrl} alt="Xem trước hình ảnh xác nhận trả nhà cung cấp" className="max-h-56 w-full rounded object-contain" />}</div>}<AlertDialogFooter><AlertDialogCancel>Quay lại kiểm tra</AlertDialogCancel><AlertDialogAction onClick={() => { void confirmSupplierReturn(); }}>Xác nhận chuyển trạng thái</AlertDialogAction></AlertDialogFooter></AlertDialogContent></AlertDialog>
   </div>;

@@ -43,7 +43,7 @@ describe("modal presentation contract", () => {
     expect(home).toContain("const [formDirty, setFormDirty] = useState(false)");
     expect(home).toContain("if (!isDetail && formDirty)");
     expect(home).toContain("const categoryDraftRef = useRef");
-    expect(home).toContain("categoryDraftRef.current = { ...categoryDraftRef.current, name: nameInput.value }");
+    expect(home).toContain("categoryDraftRef.current = { name: \"\", code: \"\", description: \"\" }");
     expect(home).not.toContain("data-purchase-date-icon");
   });
 
@@ -92,8 +92,8 @@ describe("modal presentation contract", () => {
     const home = readProjectFile("client/src/pages/Home.tsx");
     const categories = readProjectFile("client/src/pages/AssetCategoryManagementPage.tsx");
 
-    expect(home).toContain("data-category-search-picker");
-    expect(home).toContain("Tìm tên hoặc tiền tố Phân loại...");
+    expect(home).toContain("categoriesQuery");
+    expect(home).toContain("assetCategories.list");
     expect(categories).toContain("matchesVietnameseSearch");
     expect(categories).toContain('aria-label="Tìm kiếm Phân loại"');
     expect(categories).toContain("filteredCategories.slice(pageStart, pageStart + PAGE_SIZE)");
@@ -533,6 +533,7 @@ it("keeps maintenance UI controls on the shared interaction contracts", () => {
   const categories = readProjectFile("client/src/pages/AssetCategoryManagementPage.tsx");
   const datePicker = readProjectFile("client/src/components/DatePickerField.tsx");
   const home = readProjectFile("client/src/pages/Home.tsx");
+  const assetCatalogDropdowns = readProjectFile("client/src/components/AssetCatalogDropdowns.tsx");
 
   expect(db).toContain("limit(safePageSize).offset");
   expect(routers).toContain("pageSize: z.number().int().min(1).max(50)");
@@ -554,7 +555,9 @@ it("keeps maintenance UI controls on the shared interaction contracts", () => {
   expect(datePicker).toContain("[--cell-size:1.55rem]");
   expect(brandEnhancements).toContain("image/png,image/jpeg,image/webp");
   expect(brandEnhancements).toContain("bg-[#F7FAFC]");
-  expect(home).toContain("w-[min(280px,calc(100vw-1rem))]");
-  expect(home).toContain("top-[calc(100%+0.35rem)]");
-  expect(home).toContain("max-h-64 overflow-y-auto p-1");
+  expect(home).toContain("<AssetCatalogDropdowns");
+  expect(assetCatalogDropdowns).toContain("<SearchableSelect");
+  expect(assetCatalogDropdowns).toContain("<SearchableSelect");
+  expect(assetCatalogDropdowns).toContain('aria-label="Hủy tạo mới"');
+  expect(readProjectFile("client/src/components/SearchableSelect.tsx")).toContain('aria-label="Xóa tìm kiếm trong dropdown"');
 });

@@ -970,3 +970,12 @@
 - [x] Đồng bộ chúng với SearchableSelect chung, gồm tìm kiếm, highlight, bàn phím, xóa nhanh và định vị responsive.
 - [x] Kiểm thử TypeScript, Vitest, production build và responsive.
 - [x] Lưu checkpoint phát hành cho phiên này.
+
+## Current Session — Asset Form Dropdown React Refactor
+
+- [x] Chuyển dropdown Hãng/Nhà cung cấp từ DOM thủ công sang component React dùng chung.
+- [x] Chuyển dropdown Trạng thái trong form tài sản sang SearchableSelect đồng bộ.
+- [x] Bổ sung icon tìm kiếm và nút xóa nhanh trong vùng tìm kiếm dropdown.
+- [x] Giữ luồng tạo nhanh Hãng/Nhà cung cấp và cập nhật trạng thái tài sản.
+- [x] Kiểm thử TypeScript, Vitest, production build và responsive.
+- [x] Lưu checkpoint phát hành cho phiên này.
