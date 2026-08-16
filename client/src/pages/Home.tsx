@@ -305,8 +305,8 @@ export default function Home() {
     },
     onError: (error) => toast.error(error.message || "Không thể lưu tùy chọn thông báo."),
   });
-  const createAssetMutation = trpc.assets.create.useMutation({ onSuccess: () => assetQuery.refetch() });
-  const updateAssetMutation = trpc.assets.update.useMutation({ onSuccess: () => assetQuery.refetch() });
+  const createAssetMutation = trpc.assets.create.useMutation({ onSuccess: () => { void assetQuery.refetch(); toast.success("Đã tạo tài sản và lưu vào hệ thống."); }, onError: (error) => toast.error(error.message || "Không thể tạo tài sản.") });
+  const updateAssetMutation = trpc.assets.update.useMutation({ onSuccess: () => { void assetQuery.refetch(); void maintenanceTicketsQuery.refetch(); toast.success("Đã cập nhật tài sản và trạng thái bảo trì."); }, onError: (error) => toast.error(error.message || "Không thể cập nhật tài sản.") });
 
   useEffect(() => {
     const openImport = () => setAssetImportOpen(true);
@@ -482,8 +482,19 @@ export default function Home() {
         target: { type: "handover" as const, handoverId: handover.id },
       };
     }) : [];
-    return [...returnRequestNotifications, ...maintenanceNotifications, ...handoverNotifications].sort((left, right) => right.createdAt.getTime() - left.createdAt.getTime());
-  }, [assetQuery.data, assetRows, notificationHandoversQuery.data, notificationPreferences]);
+    const maintenanceRequestNotifications = notificationPreferences.maintenanceEnabled ? (maintenanceTicketsQuery.data || []).filter((ticket) => ticket.status === "open").slice(0, 3).map((ticket) => {
+      const asset = assetQuery.data?.find((item) => item.id === ticket.assetId);
+      return {
+        id: `maintenance-ticket-${ticket.id}`,
+        title: `${ticket.ticketCode} cần xử lý`,
+        description: `${asset?.assetCode || `Tài sản #${ticket.assetId}`} · ${ticket.description}`,
+        createdAt: ticket.openedAt,
+        kind: "maintenance" as const,
+        target: { type: "asset" as const, assetCode: asset?.assetCode || "" },
+      };
+    }) : [];
+    return [...returnRequestNotifications, ...maintenanceRequestNotifications, ...maintenanceNotifications, ...handoverNotifications].sort((left, right) => right.createdAt.getTime() - left.createdAt.getTime());
+  }, [assetQuery.data, assetRows, maintenanceTicketsQuery.data, notificationHandoversQuery.data, notificationPreferences]);
   const unreadNotifications = headerNotifications.filter((notification) => !readNotificationIds.includes(notification.id));
   const hasUnreadNotifications = unreadNotifications.length > 0;
   const markNotificationRead = (notificationId: string) => {

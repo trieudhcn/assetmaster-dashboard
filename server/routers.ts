@@ -389,6 +389,17 @@ export const appRouter = router({
       await recordActivity({ entityType: "asset_category", entityId: input.id, action: "updated", actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: `Cập nhật phân loại ${input.name || existing.name}` });
       return { success: true };
     }),
+    bulkMoveAssets: adminProcedure.input(z.object({ sourceCategoryId: z.number().int().positive(), targetCategoryId: z.number().int().positive() })).mutation(async ({ input, ctx }) => {
+      if (input.sourceCategoryId === input.targetCategoryId) throw new TRPCError({ code: "BAD_REQUEST", message: "Phân loại đích phải khác Phân loại nguồn." });
+      const source = await getAssetCategoryById(input.sourceCategoryId);
+      const target = await getAssetCategoryById(input.targetCategoryId);
+      if (!source || !target) throw new TRPCError({ code: "NOT_FOUND", message: "Không tìm thấy Phân loại nguồn hoặc đích." });
+      if (!target.isActive) throw new TRPCError({ code: "BAD_REQUEST", message: "Phân loại đích đã ngừng hoạt động." });
+      const sourceAssets = (await listAssets()).filter((asset) => asset.categoryId === input.sourceCategoryId);
+      for (const asset of sourceAssets) await updateAsset(asset.id, { categoryId: input.targetCategoryId });
+      await recordActivity({ entityType: "asset_category", entityId: input.sourceCategoryId, action: "assets_moved", actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: `Chuyển ${sourceAssets.length} tài sản từ ${source.name} sang ${target.name}` });
+      return { moved: sourceAssets.length };
+    }),
     delete: adminProcedure.input(z.object({ id: z.number().int().positive() })).mutation(async ({ input, ctx }) => {
       const existing = await getAssetCategoryById(input.id);
       if (!existing) throw new TRPCError({ code: "NOT_FOUND", message: "Không tìm thấy phân loại." });
@@ -575,12 +586,26 @@ export const appRouter = router({
     list: protectedProcedure.query(() => listMaintenanceTickets()),
     byAsset: protectedProcedure.input(z.object({ assetId: z.number().int().positive() })).query(({ input }) => listMaintenanceTicketsByAsset(input.assetId)),
     create: protectedProcedure.input(z.object({ assetId: z.number().int().positive(), issueType: z.enum(["maintenance", "incident", "damage"]), priority: z.enum(["low", "medium", "high", "critical"]).default("medium"), description: z.string().trim().min(5).max(5000), estimatedCost: z.string().regex(/^\d+(\.\d{1,2})?$/).optional().nullable(), dueAt: dateFromMs, recurrenceDays: z.number().int().min(1).max(3650).optional().nullable() })).mutation(async ({ input, ctx }) => {
+      const asset = await getAssetById(input.assetId);
+      if (!asset || asset.isArchived) throw new TRPCError({ code: "NOT_FOUND", message: "Tài sản được chọn không tồn tại hoặc đã lưu trữ." });
       const id = await createMaintenanceTicket({ ...input, ticketCode: `BT-${new Date().getFullYear()}-${crypto.randomUUID().slice(0, 8).toUpperCase()}`, reporterUserId: ctx.user!.id, reporterName: ctx.user!.name ?? "Người dùng", status: "open" });
+      await updateAsset(asset.id, { status: "maintenance", holderUserId: null, holderName: null, maintenanceReason: input.description.trim() });
       await recordActivity({ entityType: "maintenance", entityId: id, action: "reported", actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: "Tạo yêu cầu bảo trì / báo hỏng" });
+      await recordActivity({ entityType: "asset", entityId: asset.id, action: "maintenance_reported", actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: `Đưa ${asset.assetCode} vào Bảo trì` });
       return { id };
     }),
     update: adminProcedure.input(z.object({ id: z.number().int().positive(), status: z.enum(["open", "in_progress", "resolved", "closed"]), assigneeUserId: z.number().int().positive().optional().nullable(), resolution: nullableText, estimatedCost: z.string().regex(/^\d+(\.\d{1,2})?$/).optional().nullable(), actualCost: z.string().regex(/^\d+(\.\d{1,2})?$/).optional().nullable(), dueAt: dateFromMs, recurrenceDays: z.number().int().min(1).max(3650).optional().nullable() })).mutation(async ({ input, ctx }) => {
+      const ticket = await getMaintenanceTicket(input.id);
+      if (!ticket) throw new TRPCError({ code: "NOT_FOUND", message: "Không tìm thấy yêu cầu bảo trì." });
       await updateMaintenanceTicket(input.id, { status: input.status, assigneeUserId: input.assigneeUserId, resolution: input.resolution, estimatedCost: input.estimatedCost, actualCost: input.actualCost, dueAt: input.dueAt, recurrenceDays: input.recurrenceDays, resolvedAt: input.status === "resolved" || input.status === "closed" ? new Date() : null });
+      const asset = await getAssetById(ticket.assetId);
+      if (asset) {
+        if (input.status === "open" || input.status === "in_progress") {
+          await updateAsset(asset.id, { status: "maintenance", holderUserId: null, holderName: null, maintenanceReason: ticket.description });
+        } else if (input.status === "resolved" || input.status === "closed") {
+          await updateAsset(asset.id, { status: "available", holderUserId: null, holderName: null, maintenanceReason: null });
+        }
+      }
       await recordActivity({ entityType: "maintenance", entityId: input.id, action: input.status, actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: `Cập nhật yêu cầu bảo trì: ${input.status}` });
       return { success: true };
     }),

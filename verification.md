@@ -45,3 +45,12 @@ Trên production, đã tạo dữ liệu QA tạm thời, dùng payload `ASSETMA
 - Cổng đăng nhập hiển thị đúng trong phiên chưa xác thực, gồm mô tả phạm vi cho Quản trị viên và Nhân viên cùng nút đăng nhập tổ chức.
 - Dashboard quản trị vẫn ổn định tại các màn hình Tổng quan, Danh mục tài sản và Bàn giao & Cấp phát sau khi tách phân luồng theo vai trò.
 - Kiểm thử API xác nhận `employees.myAssetHistory` luôn dùng ID của phiên đăng nhập. Nhân viên không thể gọi danh sách quản trị tài sản hoặc bàn giao.
+
+## Current session visual verification
+
+- Desktop 1280px: Tổng quan hiển thị KPI lấy từ dữ liệu database, huy hiệu Bảo trì riêng và biểu đồ phân bổ trạng thái.
+- Desktop 1280px: Phân loại hiển thị nút Xuất Excel, bộ lọc trạng thái hoạt động/số lượng và danh sách có thống kê tài sản theo trạng thái.
+- Desktop 1280px: Bảo trì & Báo hỏng hiển thị nhắc việc, form tạo yêu cầu và danh sách ticket; huy hiệu yêu cầu mới xuất hiện riêng.
+- Database synchronization: các tài sản gắn ticket `open`/`in_progress` được đồng bộ sang `maintenance`, xóa người giữ và lưu lý do từ mô tả ticket.
+- Mobile 375px: Phân loại xếp gọn thành một cột, bộ lọc và vùng thêm mới không tràn ngang.
+- Mobile 375px: Bảo trì hiển thị nhắc việc, cảnh báo quyền, form tạo yêu cầu theo một cột và vẫn giữ nội dung đọc được.

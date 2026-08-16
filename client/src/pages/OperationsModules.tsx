@@ -85,6 +85,7 @@ export function MaintenancePage() {
   const createMutation = trpc.maintenance.create.useMutation({
     onSuccess: () => {
       void ticketsQuery.refetch();
+      void utils.assets.list.invalidate();
       setAssetId("");
       setDescription("");
       setEstimatedCost("");

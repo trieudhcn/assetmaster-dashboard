@@ -663,3 +663,12 @@
 - [x] Hiển thị tooltip chi tiết số tài sản theo trạng thái trên huy hiệu Phân loại.
 - [x] Thêm xác nhận trước khi vô hiệu hóa hoặc xóa Phân loại đang có tài sản gắn liền.
 - [x] Bổ sung kiểm thử giao diện, dữ liệu và phát hành checkpoint.
+
+## Current Session — Maintenance & Asset Categories
+
+- [x] Rà soát và sửa toàn bộ luồng tạo/cập nhật trạng thái Bảo trì/Báo hỏng từ Danh mục tài sản và trang Bảo trì
+- [x] Khôi phục thông báo bảo trì cho Admin và thống kê bảo trì trên Tổng quan
+- [x] Cho phép chuyển hàng loạt tài sản sang Phân loại đích ngay trong hộp thoại xóa Phân loại
+- [x] Xuất báo cáo Excel danh sách Phân loại kèm tổng số, Đang sử dụng, Hỏng và Bảo trì
+- [x] Bổ sung bộ lọc Phân loại theo trạng thái hoạt động và số lượng tài sản
+- [x] Bổ sung kiểm thử Vitest cho các luồng bảo trì và Phân loại mới

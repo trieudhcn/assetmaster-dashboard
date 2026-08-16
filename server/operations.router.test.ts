@@ -8,6 +8,10 @@ const mocks = vi.hoisted(() => ({
   updateAuditItem: vi.fn(),
   recordActivity: vi.fn(),
   getMaintenanceTicket: vi.fn(),
+  getAssetById: vi.fn(),
+  getAssetCategoryById: vi.fn(),
+  updateAsset: vi.fn(),
+  listAssets: vi.fn(),
   listMaintenanceTickets: vi.fn(),
   listMaintenanceTicketsByAsset: vi.fn(),
   listAuditSessions: vi.fn(),
@@ -26,7 +30,8 @@ vi.mock("./db", () => ({
   createHandover: vi.fn(),
   createMaintenanceTicket: mocks.createMaintenanceTicket,
   getActiveDepartmentById: vi.fn(),
-  getAssetById: vi.fn(),
+  getAssetById: mocks.getAssetById,
+  getAssetCategoryById: mocks.getAssetCategoryById,
   getCompany: vi.fn(),
   getDepartmentByCode: vi.fn(),
   getDepartmentById: vi.fn(),
@@ -58,7 +63,7 @@ vi.mock("./db", () => ({
   recordActivity: mocks.recordActivity,
   saveCompany: vi.fn(),
   transitionHandoverStatus: vi.fn(),
-  updateAsset: vi.fn(),
+  updateAsset: mocks.updateAsset,
   updateAuditItem: mocks.updateAuditItem,
   updateHandover: vi.fn(),
   updateMaintenanceTicket: mocks.updateMaintenanceTicket,
@@ -95,12 +100,15 @@ describe("operations management", () => {
     mocks.updateMaintenanceTicket.mockResolvedValue(undefined);
     mocks.updateAuditItem.mockResolvedValue(undefined);
     mocks.recordActivity.mockResolvedValue(undefined);
-    mocks.getMaintenanceTicket.mockResolvedValue({ id: 30, ticketCode: "BT-2026-ABC12345" });
+    mocks.getMaintenanceTicket.mockResolvedValue({ id: 30, assetId: 8, ticketCode: "BT-2026-ABC12345", description: "Màn hình thiết bị bị nứt sau va chạm." });
     mocks.listMaintenanceTickets.mockResolvedValue([]);
     mocks.listMaintenanceTicketsByAsset.mockResolvedValue([]);
     mocks.listAuditSessions.mockResolvedValue([]);
     mocks.listActivityLogs.mockResolvedValue([]);
     mocks.storagePut.mockResolvedValue({ key: "maintenance/30/chung-tu.pdf", url: "/manus-storage/maintenance/30/chung-tu.pdf" });
+    const asset = { id: 8, assetCode: "LT00008", name: "Laptop QA", isArchived: false, status: "available" };
+    mocks.getAssetById.mockResolvedValue(asset as any);
+    mocks.getAssetCategoryById.mockImplementation(async (id: number) => id === 1 ? { id: 1, name: "Laptop", code: "LT", isActive: true } : { id, name: "Thiết bị", code: "TB", isActive: true });
   });
 
   it("creates a maintenance ticket with the reporting user and initial open state", async () => {
@@ -125,6 +133,18 @@ describe("operations management", () => {
       ticketCode: expect.stringMatching(/^BT-\d{4}-[A-Z0-9]{8}$/),
     }));
     expect(mocks.recordActivity).toHaveBeenCalledWith(expect.objectContaining({ entityType: "maintenance", entityId: 30, action: "reported" }));
+    expect(mocks.updateAsset).toHaveBeenCalledWith(8, expect.objectContaining({ status: "maintenance", holderUserId: null, holderName: null, maintenanceReason: "Màn hình thiết bị bị nứt sau va chạm." }));
+  });
+
+  it("moves all source-category assets to an active target category and requires admin", async () => {
+    const dbModule = vi.mocked(await import("./db"));
+    dbModule.listAssets.mockResolvedValue([{ id: 8, categoryId: 1, assetCode: "LT00008" }, { id: 9, categoryId: 1, assetCode: "LT00009" }] as any);
+    const employeeCaller = appRouter.createCaller(employeeContext);
+    await expect(employeeCaller.assetCategories.bulkMoveAssets({ sourceCategoryId: 1, targetCategoryId: 2 })).rejects.toMatchObject({ code: "FORBIDDEN" });
+    const adminCaller = appRouter.createCaller(adminContext);
+    await expect(adminCaller.assetCategories.bulkMoveAssets({ sourceCategoryId: 1, targetCategoryId: 2 })).resolves.toEqual({ moved: 2 });
+    expect(dbModule.updateAsset).toHaveBeenCalledWith(8, { categoryId: 2 });
+    expect(dbModule.updateAsset).toHaveBeenCalledWith(9, { categoryId: 2 });
   });
 
   it("returns maintenance history scoped to the selected asset for protected users", async () => {
@@ -165,6 +185,7 @@ describe("operations management", () => {
       actualCost: "1175000.00",
       resolvedAt: expect.any(Date),
     }));
+    expect(mocks.updateAsset).toHaveBeenCalledWith(8, expect.objectContaining({ status: "available", holderUserId: null, holderName: null, maintenanceReason: null }));
     expect(mocks.recordActivity).toHaveBeenCalledWith(expect.objectContaining({ entityType: "maintenance", entityId: 30, action: "resolved" }));
   });
 

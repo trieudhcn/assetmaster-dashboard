@@ -109,9 +109,11 @@ describe("modal presentation contract", () => {
 
     expect(categories).toContain('<div className="relative mt-3"><input value={query}');
     expect(categories).toContain("Vô hiệu hóa Phân loại đang có tài sản?");
-    expect(categories).toContain("Không thể xóa Phân loại đang có tài sản");
+    expect(categories).toContain("Chuyển tài sản trước khi xóa");
     expect(categories).toContain("Đang sử dụng:");
     expect(categories).toContain("Hỏng:");
     expect(categories).toContain("Bảo trì:");
+    expect(categories).toContain("bulkMoveAssets");
+    expect(categories).toContain("Xuất Excel");
   });
 });

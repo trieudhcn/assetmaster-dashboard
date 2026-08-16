@@ -4,6 +4,8 @@ import { toast } from "sonner";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { trpc } from "@/lib/trpc";
 import { matchesVietnameseSearch } from "@/lib/catalogUi";
+import * as XLSX from "xlsx";
+import { Download, FileSpreadsheet, Filter } from "lucide-react";
 
 type CategoryDraft = { name: string; code: string; description: string };
 type Category = CategoryDraft & { id: number; isActive: boolean };
@@ -22,6 +24,10 @@ export function AssetCategoryManagementPage() {
   const [editor, setEditor] = useState<Category | null>(null);
   const [page, setPage] = useState(1);
   const [query, setQuery] = useState("");
+  const [activityFilter, setActivityFilter] = useState<"all" | "active" | "inactive">("all");
+  const [assetFilter, setAssetFilter] = useState<"all" | "with-assets" | "empty">("all");
+  const [moveSource, setMoveSource] = useState<Category | null>(null);
+  const [moveTargetId, setMoveTargetId] = useState("");
 
   const categories = (categoriesQuery.data || []) as Category[];
   const assetStatsByCategory = new Map<number, CategoryAssetStats>();
@@ -34,14 +40,19 @@ export function AssetCategoryManagementPage() {
     if (asset.condition === "damaged") current.damaged += 1;
     assetStatsByCategory.set(asset.categoryId, current);
   });
-  const filteredCategories = categories.filter((category) => matchesVietnameseSearch(`${category.name} ${category.code} ${category.description || ""}`, query));
+  const filteredCategories = categories.filter((category) => {
+    const stats = assetStatsByCategory.get(category.id) || { total: 0, assigned: 0, maintenance: 0, damaged: 0 };
+    const matchesActivity = activityFilter === "all" || (activityFilter === "active" ? category.isActive : !category.isActive);
+    const matchesAssets = assetFilter === "all" || (assetFilter === "with-assets" ? stats.total > 0 : stats.total === 0);
+    return matchesActivity && matchesAssets && matchesVietnameseSearch(`${category.name} ${category.code} ${category.description || ""}`, query);
+  });
   const totalPages = Math.max(1, Math.ceil(filteredCategories.length / PAGE_SIZE));
   const activePage = Math.min(page, totalPages);
   const pageStart = (activePage - 1) * PAGE_SIZE;
   const pageCategories = filteredCategories.slice(pageStart, pageStart + PAGE_SIZE);
 
   useEffect(() => setPage((current) => Math.min(Math.max(1, current), totalPages)), [totalPages]);
-  useEffect(() => setPage(1), [query]);
+  useEffect(() => setPage(1), [query, activityFilter, assetFilter]);
 
   const refresh = () => {
     void utils.assetCategories.list.invalidate();
@@ -64,6 +75,18 @@ export function AssetCategoryManagementPage() {
     },
     onError: (error) => toast.error(error.message),
   });
+  const bulkMove = trpc.assetCategories.bulkMoveAssets.useMutation({
+    onSuccess: ({ moved }) => {
+      const sourceId = moveSource?.id;
+      setMoveSource(null);
+      setMoveTargetId("");
+      void utils.assets.list.invalidate();
+      refresh();
+      if (sourceId) remove.mutate({ id: sourceId });
+      else toast.success(`Đã chuyển ${moved} tài sản sang Phân loại mới.`);
+    },
+    onError: (error) => toast.error(error.message || "Không thể chuyển tài sản."),
+  });
   const remove = trpc.assetCategories.delete.useMutation({
     onSuccess: () => {
       refresh();
@@ -72,6 +95,16 @@ export function AssetCategoryManagementPage() {
     onError: (error) => toast.error(error.message),
   });
   const isValid = (value: CategoryDraft) => value.name.trim().length >= 2 && /^[A-Z0-9-]{1,12}$/.test(value.code.trim());
+  const exportReport = () => {
+    const rows = filteredCategories.map((category) => {
+      const stats = assetStatsByCategory.get(category.id) || { total: 0, assigned: 0, maintenance: 0, damaged: 0 };
+      return { "Tên Phân loại": category.name, "Tiền tố": category.code, "Trạng thái": category.isActive ? "Đang hoạt động" : "Ngừng hoạt động", "Tổng tài sản": stats.total, "Đang sử dụng": stats.assigned, "Hỏng": stats.damaged, "Bảo trì": stats.maintenance, "Mô tả": category.description || "" };
+    });
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, XLSX.utils.json_to_sheet(rows), "Phân loại tài sản");
+    XLSX.writeFile(workbook, `bao-cao-phan-loai-${new Date().toISOString().slice(0, 10)}.xlsx`);
+    toast.success(`Đã xuất ${rows.length} Phân loại ra Excel.`);
+  };
 
   if (loading) return <State text="Đang kiểm tra quyền truy cập..." />;
   if (!isAdmin) return <State text="Chỉ quản trị viên mới có thể quản lý Phân loại tài sản." />;
@@ -102,17 +135,19 @@ export function AssetCategoryManagementPage() {
 
         <section className="flex min-h-[35rem] flex-col overflow-hidden rounded-xl border border-[#DFE9F0] bg-white shadow-[0_8px_24px_rgba(16,42,67,0.045)]">
           <div className="border-b border-[#E7EEF3] px-5 py-4">
-            <div className="flex items-center gap-2"><Tags size={17} className="text-[#2666A8]" /><div><h2 className="font-display text-lg font-extrabold text-[#102A43]">Danh sách Phân loại</h2><p className="mt-0.5 text-[10px] font-semibold text-[#8AA0B6]">Hiển thị 5 Phân loại trên mỗi trang</p></div></div>
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between"><div className="flex items-center gap-2"><Tags size={17} className="text-[#2666A8]" /><div><h2 className="font-display text-lg font-extrabold text-[#102A43]">Danh sách Phân loại</h2><p className="mt-0.5 text-[10px] font-semibold text-[#8AA0B6]">Hiển thị 5 Phân loại trên mỗi trang</p></div></div><button type="button" onClick={exportReport} className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-[#CDE5E5] px-3 py-2 text-[11px] font-extrabold text-[#087A6A] hover:bg-[#ECF8F7]"><FileSpreadsheet size={14} />Xuất Excel</button></div>
             <div className="relative mt-3"><input value={query} onChange={(event) => setQuery(event.target.value)} className="field-input h-9" placeholder="Tìm tên hoặc tiền tố Phân loại..." aria-label="Tìm kiếm Phân loại" /></div>
+            <div className="mt-3 grid gap-2 sm:grid-cols-2"><label className="flex items-center gap-2 text-[11px] font-semibold text-[#60758A]"><Filter size={13} className="text-[#8AA0B6]" /><select value={activityFilter} onChange={(event) => setActivityFilter(event.target.value as typeof activityFilter)} className="field-input h-9 flex-1"><option value="all">Tất cả trạng thái</option><option value="active">Đang hoạt động</option><option value="inactive">Ngừng hoạt động</option></select></label><select value={assetFilter} onChange={(event) => setAssetFilter(event.target.value as typeof assetFilter)} className="field-input h-9"><option value="all">Tất cả số lượng</option><option value="with-assets">Có tài sản</option><option value="empty">Chưa có tài sản</option></select></div>
           </div>
           {categoriesQuery.isLoading ? <p className="flex flex-1 items-center justify-center p-8 text-center text-sm text-[#71869A]">Đang tải Phân loại...</p> : !categories.length ? <p className="flex flex-1 items-center justify-center p-8 text-center text-sm text-[#8AA0B6]">Chưa có Phân loại. Hãy tạo Phân loại đầu tiên ở cột bên trái.</p> : !filteredCategories.length ? <p className="flex flex-1 items-center justify-center p-8 text-center text-sm text-[#8AA0B6]">Không tìm thấy Phân loại phù hợp.</p> : <>
             <div className="min-h-[25.5rem] flex-1 divide-y divide-[#E7EEF3]">
-              {pageCategories.map((category) => editor?.id === category.id ? <CategoryEditor key={category.id} value={editor} onChange={setEditor} onCancel={() => setEditor(null)} saving={update.isPending} onSave={() => { if (!isValid(editor)) return toast.error("Nhập tên và tiền tố mã hợp lệ."); update.mutate({ id: editor.id, name: editor.name.trim(), code: editor.code.trim(), description: editor.description.trim() || null }); }} /> : <CategoryRow key={category.id} category={category} stats={assetStatsByCategory.get(category.id) || { total: 0, assigned: 0, maintenance: 0, damaged: 0 }} onEdit={() => setEditor({ ...category })} onToggle={() => { const stats = assetStatsByCategory.get(category.id) || { total: 0, assigned: 0, maintenance: 0, damaged: 0 }; if (category.isActive && stats.total > 0) { toast.warning("Vô hiệu hóa Phân loại đang có tài sản?", { description: `“${category.name}” đang gắn với ${stats.total} tài sản. Các tài sản hiện tại không bị thay đổi, nhưng không thể chọn Phân loại này khi tạo mới.`, action: { label: "Vẫn vô hiệu hóa", onClick: () => update.mutate({ id: category.id, isActive: false }) } }); return; } update.mutate({ id: category.id, isActive: !category.isActive }); }} onDelete={() => { const stats = assetStatsByCategory.get(category.id) || { total: 0, assigned: 0, maintenance: 0, damaged: 0 }; if (stats.total > 0) { toast.warning("Không thể xóa Phân loại đang có tài sản", { description: `“${category.name}” đang gắn với ${stats.total} tài sản. Hãy chuyển hoặc gỡ gán các tài sản trước khi xóa.` }); return; } toast.warning("Xóa Phân loại?", { description: `Phân loại “${category.name}” sẽ bị xóa vĩnh viễn.`, action: { label: "Xóa", onClick: () => remove.mutate({ id: category.id }) } }); }} />)}
+              {pageCategories.map((category) => editor?.id === category.id ? <CategoryEditor key={category.id} value={editor} onChange={setEditor} onCancel={() => setEditor(null)} saving={update.isPending} onSave={() => { if (!isValid(editor)) return toast.error("Nhập tên và tiền tố mã hợp lệ."); update.mutate({ id: editor.id, name: editor.name.trim(), code: editor.code.trim(), description: editor.description.trim() || null }); }} /> : <CategoryRow key={category.id} category={category} stats={assetStatsByCategory.get(category.id) || { total: 0, assigned: 0, maintenance: 0, damaged: 0 }} onEdit={() => setEditor({ ...category })} onToggle={() => { const stats = assetStatsByCategory.get(category.id) || { total: 0, assigned: 0, maintenance: 0, damaged: 0 }; if (category.isActive && stats.total > 0) { toast.warning("Vô hiệu hóa Phân loại đang có tài sản?", { description: `“${category.name}” đang gắn với ${stats.total} tài sản. Các tài sản hiện tại không bị thay đổi, nhưng không thể chọn Phân loại này khi tạo mới.`, action: { label: "Vẫn vô hiệu hóa", onClick: () => update.mutate({ id: category.id, isActive: false }) } }); return; } update.mutate({ id: category.id, isActive: !category.isActive }); }} onDelete={() => { const stats = assetStatsByCategory.get(category.id) || { total: 0, assigned: 0, maintenance: 0, damaged: 0 }; if (stats.total > 0) { setMoveSource(category); setMoveTargetId(""); return; } toast.warning("Xóa Phân loại?", { description: `Phân loại “${category.name}” sẽ bị xóa vĩnh viễn.`, action: { label: "Xóa", onClick: () => remove.mutate({ id: category.id }) } }); }} />)}
             </div>
             <footer className="flex items-center justify-between border-t border-[#E7EEF3] bg-[#FBFCFD] px-4 py-3"><span className="text-[11px] font-semibold text-[#71869A]">Trang {activePage}/{totalPages} · {filteredCategories.length}/{categories.length} Phân loại</span><div className="flex items-center gap-1"><button type="button" onClick={() => setPage((current) => Math.max(1, current - 1))} disabled={activePage <= 1} className="rounded-md p-2 text-[#60758A] hover:bg-[#EAF3FF] hover:text-[#2666A8] disabled:cursor-not-allowed disabled:opacity-40" aria-label="Trang Phân loại trước"><ChevronLeft size={15} /></button><button type="button" onClick={() => setPage((current) => Math.min(totalPages, current + 1))} disabled={activePage >= totalPages} className="rounded-md p-2 text-[#60758A] hover:bg-[#EAF3FF] hover:text-[#2666A8] disabled:cursor-not-allowed disabled:opacity-40" aria-label="Trang Phân loại sau"><ChevronRight size={15} /></button></div></footer>
           </>}
         </section>
       </div>
+      {moveSource && <div className="fixed inset-0 z-[90] grid place-items-center bg-[#102A43]/45 p-4" role="dialog" aria-modal="true" aria-labelledby="move-category-title"><div className="w-full max-w-lg overflow-hidden rounded-2xl bg-white shadow-2xl"><div className="flex items-start justify-between border-b border-[#E7EEF3] px-5 py-4"><div><h2 id="move-category-title" className="font-display text-lg font-extrabold text-[#102A43]">Chuyển tài sản trước khi xóa</h2><p className="mt-1 text-xs leading-5 text-[#71869A]">Phân loại “{moveSource.name}” đang có tài sản. Chọn nơi nhận để chuyển toàn bộ dữ liệu, sau đó hệ thống sẽ xóa Phân loại nguồn.</p></div><button type="button" onClick={() => setMoveSource(null)} className="rounded-md p-2 text-[#8AA0B6] hover:bg-[#F0F5F8]" aria-label="Đóng hộp thoại chuyển tài sản"><X size={17} /></button></div><div className="space-y-4 px-5 py-5"><div className="rounded-lg bg-[#FFF9EB] px-3 py-2 text-xs font-semibold text-[#A86B00]">Tổng tài sản cần chuyển: {(assetStatsByCategory.get(moveSource.id) || { total: 0 }).total}</div><label className="block text-xs font-bold text-[#193B57]">Phân loại đích<select value={moveTargetId} onChange={(event) => setMoveTargetId(event.target.value)} className="field-input mt-2"><option value="">Chọn Phân loại đang hoạt động</option>{categories.filter((category) => category.id !== moveSource.id && category.isActive).map((category) => <option key={category.id} value={category.id}>{category.name} ({category.code})</option>)}</select></label></div><div className="flex justify-end gap-2 border-t border-[#E7EEF3] px-5 py-4"><button type="button" onClick={() => setMoveSource(null)} className="rounded-lg border border-[#DDE7F0] px-4 py-2 text-xs font-bold text-[#60758A]">Hủy</button><button type="button" disabled={!moveTargetId || bulkMove.isPending} onClick={() => { if (!moveTargetId) return; bulkMove.mutate({ sourceCategoryId: moveSource.id, targetCategoryId: Number(moveTargetId) }); }} className="inline-flex items-center gap-2 rounded-lg bg-[#B44545] px-4 py-2 text-xs font-bold text-white disabled:cursor-not-allowed disabled:opacity-50"><Trash2 size={14} />{bulkMove.isPending ? "Đang chuyển..." : "Chuyển và xóa Phân loại"}</button></div></div></div>}
     </div>
   </div>;
 }
