@@ -788,3 +788,10 @@
 - [x] Hỗ trợ dán trực tiếp số tiền có chứa ký hiệu ₫ hoặc VNĐ vào ô nhập liệu mà không bị lỗi.
 - [x] Thêm hậu tố VNĐ trực tiếp vào bên trong ô nhập giá trị nguyên giá.
 - [x] Bổ sung kiểm thử nhập, dán, cuộn, responsive và production build.
+
+## Current Session — Currency Words, Clear Action & Maintenance/Report Inputs
+
+- [x] Hiển thị số tiền bằng chữ dưới trường Giá trị nguyên giá.
+- [x] Thêm nút X xóa nhanh cho các trường nhập tiền.
+- [x] Áp dụng hậu tố VNĐ và hỗ trợ dán tiền cho chi phí bảo trì; giá trị báo cáo tiếp tục dùng formatter VNĐ/compact thống nhất.
+- [x] Bổ sung kiểm thử nhập, dán, xóa, chuyển đổi bằng chữ, responsive và production build.

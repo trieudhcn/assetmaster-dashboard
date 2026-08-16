@@ -1,0 +1,45 @@
+import { useEffect, useState } from "react";
+import { X } from "lucide-react";
+import { formatVndInput, parseVndAmount } from "@/lib/formatters";
+
+type CurrencyInputProps = Omit<React.InputHTMLAttributes<HTMLInputElement>, "value" | "onChange"> & {
+  value: string;
+  onChange: (value: string) => void;
+  suffix?: string;
+};
+
+export function CurrencyInput({ value, onChange, suffix = "VNĐ", className = "", ...props }: CurrencyInputProps) {
+  const [displayValue, setDisplayValue] = useState(() => formatVndInput(value));
+  useEffect(() => setDisplayValue(formatVndInput(value)), [value]);
+
+  const commit = (raw: string) => {
+    const parsed = parseVndAmount(raw);
+    const next = parsed === null ? "" : String(parsed);
+    setDisplayValue(parsed === null ? "" : formatVndInput(parsed));
+    onChange(next);
+  };
+
+  return (
+    <div className="relative">
+      <input
+        {...props}
+        value={displayValue}
+        inputMode="numeric"
+        onChange={(event) => commit(event.target.value)}
+        onPaste={(event) => {
+          const pasted = event.clipboardData.getData("text");
+          if (parseVndAmount(pasted) === null) return;
+          event.preventDefault();
+          commit(pasted);
+        }}
+        className={`field-input pr-24 ${className}`}
+      />
+      {displayValue && (
+        <button type="button" aria-label="Xóa số tiền" title="Xóa số tiền" onClick={() => commit("")} className="absolute right-12 top-1/2 grid h-7 w-7 -translate-y-1/2 place-items-center rounded-md text-[#8AA0B6] transition hover:bg-[#ECF8F7] hover:text-[#087A6A]">
+          <X size={14} />
+        </button>
+      )}
+      <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[11px] font-extrabold text-[#087A6A]">{suffix}</span>
+    </div>
+  );
+}

@@ -11,7 +11,7 @@ import { trpc } from "@/lib/trpc";
 import { buildMaintenanceExportRows, canCreateCatalogOption, filterNamedCatalogOptions, getHandoverActionTooltip, getMaintenanceBadgeCount, getNewMaintenanceRequestBadge, getPaginationWindow, matchesVietnameseSearch, toggleMaintenanceStatusFilter } from "@/lib/catalogUi";
 import { getNotificationTargetLabel, type NotificationTarget } from "@/lib/notificationLinks";
 import { handoverPdfFontUrl, registerVietnamesePdfFont } from "@/lib/handoverPdf";
-import { formatVnd, formatVndInput, parseVndAmount } from "@/lib/formatters";
+import { formatVnd, formatVndInput, numberToVietnameseWords, parseVndAmount } from "@/lib/formatters";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -1626,7 +1626,7 @@ function AssetModal({ mode, asset, formData, setFormData, onClose: dismiss, onSa
     if (!valueInput) return;
     valueInput.value = formatVndInput(formData.value);
     valueInput.setAttribute("inputmode", "numeric");
-    valueInput.setAttribute("aria-describedby", "asset-value-currency");
+    valueInput.setAttribute("aria-describedby", "asset-value-currency asset-value-words");
     const field = valueInput.parentElement;
     if (!field) return;
     field.classList.add("asset-currency-field");
@@ -1639,6 +1639,29 @@ function AssetModal({ mode, asset, formData, setFormData, onClose: dismiss, onSa
       suffix.className = "asset-currency-suffix";
       field.appendChild(suffix);
     }
+    let clearButton = field.querySelector<HTMLButtonElement>("[data-asset-value-clear]");
+    if (!clearButton) {
+      clearButton = document.createElement("button");
+      clearButton.type = "button";
+      clearButton.dataset.assetValueClear = "true";
+      clearButton.setAttribute("aria-label", "Xóa số tiền");
+      clearButton.title = "Xóa số tiền";
+      clearButton.innerHTML = "×";
+      clearButton.className = "asset-currency-clear";
+      field.appendChild(clearButton);
+    }
+    clearButton.hidden = !formData.value;
+    const handleClear = () => update("value", "");
+    clearButton.addEventListener("click", handleClear);
+    let wordsPreview = field.parentElement?.querySelector<HTMLElement>("[data-asset-value-words]");
+    if (!wordsPreview) {
+      wordsPreview = document.createElement("p");
+      wordsPreview.dataset.assetValueWords = "true";
+      wordsPreview.id = "asset-value-words";
+      wordsPreview.className = "asset-currency-words";
+      field.parentElement?.appendChild(wordsPreview);
+    }
+    wordsPreview.textContent = formData.value ? numberToVietnameseWords(formData.value) : "";
     const handlePaste = (event: ClipboardEvent) => {
       const pasted = event.clipboardData?.getData("text") || "";
       const parsed = parseVndAmount(pasted);
@@ -1649,7 +1672,10 @@ function AssetModal({ mode, asset, formData, setFormData, onClose: dismiss, onSa
     valueInput.addEventListener("paste", handlePaste);
     return () => {
       valueInput.removeEventListener("paste", handlePaste);
+      clearButton?.removeEventListener("click", handleClear);
       suffix?.remove();
+      clearButton?.remove();
+      wordsPreview?.remove();
       field.classList.remove("asset-currency-field");
     };
   }, [isDetail, formData.value]);

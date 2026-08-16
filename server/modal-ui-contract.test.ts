@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
-import { formatVnd, parseVndAmount } from "../client/src/lib/formatters";
+import { formatVnd, numberToVietnameseWords, parseVndAmount } from "../client/src/lib/formatters";
 
 const projectRoot = resolve(import.meta.dirname, "..");
 const readProjectFile = (relativePath: string) => readFileSync(resolve(projectRoot, relativePath), "utf8");
@@ -12,6 +12,7 @@ describe("modal presentation contract", () => {
     expect(parseVndAmount("160.000")).toBe(160000);
     expect(parseVndAmount("160000")).toBe(160000);
     expect(formatVnd("160000.00")).toBe("160.000");
+    expect(numberToVietnameseWords(160000)).toBe("Một trăm sáu mươi nghìn đồng");
   });
 
   it("renders action tooltip from a body-level portal rather than a clipping pseudo-element", () => {
@@ -351,6 +352,17 @@ describe("modal presentation contract", () => {
   });
 
 describe("currency input and scrollbar contract", () => {
+  it("uses the reusable currency input for maintenance costs", () => {
+    const operations = readProjectFile("client/src/pages/OperationsModules.tsx");
+    const currencyInput = readProjectFile("client/src/components/CurrencyInput.tsx");
+    expect(operations).toContain('import { CurrencyInput }');
+    expect(operations).toContain('aria-label="Chi phí dự kiến"');
+    expect(operations).toContain('aria-label="Chi phí thực tế"');
+    expect(currencyInput).toContain('aria-label="Xóa số tiền"');
+    expect(currencyInput).toContain('event.clipboardData.getData("text")');
+    expect(currencyInput).toContain('suffix = "VNĐ"');
+  });
+
   it("accepts pasted VND symbols and keeps the in-field currency suffix", () => {
     const home = readProjectFile("client/src/pages/Home.tsx");
     const stylesheet = readProjectFile("client/src/index.css");

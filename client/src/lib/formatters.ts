@@ -22,6 +22,54 @@ export function formatVndInput(value: number | string | null | undefined): strin
   return numericValue === null ? "" : formatVnd(numericValue);
 }
 
+const vietnameseDigits = ["không", "một", "hai", "ba", "bốn", "năm", "sáu", "bảy", "tám", "chín"];
+const vietnameseScales = ["", "nghìn", "triệu", "tỷ"];
+
+function readThreeDigits(value: number, full: boolean): string {
+  const hundreds = Math.floor(value / 100);
+  const tens = Math.floor((value % 100) / 10);
+  const units = value % 10;
+  const parts: string[] = [];
+  if (hundreds > 0 || full) parts.push(`${vietnameseDigits[hundreds]} trăm`);
+  if (tens > 1) {
+    parts.push(`${vietnameseDigits[tens]} mươi`);
+    if (units === 1) parts.push("mốt");
+    else if (units === 4) parts.push("tư");
+    else if (units === 5) parts.push("lăm");
+    else if (units > 0) parts.push(vietnameseDigits[units]);
+  } else if (tens === 1) {
+    parts.push("mười");
+    if (units === 5) parts.push("lăm");
+    else if (units > 0) parts.push(vietnameseDigits[units]);
+  } else if (units > 0) {
+    if (hundreds > 0 || full) parts.push("lẻ");
+    parts.push(vietnameseDigits[units]);
+  }
+  return parts.join(" ");
+}
+
+export function numberToVietnameseWords(value: number | string | null | undefined): string {
+  const numericValue = parseVndAmount(value);
+  if (numericValue === null || numericValue === 0) return "Không đồng";
+  if (numericValue < 0) return `Âm ${numberToVietnameseWords(Math.abs(numericValue))}`;
+  const groups: number[] = [];
+  let remaining = Math.floor(numericValue);
+  while (remaining > 0) { groups.push(remaining % 1000); remaining = Math.floor(remaining / 1000); }
+  const parts: string[] = [];
+  for (let index = groups.length - 1; index >= 0; index -= 1) {
+    const group = groups[index];
+    if (!group) continue;
+    const full = index < groups.length - 1;
+    const words = readThreeDigits(group, full);
+    const scaleIndex = index % vietnameseScales.length;
+    const cycle = Math.floor(index / vietnameseScales.length);
+    const scale = cycle > 0 ? `${vietnameseScales[scaleIndex]} ${"tỷ ".repeat(cycle).trim()}`.trim() : vietnameseScales[scaleIndex];
+    parts.push(`${words}${scale ? ` ${scale}` : ""}`);
+  }
+  const words = `${parts.join(" ").replace(/\s+/g, " ").trim()} đồng`;
+  return words.charAt(0).toUpperCase() + words.slice(1);
+}
+
 export type CurrencyDisplayMode = "full" | "million" | "billion";
 
 export function formatVndWithUnit(value: number | string | null | undefined): string {
