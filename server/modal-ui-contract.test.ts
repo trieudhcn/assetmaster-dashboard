@@ -104,6 +104,17 @@ describe("modal presentation contract", () => {
     expect(stylesheet).toContain(".asset-date-input::-webkit-calendar-picker-indicator");
   });
 
+  it("provides loading feedback and completion messaging for category Excel export", () => {
+    const categories = readProjectFile("client/src/pages/AssetCategoryManagementPage.tsx");
+
+    expect(categories).toContain("const [isExporting, setIsExporting] = useState(false)");
+    expect(categories).toContain('toast.loading("Đang tạo file Excel...")');
+    expect(categories).toContain('toast.success(`Đã xuất ${rows.length} Phân loại ra Excel.`, { id: loadingToast })');
+    expect(categories).toContain('toast.error("Không thể xuất file Excel. Vui lòng thử lại.", { id: loadingToast })');
+    expect(categories).toContain("disabled={isExporting}");
+    expect(categories).toContain('className="animate-spin"');
+  });
+
   it("keeps category search clearing contained and safeguards categories with linked assets", () => {
     const categories = readProjectFile("client/src/pages/AssetCategoryManagementPage.tsx");
 

@@ -5,7 +5,7 @@ import { useAuth } from "@/_core/hooks/useAuth";
 import { trpc } from "@/lib/trpc";
 import { matchesVietnameseSearch } from "@/lib/catalogUi";
 import * as XLSX from "xlsx";
-import { Download, FileSpreadsheet, Filter } from "lucide-react";
+import { Download, FileSpreadsheet, Filter, Loader2 } from "lucide-react";
 
 type CategoryDraft = { name: string; code: string; description: string };
 type Category = CategoryDraft & { id: number; isActive: boolean };
@@ -28,6 +28,7 @@ export function AssetCategoryManagementPage() {
   const [assetFilter, setAssetFilter] = useState<"all" | "with-assets" | "empty">("all");
   const [moveSource, setMoveSource] = useState<Category | null>(null);
   const [moveTargetId, setMoveTargetId] = useState("");
+  const [isExporting, setIsExporting] = useState(false);
 
   const categories = (categoriesQuery.data || []) as Category[];
   const assetStatsByCategory = new Map<number, CategoryAssetStats>();
@@ -95,15 +96,26 @@ export function AssetCategoryManagementPage() {
     onError: (error) => toast.error(error.message),
   });
   const isValid = (value: CategoryDraft) => value.name.trim().length >= 2 && /^[A-Z0-9-]{1,12}$/.test(value.code.trim());
-  const exportReport = () => {
-    const rows = filteredCategories.map((category) => {
-      const stats = assetStatsByCategory.get(category.id) || { total: 0, assigned: 0, maintenance: 0, damaged: 0 };
-      return { "Tên Phân loại": category.name, "Tiền tố": category.code, "Trạng thái": category.isActive ? "Đang hoạt động" : "Ngừng hoạt động", "Tổng tài sản": stats.total, "Đang sử dụng": stats.assigned, "Hỏng": stats.damaged, "Bảo trì": stats.maintenance, "Mô tả": category.description || "" };
-    });
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, XLSX.utils.json_to_sheet(rows), "Phân loại tài sản");
-    XLSX.writeFile(workbook, `bao-cao-phan-loai-${new Date().toISOString().slice(0, 10)}.xlsx`);
-    toast.success(`Đã xuất ${rows.length} Phân loại ra Excel.`);
+  const exportReport = async () => {
+    if (isExporting) return;
+    setIsExporting(true);
+    const loadingToast = toast.loading("Đang tạo file Excel...");
+    try {
+      await new Promise((resolve) => window.setTimeout(resolve, 160));
+      const rows = filteredCategories.map((category) => {
+        const stats = assetStatsByCategory.get(category.id) || { total: 0, assigned: 0, maintenance: 0, damaged: 0 };
+        return { "Tên Phân loại": category.name, "Tiền tố": category.code, "Trạng thái": category.isActive ? "Đang hoạt động" : "Ngừng hoạt động", "Tổng tài sản": stats.total, "Đang sử dụng": stats.assigned, "Hỏng": stats.damaged, "Bảo trì": stats.maintenance, "Mô tả": category.description || "" };
+      });
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, XLSX.utils.json_to_sheet(rows), "Phân loại tài sản");
+      XLSX.writeFile(workbook, `bao-cao-phan-loai-${new Date().toISOString().slice(0, 10)}.xlsx`);
+      toast.success(`Đã xuất ${rows.length} Phân loại ra Excel.`, { id: loadingToast });
+    } catch (error) {
+      console.error("[AssetCategoryManagementPage] Excel export failed", error);
+      toast.error("Không thể xuất file Excel. Vui lòng thử lại.", { id: loadingToast });
+    } finally {
+      setIsExporting(false);
+    }
   };
 
   if (loading) return <State text="Đang kiểm tra quyền truy cập..." />;
@@ -135,7 +147,7 @@ export function AssetCategoryManagementPage() {
 
         <section className="flex min-h-[35rem] flex-col overflow-hidden rounded-xl border border-[#DFE9F0] bg-white shadow-[0_8px_24px_rgba(16,42,67,0.045)]">
           <div className="border-b border-[#E7EEF3] px-5 py-4">
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between"><div className="flex items-center gap-2"><Tags size={17} className="text-[#2666A8]" /><div><h2 className="font-display text-lg font-extrabold text-[#102A43]">Danh sách Phân loại</h2><p className="mt-0.5 text-[10px] font-semibold text-[#8AA0B6]">Hiển thị 5 Phân loại trên mỗi trang</p></div></div><button type="button" onClick={exportReport} className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-[#CDE5E5] px-3 py-2 text-[11px] font-extrabold text-[#087A6A] hover:bg-[#ECF8F7]"><FileSpreadsheet size={14} />Xuất Excel</button></div>
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between"><div className="flex items-center gap-2"><Tags size={17} className="text-[#2666A8]" /><div><h2 className="font-display text-lg font-extrabold text-[#102A43]">Danh sách Phân loại</h2><p className="mt-0.5 text-[10px] font-semibold text-[#8AA0B6]">Hiển thị 5 Phân loại trên mỗi trang</p></div></div><button type="button" onClick={() => void exportReport()} disabled={isExporting} aria-busy={isExporting} className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-[#CDE5E5] px-3 py-2 text-[11px] font-extrabold text-[#087A6A] transition-colors hover:bg-[#ECF8F7] disabled:cursor-wait disabled:opacity-60">{isExporting ? <Loader2 size={14} className="animate-spin" /> : <FileSpreadsheet size={14} />}{isExporting ? "Đang xuất..." : "Xuất Excel"}</button></div>
             <div className="relative mt-3"><input value={query} onChange={(event) => setQuery(event.target.value)} className="field-input h-9" placeholder="Tìm tên hoặc tiền tố Phân loại..." aria-label="Tìm kiếm Phân loại" /></div>
             <div className="mt-3 grid gap-2 sm:grid-cols-2"><label className="flex items-center gap-2 text-[11px] font-semibold text-[#60758A]"><Filter size={13} className="text-[#8AA0B6]" /><select value={activityFilter} onChange={(event) => setActivityFilter(event.target.value as typeof activityFilter)} className="field-input h-9 flex-1"><option value="all">Tất cả trạng thái</option><option value="active">Đang hoạt động</option><option value="inactive">Ngừng hoạt động</option></select></label><select value={assetFilter} onChange={(event) => setAssetFilter(event.target.value as typeof assetFilter)} className="field-input h-9"><option value="all">Tất cả số lượng</option><option value="with-assets">Có tài sản</option><option value="empty">Chưa có tài sản</option></select></div>
           </div>

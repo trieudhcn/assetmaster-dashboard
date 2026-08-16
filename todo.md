@@ -672,3 +672,9 @@
 - [x] Xuất báo cáo Excel danh sách Phân loại kèm tổng số, Đang sử dụng, Hỏng và Bảo trì
 - [x] Bổ sung bộ lọc Phân loại theo trạng thái hoạt động và số lượng tài sản
 - [x] Bổ sung kiểm thử Vitest cho các luồng bảo trì và Phân loại mới
+
+## Current Session — Excel Export UX
+
+- [x] Thêm trạng thái tải khi tạo file Excel và khóa nút xuất trong lúc xử lý
+- [x] Hiển thị thông báo thành công hoặc lỗi rõ ràng sau khi xuất Excel
+- [x] Bổ sung kiểm thử hồi quy cho trạng thái xuất Excel và xác minh responsive
