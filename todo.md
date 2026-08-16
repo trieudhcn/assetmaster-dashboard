@@ -781,3 +781,10 @@
 - [x] Sửa diễn giải giá trị VNĐ để không tự nhân thêm hai số 0 khi lưu.
 - [x] Hiển thị dấu chấm phân cách hàng nghìn trực tiếp trong trường nhập giá trị nguyên giá.
 - [x] Bổ sung kiểm thử nhập, chỉnh sửa, hiển thị và export giá trị VNĐ.
+
+## Current Session — Scrollbars & Currency Input Polish
+
+- [ ] Tùy biến thanh cuộn (scrollbar) cho phù hợp với giao diện AssetMaster.
+- [ ] Hỗ trợ dán trực tiếp số tiền có chứa ký hiệu ₫ hoặc VNĐ vào ô nhập liệu mà không bị lỗi.
+- [ ] Thêm hậu tố VNĐ trực tiếp vào bên trong ô nhập giá trị nguyên giá.
+- [ ] Bổ sung kiểm thử nhập, dán, cuộn, responsive và production build.
