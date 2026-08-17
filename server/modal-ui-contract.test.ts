@@ -712,6 +712,15 @@ describe("maintenance history and filter layout contract", () => {
     expect(brandPanel).toContain("assetmaster-pdf-watermark");
   });
 
+  it("lets users select multiple audit import rows and apply a shared note", () => {
+    const operations = readProjectFile("client/src/pages/OperationsModules.tsx");
+    expect(operations).toContain("selectedAuditImportIds");
+    expect(operations).toContain("bulkAuditImportNote");
+    expect(operations).toContain("Chọn tất cả");
+    expect(operations).toContain("Áp dụng ghi chú");
+    expect(operations).toContain("Ghi chú xử lý chung cho các tài sản đã chọn");
+  });
+
   it("previews audit import changes before confirmation and supports discrepancy notes", () => {
     const operations = readProjectFile("client/src/pages/OperationsModules.tsx");
     expect(operations).toContain("auditImportChangeRows");

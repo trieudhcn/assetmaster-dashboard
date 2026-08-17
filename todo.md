@@ -1300,4 +1300,11 @@
 - [x] Yêu cầu xác nhận rõ ràng trước khi thực hiện import ghi đè kết quả Kiểm kê.
 - [x] Thêm ghi chú nhanh trực tiếp cho tài sản Chênh lệch hoặc Không tìm thấy.
 - [x] Bổ sung hồi quy, kiểm thử TypeScript, Vitest, production build và responsive.
+- [x] Lưu checkpoint phát hành và báo cáo kết quả.
+
+## Current Session — Bulk Notes in Audit Import Preview
+
+- [x] Thêm chọn nhiều hoặc chọn tất cả tài sản trong bảng preview import Kiểm kê.
+- [x] Thêm ghi chú xử lý chung và áp dụng hàng loạt cho các tài sản đã chọn.
+- [x] Bổ sung hồi quy, kiểm thử TypeScript, Vitest, production build và responsive.
 - [ ] Lưu checkpoint phát hành và báo cáo kết quả.
