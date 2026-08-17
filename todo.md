@@ -1458,3 +1458,10 @@
 - [x] Sửa luồng xác thực để người chưa đăng nhập chuyển sang trang đăng nhập đúng lúc.
 - [x] Bổ sung hồi quy và xác minh truy cập không đăng nhập.
 - [x] Lưu checkpoint phát hành và báo cáo kết quả.
+
+## Current Session — Admin Login Recovery
+
+- [x] Tái hiện và chẩn đoán việc Admin không thể đăng nhập vào trang quản trị.
+- [x] Sửa điều hướng và nhận diện quyền sau đăng nhập Admin.
+- [x] Bổ sung hồi quy và xác minh truy cập quản trị.
+- [x] Lưu checkpoint phát hành và báo cáo kết quả.
