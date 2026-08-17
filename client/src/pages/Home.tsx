@@ -46,6 +46,7 @@ import { CurrencyInput } from "@/components/CurrencyInput";
 import { SearchableSelect } from "@/components/SearchableSelect";
 import { FloatingActionTooltip } from "@/components/FloatingActionTooltip";
 import { ExportPreviewHost } from "@/components/ExportPreviewHost";
+import { EditableSectionLabelManager } from "@/components/EditableSectionLabelManager";
 import {
   Archive,
   AlertTriangle,
@@ -639,8 +640,9 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-[#F4F7FB] text-[#102A43] antialiased">
-      <FloatingActionTooltip />
-      <ExportPreviewHost />
+<FloatingActionTooltip />
+      <EditableSectionLabelManager />
+<ExportPreviewHost />
       <aside className={`fixed inset-y-0 left-0 z-40 flex w-[264px] flex-col overflow-hidden border-r border-[#DDE7F0] bg-[#102A43] px-4 py-5 shadow-[8px_0_30px_rgba(16,42,67,0.16)] transition-transform duration-200 lg:translate-x-0 ${mobileNavOpen ? "translate-x-0" : "-translate-x-full"}`}>
         <div className="flex shrink-0 items-center gap-3 px-3 pb-6">
           <div style={{ backgroundColor: companyInfo.brandColor }} className="grid h-10 w-10 place-items-center rounded-[13px] shadow-[0_8px_18px_rgba(15,140,140,0.24)]">

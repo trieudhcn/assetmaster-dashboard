@@ -81,12 +81,14 @@ import {
   listHelpGuideVersions,
   listVendors,
   listVendorDocuments,
-  listUsers,
-  recordActivity,
+listUsers,
+  listUiLabels,
+recordActivity,
   saveCompany,
   saveHelpGuide,
-  saveUserNotificationPreferences,
-  updateAsset,
+saveUserNotificationPreferences,
+  saveUiLabel,
+updateAsset,
   updateAssetCategory,
   updateAssetImportSession,
   updateBrand,
@@ -199,15 +201,23 @@ export const appRouter = router({
       await recordActivity({ entityType: "company", entityId: 0, action: "logo_uploaded", actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: `Tải logo công ty ${input.fileName}` });
       return { url: stored.url };
     }),
-    uploadFavicon: adminProcedure.input(z.object({ fileName: z.string().trim().min(1).max(255), dataUrl: z.string().max(1_000_000).regex(/^data:image\/png;base64,/) })).mutation(async ({ input, ctx }) => {
-      const bytes = Buffer.from(input.dataUrl.split(",")[1] || "", "base64");
+uploadFavicon: adminProcedure.input(z.object({ fileName: z.string().trim().min(1).max(255), dataUrl: z.string().max(1_000_000).regex(/^data:image\/png;base64,/) })).mutation(async ({ input, ctx }) => {
+const bytes = Buffer.from(input.dataUrl.split(",")[1] || "", "base64");
       if (!bytes.length || bytes.length > 256 * 1024) throw new TRPCError({ code: "BAD_REQUEST", message: "Favicon PNG không được vượt quá 256 KB." });
       const stored = await storagePut(`company-brand/favicon-${crypto.randomUUID()}.png`, bytes, "image/png");
       await recordActivity({ entityType: "company", entityId: 0, action: "favicon_uploaded", actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: `Tải favicon ${input.fileName}` });
       return { url: stored.url };
+}),
+}),
+  uiLabels: router({
+    list: protectedProcedure.query(() => listUiLabels()),
+    save: adminProcedure.input(z.object({ labelKey: z.string().trim().min(3).max(96).regex(/^[a-z0-9-]+$/), value: z.string().trim().min(2).max(255) })).mutation(async ({ input, ctx }) => {
+      const id = await saveUiLabel({ ...input, updatedByUserId: ctx.user!.id, updatedByName: ctx.user!.name || "Quản trị viên" });
+      await recordActivity({ entityType: "ui_label", entityId: id, action: "updated", actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: `Cập nhật nhãn giao diện: ${input.labelKey}` });
+      return { id };
     }),
   }),
-  employees: router({
+employees: router({
     list: adminProcedure.query(() => listUsers()),
     assetHistory: adminProcedure.input(z.object({ userId: z.number().int().positive() })).query(({ input }) => listHandoversByRecipient(input.userId)),
     myAssetHistory: protectedProcedure.query(({ ctx }) => listHandoversByRecipient(ctx.user.id)),

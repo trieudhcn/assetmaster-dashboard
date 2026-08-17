@@ -1428,3 +1428,11 @@
 - [x] Thiết kế lại chỉ báo cập nhật dữ liệu theo ngôn ngữ giao diện hiện tại.
 - [x] Bổ sung hồi quy, kiểm thử TypeScript, Vitest, production build và responsive.
 - [x] Lưu checkpoint phát hành và báo cáo kết quả.
+
+## Current Session — Editable Section Labels
+
+- [x] Lập danh mục các nhãn định danh dạng eyebrow tương tự trên giao diện quản trị.
+- [x] Xây dựng API và thành phần dùng chung cho phép Admin nhấp đúp chỉnh sửa, lưu nhãn.
+- [x] Áp dụng khả năng chỉnh sửa cho mọi nhãn định danh phù hợp trong hệ thống.
+- [x] Bổ sung hồi quy, kiểm thử TypeScript, Vitest, production build và responsive.
+- [x] Lưu checkpoint phát hành và báo cáo kết quả.

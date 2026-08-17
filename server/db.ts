@@ -18,6 +18,7 @@ import {
   helpGuideVersions,
   maintenanceTickets,
   type InsertUser,
+  uiLabels,
   userNotificationPreferences,
   users,
   vendors,
@@ -70,9 +71,22 @@ export async function getUserNotificationPreferences(userId: number) {
 }
 
 export async function saveUserNotificationPreferences(userId: number, preferences: { maintenanceEnabled: boolean; handoverEnabled: boolean; returnRequestEnabled: boolean }) {
+const db = await getDb();
+if (!db) throw new Error("Database unavailable");
+await db.insert(userNotificationPreferences).values({ userId, ...preferences }).onDuplicateKeyUpdate({ set: { ...preferences, updatedAt: new Date() } });
+}
+
+export async function listUiLabels() {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(uiLabels).orderBy(uiLabels.labelKey);
+}
+
+export async function saveUiLabel(data: typeof uiLabels.$inferInsert) {
   const db = await getDb();
   if (!db) throw new Error("Database unavailable");
-  await db.insert(userNotificationPreferences).values({ userId, ...preferences }).onDuplicateKeyUpdate({ set: { ...preferences, updatedAt: new Date() } });
+  await db.insert(uiLabels).values(data).onDuplicateKeyUpdate({ set: { value: data.value, updatedByUserId: data.updatedByUserId, updatedByName: data.updatedByName, updatedAt: new Date() } });
+  return (await db.select({ id: uiLabels.id }).from(uiLabels).where(eq(uiLabels.labelKey, data.labelKey)).limit(1))[0]?.id ?? 0;
 }
 
 export async function updateUserDepartment(id: number, departmentId: number | null) {

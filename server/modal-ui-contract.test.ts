@@ -933,5 +933,21 @@ it("hiển thị thời điểm đồng bộ dashboard từ dữ liệu truy v�
   expect(home).toContain("Đồng bộ lúc {dashboardSyncLabel}");
   expect(home).toContain("refreshDashboardData");
   expect(home).toContain("Đồng bộ lại dữ liệu dashboard");
-  expect(home).not.toContain("Dữ liệu cập nhật lúc 09:42, 14/02/2025");
+expect(home).not.toContain("Dữ liệu cập nhật lúc 09:42, 14/02/2025");
+});
+
+it("cho phép Admin nhấp đúp để chỉnh sửa và lưu các nhãn định danh cấp trang", () => {
+  const home = readProjectFile("client/src/pages/Home.tsx");
+  const editableLabels = readProjectFile("client/src/components/EditableSectionLabelManager.tsx");
+  const router = readProjectFile("server/routers.ts");
+
+  expect(home).toContain("<EditableSectionLabelManager />");
+  expect(editableLabels).toContain("dashboard-operations");
+  expect(editableLabels).toContain("asset-registry");
+  expect(editableLabels).toContain("asset-taxonomy");
+  expect(editableLabels).toContain("dblclick");
+  expect(editableLabels).toContain("Nhấp đúp để chỉnh sửa nhãn");
+  expect(editableLabels).toContain("trpc.uiLabels.save.useMutation");
+  expect(router).toContain("uiLabels: router");
+  expect(router).toContain("save: adminProcedure");
 });
