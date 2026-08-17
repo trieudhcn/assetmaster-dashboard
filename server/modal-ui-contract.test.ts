@@ -910,5 +910,18 @@ it("đồng bộ nhận diện Cổng nhân viên và hiển thị cập nhật,
   expect(helpCenter).toContain("Lịch sử phiên bản");
   expect(helpCenter).toContain("trpc.help.versions.useQuery");
   expect(router).toContain("createHelpGuideVersion");
-  expect(router).toContain("versions: adminProcedure");
+expect(router).toContain("versions: adminProcedure");
+});
+
+it("trình bày visual diff rõ ràng trong lịch sử phiên bản hướng dẫn", () => {
+  const helpCenter = readProjectFile("client/src/pages/HelpCenter.tsx");
+  const versionDiff = readProjectFile("client/src/components/GuideVersionDiffDialog.tsx");
+
+  expect(helpCenter).toContain("GuideVersionDiffDialog");
+  expect(versionDiff).toContain("Lịch sử phiên bản & so sánh");
+  expect(versionDiff).toContain("So với phiên bản trước");
+  expect(versionDiff).toContain("xanh lá");
+  expect(versionDiff).toContain("đỏ gạch ngang");
+  expect(versionDiff).toContain("diffTokens");
+  expect(versionDiff).toContain("Bước thay đổi");
 });

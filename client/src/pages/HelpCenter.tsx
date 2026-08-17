@@ -2,6 +2,7 @@ import { BarChart3, BookOpenCheck, CheckCircle2, ChevronRight, CircleHelp, Clipb
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { trpc } from "@/lib/trpc";
+import { GuideVersionDiffDialog } from "@/components/GuideVersionDiffDialog";
 
 type GuideAudience = "admin" | "user";
 type GuideItem = { guideKey: string; audience: GuideAudience; title: string; description: string; steps: string[]; icon: typeof BookOpenCheck; tone: string; updatedByName?: string | null; updatedAt?: Date | string | null };
@@ -65,11 +66,15 @@ function GuideGrid({ guides, editable = false, onEdit, onHistory }: { guides: Gu
   })}</div>;
 }
 
-function HelpGuideVersionDialog({ guide, onClose }: { guide: GuideItem; onClose: () => void }) {
+function LegacyHelpGuideVersionDialog({ guide, onClose }: { guide: GuideItem; onClose: () => void }) {
   const versionsQuery = trpc.help.versions.useQuery({ guideKey: guide.guideKey });
   useEffect(() => { const onKeyDown = (event: KeyboardEvent) => { if (event.key === "Escape") onClose(); }; window.addEventListener("keydown", onKeyDown); return () => window.removeEventListener("keydown", onKeyDown); }, [onClose]);
   const versions = (versionsQuery.data || []) as GuideVersion[];
   return <div className="fixed inset-0 z-[95] flex items-center justify-center bg-[#102A43]/45 px-4 py-6 backdrop-blur-sm" role="dialog" aria-modal="true" aria-labelledby="help-history-title" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}><div className="max-h-full w-full max-w-3xl overflow-hidden rounded-2xl border border-[#DFE9F0] bg-white shadow-2xl"><div className="flex items-start justify-between gap-4 border-b border-[#E7EEF3] px-5 py-4 sm:px-6"><div><div className="flex items-center gap-2 text-[10px] font-extrabold uppercase tracking-[.14em] text-[#0F8C8C]"><History size={14} />Theo dõi nội dung</div><h2 id="help-history-title" className="mt-1 font-display text-xl font-extrabold text-[#102A43]">Lịch sử phiên bản</h2><p className="mt-1 text-xs text-[#71869A]">{guide.title}</p></div><button type="button" onClick={onClose} className="grid h-9 w-9 place-items-center rounded-lg text-[#71869A] transition hover:bg-[#F0F5F8]" aria-label="Đóng lịch sử phiên bản"><X size={17} /></button></div><div className="max-h-[70vh] overflow-y-auto bg-[#F7FAFC] p-5 sm:p-6">{versionsQuery.isLoading ? <div className="grid min-h-[180px] place-items-center text-sm text-[#71869A]">Đang tải lịch sử phiên bản...</div> : !versions.length ? <div className="rounded-xl border border-dashed border-[#C9D5DF] bg-white px-6 py-10 text-center"><History size={22} className="mx-auto text-[#8AA0B6]" /><p className="mt-3 text-sm font-extrabold text-[#193B57]">Chưa có phiên bản đã lưu</p><p className="mt-1 text-xs text-[#71869A]">Lịch sử sẽ được tạo từ lần quản trị viên lưu hướng dẫn tiếp theo.</p></div> : <div className="space-y-3">{versions.map((version, index) => <article key={version.id} className="rounded-xl border border-[#DFE9F0] bg-white p-4"><div className="flex flex-col justify-between gap-2 sm:flex-row sm:items-start"><div><div className="text-[10px] font-extrabold uppercase tracking-[.14em] text-[#0F8C8C]">Phiên bản {versions.length - index}</div><h3 className="mt-1 text-sm font-extrabold text-[#193B57]">{version.title}</h3></div><div className="text-xs font-semibold text-[#71869A]">{formatGuideVersionDate(version.createdAt)}</div></div><p className="mt-2 text-xs leading-5 text-[#60758A]">{version.description}</p><div className="mt-3 border-t border-[#EDF2F5] pt-3"><div className="text-[10px] font-extrabold uppercase tracking-[.12em] text-[#8AA0B6]">Thay đổi bởi {version.changedByName || "Quản trị viên"}</div><ol className="mt-2 space-y-1.5">{(isStringList(version.steps) ? version.steps : []).map((step, stepIndex) => <li key={`${version.id}-${stepIndex}`} className="flex gap-2 text-xs leading-5 text-[#60758A]"><span className="font-extrabold text-[#0F8C8C]">{stepIndex + 1}.</span><span>{step}</span></li>)}</ol></div></article>)}</div>}</div></div></div>;
+}
+
+function HelpGuideVersionDialog({ guide, onClose }: { guide: GuideItem; onClose: () => void }) {
+  return <GuideVersionDiffDialog guide={guide} onClose={onClose} />;
 }
 
 function HelpGuideEditor({ guide, pending, onClose, onSave }: { guide: GuideItem; pending: boolean; onClose: () => void; onSave: (draft: Pick<GuideItem, "guideKey" | "audience" | "title" | "description" | "steps">) => void }) {

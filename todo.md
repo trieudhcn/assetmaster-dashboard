@@ -1414,3 +1414,10 @@
 - [x] Lưu và hiển thị lịch sử phiên bản hướng dẫn cho Admin.
 - [x] Bổ sung hồi quy, kiểm thử TypeScript, Vitest, production build và desktop/mobile.
 - [x] Lưu checkpoint phát hành và báo cáo kết quả.
+
+## Current Session — Visual Diff for Guide Version History
+
+- [x] Rà soát dữ liệu phiên bản và giao diện lịch sử hướng dẫn hiện có.
+- [x] Hiển thị rõ nội dung thêm, xóa và thay đổi giữa phiên bản đang xem với phiên bản liền trước.
+- [x] Bổ sung hồi quy, kiểm thử TypeScript, Vitest, production build và responsive.
+- [x] Lưu checkpoint phát hành và báo cáo kết quả.
