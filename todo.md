@@ -1451,3 +1451,10 @@
 - [x] Khắc phục vận hành và xác nhận lại khả năng truy cập trang web.
 - [x] Hoàn tất phát hành các thay đổi nền Tổng quan và bảng quản lý nhãn.
 - [x] Kiểm thử cuối, lưu checkpoint và báo cáo kết quả.
+
+## Current Session — Auth Loading Recovery
+
+- [x] Tái hiện và xác định nguyên nhân màn kiểm tra phiên đăng nhập chờ vô hạn.
+- [x] Sửa luồng xác thực để người chưa đăng nhập chuyển sang trang đăng nhập đúng lúc.
+- [x] Bổ sung hồi quy và xác minh truy cập không đăng nhập.
+- [x] Lưu checkpoint phát hành và báo cáo kết quả.
