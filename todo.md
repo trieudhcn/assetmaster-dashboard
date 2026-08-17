@@ -1274,3 +1274,12 @@
 - [x] Tích hợp preview vào các thao tác xuất file có trên giao diện.
 - [x] Bổ sung hồi quy, kiểm thử TypeScript, Vitest, production build và xác minh giao diện.
 - [ ] Lưu checkpoint phát hành và báo cáo kết quả.
+
+## Current Session — Filtered Audit Selection & Round-trip Import
+
+- [x] Tạm ẩn nút “Xuất tổng tài sản” khỏi form chi tiết Kiểm kê.
+- [x] Thiết kế bộ lọc Phòng ban/Phân loại/Tất cả và chọn nhanh tài sản vào danh sách kiểm kê.
+- [x] Xuất Excel đúng danh sách tài sản đã chọn, kèm lựa chọn hợp lệ cho Trạng thái thực tế và Kết quả.
+- [x] Chuẩn hóa import để cập nhật đúng các dòng trong file kiểm kê đã xuất.
+- [x] Bổ sung hồi quy, kiểm thử TypeScript, Vitest, production build và responsive.
+- [ ] Lưu checkpoint phát hành và báo cáo kết quả.

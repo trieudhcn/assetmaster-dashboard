@@ -17,6 +17,7 @@ type BrandedWorkbookOptions = {
   documentTitle: string;
   fileName: string;
   description?: string;
+  prepareWorkbook?: (workbook: any) => void | Promise<void>;
 };
 
 const infoSheetName = "Thông tin doanh nghiệp";
@@ -80,6 +81,7 @@ export async function writeBrandedWorkbook(workbook: XLSX.WorkBook, options: Bra
   if (!infoSheet) throw new Error("Không thể tạo trang thông tin doanh nghiệp.");
 
   const company = options.company || getStoredCompanyInfo();
+  if (options.prepareWorkbook) await options.prepareWorkbook(brandedWorkbook);
   const brandColor = toHexColor(company.brandColor);
   infoSheet.mergeCells("A1:B1");
   infoSheet.mergeCells("A2:B2");
