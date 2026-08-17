@@ -15,3 +15,7 @@ The audit list exposes a compact **Tất cả trạng thái** selector beside th
 ## Dropdown visibility review — 17/08/2026
 
 The desktop detail card now contains the data table within its rounded boundary while preserving a concise asset picker. Searchable dropdown menus use a document-level portal with fixed positioning and scroll-aware measurement, so the asset picker, **Trạng thái thực tế**, and **Kết quả** menus can render above the card instead of being clipped by its overflow boundary.
+
+## Fieldwork export review — 17/08/2026
+
+Desktop shows **Danh sách kiểm kê** alongside QR and discrepancy export actions without crowding the header. On a 375px viewport, actions wrap into readable touch targets, the asset picker and add button remain full-width, and the wide audit table provides its explicit horizontal-swipe cue rather than forcing controls into a narrow layout.

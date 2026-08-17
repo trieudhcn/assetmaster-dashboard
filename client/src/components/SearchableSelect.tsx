@@ -40,6 +40,7 @@ export function SearchableSelect({ value, onChange, options, placeholder = "Chá»
   const [menuAlign, setMenuAlign] = useState<"left" | "right">("left");
   const [menuReady, setMenuReady] = useState(false);
   const [menuPosition, setMenuPosition] = useState({ top: 0, left: 0, width: 280 });
+  const [menuPlacement, setMenuPlacement] = useState<"bottom" | "top">("bottom");
   const closeTimerRef = useRef<number | null>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const selected = options.find((option) => option.value === value);
@@ -74,9 +75,12 @@ export function SearchableSelect({ value, onChange, options, placeholder = "Chá»
       const rect = rootRef.current?.getBoundingClientRect();
       if (!rect) return;
       const width = Math.min(280, Math.max(240, rect.width));
+      const estimatedMenuHeight = 340;
       const alignRight = rect.right + width > window.innerWidth - 12;
+      const openUpward = rect.bottom + 6 + estimatedMenuHeight > window.innerHeight - 8 && rect.top > estimatedMenuHeight;
       setMenuAlign(alignRight ? "right" : "left");
-      setMenuPosition({ top: rect.bottom + 6, left: Math.max(8, alignRight ? rect.right - width : rect.left), width });
+      setMenuPlacement(openUpward ? "top" : "bottom");
+      setMenuPosition({ top: openUpward ? rect.top - 6 : rect.bottom + 6, left: Math.max(8, alignRight ? rect.right - width : rect.left), width });
       setMenuReady(true);
     };
     requestAnimationFrame(() => { measureMenu(); searchInputRef.current?.focus(); });
@@ -94,7 +98,9 @@ export function SearchableSelect({ value, onChange, options, placeholder = "Chá»
     if (open) setHighlightedIndex(Math.max(0, filteredOptions.findIndex((option) => option.value === value)));
   }, [query, value, open]);
 
-  const menu = menuMounted && menuReady ? <div ref={menuRef} style={menuPortal ? { top: menuPosition.top, left: menuPosition.left, width: menuPosition.width } : undefined} className={`${menuPortal ? "fixed z-[110]" : `absolute ${menuAlign === "right" ? "right-0 left-auto" : "left-0 right-auto"} top-[calc(100%+0.35rem)] z-[95] w-[min(280px,calc(100vw-1rem))]`} min-w-0 overflow-hidden rounded-xl border border-[#CDE5E5] bg-white shadow-[0_16px_36px_rgba(16,42,67,0.18)] transition-[opacity,transform] duration-180 ease-[cubic-bezier(0.23,1,0.32,1)] ${open ? "translate-y-0 scale-100 opacity-100" : "pointer-events-none -translate-y-1 scale-[0.98] opacity-0"}`} role="listbox">
+  const portalOpensUpward = menuPortal && menuPlacement === "top";
+  const menuMotion = open ? (portalOpensUpward ? "-translate-y-full scale-100 opacity-100" : "translate-y-0 scale-100 opacity-100") : (portalOpensUpward ? "pointer-events-none -translate-y-[calc(100%+0.25rem)] scale-[0.98] opacity-0" : "pointer-events-none -translate-y-1 scale-[0.98] opacity-0");
+  const menu = menuMounted && menuReady ? <div ref={menuRef} style={menuPortal ? { top: menuPosition.top, left: menuPosition.left, width: menuPosition.width } : undefined} className={`${menuPortal ? "fixed z-[9999]" : `absolute ${menuAlign === "right" ? "right-0 left-auto" : "left-0 right-auto"} top-[calc(100%+0.35rem)] z-[95] w-[min(280px,calc(100vw-1rem))]`} min-w-0 overflow-hidden rounded-xl border border-[#CDE5E5] bg-white shadow-[0_16px_36px_rgba(16,42,67,0.18)] transition-[opacity,transform] duration-180 ease-[cubic-bezier(0.23,1,0.32,1)] ${menuMotion}`} role="listbox">
     <div className="border-b border-[#E7EEF3] p-2">
       <div className="relative">
         <Search size={15} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[#8AA0B6]" />

@@ -1201,3 +1201,11 @@
 - [x] Giữ vùng chọn tài sản gọn, rõ ràng và responsive.
 - [x] Bổ sung hồi quy, kiểm thử TypeScript, Vitest, production build và responsive.
 - [x] Lưu checkpoint phát hành cho phiên này.
+
+## Current Session — Audit Fieldwork Export & Dropdown Layer
+
+- [x] Rà soát nguyên nhân dropdown portal vẫn bị che ở cấp hiển thị toàn cục.
+- [x] Bảo đảm dropdown Kiểm kê hiển thị trên cùng ở desktop và mobile.
+- [x] Xuất danh sách tài sản theo đợt kiểm kê sang Excel có cột hiện trạng thực tế và ghi chú.
+- [x] Bổ sung hồi quy, kiểm thử TypeScript, Vitest, production build và responsive.
+- [x] Lưu checkpoint phát hành cho phiên này.

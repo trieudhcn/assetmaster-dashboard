@@ -493,6 +493,7 @@ export function AuditPage() {
   const [isQrScanOpen, setIsQrScanOpen] = useState(false);
   const [qrScanEntries, setQrScanEntries] = useState<AuditQrScanEntry[]>([]);
   const [isExportingDiscrepancy, setIsExportingDiscrepancy] = useState<"pdf" | "excel" | null>(null);
+  const [isExportingFieldworkSheet, setIsExportingFieldworkSheet] = useState(false);
 
   const openAuditSession = (sessionId: number) => {
     const url = new URL(window.location.href);
@@ -641,6 +642,58 @@ export function AuditPage() {
     };
   });
 
+  const fieldworkRows = auditItems.map((item, index) => {
+    const asset = assetById.get(item.assetId);
+    return {
+      "STT": index + 1,
+      "Mã QR để quét": asset?.qrToken ? `ASSETMASTER|${asset.qrToken}` : asset?.assetCode || "",
+      "Mã tài sản": asset?.assetCode || `#${item.assetId}`,
+      "Tên tài sản": asset?.name || "Tài sản đã bị lưu trữ",
+      "Serial / IMEI": asset?.serialNumber || "",
+      "Vị trí hệ thống": asset?.location || "",
+      "Người / đơn vị đang giữ": asset?.holderName || "",
+      "Trạng thái hệ thống": auditAssetStatusLabel(item.expectedStatus || asset?.status),
+      "Trạng thái thực tế": auditAssetStatusLabel(item.actualStatus) === "Chưa xác định" ? "" : auditAssetStatusLabel(item.actualStatus),
+      "Kết quả kiểm kê": item.result === "pending" ? "" : auditResultLabels[item.result],
+      "Hiện trạng thực tế": item.note || "",
+      "Vị trí thực tế / người xác nhận": "",
+      "Ghi chú kiểm kê": "",
+      "Thời điểm kiểm kê": item.checkedAt ? new Date(item.checkedAt).toLocaleString("vi-VN") : "",
+      "Người kiểm kê": "",
+    };
+  });
+
+  const exportFieldworkSheet = () => {
+    if (!selectedAudit || !fieldworkRows.length) { toast.info("Đợt kiểm kê chưa có tài sản để xuất danh sách thực địa."); return; }
+    setIsExportingFieldworkSheet(true);
+    const loadingToast = toast.loading("Đang tạo danh sách kiểm kê thực địa...");
+    window.setTimeout(() => {
+      try {
+        const workbook = XLSX.utils.book_new();
+        const sheet = XLSX.utils.json_to_sheet(fieldworkRows);
+        sheet["!cols"] = [{ wch: 7 }, { wch: 34 }, { wch: 18 }, { wch: 34 }, { wch: 20 }, { wch: 24 }, { wch: 28 }, { wch: 20 }, { wch: 20 }, { wch: 18 }, { wch: 38 }, { wch: 34 }, { wch: 38 }, { wch: 24 }, { wch: 22 }];
+        sheet["!freeze"] = { xSplit: 0, ySplit: 1 };
+        XLSX.utils.book_append_sheet(workbook, sheet, "Danh sách kiểm kê");
+        const guide = XLSX.utils.aoa_to_sheet([
+          ["HƯỚNG DẪN KIỂM KÊ THỰC ĐỊA"],
+          ["Đợt kiểm kê", selectedAudit.name],
+          ["Mã đợt", selectedAudit.referenceCode],
+          ["Cách sử dụng", "Quét cột Mã QR để quét hoặc đối chiếu Mã tài sản. Ghi rõ Hiện trạng thực tế, Vị trí thực tế / người xác nhận, Ghi chú kiểm kê, Thời điểm kiểm kê và Người kiểm kê."],
+          ["Lưu ý", "Các cột hiện trạng và ghi chú có thể nhập trực tiếp trên Excel hoặc in ra để ghi tay, sau đó cập nhật kết quả vào hệ thống."],
+        ]);
+        guide["!cols"] = [{ wch: 24 }, { wch: 120 }];
+        XLSX.utils.book_append_sheet(workbook, guide, "Hướng dẫn");
+        XLSX.writeFile(workbook, `assetmaster-danh-sach-kiem-ke-${selectedAudit.referenceCode}.xlsx`);
+        toast.success(`Đã xuất ${fieldworkRows.length} tài sản để kiểm kê thực địa.`, { id: loadingToast });
+      } catch (error) {
+        console.error("[AuditPage] Fieldwork Excel export failed", error);
+        toast.error("Không thể xuất danh sách kiểm kê thực địa.", { id: loadingToast });
+      } finally {
+        setIsExportingFieldworkSheet(false);
+      }
+    }, 160);
+  };
+
   const exportDiscrepancyExcel = () => {
     if (!selectedAudit || !discrepancyRows.length) { toast.info("Đợt kiểm kê này chưa có chênh lệch để xuất."); return; }
     setIsExportingDiscrepancy("excel");
@@ -768,7 +821,7 @@ export function AuditPage() {
               <div className="rounded-lg bg-[#ECF8F7] px-3 py-2 text-center"><div className="text-[10px] font-bold text-[#087A6A]">Khớp</div><div className="mt-1 font-display text-lg font-extrabold text-[#087A6A]">{summary.matched}</div></div>
               <div className="rounded-lg bg-[#FDEDEE] px-3 py-2 text-center"><div className="text-[10px] font-bold text-[#B44545]">Chênh lệch</div><div className="mt-1 font-display text-lg font-extrabold text-[#B44545]">{summary.discrepancies}</div></div>
             </div>
-            <div className="flex flex-wrap justify-end gap-2"><button disabled={!isAdmin} onClick={() => setIsQrScanOpen((current) => !current)} className="inline-flex min-h-10 items-center gap-2 rounded-lg border border-[#CDE5E5] bg-white px-3 py-2 text-xs font-bold text-[#087A6A] transition hover:bg-[#ECF8F7] disabled:cursor-not-allowed disabled:opacity-60"><QrCode size={15} />{isQrScanOpen ? "Ẩn quét QR" : "Quét QR hàng loạt"}</button><button disabled={!discrepancyRows.length || isExportingDiscrepancy !== null} onClick={exportDiscrepancyExcel} className="inline-flex min-h-10 items-center gap-2 rounded-lg border border-[#D7E5F5] bg-white px-3 py-2 text-xs font-bold text-[#2666A8] transition hover:bg-[#EAF3FF] disabled:cursor-not-allowed disabled:opacity-60"><Download size={15} />{isExportingDiscrepancy === "excel" ? "Đang xuất..." : "Xuất Excel"}</button><button disabled={!discrepancyRows.length || isExportingDiscrepancy !== null} onClick={exportDiscrepancyPdf} className="inline-flex min-h-10 items-center gap-2 rounded-lg bg-[#102A43] px-3 py-2 text-xs font-bold text-white transition hover:bg-[#193B57] disabled:cursor-not-allowed disabled:opacity-60"><FileText size={15} />{isExportingDiscrepancy === "pdf" ? "Đang xuất..." : "Xuất PDF"}</button></div>
+            <div className="flex flex-wrap justify-end gap-2"><button disabled={!isAdmin} onClick={() => setIsQrScanOpen((current) => !current)} className="inline-flex min-h-10 items-center gap-2 rounded-lg border border-[#CDE5E5] bg-white px-3 py-2 text-xs font-bold text-[#087A6A] transition hover:bg-[#ECF8F7] disabled:cursor-not-allowed disabled:opacity-60"><QrCode size={15} />{isQrScanOpen ? "Ẩn quét QR" : "Quét QR hàng loạt"}</button><button disabled={!fieldworkRows.length || isExportingFieldworkSheet} onClick={exportFieldworkSheet} className="inline-flex min-h-10 items-center gap-2 rounded-lg border border-[#8BCDC6] bg-[#ECF8F7] px-3 py-2 text-xs font-bold text-[#087A6A] transition hover:bg-[#DDF3F0] disabled:cursor-not-allowed disabled:opacity-60"><Download size={15} />{isExportingFieldworkSheet ? "Đang tạo..." : "Danh sách kiểm kê"}</button><button disabled={!discrepancyRows.length || isExportingDiscrepancy !== null} onClick={exportDiscrepancyExcel} className="inline-flex min-h-10 items-center gap-2 rounded-lg border border-[#D7E5F5] bg-white px-3 py-2 text-xs font-bold text-[#2666A8] transition hover:bg-[#EAF3FF] disabled:cursor-not-allowed disabled:opacity-60"><Download size={15} />{isExportingDiscrepancy === "excel" ? "Đang xuất..." : "Xuất Excel"}</button><button disabled={!discrepancyRows.length || isExportingDiscrepancy !== null} onClick={exportDiscrepancyPdf} className="inline-flex min-h-10 items-center gap-2 rounded-lg bg-[#102A43] px-3 py-2 text-xs font-bold text-white transition hover:bg-[#193B57] disabled:cursor-not-allowed disabled:opacity-60"><FileText size={15} />{isExportingDiscrepancy === "pdf" ? "Đang xuất..." : "Xuất PDF"}</button></div>
           </div>
 
           {isQrScanOpen && <div className="border-b border-[#CDE5E5] bg-[#F4FBFA] p-4 sm:p-5"><div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between"><div><div className="flex items-center gap-2 text-[11px] font-extrabold uppercase tracking-[0.12em] text-[#087A6A]"><QrCode size={14} />Quét QR liên tiếp</div><p className="mt-1 text-xs leading-5 text-[#60758A]">Dùng máy quét QR hoặc dán mã. Mỗi lần Enter sẽ tự thêm tài sản mới hoặc xác nhận tài sản đã có trong đợt.</p></div><span className="w-fit rounded-full bg-white px-2.5 py-1 text-[10px] font-bold text-[#087A6A] ring-1 ring-inset ring-[#CDE5E5]">{qrScanEntries.length} lượt gần nhất</span></div><div className="mt-3 grid gap-3 lg:grid-cols-[minmax(0,1fr)_auto]"><input autoFocus value={qrScanInput} onChange={(event) => setQrScanInput(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter") { event.preventDefault(); void scanAuditQr(); } }} placeholder="Quét hoặc nhập ASSETMASTER|token / mã tài sản..." className="field-input font-mono" disabled={addItemMutation.isPending || recordItemMutation.isPending} /><button onClick={() => void scanAuditQr()} disabled={!qrScanInput.trim() || addItemMutation.isPending || recordItemMutation.isPending} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-[#0F8C8C] px-5 py-2 text-xs font-bold text-white hover:bg-[#087A6A] disabled:cursor-not-allowed disabled:opacity-60"><QrCode size={15} />{addItemMutation.isPending || recordItemMutation.isPending ? "Đang ghi nhận..." : "Ghi nhận QR"}</button></div>{qrScanEntries.length > 0 && <div className="mt-3 grid gap-2 sm:grid-cols-2 xl:grid-cols-3">{qrScanEntries.map((entry) => <div key={entry.id} className={`rounded-lg border px-3 py-2 text-xs ${entry.status === "matched" || entry.status === "added" ? "border-[#B8E9DD] bg-white text-[#087A6A]" : entry.status === "not_found" || entry.status === "error" ? "border-[#F3C4C4] bg-[#FFF8F8] text-[#B44545]" : "border-[#F2D596] bg-[#FFFDF7] text-[#A86B00]"}`}><div className="font-mono text-[10px] font-extrabold">{entry.code}</div><div className="mt-0.5 truncate font-bold">{entry.name}</div><div className="mt-1 text-[10px]">{entry.detail}</div></div>)}</div>}</div>}

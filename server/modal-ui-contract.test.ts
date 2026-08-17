@@ -487,7 +487,7 @@ describe("currency input and scrollbar contract", () => {
     expect(searchableSelect).toContain('open ? "z-[96]" : "z-0"');
     expect(searchableSelect).toContain('menuAlign === "right" ? "right-0 left-auto" : "left-0 right-auto"');
     expect(searchableSelect).toContain('const width = Math.min(280, Math.max(240, rect.width))');
-    expect(searchableSelect).toContain('setMenuPosition({ top: rect.bottom + 6');
+    expect(searchableSelect).toContain('setMenuPosition({ top: openUpward ? rect.top - 6 : rect.bottom + 6');
     expect(searchableSelect).toContain('top-[calc(100%+0.35rem)]');
     expect(searchableSelect).not.toContain('menuVertical');
     expect(searchableSelect).toContain('transition-[opacity,transform]');
@@ -605,7 +605,9 @@ describe("maintenance history and filter layout contract", () => {
     const searchableSelect = readProjectFile("client/src/components/SearchableSelect.tsx");
     expect(searchableSelect).toContain("createPortal(menu, document.body)");
     expect(searchableSelect).toContain("menuPortal = true");
-    expect(searchableSelect).toContain('fixed z-[110]');
+    expect(searchableSelect).toContain('fixed z-[9999]');
+    expect(searchableSelect).toContain("const estimatedMenuHeight = 340");
+    expect(searchableSelect).toContain("const openUpward");
   });
 
   it("supports filtered audit sessions, continuous QR scanning and discrepancy exports", () => {
@@ -619,6 +621,11 @@ describe("maintenance history and filter layout contract", () => {
     expect(operations).toContain("exportDiscrepancyExcel");
     expect(operations).toContain("exportDiscrepancyPdf");
     expect(operations).toContain("BIÊN BẢN CHÊNH LỆCH KIỂM KÊ");
+    expect(operations).toContain("exportFieldworkSheet");
+    expect(operations).toContain("Danh sách kiểm kê");
+    expect(operations).toContain("Hiện trạng thực tế");
+    expect(operations).toContain("Ghi chú kiểm kê");
+    expect(operations).toContain("Mã QR để quét");
   });
 
   it("exposes a per-maintenance-ticket history drawer and protected history query", () => {
