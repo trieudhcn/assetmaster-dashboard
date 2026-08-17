@@ -195,6 +195,16 @@ export const appRouter = router({
   }),
   company: router({
     get: protectedProcedure.query(() => getCompany()),
+    publicBrand: publicProcedure.query(async () => {
+      const company = await getCompany();
+      if (!company) return null;
+      return {
+        name: company.name,
+        websiteTitle: company.websiteTitle,
+        logoUrl: company.logoUrl,
+        brandColor: company.brandColor,
+      };
+    }),
     save: adminProcedure.input(z.object({ name: z.string().trim().min(2).max(255), address: nullableText, taxCode: nullableText, phone: nullableText, email: z.string().email().optional().nullable(), logoUrl: nullableText, websiteTitle: z.string().trim().min(2).max(120).optional().nullable(), brandColor: z.string().regex(/^#[0-9a-fA-F]{6}$/).optional().nullable(), faviconUrl: nullableText })).mutation(async ({ input, ctx }) => {
       const id = await saveCompany(input);
       await recordActivity({ entityType: "company", entityId: id, action: "updated", actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: "Cập nhật thông tin công ty" });

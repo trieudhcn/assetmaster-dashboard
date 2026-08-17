@@ -1467,3 +1467,10 @@
 - [x] Rà soát bố cục Cài đặt thương hiệu và khu vực Nhận diện mở rộng.
 - [x] Di chuyển Hiệu ứng chuyển động xuống Nhận diện mở rộng, giữ nguyên chức năng bật/tắt.
 - [x] Kiểm tra TypeScript, giao diện và phát hành cập nhật.
+
+## Current Session — Login Brand Synchronization
+
+- [x] Rà soát thành phần đăng nhập, màn hình chào mừng và dữ liệu thương hiệu hiện có.
+- [x] Dùng logo, tên công ty và tiêu đề website từ Cài đặt hệ thống cho phần nhận diện khi mới truy cập.
+- [x] Cập nhật dòng thương hiệu trên màn hình chào mừng trở lại.
+- [x] Bổ sung hồi quy, kiểm tra TypeScript, giao diện và phát hành cập nhật.
