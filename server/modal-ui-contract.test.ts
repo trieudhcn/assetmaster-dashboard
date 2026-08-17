@@ -445,6 +445,10 @@ describe("currency input and scrollbar contract", () => {
     expect(home).toContain("Lần cập nhật gần nhất:");
     expect(home).toContain("persistedAsset?.updatedAt");
     expect(home).toContain('toLocaleString("vi-VN", { dateStyle: "short", timeStyle: "short" })');
+    expect(home).toContain("const latestAssetChange = assetFieldHistoryQuery.data?.items?.[0]");
+    expect(home).toContain("Người thực hiện thay đổi gần nhất:");
+    expect(home).toContain("tooltipTarget.dataset.tooltip = latestUpdateActorTooltip");
+    expect(home).toContain('classList.add("icon-action-tooltip", "cursor-help", "outline-none")');
     expect(home).toContain('new CustomEvent("assetmaster:open-asset-history"');
     expect(home).toContain("overflow-visible rounded-xl border border-[#DFE9F0]");
     expect(home).toContain('className="w-full shrink-0 sm:w-[180px]"');

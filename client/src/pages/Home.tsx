@@ -1363,6 +1363,12 @@ function AssetModal({ mode, asset, formData, setFormData, isSaving, onClose: dis
   const persistedAsset = assetsQuery.data?.find((candidate) => candidate.assetCode === asset?.code);
   const maintenanceHistoryQuery = trpc.maintenance.byAsset.useQuery({ assetId: persistedAsset?.id || 0 }, { enabled: isDetail && Boolean(persistedAsset?.id) });
   const assetFieldHistoryQuery = trpc.assets.history.useQuery({ assetId: persistedAsset?.id || 0 }, { enabled: isDetail && Boolean(persistedAsset?.id) });
+  const latestAssetChange = assetFieldHistoryQuery.data?.items?.[0];
+  const latestUpdateActorTooltip = assetFieldHistoryQuery.isLoading
+    ? "Đang tải người thực hiện thay đổi gần nhất..."
+    : latestAssetChange?.actorName?.trim()
+      ? `Người thực hiện thay đổi gần nhất: ${latestAssetChange.actorName.trim()}`
+      : "Chưa xác định người thực hiện thay đổi gần nhất.";
   useEffect(() => {
     if (!isDetail || !persistedAsset?.id) return;
     const dialog = document.querySelector('[role="dialog"][aria-label="Chi tiết tài sản"]');
@@ -1382,6 +1388,26 @@ function AssetModal({ mode, asset, formData, setFormData, isSaving, onClose: dis
     header.insertBefore(historyButton, closeButton);
     return () => { historyButton.removeEventListener("click", openHistory); historyButton.remove(); };
   }, [isDetail, persistedAsset?.id, assetFieldHistoryQuery.data?.total, assetFieldHistoryQuery.isLoading]);
+  useEffect(() => {
+    if (!isDetail) return;
+    const dialog = document.querySelector('[role="dialog"][aria-label="Chi tiết tài sản"]');
+    const updateText = Array.from(dialog?.querySelectorAll("span") || []).find((element) => element.textContent?.startsWith("Lần cập nhật gần nhất:"));
+    const tooltipTarget = updateText?.parentElement;
+    if (!tooltipTarget) return;
+    const originalTitle = tooltipTarget.getAttribute("title");
+    tooltipTarget.classList.add("icon-action-tooltip", "cursor-help", "outline-none");
+    tooltipTarget.dataset.tooltip = latestUpdateActorTooltip;
+    tooltipTarget.tabIndex = 0;
+    tooltipTarget.setAttribute("aria-label", latestUpdateActorTooltip);
+    tooltipTarget.removeAttribute("title");
+    return () => {
+      tooltipTarget.classList.remove("icon-action-tooltip", "cursor-help", "outline-none");
+      delete tooltipTarget.dataset.tooltip;
+      tooltipTarget.removeAttribute("aria-label");
+      tooltipTarget.removeAttribute("tabindex");
+      if (originalTitle) tooltipTarget.setAttribute("title", originalTitle);
+    };
+  }, [isDetail, persistedAsset?.id, latestUpdateActorTooltip]);
   const utils = trpc.useUtils();
   const [quickEntryType, setQuickEntryType] = useState<"vendor" | "brand" | null>(null);
   const [quickEntryName, setQuickEntryName] = useState("");

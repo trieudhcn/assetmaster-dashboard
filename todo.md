@@ -1156,8 +1156,14 @@
 - [x] Lưu checkpoint phát hành cho phiên này.
 
 ## Current Session — Latest Asset Update Summary
-
 - [x] Rà soát dữ liệu thời điểm cập nhật và vị trí header chi tiết tài sản.
 - [x] Hiển thị thông tin “Lần cập nhật gần nhất” theo dữ liệu thực tế, có trạng thái tải/rỗng phù hợp.
+- [x] Bổ sung hồi quy, kiểm thử TypeScript, Vitest, production build và responsive.
+- [x] Lưu checkpoint phát hành cho phiên này.
+
+## Current Session — Latest Update Actor Tooltip
+
+- [x] Rà soát lịch sử tài sản để xác định người thực hiện thay đổi gần nhất.
+- [x] Hiển thị tooltip có tên người thực hiện khi rê chuột hoặc focus vào mốc cập nhật.
 - [x] Bổ sung hồi quy, kiểm thử TypeScript, Vitest, production build và responsive.
 - [x] Lưu checkpoint phát hành cho phiên này.
