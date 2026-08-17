@@ -655,6 +655,9 @@ describe("maintenance history and filter layout contract", () => {
     expect(operations).toContain("AUDIT_ITEMS_PAGE_SIZE = 10");
     expect(operations).toContain("pagedAuditItems");
     expect(operations).toContain("Trang {activeAuditItemsPage}/{auditItemsPageCount}");
+    expect(operations).toContain("Kết quả import gần nhất");
+    expect(operations).toContain("auditImportPageCount");
+    expect(operations).toContain("Trang preview import sau");
     expect(operations).toContain("Xem lại và xác nhận");
     expect(operations).toContain("finalizeAuditMutation");
     expect(operations).toContain("Chốt biên bản");
@@ -783,6 +786,11 @@ describe("maintenance history and filter layout contract", () => {
     expect(operations).toContain("bg-[#FFF1F3]");
     expect(previewHost).toContain("previewSheetName");
     expect(previewHost).toContain("Danh sách kiểm kê");
+    expect(previewHost).toContain("excelPreviewPageCount");
+    expect(previewHost).toContain("Trang preview Excel sau");
+    const assetImport = readProjectFile("client/src/components/AssetImportModal.tsx");
+    expect(assetImport).toContain("previewPageCount");
+    expect(assetImport).toContain("Trang preview import tài sản sau");
   });
 
   it("exposes a per-maintenance-ticket history drawer and protected history query", () => {

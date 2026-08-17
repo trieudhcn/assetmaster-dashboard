@@ -1352,3 +1352,12 @@
 - [x] Giữ nguyên dữ liệu và hồ sơ Kiểm kê đã chốt.
 - [x] Bổ sung hồi quy, kiểm thử TypeScript, Vitest, production build và responsive.
 - [x] Lưu checkpoint phát hành và báo cáo kết quả.
+
+## Current Session — Audit Stats Simplification & Preview Pagination
+
+- [ ] Tinh gọn hai khối thống kê Kiểm kê thành một hàng kết quả duy nhất, tránh lặp số liệu.
+- [ ] Bổ sung phân trang cho bảng preview import Excel, 10 dòng/trang.
+- [ ] Bổ sung phân trang cho các bảng preview dữ liệu export/Excel, 10 dòng/trang nếu có thể xem trước trên giao diện.
+- [ ] Bổ sung hồi quy, kiểm thử TypeScript, Vitest, production build và responsive.
+- [ ] Lưu checkpoint phát hành và báo cáo kết quả.
+
