@@ -1435,3 +1435,8 @@
 - [x] Loại bỏ nền minh họa Trạng thái dữ liệu và thêm chỉnh sửa nhãn nhấp đúp chỉ dành cho Admin.
 - [x] Bổ sung kiểm tra dữ liệu, phím Enter/Esc và hồi quy tránh ảnh hưởng giao diện khác.
 - [x] Lưu checkpoint phát hành và báo cáo kết quả.
+
+## Current Session — Dashboard Pulse Cleanup
+
+- [x] Loại bỏ dòng System pulse · live inventory signal khỏi Tổng quan.
+- [x] Kiểm tra bố cục, TypeScript và phát hành cập nhật.
