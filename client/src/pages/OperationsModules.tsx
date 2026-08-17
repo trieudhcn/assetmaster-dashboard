@@ -29,6 +29,7 @@ import { matchesVietnameseSearch } from "@/lib/catalogUi";
 import { numberToVietnameseWords, parseVndAmount } from "@/lib/formatters";
 import { handoverPdfFontUrl, registerVietnamesePdfFont } from "@/lib/handoverPdf";
 import { writeBrandedWorkbook } from "@/lib/brandedWorkbook";
+import { applyPdfLogoWatermark, createPdfLogoWatermark, openPdfPreview } from "@/lib/pdfExport";
 import { ModuleEmptyState } from "@/components/ModuleEmptyState";
 import { ModalTableSkeleton } from "@/components/ModalTableSkeleton";
 import {
@@ -1011,7 +1012,9 @@ export function AuditPage() {
         doc.text(lines, left + 4, y + 1);
         y += height + 3;
       });
-      doc.save(`assetmaster-chenh-lech-${selectedAudit.referenceCode}.pdf`);
+      const watermark = await createPdfLogoWatermark(company.logoUrl).catch(() => null);
+      applyPdfLogoWatermark(doc, watermark);
+      openPdfPreview(doc, `assetmaster-chenh-lech-${selectedAudit.referenceCode}.pdf`, "BIÊN BẢN CHÊNH LỆCH KIỂM KÊ");
       toast.success(`Đã xuất ${discrepancyRows.length} chênh lệch ra PDF.`, { id: loadingToast });
     } catch (error) {
       console.error("[AuditPage] PDF export failed", error);
@@ -1141,7 +1144,9 @@ export function AuditPage() {
         doc.text(`${company.name || "AssetMaster"} · ${selectedAudit.referenceCode}`, left, 291);
         doc.text(`Trang ${page}/${pageCount}`, right, 291, { align: "right" });
       }
-      doc.save(`assetmaster-bien-ban-kiem-ke-${selectedAudit.referenceCode}.pdf`);
+      const watermark = await createPdfLogoWatermark(company.logoUrl).catch(() => null);
+      applyPdfLogoWatermark(doc, watermark);
+      openPdfPreview(doc, `assetmaster-bien-ban-kiem-ke-${selectedAudit.referenceCode}.pdf`, "BIÊN BẢN KIỂM KÊ ĐÃ CHỐT");
       toast.success("Đã xuất biên bản kiểm kê đã chốt ra PDF.", { id: loadingToast });
     } catch (error) {
       console.error("[AuditPage] Finalized audit minutes PDF export failed", error);

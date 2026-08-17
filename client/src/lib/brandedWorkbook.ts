@@ -1,4 +1,5 @@
 import * as XLSX from "xlsx";
+import { openExportPreview } from "@/components/ExportPreviewHost";
 
 export type ExportCompanyInfo = {
   name?: string | null;
@@ -70,17 +71,6 @@ function addCompanyInfoSheet(workbook: XLSX.WorkBook, options: BrandedWorkbookOp
   workbook.SheetNames = [infoSheetName, ...workbook.SheetNames.filter((name) => name !== infoSheetName)];
 }
 
-function downloadBlob(bytes: ArrayBuffer, fileName: string) {
-  const url = URL.createObjectURL(new Blob([bytes], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }));
-  const anchor = document.createElement("a");
-  anchor.href = url;
-  anchor.download = fileName;
-  document.body.appendChild(anchor);
-  anchor.click();
-  anchor.remove();
-  window.setTimeout(() => URL.revokeObjectURL(url), 0);
-}
-
 export async function writeBrandedWorkbook(workbook: XLSX.WorkBook, options: BrandedWorkbookOptions) {
   addCompanyInfoSheet(workbook, options);
   const { Workbook } = await import("exceljs");
@@ -125,5 +115,10 @@ export async function writeBrandedWorkbook(workbook: XLSX.WorkBook, options: Bra
   }
 
   const bytes = await brandedWorkbook.xlsx.writeBuffer();
-  downloadBlob(bytes as ArrayBuffer, options.fileName);
+  openExportPreview({
+    blob: new Blob([bytes as ArrayBuffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }),
+    fileName: options.fileName,
+    title: options.documentTitle,
+    kind: "excel",
+  });
 }

@@ -684,6 +684,29 @@ describe("maintenance history and filter layout contract", () => {
     expect(assetImport).toContain("writeBrandedWorkbook");
   });
 
+  it("previews every export before downloading and applies configurable PDF logo watermarks", () => {
+    const previewHost = readProjectFile("client/src/components/ExportPreviewHost.tsx");
+    const workbookHelper = readProjectFile("client/src/lib/brandedWorkbook.ts");
+    const pdfExport = readProjectFile("client/src/lib/pdfExport.ts");
+    const home = readProjectFile("client/src/pages/Home.tsx");
+    const operations = readProjectFile("client/src/pages/OperationsModules.tsx");
+    const brandPanel = readProjectFile("client/src/components/BrandEnhancementsPanel.tsx");
+
+    expect(previewHost).toContain('exportPreviewEvent = "assetmaster:preview-export"');
+    expect(previewHost).toContain("Xem trước trước khi tải");
+    expect(previewHost).toContain("xlsx");
+    expect(previewHost).toContain("event.key === \"Escape\"");
+    expect(workbookHelper).toContain("openExportPreview");
+    expect(pdfExport).toContain("assetmaster-pdf-watermark");
+    expect(pdfExport).toContain("applyPdfLogoWatermark");
+    expect(pdfExport).toContain("openPdfPreview");
+    expect(home).toContain("ExportPreviewHost");
+    expect(home).toContain("createPdfLogoWatermark");
+    expect(operations).toContain("createPdfLogoWatermark");
+    expect(brandPanel).toContain("Watermark PDF");
+    expect(brandPanel).toContain("assetmaster-pdf-watermark");
+  });
+
   it("exposes a per-maintenance-ticket history drawer and protected history query", () => {
     const operations = readProjectFile("client/src/pages/OperationsModules.tsx");
     const router = readProjectFile("server/routers.ts");

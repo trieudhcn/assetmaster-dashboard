@@ -1264,4 +1264,13 @@
 - [x] Tạo helper dùng chung chèn thông tin công ty và trang giới thiệu cho workbook Excel.
 - [x] Áp dụng logo và thông tin công ty từ Cài đặt cho mọi PDF và workbook Excel hiện có.
 - [x] Bổ sung hồi quy, kiểm thử TypeScript, Vitest, production build và xác minh file xuất.
-- [ ] Lưu checkpoint phát hành và báo cáo phạm vi cập nhật.
+- [x] Lưu checkpoint phát hành và báo cáo phạm vi cập nhật.
+
+## Current Session — Export Preview & PDF Watermark
+
+- [x] Rà soát tất cả luồng xuất PDF/Excel và xác định điểm tích hợp preview.
+- [x] Xây dựng modal preview dùng chung cho PDF và Excel trước khi tải.
+- [x] Thêm tùy chọn watermark logo công ty cho toàn bộ PDF xuất.
+- [x] Tích hợp preview vào các thao tác xuất file có trên giao diện.
+- [x] Bổ sung hồi quy, kiểm thử TypeScript, Vitest, production build và xác minh giao diện.
+- [ ] Lưu checkpoint phát hành và báo cáo kết quả.
