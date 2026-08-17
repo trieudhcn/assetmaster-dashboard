@@ -1248,3 +1248,12 @@
 - [x] Chỉ hiển thị hành động xuất biên bản khi đợt kiểm kê đã chốt.
 - [x] Bổ sung hồi quy, kiểm thử TypeScript, Vitest, production build và responsive.
 - [x] Lưu checkpoint phát hành cho phiên này.
+
+## Current Session — Audit Branding, Pagination & Yearly Reference Codes
+
+- [x] Đổi mã đợt kiểm kê sang `KK-YYYY-NN`, tự reset số thứ tự theo năm hiện tại.
+- [x] Thêm logo và thông tin công ty từ Cài đặt vào biên bản kiểm kê PDF.
+- [x] Thêm số trang trên mọi trang của biên bản kiểm kê PDF.
+- [x] Cập nhật hồi quy, kiểm thử TypeScript, Vitest, production build và responsive.
+- [ ] Lưu checkpoint phát hành cho phiên này.
+- [ ] Xác nhận trạng thái hoạt động và báo cáo kết quả cho người dùng.

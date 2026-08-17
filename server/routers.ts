@@ -42,6 +42,7 @@ import {
   getCompany,
   getHandoverById,
   getNextHandoverSequence,
+  getNextAuditSequence,
   getMaintenanceTicket,
   getNextAssetCodeForPrefix,
   getUserNotificationPreferences,
@@ -699,7 +700,10 @@ export const appRouter = router({
       return (await listActivityLogsByEntity("audit", input.sessionId)).filter((entry) => entry.action === "excel_imported");
     }),
     create: adminProcedure.input(z.object({ name: z.string().trim().min(3).max(255), departmentId: z.number().int().positive().optional().nullable(), scheduledAt: dateFromMs, recurrenceDays: z.number().int().min(1).max(3650).optional().nullable() })).mutation(async ({ input, ctx }) => {
-      const id = await createAuditSession({ ...input, referenceCode: `KK-${new Date().getFullYear()}-${crypto.randomUUID().slice(0, 8).toUpperCase()}`, createdByUserId: ctx.user!.id, status: "draft" });
+      const auditYear = new Date().getFullYear();
+      const sequence = await getNextAuditSequence(auditYear);
+      const referenceCode = `KK-${auditYear}-${String(sequence).padStart(2, "0")}`;
+      const id = await createAuditSession({ ...input, referenceCode, createdByUserId: ctx.user!.id, status: "draft" });
       await recordActivity({ entityType: "audit", entityId: id, action: "created", actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: `Tạo đợt kiểm kê ${input.name}` });
       return { id };
     }),

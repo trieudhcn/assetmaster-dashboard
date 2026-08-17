@@ -67,6 +67,35 @@ const issueTypeLabels = {
 const toDateInputValue = (value: Date | null | undefined) => value ? new Date(value).toISOString().slice(0, 10) : "";
 const dateInputToMs = (value: string) => value ? new Date(`${value}T09:00:00`).getTime() : null;
 
+type AuditCompanySettings = {
+  name?: string | null;
+  address?: string | null;
+  taxCode?: string | null;
+  phone?: string | null;
+  email?: string | null;
+  websiteTitle?: string | null;
+  logoUrl?: string | null;
+  brandColor?: string | null;
+};
+
+async function loadAuditPdfImage(url: string) {
+  const response = await fetch(url);
+  if (!response.ok) throw new Error("Không thể tải logo công ty dùng cho biên bản.");
+  const blob = await response.blob();
+  return await new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onloadend = () => resolve(String(reader.result));
+    reader.onerror = reject;
+    reader.readAsDataURL(blob);
+  });
+}
+
+function auditPdfImageFormat(dataUrl: string) {
+  if (dataUrl.startsWith("data:image/jpeg")) return "JPEG" as const;
+  if (dataUrl.startsWith("data:image/webp")) return "WEBP" as const;
+  return "PNG" as const;
+}
+
 function OperationalReminderPanel() {
   const remindersQuery = trpc.reminders.list.useQuery();
   const reminders = remindersQuery.data || [];
@@ -568,6 +597,7 @@ export function AuditPage() {
   const assetsQuery = trpc.assets.list.useQuery();
   const departmentsQuery = trpc.departments.list.useQuery();
   const assetCategoriesQuery = trpc.assetCategories.list.useQuery();
+  const companySettingsQuery = trpc.company.get.useQuery(undefined, { enabled: isAdmin });
   const auditItemsQuery = trpc.audits.getItems.useQuery({ sessionId: selectedSessionId ?? 0 }, { enabled: Boolean(selectedSessionId) });
   const auditImportHistoryQuery = trpc.audits.importHistory.useQuery({ sessionId: selectedSessionId ?? 0 }, { enabled: Boolean(selectedSessionId) });
   const createSessionMutation = trpc.audits.create.useMutation({
@@ -966,6 +996,8 @@ export function AuditPage() {
       const fontResponse = await fetch(handoverPdfFontUrl);
       if (!fontResponse.ok) throw new Error("Không thể tải phông chữ tiếng Việt.");
       registerVietnamesePdfFont(doc, await fontResponse.arrayBuffer());
+      const company = (companySettingsQuery.data || {}) as AuditCompanySettings;
+      const logoDataUrl = company.logoUrl ? await loadAuditPdfImage(company.logoUrl).catch(() => undefined) : undefined;
       const left = 16;
       const right = 194;
       const contentWidth = right - left;
@@ -974,6 +1006,31 @@ export function AuditPage() {
       const sectionTitle = (title: string) => { ensureSpace(12); doc.setTextColor(15, 140, 140); doc.setFontSize(10); doc.text(title, left, y); y += 5; doc.setDrawColor(205, 229, 229); doc.line(left, y, right, y); y += 6; };
       const detailLine = (label: string, value: string) => { const lines = doc.splitTextToSize(`${label}: ${value}`, contentWidth); ensureSpace(lines.length * 5 + 2); doc.setTextColor(25, 59, 87); doc.setFontSize(9); doc.text(lines, left, y); y += lines.length * 5 + 2; };
 
+      if (logoDataUrl) {
+        try { doc.addImage(logoDataUrl, auditPdfImageFormat(logoDataUrl), left, y - 10, 18, 18, undefined, "FAST"); } catch { /* Logo lỗi định dạng sẽ dùng phần chữ thay thế. */ }
+      } else {
+        doc.setFillColor(15, 140, 140);
+        doc.roundedRect(left, y - 10, 18, 18, 3, 3, "F");
+        doc.setFillColor(16, 42, 67);
+        doc.roundedRect(left + 3, y - 7, 12, 12, 2, 2, "F");
+        doc.setTextColor(255, 255, 255);
+        doc.setFontSize(7.5);
+        doc.text("AM", left + 9, y + 1, { align: "center" });
+      }
+      doc.setTextColor(16, 42, 67);
+      doc.setFontSize(15);
+      doc.text(company.name || "Công ty quản lý tài sản", left + 24, y - 2);
+      doc.setTextColor(15, 140, 140);
+      doc.setFontSize(8.5);
+      doc.text(company.websiteTitle || "AssetMaster – Hệ thống Quản lý Tài sản", left + 24, y + 4);
+      doc.setTextColor(96, 117, 138);
+      doc.setFontSize(7.5);
+      const companyLine = `Địa chỉ: ${company.address || "Chưa cập nhật"} · MST: ${company.taxCode || "Chưa cập nhật"}`;
+      doc.text(doc.splitTextToSize(companyLine, contentWidth - 24), left + 24, y + 10);
+      doc.text(`Điện thoại: ${company.phone || "Chưa cập nhật"}${company.email ? ` · Email: ${company.email}` : ""}`, left + 24, y + 15);
+      doc.setDrawColor(15, 140, 140);
+      doc.line(left, y + 22, right, y + 22);
+      y += 35;
       doc.setTextColor(16, 42, 67);
       doc.setFontSize(17);
       doc.text("BIÊN BẢN KIỂM KÊ TÀI SẢN", left, y);
@@ -1040,6 +1097,16 @@ export function AuditPage() {
       signatureColumns.forEach((column) => doc.text("(Ký, ghi rõ họ tên)", column, y, { align: "center" }));
       y += 25;
       signatureColumns.forEach((column) => doc.line(column - 21, y, column + 21, y));
+      const pageCount = doc.getNumberOfPages();
+      for (let page = 1; page <= pageCount; page += 1) {
+        doc.setPage(page);
+        doc.setDrawColor(221, 231, 240);
+        doc.line(left, 286, right, 286);
+        doc.setTextColor(112, 134, 154);
+        doc.setFontSize(7.5);
+        doc.text(`${company.name || "AssetMaster"} · ${selectedAudit.referenceCode}`, left, 291);
+        doc.text(`Trang ${page}/${pageCount}`, right, 291, { align: "right" });
+      }
       doc.save(`assetmaster-bien-ban-kiem-ke-${selectedAudit.referenceCode}.pdf`);
       toast.success("Đã xuất biên bản kiểm kê đã chốt ra PDF.", { id: loadingToast });
     } catch (error) {

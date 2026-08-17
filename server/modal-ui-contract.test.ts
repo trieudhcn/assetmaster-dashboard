@@ -644,6 +644,9 @@ describe("maintenance history and filter layout contract", () => {
     expect(operations).toContain("NGƯỜI KIỂM KÊ");
     expect(operations).toContain("ĐẠI DIỆN ĐƠN VỊ QUẢN LÝ");
     expect(operations).toContain("NGƯỜI PHÊ DUYỆT");
+    expect(operations).toContain("companySettingsQuery");
+    expect(operations).toContain("loadAuditPdfImage");
+    expect(operations).toContain("Trang ${page}/${pageCount}");
     expect(operations).toContain("Lịch sử nhập Excel");
     expect(operations).toContain("auditImportHistoryQuery");
     expect(operations).toContain("Hiện trạng thực tế");
@@ -655,6 +658,9 @@ describe("maintenance history and filter layout contract", () => {
     expect(router).toContain("importHistory");
     expect(router).toContain("requireEditableAuditSession");
     expect(router).toContain("finalize:");
+    expect(router).toContain("getNextAuditSequence");
+    expect(router).toContain("String(sequence).padStart(2, \"0\")");
+    expect(readProjectFile("server/db.ts")).toContain("^KK-${auditYear}-(\\\\d+)$");
   });
 
   it("exposes a per-maintenance-ticket history drawer and protected history query", () => {

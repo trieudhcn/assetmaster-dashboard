@@ -12,6 +12,7 @@ const mocks = vi.hoisted(() => ({
   getAuditSession: vi.fn(),
   getMaintenanceTicket: vi.fn(),
   getNextMaintenanceTicketSequence: vi.fn(),
+  getNextAuditSequence: vi.fn(),
   getAssetById: vi.fn(),
   getAssetCategoryById: vi.fn(),
   updateAsset: vi.fn(),
@@ -52,6 +53,7 @@ vi.mock("./db", () => ({
   getHandoverById: vi.fn(),
   getMaintenanceTicket: mocks.getMaintenanceTicket,
   getNextMaintenanceTicketSequence: mocks.getNextMaintenanceTicketSequence,
+  getNextAuditSequence: mocks.getNextAuditSequence,
   listAssets: vi.fn(),
   listAuditItems: mocks.listAuditItems,
   listAuditSessions: mocks.listAuditSessions,
@@ -279,6 +281,7 @@ describe("operations management", () => {
 
   it("creates an audit session and adds an asset with its expected status", async () => {
     const caller = appRouter.createCaller(adminContext);
+    mocks.getNextAuditSequence.mockResolvedValue(1);
 
     await expect(caller.audits.create({ name: "Kiểm kê QA Quý I", departmentId: null })).resolves.toEqual({ id: 40 });
     expect(mocks.createAuditSession).toHaveBeenCalledWith(expect.objectContaining({
@@ -286,7 +289,7 @@ describe("operations management", () => {
       departmentId: null,
       createdByUserId: 1,
       status: "draft",
-      referenceCode: expect.stringMatching(/^KK-\d{4}-[A-Z0-9]{8}$/),
+      referenceCode: expect.stringMatching(/^KK-\d{4}-\d{2}$/),
     }));
 
     await expect(caller.audits.addItem({ sessionId: 40, assetId: 8, expectedStatus: "available" })).resolves.toEqual({ id: 50 });

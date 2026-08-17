@@ -705,3 +705,14 @@ export async function listHandoverReturnDecisionHistory(handoverId: number) {
   const rows = await db.select().from(activityLogs).where(eq(activityLogs.entityId, handoverId)).orderBy(desc(activityLogs.createdAt));
   return rows.filter((row) => row.entityType === "handover" && (row.action === "return_approved" || row.action === "return_rejected"));
 }
+
+export async function getNextAuditSequence(auditYear: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database unavailable");
+  const rows = await db.select({ referenceCode: auditSessions.referenceCode }).from(auditSessions).where(like(auditSessions.referenceCode, `KK-${auditYear}-%`));
+  const maxSequence = rows.reduce((maximum, row) => {
+    const match = row.referenceCode.match(new RegExp(`^KK-${auditYear}-(\\d+)$`));
+    return Math.max(maximum, match ? Number(match[1]) : 0);
+  }, 0);
+  return maxSequence + 1;
+}
