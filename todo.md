@@ -1523,3 +1523,9 @@
 - [x] Rà soát nhật ký hoạt động và drawer hồ sơ nhân viên hiện có.
 - [x] Thêm badge vai trò cạnh tên nhân viên và truy vấn lịch sử thay đổi quyền.
 - [x] Hiển thị lịch sử trong hồ sơ, bổ sung hồi quy, kiểm tra giao diện và phát hành cập nhật.
+
+## Current Session — Compact Role Badges
+
+- [x] Rà soát các vị trí badge vai trò hiện có.
+- [x] Đổi nhãn badge thành QTV và NV, giữ nguyên màu sắc và logic.
+- [x] Kiểm tra hồi quy giao diện, build và phát hành cập nhật.
