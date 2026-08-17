@@ -624,7 +624,7 @@ export default function Home() {
 
   if (loading) return <div className="grid min-h-screen place-items-center bg-[#F4F7FB] px-6"><div className="text-center"><div className="mx-auto grid h-12 w-12 place-items-center rounded-2xl bg-[#0F8C8C] text-white shadow-[0_10px_22px_rgba(15,140,140,.24)]"><Box size={22} /></div><div className="mt-4 text-sm font-extrabold text-[#193B57]">Đang kiểm tra phiên đăng nhập...</div></div></div>;
   if (!isAuthenticated) return <LoginGateway onLogin={startLogin} />;
-  if (!isAdmin && user) return <UserDashboard user={user} onLogout={logout} />;
+  if (!isAdmin && user) return <UserDashboard user={user} onLogout={logout} companyInfo={companyInfo} />;
 
   return (
     <div className="min-h-screen bg-[#F4F7FB] text-[#102A43] antialiased">

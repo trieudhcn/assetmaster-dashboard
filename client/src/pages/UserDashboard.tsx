@@ -6,6 +6,7 @@ import { getReturnDecisionNotification } from "@/lib/returnDecisionNotification"
 import { UserHelpDialog } from "./HelpCenter";
 
 type CurrentUser = { name: string | null; email: string | null; role: "user" | "admin"; isActive: boolean; lastSignedIn: Date | string };
+type CompanyBrand = { name: string; websiteTitle: string; logoUrl: string; brandColor: string };
 
 const handoverStatus = { active: "Đang giữ", pending_signature: "Chờ ký", returned: "Đã hoàn trả", draft: "Bản nháp", cancelled: "Đã hủy" } as const;
 const returnRequestPresentation = {
@@ -24,8 +25,9 @@ function ReturnRequestStatus({ status, resolution }: { status: "none" | "pending
   return <div className="min-w-0"><span className={`inline-flex rounded-lg px-2.5 py-1.5 text-[11px] font-extrabold ${presentation.className}`}>{presentation.label}</span>{resolution ? <p className="mt-1.5 text-[11px] leading-5 text-[#71869A]">Phản hồi: {resolution}</p> : null}</div>;
 }
 
-export function UserDashboard({ user, onLogout }: { user: CurrentUser; onLogout: () => Promise<void> }) {
+export function UserDashboard({ user, onLogout, companyInfo }: { user: CurrentUser; onLogout: () => Promise<void>; companyInfo: CompanyBrand }) {
   const historyQuery = trpc.employees.myAssetHistory.useQuery(undefined, { refetchInterval: 30_000 });
+  const companyQuery = trpc.company.get.useQuery();
   const notificationPreferencesQuery = trpc.notifications.preferences.useQuery();
   const [returnTarget, setReturnTarget] = useState<{ id: number; assetName: string; assetCode: string } | null>(null);
   const [helpOpen, setHelpOpen] = useState(false);
@@ -50,6 +52,35 @@ export function UserDashboard({ user, onLogout }: { user: CurrentUser; onLogout:
   const rejectedReturns = history.filter((item) => item.returnRequestStatus === "rejected");
   const initials = (user.name || user.email || "AM").split(" ").filter(Boolean).slice(-2).map((part) => part[0]).join("").toUpperCase();
   const signedInAt = user.lastSignedIn ? new Date(user.lastSignedIn).toLocaleString("vi-VN") : "Chưa cập nhật";
+  const activeCompanyInfo = {
+    name: companyQuery.data?.name || companyInfo.name,
+    websiteTitle: companyQuery.data?.websiteTitle || companyInfo.websiteTitle,
+    logoUrl: companyQuery.data?.logoUrl || companyInfo.logoUrl,
+    brandColor: companyQuery.data?.brandColor || companyInfo.brandColor,
+  };
+
+  useEffect(() => {
+    const identity = document.querySelector<HTMLElement>("main > header > div > div:first-child");
+    if (!identity || identity.children.length < 2) return;
+    const logo = identity.children[0] as HTMLElement;
+    const labels = identity.children[1] as HTMLElement;
+    logo.style.backgroundColor = activeCompanyInfo.logoUrl ? "#F0F5F8" : activeCompanyInfo.brandColor || "#0F8C8C";
+    logo.replaceChildren();
+    if (activeCompanyInfo.logoUrl) {
+      const image = document.createElement("img");
+      image.src = activeCompanyInfo.logoUrl;
+      image.alt = `Logo ${activeCompanyInfo.name || activeCompanyInfo.websiteTitle}`;
+      image.className = "h-full w-full object-contain p-1.5";
+      logo.appendChild(image);
+    } else {
+      logo.textContent = "▣";
+      logo.classList.add("text-lg", "font-extrabold");
+    }
+    const title = labels.children[0] as HTMLElement | undefined;
+    const subtitle = labels.children[1] as HTMLElement | undefined;
+    if (title) { title.textContent = activeCompanyInfo.websiteTitle || "AssetMaster"; title.title = activeCompanyInfo.websiteTitle || "AssetMaster"; }
+    if (subtitle) { subtitle.textContent = activeCompanyInfo.name || "Cổng nhân viên"; subtitle.title = activeCompanyInfo.name || "Cổng nhân viên"; }
+  });
 
   useEffect(() => {
     document.getElementById("assetmaster-return-decision-notice")?.remove();

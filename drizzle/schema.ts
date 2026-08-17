@@ -51,6 +51,18 @@ export const helpGuides = mysqlTable("helpGuides", {
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 }, (table) => [index("help_guides_audience_idx").on(table.audience)]);
 
+export const helpGuideVersions = mysqlTable("helpGuideVersions", {
+  id: int("id").autoincrement().primaryKey(),
+  guideKey: varchar("guideKey", { length: 96 }).notNull(),
+  audience: mysqlEnum("audience", ["admin", "user"]).notNull(),
+  title: varchar("title", { length: 255 }).notNull(),
+  description: text("description").notNull(),
+  steps: json("steps").notNull(),
+  changedByUserId: int("changedByUserId"),
+  changedByName: varchar("changedByName", { length: 160 }),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+}, (table) => [index("help_guide_versions_key_idx").on(table.guideKey), index("help_guide_versions_created_idx").on(table.createdAt)]);
+
 export const departments = mysqlTable("departments", {
   id: int("id").autoincrement().primaryKey(),
   code: varchar("code", { length: 40 }).notNull().unique(),

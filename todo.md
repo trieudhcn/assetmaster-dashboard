@@ -1405,3 +1405,12 @@
 - [x] Thêm tìm kiếm nội dung hướng dẫn cho cả Admin và User.
 - [x] Bổ sung hồi quy, kiểm thử TypeScript, Vitest, production build và trải nghiệm desktop/mobile.
 - [x] Lưu checkpoint phát hành và báo cáo kết quả.
+
+## Current Session — Branded User Header and Guide Version History
+
+- [x] Rà soát mẫu header Cổng nhân viên, dữ liệu thương hiệu và cấu trúc nội dung hướng dẫn.
+- [x] Hiển thị logo công ty, tiêu đề website và tên công ty trên header Cổng nhân viên.
+- [x] Gắn nhãn Mới cập nhật cho hướng dẫn vừa được chỉnh sửa.
+- [x] Lưu và hiển thị lịch sử phiên bản hướng dẫn cho Admin.
+- [x] Bổ sung hồi quy, kiểm thử TypeScript, Vitest, production build và desktop/mobile.
+- [x] Lưu checkpoint phát hành và báo cáo kết quả.

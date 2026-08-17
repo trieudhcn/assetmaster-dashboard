@@ -15,6 +15,7 @@ import {
   divisions,
   handovers,
   helpGuides,
+  helpGuideVersions,
   maintenanceTickets,
   type InsertUser,
   userNotificationPreferences,
@@ -494,6 +495,19 @@ export async function saveHelpGuide(data: typeof helpGuides.$inferInsert) {
     updatedByName: data.updatedByName,
     updatedAt: new Date(),
   } });
+}
+
+export async function createHelpGuideVersion(data: typeof helpGuideVersions.$inferInsert) {
+  const db = await getDb();
+  if (!db) throw new Error("Database unavailable");
+  const result = await db.insert(helpGuideVersions).values(data);
+  return Number(result[0].insertId);
+}
+
+export async function listHelpGuideVersions(guideKey: string) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(helpGuideVersions).where(eq(helpGuideVersions.guideKey, guideKey)).orderBy(desc(helpGuideVersions.createdAt));
 }
 
 export async function listHandovers() {

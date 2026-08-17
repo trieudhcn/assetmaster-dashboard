@@ -877,9 +877,9 @@ it("keeps maintenance UI controls on the shared interaction contracts", () => {
 });
 
 it("cung cấp trung tâm hướng dẫn theo vai trò và nút hướng dẫn riêng cho nhân viên", () => {
-  const home = readProjectFile("client/src/pages/Home.tsx");
-  const helpCenter = readProjectFile("client/src/pages/HelpCenter.tsx");
-  const userDashboard = readProjectFile("client/src/pages/UserDashboard.tsx");
+const home = readProjectFile("client/src/pages/Home.tsx");
+const helpCenter = readProjectFile("client/src/pages/HelpCenter.tsx");
+const userDashboard = readProjectFile("client/src/pages/UserDashboard.tsx");
 
   expect(home).toContain('"Trợ giúp & hướng dẫn": "help"');
   expect(home).toContain('<HelpCenter />');
@@ -892,6 +892,23 @@ it("cung cấp trung tâm hướng dẫn theo vai trò và nút hướng dẫn r
   expect(helpCenter).toContain("saveGuide.mutate");
   expect(helpCenter).toContain("Chỉnh sửa hướng dẫn");
   expect(helpCenter).toContain("Tìm kiếm hướng dẫn");
-  expect(userDashboard).toContain("Hướng dẫn sử dụng");
-  expect(userDashboard).toContain('<UserHelpDialog open={helpOpen}');
+expect(userDashboard).toContain("Hướng dẫn sử dụng");
+expect(userDashboard).toContain('<UserHelpDialog open={helpOpen}');
+});
+
+it("đồng bộ nhận diện Cổng nhân viên và hiển thị cập nhật, lịch sử hướng dẫn", () => {
+  const helpCenter = readProjectFile("client/src/pages/HelpCenter.tsx");
+  const userDashboard = readProjectFile("client/src/pages/UserDashboard.tsx");
+  const router = readProjectFile("server/routers.ts");
+
+  expect(userDashboard).toContain("trpc.company.get.useQuery");
+  expect(userDashboard).toContain("activeCompanyInfo.websiteTitle");
+  expect(userDashboard).toContain("activeCompanyInfo.logoUrl");
+  expect(userDashboard).toContain("activeCompanyInfo.name");
+  expect(helpCenter).toContain("Mới cập nhật");
+  expect(helpCenter).toContain("isRecentlyUpdated");
+  expect(helpCenter).toContain("Lịch sử phiên bản");
+  expect(helpCenter).toContain("trpc.help.versions.useQuery");
+  expect(router).toContain("createHelpGuideVersion");
+  expect(router).toContain("versions: adminProcedure");
 });

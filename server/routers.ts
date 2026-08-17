@@ -8,6 +8,7 @@ import {
   clearUserDivision,
   createBrand,
   createAssetFieldChanges,
+  createHelpGuideVersion,
   createAssetImportItem,
   createAssetImportSession,
   countActiveDivisionsByDepartment,
@@ -77,6 +78,7 @@ import {
   listDivisions,
   listHandovers,
   listHandoversByRecipient,
+  listHelpGuideVersions,
   listVendors,
   listVendorDocuments,
   listUsers,
@@ -182,7 +184,7 @@ export const appRouter = router({
     }),
   }),
   company: router({
-    get: adminProcedure.query(() => getCompany()),
+    get: protectedProcedure.query(() => getCompany()),
     save: adminProcedure.input(z.object({ name: z.string().trim().min(2).max(255), address: nullableText, taxCode: nullableText, phone: nullableText, email: z.string().email().optional().nullable(), logoUrl: nullableText, websiteTitle: z.string().trim().min(2).max(120).optional().nullable(), brandColor: z.string().regex(/^#[0-9a-fA-F]{6}$/).optional().nullable(), faviconUrl: nullableText })).mutation(async ({ input, ctx }) => {
       const id = await saveCompany(input);
       await recordActivity({ entityType: "company", entityId: id, action: "updated", actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: "Cập nhật thông tin công ty" });
@@ -810,9 +812,11 @@ export const appRouter = router({
       steps: z.array(z.string().trim().min(3).max(800)).min(1).max(6),
     })).mutation(async ({ input, ctx }) => {
       await saveHelpGuide({ ...input, steps: input.steps, updatedByUserId: ctx.user!.id, updatedByName: ctx.user!.name ?? "Quản trị viên" });
-      await recordActivity({ entityType: "helpGuide", entityId: 0, action: "updated", actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: `Cập nhật hướng dẫn: ${input.title}` });
-      return { success: true };
+      const versionId = await createHelpGuideVersion({ ...input, steps: input.steps, changedByUserId: ctx.user!.id, changedByName: ctx.user!.name ?? "Quản trị viên" });
+      await recordActivity({ entityType: "helpGuide", entityId: versionId, action: "updated", actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: `Cập nhật hướng dẫn: ${input.title}` });
+      return { success: true, versionId };
     }),
+    versions: adminProcedure.input(z.object({ guideKey: z.string().trim().min(3).max(96).regex(/^[a-z0-9-]+$/) })).query(({ input }) => listHelpGuideVersions(input.guideKey)),
   }),
 });
 
