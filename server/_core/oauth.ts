@@ -48,10 +48,10 @@ export function registerOAuthRoutes(app: Express) {
         lastSignedIn: new Date(),
       });
 
-const sessionToken = await sdk.createSessionToken(userInfo.openId, {
-        name: userInfo.name || userInfo.openId,
-expiresInMs: ONE_YEAR_MS,
-});
+      const sessionToken = await sdk.createSessionToken(userInfo.openId, {
+        name: userInfo.name || "",
+        expiresInMs: ONE_YEAR_MS,
+      });
 
       const cookieOptions = getSessionCookieOptions(req);
       res.cookie(COOKIE_NAME, sessionToken, { ...cookieOptions, maxAge: ONE_YEAR_MS });

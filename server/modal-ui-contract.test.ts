@@ -754,20 +754,6 @@ describe("maintenance history and filter layout contract", () => {
     expect(router).toContain("deleteDraft:");
   });
 
-  it("loại bỏ nền minh họa Trạng thái dữ liệu và quản lý tập trung nhãn trong Cài đặt", () => {
-    const home = readProjectFile("client/src/pages/Home.tsx");
-    const settings = readProjectFile("client/src/components/CompanyBrandSettings.tsx");
-    const labelPanel = readProjectFile("client/src/components/UiLabelManagementPanel.tsx");
-
-    expect(home).not.toContain("assetmaster-dashboard-pattern_109e8935.png");
-    expect(home).toContain('data-dashboard-freshness');
-    expect(settings).toContain("UiLabelManagementPanel");
-    expect(labelPanel).toContain("Quản lý nhãn tập trung");
-    expect(labelPanel).toContain("Tìm nhãn hoặc khu vực...");
-    expect(labelPanel).toContain("Khôi phục nhãn mặc định");
-    expect(labelPanel).toContain("trpc.uiLabels.save.useMutation");
-  });
-
   it("excludes supplier-returned assets from editable audit choices and exports", () => {
     const operations = readProjectFile("client/src/pages/OperationsModules.tsx");
     const router = readProjectFile("server/routers.ts");
@@ -947,21 +933,5 @@ it("hiển thị thời điểm đồng bộ dashboard từ dữ liệu truy v�
   expect(home).toContain("Đồng bộ lúc {dashboardSyncLabel}");
   expect(home).toContain("refreshDashboardData");
   expect(home).toContain("Đồng bộ lại dữ liệu dashboard");
-expect(home).not.toContain("Dữ liệu cập nhật lúc 09:42, 14/02/2025");
-});
-
-it("cho phép Admin nhấp đúp để chỉnh sửa và lưu các nhãn định danh cấp trang", () => {
-  const home = readProjectFile("client/src/pages/Home.tsx");
-  const editableLabels = readProjectFile("client/src/components/EditableSectionLabelManager.tsx");
-  const router = readProjectFile("server/routers.ts");
-
-  expect(home).toContain("<EditableSectionLabelManager />");
-  expect(editableLabels).toContain("dashboard-operations");
-  expect(editableLabels).toContain("asset-registry");
-  expect(editableLabels).toContain("asset-taxonomy");
-  expect(editableLabels).toContain("dblclick");
-  expect(editableLabels).toContain("Nhấp đúp để chỉnh sửa nhãn");
-  expect(editableLabels).toContain("trpc.uiLabels.save.useMutation");
-  expect(router).toContain("uiLabels: router");
-  expect(router).toContain("save: adminProcedure");
+  expect(home).not.toContain("Dữ liệu cập nhật lúc 09:42, 14/02/2025");
 });

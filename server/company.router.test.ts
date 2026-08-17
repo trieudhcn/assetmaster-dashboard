@@ -1,11 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const mocks = vi.hoisted(() => ({ getCompany: vi.fn(), saveCompany: vi.fn(), listHelpGuides: vi.fn(), saveHelpGuide: vi.fn(), createHelpGuideVersion: vi.fn(), listHelpGuideVersions: vi.fn(), listUiLabels: vi.fn(), saveUiLabel: vi.fn(), recordActivity: vi.fn(), getAssetCategoryByCode: vi.fn(), getAssetCategoryById: vi.fn(), getNextAssetCodeForPrefix: vi.fn(), createAssetCategory: vi.fn(), countAssetsByCategoryId: vi.fn(), deleteAssetCategory: vi.fn(), updateAssetCategory: vi.fn() }));
+const mocks = vi.hoisted(() => ({ getCompany: vi.fn(), saveCompany: vi.fn(), listHelpGuides: vi.fn(), saveHelpGuide: vi.fn(), createHelpGuideVersion: vi.fn(), listHelpGuideVersions: vi.fn(), recordActivity: vi.fn(), getAssetCategoryByCode: vi.fn(), getAssetCategoryById: vi.fn(), getNextAssetCodeForPrefix: vi.fn(), createAssetCategory: vi.fn(), countAssetsByCategoryId: vi.fn(), deleteAssetCategory: vi.fn(), updateAssetCategory: vi.fn() }));
 
 vi.mock("./db", () => ({
   createAsset: vi.fn(), createAssetCategory: mocks.createAssetCategory, createAuditItem: vi.fn(), createAuditSession: vi.fn(), createDepartment: vi.fn(), createDivision: vi.fn(), createHandover: vi.fn(), createMaintenanceTicket: vi.fn(), createVendor: vi.fn(), createBrand: vi.fn(), countAssetsByCategoryId: mocks.countAssetsByCategoryId, deleteAssetCategory: mocks.deleteAssetCategory,
   getActiveDepartmentById: vi.fn(), getAssetById: vi.fn(), getAssetCategoryByCode: mocks.getAssetCategoryByCode, getAssetCategoryById: mocks.getAssetCategoryById, getCompany: mocks.getCompany, getDepartmentByCode: vi.fn(), getDepartmentById: vi.fn(), getDivisionByCode: vi.fn(), getDivisionById: vi.fn(), getHandoverById: vi.fn(), getMaintenanceTicket: vi.fn(), getNextAssetCodeForPrefix: mocks.getNextAssetCodeForPrefix, getVendorById: vi.fn(), getVendorByName: vi.fn(), getBrandById: vi.fn(), getBrandByName: vi.fn(), listAssets: vi.fn(), listAssetCategories: vi.fn(), listAllAssetCategories: vi.fn(), listAuditItems: vi.fn(), listAuditSessions: vi.fn(), listActivityLogs: vi.fn(), listDepartments: vi.fn(), listAllDepartments: vi.fn(), listDivisions: vi.fn(), listAllDivisions: vi.fn(), listVendors: vi.fn(), listAllVendors: vi.fn(), listBrands: vi.fn(), listAllBrands: vi.fn(), listHandovers: vi.fn(), listHandoversByRecipient: vi.fn(), listMaintenanceTickets: vi.fn(), listUsers: vi.fn(),
-  recordActivity: mocks.recordActivity, saveCompany: mocks.saveCompany, listHelpGuides: mocks.listHelpGuides, saveHelpGuide: mocks.saveHelpGuide, createHelpGuideVersion: mocks.createHelpGuideVersion, listHelpGuideVersions: mocks.listHelpGuideVersions, listUiLabels: mocks.listUiLabels, saveUiLabel: mocks.saveUiLabel, updateAsset: vi.fn(), updateAssetCategory: mocks.updateAssetCategory, updateAuditItem: vi.fn(), updateHandover: vi.fn(), updateMaintenanceTicket: vi.fn(), updateDepartment: vi.fn(), updateDivision: vi.fn(), updateVendor: vi.fn(), updateBrand: vi.fn(),
+  recordActivity: mocks.recordActivity, saveCompany: mocks.saveCompany, listHelpGuides: mocks.listHelpGuides, saveHelpGuide: mocks.saveHelpGuide, createHelpGuideVersion: mocks.createHelpGuideVersion, listHelpGuideVersions: mocks.listHelpGuideVersions, updateAsset: vi.fn(), updateAssetCategory: mocks.updateAssetCategory, updateAuditItem: vi.fn(), updateHandover: vi.fn(), updateMaintenanceTicket: vi.fn(), updateDepartment: vi.fn(), updateDivision: vi.fn(), updateVendor: vi.fn(), updateBrand: vi.fn(),
   updateUserActiveStatus: vi.fn(), updateUserDepartment: vi.fn(), updateUserRole: vi.fn(), transitionHandoverStatus: vi.fn(),
 }));
 
@@ -65,25 +65,6 @@ expect(mocks.recordActivity).toHaveBeenCalledWith(expect.objectContaining({ enti
   it("từ chối User cập nhật nội dung hướng dẫn", async () => {
     const userCaller = appRouter.createCaller({ user: { id: 2, openId: "user", role: "user", name: "Nhân viên", isActive: true }, req: {}, res: {} } as any);
     await expect(userCaller.help.saveGuide({ guideKey: "user-return", audience: "user", title: "Hoàn trả tài sản", description: "Gửi yêu cầu hoàn trả cho quản trị viên.", steps: ["Chọn tài sản"] })).rejects.toMatchObject({ code: "FORBIDDEN" });
-  });
-});
-
-describe("uiLabels", () => {
-  const adminCaller = () => appRouter.createCaller({ user: { id: 1, openId: "admin", role: "admin", name: "Admin", isActive: true }, req: {}, res: {} } as any);
-  const userCaller = () => appRouter.createCaller({ user: { id: 2, openId: "user", role: "user", name: "Nhân viên", isActive: true }, req: {}, res: {} } as any);
-
-  beforeEach(() => {
-    vi.clearAllMocks();
-    mocks.listUiLabels.mockResolvedValue([{ id: 7, labelKey: "dashboard-operations", value: "Asset Operations", updatedAt: new Date() }]);
-    mocks.saveUiLabel.mockResolvedValue(7);
-    mocks.recordActivity.mockResolvedValue(undefined);
-  });
-
-  it("cho mọi tài khoản đăng nhập đọc nhãn và chỉ Admin lưu nhãn trực tiếp", async () => {
-    await expect(userCaller().uiLabels.list()).resolves.toHaveLength(1);
-    await expect(adminCaller().uiLabels.save({ labelKey: "dashboard-operations", value: "Vận hành tài sản" })).resolves.toEqual({ id: 7 });
-    expect(mocks.saveUiLabel).toHaveBeenCalledWith(expect.objectContaining({ labelKey: "dashboard-operations", value: "Vận hành tài sản", updatedByUserId: 1 }));
-    await expect(userCaller().uiLabels.save({ labelKey: "dashboard-operations", value: "Không được phép" })).rejects.toMatchObject({ code: "FORBIDDEN" });
   });
 });
 

@@ -1,43 +1,31 @@
 import { startLogin } from "@/const";
 import { trpc } from "@/lib/trpc";
 import { TRPCClientError } from "@trpc/client";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo } from "react";
 
 type UseAuthOptions = {
-redirectOnUnauthenticated?: boolean;
-redirectPath?: string;
+  redirectOnUnauthenticated?: boolean;
+  redirectPath?: string;
 };
-
-export const AUTH_LOADING_TIMEOUT_MS = 8_000;
 
 export function useAuth(options?: UseAuthOptions) {
   // Login is started via startLogin() in the effect below, only when we actually
   // navigate — never during render. startLogin() mints a one-time nonce + writes
   // the state cookie, so calling it per render would overwrite the cookie and
   // desync it from an in-flight login's `state`.
-const { redirectOnUnauthenticated = false, redirectPath } = options ?? {};
-const utils = trpc.useUtils();
-  const [authLoadingTimedOut, setAuthLoadingTimedOut] = useState(false);
+  const { redirectOnUnauthenticated = false, redirectPath } = options ?? {};
+  const utils = trpc.useUtils();
 
   const meQuery = trpc.auth.me.useQuery(undefined, {
     retry: false,
     refetchOnWindowFocus: false,
   });
 
-const logoutMutation = trpc.auth.logout.useMutation({
-onSuccess: () => {
-utils.auth.me.setData(undefined, null);
-},
-});
-
-  useEffect(() => {
-    if (!meQuery.isLoading) {
-      setAuthLoadingTimedOut(false);
-      return;
-    }
-    const timeout = window.setTimeout(() => setAuthLoadingTimedOut(true), AUTH_LOADING_TIMEOUT_MS);
-    return () => window.clearTimeout(timeout);
-  }, [meQuery.isLoading]);
+  const logoutMutation = trpc.auth.logout.useMutation({
+    onSuccess: () => {
+      utils.auth.me.setData(undefined, null);
+    },
+  });
 
   const logout = useCallback(async () => {
     try {
@@ -67,19 +55,17 @@ utils.auth.me.setData(undefined, null);
       "manus-runtime-user-info",
       JSON.stringify(meQuery.data)
     );
-return {
-user: meQuery.data ?? null,
-      loading: (meQuery.isLoading && !authLoadingTimedOut) || logoutMutation.isPending,
-error: meQuery.error ?? logoutMutation.error ?? null,
-isAuthenticated: Boolean(meQuery.data),
-      authLoadingTimedOut,
-};
+    return {
+      user: meQuery.data ?? null,
+      loading: meQuery.isLoading || logoutMutation.isPending,
+      error: meQuery.error ?? logoutMutation.error ?? null,
+      isAuthenticated: Boolean(meQuery.data),
+    };
   }, [
     meQuery.data,
-meQuery.error,
-meQuery.isLoading,
-    authLoadingTimedOut,
-logoutMutation.error,
+    meQuery.error,
+    meQuery.isLoading,
+    logoutMutation.error,
     logoutMutation.isPending,
   ]);
 
