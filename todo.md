@@ -1381,3 +1381,11 @@
 - [x] Loại bỏ vùng Phiếu theo người nhận, giữ vùng Phiếu theo phòng ban cân đối.
 - [x] Bổ sung hồi quy, kiểm thử TypeScript, Vitest, production build và desktop/mobile.
 - [x] Lưu checkpoint phát hành và báo cáo kết quả.
+
+## Current Session — Reports Activity Log Usability
+
+- [x] Rà soát icon tìm kiếm, dữ liệu và bộ lọc Nhật ký hoạt động.
+- [x] Việt hóa bộ lọc loại hoạt động và sửa icon tìm kiếm trong ô lọc.
+- [x] Thêm phân trang cùng lựa chọn 10, 20 hoặc 50 dòng mỗi trang.
+- [x] Bổ sung hồi quy, kiểm thử TypeScript, Vitest, production build và responsive.
+- [x] Lưu checkpoint phát hành và báo cáo kết quả.

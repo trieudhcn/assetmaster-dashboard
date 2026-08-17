@@ -455,6 +455,13 @@ describe("currency input and scrollbar contract", () => {
     expect(home).toContain('className="flex flex-wrap items-center gap-2 border-b border-[#E7EEF3] bg-[#FBFCFD] px-5 py-4"');
     expect(reports).toContain('xl:w-[680px] xl:grid-cols-4');
     expect(reports).toContain('whitespace-nowrap rounded-lg border border-[#DDE7F0]');
+    expect(reports).toContain("activityEntityLabels");
+    expect(reports).toContain('aria-label="Tìm kiếm nhật ký hoạt động"');
+    expect(reports).toContain("Tất cả loại hoạt động");
+    expect(reports).toContain("const pagedActivities = data.slice");
+    expect(reports).toContain("Mỗi trang");
+    expect(reports).toContain("Trang nhật ký trước");
+    expect(reports).toContain("Trang nhật ký sau");
     expect(home).toContain('className="relative min-w-0 flex-[2_1_420px]"');
     expect(home).toContain("handoverYearFilter");
     expect(home).toContain("handoverYears");

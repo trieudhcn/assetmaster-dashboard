@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Download, FileBarChart, History, PieChart as PieChartIcon, Search, SlidersHorizontal } from "lucide-react";
 import * as XLSX from "xlsx";
 import { toast } from "sonner";
@@ -14,6 +14,27 @@ const divisionColors = ["#0F8C8C", "#2666A8", "#E59B24", "#7666B3", "#CF5C4B", "
 const currency = (value: number, mode: CurrencyDisplayMode = "full") => formatCompactVnd(value, mode);
 type DivisionValue = { id: string; name: string; value: number; assetCount: number; color: string };
 type BrandValue = { id: string; name: string; value: number; assetCount: number; color: string };
+
+const activityEntityLabels: Record<string, string> = {
+  asset: "Tài sản",
+  assets: "Tài sản",
+  handover: "Bàn giao",
+  handovers: "Bàn giao",
+  maintenance: "Bảo trì",
+  audit: "Kiểm kê",
+  audits: "Kiểm kê",
+  category: "Phân loại",
+  categories: "Phân loại",
+  department: "Phòng ban",
+  division: "Bộ phận",
+  employee: "Nhân sự",
+  vendor: "Nhà cung cấp",
+  brand: "Hãng",
+  user: "Người dùng",
+  company: "Doanh nghiệp",
+};
+
+const activityEntityLabel = (entityType: string) => activityEntityLabels[entityType] || entityType;
 
 export function ReportsManagementView() {
   const { user } = useAuth();
@@ -193,6 +214,38 @@ function BrandValueChart({ data, totalValue, isLoading, currencyMode, title = "P
   return <section className={`mt-5 ${card} overflow-hidden`}><div className="flex flex-col gap-2 border-b border-[#E7EEF3] px-5 py-4 sm:flex-row sm:items-center sm:justify-between"><div><div className="flex items-center gap-2 text-sm font-extrabold text-[#193B57]"><PieChartIcon size={17} className="text-[#0F8C8C]" />{title}</div><p className="mt-1 text-xs text-[#71869A]">{description}</p></div><div className="rounded-lg bg-[#ECF8F7] px-3 py-2 text-xs font-extrabold text-[#087A6A]">Tổng giá trị: {currency(totalValue, currencyMode)}</div></div>{isLoading ? <div className="grid min-h-[220px] place-items-center text-sm text-[#71869A]">Đang tổng hợp dữ liệu theo Hãng...</div> : !data.length || totalValue <= 0 ? <div className="grid min-h-[220px] place-items-center px-6 text-center"><div><PieChartIcon size={28} className="mx-auto text-[#9CB0C2]" /><p className="mt-3 font-bold text-[#60758A]">Chưa có giá trị tài sản để phân bổ theo Hãng</p><p className="mt-1 text-xs leading-5 text-[#8AA0B6]">Hãy gán Hãng trong hồ sơ tài sản để xem thống kê.</p></div></div> : <div className="grid gap-5 p-5 lg:grid-cols-[minmax(260px,.75fr)_minmax(360px,1.25fr)]"><div className="flex h-[250px] items-center justify-center"><div className="grid h-48 w-48 place-items-center rounded-full border-[18px] border-[#D9F0EC] bg-white text-center shadow-[inset_0_0_0_1px_rgba(16,42,67,.04)]"><div><div className="text-[10px] font-bold uppercase tracking-[.1em] text-[#8AA0B6]">Số hãng</div><div className="mt-1 font-display text-4xl font-extrabold text-[#087A6A]">{data.length}</div><div className="mt-1 text-[11px] text-[#71869A]">trong phạm vi lọc</div></div></div></div><div className="space-y-3">{data.map((item) => { const percentage = totalValue ? Math.round((item.value / totalValue) * 100) : 0; return <div key={item.id} className="rounded-lg border border-[#E7EEF3] bg-[#FBFCFD] px-3 py-2.5"><div className="flex items-center justify-between gap-3"><div className="flex min-w-0 items-center gap-2"><span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: item.color }} /><span className="truncate text-xs font-bold text-[#193B57]">{item.name}</span></div><span className="shrink-0 text-xs font-extrabold text-[#102A43]">{percentage}%</span></div><div className="mt-2 h-2 overflow-hidden rounded-full bg-[#EAF0F4]"><div className="h-full rounded-full" style={{ width: `${Math.max(3, percentage)}%`, backgroundColor: item.color }} /></div><div className="mt-2 flex justify-between text-[10px] text-[#71869A]"><span>{item.assetCount} tài sản</span><span className="font-bold text-[#60758A]">{currency(item.value, currencyMode)}</span></div></div>; })}</div></div>}</section>;
 }
 
-function ActivityLog({ data, loading, query, type, onQueryChange, onTypeChange, allActivities }: { data: Array<{ id: number; createdAt: Date | number | string; actorName: string | null; entityType: string; entityId: number; action: string; summary: string | null }>; loading: boolean; query: string; type: string; onQueryChange: (value: string) => void; onTypeChange: (value: string) => void; allActivities: Array<{ entityType: string }> }) { return <section className={`mt-5 overflow-hidden ${card}`}><div className="border-b border-[#E7EEF3] px-5 py-4"><div className="flex items-center gap-2 text-sm font-extrabold text-[#193B57]"><History size={16} className="text-[#2666A8]" />Nhật ký hoạt động</div><div className="mt-4 grid gap-2 sm:grid-cols-[1fr_190px]"><div className="relative"><Search size={14} className="absolute left-3 top-2.5 text-[#8AA0B6]" /><input value={query} onChange={(event) => onQueryChange(event.target.value)} placeholder="Tìm người thực hiện hoặc thao tác..." className="field-input pl-9" /></div><SearchableSelect value={type} onChange={onTypeChange} placeholder="Tất cả đối tượng" searchPlaceholder="Tìm đối tượng..." options={[{ value: "all", label: "Tất cả đối tượng" }, ...[...new Set(allActivities.map((item) => item.entityType))].map((entityType) => ({ value: entityType, label: entityType }))]} /></div></div><div className="mobile-table-scroll overflow-x-auto"><table className="w-full min-w-[780px] text-left text-xs"><thead className="bg-[#FBFCFD] text-[10px] uppercase tracking-[.12em] text-[#8AA0B6]"><tr><th className="px-5 py-3">Thời gian</th><th className="px-4 py-3">Người thực hiện</th><th className="px-4 py-3">Đối tượng</th><th className="px-4 py-3">Thao tác</th><th className="px-5 py-3">Chi tiết</th></tr></thead><tbody>{loading && <tr><td colSpan={5} className="px-5 py-10 text-center text-sm text-[#71869A]">Đang tải nhật ký...</td></tr>}{!loading && data.map((item) => <tr key={item.id} className="border-t border-[#EDF2F5]"><td className="px-5 py-3 text-[#60758A]">{new Date(item.createdAt).toLocaleString("vi-VN")}</td><td className="px-4 py-3 font-semibold text-[#193B57]">{item.actorName || "Hệ thống"}</td><td className="px-4 py-3"><span className="rounded-full bg-[#F0F5F8] px-2 py-1 text-[10px] font-bold text-[#60758A]">{item.entityType} #{item.entityId}</span></td><td className="px-4 py-3 font-mono text-[10px] text-[#0F8C8C]">{item.action}</td><td className="px-5 py-3 text-[#60758A]">{item.summary || "—"}</td></tr>)}{!loading && !data.length && <tr><td colSpan={5} className="px-5 py-10 text-center text-sm text-[#8AA0B6]">Không có nhật ký phù hợp.</td></tr>}</tbody></table></div></section>; }
+function ActivityLog({ data, loading, query, type, onQueryChange, onTypeChange, allActivities }: { data: Array<{ id: number; createdAt: Date | number | string; actorName: string | null; entityType: string; entityId: number; action: string; summary: string | null }>; loading: boolean; query: string; type: string; onQueryChange: (value: string) => void; onTypeChange: (value: string) => void; allActivities: Array<{ entityType: string }> }) {
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const totalPages = Math.max(1, Math.ceil(data.length / pageSize));
+  const currentPage = Math.min(page, totalPages);
+  const startIndex = (currentPage - 1) * pageSize;
+  const pagedActivities = data.slice(startIndex, startIndex + pageSize);
+  const startRecord = data.length ? startIndex + 1 : 0;
+  const endRecord = Math.min(startIndex + pageSize, data.length);
+  const entityTypeOptions = [...new Set(allActivities.map((item) => item.entityType))].map((entityType) => ({ value: entityType, label: activityEntityLabel(entityType) }));
+
+  useEffect(() => { setPage((current) => Math.min(current, totalPages)); }, [totalPages]);
+
+  const updateQuery = (value: string) => { setPage(1); onQueryChange(value); };
+  const updateType = (value: string) => { setPage(1); onTypeChange(value); };
+  const updatePageSize = (value: number) => { setPageSize(value); setPage(1); };
+
+  return <section className={`mt-5 overflow-hidden ${card}`}>
+    <div className="border-b border-[#E7EEF3] px-5 py-4">
+      <div className="flex items-center gap-2 text-sm font-extrabold text-[#193B57]"><History size={16} className="text-[#2666A8]" />Nhật ký hoạt động</div>
+      <p className="mt-1 text-xs text-[#71869A]">Theo dõi các thay đổi tài sản, bàn giao, bảo trì, kiểm kê và quản trị tài khoản.</p>
+      <div className="mt-4 grid gap-2 sm:grid-cols-[minmax(0,1fr)_210px]">
+        <label className="flex h-10 min-w-0 items-center gap-2 rounded-lg border border-[#DDE7F0] bg-white px-3 text-[#8AA0B6] transition focus-within:border-[#0F8C8C] focus-within:ring-2 focus-within:ring-[#0F8C8C]/10">
+          <Search size={16} className="shrink-0" aria-hidden="true" />
+          <input value={query} onChange={(event) => updateQuery(event.target.value)} placeholder="Tìm người thực hiện hoặc thao tác..." className="min-w-0 flex-1 border-0 bg-transparent p-0 text-xs text-[#193B57] outline-none placeholder:text-[#9BAEC0]" aria-label="Tìm kiếm nhật ký hoạt động" />
+        </label>
+        <SearchableSelect value={type} onChange={updateType} placeholder="Tất cả loại hoạt động" searchPlaceholder="Tìm loại hoạt động..." options={[{ value: "all", label: "Tất cả loại hoạt động" }, ...entityTypeOptions]} />
+      </div>
+    </div>
+    <div className="mobile-table-scroll overflow-x-auto"><table className="w-full min-w-[780px] text-left text-xs"><thead className="bg-[#FBFCFD] text-[10px] uppercase tracking-[.12em] text-[#8AA0B6]"><tr><th className="px-5 py-3">Thời gian</th><th className="px-4 py-3">Người thực hiện</th><th className="px-4 py-3">Đối tượng</th><th className="px-4 py-3">Thao tác</th><th className="px-5 py-3">Chi tiết</th></tr></thead><tbody>{loading && <tr><td colSpan={5} className="px-5 py-10 text-center text-sm text-[#71869A]">Đang tải nhật ký...</td></tr>}{!loading && pagedActivities.map((item) => <tr key={item.id} className="border-t border-[#EDF2F5]"><td className="px-5 py-3 text-[#60758A]">{new Date(item.createdAt).toLocaleString("vi-VN")}</td><td className="px-4 py-3 font-semibold text-[#193B57]">{item.actorName || "Hệ thống"}</td><td className="px-4 py-3"><span className="rounded-full bg-[#F0F5F8] px-2 py-1 text-[10px] font-bold text-[#60758A]">{activityEntityLabel(item.entityType)} #{item.entityId}</span></td><td className="px-4 py-3 font-mono text-[10px] text-[#0F8C8C]">{item.action}</td><td className="px-5 py-3 text-[#60758A]">{item.summary || "—"}</td></tr>)}{!loading && !data.length && <tr><td colSpan={5} className="px-5 py-10 text-center text-sm text-[#8AA0B6]">Không có nhật ký phù hợp.</td></tr>}</tbody></table></div>
+    {!loading && <div className="flex flex-col gap-3 border-t border-[#E7EEF3] bg-[#FBFCFD] px-5 py-3 sm:flex-row sm:items-center sm:justify-between"><div className="text-xs text-[#71869A]">Hiển thị <b className="text-[#193B57]">{startRecord}–{endRecord}</b> trên <b className="text-[#193B57]">{data.length}</b> hoạt động</div><div className="flex flex-wrap items-center gap-2"><label className="flex items-center gap-2 text-xs font-semibold text-[#60758A]">Mỗi trang<select value={pageSize} onChange={(event) => updatePageSize(Number(event.target.value))} className="h-8 rounded-md border border-[#DDE7F0] bg-white px-2 text-xs font-bold text-[#193B57] outline-none focus:border-[#0F8C8C]"><option value={10}>10 dòng</option><option value={20}>20 dòng</option><option value={50}>50 dòng</option></select></label><span className="text-xs font-semibold text-[#60758A]">Trang {currentPage}/{totalPages}</span><button type="button" onClick={() => setPage((current) => Math.max(1, current - 1))} disabled={currentPage === 1} aria-label="Trang nhật ký trước" className="grid h-8 w-8 place-items-center rounded-md border border-[#DDE7F0] bg-white text-sm font-bold text-[#60758A] transition hover:bg-[#F0F5F8] disabled:cursor-not-allowed disabled:opacity-40">‹</button><button type="button" onClick={() => setPage((current) => Math.min(totalPages, current + 1))} disabled={currentPage === totalPages} aria-label="Trang nhật ký sau" className="grid h-8 w-8 place-items-center rounded-md border border-[#DDE7F0] bg-white text-sm font-bold text-[#60758A] transition hover:bg-[#F0F5F8] disabled:cursor-not-allowed disabled:opacity-40">›</button></div></div>}
+  </section>;
+}
 
 function Metric({ label, value }: { label: string; value: string }) { return <div className={`${card} p-5`}><FileBarChart size={19} className="text-[#2666A8]" /><div className="mt-5 text-xs font-semibold text-[#7890A5]">{label}</div><div className="mt-1 break-words font-display text-2xl font-extrabold text-[#102A43]">{value}</div></div>; }
