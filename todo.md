@@ -1436,3 +1436,18 @@
 - [x] Áp dụng khả năng chỉnh sửa cho mọi nhãn định danh phù hợp trong hệ thống.
 - [x] Bổ sung hồi quy, kiểm thử TypeScript, Vitest, production build và responsive.
 - [x] Lưu checkpoint phát hành và báo cáo kết quả.
+
+## Current Session — Data Status Cleanup and Label Management
+
+- [x] Rà soát khu vực Trạng thái dữ liệu và dữ liệu nhãn trong Cài đặt.
+- [x] Loại bỏ nền minh họa assetmaster-dashboard-pattern phía sau Trạng thái dữ liệu.
+- [x] Thêm bảng quản lý tập trung để tìm kiếm, theo dõi và chỉnh sửa các nhãn giao diện.
+- [x] Bổ sung hồi quy, kiểm thử TypeScript, Vitest, production build và responsive.
+- [x] Lưu checkpoint phát hành và báo cáo kết quả.
+
+## Current Session — Website Access Recovery
+
+- [x] Chẩn đoán nguyên nhân trang web không truy cập được.
+- [x] Khắc phục vận hành và xác nhận lại khả năng truy cập trang web.
+- [x] Hoàn tất phát hành các thay đổi nền Tổng quan và bảng quản lý nhãn.
+- [x] Kiểm thử cuối, lưu checkpoint và báo cáo kết quả.

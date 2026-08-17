@@ -754,6 +754,20 @@ describe("maintenance history and filter layout contract", () => {
     expect(router).toContain("deleteDraft:");
   });
 
+  it("loại bỏ nền minh họa Trạng thái dữ liệu và quản lý tập trung nhãn trong Cài đặt", () => {
+    const home = readProjectFile("client/src/pages/Home.tsx");
+    const settings = readProjectFile("client/src/components/CompanyBrandSettings.tsx");
+    const labelPanel = readProjectFile("client/src/components/UiLabelManagementPanel.tsx");
+
+    expect(home).not.toContain("assetmaster-dashboard-pattern_109e8935.png");
+    expect(home).toContain('data-dashboard-freshness');
+    expect(settings).toContain("UiLabelManagementPanel");
+    expect(labelPanel).toContain("Quản lý nhãn tập trung");
+    expect(labelPanel).toContain("Tìm nhãn hoặc khu vực...");
+    expect(labelPanel).toContain("Khôi phục nhãn mặc định");
+    expect(labelPanel).toContain("trpc.uiLabels.save.useMutation");
+  });
+
   it("excludes supplier-returned assets from editable audit choices and exports", () => {
     const operations = readProjectFile("client/src/pages/OperationsModules.tsx");
     const router = readProjectFile("server/routers.ts");
