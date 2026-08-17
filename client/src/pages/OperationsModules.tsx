@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   AlertTriangle,
   BellRing,
@@ -13,6 +13,7 @@ import {
   QrCode,
   Save,
   Search,
+  Upload,
   UserRound,
   Wrench,
 } from "lucide-react";
@@ -450,12 +451,48 @@ type AuditQrScanEntry = {
   detail: string;
 };
 
+type AuditExcelImportItem = {
+  id: number;
+  assetCode: string;
+  assetName: string;
+  actualStatus: "available" | "assigned" | "maintenance" | "returned_to_vendor" | "retired" | "lost" | "damaged" | null;
+  result: "pending" | "matched" | "missing" | "mismatch";
+  note: string | null;
+};
+
+type AuditExcelImportPreview = {
+  fileName: string;
+  items: AuditExcelImportItem[];
+  errors: string[];
+  skippedRows: number;
+};
+
 const auditResultLabels = {
   pending: "Chưa kiểm",
   matched: "Khớp",
   missing: "Không tìm thấy",
   mismatch: "Chênh lệch",
 } as const;
+
+const auditImportStatusMap: Record<string, AuditExcelImportItem["actualStatus"]> = {
+  "sẵn có": "available", "san co": "available", available: "available",
+  "đang cấp phát": "assigned", "dang cap phat": "assigned", assigned: "assigned",
+  "bảo trì": "maintenance", "bao tri": "maintenance", maintenance: "maintenance",
+  "trả nhà cung cấp": "returned_to_vendor", "tra nha cung cap": "returned_to_vendor", returned_to_vendor: "returned_to_vendor",
+  "ngừng sử dụng": "retired", "ngung su dung": "retired", retired: "retired",
+  "thất lạc": "lost", "that lac": "lost", lost: "lost",
+  "hư hỏng": "damaged", "hu hong": "damaged", damaged: "damaged",
+  "": null, "chưa ghi nhận": null, "chua ghi nhan": null,
+};
+
+const auditImportResultMap: Record<string, AuditExcelImportItem["result"] | undefined> = {
+  "chưa kiểm": "pending", "chua kiem": "pending", pending: "pending",
+  "khớp": "matched", khop: "matched", matched: "matched",
+  "chênh lệch": "mismatch", "chenh lech": "mismatch", mismatch: "mismatch",
+  "thiếu": "missing", thieu: "missing", "không tìm thấy": "missing", "khong tim thay": "missing", missing: "missing",
+};
+
+const normalizedAuditImportValue = (value: unknown) => String(value ?? "").trim().toLocaleLowerCase("vi-VN");
 
 const auditSessionStatusLabels = {
   draft: "Nháp",
@@ -495,6 +532,11 @@ export function AuditPage() {
   const [isExportingDiscrepancy, setIsExportingDiscrepancy] = useState<"pdf" | "excel" | null>(null);
   const [isExportingFieldworkSheet, setIsExportingFieldworkSheet] = useState(false);
   const [isExportingTotalAssets, setIsExportingTotalAssets] = useState(false);
+  const [auditResultFilter, setAuditResultFilter] = useState<"all" | AuditItemDraft["result"]>("all");
+  const [exportDepartmentId, setExportDepartmentId] = useState("all");
+  const [exportCategoryId, setExportCategoryId] = useState("all");
+  const [auditImportPreview, setAuditImportPreview] = useState<AuditExcelImportPreview | null>(null);
+  const auditImportInputRef = useRef<HTMLInputElement>(null);
 
   const openAuditSession = (sessionId: number) => {
     const url = new URL(window.location.href);
@@ -513,6 +555,7 @@ export function AuditPage() {
   const auditsQuery = trpc.audits.list.useQuery();
   const assetsQuery = trpc.assets.list.useQuery();
   const departmentsQuery = trpc.departments.list.useQuery();
+  const assetCategoriesQuery = trpc.assetCategories.list.useQuery();
   const auditItemsQuery = trpc.audits.getItems.useQuery({ sessionId: selectedSessionId ?? 0 }, { enabled: Boolean(selectedSessionId) });
   const createSessionMutation = trpc.audits.create.useMutation({
     onSuccess: ({ id }) => {
@@ -545,6 +588,15 @@ export function AuditPage() {
     },
     onError: (error) => toast.error(error.message || "Không thể lưu kết quả kiểm kê."),
   });
+  const importItemsMutation = trpc.audits.importItems.useMutation({
+    onSuccess: ({ updated }) => {
+      void auditItemsQuery.refetch();
+      setAuditImportPreview(null);
+      if (auditImportInputRef.current) auditImportInputRef.current.value = "";
+      toast.success(`Đã cập nhật ${updated} kết quả kiểm kê từ Excel.`);
+    },
+    onError: (error) => toast.error(error.message || "Không thể nhập kết quả kiểm kê từ Excel."),
+  });
 
   const auditSessions = auditsQuery.data || [];
   const filteredAuditSessions = auditStatusFilter === "all" ? auditSessions : auditSessions.filter((audit) => audit.status === auditStatusFilter);
@@ -554,6 +606,15 @@ export function AuditPage() {
   const assetById = new Map(assets.map((asset) => [asset.id, asset]));
   const alreadyAddedAssetIds = new Set(auditItems.map((item) => item.assetId));
   const availableAssets = assets.filter((asset) => !alreadyAddedAssetIds.has(asset.id));
+  const exportDepartmentOptions = [{ value: "all", label: "Tất cả Phòng ban" }, ...(departmentsQuery.data || []).map((department) => ({ value: String(department.id), label: department.name }))];
+  const exportCategoryOptions = [{ value: "all", label: "Tất cả Phân loại" }, ...(assetCategoriesQuery.data || []).map((category) => ({ value: String(category.id), label: category.name }))];
+  const scopedExportAssets = assets.filter((asset) => (exportDepartmentId === "all" || asset.departmentId === Number(exportDepartmentId)) && (exportCategoryId === "all" || asset.categoryId === Number(exportCategoryId)));
+  const scopedAuditItems = auditItems.filter((item) => {
+    const asset = assetById.get(item.assetId);
+    if (!asset) return false;
+    return (exportDepartmentId === "all" || asset.departmentId === Number(exportDepartmentId)) && (exportCategoryId === "all" || asset.categoryId === Number(exportCategoryId));
+  });
+  const filteredAuditItems = auditResultFilter === "all" ? scopedAuditItems : scopedAuditItems.filter((item) => item.result === auditResultFilter);
 
   useEffect(() => {
     const syncAuditSessionFromUrl = () => {
@@ -597,7 +658,7 @@ export function AuditPage() {
     matched: auditItems.filter((item) => item.result === "matched").length,
     discrepancies: auditItems.filter((item) => item.result === "missing" || item.result === "mismatch").length,
   };
-  const discrepancyItems = auditItems.filter((item) => item.result === "missing" || item.result === "mismatch");
+  const discrepancyItems = scopedAuditItems.filter((item) => item.result === "missing" || item.result === "mismatch");
 
   const appendQrScanEntry = (entry: Omit<AuditQrScanEntry, "id">) => {
     setQrScanEntries((current) => [{ ...entry, id: `${Date.now()}-${Math.random()}` }, ...current].slice(0, 12));
@@ -644,7 +705,7 @@ export function AuditPage() {
     };
   });
 
-  const fieldworkRows = auditItems.map((item, index) => {
+  const fieldworkRows = scopedAuditItems.map((item, index) => {
     const asset = assetById.get(item.assetId);
     return {
       "STT": index + 1,
@@ -666,7 +727,7 @@ export function AuditPage() {
   });
 
   const auditItemByAssetId = new Map(auditItems.map((item) => [item.assetId, item]));
-  const totalAssetRows = assets.map((asset, index) => {
+  const totalAssetRows = scopedExportAssets.map((asset, index) => {
     const auditItem = auditItemByAssetId.get(asset.id);
     const department = departmentsQuery.data?.find((item) => item.id === asset.departmentId);
     return {
@@ -703,7 +764,7 @@ export function AuditPage() {
           ["TỔNG TÀI SẢN KÈM KẾT QUẢ KIỂM KÊ"],
           ["Đợt kiểm kê", selectedAudit.name],
           ["Mã đợt", selectedAudit.referenceCode],
-          ["Phạm vi", `Toàn bộ ${totalAssetRows.length} tài sản trong hệ thống`],
+          ["Phạm vi", `${exportDepartmentOptions.find((option) => option.value === exportDepartmentId)?.label || "Tất cả Phòng ban"} · ${exportCategoryOptions.find((option) => option.value === exportCategoryId)?.label || "Tất cả Phân loại"} · ${totalAssetRows.length} tài sản`],
           ["Ghi chú", "Hai cột Trạng thái thực tế và Kết quả kiểm kê phản ánh dữ liệu của đợt kiểm kê này; tài sản chưa đưa vào đợt được ghi rõ để tiện theo dõi."],
         ]);
         summarySheet["!cols"] = [{ wch: 24 }, { wch: 112 }];
@@ -717,6 +778,48 @@ export function AuditPage() {
         setIsExportingTotalAssets(false);
       }
     }, 160);
+  };
+
+  const prepareAuditExcelImport = async (file: File) => {
+    if (!selectedAudit) return;
+    if (file.size > 8 * 1024 * 1024) { toast.error("File Excel tối đa 8 MB."); return; }
+    try {
+      const workbook = XLSX.read(await file.arrayBuffer(), { type: "array" });
+      const firstSheetName = workbook.SheetNames[0];
+      if (!firstSheetName) throw new Error("File Excel không có trang dữ liệu.");
+      const rows = XLSX.utils.sheet_to_json<Record<string, unknown>>(workbook.Sheets[firstSheetName], { defval: "" });
+      if (!rows.length) throw new Error("File Excel không có dòng dữ liệu.");
+      const itemByAssetCode = new Map(auditItems.map((item) => {
+        const asset = assetById.get(item.assetId);
+        return [asset?.assetCode.trim().toLocaleLowerCase("vi-VN"), item] as const;
+      }).filter((entry): entry is [string, (typeof auditItems)[number]] => Boolean(entry[0])));
+      const parsedItems: AuditExcelImportItem[] = [];
+      const errors: string[] = [];
+      const importedItemIds = new Set<number>();
+      let skippedRows = 0;
+      rows.forEach((row, index) => {
+        const rowNumber = index + 2;
+        const assetCode = String(row["Mã tài sản"] ?? "").trim();
+        if (!assetCode) { skippedRows += 1; return; }
+        const auditItem = itemByAssetCode.get(assetCode.toLocaleLowerCase("vi-VN"));
+        if (!auditItem) { errors.push(`Dòng ${rowNumber}: mã ${assetCode} không thuộc đợt kiểm kê này.`); return; }
+        if (importedItemIds.has(auditItem.id)) { errors.push(`Dòng ${rowNumber}: mã ${assetCode} bị lặp trong file.`); return; }
+        const actualStatusText = normalizedAuditImportValue(row["Trạng thái thực tế"]);
+        if (actualStatusText && !(actualStatusText in auditImportStatusMap)) { errors.push(`Dòng ${rowNumber}: Trạng thái thực tế “${String(row["Trạng thái thực tế"])}” chưa hợp lệ.`); return; }
+        const actualStatus = auditImportStatusMap[actualStatusText] ?? null;
+        const resultText = normalizedAuditImportValue(row["Kết quả kiểm kê"] || row["Kết quả"]);
+        if (resultText && !auditImportResultMap[resultText]) { errors.push(`Dòng ${rowNumber}: Kết quả kiểm kê “${String(row["Kết quả kiểm kê"] || row["Kết quả"])}” chưa hợp lệ.`); return; }
+        const result = auditImportResultMap[resultText] || (actualStatus ? (auditItem.expectedStatus === actualStatus ? "matched" : "mismatch") : "pending");
+        const note = String(row["Hiện trạng thực tế"] ?? row["Ghi chú kiểm kê"] ?? row["Ghi chú"] ?? "").trim().slice(0, 1000) || null;
+        const asset = assetById.get(auditItem.assetId);
+        parsedItems.push({ id: auditItem.id, assetCode, assetName: asset?.name || `Tài sản #${auditItem.assetId}`, actualStatus, result, note });
+        importedItemIds.add(auditItem.id);
+      });
+      if (!parsedItems.length) { toast.error(errors[0] || "Không tìm thấy dòng hợp lệ để nhập."); return; }
+      setAuditImportPreview({ fileName: file.name, items: parsedItems, errors: errors.slice(0, 8), skippedRows });
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Không thể đọc file Excel.");
+    }
   };
 
   const exportFieldworkSheet = () => {
@@ -884,7 +987,9 @@ export function AuditPage() {
 
           <div className="relative z-20 border-b border-[#E7EEF3] bg-[#FBFCFD] p-4 sm:p-5"><div className="flex flex-col gap-2 sm:flex-row sm:items-center"><SearchableSelect value={assetId} onChange={setAssetId} menuPortal disabled={!isAdmin || assetsQuery.isLoading || addItemMutation.isPending} className="w-full sm:max-w-[520px]" placeholder="Chọn tài sản cần kiểm kê" searchPlaceholder="Tìm mã, tên hoặc trạng thái..." options={[{ value: "", label: "Chọn tài sản cần kiểm kê" }, ...availableAssets.map((asset) => ({ value: String(asset.id), label: `${asset.assetCode} · ${asset.name} · ${auditAssetStatusLabel(asset.status)}`, searchText: `${asset.assetCode} ${asset.status} ${auditAssetStatusLabel(asset.status)}` }))]} /><button disabled={!isAdmin || !assetId || addItemMutation.isPending} onClick={() => { const asset = assets.find((candidate) => candidate.id === Number(assetId)); if (!asset) { toast.error("Chọn một tài sản hợp lệ."); return; } addItemMutation.mutate({ sessionId: selectedAudit.id, assetId: asset.id, expectedStatus: asset.status }); }} className="min-h-11 shrink-0 rounded-lg bg-[#0F8C8C] px-5 py-2 text-xs font-bold text-white hover:bg-[#087A6A] disabled:cursor-not-allowed disabled:opacity-60">{addItemMutation.isPending ? "Đang thêm" : "Thêm tài sản"}</button><button disabled={!fieldworkRows.length || isExportingFieldworkSheet} onClick={exportFieldworkSheet} className="inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-lg border border-[#8BCDC6] bg-[#ECF8F7] px-4 py-2 text-xs font-bold text-[#087A6A] transition hover:bg-[#DDF3F0] disabled:cursor-not-allowed disabled:opacity-60"><Download size={15} />{isExportingFieldworkSheet ? "Đang tạo..." : "Danh sách kiểm kê"}</button><button disabled={!totalAssetRows.length || isExportingTotalAssets} onClick={exportTotalAssetInventory} className="inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-lg border border-[#C7DDF8] bg-[#EAF3FF] px-4 py-2 text-xs font-bold text-[#2666A8] transition hover:bg-[#DBECFF] disabled:cursor-not-allowed disabled:opacity-60"><Download size={15} />{isExportingTotalAssets ? "Đang xuất..." : "Xuất tổng tài sản"}</button></div>{availableAssets.length === 0 && !assetsQuery.isLoading && <p className="mt-2 text-xs text-[#8AA0B6]">Tất cả tài sản hiện có đã được thêm vào đợt kiểm kê này.</p>}</div>
 
-          {auditItemsQuery.isError ? <div className="m-5 rounded-xl border border-[#F2D596] bg-[#FFF9EB] p-4 text-sm"><div className="flex items-center gap-2 font-bold text-[#A86B00]"><AlertTriangle size={16} />Không thể tải chi tiết kiểm kê</div><p className="mt-1 text-xs text-[#71869A]">{auditItemsQuery.error.message || "Vui lòng thử lại."}</p><button onClick={() => auditItemsQuery.refetch()} className="mt-3 rounded-lg border border-[#F2D596] px-3 py-2 text-xs font-bold text-[#A86B00] hover:bg-white">Thử lại</button></div> : <div className="mobile-table-scroll overflow-x-auto md:overflow-hidden"><table className="w-full min-w-[1080px] text-left text-xs"><thead className="bg-[#FCFDFE] text-[10px] uppercase tracking-[.12em] text-[#8AA0B6]"><tr><th className="px-5 py-3">Tài sản</th><th className="px-4 py-3">Trạng thái dự kiến</th><th className="px-4 py-3">Trạng thái thực tế</th><th className="px-4 py-3">Kết quả</th><th className="px-4 py-3">Ghi chú / lịch sử</th><th className="px-5 py-3 text-right">Lưu</th></tr></thead><tbody>{auditItemsQuery.isLoading && <tr><td colSpan={6}><ModalTableSkeleton rows={5} columns={6} /></td></tr>}{!auditItemsQuery.isLoading && auditItems.map((item) => { const asset = assetById.get(item.assetId); const draft = draftFor(item); const isDiscrepancy = draft.result === "missing" || draft.result === "mismatch"; const badgeTone = draft.result === "matched" ? "bg-[#E6F6F2] text-[#087A6A]" : isDiscrepancy ? "bg-[#FDEDEE] text-[#B44545]" : "bg-[#FFF5DC] text-[#A86B00]"; return <tr key={item.id} className={`border-t border-[#EDF2F5] align-top ${isDiscrepancy ? "bg-[#FFF9FA]" : ""}`}><td className="px-5 py-4"><div className="font-bold text-[#193B57]">{asset?.name || `Tài sản #${item.assetId}`}</div><div className="mt-1 font-mono text-[10px] text-[#0F8C8C]">{asset?.assetCode || "Tài sản đã bị lưu trữ"}</div><div className="mt-1 text-[10px] text-[#8AA0B6]">Trạng thái hệ thống: {auditAssetStatusLabel(asset?.status)}</div></td><td className="px-4 py-4"><span className="rounded-full bg-[#F0F5F8] px-2 py-1 text-[10px] font-bold text-[#60758A]">{auditAssetStatusLabel(item.expectedStatus)}</span></td><td className="px-4 py-4"><SearchableSelect value={draft.actualStatus} onChange={(value) => updateDraft(item, { actualStatus: value })} disabled={!isAdmin || recordItemMutation.isPending} className="min-w-[185px]" placeholder="Chưa ghi nhận" searchPlaceholder="Tìm trạng thái thực tế..." options={[{ value: "", label: "Chưa ghi nhận" }, { value: "available", label: "Sẵn có" }, { value: "assigned", label: "Đang cấp phát" }, { value: "maintenance", label: "Bảo trì" }, { value: "retired", label: "Ngừng sử dụng" }, { value: "lost", label: "Thất lạc" }, { value: "damaged", label: "Hư hỏng" }]} /></td><td className="px-4 py-4"><SearchableSelect value={draft.result} onChange={(value) => updateDraft(item, { result: value as AuditItemDraft["result"] })} disabled={!isAdmin || recordItemMutation.isPending} className="min-w-[155px]" searchPlaceholder="Tìm kết quả..." options={[{ value: "pending", label: "Chưa kiểm" }, { value: "matched", label: "Khớp" }, { value: "mismatch", label: "Chênh lệch" }, { value: "missing", label: "Không tìm thấy" }]} /><span className={`mt-2 inline-flex rounded-full px-2 py-1 text-[10px] font-extrabold ${badgeTone}`}>{auditResultLabels[draft.result]}</span></td><td className="px-4 py-4"><textarea disabled={!isAdmin || recordItemMutation.isPending} value={draft.note} onChange={(event) => updateDraft(item, { note: event.target.value })} placeholder="Mô tả hiện trạng, vị trí hoặc lý do chênh lệch..." className="min-h-[70px] w-[250px] resize-y rounded-md border border-[#DDE7F0] p-2 text-xs leading-5 text-[#193B57] outline-none focus:border-[#0F8C8C] disabled:cursor-not-allowed disabled:opacity-60" />{item.checkedAt && <div className="mt-2 flex items-center gap-1 text-[10px] text-[#8AA0B6]"><CheckCircle2 size={11} />Ghi nhận {new Date(item.checkedAt).toLocaleString("vi-VN")}</div>}</td><td className="px-5 py-4 text-right"><div className="flex flex-col items-end gap-2"><button disabled={!isAdmin || recordItemMutation.isPending} onClick={() => recordItem(item)} className="inline-flex items-center gap-1.5 rounded-md bg-[#0F8C8C] px-3 py-2 text-[10px] font-bold text-white hover:bg-[#087A6A] disabled:cursor-not-allowed disabled:opacity-60"><Save size={13} />{recordItemMutation.isPending ? "Đang lưu" : "Lưu kết quả"}</button><button disabled={!isAdmin || recordItemMutation.isPending} onClick={() => updateDraft(item, { actualStatus: "", result: "missing", note: draft.note || "Không tìm thấy tại vị trí kiểm kê." })} className="text-[10px] font-bold text-[#B44545] hover:underline disabled:cursor-not-allowed disabled:opacity-60">Đánh dấu thất lạc</button></div></td></tr>; })}</tbody></table>{!auditItemsQuery.isLoading && auditItems.length === 0 && <ModuleEmptyState module="audit" title="Chưa có tài sản trong đợt kiểm kê" description="Hãy chọn tài sản để bắt đầu đối chiếu và ghi nhận kết quả kiểm kê." />}</div>}
+          <div className="relative z-10 border-b border-[#E7EEF3] bg-white p-4 sm:p-5"><div className="grid gap-2 lg:grid-cols-[minmax(160px,0.8fr)_minmax(180px,1fr)_minmax(180px,1fr)_auto]"><SearchableSelect value={auditResultFilter} onChange={(value) => setAuditResultFilter(value as typeof auditResultFilter)} menuPortal className="min-w-0" placeholder="Tất cả kết quả" searchPlaceholder="Tìm kết quả kiểm kê..." options={[{ value: "all", label: "Tất cả kết quả" }, { value: "matched", label: "Khớp" }, { value: "mismatch", label: "Chênh lệch" }, { value: "missing", label: "Thiếu / không tìm thấy" }, { value: "pending", label: "Chưa kiểm" }]} /><SearchableSelect value={exportDepartmentId} onChange={setExportDepartmentId} menuPortal className="min-w-0" placeholder="Tất cả Phòng ban" searchPlaceholder="Tìm Phòng ban..." options={exportDepartmentOptions} /><SearchableSelect value={exportCategoryId} onChange={setExportCategoryId} menuPortal className="min-w-0" placeholder="Tất cả Phân loại" searchPlaceholder="Tìm Phân loại..." options={exportCategoryOptions} /><input ref={auditImportInputRef} type="file" accept=".xlsx,.xls" className="hidden" onChange={(event) => { const file = event.target.files?.[0]; if (file) void prepareAuditExcelImport(file); }} /><button type="button" disabled={!isAdmin || importItemsMutation.isPending} onClick={() => auditImportInputRef.current?.click()} className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg border border-[#C7DDF8] bg-white px-4 py-2 text-xs font-bold text-[#2666A8] transition hover:bg-[#EAF3FF] disabled:cursor-not-allowed disabled:opacity-60"><Upload size={15} />Nhập Excel</button></div><p className="mt-2 text-[11px] leading-5 text-[#71869A]">Lọc theo kết quả để theo dõi danh sách. Phòng ban và Phân loại được áp dụng đồng thời cho bảng và các file Excel xuất ra.</p>{auditImportPreview && <div className="mt-3 rounded-xl border border-[#B8E9DD] bg-[#F4FBFA] p-3"><div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"><div><div className="text-xs font-extrabold text-[#087A6A]">Sẵn sàng cập nhật từ {auditImportPreview.fileName}</div><p className="mt-1 text-[11px] text-[#4B8884]">{auditImportPreview.items.length} dòng hợp lệ{auditImportPreview.skippedRows ? ` · ${auditImportPreview.skippedRows} dòng trống được bỏ qua` : ""}{auditImportPreview.errors.length ? ` · ${auditImportPreview.errors.length} lỗi cần xem` : ""}.</p></div><div className="flex gap-2"><button type="button" onClick={() => { setAuditImportPreview(null); if (auditImportInputRef.current) auditImportInputRef.current.value = ""; }} className="min-h-9 rounded-lg border border-[#CDE5E5] bg-white px-3 text-xs font-bold text-[#60758A] hover:bg-[#F7FAFC]">Hủy</button><button type="button" disabled={importItemsMutation.isPending} onClick={() => importItemsMutation.mutate({ sessionId: selectedAudit.id, items: auditImportPreview.items.map(({ id, actualStatus, result, note }) => ({ id, actualStatus, result, note })) })} className="inline-flex min-h-9 items-center gap-2 rounded-lg bg-[#0F8C8C] px-3 text-xs font-bold text-white hover:bg-[#087A6A] disabled:cursor-not-allowed disabled:opacity-60"><Upload size={14} />{importItemsMutation.isPending ? "Đang cập nhật..." : `Cập nhật ${auditImportPreview.items.length} dòng`}</button></div></div>{auditImportPreview.errors.length > 0 && <div className="mt-2 rounded-lg border border-[#F2D596] bg-[#FFF9EB] px-3 py-2 text-[11px] leading-5 text-[#A86B00]">{auditImportPreview.errors.map((error) => <div key={error}>• {error}</div>)}</div>}</div>}</div>
+
+          {auditItemsQuery.isError ? <div className="m-5 rounded-xl border border-[#F2D596] bg-[#FFF9EB] p-4 text-sm"><div className="flex items-center gap-2 font-bold text-[#A86B00]"><AlertTriangle size={16} />Không thể tải chi tiết kiểm kê</div><p className="mt-1 text-xs text-[#71869A]">{auditItemsQuery.error.message || "Vui lòng thử lại."}</p><button onClick={() => auditItemsQuery.refetch()} className="mt-3 rounded-lg border border-[#F2D596] px-3 py-2 text-xs font-bold text-[#A86B00] hover:bg-white">Thử lại</button></div> : <div className="mobile-table-scroll overflow-x-auto md:overflow-hidden"><table className="w-full min-w-[1080px] text-left text-xs"><thead className="bg-[#FCFDFE] text-[10px] uppercase tracking-[.12em] text-[#8AA0B6]"><tr><th className="px-5 py-3">Tài sản</th><th className="px-4 py-3">Trạng thái dự kiến</th><th className="px-4 py-3">Trạng thái thực tế</th><th className="px-4 py-3">Kết quả</th><th className="px-4 py-3">Ghi chú / lịch sử</th><th className="px-5 py-3 text-right">Lưu</th></tr></thead><tbody>{auditItemsQuery.isLoading && <tr><td colSpan={6}><ModalTableSkeleton rows={5} columns={6} /></td></tr>}{!auditItemsQuery.isLoading && filteredAuditItems.map((item) => { const asset = assetById.get(item.assetId); const draft = draftFor(item); const isDiscrepancy = draft.result === "missing" || draft.result === "mismatch"; const badgeTone = draft.result === "matched" ? "bg-[#E6F6F2] text-[#087A6A]" : isDiscrepancy ? "bg-[#FDEDEE] text-[#B44545]" : "bg-[#FFF5DC] text-[#A86B00]"; return <tr key={item.id} className={`border-t border-[#EDF2F5] align-top ${isDiscrepancy ? "bg-[#FFF9FA]" : ""}`}><td className="px-5 py-4"><div className="font-bold text-[#193B57]">{asset?.name || `Tài sản #${item.assetId}`}</div><div className="mt-1 font-mono text-[10px] text-[#0F8C8C]">{asset?.assetCode || "Tài sản đã bị lưu trữ"}</div><div className="mt-1 text-[10px] text-[#8AA0B6]">Trạng thái hệ thống: {auditAssetStatusLabel(asset?.status)}</div></td><td className="px-4 py-4"><span className="rounded-full bg-[#F0F5F8] px-2 py-1 text-[10px] font-bold text-[#60758A]">{auditAssetStatusLabel(item.expectedStatus)}</span></td><td className="px-4 py-4"><SearchableSelect value={draft.actualStatus} onChange={(value) => updateDraft(item, { actualStatus: value })} disabled={!isAdmin || recordItemMutation.isPending} className="min-w-[185px]" placeholder="Chưa ghi nhận" searchPlaceholder="Tìm trạng thái thực tế..." options={[{ value: "", label: "Chưa ghi nhận" }, { value: "available", label: "Sẵn có" }, { value: "assigned", label: "Đang cấp phát" }, { value: "maintenance", label: "Bảo trì" }, { value: "retired", label: "Ngừng sử dụng" }, { value: "lost", label: "Thất lạc" }, { value: "damaged", label: "Hư hỏng" }]} /></td><td className="px-4 py-4"><SearchableSelect value={draft.result} onChange={(value) => updateDraft(item, { result: value as AuditItemDraft["result"] })} disabled={!isAdmin || recordItemMutation.isPending} className="min-w-[155px]" searchPlaceholder="Tìm kết quả..." options={[{ value: "pending", label: "Chưa kiểm" }, { value: "matched", label: "Khớp" }, { value: "mismatch", label: "Chênh lệch" }, { value: "missing", label: "Không tìm thấy" }]} /><span className={`mt-2 inline-flex rounded-full px-2 py-1 text-[10px] font-extrabold ${badgeTone}`}>{auditResultLabels[draft.result]}</span></td><td className="px-4 py-4"><textarea disabled={!isAdmin || recordItemMutation.isPending} value={draft.note} onChange={(event) => updateDraft(item, { note: event.target.value })} placeholder="Mô tả hiện trạng, vị trí hoặc lý do chênh lệch..." className="min-h-[70px] w-[250px] resize-y rounded-md border border-[#DDE7F0] p-2 text-xs leading-5 text-[#193B57] outline-none focus:border-[#0F8C8C] disabled:cursor-not-allowed disabled:opacity-60" />{item.checkedAt && <div className="mt-2 flex items-center gap-1 text-[10px] text-[#8AA0B6]"><CheckCircle2 size={11} />Ghi nhận {new Date(item.checkedAt).toLocaleString("vi-VN")}</div>}</td><td className="px-5 py-4 text-right"><div className="flex flex-col items-end gap-2"><button disabled={!isAdmin || recordItemMutation.isPending} onClick={() => recordItem(item)} className="inline-flex items-center gap-1.5 rounded-md bg-[#0F8C8C] px-3 py-2 text-[10px] font-bold text-white hover:bg-[#087A6A] disabled:cursor-not-allowed disabled:opacity-60"><Save size={13} />{recordItemMutation.isPending ? "Đang lưu" : "Lưu kết quả"}</button><button disabled={!isAdmin || recordItemMutation.isPending} onClick={() => updateDraft(item, { actualStatus: "", result: "missing", note: draft.note || "Không tìm thấy tại vị trí kiểm kê." })} className="text-[10px] font-bold text-[#B44545] hover:underline disabled:cursor-not-allowed disabled:opacity-60">Đánh dấu thất lạc</button></div></td></tr>; })}</tbody></table>{!auditItemsQuery.isLoading && auditItems.length === 0 && <ModuleEmptyState module="audit" title="Chưa có tài sản trong đợt kiểm kê" description="Hãy chọn tài sản để bắt đầu đối chiếu và ghi nhận kết quả kiểm kê." />}{!auditItemsQuery.isLoading && auditItems.length > 0 && filteredAuditItems.length === 0 && <ModuleEmptyState module="audit" title="Không có tài sản phù hợp" description="Hãy thay đổi bộ lọc kết quả, Phòng ban hoặc Phân loại để xem thêm dữ liệu." />}</div>}
         </section>}
       </div>
     </div>

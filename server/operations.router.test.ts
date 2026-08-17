@@ -226,6 +226,28 @@ describe("operations management", () => {
     }));
   });
 
+  it("imports multiple Excel audit results only when every item belongs to the selected session", async () => {
+    const dbModule = vi.mocked(await import("./db"));
+    dbModule.listAuditItems.mockResolvedValue([{ id: 50, auditSessionId: 40, assetId: 8 }, { id: 51, auditSessionId: 40, assetId: 9 }] as any);
+    const employeeCaller = appRouter.createCaller(employeeContext);
+    const input = {
+      sessionId: 40,
+      items: [
+        { id: 50, actualStatus: "available" as const, result: "matched" as const, note: "Khớp sổ sách" },
+        { id: 51, actualStatus: "damaged" as const, result: "mismatch" as const, note: "Trầy xước vỏ máy" },
+      ],
+    };
+
+    await expect(employeeCaller.audits.importItems(input)).rejects.toMatchObject({ code: "FORBIDDEN" });
+    const adminCaller = appRouter.createCaller(adminContext);
+    await expect(adminCaller.audits.importItems(input)).resolves.toEqual({ updated: 2 });
+    expect(mocks.updateAuditItem).toHaveBeenCalledWith(50, expect.objectContaining({ actualStatus: "available", result: "matched", checkedByUserId: 1 }));
+    expect(mocks.updateAuditItem).toHaveBeenCalledWith(51, expect.objectContaining({ actualStatus: "damaged", result: "mismatch", checkedByUserId: 1 }));
+    expect(mocks.recordActivity).toHaveBeenCalledWith(expect.objectContaining({ entityType: "audit", entityId: 40, action: "excel_imported" }));
+
+    await expect(adminCaller.audits.importItems({ sessionId: 40, items: [{ id: 999, actualStatus: null, result: "pending", note: null }] })).rejects.toMatchObject({ code: "BAD_REQUEST" });
+  });
+
   it("creates an audit session and adds an asset with its expected status", async () => {
     const caller = appRouter.createCaller(adminContext);
 

@@ -697,6 +697,25 @@ export const appRouter = router({
       await recordActivity({ entityType: "auditItem", entityId: input.id, action: input.result, actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: "Cập nhật kết quả kiểm kê" });
       return { success: true };
     }),
+    importItems: adminProcedure.input(z.object({
+      sessionId: z.number().int().positive(),
+      items: z.array(z.object({
+        id: z.number().int().positive(),
+        actualStatus: z.enum(["available", "assigned", "maintenance", "returned_to_vendor", "retired", "lost", "damaged"]).nullable(),
+        result: z.enum(["pending", "matched", "missing", "mismatch"]),
+        note: nullableText,
+      })).min(1).max(500),
+    })).mutation(async ({ input, ctx }) => {
+      const sessionItems = await listAuditItems(input.sessionId);
+      const sessionItemIds = new Set(sessionItems.map((item) => item.id));
+      const importItemIds = new Set(input.items.map((item) => item.id));
+      if (importItemIds.size !== input.items.length) throw new TRPCError({ code: "BAD_REQUEST", message: "File Excel có dòng kiểm kê trùng lặp." });
+      if (input.items.some((item) => !sessionItemIds.has(item.id))) throw new TRPCError({ code: "BAD_REQUEST", message: "File Excel chứa tài sản không thuộc đợt kiểm kê đang mở." });
+      const checkedAt = new Date();
+      await Promise.all(input.items.map((item) => updateAuditItem(item.id, { actualStatus: item.actualStatus, result: item.result, note: item.note, checkedByUserId: ctx.user!.id, checkedAt })));
+      await recordActivity({ entityType: "audit", entityId: input.sessionId, action: "excel_imported", actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: `Nhập Excel và cập nhật ${input.items.length} kết quả kiểm kê` });
+      return { updated: input.items.length };
+    }),
   }),
   reminders: router({
     list: protectedProcedure.query(async () => {

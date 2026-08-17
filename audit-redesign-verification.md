@@ -23,3 +23,7 @@ Desktop shows **Danh sách kiểm kê** alongside QR and discrepancy export acti
 ## Total asset export review — 17/08/2026
 
 On desktop, **Xuất tổng tài sản** appears directly beside **Danh sách kiểm kê** after the Add Asset action. The mobile layout preserves touch targets by stacking the export actions after the full-width selector and add button; no unintended horizontal page scrolling is introduced.
+
+## Import, result filter & scoped export review — 17/08/2026
+
+Desktop presents the result filter, Department scope, Category scope and **Nhập Excel** action in one concise row above the audit table. At 375px, these controls become full-width touch targets in a clear sequence. The export actions and table swipe affordance remain visible without page-level horizontal overflow.

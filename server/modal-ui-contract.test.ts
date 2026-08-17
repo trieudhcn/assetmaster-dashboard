@@ -628,6 +628,12 @@ describe("maintenance history and filter layout contract", () => {
     expect(operations).toContain("Trạng thái thực tế");
     expect(operations).toContain("Kết quả kiểm kê");
     expect(operations).toContain("Chưa đưa vào đợt kiểm kê");
+    expect(operations).toContain("auditResultFilter");
+    expect(operations).toContain("exportDepartmentId");
+    expect(operations).toContain("exportCategoryId");
+    expect(operations).toContain("prepareAuditExcelImport");
+    expect(operations).toContain("Nhập Excel");
+    expect(operations).toContain("Cập nhật ${auditImportPreview.items.length} dòng");
     expect(operations).toContain("Hiện trạng thực tế");
     expect(operations).toContain("Ghi chú kiểm kê");
     expect(operations).toContain("Mã QR để quét");

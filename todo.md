@@ -1223,3 +1223,12 @@
 - [x] Thêm nút Xuất tổng tài sản cạnh nút Danh sách kiểm kê.
 - [x] Bổ sung cột Trạng thái thực tế và Kết quả kiểm kê vào file Excel tổng tài sản.
 - [x] Kiểm thử hồi quy, responsive và phát hành checkpoint.
+
+## Current Session — Audit Fieldwork Import, Filters & Scoped Export
+
+- [x] Rà soát định dạng Excel kiểm kê thực địa, dữ liệu tài sản, Phòng ban và Phân loại.
+- [x] Thêm bộ lọc theo kết quả kiểm kê trên danh sách chi tiết đợt.
+- [x] Thêm bộ lọc Phòng ban và Phân loại cho xuất tổng tài sản.
+- [x] Nhập Excel kiểm kê, kiểm tra dữ liệu và cập nhật kết quả hàng loạt có phản hồi rõ ràng.
+- [x] Bổ sung hồi quy, kiểm thử TypeScript, Vitest, production build và responsive.
+- [x] Lưu checkpoint phát hành cho phiên này.
