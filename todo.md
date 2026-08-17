@@ -1209,3 +1209,10 @@
 - [x] Xuất danh sách tài sản theo đợt kiểm kê sang Excel có cột hiện trạng thực tế và ghi chú.
 - [x] Bổ sung hồi quy, kiểm thử TypeScript, Vitest, production build và responsive.
 - [x] Lưu checkpoint phát hành cho phiên này.
+
+## Current Session — Compact Audit Asset Picker
+
+- [ ] Rà soát bố cục vùng chọn tài sản kiểm kê hiện tại.
+- [ ] Thu gọn chiều ngang ô chọn tài sản.
+- [ ] Đưa nút “Danh sách kiểm kê” cùng hàng, đặt sau nút “Thêm tài sản”.
+- [ ] Kiểm thử responsive, hồi quy và phát hành checkpoint.
