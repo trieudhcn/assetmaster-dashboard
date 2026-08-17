@@ -1154,3 +1154,10 @@
 - [x] Đồng bộ huy hiệu với trạng thái tải và cập nhật dữ liệu lịch sử theo tài sản đang xem.
 - [x] Bổ sung hồi quy, kiểm thử TypeScript, Vitest, production build và responsive.
 - [x] Lưu checkpoint phát hành cho phiên này.
+
+## Current Session — Latest Asset Update Summary
+
+- [x] Rà soát dữ liệu thời điểm cập nhật và vị trí header chi tiết tài sản.
+- [x] Hiển thị thông tin “Lần cập nhật gần nhất” theo dữ liệu thực tế, có trạng thái tải/rỗng phù hợp.
+- [x] Bổ sung hồi quy, kiểm thử TypeScript, Vitest, production build và responsive.
+- [x] Lưu checkpoint phát hành cho phiên này.

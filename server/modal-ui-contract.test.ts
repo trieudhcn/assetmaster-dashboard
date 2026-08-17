@@ -442,6 +442,9 @@ describe("currency input and scrollbar contract", () => {
     expect(home).toContain("const totalChanges = assetFieldHistoryQuery.data?.total");
     expect(home).toContain("historyButton.innerHTML = `Lịch sử thay đổi");
     expect(home).toContain("Mở lịch sử thay đổi (${totalChanges ?? 0} bản ghi)");
+    expect(home).toContain("Lần cập nhật gần nhất:");
+    expect(home).toContain("persistedAsset?.updatedAt");
+    expect(home).toContain('toLocaleString("vi-VN", { dateStyle: "short", timeStyle: "short" })');
     expect(home).toContain('new CustomEvent("assetmaster:open-asset-history"');
     expect(home).toContain("overflow-visible rounded-xl border border-[#DFE9F0]");
     expect(home).toContain('className="w-full shrink-0 sm:w-[180px]"');
