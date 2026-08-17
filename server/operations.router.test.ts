@@ -4,6 +4,9 @@ const mocks = vi.hoisted(() => ({
   createMaintenanceTicket: vi.fn(),
   updateMaintenanceTicket: vi.fn(),
   createAuditSession: vi.fn(),
+  deleteAuditItem: vi.fn(),
+  deleteAuditItemsBySession: vi.fn(),
+  deleteAuditSession: vi.fn(),
   createAuditItem: vi.fn(),
   updateAuditItem: vi.fn(),
   updateAuditSession: vi.fn(),
@@ -30,6 +33,9 @@ vi.mock("./db", () => ({
   createAsset: vi.fn(),
   createAuditItem: mocks.createAuditItem,
   createAuditSession: mocks.createAuditSession,
+  deleteAuditItem: mocks.deleteAuditItem,
+  deleteAuditItemsBySession: mocks.deleteAuditItemsBySession,
+  deleteAuditSession: mocks.deleteAuditSession,
   createDepartment: vi.fn(),
   createDivision: vi.fn(),
   createVendor: vi.fn(),
@@ -110,6 +116,9 @@ describe("operations management", () => {
     mocks.createMaintenanceTicket.mockResolvedValue(30);
     mocks.createAuditSession.mockResolvedValue(40);
     mocks.createAuditItem.mockResolvedValue(50);
+    mocks.deleteAuditItem.mockResolvedValue(undefined);
+    mocks.deleteAuditItemsBySession.mockResolvedValue(undefined);
+    mocks.deleteAuditSession.mockResolvedValue(undefined);
     mocks.updateMaintenanceTicket.mockResolvedValue(undefined);
     mocks.updateAuditItem.mockResolvedValue(undefined);
     mocks.updateAuditSession.mockResolvedValue(undefined);
@@ -295,6 +304,20 @@ describe("operations management", () => {
     await expect(caller.audits.addItem({ sessionId: 40, assetId: 8, expectedStatus: "available" })).resolves.toEqual({ id: 50 });
     expect(mocks.createAuditItem).toHaveBeenCalledWith({ auditSessionId: 40, assetId: 8, expectedStatus: "available", result: "pending" });
     expect(mocks.recordActivity).toHaveBeenCalledWith(expect.objectContaining({ entityType: "auditItem", entityId: 50, action: "added" }));
+  });
+
+  it("removes assets from editable audits and deletes draft audits only", async () => {
+    const adminCaller = appRouter.createCaller(adminContext);
+    await expect(adminCaller.audits.removeItem({ id: 50 })).resolves.toEqual({ success: true });
+    expect(mocks.deleteAuditItem).toHaveBeenCalledWith(50);
+    expect(mocks.recordActivity).toHaveBeenCalledWith(expect.objectContaining({ entityType: "auditItem", action: "removed" }));
+
+    await expect(adminCaller.audits.deleteDraft({ sessionId: 40 })).resolves.toEqual({ success: true });
+    expect(mocks.deleteAuditItemsBySession).toHaveBeenCalledWith(40);
+    expect(mocks.deleteAuditSession).toHaveBeenCalledWith(40);
+
+    mocks.getAuditSession.mockResolvedValue({ id: 40, referenceCode: "KK-2026-LOCK", status: "completed" });
+    await expect(adminCaller.audits.deleteDraft({ sessionId: 40 })).rejects.toMatchObject({ code: "CONFLICT" });
   });
 
   it("only lets administrators upload a supported maintenance attachment and stores its metadata", async () => {

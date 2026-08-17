@@ -1307,4 +1307,13 @@
 - [x] Thêm chọn nhiều hoặc chọn tất cả tài sản trong bảng preview import Kiểm kê.
 - [x] Thêm ghi chú xử lý chung và áp dụng hàng loạt cho các tài sản đã chọn.
 - [x] Bổ sung hồi quy, kiểm thử TypeScript, Vitest, production build và responsive.
+- [x] Lưu checkpoint phát hành và báo cáo kết quả.
+
+## Current Session — Audit Preview Cleanup & Draft Deletion
+
+- [x] Thêm nút xóa nhanh lựa chọn và làm sạch ghi chú sau khi áp dụng hàng loạt.
+- [x] Xuất Excel danh sách preview kèm ghi chú trước khi import.
+- [x] Cho phép xóa tài sản khỏi đợt Kiểm kê chưa chốt có xác nhận.
+- [x] Cho phép xóa toàn bộ đợt Kiểm kê khi còn trạng thái nháp có xác nhận.
+- [x] Bổ sung hồi quy, kiểm thử TypeScript, Vitest, production build và responsive.
 - [ ] Lưu checkpoint phát hành và báo cáo kết quả.

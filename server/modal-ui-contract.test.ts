@@ -712,6 +712,17 @@ describe("maintenance history and filter layout contract", () => {
     expect(brandPanel).toContain("assetmaster-pdf-watermark");
   });
 
+  it("supports preview cleanup, preview export, and safe audit deletion actions", () => {
+    const operations = readProjectFile("client/src/pages/OperationsModules.tsx");
+    const router = readProjectFile("server/routers.ts");
+    expect(operations).toContain("Xóa chọn");
+    expect(operations).toContain("Xuất Excel preview");
+    expect(operations).toContain("Xóa khỏi đợt");
+    expect(operations).toContain("Xóa đợt nháp");
+    expect(router).toContain("removeItem:");
+    expect(router).toContain("deleteDraft:");
+  });
+
   it("lets users select multiple audit import rows and apply a shared note", () => {
     const operations = readProjectFile("client/src/pages/OperationsModules.tsx");
     expect(operations).toContain("selectedAuditImportIds");

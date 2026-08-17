@@ -716,3 +716,21 @@ export async function getNextAuditSequence(auditYear: number) {
   }, 0);
   return maxSequence + 1;
 }
+
+export async function deleteAuditItem(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database unavailable");
+  await db.delete(auditItems).where(eq(auditItems.id, id));
+}
+
+export async function deleteAuditItemsBySession(sessionId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database unavailable");
+  await db.delete(auditItems).where(eq(auditItems.auditSessionId, sessionId));
+}
+
+export async function deleteAuditSession(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database unavailable");
+  await db.delete(auditSessions).where(eq(auditSessions.id, id));
+}

@@ -15,6 +15,9 @@ import {
   createAssetCategory,
   createAssetsBulk,
   createAuditSession,
+  deleteAuditItem,
+  deleteAuditItemsBySession,
+  deleteAuditSession,
   createAuditItem,
   createDepartment,
   createDivision,
@@ -712,6 +715,23 @@ export const appRouter = router({
       const id = await createAuditItem({ auditSessionId: input.sessionId, assetId: input.assetId, expectedStatus: input.expectedStatus, result: "pending" });
       await recordActivity({ entityType: "auditItem", entityId: id, action: "added", actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: "Thêm tài sản vào kiểm kê" });
       return { id };
+    }),
+    removeItem: adminProcedure.input(z.object({ id: z.number().int().positive() })).mutation(async ({ input, ctx }) => {
+      const auditItem = await getAuditItemById(input.id);
+      if (!auditItem) throw new TRPCError({ code: "NOT_FOUND", message: "Không tìm thấy tài sản trong đợt kiểm kê." });
+      await requireEditableAuditSession(auditItem.auditSessionId);
+      await deleteAuditItem(input.id);
+      await recordActivity({ entityType: "auditItem", entityId: input.id, action: "removed", actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: "Xóa tài sản khỏi đợt kiểm kê" });
+      return { success: true };
+    }),
+    deleteDraft: adminProcedure.input(z.object({ sessionId: z.number().int().positive() })).mutation(async ({ input, ctx }) => {
+      const session = await getAuditSession(input.sessionId);
+      if (!session) throw new TRPCError({ code: "NOT_FOUND", message: "Không tìm thấy đợt kiểm kê." });
+      if (session.status !== "draft") throw new TRPCError({ code: "CONFLICT", message: "Chỉ có thể xóa đợt kiểm kê ở trạng thái nháp." });
+      await deleteAuditItemsBySession(input.sessionId);
+      await deleteAuditSession(input.sessionId);
+      await recordActivity({ entityType: "audit", entityId: input.sessionId, action: "deleted", actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: `Xóa đợt kiểm kê nháp ` });
+      return { success: true };
     }),
     recordItem: adminProcedure.input(z.object({ id: z.number().int().positive(), actualStatus: z.string().max(64).optional().nullable(), result: z.enum(["pending", "matched", "missing", "mismatch"]), note: nullableText })).mutation(async ({ input, ctx }) => {
       const auditItem = await getAuditItemById(input.id);
