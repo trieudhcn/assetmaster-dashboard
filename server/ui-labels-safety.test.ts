@@ -28,4 +28,16 @@ describe("safe inline UI labels", () => {
     expect(enhancer).toContain('fallback: "Xem trước trang web"');
     expect(enhancer).toContain("MutationObserver");
   });
+
+  it("đặt Hiệu ứng chuyển động trong Nhận diện mở rộng mà vẫn giữ cấu hình người dùng", () => {
+    const relocator = readFileSync(new URL("../client/src/components/MotionSettingsRelocator.tsx", import.meta.url), "utf8");
+    const app = readFileSync(new URL("../client/src/App.tsx", import.meta.url), "utf8");
+
+    expect(relocator).toContain("Nhận diện mở rộng");
+    expect(relocator).toContain("Watermark PDF");
+    expect(relocator).toContain("assetmaster-motion");
+    expect(relocator).toContain("document.documentElement.dataset.motion");
+    expect(relocator).toContain("Bật hoặc tắt hiệu ứng cho menu");
+    expect(app).toContain("<MotionSettingsRelocator />");
+  });
 });

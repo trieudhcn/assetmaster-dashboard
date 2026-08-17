@@ -1461,3 +1461,9 @@
 - [x] Việt hóa nhãn báo cáo Excel theo đúng ngữ cảnh nghiệp vụ.
 - [x] Bổ sung hồi quy, kiểm thử TypeScript, Vitest, production build và cấu trúc file xuất.
 - [x] Lưu checkpoint phát hành và báo cáo kết quả.
+
+## Current Session — Motion Settings Placement
+
+- [x] Rà soát bố cục Cài đặt thương hiệu và khu vực Nhận diện mở rộng.
+- [x] Di chuyển Hiệu ứng chuyển động xuống Nhận diện mở rộng, giữ nguyên chức năng bật/tắt.
+- [x] Kiểm tra TypeScript, giao diện và phát hành cập nhật.
