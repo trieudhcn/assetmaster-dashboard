@@ -623,6 +623,11 @@ describe("maintenance history and filter layout contract", () => {
     expect(operations).toContain("BIÊN BẢN CHÊNH LỆCH KIỂM KÊ");
     expect(operations).toContain("exportFieldworkSheet");
     expect(operations).toContain("Danh sách kiểm kê");
+    expect(operations).toContain("exportTotalAssetInventory");
+    expect(operations).toContain("Xuất tổng tài sản");
+    expect(operations).toContain("Trạng thái thực tế");
+    expect(operations).toContain("Kết quả kiểm kê");
+    expect(operations).toContain("Chưa đưa vào đợt kiểm kê");
     expect(operations).toContain("Hiện trạng thực tế");
     expect(operations).toContain("Ghi chú kiểm kê");
     expect(operations).toContain("Mã QR để quét");

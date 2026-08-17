@@ -19,3 +19,7 @@ The desktop detail card now contains the data table within its rounded boundary 
 ## Fieldwork export review — 17/08/2026
 
 Desktop shows **Danh sách kiểm kê** alongside QR and discrepancy export actions without crowding the header. On a 375px viewport, actions wrap into readable touch targets, the asset picker and add button remain full-width, and the wide audit table provides its explicit horizontal-swipe cue rather than forcing controls into a narrow layout.
+
+## Total asset export review — 17/08/2026
+
+On desktop, **Xuất tổng tài sản** appears directly beside **Danh sách kiểm kê** after the Add Asset action. The mobile layout preserves touch targets by stacking the export actions after the full-width selector and add button; no unintended horizontal page scrolling is introduced.

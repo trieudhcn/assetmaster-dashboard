@@ -1216,3 +1216,10 @@
 - [x] Thu gọn chiều ngang ô chọn tài sản.
 - [x] Đưa nút “Danh sách kiểm kê” cùng hàng, đặt sau nút “Thêm tài sản”.
 - [x] Kiểm thử responsive, hồi quy và phát hành checkpoint.
+
+## Current Session — Audit Total Asset Export
+
+- [x] Rà soát cấu trúc xuất tổng tài sản hiện có và dữ liệu kiểm kê theo đợt.
+- [x] Thêm nút Xuất tổng tài sản cạnh nút Danh sách kiểm kê.
+- [x] Bổ sung cột Trạng thái thực tế và Kết quả kiểm kê vào file Excel tổng tài sản.
+- [x] Kiểm thử hồi quy, responsive và phát hành checkpoint.

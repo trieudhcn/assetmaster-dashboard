@@ -494,6 +494,7 @@ export function AuditPage() {
   const [qrScanEntries, setQrScanEntries] = useState<AuditQrScanEntry[]>([]);
   const [isExportingDiscrepancy, setIsExportingDiscrepancy] = useState<"pdf" | "excel" | null>(null);
   const [isExportingFieldworkSheet, setIsExportingFieldworkSheet] = useState(false);
+  const [isExportingTotalAssets, setIsExportingTotalAssets] = useState(false);
 
   const openAuditSession = (sessionId: number) => {
     const url = new URL(window.location.href);
@@ -511,6 +512,7 @@ export function AuditPage() {
 
   const auditsQuery = trpc.audits.list.useQuery();
   const assetsQuery = trpc.assets.list.useQuery();
+  const departmentsQuery = trpc.departments.list.useQuery();
   const auditItemsQuery = trpc.audits.getItems.useQuery({ sessionId: selectedSessionId ?? 0 }, { enabled: Boolean(selectedSessionId) });
   const createSessionMutation = trpc.audits.create.useMutation({
     onSuccess: ({ id }) => {
@@ -662,6 +664,60 @@ export function AuditPage() {
       "Người kiểm kê": "",
     };
   });
+
+  const auditItemByAssetId = new Map(auditItems.map((item) => [item.assetId, item]));
+  const totalAssetRows = assets.map((asset, index) => {
+    const auditItem = auditItemByAssetId.get(asset.id);
+    const department = departmentsQuery.data?.find((item) => item.id === asset.departmentId);
+    return {
+      "STT": index + 1,
+      "Mã tài sản": asset.assetCode,
+      "Tên tài sản": asset.name,
+      "Phòng ban": department?.name || "Chưa gán",
+      "Người giữ": asset.holderName || "Chưa cấp phát",
+      "Trạng thái hệ thống": auditAssetStatusLabel(asset.status),
+      "Tình trạng": asset.condition || "",
+      "Vị trí": asset.location || "",
+      "Serial / IMEI": asset.serialNumber || "",
+      "Giá trị (VNĐ)": Number(asset.purchaseValue || 0),
+      "Hạn bảo hành": asset.warrantyUntil ? new Date(asset.warrantyUntil).toLocaleDateString("vi-VN") : "",
+      "Trạng thái thực tế": auditItem?.actualStatus ? auditAssetStatusLabel(auditItem.actualStatus) : auditItem ? "Chưa ghi nhận" : "Chưa đưa vào đợt kiểm kê",
+      "Kết quả kiểm kê": auditItem ? auditResultLabels[auditItem.result] : "Chưa đưa vào đợt kiểm kê",
+      "Ghi chú kiểm kê": auditItem?.note || "",
+      "Thời điểm kiểm kê": auditItem?.checkedAt ? new Date(auditItem.checkedAt).toLocaleString("vi-VN") : "",
+    };
+  });
+
+  const exportTotalAssetInventory = () => {
+    if (!selectedAudit || !totalAssetRows.length) { toast.info("Chưa có tài sản để xuất."); return; }
+    setIsExportingTotalAssets(true);
+    const loadingToast = toast.loading("Đang tạo file tổng tài sản...");
+    window.setTimeout(() => {
+      try {
+        const workbook = XLSX.utils.book_new();
+        const sheet = XLSX.utils.json_to_sheet(totalAssetRows);
+        sheet["!cols"] = [{ wch: 7 }, { wch: 18 }, { wch: 34 }, { wch: 22 }, { wch: 24 }, { wch: 20 }, { wch: 16 }, { wch: 22 }, { wch: 20 }, { wch: 18 }, { wch: 18 }, { wch: 22 }, { wch: 22 }, { wch: 38 }, { wch: 24 }];
+        sheet["!freeze"] = { xSplit: 0, ySplit: 1 };
+        XLSX.utils.book_append_sheet(workbook, sheet, "Tổng tài sản");
+        const summarySheet = XLSX.utils.aoa_to_sheet([
+          ["TỔNG TÀI SẢN KÈM KẾT QUẢ KIỂM KÊ"],
+          ["Đợt kiểm kê", selectedAudit.name],
+          ["Mã đợt", selectedAudit.referenceCode],
+          ["Phạm vi", `Toàn bộ ${totalAssetRows.length} tài sản trong hệ thống`],
+          ["Ghi chú", "Hai cột Trạng thái thực tế và Kết quả kiểm kê phản ánh dữ liệu của đợt kiểm kê này; tài sản chưa đưa vào đợt được ghi rõ để tiện theo dõi."],
+        ]);
+        summarySheet["!cols"] = [{ wch: 24 }, { wch: 112 }];
+        XLSX.utils.book_append_sheet(workbook, summarySheet, "Thông tin xuất");
+        XLSX.writeFile(workbook, `assetmaster-tong-tai-san-${selectedAudit.referenceCode}.xlsx`);
+        toast.success(`Đã xuất tổng ${totalAssetRows.length} tài sản kèm dữ liệu kiểm kê.`, { id: loadingToast });
+      } catch (error) {
+        console.error("[AuditPage] Total asset export failed", error);
+        toast.error("Không thể xuất file tổng tài sản.", { id: loadingToast });
+      } finally {
+        setIsExportingTotalAssets(false);
+      }
+    }, 160);
+  };
 
   const exportFieldworkSheet = () => {
     if (!selectedAudit || !fieldworkRows.length) { toast.info("Đợt kiểm kê chưa có tài sản để xuất danh sách thực địa."); return; }
@@ -826,7 +882,7 @@ export function AuditPage() {
 
           {isQrScanOpen && <div className="border-b border-[#CDE5E5] bg-[#F4FBFA] p-4 sm:p-5"><div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between"><div><div className="flex items-center gap-2 text-[11px] font-extrabold uppercase tracking-[0.12em] text-[#087A6A]"><QrCode size={14} />Quét QR liên tiếp</div><p className="mt-1 text-xs leading-5 text-[#60758A]">Dùng máy quét QR hoặc dán mã. Mỗi lần Enter sẽ tự thêm tài sản mới hoặc xác nhận tài sản đã có trong đợt.</p></div><span className="w-fit rounded-full bg-white px-2.5 py-1 text-[10px] font-bold text-[#087A6A] ring-1 ring-inset ring-[#CDE5E5]">{qrScanEntries.length} lượt gần nhất</span></div><div className="mt-3 grid gap-3 lg:grid-cols-[minmax(0,1fr)_auto]"><input autoFocus value={qrScanInput} onChange={(event) => setQrScanInput(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter") { event.preventDefault(); void scanAuditQr(); } }} placeholder="Quét hoặc nhập ASSETMASTER|token / mã tài sản..." className="field-input font-mono" disabled={addItemMutation.isPending || recordItemMutation.isPending} /><button onClick={() => void scanAuditQr()} disabled={!qrScanInput.trim() || addItemMutation.isPending || recordItemMutation.isPending} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-[#0F8C8C] px-5 py-2 text-xs font-bold text-white hover:bg-[#087A6A] disabled:cursor-not-allowed disabled:opacity-60"><QrCode size={15} />{addItemMutation.isPending || recordItemMutation.isPending ? "Đang ghi nhận..." : "Ghi nhận QR"}</button></div>{qrScanEntries.length > 0 && <div className="mt-3 grid gap-2 sm:grid-cols-2 xl:grid-cols-3">{qrScanEntries.map((entry) => <div key={entry.id} className={`rounded-lg border px-3 py-2 text-xs ${entry.status === "matched" || entry.status === "added" ? "border-[#B8E9DD] bg-white text-[#087A6A]" : entry.status === "not_found" || entry.status === "error" ? "border-[#F3C4C4] bg-[#FFF8F8] text-[#B44545]" : "border-[#F2D596] bg-[#FFFDF7] text-[#A86B00]"}`}><div className="font-mono text-[10px] font-extrabold">{entry.code}</div><div className="mt-0.5 truncate font-bold">{entry.name}</div><div className="mt-1 text-[10px]">{entry.detail}</div></div>)}</div>}</div>}
 
-          <div className="relative z-20 border-b border-[#E7EEF3] bg-[#FBFCFD] p-4 sm:p-5"><div className="flex flex-col gap-2 sm:flex-row sm:items-center"><SearchableSelect value={assetId} onChange={setAssetId} menuPortal disabled={!isAdmin || assetsQuery.isLoading || addItemMutation.isPending} className="w-full sm:max-w-[520px]" placeholder="Chọn tài sản cần kiểm kê" searchPlaceholder="Tìm mã, tên hoặc trạng thái..." options={[{ value: "", label: "Chọn tài sản cần kiểm kê" }, ...availableAssets.map((asset) => ({ value: String(asset.id), label: `${asset.assetCode} · ${asset.name} · ${auditAssetStatusLabel(asset.status)}`, searchText: `${asset.assetCode} ${asset.status} ${auditAssetStatusLabel(asset.status)}` }))]} /><button disabled={!isAdmin || !assetId || addItemMutation.isPending} onClick={() => { const asset = assets.find((candidate) => candidate.id === Number(assetId)); if (!asset) { toast.error("Chọn một tài sản hợp lệ."); return; } addItemMutation.mutate({ sessionId: selectedAudit.id, assetId: asset.id, expectedStatus: asset.status }); }} className="min-h-11 shrink-0 rounded-lg bg-[#0F8C8C] px-5 py-2 text-xs font-bold text-white hover:bg-[#087A6A] disabled:cursor-not-allowed disabled:opacity-60">{addItemMutation.isPending ? "Đang thêm" : "Thêm tài sản"}</button><button disabled={!fieldworkRows.length || isExportingFieldworkSheet} onClick={exportFieldworkSheet} className="inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-lg border border-[#8BCDC6] bg-[#ECF8F7] px-4 py-2 text-xs font-bold text-[#087A6A] transition hover:bg-[#DDF3F0] disabled:cursor-not-allowed disabled:opacity-60"><Download size={15} />{isExportingFieldworkSheet ? "Đang tạo..." : "Danh sách kiểm kê"}</button></div>{availableAssets.length === 0 && !assetsQuery.isLoading && <p className="mt-2 text-xs text-[#8AA0B6]">Tất cả tài sản hiện có đã được thêm vào đợt kiểm kê này.</p>}</div>
+          <div className="relative z-20 border-b border-[#E7EEF3] bg-[#FBFCFD] p-4 sm:p-5"><div className="flex flex-col gap-2 sm:flex-row sm:items-center"><SearchableSelect value={assetId} onChange={setAssetId} menuPortal disabled={!isAdmin || assetsQuery.isLoading || addItemMutation.isPending} className="w-full sm:max-w-[520px]" placeholder="Chọn tài sản cần kiểm kê" searchPlaceholder="Tìm mã, tên hoặc trạng thái..." options={[{ value: "", label: "Chọn tài sản cần kiểm kê" }, ...availableAssets.map((asset) => ({ value: String(asset.id), label: `${asset.assetCode} · ${asset.name} · ${auditAssetStatusLabel(asset.status)}`, searchText: `${asset.assetCode} ${asset.status} ${auditAssetStatusLabel(asset.status)}` }))]} /><button disabled={!isAdmin || !assetId || addItemMutation.isPending} onClick={() => { const asset = assets.find((candidate) => candidate.id === Number(assetId)); if (!asset) { toast.error("Chọn một tài sản hợp lệ."); return; } addItemMutation.mutate({ sessionId: selectedAudit.id, assetId: asset.id, expectedStatus: asset.status }); }} className="min-h-11 shrink-0 rounded-lg bg-[#0F8C8C] px-5 py-2 text-xs font-bold text-white hover:bg-[#087A6A] disabled:cursor-not-allowed disabled:opacity-60">{addItemMutation.isPending ? "Đang thêm" : "Thêm tài sản"}</button><button disabled={!fieldworkRows.length || isExportingFieldworkSheet} onClick={exportFieldworkSheet} className="inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-lg border border-[#8BCDC6] bg-[#ECF8F7] px-4 py-2 text-xs font-bold text-[#087A6A] transition hover:bg-[#DDF3F0] disabled:cursor-not-allowed disabled:opacity-60"><Download size={15} />{isExportingFieldworkSheet ? "Đang tạo..." : "Danh sách kiểm kê"}</button><button disabled={!totalAssetRows.length || isExportingTotalAssets} onClick={exportTotalAssetInventory} className="inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-lg border border-[#C7DDF8] bg-[#EAF3FF] px-4 py-2 text-xs font-bold text-[#2666A8] transition hover:bg-[#DBECFF] disabled:cursor-not-allowed disabled:opacity-60"><Download size={15} />{isExportingTotalAssets ? "Đang xuất..." : "Xuất tổng tài sản"}</button></div>{availableAssets.length === 0 && !assetsQuery.isLoading && <p className="mt-2 text-xs text-[#8AA0B6]">Tất cả tài sản hiện có đã được thêm vào đợt kiểm kê này.</p>}</div>
 
           {auditItemsQuery.isError ? <div className="m-5 rounded-xl border border-[#F2D596] bg-[#FFF9EB] p-4 text-sm"><div className="flex items-center gap-2 font-bold text-[#A86B00]"><AlertTriangle size={16} />Không thể tải chi tiết kiểm kê</div><p className="mt-1 text-xs text-[#71869A]">{auditItemsQuery.error.message || "Vui lòng thử lại."}</p><button onClick={() => auditItemsQuery.refetch()} className="mt-3 rounded-lg border border-[#F2D596] px-3 py-2 text-xs font-bold text-[#A86B00] hover:bg-white">Thử lại</button></div> : <div className="mobile-table-scroll overflow-x-auto md:overflow-hidden"><table className="w-full min-w-[1080px] text-left text-xs"><thead className="bg-[#FCFDFE] text-[10px] uppercase tracking-[.12em] text-[#8AA0B6]"><tr><th className="px-5 py-3">Tài sản</th><th className="px-4 py-3">Trạng thái dự kiến</th><th className="px-4 py-3">Trạng thái thực tế</th><th className="px-4 py-3">Kết quả</th><th className="px-4 py-3">Ghi chú / lịch sử</th><th className="px-5 py-3 text-right">Lưu</th></tr></thead><tbody>{auditItemsQuery.isLoading && <tr><td colSpan={6}><ModalTableSkeleton rows={5} columns={6} /></td></tr>}{!auditItemsQuery.isLoading && auditItems.map((item) => { const asset = assetById.get(item.assetId); const draft = draftFor(item); const isDiscrepancy = draft.result === "missing" || draft.result === "mismatch"; const badgeTone = draft.result === "matched" ? "bg-[#E6F6F2] text-[#087A6A]" : isDiscrepancy ? "bg-[#FDEDEE] text-[#B44545]" : "bg-[#FFF5DC] text-[#A86B00]"; return <tr key={item.id} className={`border-t border-[#EDF2F5] align-top ${isDiscrepancy ? "bg-[#FFF9FA]" : ""}`}><td className="px-5 py-4"><div className="font-bold text-[#193B57]">{asset?.name || `Tài sản #${item.assetId}`}</div><div className="mt-1 font-mono text-[10px] text-[#0F8C8C]">{asset?.assetCode || "Tài sản đã bị lưu trữ"}</div><div className="mt-1 text-[10px] text-[#8AA0B6]">Trạng thái hệ thống: {auditAssetStatusLabel(asset?.status)}</div></td><td className="px-4 py-4"><span className="rounded-full bg-[#F0F5F8] px-2 py-1 text-[10px] font-bold text-[#60758A]">{auditAssetStatusLabel(item.expectedStatus)}</span></td><td className="px-4 py-4"><SearchableSelect value={draft.actualStatus} onChange={(value) => updateDraft(item, { actualStatus: value })} disabled={!isAdmin || recordItemMutation.isPending} className="min-w-[185px]" placeholder="Chưa ghi nhận" searchPlaceholder="Tìm trạng thái thực tế..." options={[{ value: "", label: "Chưa ghi nhận" }, { value: "available", label: "Sẵn có" }, { value: "assigned", label: "Đang cấp phát" }, { value: "maintenance", label: "Bảo trì" }, { value: "retired", label: "Ngừng sử dụng" }, { value: "lost", label: "Thất lạc" }, { value: "damaged", label: "Hư hỏng" }]} /></td><td className="px-4 py-4"><SearchableSelect value={draft.result} onChange={(value) => updateDraft(item, { result: value as AuditItemDraft["result"] })} disabled={!isAdmin || recordItemMutation.isPending} className="min-w-[155px]" searchPlaceholder="Tìm kết quả..." options={[{ value: "pending", label: "Chưa kiểm" }, { value: "matched", label: "Khớp" }, { value: "mismatch", label: "Chênh lệch" }, { value: "missing", label: "Không tìm thấy" }]} /><span className={`mt-2 inline-flex rounded-full px-2 py-1 text-[10px] font-extrabold ${badgeTone}`}>{auditResultLabels[draft.result]}</span></td><td className="px-4 py-4"><textarea disabled={!isAdmin || recordItemMutation.isPending} value={draft.note} onChange={(event) => updateDraft(item, { note: event.target.value })} placeholder="Mô tả hiện trạng, vị trí hoặc lý do chênh lệch..." className="min-h-[70px] w-[250px] resize-y rounded-md border border-[#DDE7F0] p-2 text-xs leading-5 text-[#193B57] outline-none focus:border-[#0F8C8C] disabled:cursor-not-allowed disabled:opacity-60" />{item.checkedAt && <div className="mt-2 flex items-center gap-1 text-[10px] text-[#8AA0B6]"><CheckCircle2 size={11} />Ghi nhận {new Date(item.checkedAt).toLocaleString("vi-VN")}</div>}</td><td className="px-5 py-4 text-right"><div className="flex flex-col items-end gap-2"><button disabled={!isAdmin || recordItemMutation.isPending} onClick={() => recordItem(item)} className="inline-flex items-center gap-1.5 rounded-md bg-[#0F8C8C] px-3 py-2 text-[10px] font-bold text-white hover:bg-[#087A6A] disabled:cursor-not-allowed disabled:opacity-60"><Save size={13} />{recordItemMutation.isPending ? "Đang lưu" : "Lưu kết quả"}</button><button disabled={!isAdmin || recordItemMutation.isPending} onClick={() => updateDraft(item, { actualStatus: "", result: "missing", note: draft.note || "Không tìm thấy tại vị trí kiểm kê." })} className="text-[10px] font-bold text-[#B44545] hover:underline disabled:cursor-not-allowed disabled:opacity-60">Đánh dấu thất lạc</button></div></td></tr>; })}</tbody></table>{!auditItemsQuery.isLoading && auditItems.length === 0 && <ModuleEmptyState module="audit" title="Chưa có tài sản trong đợt kiểm kê" description="Hãy chọn tài sản để bắt đầu đối chiếu và ghi nhận kết quả kiểm kê." />}</div>}
         </section>}
