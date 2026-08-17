@@ -1367,3 +1367,10 @@
 - [x] Chuẩn hóa chiều rộng, nhãn và breakpoint responsive cho các nút toolbar.
 - [x] Bổ sung hồi quy, kiểm thử TypeScript, Vitest, production build và desktop/mobile.
 - [x] Lưu checkpoint phát hành và báo cáo kết quả.
+
+## Current Session — Reports Filter Toolbar Consistency
+
+- [x] Phân tích bố cục Phạm vi thống kê và bộ lọc Báo cáo bị lệch chuẩn.
+- [x] Chuẩn hóa nhóm bộ lọc, nút đặt lại và breakpoint responsive theo toolbar hiện tại.
+- [x] Bổ sung hồi quy, kiểm thử TypeScript, Vitest, production build và desktop/mobile.
+- [x] Lưu checkpoint phát hành và báo cáo kết quả.

@@ -453,6 +453,8 @@ describe("currency input and scrollbar contract", () => {
     expect(home).toContain("overflow-visible rounded-xl border border-[#DFE9F0]");
     expect(home).toContain('className="w-full shrink-0 sm:w-[180px]"');
     expect(home).toContain('className="flex flex-wrap items-center gap-2 border-b border-[#E7EEF3] bg-[#FBFCFD] px-5 py-4"');
+    expect(reports).toContain('xl:w-[680px] xl:grid-cols-4');
+    expect(reports).toContain('whitespace-nowrap rounded-lg border border-[#DDE7F0]');
     expect(home).toContain('className="relative min-w-0 flex-[2_1_420px]"');
     expect(home).toContain("handoverYearFilter");
     expect(home).toContain("handoverYears");
