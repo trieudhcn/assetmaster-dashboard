@@ -1389,3 +1389,11 @@
 - [x] Thêm phân trang cùng lựa chọn 10, 20 hoặc 50 dòng mỗi trang.
 - [x] Bổ sung hồi quy, kiểm thử TypeScript, Vitest, production build và responsive.
 - [x] Lưu checkpoint phát hành và báo cáo kết quả.
+
+## Current Session — Role-Based Help Center
+
+- [x] Rà soát điều hướng Trợ giúp, trang User và điểm nhận biết vai trò hiện có.
+- [x] Viết nội dung hướng dẫn sử dụng đầy đủ cho Admin theo các nhóm chức năng.
+- [x] Viết nội dung hướng dẫn riêng cho User và thêm nút truy cập trên trang User.
+- [x] Bổ sung hồi quy, kiểm thử TypeScript, Vitest, production build và trải nghiệm desktop/mobile.
+- [x] Lưu checkpoint phát hành và báo cáo kết quả.

@@ -875,3 +875,19 @@ it("keeps maintenance UI controls on the shared interaction contracts", () => {
   expect(assetCatalogDropdowns).toContain('aria-label="Hủy tạo mới"');
   expect(readProjectFile("client/src/components/SearchableSelect.tsx")).toContain('aria-label="Xóa tìm kiếm trong dropdown"');
 });
+
+it("cung cấp trung tâm hướng dẫn theo vai trò và nút hướng dẫn riêng cho nhân viên", () => {
+  const home = readProjectFile("client/src/pages/Home.tsx");
+  const helpCenter = readProjectFile("client/src/pages/HelpCenter.tsx");
+  const userDashboard = readProjectFile("client/src/pages/UserDashboard.tsx");
+
+  expect(home).toContain('"Trợ giúp & hướng dẫn": "help"');
+  expect(home).toContain('<HelpCenter />');
+  expect(helpCenter).toContain("Hướng dẫn Quản trị viên");
+  expect(helpCenter).toContain("Hướng dẫn Nhân viên");
+  expect(helpCenter).toContain("Quản lý danh mục tài sản");
+  expect(helpCenter).toContain("Gửi yêu cầu hoàn trả");
+  expect(helpCenter).toContain("UserHelpDialog");
+  expect(userDashboard).toContain("Hướng dẫn sử dụng");
+  expect(userDashboard).toContain('<UserHelpDialog open={helpOpen}');
+});
