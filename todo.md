@@ -1374,3 +1374,10 @@
 - [x] Chuẩn hóa nhóm bộ lọc, nút đặt lại và breakpoint responsive theo toolbar hiện tại.
 - [x] Bổ sung hồi quy, kiểm thử TypeScript, Vitest, production build và desktop/mobile.
 - [x] Lưu checkpoint phát hành và báo cáo kết quả.
+
+## Current Session — Remove Handover Recipient Summary
+
+- [x] Rà soát vùng thống kê Phiếu theo người nhận và dữ liệu liên quan.
+- [x] Loại bỏ vùng Phiếu theo người nhận, giữ vùng Phiếu theo phòng ban cân đối.
+- [x] Bổ sung hồi quy, kiểm thử TypeScript, Vitest, production build và desktop/mobile.
+- [x] Lưu checkpoint phát hành và báo cáo kết quả.
