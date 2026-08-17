@@ -34,6 +34,8 @@ export const companies = mysqlTable("companies", {
   websiteTitle: varchar("websiteTitle", { length: 120 }),
   brandColor: varchar("brandColor", { length: 9 }),
   faviconUrl: text("faviconUrl"),
+  loginBackgroundUrl: text("loginBackgroundUrl"),
+  loginGreeting: varchar("loginGreeting", { length: 300 }),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });

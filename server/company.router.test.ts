@@ -25,10 +25,10 @@ await expect(caller.company.get()).resolves.toBeNull();
   });
 
   it("chỉ công bố trường nhận diện cần thiết cho màn hình đăng nhập", async () => {
-    mocks.getCompany.mockResolvedValue({ name: "Công ty Kiểm thử", websiteTitle: "Cổng tài sản", logoUrl: "/manus-storage/company-brand/logo.png", brandColor: "#0F8C8C", address: "Thông tin nội bộ", taxCode: "0101010101", phone: "0900000000" });
+    mocks.getCompany.mockResolvedValue({ name: "Công ty Kiểm thử", websiteTitle: "Cổng tài sản", logoUrl: "/manus-storage/company-brand/logo.png", brandColor: "#0F8C8C", loginBackgroundUrl: "/manus-storage/company-brand/login-bg.png", loginGreeting: "Chào mừng đội ngũ", address: "Thông tin nội bộ", taxCode: "0101010101", phone: "0900000000" });
     const caller = appRouter.createCaller({ user: null, req: {}, res: {} } as any);
 
-    await expect(caller.company.publicBrand()).resolves.toEqual({ name: "Công ty Kiểm thử", websiteTitle: "Cổng tài sản", logoUrl: "/manus-storage/company-brand/logo.png", brandColor: "#0F8C8C" });
+    await expect(caller.company.publicBrand()).resolves.toEqual({ name: "Công ty Kiểm thử", websiteTitle: "Cổng tài sản", logoUrl: "/manus-storage/company-brand/logo.png", brandColor: "#0F8C8C", loginBackgroundUrl: "/manus-storage/company-brand/login-bg.png", loginGreeting: "Chào mừng đội ngũ" });
   });
 
   it("persists the configured website title and logo URL", async () => {

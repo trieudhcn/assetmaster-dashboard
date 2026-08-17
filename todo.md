@@ -1474,3 +1474,10 @@
 - [x] Dùng logo, tên công ty và tiêu đề website từ Cài đặt hệ thống cho phần nhận diện khi mới truy cập.
 - [x] Cập nhật dòng thương hiệu trên màn hình chào mừng trở lại.
 - [x] Bổ sung hồi quy, kiểm tra TypeScript, giao diện và phát hành cập nhật.
+
+## Current Session — Login Background and Greeting Customization
+
+- [x] Rà soát mô hình thông tin công ty, API và bố cục màn hình đăng nhập hiện có.
+- [x] Bổ sung lưu trữ, tải ảnh nền và cấu hình câu chào đăng nhập dành cho Admin.
+- [x] Hiển thị ảnh nền, câu chào tùy chỉnh và tên công ty đầy đủ trên màn hình đăng nhập.
+- [x] Bổ sung migration, hồi quy, kiểm tra TypeScript, giao diện và phát hành cập nhật.

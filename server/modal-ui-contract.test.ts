@@ -594,9 +594,9 @@ describe("empty illustration, modal skeleton and motion preference", () => {
 
   it("provides reusable table skeleton and motion preference toggle", () => {
     expect(readProjectFile("client/src/components/ModalTableSkeleton.tsx")).toContain("modal-skeleton-line");
-    const settings = readProjectFile("client/src/components/CompanyBrandSettings.tsx");
-    expect(settings).toContain("assetmaster-motion");
-    expect(settings).toContain('role="switch"');
+    const motionSettings = readProjectFile("client/src/components/MotionSettingsRelocator.tsx");
+    expect(motionSettings).toContain("assetmaster-motion");
+    expect(motionSettings).toContain('role="switch"');
   });
 });
 

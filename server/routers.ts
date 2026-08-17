@@ -203,9 +203,11 @@ export const appRouter = router({
         websiteTitle: company.websiteTitle,
         logoUrl: company.logoUrl,
         brandColor: company.brandColor,
+        loginBackgroundUrl: company.loginBackgroundUrl,
+        loginGreeting: company.loginGreeting,
       };
     }),
-    save: adminProcedure.input(z.object({ name: z.string().trim().min(2).max(255), address: nullableText, taxCode: nullableText, phone: nullableText, email: z.string().email().optional().nullable(), logoUrl: nullableText, websiteTitle: z.string().trim().min(2).max(120).optional().nullable(), brandColor: z.string().regex(/^#[0-9a-fA-F]{6}$/).optional().nullable(), faviconUrl: nullableText })).mutation(async ({ input, ctx }) => {
+    save: adminProcedure.input(z.object({ name: z.string().trim().min(2).max(255), address: nullableText, taxCode: nullableText, phone: nullableText, email: z.string().email().optional().nullable(), logoUrl: nullableText, websiteTitle: z.string().trim().min(2).max(120).optional().nullable(), brandColor: z.string().regex(/^#[0-9a-fA-F]{6}$/).optional().nullable(), faviconUrl: nullableText, loginBackgroundUrl: nullableText, loginGreeting: z.string().trim().max(300).optional().nullable() })).mutation(async ({ input, ctx }) => {
       const id = await saveCompany(input);
       await recordActivity({ entityType: "company", entityId: id, action: "updated", actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: "Cập nhật thông tin công ty" });
       return { id };
@@ -224,6 +226,14 @@ export const appRouter = router({
       if (!bytes.length || bytes.length > 256 * 1024) throw new TRPCError({ code: "BAD_REQUEST", message: "Favicon PNG không được vượt quá 256 KB." });
       const stored = await storagePut(`company-brand/favicon-${crypto.randomUUID()}.png`, bytes, "image/png");
       await recordActivity({ entityType: "company", entityId: 0, action: "favicon_uploaded", actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: `Tải favicon ${input.fileName}` });
+      return { url: stored.url };
+    }),
+    uploadLoginBackground: adminProcedure.input(z.object({ fileName: z.string().trim().min(1).max(255), contentType: z.enum(["image/png", "image/jpeg", "image/webp"]), dataUrl: z.string().max(7_000_000).regex(/^data:image\/(png|jpeg|webp);base64,/) })).mutation(async ({ input, ctx }) => {
+      const bytes = Buffer.from(input.dataUrl.split(",")[1] || "", "base64");
+      if (!bytes.length || bytes.length > 5 * 1024 * 1024) throw new TRPCError({ code: "BAD_REQUEST", message: "Ảnh nền phải là PNG, JPG hoặc WebP và không vượt quá 5 MB." });
+      const extension = input.contentType === "image/png" ? "png" : input.contentType === "image/jpeg" ? "jpg" : "webp";
+      const stored = await storagePut(`company-brand/login-background-${crypto.randomUUID()}.${extension}`, bytes, input.contentType);
+      await recordActivity({ entityType: "company", entityId: 0, action: "login_background_uploaded", actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: `Tải ảnh nền đăng nhập ${input.fileName}` });
       return { url: stored.url };
     }),
   }),

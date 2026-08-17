@@ -11,8 +11,12 @@ describe("login brand synchronization", () => {
     expect(loginGateway).toContain("{companyName}");
     expect(loginGateway).toContain("{websiteTitle}");
     expect(loginGateway).toContain("Đăng nhập {companyName}");
+    expect(loginGateway).toContain("{loginGreeting}");
+    expect(loginGateway).toContain("loginBackgroundUrl");
+    expect(loginGateway).not.toContain("truncate font-display text-2xl");
     expect(router).toContain("publicBrand: publicProcedure.query");
     expect(router).toContain("websiteTitle: company.websiteTitle");
+    expect(router).toContain("loginBackgroundUrl: company.loginBackgroundUrl");
     expect(router).not.toContain("publicBrand: publicProcedure.query(() => getCompany())");
   });
 });
