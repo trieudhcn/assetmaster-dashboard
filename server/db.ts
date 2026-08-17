@@ -17,6 +17,7 @@ import {
   helpGuides,
   helpGuideVersions,
   maintenanceTickets,
+  uiLabels,
   type InsertUser,
   userNotificationPreferences,
   users,
@@ -30,6 +31,18 @@ let database: ReturnType<typeof drizzle> | null = null;
 export async function getDb() {
   if (!database && process.env.DATABASE_URL) database = drizzle(process.env.DATABASE_URL);
   return database;
+}
+
+export async function listUiLabels() {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(uiLabels).orderBy(desc(uiLabels.updatedAt));
+}
+
+export async function saveUiLabel(input: { labelKey: string; value: string; updatedByUserId: number; updatedByName: string | null }) {
+  const db = await getDb();
+  if (!db) throw new Error("Database unavailable");
+  await db.insert(uiLabels).values(input).onDuplicateKeyUpdate({ set: { value: input.value, updatedByUserId: input.updatedByUserId, updatedByName: input.updatedByName } });
 }
 
 export async function upsertUser(user: InsertUser): Promise<void> {

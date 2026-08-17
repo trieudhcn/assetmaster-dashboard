@@ -46,11 +46,13 @@ import {
   getCompany,
   getHandoverById,
   listHelpGuides,
+  listUiLabels,
   getNextHandoverSequence,
   getNextAuditSequence,
   getMaintenanceTicket,
   getNextAssetCodeForPrefix,
   getUserNotificationPreferences,
+  saveUiLabel,
   listMaintenanceTickets,
   listMaintenanceTicketsByAsset,
   getNextMaintenanceTicketSequence,
@@ -180,6 +182,14 @@ export const appRouter = router({
     }),
     savePreferences: protectedProcedure.input(z.object({ maintenanceEnabled: z.boolean(), handoverEnabled: z.boolean(), returnRequestEnabled: z.boolean() })).mutation(async ({ input, ctx }) => {
       await saveUserNotificationPreferences(ctx.user.id, input);
+      return { success: true };
+    }),
+  }),
+  uiLabels: router({
+    list: protectedProcedure.query(() => listUiLabels()),
+    save: adminProcedure.input(z.object({ labelKey: z.string().regex(/^[a-z][a-z0-9-]{1,95}$/), value: z.string().trim().min(2).max(120) })).mutation(async ({ input, ctx }) => {
+      await saveUiLabel({ ...input, updatedByUserId: ctx.user.id, updatedByName: ctx.user.name });
+      await recordActivity({ entityType: "ui_label", entityId: 0, action: "updated", actorUserId: ctx.user.id, actorName: ctx.user.name, summary: `Cập nhật nhãn giao diện ${input.labelKey}` });
       return { success: true };
     }),
   }),

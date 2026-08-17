@@ -8,6 +8,7 @@ import { matchesVietnameseSearch } from "@/lib/catalogUi";
 import * as XLSX from "xlsx";
 import { Download, FileSpreadsheet, Loader2 } from "lucide-react";
 import { writeBrandedWorkbook } from "@/lib/brandedWorkbook";
+import { EditableSectionLabel } from "@/components/EditableSectionLabel";
 
 type CategoryDraft = { name: string; code: string; description: string };
 type Category = CategoryDraft & { id: number; isActive: boolean };
@@ -132,7 +133,7 @@ export function AssetCategoryManagementPage() {
     <div className="mx-auto max-w-[1500px]">
       <header className="mb-7 flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
         <div>
-          <div className="mb-2 flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.16em] text-[#0F8C8C]"><span className="h-1.5 w-1.5 rounded-full bg-[#F0A516]" />Asset taxonomy</div>
+          <div className="mb-2 flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.16em] text-[#0F8C8C]"><span className="h-1.5 w-1.5 rounded-full bg-[#F0A516]" /><EditableSectionLabel labelKey="asset-taxonomy" fallback="Asset taxonomy" canEdit={isAdmin} /></div>
           <h1 className="font-display text-[28px] font-extrabold tracking-[-0.045em] text-[#102A43] sm:text-[34px]">Phân loại tài sản</h1>
           <p className="mt-1.5 max-w-2xl text-sm text-[#71869A]">Định nghĩa nhóm tài sản và tiền tố để hệ thống tự sinh mã, ví dụ Laptop với tiền tố LT tạo mã LT00001.</p>
         </div>

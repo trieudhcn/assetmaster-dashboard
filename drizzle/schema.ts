@@ -38,6 +38,16 @@ export const companies = mysqlTable("companies", {
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
 
+export const uiLabels = mysqlTable("uiLabels", {
+  id: int("id").autoincrement().primaryKey(),
+  labelKey: varchar("labelKey", { length: 96 }).notNull().unique(),
+  value: varchar("value", { length: 255 }).notNull(),
+  updatedByUserId: int("updatedByUserId"),
+  updatedByName: varchar("updatedByName", { length: 160 }),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+}, (table) => [index("ui_labels_updated_idx").on(table.updatedAt)]);
+
 export const helpGuides = mysqlTable("helpGuides", {
   id: int("id").autoincrement().primaryKey(),
   guideKey: varchar("guideKey", { length: 96 }).notNull().unique(),
