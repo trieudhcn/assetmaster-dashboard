@@ -24,6 +24,8 @@ describe("safe inline UI labels", () => {
     expect(enhancer).toContain('fallback: "Dữ liệu quản trị trực tiếp"');
     expect(enhancer).toContain('fallback: "Phân bổ nhân sự"');
     expect(enhancer).toContain('fallback: "Danh mục nhà cung cấp"');
+    expect(enhancer).toContain('fallback: "Thiết lập thương hiệu"');
+    expect(enhancer).toContain('fallback: "Xem trước trang web"');
     expect(enhancer).toContain("MutationObserver");
   });
 });

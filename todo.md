@@ -1447,3 +1447,10 @@
 - [x] Việt hóa nhãn và mở rộng chỉnh sửa trực tiếp an toàn cho các module được yêu cầu.
 - [x] Bổ sung hồi quy, kiểm thử TypeScript, Vitest, production build và responsive.
 - [x] Lưu checkpoint phát hành và báo cáo kết quả.
+
+## Current Session — Vietnamese Settings Labels
+
+- [x] Lập danh mục toàn bộ nhãn tiếng Anh còn lại trong phần Cài đặt.
+- [x] Việt hóa các nhãn Cài đặt và giữ nguyên hành vi từng chức năng.
+- [x] Bổ sung hồi quy, kiểm thử TypeScript, Vitest, production build và giao diện Cài đặt.
+- [x] Lưu checkpoint phát hành và báo cáo kết quả.

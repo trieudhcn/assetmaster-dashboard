@@ -10,6 +10,8 @@ const legacyLabels = [
   { source: "Live management data", labelKey: "live-management-data", fallback: "Dữ liệu quản trị trực tiếp" },
   { source: "Workforce allocation", labelKey: "workforce-allocation", fallback: "Phân bổ nhân sự" },
   { source: "Procurement directory", labelKey: "procurement-directory", fallback: "Danh mục nhà cung cấp" },
+  { source: "Brand settings", labelKey: "brand-settings", fallback: "Thiết lập thương hiệu" },
+  { source: "Website preview", labelKey: "website-preview", fallback: "Xem trước trang web" },
 ] as const;
 
 type LabelHost = (typeof legacyLabels)[number] & { host: HTMLSpanElement };
