@@ -1167,3 +1167,10 @@
 - [x] Hiển thị tooltip có tên người thực hiện khi rê chuột hoặc focus vào mốc cập nhật.
 - [x] Bổ sung hồi quy, kiểm thử TypeScript, Vitest, production build và responsive.
 - [x] Lưu checkpoint phát hành cho phiên này.
+
+## Current Session — Concise Latest Update Tooltip
+
+- [x] Rà soát và rút gọn nội dung tooltip người thực hiện.
+- [x] Hiển thị nhãn ngắn gọn “Người thực hiện: [Tên]”.
+- [x] Bổ sung hồi quy, kiểm thử TypeScript, Vitest và production build.
+- [x] Lưu checkpoint phát hành cho phiên này.

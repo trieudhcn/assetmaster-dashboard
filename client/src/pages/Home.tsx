@@ -1365,10 +1365,10 @@ function AssetModal({ mode, asset, formData, setFormData, isSaving, onClose: dis
   const assetFieldHistoryQuery = trpc.assets.history.useQuery({ assetId: persistedAsset?.id || 0 }, { enabled: isDetail && Boolean(persistedAsset?.id) });
   const latestAssetChange = assetFieldHistoryQuery.data?.items?.[0];
   const latestUpdateActorTooltip = assetFieldHistoryQuery.isLoading
-    ? "Đang tải người thực hiện thay đổi gần nhất..."
+    ? "Người thực hiện: Đang tải..."
     : latestAssetChange?.actorName?.trim()
-      ? `Người thực hiện thay đổi gần nhất: ${latestAssetChange.actorName.trim()}`
-      : "Chưa xác định người thực hiện thay đổi gần nhất.";
+      ? `Người thực hiện: ${latestAssetChange.actorName.trim()}`
+      : "Người thực hiện: Chưa xác định";
   useEffect(() => {
     if (!isDetail || !persistedAsset?.id) return;
     const dialog = document.querySelector('[role="dialog"][aria-label="Chi tiết tài sản"]');
