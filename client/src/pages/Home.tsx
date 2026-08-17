@@ -827,44 +827,69 @@ function PaginatedAssetCatalogPage({ assets, query, category, status, department
   useEffect(() => {
     const resetButton = Array.from(document.querySelectorAll<HTMLButtonElement>("button")).find((button) => button.textContent?.trim() === "Đặt lại bộ lọc");
     const controls = resetButton?.parentElement;
-    if (!controls) return;
+    if (!controls || controls.querySelector("[data-asset-catalog-toolbar]")) return;
+
+    const originalControlsClass = controls.className;
+    const titleBlock = controls.firstElementChild as HTMLElement | null;
+    const originalTitleClass = titleBlock?.className || "";
+    const originalResetClass = resetButton.className;
+    controls.className = "flex flex-col gap-4 border-b border-[#E7EEF3] px-5 py-5 min-[1320px]:flex-row min-[1320px]:items-center min-[1320px]:justify-between";
+    titleBlock?.classList.add("min-w-0");
+
+    const actionBar = document.createElement("div");
+    actionBar.dataset.assetCatalogToolbar = "true";
+    actionBar.className = "flex w-full flex-wrap items-center gap-2 min-[1320px]:w-auto min-[1320px]:flex-nowrap min-[1320px]:justify-end";
+
     const filteredExportButton = document.createElement("button");
     filteredExportButton.type = "button";
     filteredExportButton.dataset.filteredAssetExcelExport = "true";
     filteredExportButton.disabled = !filteredAssetExportRows.length || isExportingFilteredAssets;
     filteredExportButton.textContent = isExportingFilteredAssets ? "Đang xuất..." : `Xuất danh sách (${filteredAssetExportRows.length})`;
     filteredExportButton.title = isExportingFilteredAssets ? "Đang tạo file Excel" : filteredAssetExportRows.length ? "Xuất toàn bộ tài sản đang hiển thị sau khi áp dụng bộ lọc" : "Không có tài sản phù hợp với bộ lọc hiện tại";
-    filteredExportButton.className = "flex h-9 items-center justify-center rounded-lg border border-[#C7DDF8] bg-white px-3 text-xs font-bold text-[#2666A8] hover:bg-[#EAF3FF] disabled:cursor-not-allowed disabled:opacity-50";
+    filteredExportButton.className = "inline-flex h-9 shrink-0 whitespace-nowrap items-center justify-center rounded-lg border border-[#C7DDF8] bg-white px-3 text-xs font-bold text-[#2666A8] hover:bg-[#EAF3FF] disabled:cursor-not-allowed disabled:opacity-50";
     filteredExportButton.addEventListener("click", exportFilteredAssetsExcel);
+
     const maintenanceButton = document.createElement("button");
     maintenanceButton.type = "button";
     maintenanceButton.dataset.maintenanceFilter = "true";
-    maintenanceButton.className = status === "Bảo trì" ? "flex h-9 items-center justify-center gap-2 rounded-lg bg-[#A86B00] px-3 text-xs font-bold text-white" : "flex h-9 items-center justify-center gap-2 rounded-lg border border-[#F2D596] bg-[#FFF9EB] px-3 text-xs font-bold text-[#A86B00] hover:bg-white";
+    maintenanceButton.className = status === "Bảo trì" ? "inline-flex h-9 shrink-0 whitespace-nowrap items-center justify-center gap-2 rounded-lg bg-[#A86B00] px-3 text-xs font-bold text-white" : "inline-flex h-9 shrink-0 whitespace-nowrap items-center justify-center gap-2 rounded-lg border border-[#F2D596] bg-[#FFF9EB] px-3 text-xs font-bold text-[#A86B00] hover:bg-white";
     maintenanceButton.textContent = "Tài sản bảo trì";
     maintenanceButton.title = status === "Bảo trì" ? "Bỏ lọc tài sản đang bảo trì" : "Chỉ hiển thị tài sản đang bảo trì";
     const toggleMaintenance = () => onStatusChange(toggleMaintenanceStatusFilter(status));
     maintenanceButton.addEventListener("click", toggleMaintenance);
+
     const exportButton = document.createElement("button");
     exportButton.type = "button";
     exportButton.dataset.maintenanceExcelExport = "true";
     exportButton.disabled = !maintenanceExportRows.length || isExportingMaintenance;
     exportButton.textContent = isExportingMaintenance ? "Đang xuất..." : `Xuất Excel (${maintenanceExportRows.length})`;
     exportButton.title = isExportingMaintenance ? "Đang tạo file Excel" : maintenanceExportRows.length ? "Xuất danh sách tài sản đang bảo trì ra Excel" : "Không có tài sản đang bảo trì trong phạm vi lọc hiện tại";
-    exportButton.className = "flex h-9 items-center justify-center rounded-lg border border-[#CDE5E5] bg-white px-3 text-xs font-bold text-[#087A6A] hover:bg-[#ECF8F7] disabled:cursor-not-allowed disabled:opacity-50";
+    exportButton.className = "inline-flex h-9 shrink-0 whitespace-nowrap items-center justify-center rounded-lg border border-[#CDE5E5] bg-white px-3 text-xs font-bold text-[#087A6A] hover:bg-[#ECF8F7] disabled:cursor-not-allowed disabled:opacity-50";
     exportButton.addEventListener("click", exportMaintenanceExcel);
+
     const importButton = document.createElement("button");
     importButton.type = "button";
     importButton.dataset.assetExcelImport = "true";
     importButton.textContent = "Nhập Excel";
     importButton.title = "Tải template và import nhiều tài sản từ Excel";
-    importButton.className = "flex h-9 items-center justify-center rounded-lg bg-[#0F8C8C] px-3 text-xs font-bold text-white hover:bg-[#087A6A]";
+    importButton.className = "inline-flex h-9 shrink-0 whitespace-nowrap items-center justify-center rounded-lg bg-[#0F8C8C] px-3 text-xs font-bold text-white hover:bg-[#087A6A]";
     const openAssetImport = () => window.dispatchEvent(new Event("assetmaster:open-asset-import"));
     importButton.addEventListener("click", openAssetImport);
-    resetButton.before(filteredExportButton);
-    filteredExportButton.after(maintenanceButton);
-    maintenanceButton.after(exportButton);
-    exportButton.after(importButton);
-    return () => { filteredExportButton.removeEventListener("click", exportFilteredAssetsExcel); maintenanceButton.removeEventListener("click", toggleMaintenance); exportButton.removeEventListener("click", exportMaintenanceExcel); importButton.removeEventListener("click", openAssetImport); filteredExportButton.remove(); maintenanceButton.remove(); exportButton.remove(); importButton.remove(); };
+
+    resetButton.className = "inline-flex h-9 shrink-0 whitespace-nowrap items-center justify-center gap-2 rounded-lg border border-[#DDE7F0] px-3 text-xs font-bold text-[#60758A] hover:bg-[#F7FAFC]";
+    actionBar.append(filteredExportButton, maintenanceButton, exportButton, importButton, resetButton);
+    controls.append(actionBar);
+
+    return () => {
+      filteredExportButton.removeEventListener("click", exportFilteredAssetsExcel);
+      maintenanceButton.removeEventListener("click", toggleMaintenance);
+      exportButton.removeEventListener("click", exportMaintenanceExcel);
+      importButton.removeEventListener("click", openAssetImport);
+      actionBar.replaceWith(resetButton);
+      resetButton.className = originalResetClass;
+      controls.className = originalControlsClass;
+      if (titleBlock) titleBlock.className = originalTitleClass;
+    };
   }, [status, onStatusChange, filteredAssetExportRows, exportFilteredAssetsExcel, isExportingFilteredAssets, maintenanceExportRows, exportMaintenanceExcel, isExportingMaintenance]);
   useEffect(() => {
     const legacyFooter = document.querySelector("section.overflow-hidden > div:last-child");

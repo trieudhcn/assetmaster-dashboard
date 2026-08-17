@@ -1361,3 +1361,9 @@
 - [x] Bổ sung hồi quy, kiểm thử TypeScript, Vitest, production build và responsive.
 - [x] Lưu checkpoint phát hành và báo cáo kết quả.
 
+## Current Session — Asset Toolbar Button Layout Fix
+
+- [x] Phân tích bố cục nhóm nút hành động bị vỡ trong Danh mục tài sản.
+- [x] Chuẩn hóa chiều rộng, nhãn và breakpoint responsive cho các nút toolbar.
+- [x] Bổ sung hồi quy, kiểm thử TypeScript, Vitest, production build và desktop/mobile.
+- [x] Lưu checkpoint phát hành và báo cáo kết quả.

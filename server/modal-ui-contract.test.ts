@@ -474,6 +474,9 @@ describe("currency input and scrollbar contract", () => {
     expect(home).toContain("DANH SÁCH TÀI SẢN THEO BỘ LỌC");
     expect(home).toContain("assetmaster-danh-sach-tai-san-da-loc-");
     expect(home).toContain("Xuất danh sách");
+    expect(home).toContain("assetCatalogToolbar");
+    expect(home).toContain("min-[1320px]:flex-nowrap");
+    expect(home).toContain("whitespace-nowrap");
     expect(home).toContain("danh-sach-phieu-ban-giao-");
     const operations = readProjectFile("client/src/pages/OperationsModules.tsx");
     const routers = readProjectFile("server/routers.ts");
