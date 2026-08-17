@@ -1240,3 +1240,11 @@
 - [x] Hiển thị lịch sử các lần nhập Excel theo đợt, gồm thời gian, người thực hiện và số dòng cập nhật.
 - [x] Bổ sung hồi quy, kiểm thử TypeScript, Vitest, production build và responsive.
 - [x] Lưu checkpoint phát hành cho phiên này.
+
+## Current Session — Finalized Audit PDF Minutes
+
+- [x] Rà soát dữ liệu đợt kiểm kê đã chốt và tiện ích PDF tiếng Việt hiện có.
+- [x] Tạo mẫu biên bản kiểm kê PDF có tổng hợp kết quả, danh sách chênh lệch và khu vực ký xác nhận.
+- [x] Chỉ hiển thị hành động xuất biên bản khi đợt kiểm kê đã chốt.
+- [x] Bổ sung hồi quy, kiểm thử TypeScript, Vitest, production build và responsive.
+- [x] Lưu checkpoint phát hành cho phiên này.

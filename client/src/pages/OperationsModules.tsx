@@ -540,6 +540,7 @@ export function AuditPage() {
   const [isQrScanOpen, setIsQrScanOpen] = useState(false);
   const [qrScanEntries, setQrScanEntries] = useState<AuditQrScanEntry[]>([]);
   const [isExportingDiscrepancy, setIsExportingDiscrepancy] = useState<"pdf" | "excel" | null>(null);
+  const [isExportingFinalizedMinutes, setIsExportingFinalizedMinutes] = useState(false);
   const [isExportingFieldworkSheet, setIsExportingFieldworkSheet] = useState(false);
   const [isExportingTotalAssets, setIsExportingTotalAssets] = useState(false);
   const [auditResultFilter, setAuditResultFilter] = useState<"all" | AuditItemDraft["result"]>("all");
@@ -679,6 +680,17 @@ export function AuditPage() {
     discrepancies: auditItems.filter((item) => item.result === "missing" || item.result === "mismatch").length,
   };
   const discrepancyItems = scopedAuditItems.filter((item) => item.result === "missing" || item.result === "mismatch");
+  const finalizedDiscrepancyRows = auditItems.filter((item) => item.result === "missing" || item.result === "mismatch").map((item) => {
+    const asset = assetById.get(item.assetId);
+    return {
+      assetCode: asset?.assetCode || `#${item.assetId}`,
+      assetName: asset?.name || "Tài sản đã bị lưu trữ",
+      expectedStatus: auditAssetStatusLabel(item.expectedStatus),
+      actualStatus: auditAssetStatusLabel(item.actualStatus),
+      result: auditResultLabels[item.result],
+      note: item.note || "Không có",
+    };
+  });
 
   const appendQrScanEntry = (entry: Omit<AuditQrScanEntry, "id">) => {
     setQrScanEntries((current) => [{ ...entry, id: `${Date.now()}-${Math.random()}` }, ...current].slice(0, 12));
@@ -945,6 +957,99 @@ export function AuditPage() {
     }
   };
 
+  const exportFinalizedAuditMinutes = async () => {
+    if (!selectedAudit || selectedAudit.status !== "completed") { toast.info("Chỉ có thể xuất biên bản sau khi đợt kiểm kê đã chốt."); return; }
+    setIsExportingFinalizedMinutes(true);
+    const loadingToast = toast.loading("Đang tạo biên bản kiểm kê đã chốt...");
+    try {
+      const doc = new jsPDF({ unit: "mm", format: "a4" });
+      const fontResponse = await fetch(handoverPdfFontUrl);
+      if (!fontResponse.ok) throw new Error("Không thể tải phông chữ tiếng Việt.");
+      registerVietnamesePdfFont(doc, await fontResponse.arrayBuffer());
+      const left = 16;
+      const right = 194;
+      const contentWidth = right - left;
+      let y = 18;
+      const ensureSpace = (height: number) => { if (y + height <= 276) return; doc.addPage(); y = 18; };
+      const sectionTitle = (title: string) => { ensureSpace(12); doc.setTextColor(15, 140, 140); doc.setFontSize(10); doc.text(title, left, y); y += 5; doc.setDrawColor(205, 229, 229); doc.line(left, y, right, y); y += 6; };
+      const detailLine = (label: string, value: string) => { const lines = doc.splitTextToSize(`${label}: ${value}`, contentWidth); ensureSpace(lines.length * 5 + 2); doc.setTextColor(25, 59, 87); doc.setFontSize(9); doc.text(lines, left, y); y += lines.length * 5 + 2; };
+
+      doc.setTextColor(16, 42, 67);
+      doc.setFontSize(17);
+      doc.text("BIÊN BẢN KIỂM KÊ TÀI SẢN", left, y);
+      y += 7;
+      doc.setTextColor(15, 140, 140);
+      doc.setFontSize(10);
+      doc.text(selectedAudit.name, left, y);
+      y += 6;
+      doc.setTextColor(96, 117, 138);
+      doc.setFontSize(8.5);
+      doc.text(`${selectedAudit.referenceCode} · Đã chốt ${selectedAudit.completedAt ? new Date(selectedAudit.completedAt).toLocaleString("vi-VN") : new Date().toLocaleString("vi-VN")}`, left, y);
+      y += 10;
+
+      sectionTitle("I. THÔNG TIN BIÊN BẢN");
+      detailLine("Tên đợt kiểm kê", selectedAudit.name);
+      detailLine("Mã đợt", selectedAudit.referenceCode);
+      detailLine("Thời điểm chốt", selectedAudit.completedAt ? new Date(selectedAudit.completedAt).toLocaleString("vi-VN") : "Đã chốt trên hệ thống");
+
+      sectionTitle("II. TỔNG HỢP KẾT QUẢ");
+      const totals = [`Tổng tài sản: ${summary.total}`, `Khớp: ${summary.matched}`, `Chênh lệch/thiếu: ${summary.discrepancies}`, `Chưa kiểm: ${summary.pending}`];
+      doc.setFillColor(244, 251, 250);
+      doc.roundedRect(left, y - 4, contentWidth, 17, 2, 2, "F");
+      doc.setTextColor(25, 59, 87);
+      doc.setFontSize(9);
+      doc.text(totals.slice(0, 2).join("     "), left + 4, y + 1);
+      doc.text(totals.slice(2).join("     "), left + 4, y + 8);
+      y += 20;
+
+      sectionTitle("III. DANH SÁCH CHÊNH LỆCH / THIẾU");
+      if (!finalizedDiscrepancyRows.length) {
+        detailLine("Kết quả", "Không phát hiện chênh lệch hoặc thiếu tài sản trong đợt kiểm kê này.");
+      } else {
+        finalizedDiscrepancyRows.forEach((row, index) => {
+          const lines = [
+            `${index + 1}. ${row.assetName} (${row.assetCode})`,
+            `Dự kiến: ${row.expectedStatus} · Thực tế: ${row.actualStatus} · Kết quả: ${row.result}`,
+            `Ghi chú: ${row.note}`,
+          ].flatMap((line) => doc.splitTextToSize(line, contentWidth - 8));
+          const height = lines.length * 4.6 + 8;
+          ensureSpace(height + 3);
+          doc.setFillColor(index % 2 ? 251 : 245, index % 2 ? 252 : 249, index % 2 ? 253 : 251);
+          doc.roundedRect(left, y - 4, contentWidth, height, 2, 2, "F");
+          doc.setTextColor(25, 59, 87);
+          doc.setFontSize(8.5);
+          doc.text(lines, left + 4, y + 1);
+          y += height + 3;
+        });
+      }
+
+      ensureSpace(58);
+      y += 6;
+      doc.setTextColor(96, 117, 138);
+      doc.setFontSize(8.5);
+      doc.text("Biên bản được lập từ dữ liệu đã chốt trên hệ thống AssetMaster.", left, y);
+      y += 8;
+      const signatureColumns = [left + 25, left + contentWidth / 2, right - 25];
+      const signatureLabels = ["NGƯỜI KIỂM KÊ", "ĐẠI DIỆN ĐƠN VỊ QUẢN LÝ", "NGƯỜI PHÊ DUYỆT"];
+      doc.setTextColor(25, 59, 87);
+      doc.setFontSize(8.5);
+      signatureLabels.forEach((label, index) => doc.text(label, signatureColumns[index], y, { align: "center" }));
+      y += 5;
+      doc.setTextColor(96, 117, 138);
+      doc.setFontSize(7.5);
+      signatureColumns.forEach((column) => doc.text("(Ký, ghi rõ họ tên)", column, y, { align: "center" }));
+      y += 25;
+      signatureColumns.forEach((column) => doc.line(column - 21, y, column + 21, y));
+      doc.save(`assetmaster-bien-ban-kiem-ke-${selectedAudit.referenceCode}.pdf`);
+      toast.success("Đã xuất biên bản kiểm kê đã chốt ra PDF.", { id: loadingToast });
+    } catch (error) {
+      console.error("[AuditPage] Finalized audit minutes PDF export failed", error);
+      toast.error(error instanceof Error ? error.message : "Không thể xuất biên bản kiểm kê PDF.", { id: loadingToast });
+    } finally {
+      setIsExportingFinalizedMinutes(false);
+    }
+  };
+
   return (
     <div className={shell}>
       <div className="mx-auto max-w-[1500px]">
@@ -1004,6 +1109,8 @@ export function AuditPage() {
           </div>
 
           <div className="flex flex-col gap-2 border-b border-[#E7EEF3] bg-[#FBFCFD] px-5 py-3 sm:flex-row sm:items-center sm:justify-between"><div className="text-xs text-[#71869A]">{isAuditLocked ? "Kết quả đã được chốt; thao tác ghi nhận, quét QR và nhập Excel đã khóa." : summary.pending > 0 ? `Còn ${summary.pending} tài sản chưa kiểm, cần hoàn tất trước khi chốt biên bản.` : "Tất cả tài sản đã có kết quả, sẵn sàng chốt biên bản."}</div>{isAuditLocked ? <span className="inline-flex w-fit items-center rounded-full bg-[#E6F6F2] px-3 py-1.5 text-xs font-extrabold text-[#087A6A]">Đã chốt · Dữ liệu khóa</span> : <button type="button" disabled={!isAdmin || summary.pending > 0 || finalizeAuditMutation.isPending} onClick={() => setIsFinalizeDialogOpen(true)} className="inline-flex min-h-10 w-fit items-center justify-center rounded-lg bg-[#102A43] px-4 py-2 text-xs font-bold text-white transition hover:bg-[#193B57] disabled:cursor-not-allowed disabled:opacity-60">{finalizeAuditMutation.isPending ? "Đang chốt..." : "Chốt biên bản"}</button>}</div>
+
+          {selectedAudit.status === "completed" && <div className="flex justify-end border-b border-[#E7EEF3] bg-[#F4FBFA] px-5 py-3"><button type="button" disabled={isExportingFinalizedMinutes} onClick={() => void exportFinalizedAuditMinutes()} className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg border border-[#8BCDC6] bg-white px-4 py-2 text-xs font-bold text-[#087A6A] transition hover:bg-[#ECF8F7] disabled:cursor-not-allowed disabled:opacity-60"><FileText size={15} />{isExportingFinalizedMinutes ? "Đang tạo biên bản..." : "Biên bản đã chốt (PDF)"}</button></div>}
 
           <div aria-disabled={isAuditLocked} className={isAuditLocked ? "pointer-events-none select-none opacity-60" : ""}>
 

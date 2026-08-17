@@ -638,6 +638,12 @@ describe("maintenance history and filter layout contract", () => {
     expect(operations).toContain("finalizeAuditMutation");
     expect(operations).toContain("Chốt biên bản");
     expect(operations).toContain("Đã chốt · Dữ liệu khóa");
+    expect(operations).toContain("exportFinalizedAuditMinutes");
+    expect(operations).toContain("BIÊN BẢN KIỂM KÊ TÀI SẢN");
+    expect(operations).toContain("Biên bản đã chốt (PDF)");
+    expect(operations).toContain("NGƯỜI KIỂM KÊ");
+    expect(operations).toContain("ĐẠI DIỆN ĐƠN VỊ QUẢN LÝ");
+    expect(operations).toContain("NGƯỜI PHÊ DUYỆT");
     expect(operations).toContain("Lịch sử nhập Excel");
     expect(operations).toContain("auditImportHistoryQuery");
     expect(operations).toContain("Hiện trạng thực tế");
