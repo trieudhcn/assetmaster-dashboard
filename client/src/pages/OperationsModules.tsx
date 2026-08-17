@@ -453,15 +453,44 @@ const auditSessionStatusLabels = {
   cancelled: "Đã hủy",
 } as const;
 
+const auditAssetStatusLabels: Record<string, string> = {
+  available: "Sẵn có",
+  assigned: "Đang cấp phát",
+  maintenance: "Bảo trì",
+  returned_to_vendor: "Trả nhà cung cấp",
+  retired: "Ngừng sử dụng",
+  lost: "Thất lạc",
+  damaged: "Hư hỏng",
+};
+
+const auditAssetStatusLabel = (status: string | null | undefined) => status ? auditAssetStatusLabels[status] || status : "Chưa xác định";
+
 export function AuditPage() {
   const { user } = useAuth();
   const isAdmin = user?.role === "admin";
   const [name, setName] = useState("");
   const [scheduledDate, setScheduledDate] = useState("");
   const [auditRecurrenceDays, setAuditRecurrenceDays] = useState("");
-  const [selectedSessionId, setSelectedSessionId] = useState<number | null>(null);
+  const [selectedSessionId, setSelectedSessionId] = useState<number | null>(() => {
+    const sessionId = Number(new URLSearchParams(window.location.search).get("auditSession"));
+    return Number.isInteger(sessionId) && sessionId > 0 ? sessionId : null;
+  });
   const [assetId, setAssetId] = useState("");
   const [itemEdits, setItemEdits] = useState<Record<number, AuditItemDraft>>({});
+
+  const openAuditSession = (sessionId: number) => {
+    const url = new URL(window.location.href);
+    url.searchParams.set("view", "audit");
+    url.searchParams.set("auditSession", String(sessionId));
+    window.history.pushState({}, "", url);
+    setSelectedSessionId(sessionId);
+  };
+  const closeAuditSession = () => {
+    const url = new URL(window.location.href);
+    url.searchParams.delete("auditSession");
+    window.history.pushState({}, "", url);
+    setSelectedSessionId(null);
+  };
 
   const auditsQuery = trpc.audits.list.useQuery();
   const assetsQuery = trpc.assets.list.useQuery();
@@ -472,7 +501,7 @@ export function AuditPage() {
       setName("");
       setScheduledDate("");
       setAuditRecurrenceDays("");
-      setSelectedSessionId(id);
+      openAuditSession(id);
       toast.success("Đã tạo đợt kiểm kê.");
     },
     onError: (error) => toast.error(error.message || "Không thể tạo đợt kiểm kê."),
@@ -505,6 +534,15 @@ export function AuditPage() {
   const assetById = new Map(assets.map((asset) => [asset.id, asset]));
   const alreadyAddedAssetIds = new Set(auditItems.map((item) => item.assetId));
   const availableAssets = assets.filter((asset) => !alreadyAddedAssetIds.has(asset.id));
+
+  useEffect(() => {
+    const syncAuditSessionFromUrl = () => {
+      const sessionId = Number(new URLSearchParams(window.location.search).get("auditSession"));
+      setSelectedSessionId(Number.isInteger(sessionId) && sessionId > 0 ? sessionId : null);
+    };
+    window.addEventListener("popstate", syncAuditSessionFromUrl);
+    return () => window.removeEventListener("popstate", syncAuditSessionFromUrl);
+  }, []);
 
   const draftFor = (item: (typeof auditItems)[number]): AuditItemDraft => itemEdits[item.id] || {
     actualStatus: item.actualStatus || "",
@@ -545,13 +583,14 @@ export function AuditPage() {
       <div className="mx-auto max-w-[1500px]">
         <div className="mb-7 flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
           <div>
-            <div className="mb-2 flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.16em] text-[#0F8C8C]"><span className="h-1.5 w-1.5 rounded-full bg-[#0F8C8C]" />Inventory verification</div>
-            <h1 className="font-display text-[30px] font-extrabold tracking-[-0.04em] text-[#102A43]">Kiểm kê tài sản</h1>
-            <p className="mt-1 text-sm text-[#71869A]">Đối chiếu expected/actual, ghi nhận chênh lệch và lưu lịch sử theo từng tài sản.</p>
+            <div className="mb-2 flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.16em] text-[#0F8C8C]"><span className="h-1.5 w-1.5 rounded-full bg-[#0F8C8C]" />Đối chiếu kiểm kê</div>
+            <h1 className="font-display text-[30px] font-extrabold tracking-[-0.04em] text-[#102A43]">{selectedAudit ? selectedAudit.name : "Kiểm kê tài sản"}</h1>
+            <p className="mt-1 text-sm text-[#71869A]">{selectedAudit ? `${selectedAudit.referenceCode} · Đối chiếu trạng thái dự kiến với thực tế kiểm kê.` : "Lập đợt kiểm kê, đối chiếu trạng thái dự kiến với thực tế và xử lý chênh lệch theo từng tài sản."}</p>
           </div>
-          <div className="rounded-lg border border-[#CDE5E5] bg-[#ECF8F7] px-3 py-2 text-xs font-semibold text-[#087A6A]">{isAdmin ? "Bạn có thể tạo đợt và ghi nhận kết quả kiểm kê." : "Chỉ quản trị viên có thể ghi nhận kết quả kiểm kê."}</div>
+          {selectedAudit ? <button onClick={closeAuditSession} className="inline-flex min-h-10 items-center justify-center rounded-lg border border-[#CDE5E5] bg-white px-4 py-2 text-xs font-bold text-[#087A6A] transition hover:bg-[#ECF8F7]">← Danh sách đợt kiểm kê</button> : <div className="rounded-lg border border-[#CDE5E5] bg-[#ECF8F7] px-3 py-2 text-xs font-semibold text-[#087A6A]">{isAdmin ? "Bạn có thể tạo đợt và ghi nhận kết quả kiểm kê." : "Chỉ quản trị viên có thể ghi nhận kết quả kiểm kê."}</div>}
         </div>
 
+        {!selectedAudit && <>
         <OperationalReminderPanel />
 
         <section className={`${card} p-5`}>
@@ -571,17 +610,18 @@ export function AuditPage() {
         ) : (
           <section className="mt-5">
             <div className="mb-3 flex items-center justify-between"><h2 className="text-sm font-extrabold text-[#193B57]">Các đợt kiểm kê</h2><span className="text-xs font-bold text-[#60758A]">{auditSessions.length} đợt</span></div>
-            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+            <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
               {auditsQuery.isLoading && <div className={`${card} col-span-full p-8 text-center text-sm text-[#71869A]`}>Đang tải các đợt kiểm kê...</div>}
               {!auditsQuery.isLoading && auditSessions.map((audit) => {
                 const selected = selectedSessionId === audit.id;
                 const tone = audit.status === "completed" ? "bg-[#E6F6F2] text-[#087A6A]" : audit.status === "cancelled" ? "bg-[#FDEDEE] text-[#B44545]" : audit.status === "active" ? "bg-[#EAF3FF] text-[#2666A8]" : "bg-[#F0F5F8] text-[#60758A]";
-                return <button key={audit.id} onClick={() => setSelectedSessionId(audit.id)} className={`${card} p-5 text-left transition hover:-translate-y-0.5 ${selected ? "ring-2 ring-[#0F8C8C]" : ""}`}><div className="flex items-start justify-between gap-3"><div className="font-mono text-[10px] font-bold text-[#0F8C8C]">{audit.referenceCode}</div><span className={`rounded-full px-2 py-1 text-[10px] font-extrabold ${tone}`}>{auditSessionStatusLabels[audit.status]}</span></div><div className="mt-3 text-sm font-extrabold text-[#193B57]">{audit.name}</div><div className="mt-2 text-xs text-[#8AA0B6]">Tạo ngày {new Date(audit.createdAt).toLocaleDateString("vi-VN")}</div></button>;
+                return <button key={audit.id} onClick={() => openAuditSession(audit.id)} className={`${card} min-h-0 p-4 text-left transition hover:-translate-y-0.5 hover:border-[#8BCDC6] ${selected ? "ring-2 ring-[#0F8C8C]" : ""}`}><div className="flex items-start justify-between gap-3"><div className="font-mono text-[10px] font-bold text-[#0F8C8C]">{audit.referenceCode}</div><span className={`rounded-full px-2 py-1 text-[10px] font-extrabold ${tone}`}>{auditSessionStatusLabels[audit.status]}</span></div><div className="mt-2 truncate text-sm font-extrabold text-[#193B57]">{audit.name}</div><div className="mt-1.5 flex items-center justify-between gap-2 text-[10px] text-[#8AA0B6]"><span>Tạo ngày {new Date(audit.createdAt).toLocaleDateString("vi-VN")}</span><span className="font-bold text-[#087A6A]">Mở chi tiết →</span></div></button>;
               })}
               {!auditsQuery.isLoading && auditSessions.length === 0 && <div className={`${card} col-span-full p-10 text-center text-sm text-[#8AA0B6]`}>Chưa có đợt kiểm kê nào. Hãy tạo một đợt để bắt đầu đối chiếu tài sản.</div>}
             </div>
           </section>
         )}
+        </>}
 
         {selectedAudit && <section className={`mt-5 overflow-hidden ${card}`}>
           <div className="flex flex-col gap-4 border-b border-[#E7EEF3] p-5 lg:flex-row lg:items-end lg:justify-between">
@@ -594,9 +634,9 @@ export function AuditPage() {
             </div>
           </div>
 
-          <div className="border-b border-[#E7EEF3] bg-[#FBFCFD] p-5"><div className="flex flex-col gap-3 sm:flex-row"><SearchableSelect value={assetId} onChange={setAssetId} disabled={!isAdmin || assetsQuery.isLoading || addItemMutation.isPending} className="flex-1" placeholder="Chọn tài sản cần kiểm kê" searchPlaceholder="Tìm mã, tên hoặc trạng thái..." options={[{ value: "", label: "Chọn tài sản cần kiểm kê" }, ...availableAssets.map((asset) => ({ value: String(asset.id), label: `${asset.assetCode} · ${asset.name} · ${asset.status}`, searchText: `${asset.assetCode} ${asset.status}` }))]} /><button disabled={!isAdmin || !assetId || addItemMutation.isPending} onClick={() => { const asset = assets.find((candidate) => candidate.id === Number(assetId)); if (!asset) { toast.error("Chọn một tài sản hợp lệ."); return; } addItemMutation.mutate({ sessionId: selectedAudit.id, assetId: asset.id, expectedStatus: asset.status }); }} className="rounded-lg bg-[#0F8C8C] px-4 py-2 text-xs font-bold text-white hover:bg-[#087A6A] disabled:cursor-not-allowed disabled:opacity-60">{addItemMutation.isPending ? "Đang thêm" : "Thêm tài sản"}</button></div>{availableAssets.length === 0 && !assetsQuery.isLoading && <p className="mt-2 text-xs text-[#8AA0B6]">Tất cả tài sản hiện có đã được thêm vào đợt kiểm kê này.</p>}</div>
+          <div className="border-b border-[#E7EEF3] bg-[#FBFCFD] p-4 sm:p-5"><div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_auto]"><SearchableSelect value={assetId} onChange={setAssetId} disabled={!isAdmin || assetsQuery.isLoading || addItemMutation.isPending} className="w-full" placeholder="Chọn tài sản cần kiểm kê" searchPlaceholder="Tìm mã, tên hoặc trạng thái..." options={[{ value: "", label: "Chọn tài sản cần kiểm kê" }, ...availableAssets.map((asset) => ({ value: String(asset.id), label: `${asset.assetCode} · ${asset.name} · ${auditAssetStatusLabel(asset.status)}`, searchText: `${asset.assetCode} ${asset.status} ${auditAssetStatusLabel(asset.status)}` }))]} /><button disabled={!isAdmin || !assetId || addItemMutation.isPending} onClick={() => { const asset = assets.find((candidate) => candidate.id === Number(assetId)); if (!asset) { toast.error("Chọn một tài sản hợp lệ."); return; } addItemMutation.mutate({ sessionId: selectedAudit.id, assetId: asset.id, expectedStatus: asset.status }); }} className="min-h-11 rounded-lg bg-[#0F8C8C] px-5 py-2 text-xs font-bold text-white hover:bg-[#087A6A] disabled:cursor-not-allowed disabled:opacity-60">{addItemMutation.isPending ? "Đang thêm" : "Thêm tài sản"}</button></div>{availableAssets.length === 0 && !assetsQuery.isLoading && <p className="mt-2 text-xs text-[#8AA0B6]">Tất cả tài sản hiện có đã được thêm vào đợt kiểm kê này.</p>}</div>
 
-          {auditItemsQuery.isError ? <div className="m-5 rounded-xl border border-[#F2D596] bg-[#FFF9EB] p-4 text-sm"><div className="flex items-center gap-2 font-bold text-[#A86B00]"><AlertTriangle size={16} />Không thể tải chi tiết kiểm kê</div><p className="mt-1 text-xs text-[#71869A]">{auditItemsQuery.error.message || "Vui lòng thử lại."}</p><button onClick={() => auditItemsQuery.refetch()} className="mt-3 rounded-lg border border-[#F2D596] px-3 py-2 text-xs font-bold text-[#A86B00] hover:bg-white">Thử lại</button></div> : <div className="mobile-table-scroll overflow-x-auto"><table className="w-full min-w-[1160px] text-left text-xs"><thead className="bg-[#FCFDFE] text-[10px] uppercase tracking-[.12em] text-[#8AA0B6]"><tr><th className="px-5 py-3">Tài sản</th><th className="px-4 py-3">Expected</th><th className="px-4 py-3">Actual</th><th className="px-4 py-3">Kết quả</th><th className="px-4 py-3">Ghi chú / lịch sử</th><th className="px-5 py-3 text-right">Lưu</th></tr></thead><tbody>{auditItemsQuery.isLoading && <tr><td colSpan={6}><ModalTableSkeleton rows={5} columns={6} /></td></tr>}{!auditItemsQuery.isLoading && auditItems.map((item) => { const asset = assetById.get(item.assetId); const draft = draftFor(item); const isDiscrepancy = draft.result === "missing" || draft.result === "mismatch"; const badgeTone = draft.result === "matched" ? "bg-[#E6F6F2] text-[#087A6A]" : isDiscrepancy ? "bg-[#FDEDEE] text-[#B44545]" : "bg-[#FFF5DC] text-[#A86B00]"; return <tr key={item.id} className={`border-t border-[#EDF2F5] align-top ${isDiscrepancy ? "bg-[#FFF9FA]" : ""}`}><td className="px-5 py-4"><div className="font-bold text-[#193B57]">{asset?.name || `Tài sản #${item.assetId}`}</div><div className="mt-1 font-mono text-[10px] text-[#0F8C8C]">{asset?.assetCode || "Tài sản đã bị lưu trữ"}</div><div className="mt-1 text-[10px] text-[#8AA0B6]">Trạng thái hệ thống: {asset?.status || "—"}</div></td><td className="px-4 py-4"><span className="rounded-full bg-[#F0F5F8] px-2 py-1 text-[10px] font-bold text-[#60758A]">{item.expectedStatus || "Chưa xác định"}</span></td><td className="px-4 py-4"><SearchableSelect value={draft.actualStatus} onChange={(value) => updateDraft(item, { actualStatus: value })} disabled={!isAdmin || recordItemMutation.isPending} className="min-w-[140px]" placeholder="Chưa ghi nhận" searchPlaceholder="Tìm trạng thái thực tế..." options={[{ value: "", label: "Chưa ghi nhận" }, { value: "available", label: "Sẵn có" }, { value: "assigned", label: "Đang cấp phát" }, { value: "maintenance", label: "Bảo trì" }, { value: "retired", label: "Ngừng sử dụng" }, { value: "lost", label: "Thất lạc" }, { value: "damaged", label: "Hư hỏng" }]} /></td><td className="px-4 py-4"><SearchableSelect value={draft.result} onChange={(value) => updateDraft(item, { result: value as AuditItemDraft["result"] })} disabled={!isAdmin || recordItemMutation.isPending} className="min-w-[145px]" searchPlaceholder="Tìm kết quả..." options={[{ value: "pending", label: "Chưa kiểm" }, { value: "matched", label: "Khớp" }, { value: "mismatch", label: "Chênh lệch" }, { value: "missing", label: "Không tìm thấy" }]} /><span className={`mt-2 inline-flex rounded-full px-2 py-1 text-[10px] font-extrabold ${badgeTone}`}>{auditResultLabels[draft.result]}</span></td><td className="px-4 py-4"><textarea disabled={!isAdmin || recordItemMutation.isPending} value={draft.note} onChange={(event) => updateDraft(item, { note: event.target.value })} placeholder="Mô tả hiện trạng, vị trí hoặc lý do chênh lệch..." className="min-h-[70px] w-[250px] resize-y rounded-md border border-[#DDE7F0] p-2 text-xs leading-5 text-[#193B57] outline-none focus:border-[#0F8C8C] disabled:cursor-not-allowed disabled:opacity-60" />{item.checkedAt && <div className="mt-2 flex items-center gap-1 text-[10px] text-[#8AA0B6]"><CheckCircle2 size={11} />Ghi nhận {new Date(item.checkedAt).toLocaleString("vi-VN")}</div>}</td><td className="px-5 py-4 text-right"><div className="flex flex-col items-end gap-2"><button disabled={!isAdmin || recordItemMutation.isPending} onClick={() => recordItem(item)} className="inline-flex items-center gap-1.5 rounded-md bg-[#0F8C8C] px-3 py-2 text-[10px] font-bold text-white hover:bg-[#087A6A] disabled:cursor-not-allowed disabled:opacity-60"><Save size={13} />{recordItemMutation.isPending ? "Đang lưu" : "Lưu kết quả"}</button><button disabled={!isAdmin || recordItemMutation.isPending} onClick={() => updateDraft(item, { actualStatus: "", result: "missing", note: draft.note || "Không tìm thấy tại vị trí kiểm kê." })} className="text-[10px] font-bold text-[#B44545] hover:underline disabled:cursor-not-allowed disabled:opacity-60">Đánh dấu thất lạc</button></div></td></tr>; })}</tbody></table>{!auditItemsQuery.isLoading && auditItems.length === 0 && <ModuleEmptyState module="audit" title="Chưa có tài sản trong đợt kiểm kê" description="Hãy chọn tài sản để bắt đầu đối chiếu và ghi nhận kết quả kiểm kê." />}</div>}
+          {auditItemsQuery.isError ? <div className="m-5 rounded-xl border border-[#F2D596] bg-[#FFF9EB] p-4 text-sm"><div className="flex items-center gap-2 font-bold text-[#A86B00]"><AlertTriangle size={16} />Không thể tải chi tiết kiểm kê</div><p className="mt-1 text-xs text-[#71869A]">{auditItemsQuery.error.message || "Vui lòng thử lại."}</p><button onClick={() => auditItemsQuery.refetch()} className="mt-3 rounded-lg border border-[#F2D596] px-3 py-2 text-xs font-bold text-[#A86B00] hover:bg-white">Thử lại</button></div> : <div className="mobile-table-scroll overflow-x-auto md:overflow-visible"><table className="w-full min-w-[1080px] text-left text-xs"><thead className="bg-[#FCFDFE] text-[10px] uppercase tracking-[.12em] text-[#8AA0B6]"><tr><th className="px-5 py-3">Tài sản</th><th className="px-4 py-3">Trạng thái dự kiến</th><th className="px-4 py-3">Trạng thái thực tế</th><th className="px-4 py-3">Kết quả</th><th className="px-4 py-3">Ghi chú / lịch sử</th><th className="px-5 py-3 text-right">Lưu</th></tr></thead><tbody>{auditItemsQuery.isLoading && <tr><td colSpan={6}><ModalTableSkeleton rows={5} columns={6} /></td></tr>}{!auditItemsQuery.isLoading && auditItems.map((item) => { const asset = assetById.get(item.assetId); const draft = draftFor(item); const isDiscrepancy = draft.result === "missing" || draft.result === "mismatch"; const badgeTone = draft.result === "matched" ? "bg-[#E6F6F2] text-[#087A6A]" : isDiscrepancy ? "bg-[#FDEDEE] text-[#B44545]" : "bg-[#FFF5DC] text-[#A86B00]"; return <tr key={item.id} className={`border-t border-[#EDF2F5] align-top ${isDiscrepancy ? "bg-[#FFF9FA]" : ""}`}><td className="px-5 py-4"><div className="font-bold text-[#193B57]">{asset?.name || `Tài sản #${item.assetId}`}</div><div className="mt-1 font-mono text-[10px] text-[#0F8C8C]">{asset?.assetCode || "Tài sản đã bị lưu trữ"}</div><div className="mt-1 text-[10px] text-[#8AA0B6]">Trạng thái hệ thống: {auditAssetStatusLabel(asset?.status)}</div></td><td className="px-4 py-4"><span className="rounded-full bg-[#F0F5F8] px-2 py-1 text-[10px] font-bold text-[#60758A]">{auditAssetStatusLabel(item.expectedStatus)}</span></td><td className="px-4 py-4"><SearchableSelect value={draft.actualStatus} onChange={(value) => updateDraft(item, { actualStatus: value })} disabled={!isAdmin || recordItemMutation.isPending} className="min-w-[185px]" placeholder="Chưa ghi nhận" searchPlaceholder="Tìm trạng thái thực tế..." options={[{ value: "", label: "Chưa ghi nhận" }, { value: "available", label: "Sẵn có" }, { value: "assigned", label: "Đang cấp phát" }, { value: "maintenance", label: "Bảo trì" }, { value: "retired", label: "Ngừng sử dụng" }, { value: "lost", label: "Thất lạc" }, { value: "damaged", label: "Hư hỏng" }]} /></td><td className="px-4 py-4"><SearchableSelect value={draft.result} onChange={(value) => updateDraft(item, { result: value as AuditItemDraft["result"] })} disabled={!isAdmin || recordItemMutation.isPending} className="min-w-[155px]" searchPlaceholder="Tìm kết quả..." options={[{ value: "pending", label: "Chưa kiểm" }, { value: "matched", label: "Khớp" }, { value: "mismatch", label: "Chênh lệch" }, { value: "missing", label: "Không tìm thấy" }]} /><span className={`mt-2 inline-flex rounded-full px-2 py-1 text-[10px] font-extrabold ${badgeTone}`}>{auditResultLabels[draft.result]}</span></td><td className="px-4 py-4"><textarea disabled={!isAdmin || recordItemMutation.isPending} value={draft.note} onChange={(event) => updateDraft(item, { note: event.target.value })} placeholder="Mô tả hiện trạng, vị trí hoặc lý do chênh lệch..." className="min-h-[70px] w-[250px] resize-y rounded-md border border-[#DDE7F0] p-2 text-xs leading-5 text-[#193B57] outline-none focus:border-[#0F8C8C] disabled:cursor-not-allowed disabled:opacity-60" />{item.checkedAt && <div className="mt-2 flex items-center gap-1 text-[10px] text-[#8AA0B6]"><CheckCircle2 size={11} />Ghi nhận {new Date(item.checkedAt).toLocaleString("vi-VN")}</div>}</td><td className="px-5 py-4 text-right"><div className="flex flex-col items-end gap-2"><button disabled={!isAdmin || recordItemMutation.isPending} onClick={() => recordItem(item)} className="inline-flex items-center gap-1.5 rounded-md bg-[#0F8C8C] px-3 py-2 text-[10px] font-bold text-white hover:bg-[#087A6A] disabled:cursor-not-allowed disabled:opacity-60"><Save size={13} />{recordItemMutation.isPending ? "Đang lưu" : "Lưu kết quả"}</button><button disabled={!isAdmin || recordItemMutation.isPending} onClick={() => updateDraft(item, { actualStatus: "", result: "missing", note: draft.note || "Không tìm thấy tại vị trí kiểm kê." })} className="text-[10px] font-bold text-[#B44545] hover:underline disabled:cursor-not-allowed disabled:opacity-60">Đánh dấu thất lạc</button></div></td></tr>; })}</tbody></table>{!auditItemsQuery.isLoading && auditItems.length === 0 && <ModuleEmptyState module="audit" title="Chưa có tài sản trong đợt kiểm kê" description="Hãy chọn tài sản để bắt đầu đối chiếu và ghi nhận kết quả kiểm kê." />}</div>}
         </section>}
       </div>
     </div>

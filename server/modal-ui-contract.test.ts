@@ -584,6 +584,17 @@ describe("empty illustration, modal skeleton and motion preference", () => {
 
 
 describe("maintenance history and filter layout contract", () => {
+  it("uses a dedicated audit session detail view with Vietnamese status labels", () => {
+    const operations = readProjectFile("client/src/pages/OperationsModules.tsx");
+
+    expect(operations).toContain('url.searchParams.set("auditSession", String(sessionId))');
+    expect(operations).toContain("Danh sách đợt kiểm kê");
+    expect(operations).toContain("Trạng thái dự kiến");
+    expect(operations).toContain("Trạng thái thực tế");
+    expect(operations).toContain("auditAssetStatusLabel(item.expectedStatus)");
+    expect(operations).toContain("overflow-x-auto md:overflow-visible");
+  });
+
   it("exposes a per-maintenance-ticket history drawer and protected history query", () => {
     const operations = readProjectFile("client/src/pages/OperationsModules.tsx");
     const router = readProjectFile("server/routers.ts");

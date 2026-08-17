@@ -1174,3 +1174,13 @@
 - [x] Hiển thị nhãn ngắn gọn “Người thực hiện: [Tên]”.
 - [x] Bổ sung hồi quy, kiểm thử TypeScript, Vitest và production build.
 - [x] Lưu checkpoint phát hành cho phiên này.
+
+## Current Session — Audit Session Detail Experience
+
+- [x] Rà soát màn hình Kiểm kê, dữ liệu đợt kiểm kê và cấu trúc điều hướng hiện tại.
+- [x] Thu gọn danh sách đợt kiểm kê, nhường không gian cho phần thao tác chi tiết.
+- [x] Tạo trang chi tiết riêng cho từng đợt kiểm kê, có lối vào từ danh sách đợt.
+- [x] Chuẩn hóa Expected, Actual, available và các nhãn liên quan sang tiếng Việt.
+- [x] Tối ưu vùng chọn tài sản và dropdown Thực tế để không bị thiếu không gian.
+- [x] Bổ sung hồi quy, kiểm thử TypeScript, Vitest, production build và responsive.
+- [x] Lưu checkpoint phát hành cho phiên này.
