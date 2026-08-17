@@ -6,7 +6,10 @@ const mocks = vi.hoisted(() => ({
   createAuditSession: vi.fn(),
   createAuditItem: vi.fn(),
   updateAuditItem: vi.fn(),
+  updateAuditSession: vi.fn(),
   recordActivity: vi.fn(),
+  getAuditItemById: vi.fn(),
+  getAuditSession: vi.fn(),
   getMaintenanceTicket: vi.fn(),
   getNextMaintenanceTicketSequence: vi.fn(),
   getAssetById: vi.fn(),
@@ -16,7 +19,9 @@ const mocks = vi.hoisted(() => ({
   listMaintenanceTickets: vi.fn(),
   listMaintenanceTicketsByAsset: vi.fn(),
   listAuditSessions: vi.fn(),
+  listAuditItems: vi.fn(),
   listActivityLogs: vi.fn(),
+  listActivityLogsByEntity: vi.fn(),
   storagePut: vi.fn(),
 }));
 
@@ -32,6 +37,8 @@ vi.mock("./db", () => ({
   createMaintenanceTicket: mocks.createMaintenanceTicket,
   getActiveDepartmentById: vi.fn(),
   getAssetById: mocks.getAssetById,
+  getAuditItemById: mocks.getAuditItemById,
+  getAuditSession: mocks.getAuditSession,
   getAssetCategoryById: mocks.getAssetCategoryById,
   getCompany: vi.fn(),
   getDepartmentByCode: vi.fn(),
@@ -46,7 +53,7 @@ vi.mock("./db", () => ({
   getMaintenanceTicket: mocks.getMaintenanceTicket,
   getNextMaintenanceTicketSequence: mocks.getNextMaintenanceTicketSequence,
   listAssets: vi.fn(),
-  listAuditItems: vi.fn(),
+  listAuditItems: mocks.listAuditItems,
   listAuditSessions: mocks.listAuditSessions,
   listDepartments: vi.fn(),
   listAllDepartments: vi.fn(),
@@ -61,12 +68,14 @@ vi.mock("./db", () => ({
   listMaintenanceTickets: mocks.listMaintenanceTickets,
   listMaintenanceTicketsByAsset: mocks.listMaintenanceTicketsByAsset,
   listActivityLogs: mocks.listActivityLogs,
+  listActivityLogsByEntity: mocks.listActivityLogsByEntity,
   listUsers: vi.fn(),
   recordActivity: mocks.recordActivity,
   saveCompany: vi.fn(),
   transitionHandoverStatus: vi.fn(),
   updateAsset: mocks.updateAsset,
   updateAuditItem: mocks.updateAuditItem,
+  updateAuditSession: mocks.updateAuditSession,
   updateHandover: vi.fn(),
   updateMaintenanceTicket: mocks.updateMaintenanceTicket,
   updateDepartment: vi.fn(),
@@ -101,16 +110,21 @@ describe("operations management", () => {
     mocks.createAuditItem.mockResolvedValue(50);
     mocks.updateMaintenanceTicket.mockResolvedValue(undefined);
     mocks.updateAuditItem.mockResolvedValue(undefined);
+    mocks.updateAuditSession.mockResolvedValue(undefined);
     mocks.recordActivity.mockResolvedValue(undefined);
     mocks.getMaintenanceTicket.mockResolvedValue({ id: 30, assetId: 8, ticketCode: "BT-2026-002", ticketYear: 2026, ticketSequence: 2, status: "open", description: "Màn hình thiết bị bị nứt sau va chạm." });
     mocks.getNextMaintenanceTicketSequence.mockResolvedValue(1);
     mocks.listMaintenanceTickets.mockResolvedValue([]);
     mocks.listMaintenanceTicketsByAsset.mockResolvedValue([]);
     mocks.listAuditSessions.mockResolvedValue([]);
+    mocks.listAuditItems.mockResolvedValue([{ id: 50, auditSessionId: 40, assetId: 8, result: "matched" }]);
     mocks.listActivityLogs.mockResolvedValue([]);
+    mocks.listActivityLogsByEntity.mockResolvedValue([]);
     mocks.storagePut.mockResolvedValue({ key: "maintenance/30/chung-tu.pdf", url: "/manus-storage/maintenance/30/chung-tu.pdf" });
     const asset = { id: 8, assetCode: "LT00008", name: "Laptop QA", isArchived: false, status: "available" };
     mocks.getAssetById.mockResolvedValue(asset as any);
+    mocks.getAuditItemById.mockResolvedValue({ id: 50, auditSessionId: 40, assetId: 8 });
+    mocks.getAuditSession.mockResolvedValue({ id: 40, referenceCode: "KK-2026-LOCK", status: "draft" });
     mocks.getAssetCategoryById.mockImplementation(async (id: number) => id === 1 ? { id: 1, name: "Laptop", code: "LT", isActive: true } : { id, name: "Thiết bị", code: "TB", isActive: true });
   });
 
@@ -246,6 +260,21 @@ describe("operations management", () => {
     expect(mocks.recordActivity).toHaveBeenCalledWith(expect.objectContaining({ entityType: "audit", entityId: 40, action: "excel_imported" }));
 
     await expect(adminCaller.audits.importItems({ sessionId: 40, items: [{ id: 999, actualStatus: null, result: "pending", note: null }] })).rejects.toMatchObject({ code: "BAD_REQUEST" });
+  });
+
+  it("finalizes an audited session, locks later updates, and exposes Excel import history", async () => {
+    mocks.listAuditItems.mockResolvedValue([{ id: 50, auditSessionId: 40, assetId: 8, result: "matched" }] as any);
+    mocks.listActivityLogsByEntity.mockResolvedValue([{ id: 301, action: "excel_imported", actorName: "Quản trị viên", summary: "Nhập Excel và cập nhật 1 kết quả kiểm kê", createdAt: new Date("2026-08-17T03:00:00Z") }, { id: 302, action: "finalized", actorName: "Quản trị viên", summary: "Chốt biên bản", createdAt: new Date() }] as any);
+    const adminCaller = appRouter.createCaller(adminContext);
+
+    await expect(adminCaller.audits.finalize({ sessionId: 40 })).resolves.toEqual({ success: true });
+    expect(mocks.updateAuditSession).toHaveBeenCalledWith(40, expect.objectContaining({ status: "completed", completedAt: expect.any(Date) }));
+    expect(mocks.recordActivity).toHaveBeenCalledWith(expect.objectContaining({ entityType: "audit", entityId: 40, action: "finalized" }));
+    await expect(adminCaller.audits.importHistory({ sessionId: 40 })).resolves.toEqual([expect.objectContaining({ id: 301, action: "excel_imported" })]);
+
+    mocks.getAuditSession.mockResolvedValue({ id: 40, referenceCode: "KK-2026-LOCK", status: "completed" });
+    await expect(adminCaller.audits.recordItem({ id: 50, actualStatus: "available", result: "matched", note: null })).rejects.toMatchObject({ code: "CONFLICT" });
+    await expect(adminCaller.audits.addItem({ sessionId: 40, assetId: 8, expectedStatus: "available" })).rejects.toMatchObject({ code: "CONFLICT" });
   });
 
   it("creates an audit session and adds an asset with its expected status", async () => {

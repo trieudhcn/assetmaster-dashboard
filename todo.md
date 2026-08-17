@@ -1232,3 +1232,11 @@
 - [x] Nhập Excel kiểm kê, kiểm tra dữ liệu và cập nhật kết quả hàng loạt có phản hồi rõ ràng.
 - [x] Bổ sung hồi quy, kiểm thử TypeScript, Vitest, production build và responsive.
 - [x] Lưu checkpoint phát hành cho phiên này.
+
+## Current Session — Audit Finalization & Excel Import History
+
+- [x] Rà soát trạng thái đợt kiểm kê và nhật ký hoạt động nhập Excel hiện có.
+- [x] Thêm thao tác chốt biên bản và khóa toàn bộ chỉnh sửa kết quả kiểm kê.
+- [x] Hiển thị lịch sử các lần nhập Excel theo đợt, gồm thời gian, người thực hiện và số dòng cập nhật.
+- [x] Bổ sung hồi quy, kiểm thử TypeScript, Vitest, production build và responsive.
+- [x] Lưu checkpoint phát hành cho phiên này.

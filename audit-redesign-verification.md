@@ -27,3 +27,7 @@ On desktop, **Xuất tổng tài sản** appears directly beside **Danh sách ki
 ## Import, result filter & scoped export review — 17/08/2026
 
 Desktop presents the result filter, Department scope, Category scope and **Nhập Excel** action in one concise row above the audit table. At 375px, these controls become full-width touch targets in a clear sequence. The export actions and table swipe affordance remain visible without page-level horizontal overflow.
+
+## Finalization & import history review — 17/08/2026
+
+When all results are complete, desktop exposes a clear **Chốt biên bản** action with explanatory text. On a 375px viewport, the action remains a distinct touch target directly below the completion guidance. The **Lịch sử nhập Excel** block stays visible below the scrollable audit table with an empty-state count until an import is recorded.

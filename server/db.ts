@@ -636,6 +636,12 @@ export async function listAuditSessions() {
   return db.select().from(auditSessions).orderBy(desc(auditSessions.createdAt));
 }
 
+export async function getAuditSession(id: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+  return (await db.select().from(auditSessions).where(eq(auditSessions.id, id)).limit(1))[0];
+}
+
 export async function createAuditSession(data: typeof auditSessions.$inferInsert) {
   const db = await getDb();
   if (!db) throw new Error("Database unavailable");
@@ -643,10 +649,22 @@ export async function createAuditSession(data: typeof auditSessions.$inferInsert
   return Number(result[0].insertId);
 }
 
+export async function updateAuditSession(id: number, data: Partial<typeof auditSessions.$inferInsert>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database unavailable");
+  await db.update(auditSessions).set(data).where(eq(auditSessions.id, id));
+}
+
 export async function listAuditItems(sessionId: number) {
   const db = await getDb();
   if (!db) return [];
   return db.select().from(auditItems).where(eq(auditItems.auditSessionId, sessionId));
+}
+
+export async function getAuditItemById(id: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+  return (await db.select().from(auditItems).where(eq(auditItems.id, id)).limit(1))[0];
 }
 
 export async function createAuditItem(data: typeof auditItems.$inferInsert) {

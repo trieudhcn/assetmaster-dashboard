@@ -612,6 +612,7 @@ describe("maintenance history and filter layout contract", () => {
 
   it("supports filtered audit sessions, continuous QR scanning and discrepancy exports", () => {
     const operations = readProjectFile("client/src/pages/OperationsModules.tsx");
+    const router = readProjectFile("server/routers.ts");
 
     expect(operations).toContain('const [auditStatusFilter, setAuditStatusFilter] = useState("all")');
     expect(operations).toContain("filteredAuditSessions");
@@ -634,12 +635,20 @@ describe("maintenance history and filter layout contract", () => {
     expect(operations).toContain("prepareAuditExcelImport");
     expect(operations).toContain("Nhập Excel");
     expect(operations).toContain("Cập nhật ${auditImportPreview.items.length} dòng");
+    expect(operations).toContain("finalizeAuditMutation");
+    expect(operations).toContain("Chốt biên bản");
+    expect(operations).toContain("Đã chốt · Dữ liệu khóa");
+    expect(operations).toContain("Lịch sử nhập Excel");
+    expect(operations).toContain("auditImportHistoryQuery");
     expect(operations).toContain("Hiện trạng thực tế");
     expect(operations).toContain("Ghi chú kiểm kê");
     expect(operations).toContain("Mã QR để quét");
     expect(operations).toContain("sm:max-w-[520px]");
     expect(operations).toContain("Thêm tài sản");
     expect(operations).toContain("Danh sách kiểm kê");
+    expect(router).toContain("importHistory");
+    expect(router).toContain("requireEditableAuditSession");
+    expect(router).toContain("finalize:");
   });
 
   it("exposes a per-maintenance-ticket history drawer and protected history query", () => {
