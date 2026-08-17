@@ -1493,3 +1493,9 @@
 - [x] Rà soát kiến trúc ứng dụng, xác thực hiện tại và các phụ thuộc triển khai.
 - [x] Xây dựng phương án cơ sở dữ liệu tại máy chủ công ty và đăng nhập tài khoản doanh nghiệp.
 - [x] Trình bày lộ trình triển khai, kiểm thử, sao lưu và vận hành nội bộ.
+
+## Current Session — Active Directory / LDAP Guide
+
+- [x] Xác định kiến trúc xác thực AD/LDAP phù hợp và các thông số IT cần chuẩn bị.
+- [x] Soạn quy trình cấu hình tài khoản dịch vụ, TLS, truy vấn LDAP và ánh xạ người dùng.
+- [x] Trình bày kiểm thử đăng nhập, phân quyền, vận hành và xử lý sự cố.
