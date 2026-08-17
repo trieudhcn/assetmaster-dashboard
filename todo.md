@@ -1316,4 +1316,13 @@
 - [x] Cho phép xóa tài sản khỏi đợt Kiểm kê chưa chốt có xác nhận.
 - [x] Cho phép xóa toàn bộ đợt Kiểm kê khi còn trạng thái nháp có xác nhận.
 - [x] Bổ sung hồi quy, kiểm thử TypeScript, Vitest, production build và responsive.
+- [x] Lưu checkpoint phát hành và báo cáo kết quả.
+
+## Current Session — Audit Toolbar & Preview Workbook Colors
+
+- [x] Đưa nút nhập cạnh “Danh sách kiểm kê” và đổi nhãn thành “Nhập file đã kiểm kê”.
+- [x] Sửa vị trí icon kính lúp trong ô tìm kiếm, không che placeholder.
+- [x] Xác nhận rõ thao tác “Xóa khỏi đợt” và giữ an toàn dữ liệu tài sản gốc.
+- [x] Tô màu dòng trong Excel preview theo kết quả/trạng thái tài sản.
+- [x] Bổ sung hồi quy, kiểm thử TypeScript, Vitest, production build và responsive.
 - [ ] Lưu checkpoint phát hành và báo cáo kết quả.

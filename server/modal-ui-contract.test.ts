@@ -638,7 +638,9 @@ describe("maintenance history and filter layout contract", () => {
     expect(operations).toContain("exportDepartmentId");
     expect(operations).toContain("exportCategoryId");
     expect(operations).toContain("prepareAuditExcelImport");
-    expect(operations).toContain("Nhập Excel");
+    expect(operations).toContain("Nhập file đã kiểm kê");
+    expect(operations).toContain("pointer-events-none absolute left-3.5 top-1/2");
+    expect(operations).toContain("FFFFF1D6");
     expect(operations).toContain("Xem lại và xác nhận");
     expect(operations).toContain("finalizeAuditMutation");
     expect(operations).toContain("Chốt biên bản");
