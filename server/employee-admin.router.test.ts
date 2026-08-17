@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const mocks = vi.hoisted(() => ({
   clearUserDivision: vi.fn(),
   countUsersByRole: vi.fn(),
+  listActivityLogsByEntity: vi.fn(),
   countActiveDivisionsByDepartment: vi.fn(),
   createDepartment: vi.fn(),
   createDivision: vi.fn(),
@@ -55,6 +56,7 @@ const mocks = vi.hoisted(() => ({
 vi.mock("./db", () => ({
   clearUserDivision: mocks.clearUserDivision,
   countUsersByRole: mocks.countUsersByRole,
+  listActivityLogsByEntity: mocks.listActivityLogsByEntity,
   countActiveDivisionsByDepartment: mocks.countActiveDivisionsByDepartment,
   createAsset: vi.fn(),
   createAuditItem: vi.fn(),
@@ -180,6 +182,7 @@ describe("employee administration", () => {
     mocks.updateUserDivision.mockResolvedValue(undefined);
     mocks.clearUserDivision.mockResolvedValue(undefined);
     mocks.countUsersByRole.mockResolvedValue(2);
+    mocks.listActivityLogsByEntity.mockResolvedValue([]);
     mocks.updateDepartment.mockResolvedValue(undefined);
     mocks.updateDivision.mockResolvedValue(undefined);
     mocks.updateHandover.mockResolvedValue(undefined);
@@ -331,6 +334,19 @@ describe("employee administration", () => {
     await expect(caller.employees.updateRole({ id: 8, role: "admin" })).resolves.toEqual({ success: true });
     expect(mocks.updateUserRole).toHaveBeenCalledWith(8, "admin");
     expect(mocks.recordActivity).toHaveBeenCalledWith(expect.objectContaining({ entityType: "user", entityId: 8, action: "role_updated" }));
+  });
+
+  it("returns role history for the selected employee", async () => {
+    mocks.listActivityLogsByEntity.mockResolvedValue([
+      { id: 501, entityType: "user", entityId: 8, action: "role_updated", summary: "Cập nhật vai trò thành admin", actorName: "Quản trị viên", createdAt: new Date("2026-08-17T03:00:00Z") },
+      { id: 502, entityType: "user", entityId: 8, action: "updated", summary: "Cập nhật thông tin", actorName: "Quản trị viên", createdAt: new Date("2026-08-16T03:00:00Z") },
+    ]);
+    const caller = appRouter.createCaller(adminContext);
+
+    await expect(caller.employees.roleHistory({ userId: 8 })).resolves.toEqual([
+      expect.objectContaining({ id: 501, action: "role_updated" }),
+    ]);
+    expect(mocks.listActivityLogsByEntity).toHaveBeenCalledWith("user", 8);
   });
 
   it("prevents an administrator from lowering their own role", async () => {

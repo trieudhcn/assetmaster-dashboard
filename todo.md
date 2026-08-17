@@ -1517,3 +1517,9 @@
 - [x] Rà soát mô hình user, API và giao diện Quản lý nhân sự.
 - [x] Thêm thao tác Admin thay đổi vai trò nhân viên với xác nhận và bảo vệ Admin cuối cùng.
 - [x] Bổ sung hồi quy, kiểm thử phân quyền, kiểm tra giao diện và phát hành cập nhật.
+
+## Current Session — Employee Role Badges and History
+
+- [x] Rà soát nhật ký hoạt động và drawer hồ sơ nhân viên hiện có.
+- [x] Thêm badge vai trò cạnh tên nhân viên và truy vấn lịch sử thay đổi quyền.
+- [x] Hiển thị lịch sử trong hồ sơ, bổ sung hồi quy, kiểm tra giao diện và phát hành cập nhật.

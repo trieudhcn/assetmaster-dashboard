@@ -241,6 +241,7 @@ export const appRouter = router({
   }),
   employees: router({
     list: adminProcedure.query(() => listUsers()),
+    roleHistory: adminProcedure.input(z.object({ userId: z.number().int().positive() })).query(async ({ input }) => (await listActivityLogsByEntity("user", input.userId)).filter((entry) => entry.action === "role_updated")),
     assetHistory: adminProcedure.input(z.object({ userId: z.number().int().positive() })).query(({ input }) => listHandoversByRecipient(input.userId)),
     myAssetHistory: protectedProcedure.query(({ ctx }) => listHandoversByRecipient(ctx.user.id)),
     updateRole: adminProcedure.input(z.object({ id: z.number().int().positive(), role: z.enum(["admin", "user"]) })).mutation(async ({ input, ctx }) => {
