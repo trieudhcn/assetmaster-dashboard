@@ -5,6 +5,7 @@ describe("safe inline UI labels", () => {
   it("chỉ cho Admin lưu nhãn hợp lệ và hỗ trợ Enter/Escape cho thao tác trực tiếp", () => {
     const router = readFileSync(new URL("./routers.ts", import.meta.url), "utf8");
     const editor = readFileSync(new URL("../client/src/components/EditableSectionLabel.tsx", import.meta.url), "utf8");
+    const enhancer = readFileSync(new URL("../client/src/components/LegacySectionLabelEnhancer.tsx", import.meta.url), "utf8");
     const home = readFileSync(new URL("../client/src/pages/Home.tsx", import.meta.url), "utf8");
 
     expect(router).toContain("uiLabels: router");
@@ -17,5 +18,12 @@ describe("safe inline UI labels", () => {
     expect(editor).toContain("Nhấp đúp để chỉnh sửa");
     expect(home).not.toContain("assetmaster-dashboard-pattern_109e8935.png");
     expect(home).toContain('labelKey="dashboard-operations"');
+    expect(enhancer).toContain('fallback: "Danh mục tài sản"');
+    expect(enhancer).toContain('fallback: "Quản lý bàn giao"');
+    expect(enhancer).toContain('fallback: "Vận hành bảo trì"');
+    expect(enhancer).toContain('fallback: "Dữ liệu quản trị trực tiếp"');
+    expect(enhancer).toContain('fallback: "Phân bổ nhân sự"');
+    expect(enhancer).toContain('fallback: "Danh mục nhà cung cấp"');
+    expect(enhancer).toContain("MutationObserver");
   });
 });
