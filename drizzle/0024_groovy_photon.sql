@@ -1,0 +1,1 @@
+ALTER TABLE `companies` ADD `loginBackgroundOverlay` varchar(8);

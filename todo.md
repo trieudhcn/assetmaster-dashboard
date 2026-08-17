@@ -1481,3 +1481,9 @@
 - [x] Bổ sung lưu trữ, tải ảnh nền và cấu hình câu chào đăng nhập dành cho Admin.
 - [x] Hiển thị ảnh nền, câu chào tùy chỉnh và tên công ty đầy đủ trên màn hình đăng nhập.
 - [x] Bổ sung migration, hồi quy, kiểm tra TypeScript, giao diện và phát hành cập nhật.
+
+## Current Session — Login Background Removal and Overlay
+
+- [x] Rà soát cấu hình ảnh nền và màn hình đăng nhập hiện có.
+- [x] Thêm thao tác gỡ ảnh nền và cấu hình lớp phủ sáng/tối trong Cài đặt hệ thống.
+- [x] Áp dụng lớp phủ theo cấu hình, bổ sung hồi quy, kiểm tra và phát hành cập nhật.
