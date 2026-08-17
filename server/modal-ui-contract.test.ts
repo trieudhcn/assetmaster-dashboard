@@ -712,6 +712,22 @@ describe("maintenance history and filter layout contract", () => {
     expect(brandPanel).toContain("assetmaster-pdf-watermark");
   });
 
+  it("builds valid Excel workbooks directly and supports audit review after import", () => {
+    const workbookHelper = readProjectFile("client/src/lib/brandedWorkbook.ts");
+    const operations = readProjectFile("client/src/pages/OperationsModules.tsx");
+    const previewHost = readProjectFile("client/src/components/ExportPreviewHost.tsx");
+    expect(workbookHelper).toContain("copySourceSheets");
+    expect(workbookHelper).not.toContain("brandedWorkbook.xlsx.load");
+    expect(workbookHelper).not.toContain("XLSX.write(workbook");
+    expect(operations).toContain("lastAuditImportSummary");
+    expect(operations).toContain("auditAssetSearch");
+    expect(operations).toContain("auditActualStatusFilter");
+    expect(operations).toContain("Không tìm thấy");
+    expect(operations).toContain("bg-[#FFF1F3]");
+    expect(previewHost).toContain("previewSheetName");
+    expect(previewHost).toContain("Danh sách kiểm kê");
+  });
+
   it("exposes a per-maintenance-ticket history drawer and protected history query", () => {
     const operations = readProjectFile("client/src/pages/OperationsModules.tsx");
     const router = readProjectFile("server/routers.ts");

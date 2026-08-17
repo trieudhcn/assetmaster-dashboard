@@ -1273,7 +1273,7 @@
 - [x] Thêm tùy chọn watermark logo công ty cho toàn bộ PDF xuất.
 - [x] Tích hợp preview vào các thao tác xuất file có trên giao diện.
 - [x] Bổ sung hồi quy, kiểm thử TypeScript, Vitest, production build và xác minh giao diện.
-- [ ] Lưu checkpoint phát hành và báo cáo kết quả.
+- [x] Lưu checkpoint phát hành và báo cáo kết quả.
 
 ## Current Session — Filtered Audit Selection & Round-trip Import
 
@@ -1281,5 +1281,15 @@
 - [x] Thiết kế bộ lọc Phòng ban/Phân loại/Tất cả và chọn nhanh tài sản vào danh sách kiểm kê.
 - [x] Xuất Excel đúng danh sách tài sản đã chọn, kèm lựa chọn hợp lệ cho Trạng thái thực tế và Kết quả.
 - [x] Chuẩn hóa import để cập nhật đúng các dòng trong file kiểm kê đã xuất.
+- [x] Bổ sung hồi quy, kiểm thử TypeScript, Vitest, production build và responsive.
+- [x] Lưu checkpoint phát hành và báo cáo kết quả.
+
+## Current Session — Audit Excel Repair & Review Tools
+
+- [x] Chẩn đoán và sửa workbook Excel không hợp lệ khiến Microsoft Excel phải repair XML.
+- [x] Kiểm chứng file Danh sách kiểm kê mở bình thường, vẫn có danh sách giá trị hợp lệ để import.
+- [x] Thêm thống kê tóm tắt sau import: khớp, chênh lệch và không tìm thấy/thất lạc.
+- [x] Thêm tìm kiếm và lọc trạng thái cho danh sách tài sản đã chọn trước khi xuất.
+- [x] Làm nổi bật các dòng chênh lệch hoặc không tìm thấy bằng màu và biểu tượng cảnh báo.
 - [x] Bổ sung hồi quy, kiểm thử TypeScript, Vitest, production build và responsive.
 - [ ] Lưu checkpoint phát hành và báo cáo kết quả.
