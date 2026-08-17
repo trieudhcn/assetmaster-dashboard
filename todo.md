@@ -1397,3 +1397,11 @@
 - [x] Viết nội dung hướng dẫn riêng cho User và thêm nút truy cập trên trang User.
 - [x] Bổ sung hồi quy, kiểm thử TypeScript, Vitest, production build và trải nghiệm desktop/mobile.
 - [x] Lưu checkpoint phát hành và báo cáo kết quả.
+
+## Current Session — Editable and Searchable Help Center
+
+- [x] Rà soát mô hình nội dung hướng dẫn, phân quyền và luồng dữ liệu hiện có.
+- [x] Thêm lưu trữ nội dung hướng dẫn và giao diện chỉnh sửa dành riêng cho Admin.
+- [x] Thêm tìm kiếm nội dung hướng dẫn cho cả Admin và User.
+- [x] Bổ sung hồi quy, kiểm thử TypeScript, Vitest, production build và trải nghiệm desktop/mobile.
+- [x] Lưu checkpoint phát hành và báo cáo kết quả.

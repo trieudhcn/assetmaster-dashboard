@@ -888,6 +888,10 @@ it("cung cấp trung tâm hướng dẫn theo vai trò và nút hướng dẫn r
   expect(helpCenter).toContain("Quản lý danh mục tài sản");
   expect(helpCenter).toContain("Gửi yêu cầu hoàn trả");
   expect(helpCenter).toContain("UserHelpDialog");
+  expect(helpCenter).toContain("SearchHelpInput");
+  expect(helpCenter).toContain("saveGuide.mutate");
+  expect(helpCenter).toContain("Chỉnh sửa hướng dẫn");
+  expect(helpCenter).toContain("Tìm kiếm hướng dẫn");
   expect(userDashboard).toContain("Hướng dẫn sử dụng");
   expect(userDashboard).toContain('<UserHelpDialog open={helpOpen}');
 });

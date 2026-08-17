@@ -14,6 +14,7 @@ import {
   departments,
   divisions,
   handovers,
+  helpGuides,
   maintenanceTickets,
   type InsertUser,
   userNotificationPreferences,
@@ -473,6 +474,26 @@ export async function saveCompany(data: typeof companies.$inferInsert) {
   if (existing) { await db.update(companies).set(data).where(eq(companies.id, existing.id)); return existing.id; }
   const result = await db.insert(companies).values(data);
   return Number(result[0].insertId);
+}
+
+export async function listHelpGuides() {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(helpGuides).orderBy(helpGuides.audience, helpGuides.guideKey);
+}
+
+export async function saveHelpGuide(data: typeof helpGuides.$inferInsert) {
+  const db = await getDb();
+  if (!db) throw new Error("Database unavailable");
+  await db.insert(helpGuides).values(data).onDuplicateKeyUpdate({ set: {
+    audience: data.audience,
+    title: data.title,
+    description: data.description,
+    steps: data.steps,
+    updatedByUserId: data.updatedByUserId,
+    updatedByName: data.updatedByName,
+    updatedAt: new Date(),
+  } });
 }
 
 export async function listHandovers() {

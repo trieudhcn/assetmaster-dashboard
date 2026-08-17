@@ -38,6 +38,19 @@ export const companies = mysqlTable("companies", {
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
 
+export const helpGuides = mysqlTable("helpGuides", {
+  id: int("id").autoincrement().primaryKey(),
+  guideKey: varchar("guideKey", { length: 96 }).notNull().unique(),
+  audience: mysqlEnum("audience", ["admin", "user"]).notNull(),
+  title: varchar("title", { length: 255 }).notNull(),
+  description: text("description").notNull(),
+  steps: json("steps").notNull(),
+  updatedByUserId: int("updatedByUserId"),
+  updatedByName: varchar("updatedByName", { length: 160 }),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+}, (table) => [index("help_guides_audience_idx").on(table.audience)]);
+
 export const departments = mysqlTable("departments", {
   id: int("id").autoincrement().primaryKey(),
   code: varchar("code", { length: 40 }).notNull().unique(),

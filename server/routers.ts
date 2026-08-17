@@ -44,6 +44,7 @@ import {
   getDivisionByCode,
   getCompany,
   getHandoverById,
+  listHelpGuides,
   getNextHandoverSequence,
   getNextAuditSequence,
   getMaintenanceTicket,
@@ -81,6 +82,7 @@ import {
   listUsers,
   recordActivity,
   saveCompany,
+  saveHelpGuide,
   saveUserNotificationPreferences,
   updateAsset,
   updateAssetCategory,
@@ -794,6 +796,23 @@ export const appRouter = router({
   }),
   activity: router({
     list: adminProcedure.input(z.object({ limit: z.number().int().min(1).max(300).default(100) })).query(({ input }) => listActivityLogs(input.limit)),
+  }),
+  help: router({
+    guides: protectedProcedure.query(async ({ ctx }) => {
+      const guides = await listHelpGuides();
+      return ctx.user!.role === "admin" ? guides : guides.filter((guide) => guide.audience === "user");
+    }),
+    saveGuide: adminProcedure.input(z.object({
+      guideKey: z.string().trim().min(3).max(96).regex(/^[a-z0-9-]+$/),
+      audience: z.enum(["admin", "user"]),
+      title: z.string().trim().min(3).max(255),
+      description: z.string().trim().min(10).max(2000),
+      steps: z.array(z.string().trim().min(3).max(800)).min(1).max(6),
+    })).mutation(async ({ input, ctx }) => {
+      await saveHelpGuide({ ...input, steps: input.steps, updatedByUserId: ctx.user!.id, updatedByName: ctx.user!.name ?? "Quản trị viên" });
+      await recordActivity({ entityType: "helpGuide", entityId: 0, action: "updated", actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: `Cập nhật hướng dẫn: ${input.title}` });
+      return { success: true };
+    }),
   }),
 });
 
