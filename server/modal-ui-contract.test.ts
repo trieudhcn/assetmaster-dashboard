@@ -639,8 +639,17 @@ describe("maintenance history and filter layout contract", () => {
     expect(operations).toContain("exportCategoryId");
     expect(operations).toContain("prepareAuditExcelImport");
     expect(operations).toContain("Nhập file đã kiểm kê");
-    expect(operations).toContain("pointer-events-none absolute left-3.5 top-1/2");
+    expect(operations).toContain('className="flex min-h-[2.45rem] items-center gap-2');
+    expect(operations).toContain('Toaster position="bottom-right"');
+    expect(operations).toContain("Đã nhập file Excel và cập nhật");
     expect(operations).toContain("FFFFF1D6");
+    expect(operations).toContain("FFF1F3F5");
+    expect(operations).toContain("filteredAuditSummary");
+    expect(operations).toContain("Tổng theo bộ lọc");
+    expect(operations).toContain("Thất lạc / không tìm thấy");
+    expect(operations).toContain("AUDIT_ITEMS_PAGE_SIZE = 10");
+    expect(operations).toContain("pagedAuditItems");
+    expect(operations).toContain("Trang {activeAuditItemsPage}/{auditItemsPageCount}");
     expect(operations).toContain("Xem lại và xác nhận");
     expect(operations).toContain("finalizeAuditMutation");
     expect(operations).toContain("Chốt biên bản");

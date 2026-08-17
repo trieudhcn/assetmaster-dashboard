@@ -1325,4 +1325,14 @@
 - [x] Xác nhận rõ thao tác “Xóa khỏi đợt” và giữ an toàn dữ liệu tài sản gốc.
 - [x] Tô màu dòng trong Excel preview theo kết quả/trạng thái tài sản.
 - [x] Bổ sung hồi quy, kiểm thử TypeScript, Vitest, production build và responsive.
-- [ ] Lưu checkpoint phát hành và báo cáo kết quả.
+- [x] Lưu checkpoint phát hành và báo cáo kết quả.
+
+## Current Session — Audit List Feedback, Summary & Pagination
+
+- [x] Hiển thị toast thành công sau import Excel và xóa tài sản khỏi đợt.
+- [x] Chuyển màu nền dòng tiêu đề Excel fieldwork sang xám nhạt, giữ chữ đọc rõ.
+- [x] Sửa triệt để icon tìm kiếm bị đè trong ô lọc danh sách Kiểm kê.
+- [x] Thêm hàng thống kê Khớp, Chênh lệch, Thất lạc phía trên bảng Kiểm kê.
+- [x] Thêm phân trang 10 tài sản/trang với điều hướng mũi tên trái/phải.
+- [x] Bổ sung hồi quy, kiểm thử TypeScript, Vitest, production build và responsive.
+- [x] Lưu checkpoint phát hành và báo cáo kết quả.
