@@ -64,6 +64,13 @@ export async function listUsers() {
   return db.select().from(users).orderBy(desc(users.lastSignedIn));
 }
 
+export async function countUsersByRole(role: "admin" | "user") {
+  const db = await getDb();
+  if (!db) return 0;
+  const rows = await db.select({ id: users.id }).from(users).where(eq(users.role, role));
+  return rows.length;
+}
+
 export async function updateUserRole(id: number, role: "admin" | "user") {
   const db = await getDb();
   if (!db) throw new Error("Database unavailable");

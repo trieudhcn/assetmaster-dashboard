@@ -1511,3 +1511,9 @@
 - [x] Tạo checkpoint backup rõ ràng cho phiên bản hiện tại trước thay đổi triển khai.
 - [x] Xác định kiến trúc chạy nội bộ với Domain Controller/LDAPS, MySQL và kho tệp công ty.
 - [x] Soạn hướng dẫn migration dữ liệu, cấu hình, backup/restore và vận hành nội bộ.
+
+## Current Session — Employee Role Management
+
+- [x] Rà soát mô hình user, API và giao diện Quản lý nhân sự.
+- [x] Thêm thao tác Admin thay đổi vai trò nhân viên với xác nhận và bảo vệ Admin cuối cùng.
+- [x] Bổ sung hồi quy, kiểm thử phân quyền, kiểm tra giao diện và phát hành cập nhật.

@@ -27,6 +27,7 @@ import {
   createVendor,
   createVendorDocument,
   countAssetsByCategoryId,
+  countUsersByRole,
   deleteAssetCategory,
   deleteVendorDocument,
   getAssetById,
@@ -243,6 +244,12 @@ export const appRouter = router({
     assetHistory: adminProcedure.input(z.object({ userId: z.number().int().positive() })).query(({ input }) => listHandoversByRecipient(input.userId)),
     myAssetHistory: protectedProcedure.query(({ ctx }) => listHandoversByRecipient(ctx.user.id)),
     updateRole: adminProcedure.input(z.object({ id: z.number().int().positive(), role: z.enum(["admin", "user"]) })).mutation(async ({ input, ctx }) => {
+      if (input.id === ctx.user!.id && input.role !== "admin") {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "Bạn không thể tự hạ quyền tài khoản quản trị đang sử dụng." });
+      }
+      if (input.role === "user" && (await countUsersByRole("admin")) <= 1) {
+        throw new TRPCError({ code: "CONFLICT", message: "Không thể hạ quyền Admin cuối cùng. Hệ thống phải luôn có ít nhất một quản trị viên." });
+      }
       await updateUserRole(input.id, input.role);
       await recordActivity({ entityType: "user", entityId: input.id, action: "role_updated", actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: `Cập nhật vai trò thành ${input.role}` });
       return { success: true };

@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
   clearUserDivision: vi.fn(),
+  countUsersByRole: vi.fn(),
   countActiveDivisionsByDepartment: vi.fn(),
   createDepartment: vi.fn(),
   createDivision: vi.fn(),
@@ -41,6 +42,7 @@ const mocks = vi.hoisted(() => ({
   storagePut: vi.fn(),
   transitionHandoverStatus: vi.fn(),
   updateUserActiveStatus: vi.fn(),
+  updateUserRole: vi.fn(),
   updateUserDepartment: vi.fn(),
   updateUserDivision: vi.fn(),
   updateDepartment: vi.fn(),
@@ -52,6 +54,7 @@ const mocks = vi.hoisted(() => ({
 
 vi.mock("./db", () => ({
   clearUserDivision: mocks.clearUserDivision,
+  countUsersByRole: mocks.countUsersByRole,
   countActiveDivisionsByDepartment: mocks.countActiveDivisionsByDepartment,
   createAsset: vi.fn(),
   createAuditItem: vi.fn(),
@@ -108,13 +111,13 @@ vi.mock("./db", () => ({
   updateMaintenanceTicket: vi.fn(),
   transitionHandoverStatus: mocks.transitionHandoverStatus,
   updateUserActiveStatus: mocks.updateUserActiveStatus,
+  updateUserRole: mocks.updateUserRole,
   updateUserDepartment: mocks.updateUserDepartment,
   updateUserDivision: mocks.updateUserDivision,
   updateDepartment: mocks.updateDepartment,
   updateDivision: mocks.updateDivision,
   updateVendor: mocks.updateVendor,
   updateBrand: mocks.updateBrand,
-  updateUserRole: vi.fn(),
 }));
 
 vi.mock("./storage", () => ({ storagePut: mocks.storagePut }));
@@ -172,9 +175,11 @@ describe("employee administration", () => {
     mocks.updateBrand.mockResolvedValue(undefined);
     mocks.listDivisions.mockResolvedValue([]);
     mocks.updateUserActiveStatus.mockResolvedValue(undefined);
+    mocks.updateUserRole.mockResolvedValue(undefined);
     mocks.updateUserDepartment.mockResolvedValue(undefined);
     mocks.updateUserDivision.mockResolvedValue(undefined);
     mocks.clearUserDivision.mockResolvedValue(undefined);
+    mocks.countUsersByRole.mockResolvedValue(2);
     mocks.updateDepartment.mockResolvedValue(undefined);
     mocks.updateDivision.mockResolvedValue(undefined);
     mocks.updateHandover.mockResolvedValue(undefined);
@@ -318,6 +323,29 @@ describe("employee administration", () => {
 
     await expect(caller.departments.list()).rejects.toMatchObject({ code: "UNAUTHORIZED" });
     expect(mocks.listDepartments).not.toHaveBeenCalled();
+  });
+
+  it("allows an administrator to change another employee role and records the activity", async () => {
+    const caller = appRouter.createCaller(adminContext);
+
+    await expect(caller.employees.updateRole({ id: 8, role: "admin" })).resolves.toEqual({ success: true });
+    expect(mocks.updateUserRole).toHaveBeenCalledWith(8, "admin");
+    expect(mocks.recordActivity).toHaveBeenCalledWith(expect.objectContaining({ entityType: "user", entityId: 8, action: "role_updated" }));
+  });
+
+  it("prevents an administrator from lowering their own role", async () => {
+    const caller = appRouter.createCaller(adminContext);
+
+    await expect(caller.employees.updateRole({ id: 1, role: "user" })).rejects.toMatchObject({ code: "BAD_REQUEST" });
+    expect(mocks.updateUserRole).not.toHaveBeenCalled();
+  });
+
+  it("prevents lowering the last administrator role", async () => {
+    mocks.countUsersByRole.mockResolvedValue(1);
+    const caller = appRouter.createCaller(adminContext);
+
+    await expect(caller.employees.updateRole({ id: 8, role: "user" })).rejects.toMatchObject({ code: "CONFLICT" });
+    expect(mocks.updateUserRole).not.toHaveBeenCalled();
   });
 
   it("records a lock operation for another employee", async () => {
