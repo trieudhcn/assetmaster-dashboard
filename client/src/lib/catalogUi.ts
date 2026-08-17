@@ -83,6 +83,41 @@ export function buildMaintenanceExportRows<T extends MaintenanceExportAsset>(ass
   }));
 }
 
+export type FilteredAssetExportAsset = {
+  code: string;
+  name: string;
+  category: string;
+  holder: string;
+  status: string;
+  location?: string;
+  serial?: string;
+  supplier?: string;
+  brand?: string;
+  purchaseDate?: string;
+  date?: string;
+  warrantyUntil?: string | number | Date | null;
+  value?: string;
+  note?: string;
+};
+
+export function buildFilteredAssetExportRows<T extends FilteredAssetExportAsset>(assets: T[]) {
+  return assets.map((asset) => ({
+    "Mã tài sản": asset.code,
+    "Tên tài sản": asset.name,
+    "Phân loại": asset.category || "Chưa phân loại",
+    "Người / Phòng giữ": asset.holder || "Chưa bàn giao",
+    "Trạng thái": asset.status,
+    "Vị trí": asset.location || "Chưa cập nhật",
+    "Serial / IMEI": asset.serial || "Chưa cập nhật",
+    "Nhà cung cấp": asset.supplier || "Chưa cập nhật",
+    "Hãng": asset.brand || "Chưa cập nhật",
+    "Ngày mua": asset.purchaseDate || asset.date || "",
+    "Hạn bảo hành": asset.warrantyUntil ? new Date(asset.warrantyUntil).toLocaleDateString("vi-VN") : "Chưa cập nhật",
+    "Giá trị (VNĐ)": Number(String(asset.value || "0").replace(/[^\d-]/g, "")) || 0,
+    "Ghi chú": asset.note || "",
+  }));
+}
+
 export function getHandoverActionTooltip(action: "document" | "print" | "history") {
   const labels = {
     document: "Xem biên bản bàn giao",

@@ -1336,3 +1336,11 @@
 - [x] Thêm phân trang 10 tài sản/trang với điều hướng mũi tên trái/phải.
 - [x] Bổ sung hồi quy, kiểm thử TypeScript, Vitest, production build và responsive.
 - [x] Lưu checkpoint phát hành và báo cáo kết quả.
+
+## Current Session — Asset List Filtered Excel Export
+
+- [x] Rà soát các bộ lọc và dữ liệu hiển thị trong Danh mục tài sản.
+- [x] Thêm nút xuất Excel cho đúng danh sách tài sản sau khi áp dụng bộ lọc.
+- [x] Hiển thị trạng thái đang xuất, thành công và không có dữ liệu phù hợp.
+- [x] Bổ sung hồi quy, kiểm thử TypeScript, Vitest, production build và responsive.
+- [x] Lưu checkpoint phát hành và báo cáo kết quả.

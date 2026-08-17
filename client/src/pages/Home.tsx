@@ -8,7 +8,7 @@ import QRCodeGenerator from "qrcode";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { startLogin } from "@/const";
 import { trpc } from "@/lib/trpc";
-import { buildMaintenanceExportRows, canCreateCatalogOption, filterNamedCatalogOptions, getHandoverActionTooltip, getMaintenanceBadgeCount, getNewMaintenanceRequestBadge, getPaginationWindow, matchesVietnameseSearch, toggleMaintenanceStatusFilter } from "@/lib/catalogUi";
+import { buildFilteredAssetExportRows, buildMaintenanceExportRows, canCreateCatalogOption, filterNamedCatalogOptions, getHandoverActionTooltip, getMaintenanceBadgeCount, getNewMaintenanceRequestBadge, getPaginationWindow, matchesVietnameseSearch, toggleMaintenanceStatusFilter } from "@/lib/catalogUi";
 import { getNotificationTargetLabel, type NotificationTarget } from "@/lib/notificationLinks";
 import { handoverPdfFontUrl, registerVietnamesePdfFont } from "@/lib/handoverPdf";
 import { formatVnd } from "@/lib/formatters";
@@ -758,8 +758,37 @@ function PaginatedAssetCatalogPage({ assets, query, category, status, department
   const { currentPage, totalPages, startIndex, startRecord, endRecord } = getPaginationWindow(assets.length, page, pageSize);
   const pageAssets = assets.slice(startIndex, startIndex + pageSize);
   const pageNumbers = Array.from({ length: totalPages }, (_, index) => index + 1).filter((pageNumber) => totalPages <= 5 || pageNumber === 1 || pageNumber === totalPages || Math.abs(pageNumber - currentPage) <= 1);
+  const filteredAssetExportRows = useMemo(() => buildFilteredAssetExportRows(assets), [assets]);
   const maintenanceExportRows = useMemo(() => buildMaintenanceExportRows(assets), [assets]);
+  const [isExportingFilteredAssets, setIsExportingFilteredAssets] = useState(false);
   const [isExportingMaintenance, setIsExportingMaintenance] = useState(false);
+  const exportFilteredAssetsExcel = () => {
+    if (!filteredAssetExportRows.length) { toast.info("Không có tài sản phù hợp với bộ lọc hiện tại để xuất Excel."); return; }
+    if (isExportingFilteredAssets) return;
+    setIsExportingFilteredAssets(true);
+    const loadingToast = toast.loading("Đang tạo danh sách tài sản theo bộ lọc...");
+    window.setTimeout(async () => {
+      try {
+        const workbook = XLSX.utils.book_new();
+        const sheet = XLSX.utils.json_to_sheet(filteredAssetExportRows);
+        sheet["!cols"] = [{ wch: 16 }, { wch: 34 }, { wch: 20 }, { wch: 24 }, { wch: 18 }, { wch: 24 }, { wch: 22 }, { wch: 24 }, { wch: 20 }, { wch: 16 }, { wch: 18 }, { wch: 18 }, { wch: 36 }];
+        sheet["!freeze"] = { xSplit: 0, ySplit: 1 };
+        XLSX.utils.book_append_sheet(workbook, sheet, "Danh sách tài sản");
+        await writeBrandedWorkbook(workbook, {
+          documentTitle: "DANH SÁCH TÀI SẢN THEO BỘ LỌC",
+          fileName: `assetmaster-danh-sach-tai-san-da-loc-${new Date().toISOString().slice(0, 10)}.xlsx`,
+          description: `Danh sách ${filteredAssetExportRows.length} tài sản theo toàn bộ bộ lọc hiện tại.`
+        });
+        toast.success(`Đã xuất ${filteredAssetExportRows.length} tài sản theo bộ lọc ra Excel.`, { id: loadingToast });
+      } catch (error) {
+        console.error(error);
+        toast.error("Không thể xuất danh sách tài sản theo bộ lọc.", { id: loadingToast });
+      } finally {
+        setIsExportingFilteredAssets(false);
+      }
+    }, 180);
+  };
+
   const exportMaintenanceExcel = () => {
     if (!maintenanceExportRows.length) { toast.info("Không có tài sản đang bảo trì trong phạm vi lọc hiện tại."); return; }
     if (isExportingMaintenance) return;
@@ -785,7 +814,7 @@ function PaginatedAssetCatalogPage({ assets, query, category, status, department
       }
     }, 180);
   };
-  useEffect(() => { setPage(1); }, [query, category, status, department, pageSize]);
+  useEffect(() => { setPage(1); }, [query, category, status, department, vendor, brand, warranty, pageSize]);
   useEffect(() => { setJumpPage(String(currentPage)); }, [currentPage]);
   useEffect(() => {
     const tooltipByPrefix: Array<[string, string]> = [["Hồ sơ", "Xem hồ sơ tài sản"], ["Chỉnh sửa", "Chỉnh sửa tài sản"], ["Mã QR", "Tạo / xem mã QR"], ["Cấp phát", "Tạo phiếu bàn giao"]];
@@ -799,6 +828,14 @@ function PaginatedAssetCatalogPage({ assets, query, category, status, department
     const resetButton = Array.from(document.querySelectorAll<HTMLButtonElement>("button")).find((button) => button.textContent?.trim() === "Đặt lại bộ lọc");
     const controls = resetButton?.parentElement;
     if (!controls) return;
+    const filteredExportButton = document.createElement("button");
+    filteredExportButton.type = "button";
+    filteredExportButton.dataset.filteredAssetExcelExport = "true";
+    filteredExportButton.disabled = !filteredAssetExportRows.length || isExportingFilteredAssets;
+    filteredExportButton.textContent = isExportingFilteredAssets ? "Đang xuất..." : `Xuất danh sách (${filteredAssetExportRows.length})`;
+    filteredExportButton.title = isExportingFilteredAssets ? "Đang tạo file Excel" : filteredAssetExportRows.length ? "Xuất toàn bộ tài sản đang hiển thị sau khi áp dụng bộ lọc" : "Không có tài sản phù hợp với bộ lọc hiện tại";
+    filteredExportButton.className = "flex h-9 items-center justify-center rounded-lg border border-[#C7DDF8] bg-white px-3 text-xs font-bold text-[#2666A8] hover:bg-[#EAF3FF] disabled:cursor-not-allowed disabled:opacity-50";
+    filteredExportButton.addEventListener("click", exportFilteredAssetsExcel);
     const maintenanceButton = document.createElement("button");
     maintenanceButton.type = "button";
     maintenanceButton.dataset.maintenanceFilter = "true";
@@ -823,11 +860,12 @@ function PaginatedAssetCatalogPage({ assets, query, category, status, department
     importButton.className = "flex h-9 items-center justify-center rounded-lg bg-[#0F8C8C] px-3 text-xs font-bold text-white hover:bg-[#087A6A]";
     const openAssetImport = () => window.dispatchEvent(new Event("assetmaster:open-asset-import"));
     importButton.addEventListener("click", openAssetImport);
-    resetButton.before(maintenanceButton);
+    resetButton.before(filteredExportButton);
+    filteredExportButton.after(maintenanceButton);
     maintenanceButton.after(exportButton);
     exportButton.after(importButton);
-    return () => { maintenanceButton.removeEventListener("click", toggleMaintenance); exportButton.removeEventListener("click", exportMaintenanceExcel); importButton.removeEventListener("click", openAssetImport); maintenanceButton.remove(); exportButton.remove(); importButton.remove(); };
-  }, [status, onStatusChange, maintenanceExportRows, exportMaintenanceExcel, isExportingMaintenance]);
+    return () => { filteredExportButton.removeEventListener("click", exportFilteredAssetsExcel); maintenanceButton.removeEventListener("click", toggleMaintenance); exportButton.removeEventListener("click", exportMaintenanceExcel); importButton.removeEventListener("click", openAssetImport); filteredExportButton.remove(); maintenanceButton.remove(); exportButton.remove(); importButton.remove(); };
+  }, [status, onStatusChange, filteredAssetExportRows, exportFilteredAssetsExcel, isExportingFilteredAssets, maintenanceExportRows, exportMaintenanceExcel, isExportingMaintenance]);
   useEffect(() => {
     const legacyFooter = document.querySelector("section.overflow-hidden > div:last-child");
     legacyFooter?.classList.add("hidden");

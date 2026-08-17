@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildMaintenanceExportRows, canCreateCatalogOption, filterNamedCatalogOptions, getHandoverActionTooltip, getMaintenanceBadgeCount, getNewMaintenanceRequestBadge, getPaginationWindow, matchesVietnameseSearch, normalizeVietnameseSearch, toggleMaintenanceStatusFilter } from "../client/src/lib/catalogUi";
+import { buildFilteredAssetExportRows, buildMaintenanceExportRows, canCreateCatalogOption, filterNamedCatalogOptions, getHandoverActionTooltip, getMaintenanceBadgeCount, getNewMaintenanceRequestBadge, getPaginationWindow, matchesVietnameseSearch, normalizeVietnameseSearch, toggleMaintenanceStatusFilter } from "../client/src/lib/catalogUi";
 
 describe("Catalog UI helpers", () => {
   it("clamps pagination and preserves a non-overlapping final record range", () => {
@@ -49,6 +49,14 @@ describe("Catalog UI helpers", () => {
     ]);
     expect(rows).toHaveLength(1);
     expect(rows[0]).toMatchObject({ "Mã tài sản": "TS-001", "Trạng thái": "Bảo trì", "Lý do bảo trì": "Kẹt giấy liên tục" });
+  });
+
+  it("keeps every supplied filtered asset and its operational fields in the catalog export", () => {
+    const rows = buildFilteredAssetExportRows([
+      { code: "LT-001", name: "Laptop Dell", category: "CNTT", holder: "Phòng Kế toán", status: "Đang cấp phát", location: "Tầng 3", serial: "SN-01", supplier: "Công ty Sao Mai", brand: "Dell", purchaseDate: "2026-08-15", warrantyUntil: "2028-08-15", value: "25.000.000", note: "Đang sử dụng" },
+    ]);
+    expect(rows).toHaveLength(1);
+    expect(rows[0]).toMatchObject({ "Mã tài sản": "LT-001", "Trạng thái": "Đang cấp phát", "Giá trị (VNĐ)": 25000000, "Nhà cung cấp": "Công ty Sao Mai" });
   });
 
   it("uses clear action labels for the handover icon controls", () => {
