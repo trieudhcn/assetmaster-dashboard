@@ -22,6 +22,13 @@ type BrandedWorkbookOptions = {
 
 const infoSheetName = "Thông tin doanh nghiệp";
 const toHexColor = (color?: string | null) => (color || "#0F8C8C").replace("#", "").toUpperCase();
+const excelTechnicalLabels: Record<string, string> = {
+  "TEMPLATE IMPORT TÀI SẢN": "MẪU NHẬP TÀI SẢN",
+  "DANH SÁCH DÒNG LỖI IMPORT TÀI SẢN": "DANH SÁCH DÒNG LỖI NHẬP TÀI SẢN",
+  "PREVIEW CẬP NHẬT KIỂM KÊ": "XEM TRƯỚC CẬP NHẬT KIỂM KÊ",
+  "Preview import": "Xem trước nhập liệu",
+};
+const localizeExcelTechnicalText = (value: string) => excelTechnicalLabels[value] || value.replace(/\bpreview\b/gi, "xem trước").replace(/\bimport\b/gi, "nhập liệu");
 
 function getStoredCompanyInfo(): ExportCompanyInfo {
   try {
@@ -56,9 +63,9 @@ async function loadLogoBase64(logoUrl: string) {
 function copySourceSheets(sourceWorkbook: XLSX.WorkBook, targetWorkbook: any, brandColor: string) {
   sourceWorkbook.SheetNames.filter((name) => name !== infoSheetName).forEach((sheetName) => {
     const sourceSheet = sourceWorkbook.Sheets[sheetName];
-    const targetSheet = targetWorkbook.addWorksheet(sheetName);
+    const targetSheet = targetWorkbook.addWorksheet(localizeExcelTechnicalText(sheetName));
     const rows = XLSX.utils.sheet_to_json<unknown[]>(sourceSheet, { header: 1, defval: "", raw: true });
-    rows.forEach((row) => targetSheet.addRow(row));
+    rows.forEach((row) => targetSheet.addRow(row.map((cell) => typeof cell === "string" ? localizeExcelTechnicalText(cell) : cell)));
     if (!rows.length) targetSheet.addRow([]);
     const sourceColumns = (sourceSheet["!cols"] || []) as Array<{ wch?: number; wpx?: number }>;
     sourceColumns.forEach((column, index) => { targetSheet.getColumn(index + 1).width = column.wch || (column.wpx ? Math.max(8, column.wpx / 7) : 16); });
@@ -73,7 +80,7 @@ function copySourceSheets(sourceWorkbook: XLSX.WorkBook, targetWorkbook: any, br
 async function addCompanyInfoSheet(workbook: any, options: BrandedWorkbookOptions, company: ExportCompanyInfo, brandColor: string) {
   const infoSheet = workbook.addWorksheet(infoSheetName);
   const rows = [
-    [options.documentTitle],
+    [localizeExcelTechnicalText(options.documentTitle)],
     [company.name || "Thông tin doanh nghiệp chưa được cập nhật"],
     [company.websiteTitle || "AssetMaster – Hệ thống Quản lý Tài sản"],
     ["Địa chỉ", company.address || "Chưa cập nhật"],
@@ -129,7 +136,7 @@ export async function writeBrandedWorkbook(workbook: XLSX.WorkBook, options: Bra
   openExportPreview({
     blob: new Blob([bytes as ArrayBuffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }),
     fileName: options.fileName,
-    title: options.documentTitle,
+    title: localizeExcelTechnicalText(options.documentTitle),
     kind: "excel",
   });
 }

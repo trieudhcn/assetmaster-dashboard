@@ -36,4 +36,22 @@ describe("branded workbook", () => {
     expect(reopened.getWorksheet("Danh sách kiểm kê")?.getCell("A2").value).toBe("LT-0001");
     expect(reopened.getWorksheet("Danh sách kiểm kê")?.getCell("B2").dataValidation.type).toBe("list");
   });
+
+  it("localizes technical preview and import labels in the generated workbook", async () => {
+    const source = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(source, XLSX.utils.aoa_to_sheet([["Preview import"], ["TEMPLATE IMPORT TÀI SẢN"]]), "Preview import");
+
+    await writeBrandedWorkbook(source, {
+      documentTitle: "PREVIEW CẬP NHẬT KIỂM KÊ",
+      fileName: "kiem-ke-preview.xlsx",
+      company: { name: "Công ty Kiểm thử", brandColor: "#0F8C8C" },
+    });
+
+    const payload = previewSpy.mock.calls.at(-1)?.[0] as { blob: Blob; title: string };
+    const { Workbook } = await import("exceljs");
+    const reopened = new Workbook();
+    await reopened.xlsx.load(await payload.blob.arrayBuffer());
+    expect(payload.title).toBe("XEM TRƯỚC CẬP NHẬT KIỂM KÊ");
+    expect(reopened.getWorksheet("Xem trước nhập liệu")?.getCell("A2").value).toBe("MẪU NHẬP TÀI SẢN");
+  });
 });
