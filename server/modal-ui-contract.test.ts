@@ -595,6 +595,19 @@ describe("maintenance history and filter layout contract", () => {
     expect(operations).toContain("overflow-x-auto md:overflow-visible");
   });
 
+  it("supports filtered audit sessions, continuous QR scanning and discrepancy exports", () => {
+    const operations = readProjectFile("client/src/pages/OperationsModules.tsx");
+
+    expect(operations).toContain('const [auditStatusFilter, setAuditStatusFilter] = useState("all")');
+    expect(operations).toContain("filteredAuditSessions");
+    expect(operations).toContain("Quét QR liên tiếp");
+    expect(operations).toContain('replace(/^ASSETMASTER\\|/i, "")');
+    expect(operations).toContain("Đã thêm và xác nhận bằng quét QR.");
+    expect(operations).toContain("exportDiscrepancyExcel");
+    expect(operations).toContain("exportDiscrepancyPdf");
+    expect(operations).toContain("BIÊN BẢN CHÊNH LỆCH KIỂM KÊ");
+  });
+
   it("exposes a per-maintenance-ticket history drawer and protected history query", () => {
     const operations = readProjectFile("client/src/pages/OperationsModules.tsx");
     const router = readProjectFile("server/routers.ts");

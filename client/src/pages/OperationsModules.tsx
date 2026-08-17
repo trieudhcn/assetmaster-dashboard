@@ -10,12 +10,14 @@ import {
   FileText,
   History,
   Plus,
+  QrCode,
   Save,
   Search,
   UserRound,
   Wrench,
 } from "lucide-react";
 import * as XLSX from "xlsx";
+import { jsPDF } from "jspdf";
 import { toast } from "sonner";
 import { trpc } from "@/lib/trpc";
 import { DatePickerField } from "@/components/DatePickerField";
@@ -24,6 +26,7 @@ import { CurrencyInput } from "@/components/CurrencyInput";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { matchesVietnameseSearch } from "@/lib/catalogUi";
 import { numberToVietnameseWords, parseVndAmount } from "@/lib/formatters";
+import { handoverPdfFontUrl, registerVietnamesePdfFont } from "@/lib/handoverPdf";
 import { ModuleEmptyState } from "@/components/ModuleEmptyState";
 import { ModalTableSkeleton } from "@/components/ModalTableSkeleton";
 
@@ -439,6 +442,14 @@ type AuditItemDraft = {
   note: string;
 };
 
+type AuditQrScanEntry = {
+  id: string;
+  code: string;
+  name: string;
+  status: "matched" | "added" | "duplicate" | "not_found" | "error";
+  detail: string;
+};
+
 const auditResultLabels = {
   pending: "Chưa kiểm",
   matched: "Khớp",
@@ -471,12 +482,17 @@ export function AuditPage() {
   const [name, setName] = useState("");
   const [scheduledDate, setScheduledDate] = useState("");
   const [auditRecurrenceDays, setAuditRecurrenceDays] = useState("");
+  const [auditStatusFilter, setAuditStatusFilter] = useState("all");
   const [selectedSessionId, setSelectedSessionId] = useState<number | null>(() => {
     const sessionId = Number(new URLSearchParams(window.location.search).get("auditSession"));
     return Number.isInteger(sessionId) && sessionId > 0 ? sessionId : null;
   });
   const [assetId, setAssetId] = useState("");
   const [itemEdits, setItemEdits] = useState<Record<number, AuditItemDraft>>({});
+  const [qrScanInput, setQrScanInput] = useState("");
+  const [isQrScanOpen, setIsQrScanOpen] = useState(false);
+  const [qrScanEntries, setQrScanEntries] = useState<AuditQrScanEntry[]>([]);
+  const [isExportingDiscrepancy, setIsExportingDiscrepancy] = useState<"pdf" | "excel" | null>(null);
 
   const openAuditSession = (sessionId: number) => {
     const url = new URL(window.location.href);
@@ -528,6 +544,7 @@ export function AuditPage() {
   });
 
   const auditSessions = auditsQuery.data || [];
+  const filteredAuditSessions = auditStatusFilter === "all" ? auditSessions : auditSessions.filter((audit) => audit.status === auditStatusFilter);
   const assets = assetsQuery.data || [];
   const auditItems = auditItemsQuery.data || [];
   const selectedAudit = auditSessions.find((audit) => audit.id === selectedSessionId);
@@ -577,6 +594,124 @@ export function AuditPage() {
     matched: auditItems.filter((item) => item.result === "matched").length,
     discrepancies: auditItems.filter((item) => item.result === "missing" || item.result === "mismatch").length,
   };
+  const discrepancyItems = auditItems.filter((item) => item.result === "missing" || item.result === "mismatch");
+
+  const appendQrScanEntry = (entry: Omit<AuditQrScanEntry, "id">) => {
+    setQrScanEntries((current) => [{ ...entry, id: `${Date.now()}-${Math.random()}` }, ...current].slice(0, 12));
+  };
+
+  const scanAuditQr = async () => {
+    if (!selectedAudit) return;
+    const candidate = qrScanInput.trim().replace(/^ASSETMASTER\|/i, "");
+    if (!candidate) { toast.error("Hãy quét hoặc nhập mã QR tài sản."); return; }
+    const asset = assets.find((item) => item.qrToken === candidate || item.assetCode.toLowerCase() === candidate.toLowerCase());
+    if (!asset) {
+      appendQrScanEntry({ code: candidate, name: "Không xác định", status: "not_found", detail: "Không tìm thấy tài sản tương ứng." });
+      setQrScanInput("");
+      return;
+    }
+    try {
+      const existingItem = auditItems.find((item) => item.assetId === asset.id);
+      if (existingItem) {
+        const result = existingItem.expectedStatus === asset.status ? "matched" : "mismatch" as const;
+        await recordItemMutation.mutateAsync({ id: existingItem.id, actualStatus: asset.status, result, note: existingItem.note || "Đã xác nhận bằng quét QR." });
+        appendQrScanEntry({ code: asset.assetCode, name: asset.name, status: result === "matched" ? "matched" : "duplicate", detail: result === "matched" ? "Đã xác nhận khớp." : "Đã ghi nhận chênh lệch trạng thái." });
+      } else {
+        const created = await addItemMutation.mutateAsync({ sessionId: selectedAudit.id, assetId: asset.id, expectedStatus: asset.status });
+        await recordItemMutation.mutateAsync({ id: created.id, actualStatus: asset.status, result: "matched", note: "Đã thêm và xác nhận bằng quét QR." });
+        appendQrScanEntry({ code: asset.assetCode, name: asset.name, status: "added", detail: "Đã thêm và xác nhận khớp." });
+      }
+      await auditItemsQuery.refetch();
+      setQrScanInput("");
+    } catch (error) {
+      appendQrScanEntry({ code: asset.assetCode, name: asset.name, status: "error", detail: error instanceof Error ? error.message : "Không thể ghi nhận mã QR." });
+    }
+  };
+
+  const discrepancyRows = discrepancyItems.map((item) => {
+    const asset = assetById.get(item.assetId);
+    return {
+      "Mã tài sản": asset?.assetCode || `#${item.assetId}`,
+      "Tên tài sản": asset?.name || "Tài sản đã bị lưu trữ",
+      "Trạng thái dự kiến": auditAssetStatusLabel(item.expectedStatus),
+      "Trạng thái thực tế": auditAssetStatusLabel(item.actualStatus),
+      "Kết quả": auditResultLabels[item.result],
+      "Ghi chú": item.note || "",
+      "Thời điểm ghi nhận": item.checkedAt ? new Date(item.checkedAt).toLocaleString("vi-VN") : "Chưa ghi nhận",
+    };
+  });
+
+  const exportDiscrepancyExcel = () => {
+    if (!selectedAudit || !discrepancyRows.length) { toast.info("Đợt kiểm kê này chưa có chênh lệch để xuất."); return; }
+    setIsExportingDiscrepancy("excel");
+    const loadingToast = toast.loading("Đang tạo biên bản chênh lệch Excel...");
+    window.setTimeout(() => {
+      try {
+        const workbook = XLSX.utils.book_new();
+        const sheet = XLSX.utils.json_to_sheet(discrepancyRows);
+        sheet["!cols"] = [{ wch: 18 }, { wch: 34 }, { wch: 22 }, { wch: 22 }, { wch: 18 }, { wch: 44 }, { wch: 24 }];
+        XLSX.utils.book_append_sheet(workbook, sheet, "Chênh lệch kiểm kê");
+        XLSX.writeFile(workbook, `assetmaster-chenh-lech-${selectedAudit.referenceCode}.xlsx`);
+        toast.success(`Đã xuất ${discrepancyRows.length} chênh lệch ra Excel.`, { id: loadingToast });
+      } catch (error) {
+        console.error("[AuditPage] Excel export failed", error);
+        toast.error("Không thể xuất biên bản Excel.", { id: loadingToast });
+      } finally {
+        setIsExportingDiscrepancy(null);
+      }
+    }, 160);
+  };
+
+  const exportDiscrepancyPdf = async () => {
+    if (!selectedAudit || !discrepancyRows.length) { toast.info("Đợt kiểm kê này chưa có chênh lệch để xuất."); return; }
+    setIsExportingDiscrepancy("pdf");
+    const loadingToast = toast.loading("Đang tạo biên bản chênh lệch PDF...");
+    try {
+      const doc = new jsPDF({ unit: "mm", format: "a4" });
+      const fontResponse = await fetch(handoverPdfFontUrl);
+      if (!fontResponse.ok) throw new Error("Không thể tải phông chữ tiếng Việt.");
+      registerVietnamesePdfFont(doc, await fontResponse.arrayBuffer());
+      const left = 16;
+      let y = 20;
+      doc.setTextColor(16, 42, 67);
+      doc.setFontSize(17);
+      doc.text("BIÊN BẢN CHÊNH LỆCH KIỂM KÊ", left, y);
+      y += 8;
+      doc.setFontSize(10);
+      doc.setTextColor(15, 140, 140);
+      doc.text(selectedAudit.name, left, y);
+      y += 6;
+      doc.setTextColor(96, 117, 138);
+      doc.setFontSize(8.5);
+      doc.text(`${selectedAudit.referenceCode} · Xuất ngày ${new Date().toLocaleString("vi-VN")}`, left, y);
+      y += 10;
+      doc.setDrawColor(205, 229, 229);
+      doc.line(left, y, 194, y);
+      y += 7;
+      discrepancyRows.forEach((row, index) => {
+        const lines = [
+          `${index + 1}. ${row["Tên tài sản"]} (${row["Mã tài sản"]})`,
+          `Dự kiến: ${row["Trạng thái dự kiến"]} · Thực tế: ${row["Trạng thái thực tế"]} · Kết quả: ${row["Kết quả"]}`,
+          `Ghi chú: ${row["Ghi chú"] || "Không có"}`,
+        ].flatMap((line) => doc.splitTextToSize(line, 178));
+        const height = lines.length * 5 + 6;
+        if (y + height > 280) { doc.addPage(); y = 18; }
+        doc.setFillColor(index % 2 ? 251 : 245, index % 2 ? 252 : 249, index % 2 ? 253 : 251);
+        doc.roundedRect(left, y - 4, 178, height, 2, 2, "F");
+        doc.setTextColor(25, 59, 87);
+        doc.setFontSize(9);
+        doc.text(lines, left + 4, y + 1);
+        y += height + 3;
+      });
+      doc.save(`assetmaster-chenh-lech-${selectedAudit.referenceCode}.pdf`);
+      toast.success(`Đã xuất ${discrepancyRows.length} chênh lệch ra PDF.`, { id: loadingToast });
+    } catch (error) {
+      console.error("[AuditPage] PDF export failed", error);
+      toast.error(error instanceof Error ? error.message : "Không thể xuất biên bản PDF.", { id: loadingToast });
+    } finally {
+      setIsExportingDiscrepancy(null);
+    }
+  };
 
   return (
     <div className={shell}>
@@ -609,15 +744,16 @@ export function AuditPage() {
           <div className="mt-5 rounded-xl border border-[#F2D596] bg-[#FFF9EB] p-5 text-sm"><div className="flex items-center gap-2 font-bold text-[#A86B00]"><AlertTriangle size={16} />Không thể tải các đợt kiểm kê</div><p className="mt-1 text-xs text-[#71869A]">{auditsQuery.error.message || "Vui lòng kiểm tra kết nối và thử lại."}</p><button onClick={() => auditsQuery.refetch()} className="mt-3 rounded-lg border border-[#F2D596] px-3 py-2 text-xs font-bold text-[#A86B00] hover:bg-white">Thử lại</button></div>
         ) : (
           <section className="mt-5">
-            <div className="mb-3 flex items-center justify-between"><h2 className="text-sm font-extrabold text-[#193B57]">Các đợt kiểm kê</h2><span className="text-xs font-bold text-[#60758A]">{auditSessions.length} đợt</span></div>
+            <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between"><h2 className="text-sm font-extrabold text-[#193B57]">Các đợt kiểm kê</h2><div className="flex items-center gap-2"><span className="text-xs font-bold text-[#60758A]">{filteredAuditSessions.length}/{auditSessions.length} đợt</span><SearchableSelect value={auditStatusFilter} onChange={setAuditStatusFilter} className="w-[172px]" placeholder="Tất cả trạng thái" searchPlaceholder="Tìm trạng thái..." options={[{ value: "all", label: "Tất cả trạng thái" }, { value: "draft", label: "Nháp" }, { value: "active", label: "Đang kiểm kê" }, { value: "completed", label: "Hoàn tất" }, { value: "cancelled", label: "Đã hủy" }]} /></div></div>
             <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
               {auditsQuery.isLoading && <div className={`${card} col-span-full p-8 text-center text-sm text-[#71869A]`}>Đang tải các đợt kiểm kê...</div>}
-              {!auditsQuery.isLoading && auditSessions.map((audit) => {
+              {!auditsQuery.isLoading && filteredAuditSessions.map((audit) => {
                 const selected = selectedSessionId === audit.id;
                 const tone = audit.status === "completed" ? "bg-[#E6F6F2] text-[#087A6A]" : audit.status === "cancelled" ? "bg-[#FDEDEE] text-[#B44545]" : audit.status === "active" ? "bg-[#EAF3FF] text-[#2666A8]" : "bg-[#F0F5F8] text-[#60758A]";
                 return <button key={audit.id} onClick={() => openAuditSession(audit.id)} className={`${card} min-h-0 p-4 text-left transition hover:-translate-y-0.5 hover:border-[#8BCDC6] ${selected ? "ring-2 ring-[#0F8C8C]" : ""}`}><div className="flex items-start justify-between gap-3"><div className="font-mono text-[10px] font-bold text-[#0F8C8C]">{audit.referenceCode}</div><span className={`rounded-full px-2 py-1 text-[10px] font-extrabold ${tone}`}>{auditSessionStatusLabels[audit.status]}</span></div><div className="mt-2 truncate text-sm font-extrabold text-[#193B57]">{audit.name}</div><div className="mt-1.5 flex items-center justify-between gap-2 text-[10px] text-[#8AA0B6]"><span>Tạo ngày {new Date(audit.createdAt).toLocaleDateString("vi-VN")}</span><span className="font-bold text-[#087A6A]">Mở chi tiết →</span></div></button>;
               })}
               {!auditsQuery.isLoading && auditSessions.length === 0 && <div className={`${card} col-span-full p-10 text-center text-sm text-[#8AA0B6]`}>Chưa có đợt kiểm kê nào. Hãy tạo một đợt để bắt đầu đối chiếu tài sản.</div>}
+              {!auditsQuery.isLoading && auditSessions.length > 0 && filteredAuditSessions.length === 0 && <div className={`${card} col-span-full p-10 text-center text-sm text-[#8AA0B6]`}>Không có đợt kiểm kê phù hợp với trạng thái đang chọn.</div>}
             </div>
           </section>
         )}
@@ -632,7 +768,10 @@ export function AuditPage() {
               <div className="rounded-lg bg-[#ECF8F7] px-3 py-2 text-center"><div className="text-[10px] font-bold text-[#087A6A]">Khớp</div><div className="mt-1 font-display text-lg font-extrabold text-[#087A6A]">{summary.matched}</div></div>
               <div className="rounded-lg bg-[#FDEDEE] px-3 py-2 text-center"><div className="text-[10px] font-bold text-[#B44545]">Chênh lệch</div><div className="mt-1 font-display text-lg font-extrabold text-[#B44545]">{summary.discrepancies}</div></div>
             </div>
+            <div className="flex flex-wrap justify-end gap-2"><button disabled={!isAdmin} onClick={() => setIsQrScanOpen((current) => !current)} className="inline-flex min-h-10 items-center gap-2 rounded-lg border border-[#CDE5E5] bg-white px-3 py-2 text-xs font-bold text-[#087A6A] transition hover:bg-[#ECF8F7] disabled:cursor-not-allowed disabled:opacity-60"><QrCode size={15} />{isQrScanOpen ? "Ẩn quét QR" : "Quét QR hàng loạt"}</button><button disabled={!discrepancyRows.length || isExportingDiscrepancy !== null} onClick={exportDiscrepancyExcel} className="inline-flex min-h-10 items-center gap-2 rounded-lg border border-[#D7E5F5] bg-white px-3 py-2 text-xs font-bold text-[#2666A8] transition hover:bg-[#EAF3FF] disabled:cursor-not-allowed disabled:opacity-60"><Download size={15} />{isExportingDiscrepancy === "excel" ? "Đang xuất..." : "Xuất Excel"}</button><button disabled={!discrepancyRows.length || isExportingDiscrepancy !== null} onClick={exportDiscrepancyPdf} className="inline-flex min-h-10 items-center gap-2 rounded-lg bg-[#102A43] px-3 py-2 text-xs font-bold text-white transition hover:bg-[#193B57] disabled:cursor-not-allowed disabled:opacity-60"><FileText size={15} />{isExportingDiscrepancy === "pdf" ? "Đang xuất..." : "Xuất PDF"}</button></div>
           </div>
+
+          {isQrScanOpen && <div className="border-b border-[#CDE5E5] bg-[#F4FBFA] p-4 sm:p-5"><div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between"><div><div className="flex items-center gap-2 text-[11px] font-extrabold uppercase tracking-[0.12em] text-[#087A6A]"><QrCode size={14} />Quét QR liên tiếp</div><p className="mt-1 text-xs leading-5 text-[#60758A]">Dùng máy quét QR hoặc dán mã. Mỗi lần Enter sẽ tự thêm tài sản mới hoặc xác nhận tài sản đã có trong đợt.</p></div><span className="w-fit rounded-full bg-white px-2.5 py-1 text-[10px] font-bold text-[#087A6A] ring-1 ring-inset ring-[#CDE5E5]">{qrScanEntries.length} lượt gần nhất</span></div><div className="mt-3 grid gap-3 lg:grid-cols-[minmax(0,1fr)_auto]"><input autoFocus value={qrScanInput} onChange={(event) => setQrScanInput(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter") { event.preventDefault(); void scanAuditQr(); } }} placeholder="Quét hoặc nhập ASSETMASTER|token / mã tài sản..." className="field-input font-mono" disabled={addItemMutation.isPending || recordItemMutation.isPending} /><button onClick={() => void scanAuditQr()} disabled={!qrScanInput.trim() || addItemMutation.isPending || recordItemMutation.isPending} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-[#0F8C8C] px-5 py-2 text-xs font-bold text-white hover:bg-[#087A6A] disabled:cursor-not-allowed disabled:opacity-60"><QrCode size={15} />{addItemMutation.isPending || recordItemMutation.isPending ? "Đang ghi nhận..." : "Ghi nhận QR"}</button></div>{qrScanEntries.length > 0 && <div className="mt-3 grid gap-2 sm:grid-cols-2 xl:grid-cols-3">{qrScanEntries.map((entry) => <div key={entry.id} className={`rounded-lg border px-3 py-2 text-xs ${entry.status === "matched" || entry.status === "added" ? "border-[#B8E9DD] bg-white text-[#087A6A]" : entry.status === "not_found" || entry.status === "error" ? "border-[#F3C4C4] bg-[#FFF8F8] text-[#B44545]" : "border-[#F2D596] bg-[#FFFDF7] text-[#A86B00]"}`}><div className="font-mono text-[10px] font-extrabold">{entry.code}</div><div className="mt-0.5 truncate font-bold">{entry.name}</div><div className="mt-1 text-[10px]">{entry.detail}</div></div>)}</div>}</div>}
 
           <div className="border-b border-[#E7EEF3] bg-[#FBFCFD] p-4 sm:p-5"><div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_auto]"><SearchableSelect value={assetId} onChange={setAssetId} disabled={!isAdmin || assetsQuery.isLoading || addItemMutation.isPending} className="w-full" placeholder="Chọn tài sản cần kiểm kê" searchPlaceholder="Tìm mã, tên hoặc trạng thái..." options={[{ value: "", label: "Chọn tài sản cần kiểm kê" }, ...availableAssets.map((asset) => ({ value: String(asset.id), label: `${asset.assetCode} · ${asset.name} · ${auditAssetStatusLabel(asset.status)}`, searchText: `${asset.assetCode} ${asset.status} ${auditAssetStatusLabel(asset.status)}` }))]} /><button disabled={!isAdmin || !assetId || addItemMutation.isPending} onClick={() => { const asset = assets.find((candidate) => candidate.id === Number(assetId)); if (!asset) { toast.error("Chọn một tài sản hợp lệ."); return; } addItemMutation.mutate({ sessionId: selectedAudit.id, assetId: asset.id, expectedStatus: asset.status }); }} className="min-h-11 rounded-lg bg-[#0F8C8C] px-5 py-2 text-xs font-bold text-white hover:bg-[#087A6A] disabled:cursor-not-allowed disabled:opacity-60">{addItemMutation.isPending ? "Đang thêm" : "Thêm tài sản"}</button></div>{availableAssets.length === 0 && !assetsQuery.isLoading && <p className="mt-2 text-xs text-[#8AA0B6]">Tất cả tài sản hiện có đã được thêm vào đợt kiểm kê này.</p>}</div>
 

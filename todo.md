@@ -1184,3 +1184,12 @@
 - [x] Tối ưu vùng chọn tài sản và dropdown Thực tế để không bị thiếu không gian.
 - [x] Bổ sung hồi quy, kiểm thử TypeScript, Vitest, production build và responsive.
 - [x] Lưu checkpoint phát hành cho phiên này.
+
+## Current Session — Audit QR, Exports & Status Filter
+
+- [x] Rà soát dữ liệu QR, luồng kiểm kê và bản ghi chênh lệch hiện có.
+- [x] Bổ sung bộ lọc trạng thái đợt kiểm kê.
+- [x] Bổ sung luồng quét/nhập QR liên tiếp để thêm hoặc ghi nhận nhiều tài sản trong đợt.
+- [x] Xuất biên bản chênh lệch theo đợt kiểm kê ra Excel và PDF.
+- [x] Bổ sung hồi quy, kiểm thử TypeScript, Vitest, production build và responsive.
+- [x] Lưu checkpoint phát hành cho phiên này.
