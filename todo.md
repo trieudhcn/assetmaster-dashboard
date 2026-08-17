@@ -1499,3 +1499,15 @@
 - [x] Xác định kiến trúc xác thực AD/LDAP phù hợp và các thông số IT cần chuẩn bị.
 - [x] Soạn quy trình cấu hình tài khoản dịch vụ, TLS, truy vấn LDAP và ánh xạ người dùng.
 - [x] Trình bày kiểm thử đăng nhập, phân quyền, vận hành và xử lý sự cố.
+
+## Current Session — Direct LDAPS Login Simplification
+
+- [ ] Đánh giá rủi ro và giới hạn của xác thực LDAPS trực tiếp.
+- [ ] Thiết kế bộ trường cấu hình LDAPS tối giản và luồng đăng nhập.
+- [ ] Trình bày điều kiện an toàn, các bước triển khai và phương án dự phòng.
+
+## Current Session — Internal LDAPS Deployment and Database Planning
+
+- [ ] Tạo checkpoint backup rõ ràng cho phiên bản hiện tại trước thay đổi triển khai.
+- [ ] Xác định kiến trúc chạy nội bộ với Domain Controller/LDAPS, MySQL và kho tệp công ty.
+- [ ] Soạn hướng dẫn migration dữ liệu, cấu hình, backup/restore và vận hành nội bộ.
