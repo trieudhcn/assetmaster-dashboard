@@ -486,7 +486,8 @@ describe("currency input and scrollbar contract", () => {
     expect(searchableSelect).toContain('w-[min(280px,calc(100vw-1rem))]');
     expect(searchableSelect).toContain('open ? "z-[96]" : "z-0"');
     expect(searchableSelect).toContain('menuAlign === "right" ? "right-0 left-auto" : "left-0 right-auto"');
-    expect(searchableSelect).toContain('estimatedMenuWidth');
+    expect(searchableSelect).toContain('const width = Math.min(280, Math.max(240, rect.width))');
+    expect(searchableSelect).toContain('setMenuPosition({ top: rect.bottom + 6');
     expect(searchableSelect).toContain('top-[calc(100%+0.35rem)]');
     expect(searchableSelect).not.toContain('menuVertical');
     expect(searchableSelect).toContain('transition-[opacity,transform]');
@@ -592,7 +593,19 @@ describe("maintenance history and filter layout contract", () => {
     expect(operations).toContain("Trạng thái dự kiến");
     expect(operations).toContain("Trạng thái thực tế");
     expect(operations).toContain("auditAssetStatusLabel(item.expectedStatus)");
-    expect(operations).toContain("overflow-x-auto md:overflow-visible");
+    expect(operations).toContain("overflow-x-auto md:overflow-hidden");
+  });
+
+  it("keeps audit detail dropdowns above the card and constrains the asset picker", () => {
+    const operations = readProjectFile("client/src/pages/OperationsModules.tsx");
+
+    expect(operations).toContain("relative z-0 mt-5 overflow-hidden");
+    expect(operations).toContain("relative z-20 border-b border-[#E7EEF3]");
+    expect(operations).toContain("w-full lg:max-w-[880px]");
+    const searchableSelect = readProjectFile("client/src/components/SearchableSelect.tsx");
+    expect(searchableSelect).toContain("createPortal(menu, document.body)");
+    expect(searchableSelect).toContain("menuPortal = true");
+    expect(searchableSelect).toContain('fixed z-[110]');
   });
 
   it("supports filtered audit sessions, continuous QR scanning and discrepancy exports", () => {

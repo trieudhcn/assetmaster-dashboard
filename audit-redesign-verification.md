@@ -11,3 +11,7 @@ On a 375px viewport, the separate detail view retains its full-width asset picke
 ## QR, exports and status filter review — 17/08/2026
 
 The audit list exposes a compact **Tất cả trạng thái** selector beside the session count. The dedicated session detail presents **Quét QR hàng loạt**, **Xuất Excel**, and **Xuất PDF** alongside its statistics without crowding the asset picker. Export actions are intentionally disabled until the session contains one or more discrepancy rows.
+
+## Dropdown visibility review — 17/08/2026
+
+The desktop detail card now contains the data table within its rounded boundary while preserving a concise asset picker. Searchable dropdown menus use a document-level portal with fixed positioning and scroll-aware measurement, so the asset picker, **Trạng thái thực tế**, and **Kết quả** menus can render above the card instead of being clipped by its overflow boundary.

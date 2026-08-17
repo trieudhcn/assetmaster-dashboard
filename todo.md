@@ -1193,3 +1193,11 @@
 - [x] Xuất biên bản chênh lệch theo đợt kiểm kê ra Excel và PDF.
 - [x] Bổ sung hồi quy, kiểm thử TypeScript, Vitest, production build và responsive.
 - [x] Lưu checkpoint phát hành cho phiên này.
+
+## Current Session — Audit Detail Dropdown Visibility
+
+- [x] Rà soát overflow và lớp hiển thị của vùng chi tiết Kiểm kê.
+- [x] Bảo đảm dropdown chọn tài sản, Trạng thái thực tế và Kết quả không bị cắt.
+- [x] Giữ vùng chọn tài sản gọn, rõ ràng và responsive.
+- [x] Bổ sung hồi quy, kiểm thử TypeScript, Vitest, production build và responsive.
+- [x] Lưu checkpoint phát hành cho phiên này.
