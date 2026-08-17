@@ -1292,4 +1292,12 @@
 - [x] Thêm tìm kiếm và lọc trạng thái cho danh sách tài sản đã chọn trước khi xuất.
 - [x] Làm nổi bật các dòng chênh lệch hoặc không tìm thấy bằng màu và biểu tượng cảnh báo.
 - [x] Bổ sung hồi quy, kiểm thử TypeScript, Vitest, production build và responsive.
+- [x] Lưu checkpoint phát hành và báo cáo kết quả.
+
+## Current Session — Audit Import Change Preview & Notes
+
+- [x] Hiển thị bảng preview chi tiết từng thay đổi dự kiến trước khi cập nhật từ Excel.
+- [x] Yêu cầu xác nhận rõ ràng trước khi thực hiện import ghi đè kết quả Kiểm kê.
+- [x] Thêm ghi chú nhanh trực tiếp cho tài sản Chênh lệch hoặc Không tìm thấy.
+- [x] Bổ sung hồi quy, kiểm thử TypeScript, Vitest, production build và responsive.
 - [ ] Lưu checkpoint phát hành và báo cáo kết quả.

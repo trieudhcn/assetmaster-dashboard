@@ -639,7 +639,7 @@ describe("maintenance history and filter layout contract", () => {
     expect(operations).toContain("exportCategoryId");
     expect(operations).toContain("prepareAuditExcelImport");
     expect(operations).toContain("Nhập Excel");
-    expect(operations).toContain("Cập nhật ${auditImportPreview.items.length} dòng");
+    expect(operations).toContain("Xem lại và xác nhận");
     expect(operations).toContain("finalizeAuditMutation");
     expect(operations).toContain("Chốt biên bản");
     expect(operations).toContain("Đã chốt · Dữ liệu khóa");
@@ -710,6 +710,16 @@ describe("maintenance history and filter layout contract", () => {
     expect(operations).toContain("createPdfLogoWatermark");
     expect(brandPanel).toContain("Watermark PDF");
     expect(brandPanel).toContain("assetmaster-pdf-watermark");
+  });
+
+  it("previews audit import changes before confirmation and supports discrepancy notes", () => {
+    const operations = readProjectFile("client/src/pages/OperationsModules.tsx");
+    expect(operations).toContain("auditImportChangeRows");
+    expect(operations).toContain("isAuditImportConfirmOpen");
+    expect(operations).toContain("Xác nhận cập nhật từ Excel?");
+    expect(operations).toContain("Xem lại và xác nhận");
+    expect(operations).toContain("Ghi chú (có thể chỉnh sửa)");
+    expect(operations).toContain("Bổ sung ghi chú xử lý");
   });
 
   it("builds valid Excel workbooks directly and supports audit review after import", () => {
