@@ -1421,3 +1421,10 @@
 - [x] Hiển thị rõ nội dung thêm, xóa và thay đổi giữa phiên bản đang xem với phiên bản liền trước.
 - [x] Bổ sung hồi quy, kiểm thử TypeScript, Vitest, production build và responsive.
 - [x] Lưu checkpoint phát hành và báo cáo kết quả.
+
+## Current Session — Dashboard Data Freshness Indicator
+
+- [x] Rà soát nguồn thời gian cập nhật thực tế và vị trí vùng thông tin trên dashboard.
+- [x] Thiết kế lại chỉ báo cập nhật dữ liệu theo ngôn ngữ giao diện hiện tại.
+- [x] Bổ sung hồi quy, kiểm thử TypeScript, Vitest, production build và responsive.
+- [x] Lưu checkpoint phát hành và báo cáo kết quả.

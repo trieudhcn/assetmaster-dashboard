@@ -923,5 +923,15 @@ it("trình bày visual diff rõ ràng trong lịch sử phiên bản hướng d�
   expect(versionDiff).toContain("xanh lá");
   expect(versionDiff).toContain("đỏ gạch ngang");
   expect(versionDiff).toContain("diffTokens");
-  expect(versionDiff).toContain("Bước thay đổi");
+expect(versionDiff).toContain("Bước thay đổi");
+});
+
+it("hiển thị thời điểm đồng bộ dashboard từ dữ liệu truy vấn thay vì mốc thời gian cố định", () => {
+  const home = readProjectFile("client/src/pages/Home.tsx");
+
+  expect(home).toContain("const dashboardLastSyncedAt = assetQuery.dataUpdatedAt");
+  expect(home).toContain("Đồng bộ lúc {dashboardSyncLabel}");
+  expect(home).toContain("refreshDashboardData");
+  expect(home).toContain("Đồng bộ lại dữ liệu dashboard");
+  expect(home).not.toContain("Dữ liệu cập nhật lúc 09:42, 14/02/2025");
 });
