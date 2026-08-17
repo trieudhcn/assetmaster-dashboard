@@ -1344,3 +1344,11 @@
 - [x] Hiển thị trạng thái đang xuất, thành công và không có dữ liệu phù hợp.
 - [x] Bổ sung hồi quy, kiểm thử TypeScript, Vitest, production build và responsive.
 - [x] Lưu checkpoint phát hành và báo cáo kết quả.
+
+## Current Session — Exclude Supplier-Returned Assets from Audits
+
+- [x] Rà soát nguồn tài sản và các điểm chọn/thêm/xuất trong Kiểm kê.
+- [x] Loại trừ tài sản Trả nhà cung cấp khỏi danh sách đủ điều kiện cho đợt Kiểm kê đang mở.
+- [x] Giữ nguyên dữ liệu và hồ sơ Kiểm kê đã chốt.
+- [x] Bổ sung hồi quy, kiểm thử TypeScript, Vitest, production build và responsive.
+- [x] Lưu checkpoint phát hành và báo cáo kết quả.

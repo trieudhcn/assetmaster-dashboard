@@ -739,6 +739,17 @@ describe("maintenance history and filter layout contract", () => {
     expect(router).toContain("deleteDraft:");
   });
 
+  it("excludes supplier-returned assets from editable audit choices and exports", () => {
+    const operations = readProjectFile("client/src/pages/OperationsModules.tsx");
+    const router = readProjectFile("server/routers.ts");
+    expect(operations).toContain('const auditableAssets = assets.filter((asset) => asset.status !== "returned_to_vendor")');
+    expect(operations).toContain("auditItemsForCurrentSession");
+    expect(operations).toContain("tài sản Trả nhà cung cấp đã được loại trừ khỏi phạm vi kiểm kê.");
+    expect(operations).toContain("không thuộc phạm vi kiểm kê");
+    expect(router).toContain('asset.status === "returned_to_vendor"');
+    expect(router).toContain("Tài sản đã trả nhà cung cấp không thuộc phạm vi kiểm kê.");
+  });
+
   it("lets users select multiple audit import rows and apply a shared note", () => {
     const operations = readProjectFile("client/src/pages/OperationsModules.tsx");
     expect(operations).toContain("selectedAuditImportIds");

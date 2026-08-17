@@ -288,6 +288,20 @@ describe("operations management", () => {
     await expect(adminCaller.audits.addItem({ sessionId: 40, assetId: 8, expectedStatus: "available" })).rejects.toMatchObject({ code: "CONFLICT" });
   });
 
+  it("does not let an already returned supplier asset block finalization of other completed audit items", async () => {
+    mocks.listAuditItems.mockResolvedValue([
+      { id: 50, auditSessionId: 40, assetId: 8, result: "matched" },
+      { id: 51, auditSessionId: 40, assetId: 9, result: "pending" },
+    ] as any);
+    mocks.getAssetById.mockImplementation(async (id: number) => id === 9
+      ? { id: 9, assetCode: "LT00009", name: "Laptop trả NCC", isArchived: false, status: "returned_to_vendor" }
+      : { id: 8, assetCode: "LT00008", name: "Laptop QA", isArchived: false, status: "available" });
+    const adminCaller = appRouter.createCaller(adminContext);
+
+    await expect(adminCaller.audits.finalize({ sessionId: 40 })).resolves.toEqual({ success: true });
+    expect(mocks.updateAuditSession).toHaveBeenCalledWith(40, expect.objectContaining({ status: "completed" }));
+  });
+
   it("creates an audit session and adds an asset with its expected status", async () => {
     const caller = appRouter.createCaller(adminContext);
     mocks.getNextAuditSequence.mockResolvedValue(1);
@@ -304,6 +318,29 @@ describe("operations management", () => {
     await expect(caller.audits.addItem({ sessionId: 40, assetId: 8, expectedStatus: "available" })).resolves.toEqual({ id: 50 });
     expect(mocks.createAuditItem).toHaveBeenCalledWith({ auditSessionId: 40, assetId: 8, expectedStatus: "available", result: "pending" });
     expect(mocks.recordActivity).toHaveBeenCalledWith(expect.objectContaining({ entityType: "auditItem", entityId: 50, action: "added" }));
+  });
+
+  it("rejects assets that have been returned to the supplier from editable audits", async () => {
+    mocks.getAssetById.mockResolvedValue({ id: 8, assetCode: "LT00008", name: "Laptop QA", isArchived: false, status: "returned_to_vendor" } as any);
+    const caller = appRouter.createCaller(adminContext);
+
+    await expect(caller.audits.addItem({ sessionId: 40, assetId: 8, expectedStatus: "returned_to_vendor" })).rejects.toMatchObject({
+      code: "BAD_REQUEST",
+      message: "Tài sản đã trả nhà cung cấp không thuộc phạm vi kiểm kê.",
+    });
+    expect(mocks.createAuditItem).not.toHaveBeenCalled();
+  });
+
+  it("blocks imported updates for an asset returned to the supplier", async () => {
+    mocks.listAuditItems.mockResolvedValue([{ id: 50, auditSessionId: 40, assetId: 8, result: "pending" }] as any);
+    mocks.getAssetById.mockResolvedValue({ id: 8, assetCode: "LT00008", name: "Laptop QA", isArchived: false, status: "returned_to_vendor" } as any);
+    const caller = appRouter.createCaller(adminContext);
+
+    await expect(caller.audits.importItems({ sessionId: 40, items: [{ id: 50, actualStatus: "returned_to_vendor", result: "mismatch", note: "Đã trả NCC" }] })).rejects.toMatchObject({
+      code: "BAD_REQUEST",
+      message: "File Excel chứa tài sản đã trả nhà cung cấp, không thuộc phạm vi kiểm kê.",
+    });
+    expect(mocks.updateAuditItem).not.toHaveBeenCalled();
   });
 
   it("removes assets from editable audits and deletes draft audits only", async () => {
