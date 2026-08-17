@@ -6,11 +6,12 @@ import { trpc } from "@/lib/trpc";
 import { assetImportHeaders, parseAssetImportRows, type AssetImportCandidate, type AssetImportIssue } from "@/lib/assetImport";
 import { SearchableSelect } from "@/components/SearchableSelect";
 import { ModalTableSkeleton } from "@/components/ModalTableSkeleton";
+import { writeBrandedWorkbook } from "@/lib/brandedWorkbook";
 
 type ParsedFile = ReturnType<typeof parseAssetImportRows> & { fileName: string; sourceRows: number; rawRows: Array<Record<string, unknown>> };
 const exampleRow = ["Laptop mẫu", "Laptop", "Sẵn có", "", "Tốt", "15/08/2026", "25000000", "Nhà cung cấp mẫu", "", "SN-001", "Kho CNTT", "15/08/2028", "Điền một tài sản trên mỗi dòng"];
 
-function downloadTemplate() {
+async function downloadTemplate() {
   const book = XLSX.utils.book_new();
   const sheet = XLSX.utils.aoa_to_sheet([[...assetImportHeaders], exampleRow]);
   sheet["!cols"] = [34, 18, 25, 38, 18, 22, 18, 26, 22, 20, 24, 25, 38].map((wch) => ({ wch }));
@@ -18,7 +19,11 @@ function downloadTemplate() {
   const guide = XLSX.utils.aoa_to_sheet([["HƯỚNG DẪN IMPORT TÀI SẢN"], ["Cột có dấu * là bắt buộc. Không đổi tên dòng tiêu đề."], ["Mã tài sản được hệ thống tự sinh theo tiền tố của Phân loại. Hãy tạo Phân loại trước khi import."], ["Trạng thái chỉ nhận Sẵn có hoặc Bảo trì. Tài sản đang cấp phát phải được tạo qua Bàn giao."]]);
   guide["!cols"] = [{ wch: 110 }];
   XLSX.utils.book_append_sheet(book, guide, "Hướng dẫn");
-  XLSX.writeFile(book, "AssetMaster-Template-Import-TaiSan.xlsx");
+  await writeBrandedWorkbook(book, {
+    documentTitle: "TEMPLATE IMPORT TÀI SẢN",
+    fileName: "AssetMaster-Template-Import-TaiSan.xlsx",
+    description: "Mẫu nhập nhiều tài sản theo phân loại; mã tài sản được hệ thống tự sinh.",
+  });
 }
 
 export function AssetImportModal({ onClose: closeModal, onImported }: { onClose: () => void; onImported: () => void }) {
@@ -93,13 +98,17 @@ export function AssetImportModal({ onClose: closeModal, onImported }: { onClose:
     if (!parsed || !issues.length || isExportingErrors) return;
     setIsExportingErrors(true);
     const loadingToast = toast.loading("Đang tạo tệp Excel các dòng lỗi...");
-    window.setTimeout(() => {
+    window.setTimeout(() => { void (async () => {
       try {
         const rows = issues.map((issue) => ({ ...(parsed.rawRows[issue.rowNumber - 2] || {}), "Dòng lỗi": issue.rowNumber, "Lý do lỗi": issue.message }));
         const book = XLSX.utils.book_new();
         const sheet = XLSX.utils.json_to_sheet(rows);
         XLSX.utils.book_append_sheet(book, sheet, "Dòng lỗi");
-        XLSX.writeFile(book, `AssetMaster-Loi-Import-${new Date().toISOString().slice(0, 10)}.xlsx`);
+        await writeBrandedWorkbook(book, {
+          documentTitle: "DANH SÁCH DÒNG LỖI IMPORT TÀI SẢN",
+          fileName: `AssetMaster-Loi-Import-${new Date().toISOString().slice(0, 10)}.xlsx`,
+          description: `${rows.length} dòng cần chỉnh sửa trước khi nhập lại vào hệ thống.`,
+        });
         toast.success(`Đã xuất ${rows.length} dòng lỗi ra Excel.`, { id: loadingToast });
       } catch (error) {
         console.error(error);
@@ -107,7 +116,7 @@ export function AssetImportModal({ onClose: closeModal, onImported }: { onClose:
       } finally {
         setIsExportingErrors(false);
       }
-    }, 180);
+    })(); }, 180);
   };
   const doImport = () => { if (!rowsForImport.length || draftIssues.length) return; setPhase("importing"); setProgress(76); importMutation.mutate({ rows: rowsForImport, updateExisting }); };
   const isWorking = phase === "reading" || phase === "importing";

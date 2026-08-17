@@ -12,6 +12,7 @@ import { buildMaintenanceExportRows, canCreateCatalogOption, filterNamedCatalogO
 import { getNotificationTargetLabel, type NotificationTarget } from "@/lib/notificationLinks";
 import { handoverPdfFontUrl, registerVietnamesePdfFont } from "@/lib/handoverPdf";
 import { formatVnd } from "@/lib/formatters";
+import { writeBrandedWorkbook } from "@/lib/brandedWorkbook";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -761,13 +762,17 @@ function PaginatedAssetCatalogPage({ assets, query, category, status, department
     if (isExportingMaintenance) return;
     setIsExportingMaintenance(true);
     const loadingToast = toast.loading("Đang tạo danh sách tài sản bảo trì...");
-    window.setTimeout(() => {
+    window.setTimeout(async () => {
       try {
         const workbook = XLSX.utils.book_new();
         const sheet = XLSX.utils.json_to_sheet(maintenanceExportRows);
         sheet["!cols"] = [{ wch: 16 }, { wch: 32 }, { wch: 18 }, { wch: 14 }, { wch: 42 }, { wch: 24 }, { wch: 24 }, { wch: 22 }, { wch: 26 }, { wch: 22 }, { wch: 16 }, { wch: 18 }, { wch: 34 }];
         XLSX.utils.book_append_sheet(workbook, sheet, "Tài sản bảo trì");
-        XLSX.writeFile(workbook, `assetmaster-tai-san-bao-tri-${new Date().toISOString().slice(0, 10)}.xlsx`);
+        await writeBrandedWorkbook(workbook, {
+          documentTitle: "DANH SÁCH TÀI SẢN ĐANG BẢO TRÌ",
+          fileName: `assetmaster-tai-san-bao-tri-${new Date().toISOString().slice(0, 10)}.xlsx`,
+          description: `Danh sách ${maintenanceExportRows.length} tài sản theo bộ lọc hiện tại.`,
+        });
         toast.success(`Đã xuất ${maintenanceExportRows.length} tài sản đang bảo trì ra Excel.`, { id: loadingToast });
       } catch (error) {
         console.error(error);
@@ -951,7 +956,7 @@ function AssignmentsPage({ showComingSoon, companyInfo }: { showComingSoon: (lab
   const pagedHandovers = filtered.slice((handoverPage - 1) * handoverPageSize, handoverPage * handoverPageSize);
   useEffect(() => { setHandoverPage(1); }, [query, statusFilter, handoverYearFilter, handoverDepartmentFilter, handoverRecipientFilter]);
   useEffect(() => { setHandoverPage((current) => Math.min(current, handoverTotalPages)); }, [handoverTotalPages]);
-  const exportHandovers = () => {
+  const exportHandovers = async () => {
     if (!filtered.length) { toast.info("Không có phiếu bàn giao phù hợp để xuất."); return; }
     setIsExportingHandovers(true);
     try {
@@ -961,7 +966,11 @@ function AssignmentsPage({ showComingSoon, companyInfo }: { showComingSoon: (lab
       const workbook = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(workbook, worksheet, "Phiếu bàn giao");
       const yearSuffix = handoverYearFilter === "Tất cả các năm" ? "tat-ca-cac-nam" : handoverYearFilter;
-      XLSX.writeFile(workbook, `danh-sach-phieu-ban-giao-${yearSuffix}.xlsx`);
+      await writeBrandedWorkbook(workbook, {
+        documentTitle: "DANH SÁCH PHIẾU BÀN GIAO",
+        fileName: `danh-sach-phieu-ban-giao-${yearSuffix}.xlsx`,
+        description: `Danh sách ${rows.length} phiếu bàn giao theo phạm vi lọc hiện tại.`,
+      });
       toast.success(`Đã xuất ${rows.length} phiếu bàn giao.`);
     } finally { setIsExportingHandovers(false); }
   };

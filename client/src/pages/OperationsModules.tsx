@@ -28,6 +28,7 @@ import { useAuth } from "@/_core/hooks/useAuth";
 import { matchesVietnameseSearch } from "@/lib/catalogUi";
 import { numberToVietnameseWords, parseVndAmount } from "@/lib/formatters";
 import { handoverPdfFontUrl, registerVietnamesePdfFont } from "@/lib/handoverPdf";
+import { writeBrandedWorkbook } from "@/lib/brandedWorkbook";
 import { ModuleEmptyState } from "@/components/ModuleEmptyState";
 import { ModalTableSkeleton } from "@/components/ModalTableSkeleton";
 import {
@@ -262,7 +263,7 @@ export function MaintenancePage() {
     }
     setIsExportingCosts(true);
     const toastId = toast.loading("Đang chuẩn bị file Excel chi phí bảo trì...");
-    window.setTimeout(() => {
+    window.setTimeout(() => { void (async () => {
       try {
         const rows = tickets.map((ticket) => {
       const estimated = parseVndAmount(String(ticket.estimatedCost ?? ""));
@@ -290,7 +291,11 @@ export function MaintenancePage() {
         worksheet["!cols"] = [{ wch: 14 }, { wch: 16 }, { wch: 24 }, { wch: 18 }, { wch: 14 }, { wch: 16 }, { wch: 20 }, { wch: 32 }, { wch: 20 }, { wch: 32 }, { wch: 14 }, { wch: 14 }, { wch: 22 }, { wch: 42 }, { wch: 42 }];
         const workbook = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(workbook, worksheet, "Chi phí bảo trì");
-        XLSX.writeFile(workbook, `assetmaster-chi-phi-bao-tri-${new Date().toISOString().slice(0, 10)}.xlsx`);
+        await writeBrandedWorkbook(workbook, {
+          documentTitle: "BÁO CÁO CHI PHÍ BẢO TRÌ",
+          fileName: `assetmaster-chi-phi-bao-tri-${new Date().toISOString().slice(0, 10)}.xlsx`,
+          description: `Tổng hợp ${rows.length} phiếu bảo trì/báo hỏng trong danh sách hiện tại.`,
+        });
         toast.success(`Đã xuất ${rows.length} dòng chi phí bảo trì.`, { id: toastId });
       } catch (error) {
         console.error(error);
@@ -298,7 +303,7 @@ export function MaintenancePage() {
       } finally {
         setIsExportingCosts(false);
       }
-    }, 180);
+    })(); }, 180);
   };
 
   const uploadAttachment = (ticket: (typeof tickets)[number], file: File | undefined) => {
@@ -815,7 +820,7 @@ export function AuditPage() {
     if (!selectedAudit || !totalAssetRows.length) { toast.info("Chưa có tài sản để xuất."); return; }
     setIsExportingTotalAssets(true);
     const loadingToast = toast.loading("Đang tạo file tổng tài sản...");
-    window.setTimeout(() => {
+    window.setTimeout(async () => {
       try {
         const workbook = XLSX.utils.book_new();
         const sheet = XLSX.utils.json_to_sheet(totalAssetRows);
@@ -831,7 +836,11 @@ export function AuditPage() {
         ]);
         summarySheet["!cols"] = [{ wch: 24 }, { wch: 112 }];
         XLSX.utils.book_append_sheet(workbook, summarySheet, "Thông tin xuất");
-        XLSX.writeFile(workbook, `assetmaster-tong-tai-san-${selectedAudit.referenceCode}.xlsx`);
+        await writeBrandedWorkbook(workbook, {
+          documentTitle: "TỔNG TÀI SẢN KÈM KẾT QUẢ KIỂM KÊ",
+          fileName: `assetmaster-tong-tai-san-${selectedAudit.referenceCode}.xlsx`,
+          description: `Đợt ${selectedAudit.name} · ${totalAssetRows.length} tài sản theo phạm vi lọc hiện tại.`,
+        });
         toast.success(`Đã xuất tổng ${totalAssetRows.length} tài sản kèm dữ liệu kiểm kê.`, { id: loadingToast });
       } catch (error) {
         console.error("[AuditPage] Total asset export failed", error);
@@ -888,7 +897,7 @@ export function AuditPage() {
     if (!selectedAudit || !fieldworkRows.length) { toast.info("Đợt kiểm kê chưa có tài sản để xuất danh sách thực địa."); return; }
     setIsExportingFieldworkSheet(true);
     const loadingToast = toast.loading("Đang tạo danh sách kiểm kê thực địa...");
-    window.setTimeout(() => {
+    window.setTimeout(async () => {
       try {
         const workbook = XLSX.utils.book_new();
         const sheet = XLSX.utils.json_to_sheet(fieldworkRows);
@@ -904,7 +913,11 @@ export function AuditPage() {
         ]);
         guide["!cols"] = [{ wch: 24 }, { wch: 120 }];
         XLSX.utils.book_append_sheet(workbook, guide, "Hướng dẫn");
-        XLSX.writeFile(workbook, `assetmaster-danh-sach-kiem-ke-${selectedAudit.referenceCode}.xlsx`);
+        await writeBrandedWorkbook(workbook, {
+          documentTitle: "DANH SÁCH KIỂM KÊ THỰC ĐỊA",
+          fileName: `assetmaster-danh-sach-kiem-ke-${selectedAudit.referenceCode}.xlsx`,
+          description: `Đợt ${selectedAudit.name} · ${fieldworkRows.length} tài sản theo phạm vi lọc hiện tại.`,
+        });
         toast.success(`Đã xuất ${fieldworkRows.length} tài sản để kiểm kê thực địa.`, { id: loadingToast });
       } catch (error) {
         console.error("[AuditPage] Fieldwork Excel export failed", error);
@@ -919,13 +932,17 @@ export function AuditPage() {
     if (!selectedAudit || !discrepancyRows.length) { toast.info("Đợt kiểm kê này chưa có chênh lệch để xuất."); return; }
     setIsExportingDiscrepancy("excel");
     const loadingToast = toast.loading("Đang tạo biên bản chênh lệch Excel...");
-    window.setTimeout(() => {
+    window.setTimeout(async () => {
       try {
         const workbook = XLSX.utils.book_new();
         const sheet = XLSX.utils.json_to_sheet(discrepancyRows);
         sheet["!cols"] = [{ wch: 18 }, { wch: 34 }, { wch: 22 }, { wch: 22 }, { wch: 18 }, { wch: 44 }, { wch: 24 }];
         XLSX.utils.book_append_sheet(workbook, sheet, "Chênh lệch kiểm kê");
-        XLSX.writeFile(workbook, `assetmaster-chenh-lech-${selectedAudit.referenceCode}.xlsx`);
+        await writeBrandedWorkbook(workbook, {
+          documentTitle: "BIÊN BẢN CHÊNH LỆCH KIỂM KÊ",
+          fileName: `assetmaster-chenh-lech-${selectedAudit.referenceCode}.xlsx`,
+          description: `Đợt ${selectedAudit.name} · ${discrepancyRows.length} chênh lệch theo phạm vi lọc hiện tại.`,
+        });
         toast.success(`Đã xuất ${discrepancyRows.length} chênh lệch ra Excel.`, { id: loadingToast });
       } catch (error) {
         console.error("[AuditPage] Excel export failed", error);
@@ -945,8 +962,25 @@ export function AuditPage() {
       const fontResponse = await fetch(handoverPdfFontUrl);
       if (!fontResponse.ok) throw new Error("Không thể tải phông chữ tiếng Việt.");
       registerVietnamesePdfFont(doc, await fontResponse.arrayBuffer());
+      const company = (companySettingsQuery.data || {}) as AuditCompanySettings;
+      const logoDataUrl = company.logoUrl ? await loadAuditPdfImage(company.logoUrl).catch(() => undefined) : undefined;
       const left = 16;
-      let y = 20;
+      if (logoDataUrl) {
+        try { doc.addImage(logoDataUrl, auditPdfImageFormat(logoDataUrl), left, 10, 18, 18, undefined, "FAST"); } catch { /* Dùng phần chữ khi logo không nhúng được. */ }
+      }
+      doc.setTextColor(16, 42, 67);
+      doc.setFontSize(13);
+      doc.text(company.name || "Công ty quản lý tài sản", left + 24, 16);
+      doc.setTextColor(15, 140, 140);
+      doc.setFontSize(8);
+      doc.text(company.websiteTitle || "AssetMaster – Hệ thống Quản lý Tài sản", left + 24, 21);
+      doc.setTextColor(96, 117, 138);
+      doc.setFontSize(7);
+      doc.text(`Địa chỉ: ${company.address || "Chưa cập nhật"} · MST: ${company.taxCode || "Chưa cập nhật"}`, left + 24, 26);
+      doc.text(`Điện thoại: ${company.phone || "Chưa cập nhật"}${company.email ? ` · Email: ${company.email}` : ""}`, left + 24, 31);
+      doc.setDrawColor(15, 140, 140);
+      doc.line(left, 37, 194, 37);
+      let y = 48;
       doc.setTextColor(16, 42, 67);
       doc.setFontSize(17);
       doc.text("BIÊN BẢN CHÊNH LỆCH KIỂM KÊ", left, y);
@@ -1217,6 +1251,29 @@ export function ReportsPage() {
     { label: "Yêu cầu bảo trì", value: maintenance.data?.length ?? 0 },
     { label: "Đợt kiểm kê", value: audits.data?.length ?? 0 },
   ];
-  const exportExcel = () => { const departmentName = departmentId === "all" ? "Tất cả phòng ban" : departments.data?.find((department) => department.id === Number(departmentId))?.name || "Chưa gán"; const rows = selectedAssets.map((asset) => ({ "Mã tài sản": asset.assetCode, "Tên tài sản": asset.name, "Phòng ban": departments.data?.find((department) => department.id === asset.departmentId)?.name || "Chưa gán", "Người giữ": asset.holderName || "Chưa cấp phát", "Trạng thái": asset.status, "Tình trạng": asset.condition, "Vị trí": asset.location || "", "Serial/IMEI": asset.serialNumber || "", "Giá trị (VNĐ)": Number(asset.purchaseValue || 0), "Hạn bảo hành": asset.warrantyUntil ? new Date(asset.warrantyUntil).toLocaleDateString("vi-VN") : "" })); const workbook = XLSX.utils.book_new(); const sheet = XLSX.utils.json_to_sheet(rows); sheet["!cols"] = [{ wch: 16 }, { wch: 34 }, { wch: 22 }, { wch: 22 }, { wch: 16 }, { wch: 16 }, { wch: 22 }, { wch: 20 }, { wch: 18 }, { wch: 18 }]; XLSX.utils.book_append_sheet(workbook, sheet, "Tài sản"); XLSX.writeFile(workbook, `assetmaster-${departmentName.replace(/[^a-zA-Z0-9]/g, "-")}.xlsx`); };
+  const exportExcel = async () => {
+    const departmentName = departmentId === "all" ? "Tất cả phòng ban" : departments.data?.find((department) => department.id === Number(departmentId))?.name || "Chưa gán";
+    const rows = selectedAssets.map((asset) => ({
+      "Mã tài sản": asset.assetCode,
+      "Tên tài sản": asset.name,
+      "Phòng ban": departments.data?.find((department) => department.id === asset.departmentId)?.name || "Chưa gán",
+      "Người giữ": asset.holderName || "Chưa cấp phát",
+      "Trạng thái": asset.status,
+      "Tình trạng": asset.condition,
+      "Vị trí": asset.location || "",
+      "Serial/IMEI": asset.serialNumber || "",
+      "Giá trị (VNĐ)": Number(asset.purchaseValue || 0),
+      "Hạn bảo hành": asset.warrantyUntil ? new Date(asset.warrantyUntil).toLocaleDateString("vi-VN") : "",
+    }));
+    const workbook = XLSX.utils.book_new();
+    const sheet = XLSX.utils.json_to_sheet(rows);
+    sheet["!cols"] = [{ wch: 16 }, { wch: 34 }, { wch: 22 }, { wch: 22 }, { wch: 16 }, { wch: 16 }, { wch: 22 }, { wch: 20 }, { wch: 18 }, { wch: 18 }];
+    XLSX.utils.book_append_sheet(workbook, sheet, "Tài sản");
+    await writeBrandedWorkbook(workbook, {
+      documentTitle: "BÁO CÁO TÀI SẢN THEO PHÒNG BAN",
+      fileName: `assetmaster-${departmentName.replace(/[^a-zA-Z0-9]/g, "-")}.xlsx`,
+      description: `Phòng ban: ${departmentName} · ${rows.length} tài sản.`,
+    });
+  };
   return <div className={shell}><div className="mx-auto max-w-[1500px]"><div className="mb-7"><div className="mb-2 flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.16em] text-[#2666A8]"><span className="h-1.5 w-1.5 rounded-full bg-[#2666A8]" />Live management data</div><h1 className="font-display text-[30px] font-extrabold tracking-[-0.04em] text-[#102A43]">Báo cáo vận hành</h1><p className="mt-1 text-sm text-[#71869A]">Tổng hợp chỉ số, xuất dữ liệu phòng ban và tra cứu lịch sử thao tác.</p></div><div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">{metrics.map((metric) => <div key={metric.label} className={`${card} p-5`}><FileBarChart size={19} className="text-[#2666A8]" /><div className="mt-5 text-xs font-semibold text-[#7890A5]">{metric.label}</div><div className="mt-1 font-display text-3xl font-extrabold text-[#102A43]">{metric.value}</div></div>)}</div><section className={`mt-5 ${card} p-5`}><div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between"><div><div className="flex items-center gap-2 text-sm font-extrabold text-[#193B57]"><Download size={16} className="text-[#087A6A]" />Xuất tài sản theo phòng ban</div><p className="mt-1 text-xs text-[#71869A]">Tệp Excel gồm thông tin định danh, người giữ, trạng thái và giá trị tài sản.</p></div><div className="flex flex-col gap-2 sm:flex-row"><select value={departmentId} onChange={(event) => setDepartmentId(event.target.value)} disabled={!isAdmin || departments.isLoading} className="field-input min-w-[210px]"><option value="all">Tất cả phòng ban</option>{departments.data?.map((department) => <option key={department.id} value={department.id}>{department.name}</option>)}</select><button onClick={exportExcel} disabled={!isAdmin || selectedAssets.length === 0} className="inline-flex items-center justify-center gap-2 rounded-lg bg-[#0F8C8C] px-4 py-2 text-xs font-bold text-white hover:bg-[#087A6A] disabled:cursor-not-allowed disabled:opacity-60"><Download size={15} />Xuất Excel ({selectedAssets.length})</button></div></div>{!isAdmin && <p className="mt-3 text-xs text-[#A86B00]">Chỉ quản trị viên có thể xuất báo cáo theo phòng ban và xem nhật ký chi tiết.</p>}</section>{isAdmin && <section className={`mt-5 overflow-hidden ${card}`}><div className="border-b border-[#E7EEF3] px-5 py-4"><div className="flex items-center gap-2 text-sm font-extrabold text-[#193B57]"><History size={16} className="text-[#2666A8]" />Nhật ký hoạt động</div><p className="mt-1 text-xs text-[#71869A]">Theo dõi các thay đổi tài sản, bàn giao, bảo trì, kiểm kê và quản trị tài khoản.</p><div className="mt-4 grid gap-2 sm:grid-cols-[1fr_190px]"><div className="relative"><Search size={14} className="absolute left-3 top-2.5 text-[#8AA0B6]" /><input value={activityQuery} onChange={(event) => setActivityQuery(event.target.value)} placeholder="Tìm theo người thực hiện, nội dung hoặc thao tác..." className="field-input pl-9" /></div><select value={activityType} onChange={(event) => setActivityType(event.target.value)} className="field-input"><option value="all">Tất cả đối tượng</option>{[...new Set((activities.data || []).map((item) => item.entityType))].map((type) => <option key={type} value={type}>{type}</option>)}</select></div></div><div className="mobile-table-scroll overflow-x-auto"><table className="w-full min-w-[780px] text-left text-xs"><thead className="bg-[#FBFCFD] text-[10px] uppercase tracking-[.12em] text-[#8AA0B6]"><tr><th className="px-5 py-3">Thời gian</th><th className="px-4 py-3">Người thực hiện</th><th className="px-4 py-3">Đối tượng</th><th className="px-4 py-3">Thao tác</th><th className="px-5 py-3">Chi tiết</th></tr></thead><tbody>{activities.isLoading && <tr><td colSpan={5} className="px-5 py-10 text-center text-sm text-[#71869A]">Đang tải nhật ký...</td></tr>}{!activities.isLoading && filteredActivities.map((item) => <tr key={item.id} className="border-t border-[#EDF2F5]"><td className="px-5 py-3 text-[#60758A]">{new Date(item.createdAt).toLocaleString("vi-VN")}</td><td className="px-4 py-3 font-semibold text-[#193B57]">{item.actorName || "Hệ thống"}</td><td className="px-4 py-3"><span className="rounded-full bg-[#F0F5F8] px-2 py-1 text-[10px] font-bold text-[#60758A]">{item.entityType} #{item.entityId}</span></td><td className="px-4 py-3 font-mono text-[10px] text-[#0F8C8C]">{item.action}</td><td className="px-5 py-3 text-[#60758A]">{item.summary || "—"}</td></tr>)}{!activities.isLoading && filteredActivities.length === 0 && <tr><td colSpan={5} className="px-5 py-10 text-center text-sm text-[#8AA0B6]">Không có nhật ký phù hợp.</td></tr>}</tbody></table></div></section>}</div></div>;
 }

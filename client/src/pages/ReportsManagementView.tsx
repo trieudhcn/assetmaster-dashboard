@@ -7,6 +7,7 @@ import { trpc } from "@/lib/trpc";
 import { matchesVietnameseSearch } from "@/lib/catalogUi";
 import { SearchableSelect } from "@/components/SearchableSelect";
 import { formatCompactVnd, type CurrencyDisplayMode } from "@/lib/formatters";
+import { writeBrandedWorkbook } from "@/lib/brandedWorkbook";
 
 const card = "rounded-xl border border-[#DFE9F0] bg-white shadow-[0_8px_24px_rgba(16,42,67,0.045)]";
 const divisionColors = ["#0F8C8C", "#2666A8", "#E59B24", "#7666B3", "#CF5C4B", "#3F9C6D", "#5B7FA3"];
@@ -99,7 +100,7 @@ export function ReportsManagementView() {
     if (!supplierReturnedAssets.length || exporting) return;
     setExporting("returned");
     const loadingToast = toast.loading("Đang tạo báo cáo tài sản trả nhà cung cấp...");
-    window.setTimeout(() => {
+    window.setTimeout(() => { void (async () => {
       try {
         const rows = supplierReturnedAssets.map((asset) => ({
           "Mã tài sản": asset.assetCode,
@@ -116,7 +117,11 @@ export function ReportsManagementView() {
         const sheet = XLSX.utils.json_to_sheet(rows);
         sheet["!cols"] = [{ wch: 16 }, { wch: 34 }, { wch: 24 }, { wch: 16 }, { wch: 24 }, { wch: 42 }, { wch: 18 }, { wch: 20 }, { wch: 22 }];
         XLSX.utils.book_append_sheet(workbook, sheet, "Trả nhà cung cấp");
-        XLSX.writeFile(workbook, "assetmaster-tai-san-tra-nha-cung-cap.xlsx");
+        await writeBrandedWorkbook(workbook, {
+          documentTitle: "BÁO CÁO TÀI SẢN ĐÃ TRẢ NHÀ CUNG CẤP",
+          fileName: "assetmaster-tai-san-tra-nha-cung-cap.xlsx",
+          description: `Báo cáo ${rows.length} tài sản trả nhà cung cấp theo phạm vi lọc hiện tại.`,
+        });
         toast.success(`Đã xuất ${rows.length} tài sản trả nhà cung cấp.`, { id: loadingToast });
       } catch (error) {
         console.error(error);
@@ -124,14 +129,14 @@ export function ReportsManagementView() {
       } finally {
         setExporting(null);
       }
-    }, 180);
+    })(); }, 180);
   };
 
   const exportExcel = () => {
     if (!inventoryAssets.length || exporting) return;
     setExporting("inventory");
     const loadingToast = toast.loading("Đang tạo báo cáo tài sản...");
-    window.setTimeout(() => {
+    window.setTimeout(() => { void (async () => {
       try {
         const rows = inventoryAssets.map((asset) => {
           const holder = asset.holderUserId ? employeeById.get(asset.holderUserId) : undefined;
@@ -144,7 +149,11 @@ export function ReportsManagementView() {
         sheet["!cols"] = [{ wch: 16 }, { wch: 34 }, { wch: 24 }, { wch: 28 }, { wch: 22 }, { wch: 16 }, { wch: 16 }, { wch: 22 }, { wch: 20 }, { wch: 18 }, { wch: 18 }];
         XLSX.utils.book_append_sheet(workbook, sheet, "Tài sản");
         const scope = selectedDivision?.name || selectedDepartment?.name || "tat-ca";
-        XLSX.writeFile(workbook, `assetmaster-${scope.replace(/[^a-zA-Z0-9]/g, "-")}.xlsx`);
+        await writeBrandedWorkbook(workbook, {
+          documentTitle: "BÁO CÁO TÀI SẢN THEO CƠ CẤU",
+          fileName: `assetmaster-${scope.replace(/[^a-zA-Z0-9]/g, "-")}.xlsx`,
+          description: `Phạm vi: ${selectedDepartment?.name || "Tất cả Phòng Ban"}${selectedDivision ? ` · ${selectedDivision.name}` : ""}.`,
+        });
         toast.success(`Đã xuất ${rows.length} tài sản theo phạm vi lọc.`, { id: loadingToast });
       } catch (error) {
         console.error(error);
@@ -152,7 +161,7 @@ export function ReportsManagementView() {
       } finally {
         setExporting(null);
       }
-    }, 180);
+    })(); }, 180);
   };
 
   return <div className="min-h-screen bg-[#F4F7FB] px-4 py-7 sm:px-6 lg:px-9 lg:py-8"><div className="mx-auto max-w-[1500px]">

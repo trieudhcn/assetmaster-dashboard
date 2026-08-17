@@ -663,6 +663,27 @@ describe("maintenance history and filter layout contract", () => {
     expect(readProjectFile("server/db.ts")).toContain("^KK-${auditYear}-(\\\\d+)$");
   });
 
+  it("adds company branding to every exported Excel workbook and to audit PDFs", () => {
+    const workbookHelper = readProjectFile("client/src/lib/brandedWorkbook.ts");
+    const operations = readProjectFile("client/src/pages/OperationsModules.tsx");
+    const reports = readProjectFile("client/src/pages/ReportsManagementView.tsx");
+    const home = readProjectFile("client/src/pages/Home.tsx");
+    const categories = readProjectFile("client/src/pages/AssetCategoryManagementPage.tsx");
+    const assetImport = readProjectFile("client/src/components/AssetImportModal.tsx");
+
+    expect(workbookHelper).toContain('const infoSheetName = "Thông tin doanh nghiệp"');
+    expect(workbookHelper).toContain('await import("exceljs")');
+    expect(workbookHelper).toContain("company.logoUrl");
+    expect(workbookHelper).toContain("Logo doanh nghiệp");
+    expect(operations).toContain("writeBrandedWorkbook");
+    expect(operations).not.toContain("XLSX.writeFile");
+    expect(operations).toContain("company.phone");
+    expect(reports).toContain("writeBrandedWorkbook");
+    expect(home).toContain("writeBrandedWorkbook");
+    expect(categories).toContain("writeBrandedWorkbook");
+    expect(assetImport).toContain("writeBrandedWorkbook");
+  });
+
   it("exposes a per-maintenance-ticket history drawer and protected history query", () => {
     const operations = readProjectFile("client/src/pages/OperationsModules.tsx");
     const router = readProjectFile("server/routers.ts");

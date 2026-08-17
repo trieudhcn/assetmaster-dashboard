@@ -7,6 +7,7 @@ import { trpc } from "@/lib/trpc";
 import { matchesVietnameseSearch } from "@/lib/catalogUi";
 import * as XLSX from "xlsx";
 import { Download, FileSpreadsheet, Loader2 } from "lucide-react";
+import { writeBrandedWorkbook } from "@/lib/brandedWorkbook";
 
 type CategoryDraft = { name: string; code: string; description: string };
 type Category = CategoryDraft & { id: number; isActive: boolean };
@@ -109,7 +110,11 @@ export function AssetCategoryManagementPage() {
       });
       const workbook = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(workbook, XLSX.utils.json_to_sheet(rows), "Phân loại tài sản");
-      XLSX.writeFile(workbook, `bao-cao-phan-loai-${new Date().toISOString().slice(0, 10)}.xlsx`);
+      await writeBrandedWorkbook(workbook, {
+        documentTitle: "BÁO CÁO PHÂN LOẠI TÀI SẢN",
+        fileName: `bao-cao-phan-loai-${new Date().toISOString().slice(0, 10)}.xlsx`,
+        description: `Báo cáo ${rows.length} phân loại theo bộ lọc đang áp dụng.`,
+      });
       toast.success(`Đã xuất ${rows.length} Phân loại ra Excel.`, { id: loadingToast });
     } catch (error) {
       console.error("[AssetCategoryManagementPage] Excel export failed", error);

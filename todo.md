@@ -1255,5 +1255,13 @@
 - [x] Thêm logo và thông tin công ty từ Cài đặt vào biên bản kiểm kê PDF.
 - [x] Thêm số trang trên mọi trang của biên bản kiểm kê PDF.
 - [x] Cập nhật hồi quy, kiểm thử TypeScript, Vitest, production build và responsive.
-- [ ] Lưu checkpoint phát hành cho phiên này.
-- [ ] Xác nhận trạng thái hoạt động và báo cáo kết quả cho người dùng.
+- [x] Lưu checkpoint phát hành cho phiên này.
+- [x] Xác nhận trạng thái hoạt động và báo cáo kết quả cho người dùng.
+
+## Current Session — Branded Export Files
+
+- [x] Lập danh mục tất cả luồng xuất PDF, Excel và mẫu/tệp lỗi có thể tải xuống.
+- [x] Tạo helper dùng chung chèn thông tin công ty và trang giới thiệu cho workbook Excel.
+- [x] Áp dụng logo và thông tin công ty từ Cài đặt cho mọi PDF và workbook Excel hiện có.
+- [x] Bổ sung hồi quy, kiểm thử TypeScript, Vitest, production build và xác minh file xuất.
+- [ ] Lưu checkpoint phát hành và báo cáo phạm vi cập nhật.
