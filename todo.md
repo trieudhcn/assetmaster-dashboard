@@ -1487,3 +1487,9 @@
 - [x] Rà soát cấu hình ảnh nền và màn hình đăng nhập hiện có.
 - [x] Thêm thao tác gỡ ảnh nền và cấu hình lớp phủ sáng/tối trong Cài đặt hệ thống.
 - [x] Áp dụng lớp phủ theo cấu hình, bổ sung hồi quy, kiểm tra và phát hành cập nhật.
+
+## Current Session — Internal Deployment Planning
+
+- [x] Rà soát kiến trúc ứng dụng, xác thực hiện tại và các phụ thuộc triển khai.
+- [x] Xây dựng phương án cơ sở dữ liệu tại máy chủ công ty và đăng nhập tài khoản doanh nghiệp.
+- [x] Trình bày lộ trình triển khai, kiểm thử, sao lưu và vận hành nội bộ.
