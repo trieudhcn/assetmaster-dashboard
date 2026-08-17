@@ -601,7 +601,7 @@ describe("maintenance history and filter layout contract", () => {
 
     expect(operations).toContain("relative z-0 mt-5 overflow-hidden");
     expect(operations).toContain("relative z-20 border-b border-[#E7EEF3]");
-    expect(operations).toContain("w-full lg:max-w-[880px]");
+    expect(operations).toContain("w-full sm:max-w-[520px]");
     const searchableSelect = readProjectFile("client/src/components/SearchableSelect.tsx");
     expect(searchableSelect).toContain("createPortal(menu, document.body)");
     expect(searchableSelect).toContain("menuPortal = true");
@@ -626,6 +626,9 @@ describe("maintenance history and filter layout contract", () => {
     expect(operations).toContain("Hiện trạng thực tế");
     expect(operations).toContain("Ghi chú kiểm kê");
     expect(operations).toContain("Mã QR để quét");
+    expect(operations).toContain("sm:max-w-[520px]");
+    expect(operations).toContain("Thêm tài sản");
+    expect(operations).toContain("Danh sách kiểm kê");
   });
 
   it("exposes a per-maintenance-ticket history drawer and protected history query", () => {

@@ -1212,7 +1212,7 @@
 
 ## Current Session — Compact Audit Asset Picker
 
-- [ ] Rà soát bố cục vùng chọn tài sản kiểm kê hiện tại.
-- [ ] Thu gọn chiều ngang ô chọn tài sản.
-- [ ] Đưa nút “Danh sách kiểm kê” cùng hàng, đặt sau nút “Thêm tài sản”.
-- [ ] Kiểm thử responsive, hồi quy và phát hành checkpoint.
+- [x] Rà soát bố cục vùng chọn tài sản kiểm kê hiện tại.
+- [x] Thu gọn chiều ngang ô chọn tài sản.
+- [x] Đưa nút “Danh sách kiểm kê” cùng hàng, đặt sau nút “Thêm tài sản”.
+- [x] Kiểm thử responsive, hồi quy và phát hành checkpoint.
