@@ -1124,3 +1124,14 @@ it("hiển thị thời điểm đồng bộ dashboard từ dữ liệu truy v�
   expect(home).toContain("Đồng bộ lại dữ liệu dashboard");
   expect(home).not.toContain("Dữ liệu cập nhật lúc 09:42, 14/02/2025");
 });
+
+it("hiển thị danh sách vật tư chạm mức tồn tối thiểu trên trang Tổng quan", () => {
+  const home = readProjectFile("client/src/pages/Home.tsx");
+
+  expect(home).toContain("trpc.supplies.list.useQuery");
+  expect(home).toContain("lowStockSupplies");
+  expect(home).toContain("Vật tư chạm mức tồn tối thiểu");
+  expect(home).toContain("Tồn / tối thiểu");
+  expect(home).toContain("Mở vật tư & tồn kho");
+  expect(home).toContain("Tồn kho vật tư đang an toàn");
+});

@@ -1692,3 +1692,9 @@
 - [x] Hiển thị số lượng tồn kho còn lại trong hộp thoại xác nhận cấp phát vật tư.
 - [x] Thêm cảnh báo rõ ràng khi cấp phát khiến tồn kho thấp hơn mức tối thiểu.
 - [x] Bổ sung hồi quy, kiểm tra giao diện, TypeScript, Vitest, build và phát hành cập nhật.
+
+## Current Session — Dashboard Low Stock Watchlist
+
+- [x] Hiển thị danh sách vật tư chạm hoặc thấp hơn mức tồn tối thiểu trên trang Tổng quan.
+- [x] Hiển thị mã, số lượng hiện có, mức tối thiểu và lối tắt đến Vật tư & Tồn kho.
+- [x] Bổ sung hồi quy, kiểm tra giao diện, TypeScript, Vitest, build và phát hành cập nhật.
