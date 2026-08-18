@@ -1603,3 +1603,8 @@
 
 - [x] Thay cơ chế chèn DOM bằng nút React hiển thị trực tiếp trong hàng bộ lọc Danh mục tài sản.
 - [x] Bổ sung hồi quy, kiểm tra giao diện, TypeScript, Vitest, build và phát hành cập nhật.
+
+## Current Session — Document Header Alignment
+
+- [x] Căn giữa theo chiều dọc khối thông tin công ty với logo trong phần đầu biên bản.
+- [x] Bổ sung hồi quy, kiểm tra TypeScript, Vitest, build và phát hành cập nhật.

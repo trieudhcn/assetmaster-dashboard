@@ -1289,11 +1289,11 @@ async function downloadHandoverPdf(item: Handover, signature: string | undefined
   drawHandoverBrandMark(doc, left, y, logoDataUrl);
   doc.setTextColor(15, 140, 140);
   doc.setFontSize(10);
-  doc.text(companyInfo.name, left + 24, y);
+  doc.text(companyInfo.name, left + 24, y - 4);
   doc.setFontSize(8);
   doc.setTextColor(112, 134, 154);
-  doc.text(`Địa chỉ: ${companyInfo.address}`, left + 24, y + 6);
-  doc.text(`MST: ${companyInfo.taxCode} · Điện thoại: ${companyInfo.phone}`, left + 24, y + 12);
+  doc.text(`Địa chỉ: ${companyInfo.address}`, left + 24, y + 2);
+  doc.text(`MST: ${companyInfo.taxCode} · Điện thoại: ${companyInfo.phone}`, left + 24, y + 8);
   doc.setTextColor(16, 42, 67);
   doc.setDrawColor(15, 140, 140);
   doc.line(left, y + 18, 192, y + 18);

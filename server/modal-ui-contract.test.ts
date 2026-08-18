@@ -152,6 +152,13 @@ describe("modal presentation contract", () => {
     expect(operations).toContain("Biên bản được lập từ dữ liệu đã chốt của đơn vị.");
   });
 
+  it("vertically centers company information alongside the handover document logo", () => {
+    const home = readProjectFile("client/src/pages/Home.tsx");
+    expect(home).toContain("doc.text(companyInfo.name, left + 24, y - 4)");
+    expect(home).toContain("doc.text(`Địa chỉ: ${companyInfo.address}`, left + 24, y + 2)");
+    expect(home).toContain("doc.text(`MST: ${companyInfo.taxCode} · Điện thoại: ${companyInfo.phone}`, left + 24, y + 8)");
+  });
+
   it("surfaces maintenance assets with a quick request action and prevents duplicate open tickets", () => {
     const operations = readProjectFile("client/src/pages/OperationsModules.tsx");
     const routers = readProjectFile("server/routers.ts");
