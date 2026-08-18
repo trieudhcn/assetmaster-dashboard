@@ -25,6 +25,8 @@ import {
   createHandover,
   createInventoryMovement,
   createInventorySupply,
+  createSupplyIssueSlip,
+  createSupplyIssueSlipItem,
   createMaintenanceTicket,
   createVendor,
   createVendorDocument,
@@ -51,6 +53,9 @@ import {
   getHandoverById,
   getInventorySupplyByCode,
   getInventorySupplyById,
+  getNextSupplyIssueSequence,
+  getSupplyIssueSlipById,
+  getSupplyIssueSlipItemById,
   listHelpGuides,
   listUiLabels,
   getNextHandoverSequence,
@@ -90,6 +95,9 @@ import {
   listHandoversByRecipient,
   listInventoryMovements,
   listInventorySupplies,
+  listInventoryMovementReport,
+  listSupplyIssueSlipItems,
+  listSupplyIssueSlips,
   listHelpGuideVersions,
   listVendors,
   listVendorDocuments,
@@ -109,6 +117,8 @@ import {
   updateVendor,
   updateHandover,
   updateInventorySupply,
+  updateSupplyIssueSlip,
+  updateSupplyIssueSlipItem,
   updateMaintenanceTicket,
   updateUserRole,
   updateUserActiveStatus,
@@ -485,6 +495,71 @@ export const appRouter = router({
   supplies: router({
     list: adminProcedure.query(() => listInventorySupplies()),
     history: adminProcedure.input(z.object({ supplyId: z.number().int().positive(), page: z.number().int().positive().default(1), pageSize: z.number().int().min(1).max(50).default(10) })).query(({ input }) => listInventoryMovements(input.supplyId, input.page, input.pageSize)),
+    historyReport: adminProcedure.query(() => listInventoryMovementReport()),
+    issueSlips: adminProcedure.query(() => listSupplyIssueSlips()),
+    issueSlipItems: adminProcedure.input(z.object({ issueSlipId: z.number().int().positive() })).query(({ input }) => listSupplyIssueSlipItems(input.issueSlipId)),
+    createIssueSlip: adminProcedure.input(z.object({
+      recipientUserId: z.number().int().positive().nullable().optional(),
+      recipientName: z.string().trim().max(160).optional(),
+      recipientDepartmentId: z.number().int().positive().nullable().optional(),
+      note: nullableText,
+      items: z.array(z.object({ supplyId: z.number().int().positive(), quantity: z.number().finite().positive() })).min(1).max(50),
+    }).superRefine((input, issue) => {
+      if (!input.recipientUserId && !input.recipientName) issue.addIssue({ code: z.ZodIssueCode.custom, path: ["recipientName"], message: "Vui lòng chọn nhân sự hoặc nhập người nhận khác." });
+      if (new Set(input.items.map((item) => item.supplyId)).size !== input.items.length) issue.addIssue({ code: z.ZodIssueCode.custom, path: ["items"], message: "Một vật tư chỉ được xuất một lần trong cùng phiếu." });
+    })).mutation(async ({ input, ctx }) => {
+      const recipientUser = input.recipientUserId ? (await listUsers()).find((user) => user.id === input.recipientUserId && user.isActive) : null;
+      if (input.recipientUserId && !recipientUser) throw new TRPCError({ code: "NOT_FOUND", message: "Không tìm thấy nhân sự đang hoạt động được chọn." });
+      const recipientName = recipientUser?.name || input.recipientName?.trim();
+      if (!recipientName) throw new TRPCError({ code: "BAD_REQUEST", message: "Vui lòng cung cấp người nhận vật tư." });
+      const issueYear = new Date().getFullYear();
+      for (let attempt = 0; attempt < 5; attempt += 1) {
+        try {
+          return await runInventoryTransaction(async (transaction) => {
+            const sequence = await getNextSupplyIssueSequence(issueYear, transaction);
+            const referenceCode = `VT-${issueYear}-${String(sequence).padStart(3, "0")}`;
+            const issueSlipId = await createSupplyIssueSlip({ referenceCode, recipientUserId: recipientUser?.id ?? null, recipientName, recipientDepartmentId: recipientUser?.departmentId ?? input.recipientDepartmentId ?? null, status: "active", note: input.note ?? null, issuedByUserId: ctx.user!.id, issuedByName: ctx.user!.name ?? "Quản trị viên" }, transaction);
+            for (const requestItem of input.items) {
+              const supply = await getInventorySupplyById(requestItem.supplyId, transaction);
+              if (!supply || !supply.isActive) throw new TRPCError({ code: "NOT_FOUND", message: "Không tìm thấy vật tư đang hoạt động." });
+              const before = Number(supply.stockQuantity);
+              const after = before - requestItem.quantity;
+              if (after < 0) throw new TRPCError({ code: "BAD_REQUEST", message: `Tồn kho ${supply.name} không đủ. Hiện còn ${before} ${supply.unit}.` });
+              await updateInventorySupply(supply.id, { stockQuantity: String(after) }, transaction);
+              const issueSlipItemId = await createSupplyIssueSlipItem({ issueSlipId, supplyId: supply.id, supplyCode: supply.code, supplyName: supply.name, unit: supply.unit, issuedQuantity: String(requestItem.quantity), returnedQuantity: "0" }, transaction);
+              await createInventoryMovement({ supplyId: supply.id, movementType: "issue", quantity: String(-requestItem.quantity), quantityBefore: String(before), quantityAfter: String(after), issueSlipId, issueSlipItemId, recipientUserId: recipientUser?.id ?? null, recipientName, recipientDepartmentId: recipientUser?.departmentId ?? input.recipientDepartmentId ?? null, note: `Cấp phát theo phiếu ${referenceCode}${input.note ? `: ${input.note}` : ""}`, createdByUserId: ctx.user!.id, createdByName: ctx.user!.name ?? "Quản trị viên" }, transaction);
+            }
+            await recordActivity({ entityType: "supply_issue_slip", entityId: issueSlipId, action: "created", actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: `Tạo phiếu cấp phát vật tư ${referenceCode} cho ${recipientName}` }, transaction);
+            return { id: issueSlipId, referenceCode };
+          });
+        } catch (error) {
+          const duplicateCode = typeof error === "object" && error !== null && (("code" in error && error.code === "ER_DUP_ENTRY") || ("errno" in error && Number(error.errno) === 1062));
+          if (!duplicateCode || attempt === 4) throw error;
+        }
+      }
+      throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Không thể tạo mã phiếu cấp phát duy nhất." });
+    }),
+    returnIssueItem: adminProcedure.input(z.object({ issueSlipItemId: z.number().int().positive(), quantity: z.number().finite().positive(), note: z.string().trim().min(2).max(1000) })).mutation(async ({ input, ctx }) => runInventoryTransaction(async (transaction) => {
+      const item = await getSupplyIssueSlipItemById(input.issueSlipItemId, transaction);
+      if (!item) throw new TRPCError({ code: "NOT_FOUND", message: "Không tìm thấy dòng vật tư đã cấp phát." });
+      const issueSlip = await getSupplyIssueSlipById(item.issueSlipId, transaction);
+      if (!issueSlip || issueSlip.status === "returned") throw new TRPCError({ code: "BAD_REQUEST", message: "Phiếu cấp phát này đã hoàn trả toàn bộ." });
+      const availableToReturn = Number(item.issuedQuantity) - Number(item.returnedQuantity);
+      if (input.quantity > availableToReturn) throw new TRPCError({ code: "BAD_REQUEST", message: `Chỉ có thể hoàn trả tối đa ${availableToReturn} ${item.unit}.` });
+      const supply = await getInventorySupplyById(item.supplyId, transaction);
+      if (!supply) throw new TRPCError({ code: "NOT_FOUND", message: "Không tìm thấy vật tư trong kho." });
+      const before = Number(supply.stockQuantity);
+      const after = before + input.quantity;
+      await updateInventorySupply(supply.id, { stockQuantity: String(after) }, transaction);
+      const returnedQuantity = Number(item.returnedQuantity) + input.quantity;
+      await updateSupplyIssueSlipItem(item.id, { returnedQuantity: String(returnedQuantity) }, transaction);
+      await createInventoryMovement({ supplyId: supply.id, movementType: "return", quantity: String(input.quantity), quantityBefore: String(before), quantityAfter: String(after), issueSlipId: issueSlip.id, issueSlipItemId: item.id, recipientUserId: issueSlip.recipientUserId ?? null, recipientName: issueSlip.recipientName, recipientDepartmentId: issueSlip.recipientDepartmentId ?? null, note: `Hoàn trả theo phiếu ${issueSlip.referenceCode}: ${input.note}`, createdByUserId: ctx.user!.id, createdByName: ctx.user!.name ?? "Quản trị viên" }, transaction);
+      const items = await listSupplyIssueSlipItems(issueSlip.id, transaction);
+      const isFullyReturned = items.every((row: { id: number; issuedQuantity: string; returnedQuantity: string }) => row.id === item.id ? Number(row.issuedQuantity) <= returnedQuantity : Number(row.issuedQuantity) <= Number(row.returnedQuantity));
+      if (isFullyReturned) await updateSupplyIssueSlip(issueSlip.id, { status: "returned", returnedAt: new Date() }, transaction);
+      await recordActivity({ entityType: "supply_issue_slip", entityId: issueSlip.id, action: "item_returned", actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: `Hoàn trả ${input.quantity} ${item.unit} theo phiếu ${issueSlip.referenceCode}` }, transaction);
+      return { success: true, stockQuantity: after, fullyReturned: isFullyReturned };
+    })),
     create: adminProcedure.input(z.object({
       code: z.string().trim().min(2).max(64).regex(/^[A-Za-z0-9-]+$/).transform((value) => value.toUpperCase()),
       name: z.string().trim().min(2).max(255),

@@ -198,13 +198,44 @@ export const inventorySupplies = mysqlTable("inventorySupplies", {
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 }, (table) => [index("inventory_supplies_category_idx").on(table.categoryId), index("inventory_supplies_active_idx").on(table.isActive)]);
 
+export const supplyIssueSlips = mysqlTable("supplyIssueSlips", {
+  id: int("id").autoincrement().primaryKey(),
+  referenceCode: varchar("referenceCode", { length: 64 }).notNull().unique(),
+  recipientUserId: int("recipientUserId").references(() => users.id, { onDelete: "set null", onUpdate: "cascade" }),
+  recipientName: varchar("recipientName", { length: 160 }).notNull(),
+  recipientDepartmentId: int("recipientDepartmentId"),
+  status: mysqlEnum("status", ["active", "returned"]).default("active").notNull(),
+  note: text("note"),
+  issuedByUserId: int("issuedByUserId"),
+  issuedByName: varchar("issuedByName", { length: 160 }),
+  issuedAt: timestamp("issuedAt").defaultNow().notNull(),
+  returnedAt: timestamp("returnedAt"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+}, (table) => [index("supply_issue_slips_issued_idx").on(table.issuedAt), index("supply_issue_slips_recipient_idx").on(table.recipientUserId)]);
+
+export const supplyIssueSlipItems = mysqlTable("supplyIssueSlipItems", {
+  id: int("id").autoincrement().primaryKey(),
+  issueSlipId: int("issueSlipId").notNull().references(() => supplyIssueSlips.id, { onDelete: "restrict", onUpdate: "cascade" }),
+  supplyId: int("supplyId").notNull().references(() => inventorySupplies.id, { onDelete: "restrict", onUpdate: "cascade" }),
+  supplyCode: varchar("supplyCode", { length: 64 }).notNull(),
+  supplyName: varchar("supplyName", { length: 255 }).notNull(),
+  unit: varchar("unit", { length: 32 }).notNull(),
+  issuedQuantity: decimal("issuedQuantity", { precision: 15, scale: 2 }).notNull(),
+  returnedQuantity: decimal("returnedQuantity", { precision: 15, scale: 2 }).default("0").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+}, (table) => [index("supply_issue_slip_items_slip_idx").on(table.issueSlipId), index("supply_issue_slip_items_supply_idx").on(table.supplyId)]);
+
 export const inventoryMovements = mysqlTable("inventoryMovements", {
   id: int("id").autoincrement().primaryKey(),
   supplyId: int("supplyId").notNull().references(() => inventorySupplies.id, { onDelete: "restrict", onUpdate: "cascade" }),
-  movementType: mysqlEnum("movementType", ["receipt", "issue", "adjustment"]).notNull(),
+  movementType: mysqlEnum("movementType", ["receipt", "issue", "adjustment", "return"]).notNull(),
   quantity: decimal("quantity", { precision: 15, scale: 2 }).notNull(),
   quantityBefore: decimal("quantityBefore", { precision: 15, scale: 2 }).notNull(),
   quantityAfter: decimal("quantityAfter", { precision: 15, scale: 2 }).notNull(),
+  issueSlipId: int("issueSlipId").references(() => supplyIssueSlips.id, { onDelete: "set null", onUpdate: "cascade" }),
+  issueSlipItemId: int("issueSlipItemId").references(() => supplyIssueSlipItems.id, { onDelete: "set null", onUpdate: "cascade" }),
   recipientUserId: int("recipientUserId").references(() => users.id, { onDelete: "set null", onUpdate: "cascade" }),
   recipientName: varchar("recipientName", { length: 160 }),
   recipientDepartmentId: int("recipientDepartmentId"),
@@ -212,7 +243,7 @@ export const inventoryMovements = mysqlTable("inventoryMovements", {
   createdByUserId: int("createdByUserId"),
   createdByName: varchar("createdByName", { length: 160 }),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
-}, (table) => [index("inventory_movements_supply_idx").on(table.supplyId), index("inventory_movements_created_idx").on(table.createdAt)]);
+}, (table) => [index("inventory_movements_supply_idx").on(table.supplyId), index("inventory_movements_created_idx").on(table.createdAt), index("inventory_movements_slip_idx").on(table.issueSlipId)]);
 
 export const handovers = mysqlTable("handovers", {
   id: int("id").autoincrement().primaryKey(),

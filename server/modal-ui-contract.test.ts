@@ -189,6 +189,19 @@ describe("modal presentation contract", () => {
     expect(routers).toContain("Không tìm thấy nhân sự đang hoạt động được chọn.");
   });
 
+  it("adds supply issue slips, stock returns, and an Excel history report", () => {
+    const supplies = readProjectFile("client/src/pages/SuppliesInventoryView.tsx");
+    const issueSlips = readProjectFile("client/src/components/SupplyIssueSlipManager.tsx");
+    const routers = readProjectFile("server/routers.ts");
+    expect(supplies).toContain("Tạo phiếu cấp phát");
+    expect(issueSlips).toContain("VT-NĂM-001");
+    expect(issueSlips).toContain("Hoàn trả về kho");
+    expect(issueSlips).toContain("Xuất Excel lịch sử");
+    expect(routers).toContain("VT-${issueYear}-${String(sequence).padStart(3, \"0\")}");
+    expect(routers).toContain("returnIssueItem");
+    expect(routers).toContain("historyReport");
+  });
+
   it("uses only company branding rather than the product name in document headers", () => {
     const home = readProjectFile("client/src/pages/Home.tsx");
     const operations = readProjectFile("client/src/pages/OperationsModules.tsx");

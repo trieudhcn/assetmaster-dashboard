@@ -19,6 +19,8 @@ import {
   inventoryMovements,
   inventorySupplies,
   maintenanceTickets,
+  supplyIssueSlipItems,
+  supplyIssueSlips,
   uiLabels,
   type InsertUser,
   userNotificationPreferences,
@@ -472,6 +474,87 @@ export async function listInventoryMovements(supplyId: number, page = 1, pageSiz
   const items = await db.select().from(inventoryMovements).where(eq(inventoryMovements.supplyId, supplyId)).orderBy(desc(inventoryMovements.createdAt)).limit(safePageSize).offset((safePage - 1) * safePageSize);
   const totalNumber = Number(total || 0);
   return { items, total: totalNumber, page: safePage, pageSize: safePageSize, totalPages: Math.ceil(totalNumber / safePageSize) };
+}
+
+export async function getNextSupplyIssueSequence(issueYear: number, executor?: any) {
+  const db = executor ?? await getDb();
+  if (!db) throw new Error("Database unavailable");
+  const rows: Array<{ referenceCode: string }> = await db.select({ referenceCode: supplyIssueSlips.referenceCode }).from(supplyIssueSlips).where(like(supplyIssueSlips.referenceCode, `VT-${issueYear}-%`));
+  const maxSequence = rows.reduce((maximum: number, row) => {
+    const match = row.referenceCode.match(new RegExp(`^VT-${issueYear}-(\\d+)$`));
+    return Math.max(maximum, match ? Number(match[1]) : 0);
+  }, 0);
+  return maxSequence + 1;
+}
+
+export async function createSupplyIssueSlip(data: typeof supplyIssueSlips.$inferInsert, executor?: any) {
+  const db = executor ?? await getDb();
+  if (!db) throw new Error("Database unavailable");
+  const result = await db.insert(supplyIssueSlips).values(data);
+  return Number(result[0].insertId);
+}
+
+export async function createSupplyIssueSlipItem(data: typeof supplyIssueSlipItems.$inferInsert, executor?: any) {
+  const db = executor ?? await getDb();
+  if (!db) throw new Error("Database unavailable");
+  const result = await db.insert(supplyIssueSlipItems).values(data);
+  return Number(result[0].insertId);
+}
+
+export async function getSupplyIssueSlipById(id: number, executor?: any) {
+  const db = executor ?? await getDb();
+  if (!db) return undefined;
+  return (await db.select().from(supplyIssueSlips).where(eq(supplyIssueSlips.id, id)).limit(1))[0];
+}
+
+export async function listSupplyIssueSlips() {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(supplyIssueSlips).orderBy(desc(supplyIssueSlips.issuedAt));
+}
+
+export async function listSupplyIssueSlipItems(issueSlipId: number, executor?: any) {
+  const db = executor ?? await getDb();
+  if (!db) return [];
+  return db.select().from(supplyIssueSlipItems).where(eq(supplyIssueSlipItems.issueSlipId, issueSlipId));
+}
+
+export async function getSupplyIssueSlipItemById(id: number, executor?: any) {
+  const db = executor ?? await getDb();
+  if (!db) return undefined;
+  return (await db.select().from(supplyIssueSlipItems).where(eq(supplyIssueSlipItems.id, id)).limit(1))[0];
+}
+
+export async function updateSupplyIssueSlip(id: number, data: Partial<typeof supplyIssueSlips.$inferInsert>, executor?: any) {
+  const db = executor ?? await getDb();
+  if (!db) throw new Error("Database unavailable");
+  await db.update(supplyIssueSlips).set(data).where(eq(supplyIssueSlips.id, id));
+}
+
+export async function updateSupplyIssueSlipItem(id: number, data: Partial<typeof supplyIssueSlipItems.$inferInsert>, executor?: any) {
+  const db = executor ?? await getDb();
+  if (!db) throw new Error("Database unavailable");
+  await db.update(supplyIssueSlipItems).set(data).where(eq(supplyIssueSlipItems.id, id));
+}
+
+export async function listInventoryMovementReport() {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select({
+    id: inventoryMovements.id,
+    movementType: inventoryMovements.movementType,
+    quantity: inventoryMovements.quantity,
+    quantityBefore: inventoryMovements.quantityBefore,
+    quantityAfter: inventoryMovements.quantityAfter,
+    recipientName: inventoryMovements.recipientName,
+    note: inventoryMovements.note,
+    createdByName: inventoryMovements.createdByName,
+    createdAt: inventoryMovements.createdAt,
+    supplyCode: inventorySupplies.code,
+    supplyName: inventorySupplies.name,
+    unit: inventorySupplies.unit,
+    issueReferenceCode: supplyIssueSlips.referenceCode,
+  }).from(inventoryMovements).innerJoin(inventorySupplies, eq(inventoryMovements.supplyId, inventorySupplies.id)).leftJoin(supplyIssueSlips, eq(inventoryMovements.issueSlipId, supplyIssueSlips.id)).orderBy(desc(inventoryMovements.createdAt));
 }
 
 export async function createAssetsBulk(data: Array<typeof assets.$inferInsert>) {

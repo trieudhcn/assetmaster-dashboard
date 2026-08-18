@@ -1643,3 +1643,11 @@
 - [x] Cho phép chỉnh sửa mã và tên vật tư theo quy tắc chống trùng lặp.
 - [x] Cho phép cấp phát cho nhân sự hệ thống hoặc người nhận nhập tay khi chọn Người khác.
 - [x] Bổ sung hồi quy, kiểm tra giao diện, TypeScript, Vitest, build và phát hành cập nhật.
+
+## Current Session — Supply Issue Slips, Returns & Excel Report
+
+- [x] Rà soát luồng giao dịch vật tư và chuẩn bị mô hình phiếu cấp phát theo năm.
+- [x] Tạo dữ liệu phiếu cấp phát VT-NĂM-001 và liên kết giao dịch cấp phát/hoàn trả.
+- [x] Thêm API tạo phiếu, hoàn trả một phần về kho và xuất lịch sử nhập–xuất.
+- [x] Xây dựng giao diện phiếu cấp phát, hoàn trả và tải báo cáo Excel.
+- [x] Bổ sung hồi quy, kiểm tra giao diện, TypeScript, Vitest, migration, build và phát hành cập nhật.
