@@ -1,0 +1,3 @@
+# Xác minh xác nhận hoàn trả và cảnh báo tồn kho — 18/08/2026
+
+Danh sách Bàn giao & Cấp phát tải ổn định, có phiếu BG-2026-001 và BG-2026-3E76C8B3 đang ở trạng thái Đã bàn giao để kiểm tra luồng hoàn trả. Với BG-2026-001, nút **Ghi nhận hoàn trả** mở hộp thoại xác nhận đồng bộ, nền mờ, nêu rõ hậu quả trạng thái, tóm tắt tài sản, mã và người đang nhận, cùng nút Hủy/Xác nhận hoàn trả. Đã hủy hộp thoại để không làm thay đổi dữ liệu kiểm thử. Drawer thử nghiệm vật tư đã đóng sau khi thay đổi DOM, trang vật tư tải lại ổn định; cảnh báo tồn kho được bao phủ bởi hồi quy cùng kiểm tra TypeScript/build.

@@ -255,6 +255,19 @@ describe("modal presentation contract", () => {
     expect(supplies).toContain("Tạo phiếu cấp phát?");
     expect(supplies).not.toContain("window.confirm");
     expect(supplies).toContain("onConfirm={confirmIssueSlip}");
+    expect(supplies).toContain("projectedStockAfterIssue");
+    expect(supplies).toContain("Tồn kho sau cấp");
+    expect(supplies).toContain("Cảnh báo tồn kho thấp");
+    expect(supplies).toContain("thấp hơn mức tối thiểu");
+  });
+
+  it("requires a branded confirmation before recording an asset return", () => {
+    const home = readProjectFile("client/src/pages/Home.tsx");
+
+    expect(home).toContain("AlertDialogTrigger");
+    expect(home).toContain("Xác nhận ghi nhận hoàn trả?");
+    expect(home).toContain("Tài sản sẽ được chuyển về trạng thái sẵn có");
+    expect(home).toContain("onClick={() => updateStatus(\"returned\")}");
   });
 
   it("uses only company branding rather than the product name in document headers", () => {
