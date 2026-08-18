@@ -897,6 +897,19 @@ function PaginatedAssetCatalogPage({ assets, query, category, status, department
     const openAssetImport = () => window.dispatchEvent(new Event("assetmaster:open-asset-import"));
     importButton.addEventListener("click", openAssetImport);
 
+    const warrantySelect = Array.from(document.querySelectorAll<HTMLSelectElement>("select")).find((select) => Array.from(select.options).some((option) => option.text === "Tất cả bảo hành"));
+    const filterBar = warrantySelect?.parentElement?.parentElement;
+    const importHistoryButton = document.createElement("button");
+    importHistoryButton.type = "button";
+    importHistoryButton.dataset.assetImportHistory = "true";
+    importHistoryButton.className = "grid h-9 w-9 shrink-0 place-items-center rounded-lg border border-[#CDE5E5] bg-white text-sm font-extrabold text-[#087A6A] hover:bg-[#ECF8F7]";
+    importHistoryButton.setAttribute("aria-label", "Mở lịch sử import");
+    importHistoryButton.title = "Lịch sử import thành công";
+    importHistoryButton.textContent = "↶";
+    const openImportHistory = () => window.dispatchEvent(new Event("assetmaster:open-import-history"));
+    importHistoryButton.addEventListener("click", openImportHistory);
+    if (filterBar && !filterBar.querySelector("[data-asset-import-history]")) filterBar.append(importHistoryButton);
+
     resetButton.className = "inline-flex h-9 shrink-0 whitespace-nowrap items-center justify-center gap-2 rounded-lg border border-[#DDE7F0] px-3 text-xs font-bold text-[#60758A] hover:bg-[#F7FAFC]";
     actionBar.append(filteredExportButton, maintenanceButton, exportButton, importButton, resetButton);
     controls.append(actionBar);
@@ -906,6 +919,8 @@ function PaginatedAssetCatalogPage({ assets, query, category, status, department
       maintenanceButton.removeEventListener("click", toggleMaintenance);
       exportButton.removeEventListener("click", exportMaintenanceExcel);
       importButton.removeEventListener("click", openAssetImport);
+      importHistoryButton.removeEventListener("click", openImportHistory);
+      importHistoryButton.remove();
       actionBar.replaceWith(resetButton);
       resetButton.className = originalResetClass;
       controls.className = originalControlsClass;

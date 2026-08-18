@@ -133,8 +133,11 @@ describe("modal presentation contract", () => {
     expect(importHistory).toContain("Có thể hoàn tác");
     expect(importHistory).toContain("importSessionDetails.useQuery");
     expect(importHistory).toContain("Xem tài sản");
+    expect(importHistory).toContain("assetmaster:open-import-history");
     expect(home).toContain('className="relative z-[120]"');
     expect(home).toContain("z-[130]");
+    expect(home).toContain('data-asset-import-history');
+    expect(home).toContain('title = "Lịch sử import thành công"');
     expect(employees).toContain("EMPLOYEE_PAGE_SIZE = 10");
     expect(employees).toContain('aria-label="Trang nhân sự sau"');
   });

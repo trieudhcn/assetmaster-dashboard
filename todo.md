@@ -1586,3 +1586,9 @@
 - [x] Thêm xem chi tiết danh sách tài sản trong từng phiên import trước khi hoàn tác.
 - [x] Thêm phân trang cho Quản lý nhân sự theo mẫu điều hướng thống nhất của hệ thống.
 - [x] Bổ sung hồi quy, kiểm tra giao diện, TypeScript, Vitest, build và phát hành cập nhật.
+
+## Current Session — Compact Asset Import History
+
+- [x] Đưa nút lịch sử import vào khu vực bộ lọc Danh mục tài sản dưới dạng icon gọn.
+- [x] Chỉ liệt kê phiên import có tài sản được tạo hoặc cập nhật thành công.
+- [x] Bổ sung hồi quy, kiểm tra giao diện, TypeScript, Vitest, build và phát hành cập nhật.

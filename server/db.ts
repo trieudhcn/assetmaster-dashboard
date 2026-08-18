@@ -467,8 +467,9 @@ export async function listAssetImportSessions(page = 1, pageSize = 10) {
   const safePage = Math.max(1, Math.floor(page));
   const safePageSize = Math.min(50, Math.max(1, Math.floor(pageSize)));
   if (!db) return { items: [], total: 0, page: safePage, pageSize: safePageSize, totalPages: 0 };
-  const [{ total }] = await db.select({ total: sql<number>`count(*)` }).from(assetImportSessions);
-  const items = await db.select().from(assetImportSessions).orderBy(desc(assetImportSessions.createdAt)).limit(safePageSize).offset((safePage - 1) * safePageSize);
+  const successfulSession = sql`${assetImportSessions.createdCount} > 0 OR ${assetImportSessions.updatedCount} > 0`;
+  const [{ total }] = await db.select({ total: sql<number>`count(*)` }).from(assetImportSessions).where(successfulSession);
+  const items = await db.select().from(assetImportSessions).where(successfulSession).orderBy(desc(assetImportSessions.createdAt)).limit(safePageSize).offset((safePage - 1) * safePageSize);
   const totalNumber = Number(total || 0);
   return { items, total: totalNumber, page: safePage, pageSize: safePageSize, totalPages: Math.ceil(totalNumber / safePageSize) };
 }

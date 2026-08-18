@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { AlertTriangle, ChevronLeft, ChevronRight, Clock3, History, PackageSearch, RotateCcw, X } from "lucide-react";
 import { toast } from "sonner";
 import { trpc } from "@/lib/trpc";
@@ -8,7 +8,8 @@ const DETAIL_PAGE_SIZE = 10;
 
 export function ImportHistoryLauncher({ onUndone }: { onUndone: () => void }) {
   const [open, setOpen] = useState(false);
-  return <>{open ? <ImportHistoryDrawer onClose={() => setOpen(false)} onUndone={onUndone} /> : null}<button type="button" onClick={() => setOpen(true)} className="fixed bottom-5 right-5 z-[84] inline-flex items-center gap-2 rounded-full border border-[#CDE5E5] bg-white px-3 py-2 text-xs font-extrabold text-[#087A6A] shadow-[0_12px_28px_rgba(16,42,67,0.16)] transition hover:-translate-y-0.5 hover:bg-[#F4FBFA]" aria-label="Mở lịch sử import"><History size={15} />Lịch sử import</button></>;
+  useEffect(() => { const openHistory = () => setOpen(true); window.addEventListener("assetmaster:open-import-history", openHistory); return () => window.removeEventListener("assetmaster:open-import-history", openHistory); }, []);
+  return open ? <ImportHistoryDrawer onClose={() => setOpen(false)} onUndone={onUndone} /> : null;
 }
 
 function ImportHistoryDrawer({ onClose, onUndone }: { onClose: () => void; onUndone: () => void }) {
