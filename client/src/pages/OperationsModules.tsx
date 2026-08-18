@@ -34,6 +34,7 @@ import { handoverPdfFontUrl, registerVietnamesePdfFont } from "@/lib/handoverPdf
 import { writeBrandedWorkbook } from "@/lib/brandedWorkbook";
 import { applyPdfLogoWatermark, createPdfLogoWatermark, openPdfPreview } from "@/lib/pdfExport";
 import { ModuleEmptyState } from "@/components/ModuleEmptyState";
+import { EditableSectionLabel } from "@/components/EditableSectionLabel";
 import { ModalTableSkeleton } from "@/components/ModalTableSkeleton";
 import {
   AlertDialog,
@@ -1324,7 +1325,7 @@ export function AuditPage() {
       <div className="mx-auto max-w-[1500px]">
         <div className="mb-7 flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
           <div>
-            <div className="mb-2 flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.16em] text-[#0F8C8C]"><span className="h-1.5 w-1.5 rounded-full bg-[#0F8C8C]" />Đối chiếu kiểm kê</div>
+            <div className="mb-2 flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.16em] text-[#0F8C8C]"><span className="h-1.5 w-1.5 rounded-full bg-[#0F8C8C]" /><EditableSectionLabel labelKey="audit-reconciliation" fallback="Đối chiếu kiểm kê" canEdit={isAdmin} /></div>
             <h1 className="font-display text-[30px] font-extrabold tracking-[-0.04em] text-[#102A43]">{selectedAudit ? selectedAudit.name : "Kiểm kê tài sản"}</h1>
             <p className="mt-1 text-sm text-[#71869A]">{selectedAudit ? `${selectedAudit.referenceCode} · Đối chiếu trạng thái dự kiến với thực tế kiểm kê.` : "Lập đợt kiểm kê, đối chiếu trạng thái dự kiến với thực tế và xử lý chênh lệch theo từng tài sản."}</p>
           </div>
