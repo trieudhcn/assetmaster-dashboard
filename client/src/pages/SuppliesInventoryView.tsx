@@ -142,14 +142,15 @@ export function SuppliesInventoryView() {
       formatError.className = "text-[10px] font-medium leading-4 text-[#B44545]";
       const commit = (raw: string) => { if (isInvalidVndInput(raw)) { input.value = raw; input.dataset.rawValue = ""; input.style.borderColor = "#B44545"; input.style.backgroundColor = "#FFF7F7"; words.textContent = ""; formatError.textContent = "Đơn giá chỉ nhận chữ số; có thể dán số kèm ₫ hoặc VNĐ."; return; } const amount = parseVndAmount(raw); const formatted = amount === null ? "" : formatVndInput(amount); input.value = formatted; input.dataset.rawValue = amount === null ? "" : String(amount); input.style.borderColor = ""; input.style.backgroundColor = ""; words.textContent = formatted ? numberToVietnameseWords(formatted) : ""; formatError.textContent = ""; };
       commit(editingSupply.unitCost === null ? "" : String(editingSupply.unitCost));
-      input.addEventListener("input", () => commit(input.value));
+      const handleEditCurrencyInput = () => { const numericOnly = input.value.replace(/[^0-9.,]/g, ""); if (input.value !== numericOnly) input.value = numericOnly; commit(numericOnly); };
+      input.addEventListener("input", handleEditCurrencyInput);
       inputWrap.append(input, suffix);
       field.append(caption, inputWrap, words, formatError);
       const saveHandler = (event: Event) => { event.preventDefault(); event.stopPropagation(); if (isInvalidVndInput(input.value)) { toast.error("Đơn giá không đúng định dạng. Chỉ nhập chữ số hoặc dán số kèm ₫/VNĐ."); return; } const raw = input.dataset.rawValue || ""; updateSupply.mutate({ id: editingSupply.id, name: nameInput.value, unitCost: raw ? Number(raw) : null }); };
       saveButton.addEventListener("click", saveHandler, true);
       const actions = editor.querySelector(".mt-5.flex");
       if (actions) editor.insertBefore(field, actions); else editor.append(field);
-      return () => { saveButton.removeEventListener("click", saveHandler, true); field.remove(); delete editor.dataset.editCurrencyReady; };
+      return () => { input.removeEventListener("input", handleEditCurrencyInput); saveButton.removeEventListener("click", saveHandler, true); field.remove(); delete editor.dataset.editCurrencyReady; };
     });
     return () => window.cancelAnimationFrame(frame);
   }, [editingSupply?.id]);
@@ -406,7 +407,7 @@ function SupplyCreateModal({ form, setForm, categoryOptions, vendorOptions, bran
       suffix.className = "pointer-events-none absolute right-5 top-1/2 -translate-y-1/2 text-[9px] font-extrabold text-[#087A6A]";
       suffix.textContent = "VNĐ";
       const commit = (raw: string) => { const amount = parseVndAmount(raw); setRows((current) => current.map((item, index) => index === rowIndex ? { ...item, unitCost: amount } : item)); };
-      const handleInput = (event: Event) => { event.stopPropagation(); commit((event.currentTarget as HTMLInputElement).value); };
+      const handleInput = (event: Event) => { event.stopPropagation(); const target = event.currentTarget as HTMLInputElement; const numericOnly = target.value.replace(/[^0-9.,]/g, ""); if (target.value !== numericOnly) target.value = numericOnly; commit(numericOnly); };
       input.addEventListener("input", handleInput, true);
       cell.append(suffix);
     });

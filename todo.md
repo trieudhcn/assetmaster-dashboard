@@ -1814,3 +1814,10 @@
 - [x] Áp dụng phân cách hàng nghìn, hậu tố VNĐ và xử lý dữ liệu dán có ký hiệu tiền tệ nhất quán.
 - [x] Hiển thị viền đỏ và thông báo lỗi ngay dưới trường đơn giá khi dữ liệu số không hợp lệ.
 - [x] Bổ sung hồi quy, kiểm tra TypeScript, Vitest, build, giao diện và phát hành cập nhật.
+
+## Current Session — Monthly Maintenance Costs & Numeric Unit Prices
+
+- [x] Tổng hợp chi phí bảo trì thực tế theo tháng từ dữ liệu phiếu bảo trì.
+- [x] Hiển thị biểu đồ chi phí bảo trì theo tháng trên trang Tổng quan.
+- [x] Chỉ cho phép nhập ký tự số trong tất cả các ô đơn giá, vẫn hỗ trợ dán giá trị có ₫ hoặc VNĐ.
+- [x] Bổ sung hồi quy, kiểm tra TypeScript, Vitest, build, giao diện và phát hành cập nhật.

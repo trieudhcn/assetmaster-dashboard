@@ -30,6 +30,18 @@ describe("modal presentation contract", () => {
     expect(supplies).toContain("Đơn giá không đúng định dạng");
   });
 
+  it("summarizes maintenance costs by month and filters non-numeric unit-price input", () => {
+    const home = readProjectFile("client/src/pages/Home.tsx");
+    const currencyInput = readProjectFile("client/src/components/CurrencyInput.tsx");
+    const supplies = readProjectFile("client/src/pages/SuppliesInventoryView.tsx");
+
+    expect(home).toContain("monthlyMaintenanceCosts");
+    expect(home).toContain("Chi phí bảo trì theo tháng");
+    expect(home).toContain("data-maintenance-monthly-cost-chart");
+    expect(currencyInput).toContain("raw.replace(/[^0-9.,]/g, \"\")");
+    expect(supplies).toContain("target.value.replace(/[^0-9.,]/g, \"\")");
+  });
+
   it("renders action tooltip from a body-level portal rather than a clipping pseudo-element", () => {
     const tooltipComponent = readProjectFile("client/src/components/FloatingActionTooltip.tsx");
     const home = readProjectFile("client/src/pages/Home.tsx");

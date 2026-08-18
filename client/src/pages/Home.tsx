@@ -358,6 +358,25 @@ export default function Home() {
   const notificationPreferencesQuery = trpc.notifications.preferences.useQuery(undefined, { enabled: isAuthenticated });
   const maintenanceBadgeCount = getMaintenanceBadgeCount(assetRows);
   const newMaintenanceRequestBadge = getNewMaintenanceRequestBadge(maintenanceTicketsQuery.data || []);
+  const monthlyMaintenanceCosts = (() => {
+    const now = new Date();
+    const months = Array.from({ length: 6 }, (_, index) => {
+      const date = new Date(now.getFullYear(), now.getMonth() - (5 - index), 1);
+      const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
+      return { key, label: `T${date.getMonth() + 1}`, total: 0 };
+    });
+    const byKey = new Map(months.map((month) => [month.key, month]));
+    (maintenanceTicketsQuery.data || []).forEach((ticket) => {
+      const date = ticket.resolvedAt || ticket.openedAt;
+      if (!date) return;
+      const occurredAt = new Date(date);
+      const key = `${occurredAt.getFullYear()}-${String(occurredAt.getMonth() + 1).padStart(2, "0")}`;
+      const month = byKey.get(key);
+      const amount = Number(ticket.actualCost ?? ticket.estimatedCost ?? 0);
+      if (month && Number.isFinite(amount) && amount > 0) month.total += amount;
+    });
+    return months;
+  })();
   const maintenanceRequestBadgeTone = { low: "bg-[#EAF3FF] text-[#2666A8]", medium: "bg-[#FFF0C9] text-[#A86B00]", high: "bg-[#FFE7CF] text-[#B85B16]", critical: "bg-[#FDEDEE] text-[#B44545]" }[newMaintenanceRequestBadge.priority || "low"];
   const sidebarNavItems = navItems.map((item) => ({ ...item, maintenanceAssetCount: item.label === "Bảo trì & Báo hỏng" ? maintenanceBadgeCount : 0, maintenanceRequestCount: item.label === "Bảo trì & Báo hỏng" ? newMaintenanceRequestBadge.count : 0 }));
   const trpcUtils = trpc.useUtils();
@@ -372,6 +391,39 @@ export default function Home() {
   const createAssetMutation = trpc.assets.create.useMutation({ onSuccess: () => { void assetQuery.refetch(); setAssetModal(null); toast.success("Đã tạo tài sản và lưu vào hệ thống."); }, onError: (error) => toast.error(error.message || "Không thể tạo tài sản.") });
   const uploadSupplierReturnAttachmentMutation = trpc.assets.uploadSupplierReturnAttachment.useMutation({ onSuccess: () => { void assetQuery.refetch(); toast.success("Đã lưu tệp xác nhận trả nhà cung cấp."); }, onError: (error) => toast.error(error.message || "Không thể lưu tệp xác nhận trả nhà cung cấp.") });
   const updateAssetMutation = trpc.assets.update.useMutation({ onSuccess: (_result, variables) => { void assetQuery.refetch(); void maintenanceTicketsQuery.refetch(); setAssetModal(null); toast.success("Đã cập nhật tài sản và trạng thái bảo trì."); if (variables.id && pendingSupplierReturnAttachmentRef.current) { const attachment = pendingSupplierReturnAttachmentRef.current; pendingSupplierReturnAttachmentRef.current = null; uploadSupplierReturnAttachmentMutation.mutate({ id: variables.id, ...attachment }); } }, onError: (error) => { pendingSupplierReturnAttachmentRef.current = null; toast.error(error.message || "Không thể cập nhật tài sản."); } });
+
+  useEffect(() => {
+    if (!isAuthenticated || !isAdmin) return;
+    const anchor = Array.from(document.querySelectorAll<HTMLElement>("section")).find((section) => section.textContent?.includes("Phụ kiện chạm mức tồn tối thiểu"));
+    if (!anchor) return;
+    const existing = document.querySelector<HTMLElement>("[data-maintenance-monthly-cost-chart]");
+    existing?.remove();
+    const max = Math.max(...monthlyMaintenanceCosts.map((item) => item.total), 1);
+    const total = monthlyMaintenanceCosts.reduce((sum, item) => sum + item.total, 0);
+    const chart = document.createElement("section");
+    chart.dataset.maintenanceMonthlyCostChart = "true";
+    chart.className = "mt-5 rounded-xl border border-[#DFE9F0] bg-white p-5 shadow-[0_8px_24px_rgba(16,42,67,0.045)]";
+    chart.innerHTML = `<div class="flex flex-wrap items-start justify-between gap-3"><div><div class="flex items-center gap-2 text-sm font-extrabold text-[#193B57]"><span class="grid h-7 w-7 place-items-center rounded-lg bg-[#FFF5DC] text-[#A86B00]">₫</span>Chi phí bảo trì theo tháng</div><p class="mt-1 text-xs text-[#71869A]">Tổng chi phí thực tế; dùng chi phí dự kiến khi phiếu chưa chốt.</p></div><div class="rounded-lg bg-[#FFF9EB] px-3 py-2 text-right"><div class="text-[10px] font-extrabold uppercase tracking-[.1em] text-[#8F6A31]">6 tháng gần nhất</div><div class="mt-1 text-sm font-extrabold text-[#A86B00]">${total.toLocaleString("vi-VN")} VNĐ</div></div></div><div class="mt-5 grid h-40 grid-cols-6 items-end gap-3" aria-label="Biểu đồ chi phí bảo trì theo tháng"></div>`;
+    const bars = chart.querySelector("[aria-label]");
+    monthlyMaintenanceCosts.forEach((item) => {
+      const column = document.createElement("div");
+      column.className = "flex h-full min-w-0 flex-col items-center justify-end gap-2";
+      const value = document.createElement("span");
+      value.className = "hidden max-w-full truncate text-[10px] font-bold text-[#60758A] sm:block";
+      value.textContent = item.total ? `${Math.round(item.total / 1000).toLocaleString("vi-VN")}k` : "0";
+      const bar = document.createElement("div");
+      bar.className = "w-full min-h-1 rounded-t-md bg-gradient-to-t from-[#0F8C8C] to-[#69BBB5] transition-[height] duration-300";
+      bar.style.height = `${item.total ? Math.max((item.total / max) * 100, 6) : 3}%`;
+      bar.title = `${item.label}: ${item.total.toLocaleString("vi-VN")} VNĐ`;
+      const label = document.createElement("span");
+      label.className = "text-[10px] font-extrabold text-[#71869A]";
+      label.textContent = item.label;
+      column.append(value, bar, label);
+      bars?.append(column);
+    });
+    anchor.insertAdjacentElement("afterend", chart);
+    return () => chart.remove();
+  }, [isAuthenticated, isAdmin, maintenanceTicketsQuery.data]);
 
   useEffect(() => {
     const openImport = () => setAssetImportOpen(true);

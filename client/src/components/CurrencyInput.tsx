@@ -14,11 +14,12 @@ export function CurrencyInput({ value, onChange, suffix = "VNĐ", showWords = fa
   const [formatError, setFormatError] = useState(false);
   useEffect(() => setDisplayValue(formatVndInput(value)), [value]);
 
-  const commit = (raw: string) => {
-    const invalid = isInvalidVndInput(raw);
+  const commit = (raw: string, fromPaste = false) => {
+    const normalizedRaw = fromPaste ? raw : raw.replace(/[^0-9.,]/g, "");
+    const invalid = isInvalidVndInput(normalizedRaw);
     setFormatError(invalid);
-    if (invalid) { setDisplayValue(raw); return; }
-    const parsed = parseVndAmount(raw);
+    if (invalid) { setDisplayValue(normalizedRaw); return; }
+    const parsed = parseVndAmount(normalizedRaw);
     const next = parsed === null ? "" : String(parsed);
     setDisplayValue(parsed === null ? "" : formatVndInput(parsed));
     onChange(next);
@@ -37,7 +38,7 @@ export function CurrencyInput({ value, onChange, suffix = "VNĐ", showWords = fa
         onPaste={(event) => {
           const pasted = event.clipboardData.getData("text");
           event.preventDefault();
-          commit(pasted);
+          commit(pasted, true);
         }}
         aria-invalid={formatError || undefined}
         className={`field-input w-full pr-[6.5rem] ${formatError ? "border-[#B44545] bg-[#FFF7F7] text-[#9E2C2C] focus:border-[#B44545] focus:ring-[#F7C6C6]" : ""} ${className}`}
