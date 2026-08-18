@@ -22,6 +22,14 @@ export function formatVndInput(value: number | string | null | undefined): strin
   return numericValue === null ? "" : formatVnd(numericValue);
 }
 
+export function isInvalidVndInput(value: string | number | null | undefined): boolean {
+  const raw = String(value ?? "").trim();
+  if (!raw) return false;
+  const compact = raw.replace(/\s|VNĐ|VND|₫/gi, "");
+  if (!compact) return true;
+  return !(/^\d+$/.test(compact) || /^\d{1,3}(?:[.,]\d{3})+$/.test(compact) || /^\d+[.,]\d{1,2}$/.test(compact));
+}
+
 const vietnameseDigits = ["không", "một", "hai", "ba", "bốn", "năm", "sáu", "bảy", "tám", "chín"];
 const vietnameseScales = ["", "nghìn", "triệu", "tỷ"];
 

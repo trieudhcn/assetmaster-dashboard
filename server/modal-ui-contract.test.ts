@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
-import { formatVnd, numberToVietnameseWords, parseVndAmount } from "../client/src/lib/formatters";
+import { formatVnd, isInvalidVndInput, numberToVietnameseWords, parseVndAmount } from "../client/src/lib/formatters";
 
 const projectRoot = resolve(import.meta.dirname, "..");
 const readProjectFile = (relativePath: string) => readFileSync(resolve(projectRoot, relativePath), "utf8");
@@ -13,6 +13,21 @@ describe("modal presentation contract", () => {
     expect(parseVndAmount("160000")).toBe(160000);
     expect(formatVnd("160000.00")).toBe("160.000");
     expect(numberToVietnameseWords(160000)).toBe("Một trăm sáu mươi nghìn đồng");
+    expect(isInvalidVndInput("42.500.000 VNĐ")).toBe(false);
+    expect(isInvalidVndInput("42,500,000 ₫")).toBe(false);
+    expect(isInvalidVndInput("160000.00")).toBe(false);
+    expect(isInvalidVndInput("42 nghìn")).toBe(true);
+  });
+
+  it("shows a shared inline warning and blocks accessory saving for invalid currency input", () => {
+    const currencyInput = readProjectFile("client/src/components/CurrencyInput.tsx");
+    const supplies = readProjectFile("client/src/pages/SuppliesInventoryView.tsx");
+
+    expect(currencyInput).toContain("isInvalidVndInput");
+    expect(currencyInput).toContain("Đơn giá chỉ nhận chữ số");
+    expect(currencyInput).toContain("border-[#B44545]");
+    expect(supplies).toContain("isInvalidVndInput(form.unitCost)");
+    expect(supplies).toContain("Đơn giá không đúng định dạng");
   });
 
   it("renders action tooltip from a body-level portal rather than a clipping pseudo-element", () => {

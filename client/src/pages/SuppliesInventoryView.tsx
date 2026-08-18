@@ -7,7 +7,7 @@ import { toast } from "sonner";
 import { trpc } from "@/lib/trpc";
 import { SearchableSelect } from "@/components/SearchableSelect";
 import { SupplyIssueSlipManager } from "@/components/SupplyIssueSlipManager";
-import { formatVndInput, numberToVietnameseWords, parseVndAmount } from "@/lib/formatters";
+import { formatVndInput, isInvalidVndInput, numberToVietnameseWords, parseVndAmount } from "@/lib/formatters";
 
 const PAGE_SIZE = 10;
 type SupplyForm = { code: string; name: string; unit: string; openingQuantity: string; minimumQuantity: string; unitCost: string; location: string; categoryId: string; vendorId: string; brandId: string; note: string };
@@ -79,6 +79,7 @@ export function SuppliesInventoryView() {
 
   const submitCreate = () => {
     if (!form.code.trim() || !form.name.trim()) return toast.error("Vui lòng nhập mã và tên phụ kiện.");
+    if (isInvalidVndInput(form.unitCost)) return toast.error("Đơn giá không đúng định dạng. Chỉ nhập chữ số hoặc dán số kèm ₫/VNĐ.");
     createSupply.mutate({ code: form.code, name: form.name, unit: form.unit || "Cái", openingQuantity: Number(form.openingQuantity || 0), minimumQuantity: Number(form.minimumQuantity || 0), unitCost: form.unitCost ? Number(form.unitCost) : null, location: form.location || null, categoryId: form.categoryId ? Number(form.categoryId) : null, vendorId: form.vendorId ? Number(form.vendorId) : null, brandId: form.brandId ? Number(form.brandId) : null, note: form.note || null });
   };
   const submitMovement = () => {
@@ -137,12 +138,14 @@ export function SuppliesInventoryView() {
       suffix.textContent = "VNĐ";
       const words = document.createElement("p");
       words.className = "pl-1 text-[10px] font-medium leading-4 text-[#8AA0B6]";
-      const commit = (raw: string) => { const amount = parseVndAmount(raw); const formatted = amount === null ? "" : formatVndInput(amount); input.value = formatted; input.dataset.rawValue = amount === null ? "" : String(amount); words.textContent = formatted ? numberToVietnameseWords(formatted) : ""; };
+      const formatError = document.createElement("p");
+      formatError.className = "text-[10px] font-medium leading-4 text-[#B44545]";
+      const commit = (raw: string) => { if (isInvalidVndInput(raw)) { input.value = raw; input.dataset.rawValue = ""; input.style.borderColor = "#B44545"; input.style.backgroundColor = "#FFF7F7"; words.textContent = ""; formatError.textContent = "Đơn giá chỉ nhận chữ số; có thể dán số kèm ₫ hoặc VNĐ."; return; } const amount = parseVndAmount(raw); const formatted = amount === null ? "" : formatVndInput(amount); input.value = formatted; input.dataset.rawValue = amount === null ? "" : String(amount); input.style.borderColor = ""; input.style.backgroundColor = ""; words.textContent = formatted ? numberToVietnameseWords(formatted) : ""; formatError.textContent = ""; };
       commit(editingSupply.unitCost === null ? "" : String(editingSupply.unitCost));
       input.addEventListener("input", () => commit(input.value));
       inputWrap.append(input, suffix);
-      field.append(caption, inputWrap, words);
-      const saveHandler = (event: Event) => { event.preventDefault(); event.stopPropagation(); const raw = input.dataset.rawValue || ""; updateSupply.mutate({ id: editingSupply.id, name: nameInput.value, unitCost: raw ? Number(raw) : null }); };
+      field.append(caption, inputWrap, words, formatError);
+      const saveHandler = (event: Event) => { event.preventDefault(); event.stopPropagation(); if (isInvalidVndInput(input.value)) { toast.error("Đơn giá không đúng định dạng. Chỉ nhập chữ số hoặc dán số kèm ₫/VNĐ."); return; } const raw = input.dataset.rawValue || ""; updateSupply.mutate({ id: editingSupply.id, name: nameInput.value, unitCost: raw ? Number(raw) : null }); };
       saveButton.addEventListener("click", saveHandler, true);
       const actions = editor.querySelector(".mt-5.flex");
       if (actions) editor.insertBefore(field, actions); else editor.append(field);
@@ -364,13 +367,15 @@ function SupplyCreateModal({ form, setForm, categoryOptions, vendorOptions, bran
     clear.textContent = "×";
     const words = document.createElement("p");
     words.className = "mt-1 pl-1 text-[10px] font-medium leading-4 text-[#8AA0B6]";
-    const renderCurrency = (raw: string) => { const amount = parseVndAmount(raw); const formatted = amount === null ? "" : formatVndInput(amount); input.value = formatted; words.textContent = formatted ? numberToVietnameseWords(formatted) : ""; clear.style.display = formatted ? "grid" : "none"; };
-    const commitCurrency = (raw: string) => { const amount = parseVndAmount(raw); setForm((current) => ({ ...current, unitCost: amount === null ? "" : String(amount) })); window.requestAnimationFrame(() => renderCurrency(amount === null ? "" : String(amount))); };
+    const formatError = document.createElement("p");
+    formatError.className = "mt-1 pl-1 text-[10px] font-medium leading-4 text-[#B44545]";
+    const renderCurrency = (raw: string) => { const invalid = isInvalidVndInput(raw); if (invalid) { input.value = raw; input.style.borderColor = "#B44545"; input.style.backgroundColor = "#FFF7F7"; words.textContent = ""; clear.style.display = "none"; formatError.textContent = "Đơn giá chỉ nhận chữ số; có thể dán số kèm ₫ hoặc VNĐ."; return; } const amount = parseVndAmount(raw); const formatted = amount === null ? "" : formatVndInput(amount); input.value = formatted; input.style.borderColor = ""; input.style.backgroundColor = ""; words.textContent = formatted ? numberToVietnameseWords(formatted) : ""; clear.style.display = formatted ? "grid" : "none"; formatError.textContent = ""; };
+    const commitCurrency = (raw: string) => { if (isInvalidVndInput(raw)) { setForm((current) => ({ ...current, unitCost: raw })); window.requestAnimationFrame(() => renderCurrency(raw)); return; } const amount = parseVndAmount(raw); setForm((current) => ({ ...current, unitCost: amount === null ? "" : String(amount) })); window.requestAnimationFrame(() => renderCurrency(amount === null ? "" : String(amount))); };
     const handleInput = (event: Event) => { event.stopPropagation(); commitCurrency((event.currentTarget as HTMLInputElement).value); };
     const handleClear = () => { commitCurrency(""); input.focus(); };
     input.addEventListener("input", handleInput, true); clear.addEventListener("click", handleClear);
-    container.append(suffix, clear); label.append(words); renderCurrency(form.unitCost);
-    return () => { input.removeEventListener("input", handleInput, true); clear.removeEventListener("click", handleClear); suffix.remove(); clear.remove(); words.remove(); delete container.dataset.accessoryCurrencyReady; input.style.paddingRight = ""; };
+    container.append(suffix, clear); label.append(words, formatError); renderCurrency(form.unitCost);
+    return () => { input.removeEventListener("input", handleInput, true); clear.removeEventListener("click", handleClear); suffix.remove(); clear.remove(); words.remove(); formatError.remove(); delete container.dataset.accessoryCurrencyReady; input.style.paddingRight = ""; input.style.borderColor = ""; input.style.backgroundColor = ""; };
   }, [form]);
   useEffect(() => {
     const dialog = document.querySelector<HTMLElement>('[aria-labelledby="supply-create-title"]');

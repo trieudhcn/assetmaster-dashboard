@@ -1807,3 +1807,10 @@
 - [x] Giữ dấu phân cách hàng nghìn của đơn giá sau khi thay đổi mức tồn tối thiểu hoặc trường khác.
 - [x] Bổ sung hồi quy cho việc đồng bộ định dạng tiền qua các lần React render.
 - [x] Kiểm tra TypeScript, Vitest, build và phát hành sửa lỗi.
+
+## Current Session — Global Currency Formatting & Validation
+
+- [x] Rà soát tất cả form và modal có trường nhập tiền tệ còn lại.
+- [x] Áp dụng phân cách hàng nghìn, hậu tố VNĐ và xử lý dữ liệu dán có ký hiệu tiền tệ nhất quán.
+- [x] Hiển thị viền đỏ và thông báo lỗi ngay dưới trường đơn giá khi dữ liệu số không hợp lệ.
+- [x] Bổ sung hồi quy, kiểm tra TypeScript, Vitest, build, giao diện và phát hành cập nhật.
