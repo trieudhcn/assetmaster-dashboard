@@ -1747,3 +1747,9 @@
 - [x] Cho phép tạo nhanh nhóm phụ kiện ngay từ bộ lọc nhóm.
 - [x] Tự động khóa mã phụ kiện sau khi tạo mới để tránh chỉnh sửa nhầm.
 - [x] Bổ sung hồi quy, kiểm tra TypeScript, Vitest, build, giao diện và phát hành cập nhật.
+
+## Current Session — Add Accessory Dialog Terminology
+
+- [x] Đổi toàn bộ nhãn, mô tả và nút trong hộp thoại Thêm phụ kiện từ Vật tư sang Phụ kiện.
+- [x] Chuẩn hóa nội dung luồng nhập Excel phụ kiện trong cùng hộp thoại.
+- [x] Bổ sung hồi quy, kiểm tra TypeScript, Vitest, build, giao diện và phát hành cập nhật.

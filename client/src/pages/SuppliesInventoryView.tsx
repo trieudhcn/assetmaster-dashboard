@@ -129,6 +129,17 @@ function LegacySupplyCreateModal({ form, setForm, categoryOptions, vendorOptions
   const utils = trpc.useUtils();
   const importInputRef = useRef<HTMLInputElement>(null);
   const [bulkPreview, setBulkPreview] = useState<SupplyBulkItem[]>([]);
+  useEffect(() => {
+    const dialog = document.querySelector<HTMLElement>('[aria-labelledby="supply-create-title"]');
+    if (!dialog) return;
+    const replacements: Array<[RegExp, string]> = [[/Vật tư/g, "Phụ kiện"], [/vật tư/g, "phụ kiện"], [/VT-/g, "PK-"]];
+    const walker = document.createTreeWalker(dialog, NodeFilter.SHOW_TEXT);
+    const nodes: Text[] = [];
+    while (walker.nextNode()) nodes.push(walker.currentNode as Text);
+    nodes.forEach((node) => { let value = node.nodeValue || ""; replacements.forEach(([pattern, replacement]) => { value = value.replace(pattern, replacement); }); node.nodeValue = value; });
+    dialog.querySelectorAll<HTMLInputElement>('input[placeholder]').forEach((input) => { let value = input.placeholder; replacements.forEach(([pattern, replacement]) => { value = value.replace(pattern, replacement); }); input.placeholder = value; });
+    dialog.querySelectorAll<HTMLElement>('[aria-label]').forEach((element) => { let value = element.getAttribute("aria-label") || ""; replacements.forEach(([pattern, replacement]) => { value = value.replace(pattern, replacement); }); element.setAttribute("aria-label", value); });
+  });
   const [bulkErrors, setBulkErrors] = useState<string[]>([]);
   const [updateExisting, setUpdateExisting] = useState(false);
   const [importProgress, setImportProgress] = useState({ phase: "idle", current: 0, total: 0, detail: "" });
