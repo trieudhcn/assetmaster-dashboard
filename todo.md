@@ -1713,3 +1713,10 @@
 - [x] Chuẩn hóa kích thước, icon và căn giữa nút Hủy/Tạo vật tư.
 - [x] Căn giữa nhãn cùng số liệu các thẻ Mặt hàng, Tồn kho và Sắp hết.
 - [x] Bổ sung hồi quy, kiểm tra giao diện, TypeScript, Vitest, build và phát hành cập nhật.
+
+## Current Session — Supply Import Updates & Progress
+
+- [x] Thêm tùy chọn cập nhật vật tư khi mã trong Excel đã tồn tại.
+- [x] Hiển thị phân biệt số dòng tạo mới và cập nhật trong phần xem trước import.
+- [x] Hiển thị tiến trình chi tiết theo từng dòng khi import đang xử lý.
+- [x] Bổ sung hồi quy, kiểm tra giao diện, TypeScript, Vitest, build và phát hành cập nhật.

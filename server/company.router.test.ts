@@ -181,6 +181,16 @@ describe("asset Excel import safeguards", () => {
     expect(mocks.createInventoryMovement).toHaveBeenCalledWith(expect.objectContaining({ supplyId: 81, movementType: "receipt", quantityAfter: "10", note: "Tồn đầu kỳ khi nhập Excel vật tư" }), expect.anything());
   });
 
+  it("updates an existing supply from Excel when duplicate-code updates are enabled", async () => {
+    mocks.getInventorySupplyByCode.mockResolvedValue({ id: 91, code: "VT-BAN-PHIM", stockQuantity: "4", name: "Bàn phím cũ" });
+    mocks.runInventoryTransaction.mockImplementation(async (callback: any) => callback({ transaction: true }));
+    await expect(adminCaller().supplies.bulkCreate({ updateExisting: true, items: [
+      { code: "VT-BAN-PHIM", name: "Bàn phím mới", unit: "Cái", openingQuantity: 3, minimumQuantity: 2, unitCost: 250000, location: "Kho CNTT", categoryId: null, vendorId: null, brandId: null, note: "Cập nhật từ file" },
+    ] })).resolves.toMatchObject({ created: 0, updated: 1 });
+    expect(mocks.updateInventorySupply).toHaveBeenCalledWith(91, expect.objectContaining({ name: "Bàn phím mới", stockQuantity: "7" }), expect.anything());
+    expect(mocks.createInventoryMovement).toHaveBeenCalledWith(expect.objectContaining({ supplyId: 91, quantity: "3", quantityBefore: "4", quantityAfter: "7", note: "Nhập bổ sung khi cập nhật từ Excel vật tư" }), expect.anything());
+  });
+
   it("records a quantity issue atomically and rejects issues beyond stock", async () => {
     mocks.runInventoryTransaction.mockImplementation(async (callback: any) => callback({ transaction: true }));
     mocks.getInventorySupplyById.mockResolvedValue({ id: 81, name: "Chuột phổ thông", unit: "Cái", stockQuantity: "5", minimumQuantity: "3", isActive: true });

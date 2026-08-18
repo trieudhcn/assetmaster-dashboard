@@ -583,7 +583,7 @@ export const appRouter = router({
         return { id: supplyId };
       });
     }),
-    bulkCreate: adminProcedure.input(z.object({ items: z.array(z.object({
+    bulkCreate: adminProcedure.input(z.object({ updateExisting: z.boolean().default(false), items: z.array(z.object({
       code: z.string().trim().min(2).max(64).regex(/^[A-Za-z0-9-]+$/).transform((value) => value.toUpperCase()),
       name: z.string().trim().min(2).max(255),
       categoryId: z.number().int().positive().nullable().optional(),
@@ -602,15 +602,34 @@ export const appRouter = router({
         fileCodes.add(item.code);
       }
       return runInventoryTransaction(async (transaction) => {
-        for (const item of input.items) if (await getInventorySupplyByCode(item.code, transaction)) throw new TRPCError({ code: "BAD_REQUEST", message: `Mã vật tư ${item.code} đã tồn tại.` });
-        const ids: number[] = [];
+        const existingByCode = new Map<string, Awaited<ReturnType<typeof getInventorySupplyByCode>>>();
         for (const item of input.items) {
+          const existing = await getInventorySupplyByCode(item.code, transaction);
+          if (existing && !input.updateExisting) throw new TRPCError({ code: "BAD_REQUEST", message: `Mã vật tư ${item.code} đã tồn tại. Hãy bật tùy chọn cập nhật vật tư trùng mã.` });
+          existingByCode.set(item.code, existing);
+        }
+        const ids: number[] = [];
+        let created = 0;
+        let updated = 0;
+        for (const item of input.items) {
+          const existing = existingByCode.get(item.code);
+          if (existing) {
+            const before = Number(existing.stockQuantity);
+            const after = before + item.openingQuantity;
+            await updateInventorySupply(existing.id, { name: item.name, categoryId: item.categoryId ?? null, vendorId: item.vendorId ?? null, brandId: item.brandId ?? null, unit: item.unit, minimumQuantity: String(item.minimumQuantity), unitCost: item.unitCost === null || item.unitCost === undefined ? null : String(item.unitCost), location: item.location ?? null, note: item.note ?? null, stockQuantity: String(after) }, transaction);
+            if (item.openingQuantity > 0) await createInventoryMovement({ supplyId: existing.id, movementType: "receipt", quantity: String(item.openingQuantity), quantityBefore: String(before), quantityAfter: String(after), note: "Nhập bổ sung khi cập nhật từ Excel vật tư", createdByUserId: ctx.user!.id, createdByName: ctx.user!.name ?? "Quản trị viên" }, transaction);
+            await recordActivity({ entityType: "supply", entityId: existing.id, action: "bulk_import_updated", actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: `Cập nhật từ Excel vật tư ${item.name} (${item.code})${item.openingQuantity > 0 ? `, nhập thêm ${item.openingQuantity} ${item.unit}` : ""}` }, transaction);
+            ids.push(existing.id);
+            updated += 1;
+            continue;
+          }
           const supplyId = await createInventorySupply({ code: item.code, name: item.name, categoryId: item.categoryId ?? null, vendorId: item.vendorId ?? null, brandId: item.brandId ?? null, unit: item.unit, stockQuantity: String(item.openingQuantity), minimumQuantity: String(item.minimumQuantity), unitCost: item.unitCost === null || item.unitCost === undefined ? null : String(item.unitCost), location: item.location ?? null, note: item.note ?? null, isActive: true, createdByUserId: ctx.user!.id }, transaction);
           if (item.openingQuantity > 0) await createInventoryMovement({ supplyId, movementType: "receipt", quantity: String(item.openingQuantity), quantityBefore: "0", quantityAfter: String(item.openingQuantity), note: "Tồn đầu kỳ khi nhập Excel vật tư", createdByUserId: ctx.user!.id, createdByName: ctx.user!.name ?? "Quản trị viên" }, transaction);
           await recordActivity({ entityType: "supply", entityId: supplyId, action: "bulk_imported", actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: `Nhập Excel vật tư ${item.name} (${item.code}), tồn đầu ${item.openingQuantity} ${item.unit}` }, transaction);
           ids.push(supplyId);
+          created += 1;
         }
-        return { created: ids.length, ids };
+        return { created, updated, ids };
       });
     }),
     update: adminProcedure.input(z.object({ id: z.number().int().positive(), code: z.string().trim().min(2).max(64).regex(/^[A-Za-z0-9-]+$/).transform((value) => value.toUpperCase()).optional(), name: z.string().trim().min(2).max(255).optional(), categoryId: z.number().int().positive().nullable().optional(), vendorId: z.number().int().positive().nullable().optional(), brandId: z.number().int().positive().nullable().optional(), unit: z.string().trim().min(1).max(32).optional(), minimumQuantity: z.number().finite().min(0).optional(), unitCost: z.number().finite().min(0).nullable().optional(), location: nullableText, note: nullableText, isActive: z.boolean().optional() })).mutation(async ({ input, ctx }) => {

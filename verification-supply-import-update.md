@@ -1,0 +1,2 @@
+- Modal **Thêm vật tư** đã hiển thị phần nhập Excel với các nút Tải mẫu và Chọn Excel, đồng thời biểu mẫu tạo thủ công vẫn hoạt động bình thường khi chưa chọn tệp.
+- Luồng cập nhật trùng mã và tiến trình được kiểm thử bằng hồi quy router/UI; kiểm tra giao diện không tạo hoặc cập nhật dữ liệu kho thực tế.

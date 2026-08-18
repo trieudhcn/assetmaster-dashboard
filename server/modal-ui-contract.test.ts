@@ -173,6 +173,9 @@ describe("modal presentation contract", () => {
     expect(supplies).toContain("Nhập danh sách từ Excel");
     expect(supplies).toContain("Tải mẫu");
     expect(supplies).toContain("bulkCreate");
+    expect(supplies).toContain("Tự động cập nhật vật tư trùng mã");
+    expect(supplies).toContain("Đang kiểm tra dữ liệu từng dòng");
+    expect(supplies).toContain("Đang ghi transaction an toàn");
     expect(supplies).toContain("text-center shadow-sm");
     expect(supplies).toContain("Sắp hết hàng");
     expect(supplies).toContain('aria-label="Ghi nhận nhập, xuất hoặc cấp phát"');
