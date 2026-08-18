@@ -8,7 +8,36 @@ const DETAIL_PAGE_SIZE = 10;
 
 export function ImportHistoryLauncher({ onUndone }: { onUndone: () => void }) {
   const [open, setOpen] = useState(false);
+  const [now, setNow] = useState(() => Date.now());
+  const latest = trpc.assets.latestImport.useQuery();
+  const session = latest.data;
+  const canUndo = Boolean(session && !session.isUndone && session.canUndo && session.createdCount + session.updatedCount > 0);
+  const remainingMs = canUndo ? Math.max(0, new Date(session!.undoDeadline).getTime() - now) : 0;
+  const remainingMinutes = Math.ceil(remainingMs / 60_000);
+  const countdownLabel = canUndo ? (remainingMinutes >= 60 ? `Hoàn tác: ${Math.floor(remainingMinutes / 60)}g ${remainingMinutes % 60}ph` : `Hoàn tác: ${remainingMinutes}ph`) : "Lịch sử import";
   useEffect(() => { const openHistory = () => setOpen(true); window.addEventListener("assetmaster:open-import-history", openHistory); return () => window.removeEventListener("assetmaster:open-import-history", openHistory); }, []);
+  useEffect(() => { if (!canUndo) return; setNow(Date.now()); const timer = window.setInterval(() => setNow(Date.now()), 60_000); return () => window.clearInterval(timer); }, [canUndo, session?.id]);
+  useEffect(() => {
+    const syncControl = () => {
+      const control = document.querySelector<HTMLButtonElement>("[data-asset-import-history]");
+      if (!control || control.dataset.undoLabel === countdownLabel) return;
+      control.dataset.undoLabel = countdownLabel;
+      control.className = "inline-flex h-9 shrink-0 items-center justify-center gap-1.5 rounded-lg border border-[#CDE5E5] bg-white px-2.5 text-[11px] font-extrabold text-[#087A6A] hover:bg-[#ECF8F7]";
+      control.textContent = `↶ ${countdownLabel}`;
+      control.title = canUndo ? `Có thể hoàn tác đến ${new Date(session!.undoDeadline).toLocaleString("vi-VN")}` : "Lịch sử import thành công";
+    };
+    syncControl();
+    const observer = new MutationObserver(syncControl);
+    observer.observe(document.body, { childList: true, subtree: true });
+    return () => observer.disconnect();
+  }, [canUndo, countdownLabel, session?.undoDeadline]);
+  useEffect(() => {
+    if (!canUndo || remainingMs > 2 * 60 * 60 * 1000 || remainingMs <= 0) return;
+    const warningKey = `assetmaster-import-undo-warning-${session!.id}`;
+    if (sessionStorage.getItem(warningKey)) return;
+    sessionStorage.setItem(warningKey, "shown");
+    toast.warning("Phiên import sắp hết hạn hoàn tác", { description: `Còn khoảng ${remainingMinutes} phút. Mở Lịch sử import để xử lý.`, action: { label: "Mở Lịch sử", onClick: () => setOpen(true) } });
+  }, [canUndo, remainingMinutes, remainingMs, session?.id]);
   return open ? <ImportHistoryDrawer onClose={() => setOpen(false)} onUndone={onUndone} /> : null;
 }
 

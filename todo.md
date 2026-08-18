@@ -1614,3 +1614,10 @@
 - [x] Ẩn thẻ hoàn tác import nổi ở góc màn hình.
 - [x] Thông báo sau import thành công về vị trí Lịch sử import để hoàn tác.
 - [x] Bổ sung hồi quy, kiểm tra TypeScript, Vitest, build và phát hành cập nhật.
+
+## Current Session — Import Undo Discoverability
+
+- [x] Thêm liên kết mở nhanh Lịch sử import trong toast import thành công.
+- [x] Hiển thị thời gian còn lại để hoàn tác bên cạnh biểu tượng Lịch sử import.
+- [x] Cảnh báo người dùng khi phiên import sắp hết hạn hoàn tác.
+- [x] Bổ sung hồi quy, kiểm tra giao diện, TypeScript, Vitest, build và phát hành cập nhật.

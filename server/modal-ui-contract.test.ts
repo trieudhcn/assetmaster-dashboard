@@ -148,6 +148,16 @@ describe("modal presentation contract", () => {
     const importModal = readProjectFile("client/src/components/AssetImportModal.tsx");
     expect(home).not.toContain("LatestImportUndo");
     expect(importModal).toContain("Bạn có thể hoàn tác trong Lịch sử import ở hàng bộ lọc Danh mục tài sản.");
+    expect(importModal).toContain('label: "Mở Lịch sử"');
+    expect(importModal).toContain('assetmaster:open-import-history');
+  });
+
+  it("shows the import undo countdown and alerts users before its deadline", () => {
+    const importHistory = readProjectFile("client/src/components/ImportHistoryDrawer.tsx");
+    expect(importHistory).toContain("Hoàn tác:");
+    expect(importHistory).toContain("assetmaster-import-undo-warning-");
+    expect(importHistory).toContain("Phiên import sắp hết hạn hoàn tác");
+    expect(importHistory).toContain('label: "Mở Lịch sử"');
   });
 
   it("uses only company branding rather than the product name in document headers", () => {
@@ -860,7 +870,7 @@ describe("maintenance history and filter layout contract", () => {
 
   it("closes the asset import modal after a successful import notification", () => {
     const assetImport = readProjectFile("client/src/components/AssetImportModal.tsx");
-    expect(assetImport).toContain("toast.success(`Đã tạo ${result.created} và cập nhật ${result.updated} tài sản.`, { description: \"Bạn có thể hoàn tác trong Lịch sử import ở hàng bộ lọc Danh mục tài sản.\" })");
+    expect(assetImport).toContain("toast.success(`Đã tạo ${result.created} và cập nhật ${result.updated} tài sản.`, { description: \"Bạn có thể hoàn tác trong Lịch sử import ở hàng bộ lọc Danh mục tài sản.\", action: { label: \"Mở Lịch sử\"");
     expect(assetImport).toContain("window.setTimeout(onClose, 650)");
   });
 
