@@ -481,9 +481,9 @@ export async function listInventoryMovements(supplyId: number, page = 1, pageSiz
 export async function getNextSupplyIssueSequence(issueYear: number, executor?: any) {
   const db = executor ?? await getDb();
   if (!db) throw new Error("Database unavailable");
-  const rows: Array<{ referenceCode: string }> = await db.select({ referenceCode: supplyIssueSlips.referenceCode }).from(supplyIssueSlips).where(like(supplyIssueSlips.referenceCode, `VT-${issueYear}-%`));
+  const rows: Array<{ referenceCode: string }> = await db.select({ referenceCode: supplyIssueSlips.referenceCode }).from(supplyIssueSlips).where(like(supplyIssueSlips.referenceCode, `PK-${issueYear}-%`));
   const maxSequence = rows.reduce((maximum: number, row) => {
-    const match = row.referenceCode.match(new RegExp(`^VT-${issueYear}-(\\d+)$`));
+    const match = row.referenceCode.match(new RegExp(`^PK-${issueYear}-(\\d+)$`));
     return Math.max(maximum, match ? Number(match[1]) : 0);
   }, 0);
   return maxSequence + 1;

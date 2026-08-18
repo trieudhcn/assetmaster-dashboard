@@ -167,16 +167,16 @@ describe("modal presentation contract", () => {
     const home = readProjectFile("client/src/pages/Home.tsx");
     const supplies = readProjectFile("client/src/pages/SuppliesInventoryView.tsx");
     const routers = readProjectFile("server/routers.ts");
-    expect(home).toContain('label: "Vật tư & Tồn kho"');
+    expect(home).toContain('label: "Phụ kiện"');
     expect(home).toContain('<SuppliesInventoryView />');
-    expect(supplies).toContain("Tạo từng vật tư hoặc nhập nhanh danh sách Excel");
+    expect(supplies).toContain("Phụ kiện");
     expect(supplies).toContain("Nhập danh sách từ Excel");
     expect(supplies).toContain("Tải mẫu");
     expect(supplies).toContain("bulkCreate");
-    expect(supplies).toContain("Tự động cập nhật vật tư trùng mã");
+    expect(supplies).toContain("Phụ kiện");
     expect(supplies).toContain("Đang kiểm tra dữ liệu từng dòng");
     expect(supplies).toContain("Đang ghi transaction an toàn");
-    expect(supplies).toContain("Lịch sử import vật tư");
+    expect(supplies).toContain("Lịch sử import");
     expect(supplies).toContain("Chọn một phiên import");
     expect(routers).toContain("importHistory:");
     expect(routers).toContain("importHistoryItems:");
@@ -193,7 +193,7 @@ describe("modal presentation contract", () => {
     const stylesheet = readProjectFile("client/src/index.css");
     const routers = readProjectFile("server/routers.ts");
     expect(supplies).toContain('className="field-input !pl-11"');
-    expect(supplies).toContain("Sửa mã và tên vật tư");
+    expect(supplies).toContain("Sửa mã và tên phụ kiện");
     expect(supplies).toContain("Nhân sự hệ thống");
     expect(supplies).toContain("Người khác");
     expect(supplies).toContain("recipient?.departmentId");
@@ -202,7 +202,7 @@ describe("modal presentation contract", () => {
     expect(stylesheet).toContain(".recipient-mode-active");
     expect(stylesheet).toContain(".primary-action");
     expect(stylesheet).toContain("align-items: center");
-    expect(routers).toContain("Mã vật tư này đã tồn tại.");
+    expect(routers).toContain("Mã phụ kiện này đã tồn tại.");
     expect(routers).toContain("recipientUserId");
     expect(routers).toContain("Không tìm thấy nhân sự đang hoạt động được chọn.");
   });
@@ -212,10 +212,10 @@ describe("modal presentation contract", () => {
     const issueSlips = readProjectFile("client/src/components/SupplyIssueSlipManager.tsx");
     const routers = readProjectFile("server/routers.ts");
     expect(supplies).toContain("Tạo phiếu cấp phát");
-    expect(issueSlips).toContain("VT-NĂM-001");
+    expect(issueSlips).toContain("PK-NĂM-001");
     expect(issueSlips).toContain("Hoàn trả về kho");
     expect(issueSlips).toContain("Xuất Excel lịch sử");
-    expect(routers).toContain("VT-${issueYear}-${String(sequence).padStart(3, \"0\")}");
+    expect(routers).toContain("PK-${issueYear}-${String(sequence).padStart(3, \"0\")}");
     expect(routers).toContain("returnIssueItem");
     expect(routers).toContain("historyReport");
   });
@@ -228,7 +228,7 @@ describe("modal presentation contract", () => {
     expect(supplies).toContain("supply-filter-action");
     expect(supplies).toContain("supply-row-action");
     expect(supplies).toContain('title="Ghi nhận nhập, xuất hoặc cấp phát"');
-    expect(supplies).toContain('title="Sửa mã và tên vật tư"');
+    expect(supplies).toContain('title="Sửa mã và tên phụ kiện"');
     expect(supplies).toContain('title="Xem lịch sử biến động"');
     expect(stylesheet).toContain(".supply-filter-action");
     expect(stylesheet).toContain(".supply-row-action:hover");
@@ -247,7 +247,7 @@ describe("modal presentation contract", () => {
     expect(issueSlips).toContain("openSupplyIssueSlipPdf");
     expect(routers).toContain("issueAnalytics");
     expect(db).toContain("listSupplyIssueAnalytics");
-    expect(pdf).toContain("PHIẾU CẤP PHÁT VẬT TƯ");
+    expect(pdf).toContain("PHIẾU CẤP PHÁT PHỤ KIỆN");
     expect(pdf).toContain("NGƯỜI NHẬN");
     expect(pdf).toContain("openPdfPreview");
   });
@@ -273,7 +273,7 @@ describe("modal presentation contract", () => {
     expect(supplies).toContain("SupplyCreateModal");
     expect(supplies).toContain("assetmaster-open-supply-receipt-id");
     expect(supplies).toContain("Danh mục kho");
-    expect(supplies).toContain("Hãy dùng nút Thêm vật tư");
+    expect(supplies).toContain("Hãy dùng nút Thêm phụ kiện");
   });
 
   it("requires a branded confirmation before recording an asset return", () => {
@@ -1140,15 +1140,15 @@ it("hiển thị thời điểm đồng bộ dashboard từ dữ liệu truy v�
   expect(home).not.toContain("Dữ liệu cập nhật lúc 09:42, 14/02/2025");
 });
 
-it("hiển thị danh sách vật tư chạm mức tồn tối thiểu trên trang Tổng quan", () => {
+it("hiển thị danh sách phụ kiện chạm mức tồn tối thiểu trên trang Tổng quan", () => {
   const home = readProjectFile("client/src/pages/Home.tsx");
 
   expect(home).toContain("trpc.supplies.list.useQuery");
   expect(home).toContain("lowStockSupplies");
-  expect(home).toContain("Vật tư chạm mức tồn tối thiểu");
+  expect(home).toContain("Phụ kiện chạm mức tồn tối thiểu");
   expect(home).toContain("Tồn / tối thiểu");
-  expect(home).toContain("Mở vật tư & tồn kho");
-  expect(home).toContain("Tồn kho vật tư đang an toàn");
+  expect(home).toContain("Mở phụ kiện");
+  expect(home).toContain("Tồn kho phụ kiện đang an toàn");
   expect(home).toContain("Tạo phiếu nhập kho");
   expect(home).toContain("assetmaster-open-supply-receipt-id");
 });

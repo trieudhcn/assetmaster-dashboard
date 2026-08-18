@@ -1727,3 +1727,10 @@
 - [x] Lưu chi tiết các dòng đã tạo/cập nhật để quản trị viên tra cứu lại.
 - [x] Thêm danh sách và màn hình chi tiết lịch sử import vật tư trên giao diện.
 - [x] Bổ sung hồi quy, migration, kiểm tra TypeScript, Vitest, build và phát hành cập nhật.
+
+## Current Session — Accessories Naming & PK Issue Codes
+
+- [x] Đổi toàn bộ nội dung người dùng từ Vật tư thành Phụ kiện trong mô-đun, báo cáo và hướng dẫn.
+- [x] Đổi tiêu đề Vật tư & tồn kho thành Phụ kiện.
+- [x] Chuyển mã phiếu cấp phát mới sang PK-Năm-001, tự tăng và đặt lại theo năm.
+- [x] Giữ khả năng xem phiếu VT cũ và bổ sung hồi quy, kiểm tra TypeScript, Vitest, build và phát hành cập nhật.

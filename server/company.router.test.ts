@@ -180,7 +180,7 @@ describe("asset Excel import safeguards", () => {
       { code: "VT-LOT-CHUOT", name: "Lót chuột", unit: "Cái", openingQuantity: 0, minimumQuantity: 2, unitCost: null, location: null, categoryId: null, vendorId: null, brandId: null, note: null },
     ] })).resolves.toMatchObject({ created: 2 });
     expect(mocks.createInventorySupply).toHaveBeenCalledTimes(2);
-    expect(mocks.createInventoryMovement).toHaveBeenCalledWith(expect.objectContaining({ supplyId: 81, movementType: "receipt", quantityAfter: "10", note: "Tồn đầu kỳ khi nhập Excel vật tư" }), expect.anything());
+    expect(mocks.createInventoryMovement).toHaveBeenCalledWith(expect.objectContaining({ supplyId: 81, movementType: "receipt", quantityAfter: "10", note: "Tồn đầu kỳ khi nhập Excel phụ kiện" }), expect.anything());
     expect(supplyImportMocks.createSupplyImportSession).toHaveBeenCalledWith(expect.objectContaining({ referenceCode: expect.stringMatching(/^VTIMP-\d{4}-/) }), expect.anything());
     expect(supplyImportMocks.createSupplyImportItem).toHaveBeenCalledTimes(2);
     expect(supplyImportMocks.updateSupplyImportSession).toHaveBeenCalledWith(501, { createdCount: 2, updatedCount: 0 }, expect.anything());
@@ -193,7 +193,7 @@ describe("asset Excel import safeguards", () => {
       { code: "VT-BAN-PHIM", name: "Bàn phím mới", unit: "Cái", openingQuantity: 3, minimumQuantity: 2, unitCost: 250000, location: "Kho CNTT", categoryId: null, vendorId: null, brandId: null, note: "Cập nhật từ file" },
     ] })).resolves.toMatchObject({ created: 0, updated: 1 });
     expect(mocks.updateInventorySupply).toHaveBeenCalledWith(91, expect.objectContaining({ name: "Bàn phím mới", stockQuantity: "7" }), expect.anything());
-    expect(mocks.createInventoryMovement).toHaveBeenCalledWith(expect.objectContaining({ supplyId: 91, quantity: "3", quantityBefore: "4", quantityAfter: "7", note: "Nhập bổ sung khi cập nhật từ Excel vật tư" }), expect.anything());
+    expect(mocks.createInventoryMovement).toHaveBeenCalledWith(expect.objectContaining({ supplyId: 91, quantity: "3", quantityBefore: "4", quantityAfter: "7", note: "Nhập bổ sung khi cập nhật từ Excel phụ kiện" }), expect.anything());
   });
 
   it("records a quantity issue atomically and rejects issues beyond stock", async () => {
@@ -205,7 +205,7 @@ describe("asset Excel import safeguards", () => {
     await expect(adminCaller().supplies.move({ supplyId: 81, movementType: "issue", quantity: 8, recipientName: "Phòng Kinh doanh", recipientDepartmentId: null, note: "Cấp phát vượt mức tồn kho" })).rejects.toThrow("Tồn kho không đủ");
   });
 
-  it("creates a yearly VT supply issue slip and links its inventory movement", async () => {
+  it("creates a yearly PK accessory issue slip and links its inventory movement", async () => {
     mocks.runInventoryTransaction.mockImplementation(async (callback: any) => callback({ transaction: true }));
     mocks.getNextSupplyIssueSequence.mockResolvedValue(1);
     mocks.createSupplyIssueSlip.mockResolvedValue(101);
@@ -213,7 +213,7 @@ describe("asset Excel import safeguards", () => {
     mocks.getInventorySupplyById.mockResolvedValue({ id: 81, code: "VT-CHUOT", name: "Chuột phổ thông", unit: "Cái", stockQuantity: "8", minimumQuantity: "3", isActive: true });
     mocks.createInventoryMovement.mockResolvedValue(301);
     const result = await adminCaller().supplies.createIssueSlip({ recipientUserId: null, recipientName: "Phòng Kinh doanh", recipientDepartmentId: null, note: "Cấp phát thiết bị làm việc", items: [{ supplyId: 81, quantity: 2 }] });
-    expect(result).toMatchObject({ id: 101, referenceCode: expect.stringMatching(/^VT-\d{4}-001$/) });
+    expect(result).toMatchObject({ id: 101, referenceCode: expect.stringMatching(/^PK-\d{4}-001$/) });
     expect(mocks.createSupplyIssueSlipItem).toHaveBeenCalledWith(expect.objectContaining({ issueSlipId: 101, issuedQuantity: "2" }), expect.anything());
     expect(mocks.createInventoryMovement).toHaveBeenCalledWith(expect.objectContaining({ movementType: "issue", issueSlipId: 101, issueSlipItemId: 201 }), expect.anything());
   });
@@ -221,10 +221,10 @@ describe("asset Excel import safeguards", () => {
   it("returns only the remaining issued quantity back to inventory", async () => {
     mocks.runInventoryTransaction.mockImplementation(async (callback: any) => callback({ transaction: true }));
     mocks.getSupplyIssueSlipItemById.mockResolvedValue({ id: 201, issueSlipId: 101, supplyId: 81, unit: "Cái", issuedQuantity: "5", returnedQuantity: "2" });
-    mocks.getSupplyIssueSlipById.mockResolvedValue({ id: 101, referenceCode: "VT-2026-001", status: "active", recipientName: "Phòng Kinh doanh", recipientUserId: null, recipientDepartmentId: null });
+    mocks.getSupplyIssueSlipById.mockResolvedValue({ id: 101, referenceCode: "PK-2026-001", status: "active", recipientName: "Phòng Kinh doanh", recipientUserId: null, recipientDepartmentId: null });
     mocks.getInventorySupplyById.mockResolvedValue({ id: 81, stockQuantity: "10" });
     mocks.listSupplyIssueSlipItems.mockResolvedValue([{ id: 201, issuedQuantity: "5", returnedQuantity: "2" }]);
-    await expect(adminCaller().supplies.returnIssueItem({ issueSlipItemId: 201, quantity: 3, note: "Hoàn trả vật tư chưa sử dụng" })).resolves.toMatchObject({ success: true, stockQuantity: 13, fullyReturned: true });
+    await expect(adminCaller().supplies.returnIssueItem({ issueSlipItemId: 201, quantity: 3, note: "Hoàn trả phụ kiện chưa sử dụng" })).resolves.toMatchObject({ success: true, stockQuantity: 13, fullyReturned: true });
     expect(mocks.updateSupplyIssueSlipItem).toHaveBeenCalledWith(201, { returnedQuantity: "5" }, expect.anything());
     expect(mocks.createInventoryMovement).toHaveBeenCalledWith(expect.objectContaining({ movementType: "return", quantity: "3", issueSlipId: 101 }), expect.anything());
   });

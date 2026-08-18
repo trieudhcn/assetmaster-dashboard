@@ -506,7 +506,7 @@ export const appRouter = router({
     importHistory: adminProcedure.input(z.object({ page: z.number().int().positive().default(1), pageSize: z.number().int().min(1).max(50).default(10) })).query(({ input }) => listSupplyImportSessions(input.page, input.pageSize)),
     importHistoryItems: adminProcedure.input(z.object({ sessionId: z.number().int().positive() })).query(async ({ input }) => {
       const session = await getSupplyImportSessionById(input.sessionId);
-      if (!session) throw new TRPCError({ code: "NOT_FOUND", message: "Không tìm thấy phiên import vật tư." });
+      if (!session) throw new TRPCError({ code: "NOT_FOUND", message: "Không tìm thấy phiên import phụ kiện." });
       return { session, items: await listSupplyImportItems(session.id) };
     }),
     issueAnalytics: adminProcedure.query(() => listSupplyIssueAnalytics()),
@@ -520,22 +520,22 @@ export const appRouter = router({
       items: z.array(z.object({ supplyId: z.number().int().positive(), quantity: z.number().finite().positive() })).min(1).max(50),
     }).superRefine((input, issue) => {
       if (!input.recipientUserId && !input.recipientName) issue.addIssue({ code: z.ZodIssueCode.custom, path: ["recipientName"], message: "Vui lòng chọn nhân sự hoặc nhập người nhận khác." });
-      if (new Set(input.items.map((item) => item.supplyId)).size !== input.items.length) issue.addIssue({ code: z.ZodIssueCode.custom, path: ["items"], message: "Một vật tư chỉ được xuất một lần trong cùng phiếu." });
+      if (new Set(input.items.map((item) => item.supplyId)).size !== input.items.length) issue.addIssue({ code: z.ZodIssueCode.custom, path: ["items"], message: "Một phụ kiện chỉ được xuất một lần trong cùng phiếu." });
     })).mutation(async ({ input, ctx }) => {
       const recipientUser = input.recipientUserId ? (await listUsers()).find((user) => user.id === input.recipientUserId && user.isActive) : null;
       if (input.recipientUserId && !recipientUser) throw new TRPCError({ code: "NOT_FOUND", message: "Không tìm thấy nhân sự đang hoạt động được chọn." });
       const recipientName = recipientUser?.name || input.recipientName?.trim();
-      if (!recipientName) throw new TRPCError({ code: "BAD_REQUEST", message: "Vui lòng cung cấp người nhận vật tư." });
+      if (!recipientName) throw new TRPCError({ code: "BAD_REQUEST", message: "Vui lòng cung cấp người nhận phụ kiện." });
       const issueYear = new Date().getFullYear();
       for (let attempt = 0; attempt < 5; attempt += 1) {
         try {
           return await runInventoryTransaction(async (transaction) => {
             const sequence = await getNextSupplyIssueSequence(issueYear, transaction);
-            const referenceCode = `VT-${issueYear}-${String(sequence).padStart(3, "0")}`;
+            const referenceCode = `PK-${issueYear}-${String(sequence).padStart(3, "0")}`;
             const issueSlipId = await createSupplyIssueSlip({ referenceCode, recipientUserId: recipientUser?.id ?? null, recipientName, recipientDepartmentId: recipientUser?.departmentId ?? input.recipientDepartmentId ?? null, status: "active", note: input.note ?? null, issuedByUserId: ctx.user!.id, issuedByName: ctx.user!.name ?? "Quản trị viên" }, transaction);
             for (const requestItem of input.items) {
               const supply = await getInventorySupplyById(requestItem.supplyId, transaction);
-              if (!supply || !supply.isActive) throw new TRPCError({ code: "NOT_FOUND", message: "Không tìm thấy vật tư đang hoạt động." });
+              if (!supply || !supply.isActive) throw new TRPCError({ code: "NOT_FOUND", message: "Không tìm thấy phụ kiện đang hoạt động." });
               const before = Number(supply.stockQuantity);
               const after = before - requestItem.quantity;
               if (after < 0) throw new TRPCError({ code: "BAD_REQUEST", message: `Tồn kho ${supply.name} không đủ. Hiện còn ${before} ${supply.unit}.` });
@@ -543,7 +543,7 @@ export const appRouter = router({
               const issueSlipItemId = await createSupplyIssueSlipItem({ issueSlipId, supplyId: supply.id, supplyCode: supply.code, supplyName: supply.name, unit: supply.unit, issuedQuantity: String(requestItem.quantity), returnedQuantity: "0" }, transaction);
               await createInventoryMovement({ supplyId: supply.id, movementType: "issue", quantity: String(-requestItem.quantity), quantityBefore: String(before), quantityAfter: String(after), issueSlipId, issueSlipItemId, recipientUserId: recipientUser?.id ?? null, recipientName, recipientDepartmentId: recipientUser?.departmentId ?? input.recipientDepartmentId ?? null, note: `Cấp phát theo phiếu ${referenceCode}${input.note ? `: ${input.note}` : ""}`, createdByUserId: ctx.user!.id, createdByName: ctx.user!.name ?? "Quản trị viên" }, transaction);
             }
-            await recordActivity({ entityType: "supply_issue_slip", entityId: issueSlipId, action: "created", actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: `Tạo phiếu cấp phát vật tư ${referenceCode} cho ${recipientName}` }, transaction);
+            await recordActivity({ entityType: "supply_issue_slip", entityId: issueSlipId, action: "created", actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: `Tạo phiếu cấp phát phụ kiện ${referenceCode} cho ${recipientName}` }, transaction);
             return { id: issueSlipId, referenceCode };
           });
         } catch (error) {
@@ -555,13 +555,13 @@ export const appRouter = router({
     }),
     returnIssueItem: adminProcedure.input(z.object({ issueSlipItemId: z.number().int().positive(), quantity: z.number().finite().positive(), note: z.string().trim().min(2).max(1000) })).mutation(async ({ input, ctx }) => runInventoryTransaction(async (transaction) => {
       const item = await getSupplyIssueSlipItemById(input.issueSlipItemId, transaction);
-      if (!item) throw new TRPCError({ code: "NOT_FOUND", message: "Không tìm thấy dòng vật tư đã cấp phát." });
+      if (!item) throw new TRPCError({ code: "NOT_FOUND", message: "Không tìm thấy dòng phụ kiện đã cấp phát." });
       const issueSlip = await getSupplyIssueSlipById(item.issueSlipId, transaction);
       if (!issueSlip || issueSlip.status === "returned") throw new TRPCError({ code: "BAD_REQUEST", message: "Phiếu cấp phát này đã hoàn trả toàn bộ." });
       const availableToReturn = Number(item.issuedQuantity) - Number(item.returnedQuantity);
       if (input.quantity > availableToReturn) throw new TRPCError({ code: "BAD_REQUEST", message: `Chỉ có thể hoàn trả tối đa ${availableToReturn} ${item.unit}.` });
       const supply = await getInventorySupplyById(item.supplyId, transaction);
-      if (!supply) throw new TRPCError({ code: "NOT_FOUND", message: "Không tìm thấy vật tư trong kho." });
+      if (!supply) throw new TRPCError({ code: "NOT_FOUND", message: "Không tìm thấy phụ kiện trong kho." });
       const before = Number(supply.stockQuantity);
       const after = before + input.quantity;
       await updateInventorySupply(supply.id, { stockQuantity: String(after) }, transaction);
@@ -587,11 +587,11 @@ export const appRouter = router({
       location: nullableText,
       note: nullableText,
     })).mutation(async ({ input, ctx }) => {
-      if (await getInventorySupplyByCode(input.code)) throw new TRPCError({ code: "BAD_REQUEST", message: "Mã vật tư này đã tồn tại." });
+      if (await getInventorySupplyByCode(input.code)) throw new TRPCError({ code: "BAD_REQUEST", message: "Mã phụ kiện này đã tồn tại." });
       return runInventoryTransaction(async (transaction) => {
         const supplyId = await createInventorySupply({ code: input.code, name: input.name, categoryId: input.categoryId ?? null, vendorId: input.vendorId ?? null, brandId: input.brandId ?? null, unit: input.unit, stockQuantity: String(input.openingQuantity), minimumQuantity: String(input.minimumQuantity), unitCost: input.unitCost === null || input.unitCost === undefined ? null : String(input.unitCost), location: input.location ?? null, note: input.note ?? null, isActive: true, createdByUserId: ctx.user!.id }, transaction);
-        if (input.openingQuantity > 0) await createInventoryMovement({ supplyId, movementType: "receipt", quantity: String(input.openingQuantity), quantityBefore: "0", quantityAfter: String(input.openingQuantity), note: "Tồn đầu kỳ khi tạo vật tư", createdByUserId: ctx.user!.id, createdByName: ctx.user!.name ?? "Quản trị viên" }, transaction);
-        await recordActivity({ entityType: "supply", entityId: supplyId, action: "created", actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: `Tạo vật tư ${input.name} (${input.code}), tồn đầu ${input.openingQuantity} ${input.unit}` }, transaction);
+        if (input.openingQuantity > 0) await createInventoryMovement({ supplyId, movementType: "receipt", quantity: String(input.openingQuantity), quantityBefore: "0", quantityAfter: String(input.openingQuantity), note: "Tồn đầu kỳ khi tạo phụ kiện", createdByUserId: ctx.user!.id, createdByName: ctx.user!.name ?? "Quản trị viên" }, transaction);
+        await recordActivity({ entityType: "supply", entityId: supplyId, action: "created", actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: `Tạo phụ kiện ${input.name} (${input.code}), tồn đầu ${input.openingQuantity} ${input.unit}` }, transaction);
         return { id: supplyId };
       });
     }),
@@ -610,14 +610,14 @@ export const appRouter = router({
     })).min(1).max(200) })).mutation(async ({ input, ctx }) => {
       const fileCodes = new Set<string>();
       for (const item of input.items) {
-        if (fileCodes.has(item.code)) throw new TRPCError({ code: "BAD_REQUEST", message: `Mã vật tư ${item.code} bị lặp trong file Excel.` });
+        if (fileCodes.has(item.code)) throw new TRPCError({ code: "BAD_REQUEST", message: `Mã phụ kiện ${item.code} bị lặp trong file Excel.` });
         fileCodes.add(item.code);
       }
       return runInventoryTransaction(async (transaction) => {
         const existingByCode = new Map<string, Awaited<ReturnType<typeof getInventorySupplyByCode>>>();
         for (const item of input.items) {
           const existing = await getInventorySupplyByCode(item.code, transaction);
-          if (existing && !input.updateExisting) throw new TRPCError({ code: "BAD_REQUEST", message: `Mã vật tư ${item.code} đã tồn tại. Hãy bật tùy chọn cập nhật vật tư trùng mã.` });
+          if (existing && !input.updateExisting) throw new TRPCError({ code: "BAD_REQUEST", message: `Mã phụ kiện ${item.code} đã tồn tại. Hãy bật tùy chọn cập nhật phụ kiện trùng mã.` });
           existingByCode.set(item.code, existing);
         }
         const sessionId = await createSupplyImportSession({ referenceCode: `VTIMP-${new Date().getFullYear()}-${crypto.randomUUID().slice(0, 8).toUpperCase()}`, createdByUserId: ctx.user!.id, createdByName: ctx.user!.name ?? "Quản trị viên" }, transaction);
@@ -632,32 +632,32 @@ export const appRouter = router({
             const beforeSnapshot = { code: existing.code, name: existing.name, unit: existing.unit, stockQuantity: existing.stockQuantity, minimumQuantity: existing.minimumQuantity, unitCost: existing.unitCost, location: existing.location, categoryId: existing.categoryId, vendorId: existing.vendorId, brandId: existing.brandId, note: existing.note };
             const afterSnapshot = { code: item.code, name: item.name, unit: item.unit, stockQuantity: String(after), minimumQuantity: String(item.minimumQuantity), unitCost: item.unitCost === null || item.unitCost === undefined ? null : String(item.unitCost), location: item.location ?? null, categoryId: item.categoryId ?? null, vendorId: item.vendorId ?? null, brandId: item.brandId ?? null, note: item.note ?? null };
             await updateInventorySupply(existing.id, { name: item.name, categoryId: item.categoryId ?? null, vendorId: item.vendorId ?? null, brandId: item.brandId ?? null, unit: item.unit, minimumQuantity: String(item.minimumQuantity), unitCost: item.unitCost === null || item.unitCost === undefined ? null : String(item.unitCost), location: item.location ?? null, note: item.note ?? null, stockQuantity: String(after) }, transaction);
-            if (item.openingQuantity > 0) await createInventoryMovement({ supplyId: existing.id, movementType: "receipt", quantity: String(item.openingQuantity), quantityBefore: String(before), quantityAfter: String(after), note: "Nhập bổ sung khi cập nhật từ Excel vật tư", createdByUserId: ctx.user!.id, createdByName: ctx.user!.name ?? "Quản trị viên" }, transaction);
+            if (item.openingQuantity > 0) await createInventoryMovement({ supplyId: existing.id, movementType: "receipt", quantity: String(item.openingQuantity), quantityBefore: String(before), quantityAfter: String(after), note: "Nhập bổ sung khi cập nhật từ Excel phụ kiện", createdByUserId: ctx.user!.id, createdByName: ctx.user!.name ?? "Quản trị viên" }, transaction);
             await createSupplyImportItem({ importSessionId: sessionId, supplyId: existing.id, action: "updated", beforeSnapshot, afterSnapshot }, transaction);
-            await recordActivity({ entityType: "supply", entityId: existing.id, action: "bulk_import_updated", actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: `Cập nhật từ Excel vật tư ${item.name} (${item.code})${item.openingQuantity > 0 ? `, nhập thêm ${item.openingQuantity} ${item.unit}` : ""}` }, transaction);
+            await recordActivity({ entityType: "supply", entityId: existing.id, action: "bulk_import_updated", actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: `Cập nhật từ Excel phụ kiện ${item.name} (${item.code})${item.openingQuantity > 0 ? `, nhập thêm ${item.openingQuantity} ${item.unit}` : ""}` }, transaction);
             ids.push(existing.id);
             updated += 1;
             continue;
           }
           const supplyId = await createInventorySupply({ code: item.code, name: item.name, categoryId: item.categoryId ?? null, vendorId: item.vendorId ?? null, brandId: item.brandId ?? null, unit: item.unit, stockQuantity: String(item.openingQuantity), minimumQuantity: String(item.minimumQuantity), unitCost: item.unitCost === null || item.unitCost === undefined ? null : String(item.unitCost), location: item.location ?? null, note: item.note ?? null, isActive: true, createdByUserId: ctx.user!.id }, transaction);
-          if (item.openingQuantity > 0) await createInventoryMovement({ supplyId, movementType: "receipt", quantity: String(item.openingQuantity), quantityBefore: "0", quantityAfter: String(item.openingQuantity), note: "Tồn đầu kỳ khi nhập Excel vật tư", createdByUserId: ctx.user!.id, createdByName: ctx.user!.name ?? "Quản trị viên" }, transaction);
+          if (item.openingQuantity > 0) await createInventoryMovement({ supplyId, movementType: "receipt", quantity: String(item.openingQuantity), quantityBefore: "0", quantityAfter: String(item.openingQuantity), note: "Tồn đầu kỳ khi nhập Excel phụ kiện", createdByUserId: ctx.user!.id, createdByName: ctx.user!.name ?? "Quản trị viên" }, transaction);
           await createSupplyImportItem({ importSessionId: sessionId, supplyId, action: "created", beforeSnapshot: null, afterSnapshot: { code: item.code, name: item.name, unit: item.unit, stockQuantity: String(item.openingQuantity), minimumQuantity: String(item.minimumQuantity), unitCost: item.unitCost === null || item.unitCost === undefined ? null : String(item.unitCost), location: item.location ?? null, categoryId: item.categoryId ?? null, vendorId: item.vendorId ?? null, brandId: item.brandId ?? null, note: item.note ?? null } }, transaction);
-          await recordActivity({ entityType: "supply", entityId: supplyId, action: "bulk_imported", actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: `Nhập Excel vật tư ${item.name} (${item.code}), tồn đầu ${item.openingQuantity} ${item.unit}` }, transaction);
+          await recordActivity({ entityType: "supply", entityId: supplyId, action: "bulk_imported", actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: `Nhập Excel phụ kiện ${item.name} (${item.code}), tồn đầu ${item.openingQuantity} ${item.unit}` }, transaction);
           ids.push(supplyId);
           created += 1;
         }
         await updateSupplyImportSession(sessionId, { createdCount: created, updatedCount: updated }, transaction);
-        await recordActivity({ entityType: "supplyImport", entityId: sessionId, action: "imported", actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: `Import Excel vật tư: tạo ${created}, cập nhật ${updated}` }, transaction);
+        await recordActivity({ entityType: "supplyImport", entityId: sessionId, action: "imported", actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: `Import Excel phụ kiện: tạo ${created}, cập nhật ${updated}` }, transaction);
         return { created, updated, ids, sessionId };
       });
     }),
     update: adminProcedure.input(z.object({ id: z.number().int().positive(), code: z.string().trim().min(2).max(64).regex(/^[A-Za-z0-9-]+$/).transform((value) => value.toUpperCase()).optional(), name: z.string().trim().min(2).max(255).optional(), categoryId: z.number().int().positive().nullable().optional(), vendorId: z.number().int().positive().nullable().optional(), brandId: z.number().int().positive().nullable().optional(), unit: z.string().trim().min(1).max(32).optional(), minimumQuantity: z.number().finite().min(0).optional(), unitCost: z.number().finite().min(0).nullable().optional(), location: nullableText, note: nullableText, isActive: z.boolean().optional() })).mutation(async ({ input, ctx }) => {
       const supply = await getInventorySupplyById(input.id);
-      if (!supply) throw new TRPCError({ code: "NOT_FOUND", message: "Không tìm thấy vật tư." });
-      if (input.code && input.code !== supply.code && await getInventorySupplyByCode(input.code)) throw new TRPCError({ code: "BAD_REQUEST", message: "Mã vật tư này đã tồn tại." });
+      if (!supply) throw new TRPCError({ code: "NOT_FOUND", message: "Không tìm thấy phụ kiện." });
+      if (input.code && input.code !== supply.code && await getInventorySupplyByCode(input.code)) throw new TRPCError({ code: "BAD_REQUEST", message: "Mã phụ kiện này đã tồn tại." });
       const { id, minimumQuantity, unitCost, ...changes } = input;
       await updateInventorySupply(id, { ...changes, minimumQuantity: minimumQuantity === undefined ? undefined : String(minimumQuantity), unitCost: unitCost === undefined ? undefined : unitCost === null ? null : String(unitCost) });
-      await recordActivity({ entityType: "supply", entityId: id, action: "updated", actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: `Cập nhật vật tư ${changes.name || supply.name}${changes.code && changes.code !== supply.code ? `, mã ${supply.code} → ${changes.code}` : ""}` });
+      await recordActivity({ entityType: "supply", entityId: id, action: "updated", actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: `Cập nhật phụ kiện ${changes.name || supply.name}${changes.code && changes.code !== supply.code ? `, mã ${supply.code} → ${changes.code}` : ""}` });
       return { success: true };
     }),
     move: adminProcedure.input(z.object({ supplyId: z.number().int().positive(), movementType: z.enum(["receipt", "issue", "adjustment"]), quantity: z.number().finite(), recipientUserId: z.number().int().positive().nullable().optional(), recipientName: z.string().trim().max(160).optional(), recipientDepartmentId: z.number().int().positive().nullable().optional(), note: z.string().trim().min(2).max(1000) }).superRefine((input, issue) => {
@@ -666,7 +666,7 @@ export const appRouter = router({
       if (input.movementType === "issue" && !input.recipientUserId && !input.recipientName) issue.addIssue({ code: z.ZodIssueCode.custom, path: ["recipientName"], message: "Vui lòng chọn nhân sự hoặc nhập người nhận khác." });
     })).mutation(async ({ input, ctx }) => runInventoryTransaction(async (transaction) => {
       const supply = await getInventorySupplyById(input.supplyId, transaction);
-      if (!supply || !supply.isActive) throw new TRPCError({ code: "NOT_FOUND", message: "Không tìm thấy vật tư đang hoạt động." });
+      if (!supply || !supply.isActive) throw new TRPCError({ code: "NOT_FOUND", message: "Không tìm thấy phụ kiện đang hoạt động." });
       const recipientUser = input.recipientUserId ? (await listUsers()).find((user) => user.id === input.recipientUserId && user.isActive) : null;
       if (input.recipientUserId && !recipientUser) throw new TRPCError({ code: "NOT_FOUND", message: "Không tìm thấy nhân sự đang hoạt động được chọn." });
       const before = Number(supply.stockQuantity);
@@ -676,7 +676,7 @@ export const appRouter = router({
       await updateInventorySupply(supply.id, { stockQuantity: String(after) }, transaction);
       const movementId = await createInventoryMovement({ supplyId: supply.id, movementType: input.movementType, quantity: String(signedQuantity), quantityBefore: String(before), quantityAfter: String(after), recipientUserId: recipientUser?.id ?? null, recipientName: (recipientUser?.name || input.recipientName) ?? null, recipientDepartmentId: recipientUser?.departmentId ?? input.recipientDepartmentId ?? null, note: input.note, createdByUserId: ctx.user!.id, createdByName: ctx.user!.name ?? "Quản trị viên" }, transaction);
       const actionLabel = input.movementType === "receipt" ? "Nhập kho" : input.movementType === "issue" ? "Cấp phát/xuất kho" : "Điều chỉnh tồn";
-      await recordActivity({ entityType: "supply", entityId: supply.id, action: input.movementType, actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: `${actionLabel} ${Math.abs(signedQuantity)} ${supply.unit} vật tư ${supply.name}. Tồn: ${after} ${supply.unit}.` }, transaction);
+      await recordActivity({ entityType: "supply", entityId: supply.id, action: input.movementType, actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: `${actionLabel} ${Math.abs(signedQuantity)} ${supply.unit} phụ kiện ${supply.name}. Tồn: ${after} ${supply.unit}.` }, transaction);
       return { movementId, stockQuantity: after, isLowStock: after <= Number(supply.minimumQuantity) };
     })),
   }),

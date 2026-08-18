@@ -48,7 +48,7 @@ export async function openSupplyIssueSlipPdf(slip: SupplyIssueSlipPdf, items: Su
   doc.line(margin, 39, pageWidth - margin, 39);
   doc.setFontSize(17);
   doc.setTextColor(16, 42, 67);
-  doc.text("PHIẾU CẤP PHÁT VẬT TƯ", pageWidth / 2, 51, { align: "center" });
+  doc.text("PHIẾU CẤP PHÁT PHỤ KIỆN", pageWidth / 2, 51, { align: "center" });
   doc.setFontSize(10);
   doc.text(`Mã phiếu: ${slip.referenceCode}`, pageWidth / 2, 58, { align: "center" });
   doc.setFontSize(10);
@@ -58,7 +58,7 @@ export async function openSupplyIssueSlipPdf(slip: SupplyIssueSlipPdf, items: Su
   if (slip.note) doc.text(`Ghi chú: ${slip.note}`, margin, 87, { maxWidth: pageWidth - margin * 2 });
   const startY = slip.note ? 96 : 90;
   const widths = [12, 32, 68, 22, 26, 26];
-  const headers = ["STT", "Mã", "Tên vật tư", "Đơn vị", "Số lượng", "Đã trả"];
+  const headers = ["STT", "Mã", "Tên phụ kiện", "Đơn vị", "Số lượng", "Đã trả"];
   let y = startY;
   const drawRow = (cells: string[], height = 9, bold = false) => {
     let x = margin;
