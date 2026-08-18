@@ -1,11 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const mocks = vi.hoisted(() => ({ getCompany: vi.fn(), saveCompany: vi.fn(), listHelpGuides: vi.fn(), saveHelpGuide: vi.fn(), createHelpGuideVersion: vi.fn(), listHelpGuideVersions: vi.fn(), recordActivity: vi.fn(), getAssetCategoryByCode: vi.fn(), getAssetCategoryById: vi.fn(), getNextAssetCodeForPrefix: vi.fn(), createAssetCategory: vi.fn(), countAssetsByCategoryId: vi.fn(), deleteAssetCategory: vi.fn(), updateAssetCategory: vi.fn() }));
+const mocks = vi.hoisted(() => ({ getCompany: vi.fn(), saveCompany: vi.fn(), listHelpGuides: vi.fn(), saveHelpGuide: vi.fn(), createHelpGuideVersion: vi.fn(), listHelpGuideVersions: vi.fn(), recordActivity: vi.fn(), getAssetCategoryByCode: vi.fn(), getAssetCategoryById: vi.fn(), getAssetCategoryByName: vi.fn(), getNextAssetCodeForPrefix: vi.fn(), createAssetCategory: vi.fn(), countAssetsByCategoryId: vi.fn(), deleteAssetCategory: vi.fn(), updateAssetCategory: vi.fn(), getVendorByName: vi.fn(), getBrandByName: vi.fn(), listActiveAssetsBySerialNumber: vi.fn(), runAssetImportTransaction: vi.fn(), createAsset: vi.fn(), updateAsset: vi.fn(), createAssetImportSession: vi.fn(), updateAssetImportSession: vi.fn(), createAssetImportItem: vi.fn(), createAssetFieldChanges: vi.fn() }));
 
 vi.mock("./db", () => ({
-  createAsset: vi.fn(), createAssetCategory: mocks.createAssetCategory, createAuditItem: vi.fn(), createAuditSession: vi.fn(), createDepartment: vi.fn(), createDivision: vi.fn(), createHandover: vi.fn(), createMaintenanceTicket: vi.fn(), createVendor: vi.fn(), createBrand: vi.fn(), countAssetsByCategoryId: mocks.countAssetsByCategoryId, deleteAssetCategory: mocks.deleteAssetCategory,
-  getActiveDepartmentById: vi.fn(), getAssetById: vi.fn(), getAssetCategoryByCode: mocks.getAssetCategoryByCode, getAssetCategoryById: mocks.getAssetCategoryById, getCompany: mocks.getCompany, getDepartmentByCode: vi.fn(), getDepartmentById: vi.fn(), getDivisionByCode: vi.fn(), getDivisionById: vi.fn(), getHandoverById: vi.fn(), getMaintenanceTicket: vi.fn(), getNextAssetCodeForPrefix: mocks.getNextAssetCodeForPrefix, getVendorById: vi.fn(), getVendorByName: vi.fn(), getBrandById: vi.fn(), getBrandByName: vi.fn(), listAssets: vi.fn(), listAssetCategories: vi.fn(), listAllAssetCategories: vi.fn(), listAuditItems: vi.fn(), listAuditSessions: vi.fn(), listActivityLogs: vi.fn(), listDepartments: vi.fn(), listAllDepartments: vi.fn(), listDivisions: vi.fn(), listAllDivisions: vi.fn(), listVendors: vi.fn(), listAllVendors: vi.fn(), listBrands: vi.fn(), listAllBrands: vi.fn(), listHandovers: vi.fn(), listHandoversByRecipient: vi.fn(), listMaintenanceTickets: vi.fn(), listUsers: vi.fn(),
-  recordActivity: mocks.recordActivity, saveCompany: mocks.saveCompany, listHelpGuides: mocks.listHelpGuides, saveHelpGuide: mocks.saveHelpGuide, createHelpGuideVersion: mocks.createHelpGuideVersion, listHelpGuideVersions: mocks.listHelpGuideVersions, updateAsset: vi.fn(), updateAssetCategory: mocks.updateAssetCategory, updateAuditItem: vi.fn(), updateHandover: vi.fn(), updateMaintenanceTicket: vi.fn(), updateDepartment: vi.fn(), updateDivision: vi.fn(), updateVendor: vi.fn(), updateBrand: vi.fn(),
+  createAsset: mocks.createAsset, createAssetCategory: mocks.createAssetCategory, createAssetImportItem: mocks.createAssetImportItem, createAssetImportSession: mocks.createAssetImportSession, createAssetFieldChanges: mocks.createAssetFieldChanges, createAuditItem: vi.fn(), createAuditSession: vi.fn(), createDepartment: vi.fn(), createDivision: vi.fn(), createHandover: vi.fn(), createMaintenanceTicket: vi.fn(), createVendor: vi.fn(), createBrand: vi.fn(), countAssetsByCategoryId: mocks.countAssetsByCategoryId, deleteAssetCategory: mocks.deleteAssetCategory,
+  getActiveDepartmentById: vi.fn(), getAssetById: vi.fn(), getAssetCategoryByCode: mocks.getAssetCategoryByCode, getAssetCategoryById: mocks.getAssetCategoryById, getAssetCategoryByName: mocks.getAssetCategoryByName, getCompany: mocks.getCompany, getDepartmentByCode: vi.fn(), getDepartmentById: vi.fn(), getDivisionByCode: vi.fn(), getDivisionById: vi.fn(), getHandoverById: vi.fn(), getMaintenanceTicket: vi.fn(), getNextAssetCodeForPrefix: mocks.getNextAssetCodeForPrefix, getVendorById: vi.fn(), getVendorByName: mocks.getVendorByName, getBrandById: vi.fn(), getBrandByName: mocks.getBrandByName, listActiveAssetsBySerialNumber: mocks.listActiveAssetsBySerialNumber, listAssets: vi.fn(), listAssetCategories: vi.fn(), listAllAssetCategories: vi.fn(), listAuditItems: vi.fn(), listAuditSessions: vi.fn(), listActivityLogs: vi.fn(), listDepartments: vi.fn(), listAllDepartments: vi.fn(), listDivisions: vi.fn(), listAllDivisions: vi.fn(), listVendors: vi.fn(), listAllVendors: vi.fn(), listBrands: vi.fn(), listAllBrands: vi.fn(), listHandovers: vi.fn(), listHandoversByRecipient: vi.fn(), listMaintenanceTickets: vi.fn(), listUsers: vi.fn(),
+  recordActivity: mocks.recordActivity, runAssetImportTransaction: mocks.runAssetImportTransaction, saveCompany: mocks.saveCompany, listHelpGuides: mocks.listHelpGuides, saveHelpGuide: mocks.saveHelpGuide, createHelpGuideVersion: mocks.createHelpGuideVersion, listHelpGuideVersions: mocks.listHelpGuideVersions, updateAsset: mocks.updateAsset, updateAssetCategory: mocks.updateAssetCategory, updateAssetImportSession: mocks.updateAssetImportSession, updateAuditItem: vi.fn(), updateHandover: vi.fn(), updateMaintenanceTicket: vi.fn(), updateDepartment: vi.fn(), updateDivision: vi.fn(), updateVendor: vi.fn(), updateBrand: vi.fn(),
   updateUserActiveStatus: vi.fn(), updateUserDepartment: vi.fn(), updateUserRole: vi.fn(), transitionHandoverStatus: vi.fn(),
 }));
 
@@ -89,5 +89,41 @@ describe("assetCategories", () => {
   it("returns the next sequential code for an active category", async () => {
     await expect(adminCaller().assetCategories.nextCode({ categoryId: 8 })).resolves.toEqual({ assetCode: "LT00007" });
     expect(mocks.getNextAssetCodeForPrefix).toHaveBeenCalledWith("LT");
+  });
+});
+
+describe("asset Excel import safeguards", () => {
+  const adminCaller = () => appRouter.createCaller({ user: { id: 1, openId: "admin", role: "admin", name: "Admin", isActive: true }, req: {}, res: {} } as any);
+  const row = { rowNumber: 2, assetCode: "", name: "Laptop cập nhật", category: "Laptop", status: "available" as const, maintenanceReason: null, condition: "good" as const, purchaseDate: new Date("2026-08-15").getTime(), purchaseValue: "25000000", vendor: "Nhà cung cấp A", brandName: "Hãng A", serialNumber: "SN-001", location: "Kho CNTT", warrantyUntil: null, note: null };
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mocks.getAssetCategoryByName.mockResolvedValue({ id: 8, name: "Laptop", code: "LT", isActive: true });
+    mocks.getVendorByName.mockResolvedValue({ id: 11, name: "Nhà cung cấp A", isActive: true });
+    mocks.getBrandByName.mockResolvedValue({ id: 12, name: "Hãng A", isActive: true });
+    mocks.listActiveAssetsBySerialNumber.mockResolvedValue([{ id: 77, name: "Laptop cũ", serialNumber: "SN-001", isArchived: false }]);
+    mocks.runAssetImportTransaction.mockImplementation(async (callback: any) => callback({ transaction: true }));
+    mocks.createAssetImportSession.mockResolvedValue(31);
+    mocks.updateAsset.mockResolvedValue(undefined);
+    mocks.createAssetImportItem.mockResolvedValue(41);
+    mocks.createAssetFieldChanges.mockResolvedValue(undefined);
+    mocks.updateAssetImportSession.mockResolvedValue(undefined);
+    mocks.recordActivity.mockResolvedValue(undefined);
+  });
+
+  it("updates exactly one matching Serial/IMEI in a transaction and preserves the vendor relation", async () => {
+    const result = await adminCaller().assets.import({ rows: [row], updateExisting: true });
+    expect(result).toMatchObject({ created: 0, updated: 1, errors: [], sessionId: 31 });
+    expect(mocks.runAssetImportTransaction).toHaveBeenCalledTimes(1);
+    expect(mocks.updateAsset).toHaveBeenCalledWith(77, expect.objectContaining({ vendor: "Nhà cung cấp A", vendorId: 11, brandId: 12 }), expect.anything());
+    expect(mocks.createAssetImportItem).toHaveBeenCalledWith(expect.objectContaining({ action: "updated", assetId: 77 }), expect.anything());
+  });
+
+  it("rejects an inactive or missing vendor before opening a transaction", async () => {
+    mocks.getVendorByName.mockResolvedValue(undefined);
+    const result = await adminCaller().assets.import({ rows: [row], updateExisting: true });
+    expect(result).toMatchObject({ created: 0, updated: 0, sessionId: null });
+    expect(result.errors[0]?.message).toContain("Nhà cung cấp A không tồn tại hoặc đã ngừng hoạt động");
+    expect(mocks.runAssetImportTransaction).not.toHaveBeenCalled();
   });
 });

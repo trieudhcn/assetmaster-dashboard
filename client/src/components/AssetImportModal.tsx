@@ -3,7 +3,7 @@ import * as XLSX from "xlsx";
 import { AlertTriangle, CheckCircle2, ChevronLeft, ChevronRight, Download, FileSpreadsheet, LoaderCircle, Pencil, Upload, X } from "lucide-react";
 import { toast } from "sonner";
 import { trpc } from "@/lib/trpc";
-import { assetImportHeaders, parseAssetImportRows, type AssetImportCandidate, type AssetImportIssue } from "@/lib/assetImport";
+import { assetImportHeaders, parseAssetImportRows, validateAssetImportHeaders, type AssetImportCandidate, type AssetImportIssue } from "@/lib/assetImport";
 import { SearchableSelect } from "@/components/SearchableSelect";
 import { ModalTableSkeleton } from "@/components/ModalTableSkeleton";
 import { writeBrandedWorkbook } from "@/lib/brandedWorkbook";
@@ -35,6 +35,7 @@ export function AssetImportModal({ onClose: closeModal, onImported }: { onClose:
   const categoriesQuery = trpc.assetCategories.list.useQuery();
   const vendorsQuery = trpc.vendors.list.useQuery();
   const brandsQuery = trpc.brands.list.useQuery();
+  const assetsQuery = trpc.assets.list.useQuery();
   templateCatalogValues = {
     categories: uniqueTemplateNames((categoriesQuery.data || []).map((item) => item.name)),
     vendors: uniqueTemplateNames((vendorsQuery.data || []).map((item) => item.name)),
@@ -43,7 +44,7 @@ export function AssetImportModal({ onClose: closeModal, onImported }: { onClose:
   const [parsed, setParsed] = useState<ParsedFile | null>(null);
   const [draftRows, setDraftRows] = useState<AssetImportCandidate[]>([]);
   const [serverIssues, setServerIssues] = useState<AssetImportIssue[]>([]);
-  const [updateExisting, setUpdateExisting] = useState(false);
+  const [updateExisting, setUpdateExisting] = useState(true);
   const [phase, setPhase] = useState<"idle" | "reading" | "ready" | "importing" | "complete">("idle");
   const [progress, setProgress] = useState(0);
   const [confirmStep, setConfirmStep] = useState<0 | 1 | 2>(0);
@@ -90,7 +91,26 @@ export function AssetImportModal({ onClose: closeModal, onImported }: { onClose:
     setParsed(null); setDraftRows([]); setServerIssues([]); setPreviewPage(1); setPhase("reading"); setProgress(8);
     const reader = new FileReader();
     reader.onprogress = (event) => { if (event.lengthComputable) setProgress(Math.max(8, Math.min(72, Math.round((event.loaded / event.total) * 72)))); };
-    reader.onload = () => { try { const book = XLSX.read(reader.result, { type: "array" }); const rows = XLSX.utils.sheet_to_json<Record<string, unknown>>(book.Sheets[book.SheetNames[0]], { defval: "", raw: false }); if (!rows.length) throw new Error("empty"); if (rows.length > 100) throw new Error("limit"); const result = parseAssetImportRows(rows); setParsed({ ...result, fileName: file.name, sourceRows: rows.length, rawRows: rows }); setDraftRows(result.candidates); setProgress(100); setPhase("ready"); } catch (error) { setPhase("idle"); setProgress(0); toast.error(error instanceof Error && error.message === "limit" ? "Mỗi lần chỉ import tối đa 100 tài sản." : "Không thể đọc tệp Excel. Hãy dùng template chuẩn."); } };
+    reader.onload = () => { try {
+      const book = XLSX.read(reader.result, { type: "array" });
+      const templateSheet = book.Sheets["Danh sách tài sản"];
+      if (!templateSheet) throw new Error("sheet");
+      const headerRow = XLSX.utils.sheet_to_json<unknown[]>(templateSheet, { header: 1, range: 0, blankrows: false })[0] || [];
+      const headerCheck = validateAssetImportHeaders(headerRow);
+      if (!headerCheck.valid) throw new Error("header");
+      const rows = XLSX.utils.sheet_to_json<Record<string, unknown>>(templateSheet, { defval: "", raw: false });
+      if (!rows.length) throw new Error("empty");
+      if (rows.length > 100) throw new Error("limit");
+      const result = parseAssetImportRows(rows);
+      setParsed({ ...result, fileName: file.name, sourceRows: rows.length, rawRows: rows }); setDraftRows(result.candidates); setProgress(100); setPhase("ready");
+    } catch (error) {
+      setPhase("idle"); setProgress(0);
+      const message = error instanceof Error && error.message === "limit" ? "Mỗi lần chỉ import tối đa 100 tài sản."
+        : error instanceof Error && error.message === "sheet" ? "Không tìm thấy sheet “Danh sách tài sản”. Hãy dùng template chuẩn."
+          : error instanceof Error && error.message === "header" ? "Header không đúng mẫu. Không đổi tên, thêm hoặc di chuyển các cột của template."
+            : "Không thể đọc tệp Excel. Hãy dùng template chuẩn.";
+      toast.error(message);
+    } };
     reader.onerror = () => { setPhase("idle"); setProgress(0); toast.error("Không thể đọc tệp đã chọn."); };
     reader.readAsArrayBuffer(file);
   };
@@ -101,12 +121,13 @@ export function AssetImportModal({ onClose: closeModal, onImported }: { onClose:
     if (row.status === "maintenance" && !row.maintenanceReason?.trim()) messages.push("Tài sản Bảo trì cần có Lý do bảo trì.");
     return messages.map((message) => ({ rowNumber: row.rowNumber, message }));
   });
-  const previewRows = draftRows.map((row) => ({ ...row, action: "create" as const }));
+  const existingSerials = new Set((assetsQuery.data || []).map((asset) => asset.serialNumber?.trim()).filter((serial): serial is string => Boolean(serial)));
+  const previewRows = draftRows.map((row) => ({ ...row, action: (updateExisting && row.serialNumber && existingSerials.has(row.serialNumber.trim()) ? "update" : "create") as "create" | "update" }));
   const previewPageCount = Math.max(1, Math.ceil(previewRows.length / 10));
   const activePreviewPage = Math.min(previewPage, previewPageCount);
   const pagedPreviewRows = previewRows.slice((activePreviewPage - 1) * 10, activePreviewPage * 10);
   const creates = previewRows.filter((row) => row.action === "create").length;
-  const updates = 0;
+  const updates = previewRows.filter((row) => row.action === "update").length;
   const duplicates = 0;
   const rowsForImport = previewRows.map(({ action, ...row }) => row);
   const issues = [...(parsed?.issues || []), ...draftIssues, ...serverIssues];

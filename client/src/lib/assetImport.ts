@@ -36,16 +36,35 @@ export type AssetImportIssue = { rowNumber: number; message: string };
 
 const text = (value: unknown) => String(value ?? "").trim();
 
+export function validateAssetImportHeaders(headers: unknown[]) {
+  const normalized = headers.map((header) => text(header));
+  const incorrect = assetImportHeaders.filter((header, index) => normalized[index] !== header);
+  return { valid: incorrect.length === 0, incorrect };
+}
+
 export function parseVietnameseDate(value: unknown) {
   const source = text(value);
   if (!source) return null;
   const vietnamese = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/.exec(source);
-  if (vietnamese) {
-    const date = new Date(Number(vietnamese[3]), Number(vietnamese[2]) - 1, Number(vietnamese[1]));
-    return Number.isNaN(date.getTime()) ? null : date.getTime();
-  }
-  const date = new Date(source);
-  return Number.isNaN(date.getTime()) ? null : date.getTime();
+  if (!vietnamese) return null;
+  const day = Number(vietnamese[1]);
+  const month = Number(vietnamese[2]);
+  const year = Number(vietnamese[3]);
+  const date = new Date(year, month - 1, day);
+  if (Number.isNaN(date.getTime()) || date.getFullYear() !== year || date.getMonth() !== month - 1 || date.getDate() !== day) return null;
+  return date.getTime();
+}
+
+export function parseVietnameseCurrency(value: unknown) {
+  const source = text(value).replace(/\s*(vnđ|vnd|₫)\s*$/iu, "").trim();
+  if (!source) return null;
+  const normalized = /^\d+$/.test(source)
+    ? source
+    : /^\d{1,3}(?:[.\s]\d{3})+$/.test(source)
+      ? source.replace(/[.\s]/g, "")
+      : null;
+  if (!normalized || !/^\d+$/.test(normalized)) return null;
+  return normalized;
 }
 
 export function parseAssetImportRows(rows: Array<Record<string, unknown>>) {
@@ -66,14 +85,15 @@ export function parseAssetImportRows(rows: Array<Record<string, unknown>>) {
     const warrantySource = text(row["Hạn bảo hành (dd/mm/yyyy)"]);
     const purchaseDate = parseVietnameseDate(purchaseDateSource);
     const warrantyUntil = parseVietnameseDate(warrantySource);
-    const purchaseValueSource = text(row["Giá trị (VNĐ)"]).replace(/[,.\s]/g, "");
+    const purchaseValueRaw = text(row["Giá trị (VNĐ)"]);
+    const purchaseValueSource = parseVietnameseCurrency(purchaseValueRaw);
     if (!name || !category) issues.push({ rowNumber, message: "Cần nhập Tên tài sản và Phân loại." });
     else if (!status) issues.push({ rowNumber, message: "Trạng thái chỉ nhận Sẵn có hoặc Bảo trì." });
     else if (!condition) issues.push({ rowNumber, message: "Tình trạng chỉ nhận Tốt, Khá, Cần kiểm tra hoặc Hư hỏng." });
     else if (status === "maintenance" && !maintenanceReason) issues.push({ rowNumber, message: "Tài sản Bảo trì cần có Lý do bảo trì." });
     else if (purchaseDateSource && !purchaseDate) issues.push({ rowNumber, message: "Ngày mua phải theo định dạng dd/mm/yyyy." });
     else if (warrantySource && !warrantyUntil) issues.push({ rowNumber, message: "Hạn bảo hành phải theo định dạng dd/mm/yyyy." });
-    else if (purchaseValueSource && !/^\d+(\.\d{1,2})?$/.test(purchaseValueSource)) issues.push({ rowNumber, message: "Giá trị phải là số tiền hợp lệ." });
+    else if (purchaseValueRaw && !purchaseValueSource) issues.push({ rowNumber, message: "Giá trị phải là số VNĐ nguyên, ví dụ 25000000 hoặc 25.000.000." });
     else {
       candidates.push({ rowNumber, assetCode, name, category, status, maintenanceReason, condition, purchaseDate, purchaseValue: purchaseValueSource || null, vendor: text(row["Nhà cung cấp"]) || null, brandName: text(row["Hãng"]) || null, serialNumber: text(row["Serial/IMEI"]) || null, location: text(row["Vị trí"]) || null, warrantyUntil, note: text(row["Ghi chú"]) || null });
     }

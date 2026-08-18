@@ -1547,3 +1547,10 @@
 - [x] Rà soát tạo template, danh mục dropdown và cấu trúc workbook.
 - [x] Kiểm tra đọc tệp, xác thực, xem trước, import và cập nhật dữ liệu.
 - [x] Đánh giá rủi ro vận hành, lập khuyến nghị ưu tiên và bàn giao báo cáo.
+
+## Current Session — Hardened Asset Excel Import
+
+- [x] Rà soát khóa cập nhật tài sản, ánh xạ Nhà cung cấp và cơ chế transaction hiện có.
+- [x] Xác thực chặt header, sheet, ngày tháng và số tiền trước khi mở preview/import.
+- [x] Liên kết Nhà cung cấp, triển khai updateExisting và transaction toàn lô.
+- [x] Bổ sung hồi quy toàn luồng, kiểm tra giao diện, TypeScript, build và phát hành cập nhật.

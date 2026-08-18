@@ -65,6 +65,7 @@ import {
   listAssetCategories,
   listAllAssetCategories,
   listAssetFieldChanges,
+  listActiveAssetsBySerialNumber,
   listAssetsByCodes,
   listAssetCodesByCodes,
   listBrands,
@@ -86,6 +87,7 @@ import {
   listVendorDocuments,
   listUsers,
   recordActivity,
+  runAssetImportTransaction,
   saveCompany,
   saveHelpGuide,
   saveUserNotificationPreferences,
@@ -159,8 +161,8 @@ function valueText(value: unknown) {
 export function fieldChanges(assetId: number, before: Record<string, unknown>, after: Record<string, unknown>, source: "import" | "manual" | "undo", actorUserId: number, actorName: string | null | undefined, importSessionId?: number) {
   return trackedAssetFields.filter((field) => valueText(before[field]) !== valueText(after[field])).map((field) => ({ assetId, importSessionId: importSessionId ?? null, fieldName: field, previousValue: valueText(before[field]), nextValue: valueText(after[field]), source, actorUserId, actorName: actorName ?? null }));
 }
-function importAssetValues(row: z.infer<typeof assetImportRow>, brandId: number | null, categoryId: number) {
-  return { name: row.name, categoryId, status: row.status, condition: row.condition, purchaseDate: row.purchaseDate, purchaseValue: row.purchaseValue, vendor: row.vendor, vendorId: null, brandId, serialNumber: row.serialNumber, location: row.location, warrantyUntil: row.warrantyUntil, metadata: { category: row.category }, note: row.note, maintenanceReason: row.status === "maintenance" ? row.maintenanceReason : null, isArchived: false };
+function importAssetValues(row: z.infer<typeof assetImportRow>, brandId: number | null, vendorId: number | null, categoryId: number) {
+  return { name: row.name, categoryId, status: row.status, condition: row.condition, purchaseDate: row.purchaseDate, purchaseValue: row.purchaseValue, vendor: row.vendor, vendorId, brandId, serialNumber: row.serialNumber, location: row.location, warrantyUntil: row.warrantyUntil, metadata: { category: row.category }, note: row.note, maintenanceReason: row.status === "maintenance" ? row.maintenanceReason : null, isArchived: false };
 }
 export const IMPORT_UNDO_WINDOW_MS = 24 * 60 * 60 * 1000;
 export function getImportUndoDeadline(createdAt: Date) {
@@ -473,36 +475,51 @@ export const appRouter = router({
   assets: router({
     list: adminProcedure.query(() => listAssets()),
     import: adminProcedure.input(z.object({ rows: z.array(assetImportRow).min(1).max(100), updateExisting: z.boolean().default(false) })).mutation(async ({ input, ctx }) => {
-      const rowsToCreate: Array<{ row: typeof assetImportRow._output; category: NonNullable<Awaited<ReturnType<typeof getAssetCategoryByName>>> }> = [];
+      const rowsToImport: Array<{ row: typeof assetImportRow._output; category: NonNullable<Awaited<ReturnType<typeof getAssetCategoryByName>>>; vendorId: number | null; brandId: number | null; existingAsset: Awaited<ReturnType<typeof listActiveAssetsBySerialNumber>>[number] | null }> = [];
       const errors: Array<{ rowNumber: number; message: string }> = [];
       for (const row of input.rows) {
         if (!hasRequiredMaintenanceReason(row.status, row.maintenanceReason)) { errors.push({ rowNumber: row.rowNumber, message: "Tài sản Bảo trì cần có Lý do bảo trì." }); continue; }
         const category = await getAssetCategoryByName(row.category);
         if (!category?.isActive) { errors.push({ rowNumber: row.rowNumber, message: `Phân loại ${row.category} không tồn tại hoặc đã ngừng hoạt động.` }); continue; }
-        if (row.brandName && !(await getBrandByName(row.brandName))?.isActive) { errors.push({ rowNumber: row.rowNumber, message: `Hãng ${row.brandName} không tồn tại hoặc đã ngừng hoạt động.` }); continue; }
-        rowsToCreate.push({ row, category });
+        const vendor = row.vendor ? await getVendorByName(row.vendor) : null;
+        if (row.vendor && !vendor?.isActive) { errors.push({ rowNumber: row.rowNumber, message: `Nhà cung cấp ${row.vendor} không tồn tại hoặc đã ngừng hoạt động.` }); continue; }
+        const brand = row.brandName ? await getBrandByName(row.brandName) : null;
+        if (row.brandName && !brand?.isActive) { errors.push({ rowNumber: row.rowNumber, message: `Hãng ${row.brandName} không tồn tại hoặc đã ngừng hoạt động.` }); continue; }
+        const existingMatches = input.updateExisting && row.serialNumber ? await listActiveAssetsBySerialNumber(row.serialNumber) : [];
+        if (existingMatches.length > 1) { errors.push({ rowNumber: row.rowNumber, message: `Serial/IMEI ${row.serialNumber} đang trùng trên nhiều tài sản, không thể cập nhật tự động.` }); continue; }
+        rowsToImport.push({ row, category, vendorId: vendor?.id ?? null, brandId: brand?.id ?? null, existingAsset: existingMatches[0] ?? null });
       }
-      const sessionId = await createAssetImportSession({ referenceCode: `IMP-${new Date().getFullYear()}-${crypto.randomUUID().slice(0, 8).toUpperCase()}`, createdByUserId: ctx.user!.id, createdByName: ctx.user!.name ?? "Quản trị viên" });
-      const brandIds = new Map<string, number | null>();
-      for (const { row } of rowsToCreate) if (row.brandName && !brandIds.has(row.brandName)) brandIds.set(row.brandName, (await getBrandByName(row.brandName))?.id || null);
-      const nextSequenceByPrefix = new Map<string, number>();
-      let created = 0;
-      for (const { row, category } of rowsToCreate) {
-        let nextSequence = nextSequenceByPrefix.get(category.code);
-        if (nextSequence === undefined) nextSequence = Number((await getNextAssetCodeForPrefix(category.code)).slice(category.code.length));
-        const assetCode = `${category.code}${String(nextSequence).padStart(5, "0")}`;
-        nextSequenceByPrefix.set(category.code, nextSequence + 1);
-        const changes = importAssetValues(row, row.brandName ? brandIds.get(row.brandName) || null : null, category.id);
-        const id = await createAsset({ assetCode, departmentId: null, holderUserId: null, holderName: null, qrToken: crypto.randomUUID().replaceAll("-", ""), createdByUserId: ctx.user!.id, ...changes });
-        const after = assetSnapshot(changes);
-        await createAssetImportItem({ importSessionId: sessionId, assetId: id, action: "created", beforeSnapshot: null, afterSnapshot: after });
-        await createAssetFieldChanges(fieldChanges(id, {}, after, "import", ctx.user!.id, ctx.user!.name, sessionId));
-        created++;
-      }
-      const updated = 0;
-      await updateAssetImportSession(sessionId, { createdCount: created, updatedCount: updated });
-      if (created || updated) await recordActivity({ entityType: "assetImport", entityId: sessionId, action: "imported", actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: `Import Excel: tạo ${created}, cập nhật ${updated} tài sản${errors.length ? `; bỏ qua ${errors.length} dòng lỗi` : ""}` });
-      return { created, updated, errors, sessionId };
+      if (!rowsToImport.length) return { created: 0, updated: 0, errors, sessionId: null };
+      return runAssetImportTransaction(async (transaction) => {
+        const sessionId = await createAssetImportSession({ referenceCode: `IMP-${new Date().getFullYear()}-${crypto.randomUUID().slice(0, 8).toUpperCase()}`, createdByUserId: ctx.user!.id, createdByName: ctx.user!.name ?? "Quản trị viên" }, transaction);
+        const nextSequenceByPrefix = new Map<string, number>();
+        let created = 0;
+        let updated = 0;
+        for (const { row, category, vendorId, brandId, existingAsset } of rowsToImport) {
+          const changes = importAssetValues(row, brandId, vendorId, category.id);
+          if (input.updateExisting && existingAsset) {
+            const before = assetSnapshot(existingAsset as unknown as Record<string, unknown>);
+            await updateAsset(existingAsset.id, changes, transaction);
+            const after = assetSnapshot({ ...(existingAsset as unknown as Record<string, unknown>), ...changes });
+            await createAssetImportItem({ importSessionId: sessionId, assetId: existingAsset.id, action: "updated", beforeSnapshot: before, afterSnapshot: after }, transaction);
+            await createAssetFieldChanges(fieldChanges(existingAsset.id, before, after, "import", ctx.user!.id, ctx.user!.name, sessionId), transaction);
+            updated++;
+            continue;
+          }
+          let nextSequence = nextSequenceByPrefix.get(category.code);
+          if (nextSequence === undefined) nextSequence = Number((await getNextAssetCodeForPrefix(category.code, transaction)).slice(category.code.length));
+          const assetCode = `${category.code}${String(nextSequence).padStart(5, "0")}`;
+          nextSequenceByPrefix.set(category.code, nextSequence + 1);
+          const id = await createAsset({ assetCode, departmentId: null, holderUserId: null, holderName: null, qrToken: crypto.randomUUID().replaceAll("-", ""), createdByUserId: ctx.user!.id, ...changes }, transaction);
+          const after = assetSnapshot(changes);
+          await createAssetImportItem({ importSessionId: sessionId, assetId: id, action: "created", beforeSnapshot: null, afterSnapshot: after }, transaction);
+          await createAssetFieldChanges(fieldChanges(id, {}, after, "import", ctx.user!.id, ctx.user!.name, sessionId), transaction);
+          created++;
+        }
+        await updateAssetImportSession(sessionId, { createdCount: created, updatedCount: updated }, transaction);
+        await recordActivity({ entityType: "assetImport", entityId: sessionId, action: "imported", actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: `Import Excel: tạo ${created}, cập nhật ${updated} tài sản${errors.length ? `; bỏ qua ${errors.length} dòng lỗi` : ""}` }, transaction);
+        return { created, updated, errors, sessionId };
+      });
     }),
     latestImport: adminProcedure.query(async () => {
       const session = await getLatestAssetImportSession();

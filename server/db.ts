@@ -1,4 +1,4 @@
-import { desc, eq, inArray, like, sql } from "drizzle-orm";
+import { and, desc, eq, inArray, like, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import {
   activityLogs,
@@ -377,10 +377,10 @@ export async function countAssetsByCategoryId(categoryId: number) {
   return results.length;
 }
 
-export async function getNextAssetCodeForPrefix(prefix: string) {
-  const db = await getDb();
+export async function getNextAssetCodeForPrefix(prefix: string, executor?: any) {
+  const db = executor ?? await getDb();
   if (!db) return `${prefix}00001`;
-  const codes = await db.select({ assetCode: assets.assetCode }).from(assets).where(like(assets.assetCode, `${prefix}%`));
+  const codes: Array<{ assetCode: string }> = await db.select({ assetCode: assets.assetCode }).from(assets).where(like(assets.assetCode, `${prefix}%`));
   const exactSuffix = new RegExp(`^${prefix.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}(\\d{5})$`);
   const largestSequence = codes.reduce((largest, row) => Math.max(largest, Number(row.assetCode.match(exactSuffix)?.[1] || 0)), 0);
   return `${prefix}${String(largestSequence + 1).padStart(5, "0")}`;
@@ -398,8 +398,14 @@ export async function getAssetById(id: number) {
   return (await db.select().from(assets).where(eq(assets.id, id)).limit(1))[0];
 }
 
-export async function createAsset(data: typeof assets.$inferInsert) {
-  const db = await getDb();
+export async function listActiveAssetsBySerialNumber(serialNumber: string, executor?: any) {
+  const db = executor ?? await getDb();
+  if (!db || !serialNumber.trim()) return [];
+  return db.select().from(assets).where(and(eq(assets.serialNumber, serialNumber.trim()), eq(assets.isArchived, false)));
+}
+
+export async function createAsset(data: typeof assets.$inferInsert, executor?: any) {
+  const db = executor ?? await getDb();
   if (!db) throw new Error("Database unavailable");
   const result = await db.insert(assets).values(data);
   return Number(result[0].insertId);
@@ -425,21 +431,21 @@ export async function createAssetsBulk(data: Array<typeof assets.$inferInsert>) 
   return data.length;
 }
 
-export async function updateAsset(id: number, data: Partial<typeof assets.$inferInsert>) {
-  const db = await getDb();
+export async function updateAsset(id: number, data: Partial<typeof assets.$inferInsert>, executor?: any) {
+  const db = executor ?? await getDb();
   if (!db) throw new Error("Database unavailable");
   await db.update(assets).set(data).where(eq(assets.id, id));
 }
 
-export async function createAssetImportSession(data: typeof assetImportSessions.$inferInsert) {
-  const db = await getDb();
+export async function createAssetImportSession(data: typeof assetImportSessions.$inferInsert, executor?: any) {
+  const db = executor ?? await getDb();
   if (!db) throw new Error("Database unavailable");
   const result = await db.insert(assetImportSessions).values(data);
   return Number(result[0].insertId);
 }
 
-export async function updateAssetImportSession(id: number, data: Partial<typeof assetImportSessions.$inferInsert>) {
-  const db = await getDb();
+export async function updateAssetImportSession(id: number, data: Partial<typeof assetImportSessions.$inferInsert>, executor?: any) {
+  const db = executor ?? await getDb();
   if (!db) throw new Error("Database unavailable");
   await db.update(assetImportSessions).set(data).where(eq(assetImportSessions.id, id));
 }
@@ -450,8 +456,8 @@ export async function getLatestAssetImportSession() {
   return (await db.select().from(assetImportSessions).orderBy(desc(assetImportSessions.createdAt)).limit(1))[0];
 }
 
-export async function createAssetImportItem(data: typeof assetImportItems.$inferInsert) {
-  const db = await getDb();
+export async function createAssetImportItem(data: typeof assetImportItems.$inferInsert, executor?: any) {
+  const db = executor ?? await getDb();
   if (!db) throw new Error("Database unavailable");
   const result = await db.insert(assetImportItems).values(data);
   return Number(result[0].insertId);
@@ -463,8 +469,8 @@ export async function listAssetImportItems(sessionId: number) {
   return db.select().from(assetImportItems).where(eq(assetImportItems.importSessionId, sessionId));
 }
 
-export async function createAssetFieldChanges(data: Array<typeof assetFieldChanges.$inferInsert>) {
-  const db = await getDb();
+export async function createAssetFieldChanges(data: Array<typeof assetFieldChanges.$inferInsert>, executor?: any) {
+  const db = executor ?? await getDb();
   if (!db) throw new Error("Database unavailable");
   if (!data.length) return;
   await db.insert(assetFieldChanges).values(data);
@@ -735,10 +741,16 @@ export async function updateAuditItem(id: number, data: Partial<typeof auditItem
   await db.update(auditItems).set(data).where(eq(auditItems.id, id));
 }
 
-export async function recordActivity(data: typeof activityLogs.$inferInsert) {
-  const db = await getDb();
+export async function recordActivity(data: typeof activityLogs.$inferInsert, executor?: any) {
+  const db = executor ?? await getDb();
   if (!db) return;
   await db.insert(activityLogs).values(data);
+}
+
+export async function runAssetImportTransaction<T>(callback: (transaction: any) => Promise<T>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database unavailable");
+  return db.transaction(async (transaction) => callback(transaction));
 }
 
 export async function listActivityLogs(limit = 200) {
