@@ -111,6 +111,73 @@ export function SuppliesInventoryView() {
     setMovementNote("");
   }, [supplies]);
   const beginEdit = (id: number) => { const item = supplies.find((supply) => supply.id === id); if (!item) return; setEditingId(id); setEditCode(item.code); setEditName(item.name); };
+  useEffect(() => {
+    if (!editingSupply) return;
+    const frame = window.requestAnimationFrame(() => {
+      const dialog = Array.from(document.querySelectorAll<HTMLElement>('[role="dialog"]')).find((element) => element.textContent?.includes("Định danh phụ kiện"));
+      const editor = dialog?.querySelector<HTMLElement>(".space-y-3");
+      const nameInput = Array.from(dialog?.querySelectorAll("label") || []).find((label) => label.textContent?.includes("Tên phụ kiện"))?.querySelector<HTMLInputElement>("input");
+      const saveButton = dialog?.querySelector<HTMLButtonElement>("button.primary-action");
+      if (!dialog || !editor || !nameInput || !saveButton || editor.dataset.editCurrencyReady === "true") return;
+      editor.dataset.editCurrencyReady = "true";
+      const field = document.createElement("label");
+      field.className = "block space-y-2";
+      const caption = document.createElement("span");
+      caption.className = "text-xs font-extrabold text-[#526779]";
+      caption.textContent = "Đơn giá VNĐ";
+      const inputWrap = document.createElement("div");
+      inputWrap.className = "relative";
+      const input = document.createElement("input");
+      input.type = "text";
+      input.inputMode = "numeric";
+      input.className = "field-input w-full pr-[6.5rem]";
+      input.placeholder = "Ví dụ: 42.500.000";
+      const suffix = document.createElement("span");
+      suffix.className = "pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[11px] font-extrabold text-[#087A6A]";
+      suffix.textContent = "VNĐ";
+      const words = document.createElement("p");
+      words.className = "pl-1 text-[10px] font-medium leading-4 text-[#8AA0B6]";
+      const commit = (raw: string) => { const amount = parseVndAmount(raw); const formatted = amount === null ? "" : formatVndInput(amount); input.value = formatted; input.dataset.rawValue = amount === null ? "" : String(amount); words.textContent = formatted ? numberToVietnameseWords(formatted) : ""; };
+      commit(editingSupply.unitCost === null ? "" : String(editingSupply.unitCost));
+      input.addEventListener("input", () => commit(input.value));
+      inputWrap.append(input, suffix);
+      field.append(caption, inputWrap, words);
+      const saveHandler = (event: Event) => { event.preventDefault(); event.stopPropagation(); const raw = input.dataset.rawValue || ""; updateSupply.mutate({ id: editingSupply.id, name: nameInput.value, unitCost: raw ? Number(raw) : null }); };
+      saveButton.addEventListener("click", saveHandler, true);
+      const actions = editor.querySelector(".mt-5.flex");
+      if (actions) editor.insertBefore(field, actions); else editor.append(field);
+      return () => { saveButton.removeEventListener("click", saveHandler, true); field.remove(); delete editor.dataset.editCurrencyReady; };
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [editingSupply?.id]);
+  useEffect(() => {
+    if (!createModalOpen) return;
+    const frame = window.requestAnimationFrame(() => {
+      const dialog = Array.from(document.querySelectorAll<HTMLElement>('[aria-labelledby="supply-create-title"]')).find((element) => element.textContent?.includes("Thêm phụ kiện"));
+      const labels = Array.from(dialog?.querySelectorAll("label") || []);
+      const quantityInput = labels.find((label) => label.textContent?.trim().startsWith("Tồn đầu kỳ"))?.querySelector<HTMLInputElement>("input");
+      const costLabel = labels.find((label) => label.textContent?.trim().startsWith("Đơn giá VNĐ"));
+      const grid = costLabel?.parentElement;
+      if (!dialog || !quantityInput || !costLabel || !grid || grid.querySelector("[data-accessory-value-summary]")) return;
+      const summary = document.createElement("section");
+      summary.dataset.accessoryValueSummary = "true";
+      summary.className = "sm:col-span-2 rounded-xl border border-[#CDE5E5] bg-[#F4FBFA] px-3 py-2.5";
+      const title = document.createElement("p");
+      title.className = "text-[10px] font-extrabold uppercase tracking-[.1em] text-[#4B8884]";
+      title.textContent = "Tổng giá trị dự kiến";
+      const amount = document.createElement("p");
+      amount.className = "mt-1 text-sm font-extrabold text-[#087A6A]";
+      const words = document.createElement("p");
+      words.className = "mt-1 text-[10px] font-medium text-[#71869A]";
+      const refresh = () => { const unitCostInput = costLabel.querySelector<HTMLInputElement>("input"); const unitCost = parseVndAmount(unitCostInput?.value || "") || 0; const total = Math.max(0, Number(quantityInput.value || 0)) * unitCost; amount.textContent = `${total.toLocaleString("vi-VN", { maximumFractionDigits: 0 })} VNĐ`; words.textContent = total ? numberToVietnameseWords(String(total)) : "Nhập số lượng và đơn giá để xem tổng giá trị."; };
+      quantityInput.addEventListener("input", refresh);
+      costLabel.querySelector<HTMLInputElement>("input")?.addEventListener("input", () => window.requestAnimationFrame(refresh));
+      summary.append(title, amount, words);
+      grid.insertBefore(summary, costLabel.nextSibling);
+      refresh();
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [createModalOpen]);
 
   return <div className="min-h-screen bg-[#F4F7FB] px-4 py-7 sm:px-6 lg:px-9 lg:py-8"><div className="mx-auto max-w-[1500px]">
     <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between"><div><div className="flex items-center gap-2 text-[10px] font-extrabold uppercase tracking-[.16em] text-[#0F8C8C]"><Boxes size={14} />Kho vận hành</div><h1 className="mt-1 font-display text-3xl font-extrabold text-[#102A43]">Phụ kiện</h1><p className="mt-1 text-sm text-[#71869A]">Quản lý phụ kiện không theo Serial/IMEI bằng số lượng nhập, xuất, cấp phát và tồn thực tế.</p></div><div className="flex flex-wrap items-center justify-end gap-2"><button type="button" onClick={() => setSupplyImportHistoryOpen(true)} className="inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-[#CDE5E5] bg-white px-3 text-xs font-bold text-[#087A6A] transition hover:bg-[#F4FBFA]"><History size={15} />Lịch sử import</button><button type="button" onClick={() => { setForm(emptyForm); setCreateModalOpen(true); }} className="primary-action"><Plus size={16} />Thêm phụ kiện</button>{createModalOpen && <SupplyCreateModal form={form} setForm={setForm} categoryOptions={categoryOptions} vendorOptions={vendorOptions} brandOptions={brandOptions} isSubmitting={createSupply.isPending} onClose={() => setCreateModalOpen(false)} onSubmit={submitCreate} />}{supplyImportHistoryOpen && <SupplyImportHistoryDialog onClose={() => setSupplyImportHistoryOpen(false)} />}<div className="grid grid-cols-3 gap-2"><Metric label="Mặt hàng" value={supplies.length} /><Metric label="Tồn kho" value={quantity(totalUnits)} tone="teal" /><Metric label="Sắp hết" value={lowCount} tone={lowCount ? "warning" : "default"} /></div></div></div>

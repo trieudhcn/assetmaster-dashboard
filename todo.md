@@ -1790,3 +1790,9 @@
 - [x] Thay luồng can thiệp DOM của đơn giá bằng thành phần tiền tệ React dùng chung.
 - [x] Hiển thị phân cách hàng nghìn ngay khi nhập tiền trong form Thêm phụ kiện.
 - [x] Bổ sung hồi quy, kiểm tra TypeScript, Vitest, build và phát hành sửa lỗi.
+
+## Current Session — Accessory Value Summary & Edit Currency
+
+- [x] Hiển thị tổng giá trị dự kiến bằng số lượng nhân đơn giá trước khi lưu phụ kiện mới.
+- [x] Áp dụng phân cách hàng nghìn, hậu tố VNĐ và hỗ trợ dán tiền Việt Nam cho đơn giá khi chỉnh sửa phụ kiện.
+- [x] Bổ sung hồi quy, kiểm tra TypeScript, Vitest, build, giao diện và phát hành cập nhật.

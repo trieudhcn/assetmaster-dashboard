@@ -197,6 +197,9 @@ describe("modal presentation contract", () => {
     expect(supplies).toContain("numberToVietnameseWords");
     expect(supplies).toContain("Ví dụ: 42.500.000");
     expect(supplies).toContain("window.requestAnimationFrame");
+    expect(supplies).toContain("Tổng giá trị dự kiến");
+    expect(supplies).toContain("data-accessory-value-summary");
+    expect(supplies).toContain("editCurrencyReady");
     expect(supplies).toContain("Đơn giá (VNĐ)");
     expect(supplies).toContain("previewCurrencyReady");
     expect(supplies).toContain("AccessoryGroupSummary");
