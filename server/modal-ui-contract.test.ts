@@ -188,7 +188,10 @@ describe("modal presentation contract", () => {
     expect(supplies).toContain("Lọc theo nhóm");
     expect(supplies).not.toContain("nextAccessoryCodeQuery");
     expect(supplies).toContain("setForm(emptyForm)");
-    expect(supplies).toContain("Xác nhận ${rows.length} dòng");
+    expect(supplies).toContain("Xem trước và chỉnh sửa dữ liệu");
+    expect(supplies).toContain("các ô có cảnh báo trước khi xác nhận lưu");
+    expect(supplies).toContain("bg-[#FFF5EE]");
+    expect(supplies).toContain("Xác nhận lưu ${rows.length} dòng");
     expect(supplies).toContain("AccessoryGroupSummary");
     expect(supplies).toContain("Tồn kho phụ kiện theo nhóm");
     expect(supplies).toContain("Tạo nhóm phụ kiện");

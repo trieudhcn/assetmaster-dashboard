@@ -1765,3 +1765,10 @@
 - [x] Bỏ tự sinh và tự điền mã phụ kiện để người dùng tự đặt mã khi tạo mới.
 - [x] Bổ sung bước xác nhận rõ ràng sau khi xem trước Excel, trước khi lưu dữ liệu vào hệ thống.
 - [x] Bổ sung hồi quy, kiểm tra TypeScript, Vitest, build, giao diện và phát hành cập nhật.
+
+## Current Session — Editable Excel Preview Validation
+
+- [x] Cho phép chỉnh sửa trực tiếp các ô phụ kiện trong bảng xem trước Excel.
+- [x] Kiểm tra lại từng dòng sau khi chỉnh sửa và chỉ mở xác nhận lưu khi hợp lệ.
+- [x] Làm nổi bật các hàng và ô có dữ liệu không hợp lệ bằng cảnh báo trực quan.
+- [x] Bổ sung hồi quy, kiểm tra TypeScript, Vitest, build, giao diện và phát hành cập nhật.
