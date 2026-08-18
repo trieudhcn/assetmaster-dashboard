@@ -346,11 +346,14 @@ export default function Home() {
   const [headerProfileOpen, setHeaderProfileOpen] = useState(false);
   const [notificationSettingsOpen, setNotificationSettingsOpen] = useState(false);
   const [companyInfo, setCompanyInfo] = useState<CompanyInfo>(readCompanyInfo);
+  const [maintenanceChartYear, setMaintenanceChartYear] = useState(() => new Date().getFullYear());
+  const [selectedMaintenanceChartMonth, setSelectedMaintenanceChartMonth] = useState<number | null>(null);
   const isAdmin = user?.role === "admin";
   const assetQuery = trpc.assets.list.useQuery(undefined, { enabled: isAuthenticated && isAdmin });
   const suppliesQuery = trpc.supplies.list.useQuery(undefined, { enabled: isAuthenticated && isAdmin });
   const assetCategoriesQuery = trpc.assetCategories.list.useQuery(undefined, { enabled: isAuthenticated && isAdmin });
   const maintenanceTicketsQuery = trpc.maintenance.list.useQuery(undefined, { enabled: isAuthenticated && isAdmin });
+  const maintenanceBudgetsQuery = trpc.maintenance.monthlyBudgets.useQuery({ year: maintenanceChartYear }, { enabled: isAuthenticated && isAdmin });
   const vendorsQuery = trpc.vendors.list.useQuery(undefined, { enabled: isAuthenticated && isAdmin });
   const brandsQuery = trpc.brands.list.useQuery(undefined, { enabled: isAuthenticated && isAdmin });
   const companyQuery = trpc.company.get.useQuery(undefined, { enabled: isAuthenticated && isAdmin });
@@ -359,11 +362,9 @@ export default function Home() {
   const maintenanceBadgeCount = getMaintenanceBadgeCount(assetRows);
   const newMaintenanceRequestBadge = getNewMaintenanceRequestBadge(maintenanceTicketsQuery.data || []);
   const monthlyMaintenanceCosts = (() => {
-    const now = new Date();
-    const months = Array.from({ length: 6 }, (_, index) => {
-      const date = new Date(now.getFullYear(), now.getMonth() - (5 - index), 1);
-      const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
-      return { key, label: `T${date.getMonth() + 1}`, total: 0 };
+    const months = Array.from({ length: 12 }, (_, index) => {
+      const key = `${maintenanceChartYear}-${String(index + 1).padStart(2, "0")}`;
+      return { key, month: index + 1, label: `T${index + 1}`, total: 0, tickets: [] as Array<NonNullable<typeof maintenanceTicketsQuery.data>[number]> };
     });
     const byKey = new Map(months.map((month) => [month.key, month]));
     (maintenanceTicketsQuery.data || []).forEach((ticket) => {
@@ -373,13 +374,28 @@ export default function Home() {
       const key = `${occurredAt.getFullYear()}-${String(occurredAt.getMonth() + 1).padStart(2, "0")}`;
       const month = byKey.get(key);
       const amount = Number(ticket.actualCost ?? ticket.estimatedCost ?? 0);
-      if (month && Number.isFinite(amount) && amount > 0) month.total += amount;
+      if (month && Number.isFinite(amount) && amount >= 0) {
+        month.total += amount;
+        month.tickets?.push(ticket);
+      }
     });
-    return months;
+    const budgets = new Map((maintenanceBudgetsQuery.data || []).map((budget) => [budget.month, Number(budget.amount)]));
+    return months.map((month) => ({ ...month, budget: budgets.get(month.month) ?? null }));
   })();
+  const maintenanceChartYears = Array.from(new Set([
+    ...Array.from({ length: 5 }, (_, index) => new Date().getFullYear() - index),
+    ...(maintenanceTicketsQuery.data || []).map((ticket) => new Date(ticket.resolvedAt || ticket.openedAt).getFullYear()).filter(Number.isFinite),
+  ])).sort((a, b) => b - a);
   const maintenanceRequestBadgeTone = { low: "bg-[#EAF3FF] text-[#2666A8]", medium: "bg-[#FFF0C9] text-[#A86B00]", high: "bg-[#FFE7CF] text-[#B85B16]", critical: "bg-[#FDEDEE] text-[#B44545]" }[newMaintenanceRequestBadge.priority || "low"];
   const sidebarNavItems = navItems.map((item) => ({ ...item, maintenanceAssetCount: item.label === "Bảo trì & Báo hỏng" ? maintenanceBadgeCount : 0, maintenanceRequestCount: item.label === "Bảo trì & Báo hỏng" ? newMaintenanceRequestBadge.count : 0 }));
   const trpcUtils = trpc.useUtils();
+  const saveMaintenanceBudgetMutation = trpc.maintenance.saveMonthlyBudget.useMutation({
+    onSuccess: (_result, variables) => {
+      void maintenanceBudgetsQuery.refetch();
+      toast.success(`Đã lưu ngân sách tháng ${variables.month}/${variables.year}.`);
+    },
+    onError: (error) => toast.error(error.message || "Không thể lưu ngân sách bảo trì."),
+  });
   const saveCompanyMutation = trpc.company.save.useMutation({ onSuccess: () => companyQuery.refetch() });
   const saveNotificationPreferencesMutation = trpc.notifications.savePreferences.useMutation({
     onSuccess: (_result, nextPreferences) => {
@@ -398,32 +414,130 @@ export default function Home() {
     if (!anchor) return;
     const existing = document.querySelector<HTMLElement>("[data-maintenance-monthly-cost-chart]");
     existing?.remove();
-    const max = Math.max(...monthlyMaintenanceCosts.map((item) => item.total), 1);
+    const max = Math.max(...monthlyMaintenanceCosts.map((item) => Math.max(item.total, item.budget || 0)), 1);
     const total = monthlyMaintenanceCosts.reduce((sum, item) => sum + item.total, 0);
+    const selectedMonth = selectedMaintenanceChartMonth ? monthlyMaintenanceCosts.find((item) => item.month === selectedMaintenanceChartMonth) : null;
     const chart = document.createElement("section");
     chart.dataset.maintenanceMonthlyCostChart = "true";
     chart.className = "mt-5 rounded-xl border border-[#DFE9F0] bg-white p-5 shadow-[0_8px_24px_rgba(16,42,67,0.045)]";
-    chart.innerHTML = `<div class="flex flex-wrap items-start justify-between gap-3"><div><div class="flex items-center gap-2 text-sm font-extrabold text-[#193B57]"><span class="grid h-7 w-7 place-items-center rounded-lg bg-[#FFF5DC] text-[#A86B00]">₫</span>Chi phí bảo trì theo tháng</div><p class="mt-1 text-xs text-[#71869A]">Tổng chi phí thực tế; dùng chi phí dự kiến khi phiếu chưa chốt.</p></div><div class="rounded-lg bg-[#FFF9EB] px-3 py-2 text-right"><div class="text-[10px] font-extrabold uppercase tracking-[.1em] text-[#8F6A31]">6 tháng gần nhất</div><div class="mt-1 text-sm font-extrabold text-[#A86B00]">${total.toLocaleString("vi-VN")} VNĐ</div></div></div><div class="mt-5 grid h-40 grid-cols-6 items-end gap-3" aria-label="Biểu đồ chi phí bảo trì theo tháng"></div>`;
+    chart.innerHTML = `<div class="flex flex-wrap items-start justify-between gap-3"><div><div class="flex items-center gap-2 text-sm font-extrabold text-[#193B57]"><span class="grid h-7 w-7 place-items-center rounded-lg bg-[#FFF5DC] text-[#A86B00]">₫</span>Chi phí bảo trì theo tháng</div><p class="mt-1 text-xs text-[#71869A]">Nhấp cột tháng để xem phiếu chi tiết và thiết lập ngân sách.</p></div><div class="flex items-center gap-2"><label class="sr-only" for="maintenance-chart-year">Chọn năm</label><select id="maintenance-chart-year" class="h-9 rounded-lg border border-[#D7E3EB] bg-white px-3 text-xs font-extrabold text-[#193B57] focus:border-[#0F8C8C] focus:outline-none"></select><div class="rounded-lg bg-[#FFF9EB] px-3 py-2 text-right"><div class="text-[10px] font-extrabold uppercase tracking-[.1em] text-[#8F6A31]">Tổng năm ${maintenanceChartYear}</div><div class="mt-1 text-sm font-extrabold text-[#A86B00]">${formatVnd(total)} VNĐ</div></div></div></div><div class="mt-4 flex items-center gap-2 text-[10px] text-[#71869A]"><span class="h-2.5 w-2.5 rounded-sm bg-[#0F8C8C]"></span> Trong ngân sách <span class="ml-2 h-2.5 w-2.5 rounded-sm bg-[#B44545]"></span> Vượt ngân sách <span class="ml-2 h-px w-4 border-t border-dashed border-[#A86B00]"></span> Mức ngân sách</div><div class="mt-4 grid h-48 grid-cols-6 items-end gap-2 sm:gap-3 lg:grid-cols-12" aria-label="Biểu đồ chi phí bảo trì theo tháng"></div>`;
+    const yearSelect = chart.querySelector<HTMLSelectElement>("#maintenance-chart-year");
+    maintenanceChartYears.forEach((year) => {
+      const option = document.createElement("option");
+      option.value = String(year);
+      option.textContent = `Năm ${year}`;
+      option.selected = year === maintenanceChartYear;
+      yearSelect?.append(option);
+    });
+    yearSelect?.addEventListener("change", () => {
+      setMaintenanceChartYear(Number(yearSelect.value));
+      setSelectedMaintenanceChartMonth(null);
+    });
     const bars = chart.querySelector("[aria-label]");
     monthlyMaintenanceCosts.forEach((item) => {
-      const column = document.createElement("div");
-      column.className = "flex h-full min-w-0 flex-col items-center justify-end gap-2";
+      const isOverBudget = item.budget !== null && item.total > item.budget;
+      const column = document.createElement("button");
+      column.type = "button";
+      column.className = "flex h-full min-w-0 flex-col items-center justify-end gap-1.5 rounded-md px-0.5 text-left transition hover:bg-[#F5FAFA] focus:outline-none focus:ring-2 focus:ring-[#0F8C8C]/35";
+      column.setAttribute("aria-label", `Xem phiếu bảo trì tháng ${item.month}/${maintenanceChartYear}`);
       const value = document.createElement("span");
-      value.className = "hidden max-w-full truncate text-[10px] font-bold text-[#60758A] sm:block";
+      value.className = `hidden max-w-full truncate text-[10px] font-bold sm:block ${isOverBudget ? "text-[#B44545]" : "text-[#60758A]"}`;
       value.textContent = item.total ? `${Math.round(item.total / 1000).toLocaleString("vi-VN")}k` : "0";
+      const plot = document.createElement("div");
+      plot.className = "relative flex h-[154px] w-full items-end";
       const bar = document.createElement("div");
-      bar.className = "w-full min-h-1 rounded-t-md bg-gradient-to-t from-[#0F8C8C] to-[#69BBB5] transition-[height] duration-300";
+      bar.className = `w-full min-h-1 rounded-t-md transition-[height] duration-300 ${isOverBudget ? "bg-gradient-to-t from-[#B44545] to-[#ED9292]" : "bg-gradient-to-t from-[#0F8C8C] to-[#69BBB5]"}`;
       bar.style.height = `${item.total ? Math.max((item.total / max) * 100, 6) : 3}%`;
-      bar.title = `${item.label}: ${item.total.toLocaleString("vi-VN")} VNĐ`;
+      bar.title = `${item.label}: ${formatVnd(item.total)} VNĐ${item.budget !== null ? ` · Ngân sách: ${formatVnd(item.budget)} VNĐ` : " · Chưa đặt ngân sách"}`;
+      plot.append(bar);
+      if (item.budget !== null) {
+        const budgetLine = document.createElement("span");
+        budgetLine.className = "pointer-events-none absolute left-0 right-0 border-t border-dashed border-[#A86B00]";
+        budgetLine.style.bottom = `${Math.min((item.budget / max) * 100, 100)}%`;
+        budgetLine.title = `Ngân sách: ${formatVnd(item.budget)} VNĐ`;
+        plot.append(budgetLine);
+      }
       const label = document.createElement("span");
-      label.className = "text-[10px] font-extrabold text-[#71869A]";
+      label.className = `text-[10px] font-extrabold ${isOverBudget ? "text-[#B44545]" : "text-[#71869A]"}`;
       label.textContent = item.label;
-      column.append(value, bar, label);
+      column.append(value, plot, label);
+      column.addEventListener("click", () => setSelectedMaintenanceChartMonth(item.month));
       bars?.append(column);
     });
+    if (selectedMonth) {
+      const details = document.createElement("section");
+      details.className = `mt-5 rounded-xl border p-4 ${selectedMonth.budget !== null && selectedMonth.total > selectedMonth.budget ? "border-[#F2C1C4] bg-[#FFF7F7]" : "border-[#E1EAEE] bg-[#F8FBFC]"}`;
+      const detailsHeader = document.createElement("div");
+      detailsHeader.className = "flex flex-wrap items-start justify-between gap-3";
+      const titleBlock = document.createElement("div");
+      const title = document.createElement("h3");
+      title.className = "font-bold text-[#193B57]";
+      title.textContent = `Phiếu bảo trì tháng ${selectedMonth.month}/${maintenanceChartYear}`;
+      const summary = document.createElement("p");
+      summary.className = "mt-1 text-xs text-[#60758A]";
+      summary.textContent = `${selectedMonth.tickets.length} phiếu · Chi phí ${formatVnd(selectedMonth.total)} VNĐ${selectedMonth.budget !== null ? ` · Ngân sách ${formatVnd(selectedMonth.budget)} VNĐ` : " · Chưa đặt ngân sách"}`;
+      titleBlock.append(title, summary);
+      const close = document.createElement("button");
+      close.type = "button";
+      close.className = "rounded-md px-2 py-1 text-xs font-bold text-[#60758A] hover:bg-white";
+      close.textContent = "Đóng";
+      close.addEventListener("click", () => setSelectedMaintenanceChartMonth(null));
+      detailsHeader.append(titleBlock, close);
+      const budgetForm = document.createElement("div");
+      budgetForm.className = "mt-4 flex flex-col gap-2 border-y border-[#E1EAEE] py-3 sm:flex-row sm:items-end";
+      const budgetField = document.createElement("label");
+      budgetField.className = "flex min-w-0 flex-1 flex-col gap-1 text-[11px] font-bold text-[#60758A]";
+      budgetField.textContent = "Ngân sách tháng (VNĐ)";
+      const budgetInput = document.createElement("input");
+      budgetInput.inputMode = "numeric";
+      budgetInput.autocomplete = "off";
+      budgetInput.value = selectedMonth.budget === null ? "" : formatVnd(selectedMonth.budget);
+      budgetInput.placeholder = "Ví dụ: 5.000.000";
+      budgetInput.className = "h-9 rounded-lg border border-[#D7E3EB] bg-white px-3 text-sm font-semibold text-[#193B57] outline-none focus:border-[#0F8C8C]";
+      budgetInput.addEventListener("input", () => { budgetInput.value = budgetInput.value.replace(/\D/g, "").replace(/\B(?=(\d{3})+(?!\d))/g, "."); });
+      budgetField.append(budgetInput);
+      const saveBudget = document.createElement("button");
+      saveBudget.type = "button";
+      saveBudget.className = "h-9 rounded-lg bg-[#0F8C8C] px-4 text-xs font-extrabold text-white transition hover:bg-[#087A7A] disabled:cursor-not-allowed disabled:opacity-60";
+      saveBudget.textContent = "Lưu ngân sách";
+      saveBudget.disabled = saveMaintenanceBudgetMutation.isPending;
+      saveBudget.addEventListener("click", () => {
+        const rawAmount = budgetInput.value.replace(/\D/g, "");
+        if (!rawAmount) { toast.error("Vui lòng nhập ngân sách bằng số."); return; }
+        saveMaintenanceBudgetMutation.mutate({ year: maintenanceChartYear, month: selectedMonth.month, amount: rawAmount });
+      });
+      budgetForm.append(budgetField, saveBudget);
+      details.append(detailsHeader, budgetForm);
+      const ticketList = document.createElement("div");
+      ticketList.className = "mt-3 space-y-2";
+      if (selectedMonth.tickets.length === 0) {
+        const empty = document.createElement("p");
+        empty.className = "rounded-lg border border-dashed border-[#D7E3EB] bg-white px-3 py-4 text-center text-xs text-[#71869A]";
+        empty.textContent = "Không có phiếu bảo trì phát sinh trong tháng này.";
+        ticketList.append(empty);
+      } else {
+        selectedMonth.tickets.forEach((ticket) => {
+          const row = document.createElement("article");
+          row.className = "rounded-lg border border-[#E1EAEE] bg-white p-3";
+          const code = document.createElement("div");
+          code.className = "text-xs font-extrabold text-[#193B57]";
+          code.textContent = `${ticket.ticketCode} · ${ticket.status === "closed" ? "Đã đóng" : ticket.status === "resolved" ? "Đã xử lý" : ticket.status === "in_progress" ? "Đang xử lý" : "Mới mở"}`;
+          const description = document.createElement("p");
+          description.className = "mt-1 line-clamp-2 text-xs leading-5 text-[#60758A]";
+          description.textContent = ticket.description;
+          const costs = document.createElement("p");
+          costs.className = "mt-2 text-[11px] font-semibold text-[#71869A]";
+          costs.textContent = `Dự kiến: ${ticket.estimatedCost === null ? "—" : `${formatVnd(ticket.estimatedCost)} VNĐ`} · Thực tế: ${ticket.actualCost === null ? "—" : `${formatVnd(ticket.actualCost)} VNĐ`}`;
+          row.append(code, description, costs);
+          ticketList.append(row);
+        });
+      }
+      details.append(ticketList);
+      chart.append(details);
+    }
     anchor.insertAdjacentElement("afterend", chart);
     return () => chart.remove();
-  }, [isAuthenticated, isAdmin, maintenanceTicketsQuery.data]);
+  }, [isAuthenticated, isAdmin, maintenanceChartYear, maintenanceChartYears, monthlyMaintenanceCosts, saveMaintenanceBudgetMutation, selectedMaintenanceChartMonth]);
 
   useEffect(() => {
     const openImport = () => setAssetImportOpen(true);

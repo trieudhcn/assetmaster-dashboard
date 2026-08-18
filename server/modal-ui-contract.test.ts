@@ -42,6 +42,23 @@ describe("modal presentation contract", () => {
     expect(supplies).toContain("target.value.replace(/[^0-9.,]/g, \"\")");
   });
 
+  it("supports maintenance chart year filtering, ticket drilldown and monthly budgets", () => {
+    const home = readProjectFile("client/src/pages/Home.tsx");
+    const database = readProjectFile("server/db.ts");
+    const routers = readProjectFile("server/routers.ts");
+
+    expect(home).toContain("maintenanceChartYear");
+    expect(home).toContain("maintenance.monthlyBudgets.useQuery");
+    expect(home).toContain("maintenance.saveMonthlyBudget.useMutation");
+    expect(home).toContain("Xem phiếu bảo trì tháng");
+    expect(home).toContain("Ngân sách tháng (VNĐ)");
+    expect(home).toContain("Vượt ngân sách");
+    expect(database).toContain("listMaintenanceMonthlyBudgets");
+    expect(database).toContain("saveMaintenanceMonthlyBudget");
+    expect(routers).toContain("monthlyBudgets: adminProcedure");
+    expect(routers).toContain("saveMonthlyBudget: adminProcedure");
+  });
+
   it("renders action tooltip from a body-level portal rather than a clipping pseudo-element", () => {
     const tooltipComponent = readProjectFile("client/src/components/FloatingActionTooltip.tsx");
     const home = readProjectFile("client/src/pages/Home.tsx");

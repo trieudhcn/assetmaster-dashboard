@@ -211,6 +211,13 @@
       "when": 1787052661564,
       "tag": "0029_supply_import_history",
       "breakpoints": true
+    },
+    {
+      "idx": 30,
+      "version": "5",
+      "when": 1787060805267,
+      "tag": "0030_left_blue_blade",
+      "breakpoints": true
     }
   ]
 }

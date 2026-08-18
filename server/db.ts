@@ -18,6 +18,7 @@ import {
   helpGuideVersions,
   inventoryMovements,
   inventorySupplies,
+  maintenanceMonthlyBudgets,
   maintenanceTickets,
   supplyImportItems,
   supplyImportSessions,
@@ -888,6 +889,19 @@ export async function listMaintenanceTickets() {
   const db = await getDb();
   if (!db) return [];
   return db.select().from(maintenanceTickets).orderBy(desc(maintenanceTickets.openedAt));
+}
+
+export async function listMaintenanceMonthlyBudgets(year: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(maintenanceMonthlyBudgets).where(eq(maintenanceMonthlyBudgets.year, year)).orderBy(maintenanceMonthlyBudgets.month);
+}
+
+export async function saveMaintenanceMonthlyBudget(data: { year: number; month: number; amount: string; updatedByUserId: number }) {
+  const db = await getDb();
+  if (!db) throw new Error("Database unavailable");
+  await db.insert(maintenanceMonthlyBudgets).values(data).onDuplicateKeyUpdate({ set: { amount: data.amount, updatedByUserId: data.updatedByUserId } });
+  return (await db.select().from(maintenanceMonthlyBudgets).where(eq(maintenanceMonthlyBudgets.year, data.year)).orderBy(maintenanceMonthlyBudgets.month)).find((item) => item.month === data.month) ?? null;
 }
 
 export async function getNextMaintenanceTicketSequence(ticketYear: number) {

@@ -69,6 +69,7 @@ import {
   getUserNotificationPreferences,
   saveUiLabel,
   listMaintenanceTickets,
+  listMaintenanceMonthlyBudgets,
   listMaintenanceTicketsByAsset,
   getNextMaintenanceTicketSequence,
   listActivityLogsByEntity,
@@ -113,6 +114,7 @@ import {
   runAssetImportTransaction,
   runInventoryTransaction,
   saveCompany,
+  saveMaintenanceMonthlyBudget,
   saveHelpGuide,
   saveUserNotificationPreferences,
   updateAsset,
@@ -958,6 +960,8 @@ export const appRouter = router({
   }),
   maintenance: router({
     list: protectedProcedure.query(() => listMaintenanceTickets()),
+    monthlyBudgets: adminProcedure.input(z.object({ year: z.number().int().min(2000).max(2100) })).query(({ input }) => listMaintenanceMonthlyBudgets(input.year)),
+    saveMonthlyBudget: adminProcedure.input(z.object({ year: z.number().int().min(2000).max(2100), month: z.number().int().min(1).max(12), amount: z.string().regex(/^\d+(\.\d{1,2})?$/) })).mutation(({ input, ctx }) => saveMaintenanceMonthlyBudget({ ...input, updatedByUserId: ctx.user!.id })),
     byAsset: protectedProcedure.input(z.object({ assetId: z.number().int().positive() })).query(({ input }) => listMaintenanceTicketsByAsset(input.assetId)),
     history: protectedProcedure.input(z.object({ id: z.number().int().positive() })).query(async ({ input }) => {
       const ticket = await getMaintenanceTicket(input.id);

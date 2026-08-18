@@ -1821,3 +1821,10 @@
 - [x] Hiển thị biểu đồ chi phí bảo trì theo tháng trên trang Tổng quan.
 - [x] Chỉ cho phép nhập ký tự số trong tất cả các ô đơn giá, vẫn hỗ trợ dán giá trị có ₫ hoặc VNĐ.
 - [x] Bổ sung hồi quy, kiểm tra TypeScript, Vitest, build, giao diện và phát hành cập nhật.
+
+## Current Session — Maintenance Cost Drilldown & Budget
+
+- [x] Thêm bộ lọc năm cho biểu đồ chi phí bảo trì.
+- [x] Cho phép nhấn cột tháng để xem danh sách phiếu bảo trì và chi phí chi tiết.
+- [x] Lưu thiết lập ngân sách bảo trì hàng tháng và cảnh báo vượt ngưỡng trên biểu đồ.
+- [x] Bổ sung hồi quy, kiểm tra TypeScript, Vitest, build, giao diện và phát hành cập nhật.

@@ -1,4 +1,4 @@
-import { boolean, decimal, index, int, json, mysqlEnum, mysqlTable, text, timestamp, varchar } from "drizzle-orm/mysql-core";
+import { boolean, decimal, index, int, json, mysqlEnum, mysqlTable, text, timestamp, uniqueIndex, varchar } from "drizzle-orm/mysql-core";
 
 export const users = mysqlTable("users", {
   id: int("id").autoincrement().primaryKey(),
@@ -333,6 +333,16 @@ export const maintenanceTickets = mysqlTable("maintenanceTickets", {
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 }, (table) => [index("maintenance_asset_idx").on(table.assetId), index("maintenance_status_idx").on(table.status), index("maintenance_year_sequence_idx").on(table.ticketYear, table.ticketSequence)]);
+
+export const maintenanceMonthlyBudgets = mysqlTable("maintenanceMonthlyBudgets", {
+  id: int("id").autoincrement().primaryKey(),
+  year: int("year").notNull(),
+  month: int("month").notNull(),
+  amount: decimal("amount", { precision: 15, scale: 2 }).notNull(),
+  updatedByUserId: int("updatedByUserId"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+}, (table) => [uniqueIndex("maintenance_budget_year_month_unique").on(table.year, table.month), index("maintenance_budget_year_idx").on(table.year)]);
 
 export const auditSessions = mysqlTable("auditSessions", {
   id: int("id").autoincrement().primaryKey(),
