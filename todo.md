@@ -1535,3 +1535,9 @@
 - [x] Rà soát header Kiểm kê và cơ chế nhãn chỉnh sửa hiện có.
 - [x] Kết nối nhãn Đối chiếu kiểm kê với cơ chế chỉnh sửa an toàn của Admin.
 - [x] Bổ sung hồi quy, kiểm tra giao diện và phát hành cập nhật.
+
+## Current Session — Bulk Asset Import Template
+
+- [x] Rà soát luồng xuất mẫu nhập tài sản và nguồn dữ liệu phân loại, nhà cung cấp, nhãn hàng.
+- [x] Đổi hàng tiêu đề sang xám nhạt và thêm dropdown đồng bộ dữ liệu hiện có trong template Excel.
+- [x] Bổ sung hồi quy workbook, kiểm tra TypeScript, export và phát hành cập nhật.

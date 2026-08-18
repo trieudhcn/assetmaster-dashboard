@@ -7,27 +7,39 @@ import { assetImportHeaders, parseAssetImportRows, type AssetImportCandidate, ty
 import { SearchableSelect } from "@/components/SearchableSelect";
 import { ModalTableSkeleton } from "@/components/ModalTableSkeleton";
 import { writeBrandedWorkbook } from "@/lib/brandedWorkbook";
+import { configureAssetImportTemplate, uniqueTemplateNames, type TemplateCatalogValues } from "@/lib/assetImportTemplate";
 
 type ParsedFile = ReturnType<typeof parseAssetImportRows> & { fileName: string; sourceRows: number; rawRows: Array<Record<string, unknown>> };
-const exampleRow = ["Laptop mẫu", "Laptop", "Sẵn có", "", "Tốt", "15/08/2026", "25000000", "Nhà cung cấp mẫu", "", "SN-001", "Kho CNTT", "15/08/2028", "Điền một tài sản trên mỗi dòng"];
+let templateCatalogValues: TemplateCatalogValues = { categories: [], vendors: [], brands: [] };
 
 async function downloadTemplate() {
+  const { categories, vendors, brands } = templateCatalogValues;
+  const exampleRow = ["Laptop mẫu", categories[0] || "", "Sẵn có", "", "Tốt", "15/08/2026", "25000000", vendors[0] || "", brands[0] || "", "SN-001", "Kho CNTT", "15/08/2028", "Điền một tài sản trên mỗi dòng"];
   const book = XLSX.utils.book_new();
   const sheet = XLSX.utils.aoa_to_sheet([[...assetImportHeaders], exampleRow]);
   sheet["!cols"] = [34, 18, 25, 38, 18, 22, 18, 26, 22, 20, 24, 25, 38].map((wch) => ({ wch }));
   XLSX.utils.book_append_sheet(book, sheet, "Danh sách tài sản");
-  const guide = XLSX.utils.aoa_to_sheet([["HƯỚNG DẪN IMPORT TÀI SẢN"], ["Cột có dấu * là bắt buộc. Không đổi tên dòng tiêu đề."], ["Mã tài sản được hệ thống tự sinh theo tiền tố của Phân loại. Hãy tạo Phân loại trước khi import."], ["Trạng thái chỉ nhận Sẵn có hoặc Bảo trì. Tài sản đang cấp phát phải được tạo qua Bàn giao."]]);
+  const guide = XLSX.utils.aoa_to_sheet([["HƯỚNG DẪN IMPORT TÀI SẢN"], ["Cột có dấu * là bắt buộc. Không đổi tên dòng tiêu đề."], ["Phân loại, Nhà cung cấp và Hãng có dropdown lấy từ dữ liệu đang hoạt động của hệ thống."], ["Mã tài sản được hệ thống tự sinh theo tiền tố của Phân loại. Hãy tạo Phân loại trước khi import."], ["Trạng thái chỉ nhận Sẵn có hoặc Bảo trì. Tài sản đang cấp phát phải được tạo qua Bàn giao."]]);
   guide["!cols"] = [{ wch: 110 }];
   XLSX.utils.book_append_sheet(book, guide, "Hướng dẫn");
   await writeBrandedWorkbook(book, {
     documentTitle: "TEMPLATE IMPORT TÀI SẢN",
     fileName: "AssetMaster-Template-Import-TaiSan.xlsx",
     description: "Mẫu nhập nhiều tài sản theo phân loại; mã tài sản được hệ thống tự sinh.",
+    prepareWorkbook: (workbook) => configureAssetImportTemplate(workbook, { categories, vendors, brands }),
   });
 }
 
 export function AssetImportModal({ onClose: closeModal, onImported }: { onClose: () => void; onImported: () => void }) {
   const inputRef = useRef<HTMLInputElement>(null);
+  const categoriesQuery = trpc.assetCategories.list.useQuery();
+  const vendorsQuery = trpc.vendors.list.useQuery();
+  const brandsQuery = trpc.brands.list.useQuery();
+  templateCatalogValues = {
+    categories: uniqueTemplateNames((categoriesQuery.data || []).map((item) => item.name)),
+    vendors: uniqueTemplateNames((vendorsQuery.data || []).map((item) => item.name)),
+    brands: uniqueTemplateNames((brandsQuery.data || []).map((item) => item.name)),
+  };
   const [parsed, setParsed] = useState<ParsedFile | null>(null);
   const [draftRows, setDraftRows] = useState<AssetImportCandidate[]>([]);
   const [serverIssues, setServerIssues] = useState<AssetImportIssue[]>([]);
