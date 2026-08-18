@@ -177,6 +177,18 @@ describe("modal presentation contract", () => {
     expect(routers).toContain("Tồn kho không đủ");
   });
 
+  it("keeps supply search readable and supports staff or manual recipients for issues", () => {
+    const supplies = readProjectFile("client/src/pages/SuppliesInventoryView.tsx");
+    const routers = readProjectFile("server/routers.ts");
+    expect(supplies).toContain('className="field-input !pl-11"');
+    expect(supplies).toContain("Sửa mã và tên vật tư");
+    expect(supplies).toContain("Nhân sự hệ thống");
+    expect(supplies).toContain("✓ Người khác");
+    expect(routers).toContain("Mã vật tư này đã tồn tại.");
+    expect(routers).toContain("recipientUserId");
+    expect(routers).toContain("Không tìm thấy nhân sự đang hoạt động được chọn.");
+  });
+
   it("uses only company branding rather than the product name in document headers", () => {
     const home = readProjectFile("client/src/pages/Home.tsx");
     const operations = readProjectFile("client/src/pages/OperationsModules.tsx");

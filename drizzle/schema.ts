@@ -205,6 +205,7 @@ export const inventoryMovements = mysqlTable("inventoryMovements", {
   quantity: decimal("quantity", { precision: 15, scale: 2 }).notNull(),
   quantityBefore: decimal("quantityBefore", { precision: 15, scale: 2 }).notNull(),
   quantityAfter: decimal("quantityAfter", { precision: 15, scale: 2 }).notNull(),
+  recipientUserId: int("recipientUserId").references(() => users.id, { onDelete: "set null", onUpdate: "cascade" }),
   recipientName: varchar("recipientName", { length: 160 }),
   recipientDepartmentId: int("recipientDepartmentId"),
   note: text("note"),

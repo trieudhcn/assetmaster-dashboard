@@ -1636,3 +1636,10 @@
 - [x] Thêm API quản lý danh mục vật tư, số lượng tồn, mức tồn tối thiểu và lịch sử biến động.
 - [x] Xây dựng giao diện quản lý vật tư, nhập–xuất và cảnh báo sắp hết hàng.
 - [x] Bổ sung hồi quy, kiểm tra giao diện, TypeScript, Vitest, migration, build và phát hành cập nhật.
+
+## Current Session — Supplies Editing & Recipient Allocation
+
+- [x] Sửa khoảng đệm ô tìm kiếm vật tư để biểu tượng không che nội dung.
+- [x] Cho phép chỉnh sửa mã và tên vật tư theo quy tắc chống trùng lặp.
+- [x] Cho phép cấp phát cho nhân sự hệ thống hoặc người nhận nhập tay khi chọn Người khác.
+- [x] Bổ sung hồi quy, kiểm tra giao diện, TypeScript, Vitest, build và phát hành cập nhật.

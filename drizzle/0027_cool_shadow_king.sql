@@ -1,0 +1,2 @@
+ALTER TABLE `inventoryMovements` ADD `recipientUserId` int;--> statement-breakpoint
+ALTER TABLE `inventoryMovements` ADD CONSTRAINT `inventoryMovements_recipientUserId_users_id_fk` FOREIGN KEY (`recipientUserId`) REFERENCES `users`(`id`) ON DELETE set null ON UPDATE cascade;
