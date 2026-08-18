@@ -1651,3 +1651,11 @@
 - [x] Thêm API tạo phiếu, hoàn trả một phần về kho và xuất lịch sử nhập–xuất.
 - [x] Xây dựng giao diện phiếu cấp phát, hoàn trả và tải báo cáo Excel.
 - [x] Bổ sung hồi quy, kiểm tra giao diện, TypeScript, Vitest, migration, build và phát hành cập nhật.
+
+## Current Session — Supplies UX, Analytics & PDF Slips
+
+- [x] Căn chỉnh thanh lọc vật tư, thu gọn ô tìm kiếm và giữ nút bộ lọc thẳng hàng.
+- [x] Chuyển thao tác bảng vật tư thành icon cân giữa có tooltip và hiệu ứng hover.
+- [x] Thêm biểu đồ cấp phát vật tư theo phòng ban hoặc nhân sự dựa trên dữ liệu thực.
+- [x] Thêm xuất, xem trước và in PDF phiếu cấp phát vật tư có nhận diện công ty.
+- [x] Bổ sung hồi quy, kiểm tra giao diện, TypeScript, Vitest, build và phát hành cập nhật.

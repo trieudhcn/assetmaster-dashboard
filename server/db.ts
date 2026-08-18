@@ -557,6 +557,18 @@ export async function listInventoryMovementReport() {
   }).from(inventoryMovements).innerJoin(inventorySupplies, eq(inventoryMovements.supplyId, inventorySupplies.id)).leftJoin(supplyIssueSlips, eq(inventoryMovements.issueSlipId, supplyIssueSlips.id)).orderBy(desc(inventoryMovements.createdAt));
 }
 
+export async function listSupplyIssueAnalytics() {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select({
+    recipientName: supplyIssueSlips.recipientName,
+    departmentName: departments.name,
+    issuedQuantity: sql<number>`sum(${supplyIssueSlipItems.issuedQuantity})`,
+    returnedQuantity: sql<number>`sum(${supplyIssueSlipItems.returnedQuantity})`,
+    outstandingQuantity: sql<number>`sum(${supplyIssueSlipItems.issuedQuantity} - ${supplyIssueSlipItems.returnedQuantity})`,
+  }).from(supplyIssueSlipItems).innerJoin(supplyIssueSlips, eq(supplyIssueSlipItems.issueSlipId, supplyIssueSlips.id)).leftJoin(departments, eq(supplyIssueSlips.recipientDepartmentId, departments.id)).groupBy(supplyIssueSlips.recipientName, departments.name).orderBy(desc(sql`sum(${supplyIssueSlipItems.issuedQuantity} - ${supplyIssueSlipItems.returnedQuantity})`));
+}
+
 export async function createAssetsBulk(data: Array<typeof assets.$inferInsert>) {
   const db = await getDb();
   if (!db) throw new Error("Database unavailable");

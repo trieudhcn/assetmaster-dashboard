@@ -171,7 +171,7 @@ describe("modal presentation contract", () => {
     expect(home).toContain('<SuppliesInventoryView />');
     expect(supplies).toContain("Không yêu cầu Serial/IMEI.");
     expect(supplies).toContain("Sắp hết hàng");
-    expect(supplies).toContain("Nhập/Xuất");
+    expect(supplies).toContain('aria-label="Ghi nhận nhập, xuất hoặc cấp phát"');
     expect(supplies).toContain("Lịch sử biến động");
     expect(routers).toContain("supplies: router");
     expect(routers).toContain("Tồn kho không đủ");
@@ -200,6 +200,38 @@ describe("modal presentation contract", () => {
     expect(routers).toContain("VT-${issueYear}-${String(sequence).padStart(3, \"0\")}");
     expect(routers).toContain("returnIssueItem");
     expect(routers).toContain("historyReport");
+  });
+
+  it("keeps supply filters and action icons aligned while exposing their names on hover", () => {
+    const supplies = readProjectFile("client/src/pages/SuppliesInventoryView.tsx");
+    const stylesheet = readProjectFile("client/src/index.css");
+
+    expect(supplies).toContain("sm:max-w-[420px]");
+    expect(supplies).toContain("supply-filter-action");
+    expect(supplies).toContain("supply-row-action");
+    expect(supplies).toContain('title="Ghi nhận nhập, xuất hoặc cấp phát"');
+    expect(supplies).toContain('title="Sửa mã và tên vật tư"');
+    expect(supplies).toContain('title="Xem lịch sử biến động"');
+    expect(stylesheet).toContain(".supply-filter-action");
+    expect(stylesheet).toContain(".supply-row-action:hover");
+  });
+
+  it("shows real issue analytics by department or recipient and previews printable issue-slip PDFs", () => {
+    const issueSlips = readProjectFile("client/src/components/SupplyIssueSlipManager.tsx");
+    const pdf = readProjectFile("client/src/lib/supplyIssueSlipPdf.ts");
+    const routers = readProjectFile("server/routers.ts");
+    const db = readProjectFile("server/db.ts");
+
+    expect(issueSlips).toContain("issueAnalytics.useQuery");
+    expect(issueSlips).toContain("Phòng ban");
+    expect(issueSlips).toContain("Nhân sự");
+    expect(issueSlips).toContain("Xem & in PDF");
+    expect(issueSlips).toContain("openSupplyIssueSlipPdf");
+    expect(routers).toContain("issueAnalytics");
+    expect(db).toContain("listSupplyIssueAnalytics");
+    expect(pdf).toContain("PHIẾU CẤP PHÁT VẬT TƯ");
+    expect(pdf).toContain("NGƯỜI NHẬN");
+    expect(pdf).toContain("openPdfPreview");
   });
 
   it("uses only company branding rather than the product name in document headers", () => {

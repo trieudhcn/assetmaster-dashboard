@@ -1,20 +1,23 @@
 import { useMemo, useState } from "react";
 import * as XLSX from "xlsx";
-import { Download, FileText, RotateCcw, X } from "lucide-react";
+import { BarChart3, Building2, Download, FileText, Printer, RotateCcw, UsersRound, X } from "lucide-react";
 import { toast } from "sonner";
 import { trpc } from "@/lib/trpc";
 import { writeBrandedWorkbook } from "@/lib/brandedWorkbook";
+import { openSupplyIssueSlipPdf } from "@/lib/supplyIssueSlipPdf";
 
 const numberText = (value: string | number | null | undefined) => Number(value || 0).toLocaleString("vi-VN", { maximumFractionDigits: 2 });
 
 export function SupplyIssueSlipManager() {
   const utils = trpc.useUtils();
   const slipsQuery = trpc.supplies.issueSlips.useQuery();
+  const analyticsQuery = trpc.supplies.issueAnalytics.useQuery();
   const reportQuery = trpc.supplies.historyReport.useQuery(undefined, { enabled: false });
   const [selectedSlipId, setSelectedSlipId] = useState<number | null>(null);
   const [returnItemId, setReturnItemId] = useState<number | null>(null);
   const [returnQuantity, setReturnQuantity] = useState("");
   const [returnNote, setReturnNote] = useState("");
+  const [isPreparingPdf, setIsPreparingPdf] = useState(false);
   const itemsQuery = trpc.supplies.issueSlipItems.useQuery({ issueSlipId: selectedSlipId || 0 }, { enabled: selectedSlipId !== null });
   const selectedSlip = useMemo(() => (slipsQuery.data || []).find((slip) => slip.id === selectedSlipId) || null, [slipsQuery.data, selectedSlipId]);
   const returningItem = (itemsQuery.data || []).find((item: any) => item.id === returnItemId) || null;
@@ -32,6 +35,19 @@ export function SupplyIssueSlipManager() {
     },
     onError: (error) => toast.error(error.message || "Không thể hoàn trả vật tư."),
   });
+
+  const previewSlipPdf = async () => {
+    if (!selectedSlip) return;
+    if (itemsQuery.isLoading) return toast.message("Đang tải danh sách vật tư trong phiếu.");
+    if (!itemsQuery.data?.length) return toast.error("Phiếu cấp phát chưa có vật tư để xuất PDF.");
+    setIsPreparingPdf(true);
+    try {
+      await openSupplyIssueSlipPdf(selectedSlip, itemsQuery.data);
+      toast.success("Đã tạo bản xem trước PDF. Chọn In để ký nhận bản cứng.");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Không thể tạo PDF phiếu cấp phát.");
+    } finally { setIsPreparingPdf(false); }
+  };
 
   const exportReport = async () => {
     const result = await reportQuery.refetch();
@@ -74,7 +90,8 @@ export function SupplyIssueSlipManager() {
           </div>
           <button type="button" aria-label="Đóng chi tiết phiếu" onClick={() => setSelectedSlipId(null)} className="drawer-close-action"><X size={18} /></button>
         </div>
-        <div className="mt-6 space-y-3">
+        <div className="mt-5 flex flex-wrap gap-2"><button type="button" onClick={() => void previewSlipPdf()} disabled={isPreparingPdf || itemsQuery.isLoading} className="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-[#0F8C8C] px-3 text-xs font-extrabold text-white transition hover:bg-[#087A6A] disabled:opacity-50"><Printer size={15} />{isPreparingPdf ? "Đang tạo PDF..." : "Xem & in PDF"}</button><span className="self-center text-[11px] text-[#71869A]">PDF có thông tin công ty và vùng ký nhận.</span></div>
+        <div className="mt-5 space-y-3">
           {itemsQuery.isLoading && <p className="text-sm text-[#71869A]">Đang tải vật tư đã cấp...</p>}
           {(itemsQuery.data || []).map((item: any) => {
             const remaining = Number(item.issuedQuantity) - Number(item.returnedQuantity);
@@ -114,8 +131,21 @@ export function SupplyIssueSlipManager() {
       <div><div className="flex items-center gap-2 text-[10px] font-extrabold uppercase tracking-[.14em] text-[#0F8C8C]"><FileText size={14} />Cấp phát & hoàn trả</div><h2 className="mt-1 font-display text-lg font-extrabold text-[#193B57]">Phiếu cấp phát vật tư</h2><p className="mt-1 text-xs text-[#71869A]">Theo dõi mã VT-NĂM-001, số lượng đã cấp và phần hoàn trả về kho.</p></div>
       <button type="button" onClick={() => void exportReport()} disabled={reportQuery.isFetching} className="inline-flex h-10 shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-lg border border-[#CDE5E5] bg-[#F4FBFA] px-3 text-xs font-extrabold text-[#087A6A] disabled:opacity-50"><Download size={15} />{reportQuery.isFetching ? "Đang xuất..." : "Xuất Excel lịch sử"}</button>
     </div>
-    <div className="mt-4 overflow-x-auto"><table className="w-full min-w-[720px] text-left text-xs"><thead className="border-y border-[#E7EEF3] bg-[#F8FBFC] text-[10px] uppercase tracking-[.09em] text-[#8AA0B6]"><tr><th className="px-3 py-3">Mã phiếu</th><th className="px-3 py-3">Người nhận</th><th className="px-3 py-3">Thời gian cấp</th><th className="px-3 py-3">Trạng thái</th><th className="px-3 py-3 text-right">Thao tác</th></tr></thead><tbody>{slipsQuery.isLoading ? <tr><td colSpan={5} className="px-3 py-8 text-center text-[#71869A]">Đang tải phiếu cấp phát...</td></tr> : (slipsQuery.data || []).map((slip) => <tr key={slip.id} className="border-b border-[#EDF2F5]"><td className="px-3 py-3 font-mono font-extrabold text-[#193B57]">{slip.referenceCode}</td><td className="px-3 py-3 text-[#60758A]">{slip.recipientName}</td><td className="px-3 py-3 text-[#60758A]">{new Date(slip.issuedAt).toLocaleString("vi-VN")}</td><td className="px-3 py-3"><span className={`rounded-full px-2 py-1 text-[10px] font-extrabold ${slip.status === "returned" ? "bg-[#E6F6F2] text-[#087A6A]" : "bg-[#FFF5DC] text-[#A86B00]"}`}>{slip.status === "returned" ? "Đã hoàn trả" : "Đang cấp phát"}</span></td><td className="px-3 py-3 text-right"><button type="button" onClick={() => setSelectedSlipId(slip.id)} className="rounded-lg border border-[#DDE7F0] px-3 py-1.5 font-extrabold text-[#60758A] hover:bg-[#F7FAFC]">Chi tiết</button></td></tr>)}{!slipsQuery.isLoading && !(slipsQuery.data || []).length && <tr><td colSpan={5} className="px-3 py-8 text-center text-[#8AA0B6]">Chưa có phiếu cấp phát. Tạo phiếu từ thao tác Xuất/Cấp phát của vật tư.</td></tr>}</tbody></table></div>
+    <SupplyIssueAnalytics rows={analyticsQuery.data || []} loading={analyticsQuery.isLoading} />
+    <div className="mt-5 overflow-x-auto"><table className="w-full min-w-[720px] text-left text-xs"><thead className="border-y border-[#E7EEF3] bg-[#F8FBFC] text-[10px] uppercase tracking-[.09em] text-[#8AA0B6]"><tr><th className="px-3 py-3">Mã phiếu</th><th className="px-3 py-3">Người nhận</th><th className="px-3 py-3">Thời gian cấp</th><th className="px-3 py-3">Trạng thái</th><th className="px-3 py-3 text-right">Thao tác</th></tr></thead><tbody>{slipsQuery.isLoading ? <tr><td colSpan={5} className="px-3 py-8 text-center text-[#71869A]">Đang tải phiếu cấp phát...</td></tr> : (slipsQuery.data || []).map((slip) => <tr key={slip.id} className="border-b border-[#EDF2F5]"><td className="px-3 py-3 font-mono font-extrabold text-[#193B57]">{slip.referenceCode}</td><td className="px-3 py-3 text-[#60758A]">{slip.recipientName}</td><td className="px-3 py-3 text-[#60758A]">{new Date(slip.issuedAt).toLocaleString("vi-VN")}</td><td className="px-3 py-3"><span className={`rounded-full px-2 py-1 text-[10px] font-extrabold ${slip.status === "returned" ? "bg-[#E6F6F2] text-[#087A6A]" : "bg-[#FFF5DC] text-[#A86B00]"}`}>{slip.status === "returned" ? "Đã hoàn trả" : "Đang cấp phát"}</span></td><td className="px-3 py-3 text-right"><button type="button" onClick={() => setSelectedSlipId(slip.id)} className="rounded-lg border border-[#DDE7F0] px-3 py-1.5 font-extrabold text-[#60758A] hover:bg-[#F7FAFC]">Chi tiết</button></td></tr>)}{!slipsQuery.isLoading && !(slipsQuery.data || []).length && <tr><td colSpan={5} className="px-3 py-8 text-center text-[#8AA0B6]">Chưa có phiếu cấp phát. Tạo phiếu từ thao tác Xuất/Cấp phát của vật tư.</td></tr>}</tbody></table></div>
     {issueSlipDrawer}
     {returnDialog}
   </section>;
+}
+
+function SupplyIssueAnalytics({ rows, loading }: { rows: Array<{ recipientName: string; departmentName: string | null; issuedQuantity: number | string; returnedQuantity: number | string; outstandingQuantity: number | string }>; loading: boolean }) {
+  const [mode, setMode] = useState<"department" | "recipient">("department");
+  const grouped = useMemo(() => {
+    const totals = new Map<string, { issued: number; outstanding: number }>();
+    rows.forEach((row) => { const key = mode === "department" ? row.departmentName || "Chưa gán phòng ban" : row.recipientName || "Chưa xác định"; const previous = totals.get(key) || { issued: 0, outstanding: 0 }; totals.set(key, { issued: previous.issued + Number(row.issuedQuantity || 0), outstanding: previous.outstanding + Number(row.outstandingQuantity || 0) }); });
+    return [...totals.entries()].map(([label, total]) => ({ label, ...total })).sort((a, b) => b.issued - a.issued).slice(0, 6);
+  }, [mode, rows]);
+  const max = Math.max(1, ...grouped.map((item) => item.issued));
+  const totalIssued = grouped.reduce((sum, item) => sum + item.issued, 0);
+  return <section className="mt-5 rounded-xl border border-[#DCEBE9] bg-[#FBFEFE] p-4"><div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between"><div><div className="flex items-center gap-2 text-[10px] font-extrabold uppercase tracking-[.13em] text-[#0F8C8C]"><BarChart3 size={14} />Thống kê cấp phát</div><h3 className="mt-1 font-display text-base font-extrabold text-[#193B57]">Số lượng vật tư đã cấp phát</h3><p className="mt-1 text-xs text-[#71869A]">Tổng hợp từ phiếu cấp phát thực tế; hiển thị tối đa 6 nhóm có số lượng cao nhất.</p></div><div className="inline-flex rounded-lg border border-[#CDE5E5] bg-white p-1"><button type="button" onClick={() => setMode("department")} className={`inline-flex items-center gap-1 rounded-md px-2.5 py-1.5 text-[11px] font-extrabold ${mode === "department" ? "bg-[#E6F6F2] text-[#087A6A]" : "text-[#71869A] hover:text-[#193B57]"}`}><Building2 size={13} />Phòng ban</button><button type="button" onClick={() => setMode("recipient")} className={`inline-flex items-center gap-1 rounded-md px-2.5 py-1.5 text-[11px] font-extrabold ${mode === "recipient" ? "bg-[#E6F6F2] text-[#087A6A]" : "text-[#71869A] hover:text-[#193B57]"}`}><UsersRound size={13} />Nhân sự</button></div></div><div className="mt-4 grid gap-3 lg:grid-cols-[minmax(0,1fr)_150px]"><div className="space-y-3">{loading ? <p className="py-6 text-center text-xs text-[#71869A]">Đang tổng hợp dữ liệu cấp phát...</p> : grouped.map((item) => <div key={item.label}><div className="mb-1 flex items-center justify-between gap-3 text-xs"><span className="truncate font-bold text-[#526779]">{item.label}</span><span className="shrink-0 font-extrabold text-[#087A6A]">{numberText(item.issued)} đã cấp · {numberText(item.outstanding)} còn giữ</span></div><div className="h-2 overflow-hidden rounded-full bg-[#E6EFF1]"><div className="h-full rounded-full bg-gradient-to-r from-[#0F8C8C] to-[#69BBB5] transition-[width] duration-300" style={{ width: `${(item.issued / max) * 100}%` }} /></div></div>)}{!loading && !grouped.length && <p className="rounded-lg border border-dashed border-[#CDE5E5] px-4 py-6 text-center text-xs text-[#71869A]">Chưa có phiếu cấp phát để thống kê.</p>}</div><div className="rounded-xl bg-[#E6F6F2] p-4 text-center"><div className="text-[10px] font-extrabold uppercase tracking-[.11em] text-[#498C87]">Tổng đã cấp</div><div className="mt-2 font-display text-3xl font-extrabold text-[#087A6A]">{numberText(totalIssued)}</div><div className="mt-1 text-[11px] font-semibold text-[#60758A]">đơn vị vật tư</div></div></div></section>;
 }

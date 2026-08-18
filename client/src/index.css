@@ -168,6 +168,15 @@ button[aria-label="Mở menu người dùng"] + div { animation: popover-in 180m
 .field-input:disabled { cursor: not-allowed; }
 .asset-date-input::-webkit-calendar-picker-indicator { position: absolute; right: 0; width: 2.75rem; height: 100%; opacity: 0; cursor: pointer; }
 
+/* Supply toolbar and table actions preserve a predictable horizontal rhythm at every desktop width. */
+.supply-filter-action { display: inline-flex; min-height: 2.45rem; align-items: center; justify-content: center; gap: 0.45rem; border: 1px solid #DDE7F0; border-radius: 0.55rem; background: #FFFFFF; padding: 0.5rem 0.75rem; color: #526779; font-size: 0.75rem; font-weight: 800; line-height: 1; white-space: nowrap; transition: border-color 160ms ease-out, background-color 160ms ease-out, color 160ms ease-out, box-shadow 160ms ease-out, transform 160ms ease-out; }
+.supply-filter-action:hover { border-color: #9CCFCB; background: #F4FBFA; color: #087A6A; box-shadow: 0 3px 10px rgba(15, 140, 140, 0.10); }
+.supply-filter-action:active { transform: scale(0.97); }
+.supply-filter-action:focus-visible, .supply-row-action:focus-visible { outline: 2px solid #0F8C8C; outline-offset: 2px; }
+.supply-row-action { display: inline-flex; width: 2.15rem; height: 2.15rem; align-items: center; justify-content: center; border-radius: 0.5rem; color: #526779; transition: color 150ms ease-out, background-color 150ms ease-out, box-shadow 150ms ease-out, transform 150ms ease-out; }
+.supply-row-action:hover { background: #E6F6F2; color: #087A6A; box-shadow: 0 3px 10px rgba(15, 140, 140, 0.14); transform: translateY(-1px); }
+.supply-row-action:active { transform: scale(0.94); }
+
 /* Shared drawer close target: stable hit area, focus ring and hover affordance. */
 .drawer-close-action { display: inline-flex; min-width: 2.5rem; min-height: 2.5rem; align-items: center; justify-content: center; border-radius: 0.5rem; color: #71869A; transition: background-color 160ms ease-out, color 160ms ease-out, transform 160ms ease-out; }
 .drawer-close-action:hover { background: #F0F5F8; color: #193B57; }
