@@ -200,6 +200,7 @@ describe("modal presentation contract", () => {
     expect(supplies).toContain("Tổng giá trị dự kiến");
     expect(supplies).toContain("data-accessory-value-summary");
     expect(supplies).toContain("editCurrencyReady");
+    expect(supplies).toContain("header.style.paddingBottom = \"1.35rem\"");
     expect(supplies).toContain("Đơn giá (VNĐ)");
     expect(supplies).toContain("previewCurrencyReady");
     expect(supplies).toContain("AccessoryGroupSummary");

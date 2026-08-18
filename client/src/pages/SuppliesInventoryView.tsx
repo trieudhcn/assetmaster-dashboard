@@ -372,6 +372,17 @@ function SupplyCreateModal({ form, setForm, categoryOptions, vendorOptions, bran
     return () => { input.removeEventListener("input", handleInput, true); clear.removeEventListener("click", handleClear); suffix.remove(); clear.remove(); words.remove(); delete container.dataset.accessoryCurrencyReady; input.style.paddingRight = ""; };
   }, []);
   useEffect(() => {
+    const dialog = document.querySelector<HTMLElement>('[aria-labelledby="supply-create-title"]');
+    const header = dialog?.querySelector<HTMLElement>("header");
+    const description = dialog?.querySelector<HTMLElement>("#supply-create-title + p");
+    if (!header || !description) return;
+    const previousPadding = header.style.paddingBottom;
+    const previousMargin = description.style.marginBottom;
+    header.style.paddingBottom = "1.35rem";
+    description.style.marginBottom = "0.15rem";
+    return () => { header.style.paddingBottom = previousPadding; description.style.marginBottom = previousMargin; };
+  }, []);
+  useEffect(() => {
     const previewTable = Array.from(document.querySelectorAll("table")).find((table) => table.textContent?.includes("Mã phụ kiện") && table.textContent?.includes("Kiểm tra"));
     if (!previewTable) return;
     const header = Array.from(previewTable.querySelectorAll("th")).find((cell) => cell.textContent?.trim() === "Đơn giá");

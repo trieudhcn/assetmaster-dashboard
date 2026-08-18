@@ -1796,3 +1796,8 @@
 - [x] Hiển thị tổng giá trị dự kiến bằng số lượng nhân đơn giá trước khi lưu phụ kiện mới.
 - [x] Áp dụng phân cách hàng nghìn, hậu tố VNĐ và hỗ trợ dán tiền Việt Nam cho đơn giá khi chỉnh sửa phụ kiện.
 - [x] Bổ sung hồi quy, kiểm tra TypeScript, Vitest, build, giao diện và phát hành cập nhật.
+
+## Current Session — Add Accessory Header Spacing
+
+- [x] Điều chỉnh khoảng đệm để mô tả trong tiêu đề Thêm phụ kiện không chồng lên đường viền.
+- [x] Kiểm tra hiển thị tiêu đề ở desktop và mobile, sau đó chạy hồi quy và phát hành sửa lỗi.
