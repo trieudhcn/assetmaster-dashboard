@@ -1778,3 +1778,9 @@
 - [x] Áp dụng phân cách hàng nghìn, hậu tố VNĐ và hỗ trợ dán tiền Việt Nam cho đơn giá phụ kiện.
 - [x] Hiển thị số tiền bằng chữ dưới trường đơn giá như form Thêm tài sản.
 - [x] Bổ sung hồi quy, kiểm tra TypeScript, Vitest, build, giao diện và phát hành cập nhật.
+
+## Current Session — Preview Unit Cost Formatting
+
+- [x] Áp dụng phân cách hàng nghìn và hậu tố VNĐ cho cột đơn giá trong bảng xem trước Excel.
+- [x] Giữ giá trị số chính xác khi chỉnh sửa và xác nhận lưu dữ liệu xem trước.
+- [x] Bổ sung hồi quy, kiểm tra TypeScript, Vitest, build và phát hành cập nhật.
