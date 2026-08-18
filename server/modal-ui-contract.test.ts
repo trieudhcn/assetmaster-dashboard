@@ -194,6 +194,10 @@ describe("modal presentation contract", () => {
     expect(supplies).toContain("supply-create-title");
     expect(supplies).toContain("Phụ kiện");
     expect(supplies).toContain("/Vật tư/g, \"Phụ kiện\"");
+    expect(supplies).toContain('"Mã phụ kiện": "PK-CHUOT-M100"');
+    expect(supplies).toContain("Danh sách phụ kiện");
+    expect(supplies).toContain("template-nhap-phu-kien.xlsx");
+    expect(supplies).toContain("Tải mẫu phụ kiện");
     expect(routers).toContain("supplies: router");
     expect(routers).toContain("nextCode:");
     expect(routers).toContain("createAccessoryGroup:");

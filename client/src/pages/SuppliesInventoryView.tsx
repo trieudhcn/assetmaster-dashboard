@@ -164,8 +164,31 @@ function SupplyCreateModal({ form, setForm, categoryOptions, vendorOptions, bran
   const existingCount = rows.filter((row) => existingCodes.has(row.code)).length;
   const bulkCreate = trpc.supplies.bulkCreate.useMutation({ onSuccess: (result) => { const total = result.created + result.updated; setProgress({ phase: "done", current: total, total, detail: `Hoàn tất: tạo mới ${result.created}, cập nhật ${result.updated}.` }); toast.success(`Đã xử lý ${total} vật tư: tạo mới ${result.created}, cập nhật ${result.updated}.`); void utils.supplies.list.invalidate(); window.setTimeout(onClose, 900); }, onError: (error) => { setProgress((current) => ({ ...current, phase: "error", detail: error.message || "Không thể nhập vật tư từ Excel." })); toast.error(error.message || "Không thể nhập vật tư từ Excel."); } });
   const isBusy = isSubmitting || bulkCreate.isPending;
+  useEffect(() => {
+    const dialog = document.querySelector<HTMLElement>('[aria-labelledby="supply-create-title"]');
+    if (!dialog) return;
+    const replacements: Array<[RegExp, string]> = [[/Vật tư/g, "Phụ kiện"], [/vật tư/g, "phụ kiện"], [/VT-/g, "PK-"]];
+    const walker = document.createTreeWalker(dialog, NodeFilter.SHOW_TEXT);
+    const nodes: Text[] = [];
+    while (walker.nextNode()) nodes.push(walker.currentNode as Text);
+    nodes.forEach((node) => { let text = node.nodeValue || ""; if (text.trim() === "Tải mẫu") text = text.replace("Tải mẫu", "Tải mẫu phụ kiện"); replacements.forEach(([pattern, replacement]) => { text = text.replace(pattern, replacement); }); node.nodeValue = text; });
+    dialog.querySelectorAll<HTMLInputElement>('input[placeholder]').forEach((input) => { let text = input.placeholder; replacements.forEach(([pattern, replacement]) => { text = text.replace(pattern, replacement); }); input.placeholder = text; });
+    dialog.querySelectorAll<HTMLElement>('[aria-label]').forEach((element) => { let text = element.getAttribute("aria-label") || ""; replacements.forEach(([pattern, replacement]) => { text = text.replace(pattern, replacement); }); element.setAttribute("aria-label", text); });
+  });
   useEffect(() => { if (!bulkCreate.isPending || !rows.length) return; const timer = window.setInterval(() => setProgress((current) => current.phase !== "saving" || current.current >= rows.length ? current : { ...current, current: current.current + 1, detail: `Đang ghi transaction an toàn · dòng ${current.current + 1}/${rows.length}` }), 180); return () => window.clearInterval(timer); }, [bulkCreate.isPending, rows.length]);
   const value = (row: Record<string, unknown>, header: string) => String(row[header] ?? "").trim();
+  useEffect(() => {
+    const originalSheetToJson = XLSX.utils.sheet_to_json;
+    (XLSX.utils.sheet_to_json as any) = ((sheet: XLSX.WorkSheet, options?: unknown) => {
+      const parsed = originalSheetToJson(sheet, options as any) as Array<Record<string, unknown>>;
+      return parsed.map((row) => ({
+        ...row,
+        "Mã vật tư": row["Mã vật tư"] ?? row["Mã phụ kiện"],
+        "Tên vật tư": row["Tên vật tư"] ?? row["Tên phụ kiện"],
+      }));
+    }) as typeof XLSX.utils.sheet_to_json;
+    return () => { (XLSX.utils.sheet_to_json as any) = originalSheetToJson; };
+  }, []);
   const number = (raw: string, label: string, line: number, list: string[], fallback = 0) => { if (!raw) return fallback; const parsed = Number(raw.replace(/(?:VNĐ|VND|₫|\s)/gi, "").replace(/\./g, "").replace(",", ".")); if (!Number.isFinite(parsed) || parsed < 0) { list.push(`Dòng ${line}: ${label} phải là số không âm.`); return fallback; } return parsed; };
   const catalog = (raw: string, options: Array<{ value: string; label: string }>, label: string, line: number, list: string[]) => { if (!raw) return null; const match = options.find((option) => option.value && option.label.localeCompare(raw, "vi", { sensitivity: "accent" }) === 0); if (!match) { list.push(`Dòng ${line}: không tìm thấy ${label} “${raw}”.`); return null; } return Number(match.value); };
   const downloadTemplate = () => { const workbook = XLSX.utils.book_new(); const sheet = XLSX.utils.json_to_sheet([{ "Mã phụ kiện": "PK-CHUOT-M100", "Tên phụ kiện": "Chuột Logitech M100", "Đơn vị tính": "Cái", "Tồn đầu kỳ": 10, "Mức tồn tối thiểu": 3, "Đơn giá VNĐ": 50000, "Vị trí kho": "Kho CNTT - Kệ A", "Phân loại": "", "Nhà cung cấp": "", "Hãng": "", "Ghi chú": "" }]); XLSX.utils.book_append_sheet(workbook, sheet, "Danh sách phụ kiện"); XLSX.writeFile(workbook, "template-nhap-phu-kien.xlsx"); };

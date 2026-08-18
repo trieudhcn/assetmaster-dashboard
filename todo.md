@@ -1753,3 +1753,9 @@
 - [x] Đổi toàn bộ nhãn, mô tả và nút trong hộp thoại Thêm phụ kiện từ Vật tư sang Phụ kiện.
 - [x] Chuẩn hóa nội dung luồng nhập Excel phụ kiện trong cùng hộp thoại.
 - [x] Bổ sung hồi quy, kiểm tra TypeScript, Vitest, build, giao diện và phát hành cập nhật.
+
+## Current Session — Accessory Excel Template
+
+- [x] Chuẩn hóa tiêu đề cột, tên sheet và tên tệp Excel mẫu theo Phụ kiện.
+- [x] Bảo đảm nút tải file mẫu xuất hiện trực tiếp tại khu vực nhập Excel.
+- [x] Bổ sung hồi quy, kiểm tra TypeScript, Vitest, build và phát hành cập nhật.
