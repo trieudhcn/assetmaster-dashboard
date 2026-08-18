@@ -176,6 +176,10 @@ describe("modal presentation contract", () => {
     expect(supplies).toContain("Tự động cập nhật vật tư trùng mã");
     expect(supplies).toContain("Đang kiểm tra dữ liệu từng dòng");
     expect(supplies).toContain("Đang ghi transaction an toàn");
+    expect(supplies).toContain("Lịch sử import vật tư");
+    expect(supplies).toContain("Chọn một phiên import");
+    expect(routers).toContain("importHistory:");
+    expect(routers).toContain("importHistoryItems:");
     expect(supplies).toContain("text-center shadow-sm");
     expect(supplies).toContain("Sắp hết hàng");
     expect(supplies).toContain('aria-label="Ghi nhận nhập, xuất hoặc cấp phát"');

@@ -19,6 +19,8 @@ import {
   inventoryMovements,
   inventorySupplies,
   maintenanceTickets,
+  supplyImportItems,
+  supplyImportSessions,
   supplyIssueSlipItems,
   supplyIssueSlips,
   uiLabels,
@@ -631,6 +633,49 @@ export async function listAssetImportItems(sessionId: number, executor?: any) {
   const db = executor ?? await getDb();
   if (!db) return [];
   return db.select().from(assetImportItems).where(eq(assetImportItems.importSessionId, sessionId));
+}
+
+export async function createSupplyImportSession(data: typeof supplyImportSessions.$inferInsert, executor?: any) {
+  const db = executor ?? await getDb();
+  if (!db) throw new Error("Database unavailable");
+  const result = await db.insert(supplyImportSessions).values(data);
+  return Number(result[0].insertId);
+}
+
+export async function updateSupplyImportSession(id: number, data: Partial<typeof supplyImportSessions.$inferInsert>, executor?: any) {
+  const db = executor ?? await getDb();
+  if (!db) throw new Error("Database unavailable");
+  await db.update(supplyImportSessions).set(data).where(eq(supplyImportSessions.id, id));
+}
+
+export async function createSupplyImportItem(data: typeof supplyImportItems.$inferInsert, executor?: any) {
+  const db = executor ?? await getDb();
+  if (!db) throw new Error("Database unavailable");
+  const result = await db.insert(supplyImportItems).values(data);
+  return Number(result[0].insertId);
+}
+
+export async function listSupplyImportSessions(page = 1, pageSize = 10) {
+  const db = await getDb();
+  const safePage = Math.max(1, Math.floor(page));
+  const safePageSize = Math.min(50, Math.max(1, Math.floor(pageSize)));
+  if (!db) return { items: [], total: 0, page: safePage, pageSize: safePageSize, totalPages: 0 };
+  const [{ total }] = await db.select({ total: sql<number>`count(*)` }).from(supplyImportSessions);
+  const items = await db.select().from(supplyImportSessions).orderBy(desc(supplyImportSessions.createdAt)).limit(safePageSize).offset((safePage - 1) * safePageSize);
+  const totalNumber = Number(total || 0);
+  return { items, total: totalNumber, page: safePage, pageSize: safePageSize, totalPages: Math.ceil(totalNumber / safePageSize) };
+}
+
+export async function getSupplyImportSessionById(id: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+  return (await db.select().from(supplyImportSessions).where(eq(supplyImportSessions.id, id)).limit(1))[0];
+}
+
+export async function listSupplyImportItems(sessionId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(supplyImportItems).where(eq(supplyImportItems.importSessionId, sessionId)).orderBy(supplyImportItems.id);
 }
 
 export async function createAssetFieldChanges(data: Array<typeof assetFieldChanges.$inferInsert>, executor?: any) {

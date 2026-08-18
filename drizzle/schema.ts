@@ -245,6 +245,26 @@ export const inventoryMovements = mysqlTable("inventoryMovements", {
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 }, (table) => [index("inventory_movements_supply_idx").on(table.supplyId), index("inventory_movements_created_idx").on(table.createdAt), index("inventory_movements_slip_idx").on(table.issueSlipId)]);
 
+export const supplyImportSessions = mysqlTable("supplyImportSessions", {
+  id: int("id").autoincrement().primaryKey(),
+  referenceCode: varchar("referenceCode", { length: 64 }).notNull().unique(),
+  createdByUserId: int("createdByUserId"),
+  createdByName: varchar("createdByName", { length: 160 }),
+  createdCount: int("createdCount").default(0).notNull(),
+  updatedCount: int("updatedCount").default(0).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+}, (table) => [index("supply_import_sessions_created_idx").on(table.createdAt)]);
+
+export const supplyImportItems = mysqlTable("supplyImportItems", {
+  id: int("id").autoincrement().primaryKey(),
+  importSessionId: int("importSessionId").notNull().references(() => supplyImportSessions.id, { onDelete: "restrict", onUpdate: "cascade" }),
+  supplyId: int("supplyId").notNull().references(() => inventorySupplies.id, { onDelete: "restrict", onUpdate: "cascade" }),
+  action: mysqlEnum("action", ["created", "updated"]).notNull(),
+  beforeSnapshot: json("beforeSnapshot"),
+  afterSnapshot: json("afterSnapshot"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+}, (table) => [index("supply_import_items_session_idx").on(table.importSessionId), index("supply_import_items_supply_idx").on(table.supplyId)]);
+
 export const handovers = mysqlTable("handovers", {
   id: int("id").autoincrement().primaryKey(),
   referenceCode: varchar("referenceCode", { length: 64 }).notNull().unique(),

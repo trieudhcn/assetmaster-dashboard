@@ -1,0 +1,2 @@
+- Nút **Lịch sử import** được hiển thị cạnh nút Thêm vật tư và mở hộp thoại quản trị có danh sách phiên ở bên trái, vùng chi tiết ở bên phải.
+- Với dữ liệu hiện có chưa có phiên import vật tư, modal hiển thị empty state rõ ràng, phân trang ở trạng thái vô hiệu hóa và hướng dẫn chọn phiên khi dữ liệu phát sinh.

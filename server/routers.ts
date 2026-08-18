@@ -25,6 +25,8 @@ import {
   createHandover,
   createInventoryMovement,
   createInventorySupply,
+  createSupplyImportItem,
+  createSupplyImportSession,
   createSupplyIssueSlip,
   createSupplyIssueSlipItem,
   createMaintenanceTicket,
@@ -56,6 +58,7 @@ import {
   getNextSupplyIssueSequence,
   getSupplyIssueSlipById,
   getSupplyIssueSlipItemById,
+  getSupplyImportSessionById,
   listHelpGuides,
   listUiLabels,
   getNextHandoverSequence,
@@ -98,6 +101,8 @@ import {
   listInventoryMovementReport,
   listSupplyIssueSlipItems,
   listSupplyIssueSlips,
+  listSupplyImportItems,
+  listSupplyImportSessions,
   listSupplyIssueAnalytics,
   listHelpGuideVersions,
   listVendors,
@@ -118,6 +123,7 @@ import {
   updateVendor,
   updateHandover,
   updateInventorySupply,
+  updateSupplyImportSession,
   updateSupplyIssueSlip,
   updateSupplyIssueSlipItem,
   updateMaintenanceTicket,
@@ -497,6 +503,12 @@ export const appRouter = router({
     list: adminProcedure.query(() => listInventorySupplies()),
     history: adminProcedure.input(z.object({ supplyId: z.number().int().positive(), page: z.number().int().positive().default(1), pageSize: z.number().int().min(1).max(50).default(10) })).query(({ input }) => listInventoryMovements(input.supplyId, input.page, input.pageSize)),
     historyReport: adminProcedure.query(() => listInventoryMovementReport()),
+    importHistory: adminProcedure.input(z.object({ page: z.number().int().positive().default(1), pageSize: z.number().int().min(1).max(50).default(10) })).query(({ input }) => listSupplyImportSessions(input.page, input.pageSize)),
+    importHistoryItems: adminProcedure.input(z.object({ sessionId: z.number().int().positive() })).query(async ({ input }) => {
+      const session = await getSupplyImportSessionById(input.sessionId);
+      if (!session) throw new TRPCError({ code: "NOT_FOUND", message: "Không tìm thấy phiên import vật tư." });
+      return { session, items: await listSupplyImportItems(session.id) };
+    }),
     issueAnalytics: adminProcedure.query(() => listSupplyIssueAnalytics()),
     issueSlips: adminProcedure.query(() => listSupplyIssueSlips()),
     issueSlipItems: adminProcedure.input(z.object({ issueSlipId: z.number().int().positive() })).query(({ input }) => listSupplyIssueSlipItems(input.issueSlipId)),
@@ -608,6 +620,7 @@ export const appRouter = router({
           if (existing && !input.updateExisting) throw new TRPCError({ code: "BAD_REQUEST", message: `Mã vật tư ${item.code} đã tồn tại. Hãy bật tùy chọn cập nhật vật tư trùng mã.` });
           existingByCode.set(item.code, existing);
         }
+        const sessionId = await createSupplyImportSession({ referenceCode: `VTIMP-${new Date().getFullYear()}-${crypto.randomUUID().slice(0, 8).toUpperCase()}`, createdByUserId: ctx.user!.id, createdByName: ctx.user!.name ?? "Quản trị viên" }, transaction);
         const ids: number[] = [];
         let created = 0;
         let updated = 0;
@@ -616,8 +629,11 @@ export const appRouter = router({
           if (existing) {
             const before = Number(existing.stockQuantity);
             const after = before + item.openingQuantity;
+            const beforeSnapshot = { code: existing.code, name: existing.name, unit: existing.unit, stockQuantity: existing.stockQuantity, minimumQuantity: existing.minimumQuantity, unitCost: existing.unitCost, location: existing.location, categoryId: existing.categoryId, vendorId: existing.vendorId, brandId: existing.brandId, note: existing.note };
+            const afterSnapshot = { code: item.code, name: item.name, unit: item.unit, stockQuantity: String(after), minimumQuantity: String(item.minimumQuantity), unitCost: item.unitCost === null || item.unitCost === undefined ? null : String(item.unitCost), location: item.location ?? null, categoryId: item.categoryId ?? null, vendorId: item.vendorId ?? null, brandId: item.brandId ?? null, note: item.note ?? null };
             await updateInventorySupply(existing.id, { name: item.name, categoryId: item.categoryId ?? null, vendorId: item.vendorId ?? null, brandId: item.brandId ?? null, unit: item.unit, minimumQuantity: String(item.minimumQuantity), unitCost: item.unitCost === null || item.unitCost === undefined ? null : String(item.unitCost), location: item.location ?? null, note: item.note ?? null, stockQuantity: String(after) }, transaction);
             if (item.openingQuantity > 0) await createInventoryMovement({ supplyId: existing.id, movementType: "receipt", quantity: String(item.openingQuantity), quantityBefore: String(before), quantityAfter: String(after), note: "Nhập bổ sung khi cập nhật từ Excel vật tư", createdByUserId: ctx.user!.id, createdByName: ctx.user!.name ?? "Quản trị viên" }, transaction);
+            await createSupplyImportItem({ importSessionId: sessionId, supplyId: existing.id, action: "updated", beforeSnapshot, afterSnapshot }, transaction);
             await recordActivity({ entityType: "supply", entityId: existing.id, action: "bulk_import_updated", actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: `Cập nhật từ Excel vật tư ${item.name} (${item.code})${item.openingQuantity > 0 ? `, nhập thêm ${item.openingQuantity} ${item.unit}` : ""}` }, transaction);
             ids.push(existing.id);
             updated += 1;
@@ -625,11 +641,14 @@ export const appRouter = router({
           }
           const supplyId = await createInventorySupply({ code: item.code, name: item.name, categoryId: item.categoryId ?? null, vendorId: item.vendorId ?? null, brandId: item.brandId ?? null, unit: item.unit, stockQuantity: String(item.openingQuantity), minimumQuantity: String(item.minimumQuantity), unitCost: item.unitCost === null || item.unitCost === undefined ? null : String(item.unitCost), location: item.location ?? null, note: item.note ?? null, isActive: true, createdByUserId: ctx.user!.id }, transaction);
           if (item.openingQuantity > 0) await createInventoryMovement({ supplyId, movementType: "receipt", quantity: String(item.openingQuantity), quantityBefore: "0", quantityAfter: String(item.openingQuantity), note: "Tồn đầu kỳ khi nhập Excel vật tư", createdByUserId: ctx.user!.id, createdByName: ctx.user!.name ?? "Quản trị viên" }, transaction);
+          await createSupplyImportItem({ importSessionId: sessionId, supplyId, action: "created", beforeSnapshot: null, afterSnapshot: { code: item.code, name: item.name, unit: item.unit, stockQuantity: String(item.openingQuantity), minimumQuantity: String(item.minimumQuantity), unitCost: item.unitCost === null || item.unitCost === undefined ? null : String(item.unitCost), location: item.location ?? null, categoryId: item.categoryId ?? null, vendorId: item.vendorId ?? null, brandId: item.brandId ?? null, note: item.note ?? null } }, transaction);
           await recordActivity({ entityType: "supply", entityId: supplyId, action: "bulk_imported", actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: `Nhập Excel vật tư ${item.name} (${item.code}), tồn đầu ${item.openingQuantity} ${item.unit}` }, transaction);
           ids.push(supplyId);
           created += 1;
         }
-        return { created, updated, ids };
+        await updateSupplyImportSession(sessionId, { createdCount: created, updatedCount: updated }, transaction);
+        await recordActivity({ entityType: "supplyImport", entityId: sessionId, action: "imported", actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: `Import Excel vật tư: tạo ${created}, cập nhật ${updated}` }, transaction);
+        return { created, updated, ids, sessionId };
       });
     }),
     update: adminProcedure.input(z.object({ id: z.number().int().positive(), code: z.string().trim().min(2).max(64).regex(/^[A-Za-z0-9-]+$/).transform((value) => value.toUpperCase()).optional(), name: z.string().trim().min(2).max(255).optional(), categoryId: z.number().int().positive().nullable().optional(), vendorId: z.number().int().positive().nullable().optional(), brandId: z.number().int().positive().nullable().optional(), unit: z.string().trim().min(1).max(32).optional(), minimumQuantity: z.number().finite().min(0).optional(), unitCost: z.number().finite().min(0).nullable().optional(), location: nullableText, note: nullableText, isActive: z.boolean().optional() })).mutation(async ({ input, ctx }) => {

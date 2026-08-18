@@ -1720,3 +1720,10 @@
 - [x] Hiển thị phân biệt số dòng tạo mới và cập nhật trong phần xem trước import.
 - [x] Hiển thị tiến trình chi tiết theo từng dòng khi import đang xử lý.
 - [x] Bổ sung hồi quy, kiểm tra giao diện, TypeScript, Vitest, build và phát hành cập nhật.
+
+## Current Session — Supply Import History
+
+- [x] Lưu phiên import Excel vật tư với người thực hiện, thời gian và kết quả tạo mới/cập nhật.
+- [x] Lưu chi tiết các dòng đã tạo/cập nhật để quản trị viên tra cứu lại.
+- [x] Thêm danh sách và màn hình chi tiết lịch sử import vật tư trên giao diện.
+- [x] Bổ sung hồi quy, migration, kiểm tra TypeScript, Vitest, build và phát hành cập nhật.
