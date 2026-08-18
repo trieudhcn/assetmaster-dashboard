@@ -10,6 +10,21 @@ function companyInfo(): CompanyInfo {
   try { return JSON.parse(localStorage.getItem("assetmaster-company-info") || "{}"); } catch { return {}; }
 }
 
+async function loadCompanyLogoForPdf(logoUrl?: string | null) {
+  if (!logoUrl) return null;
+  const response = await fetch(logoUrl);
+  if (!response.ok) return null;
+  const objectUrl = URL.createObjectURL(await response.blob());
+  try {
+    return await new Promise<string>((resolve, reject) => {
+      const image = new Image();
+      image.onload = () => { const canvas = document.createElement("canvas"); canvas.width = 160; canvas.height = 160; const context = canvas.getContext("2d"); if (!context) { reject(new Error("Không thể tạo logo cho PDF.")); return; } const ratio = Math.min(132 / image.width, 132 / image.height); const width = image.width * ratio; const height = image.height * ratio; context.drawImage(image, (160 - width) / 2, (160 - height) / 2, width, height); resolve(canvas.toDataURL("image/png")); };
+      image.onerror = () => reject(new Error("Không thể đọc logo doanh nghiệp."));
+      image.src = objectUrl;
+    });
+  } catch { return null; } finally { URL.revokeObjectURL(objectUrl); }
+}
+
 export async function openSupplyIssueSlipPdf(slip: SupplyIssueSlipPdf, items: SupplyIssueItemPdf[]) {
   const doc = new jsPDF({ unit: "mm", format: "a4" });
   let hasVietnameseFont = false;
@@ -18,14 +33,17 @@ export async function openSupplyIssueSlipPdf(slip: SupplyIssueSlipPdf, items: Su
     if (response.ok) { registerVietnamesePdfFont(doc, await response.arrayBuffer()); hasVietnameseFont = true; }
   } catch { /* Fallback font is used when the custom font is temporarily unavailable. */ }
   const company = companyInfo();
+  const headerLogo = await loadCompanyLogoForPdf(company.logoUrl);
   const pageWidth = doc.internal.pageSize.getWidth();
   const margin = 16;
+  const companyTextX = headerLogo ? margin + 25 : margin;
+  if (headerLogo) doc.addImage(headerLogo, "PNG", margin, 10, 19, 19, undefined, "FAST");
   doc.setTextColor(16, 42, 67);
   doc.setFontSize(15);
-  doc.text(company.name || "THÔNG TIN DOANH NGHIỆP", margin, 19);
+  doc.text(company.name || "THÔNG TIN DOANH NGHIỆP", companyTextX, 19);
   doc.setFontSize(9);
   const companyLines = [company.address && `Địa chỉ: ${company.address}`, company.taxCode && `MST: ${company.taxCode}`, company.phone && `Điện thoại: ${company.phone}`].filter(Boolean) as string[];
-  companyLines.forEach((line, index) => doc.text(line, margin, 25 + index * 5));
+  companyLines.forEach((line, index) => doc.text(line, companyTextX, 25 + index * 5));
   doc.setDrawColor(15, 140, 140);
   doc.line(margin, 39, pageWidth - margin, 39);
   doc.setFontSize(17);

@@ -1666,3 +1666,10 @@
 - [x] Làm rõ trạng thái chọn Nhân sự hệ thống và Người khác trong phiếu cấp phát.
 - [x] Căn chỉnh icon và nhãn nút Tạo vật tư, Tạo phiếu cấp phát trên mọi kích thước màn hình.
 - [x] Bổ sung hồi quy, kiểm tra giao diện, TypeScript, Vitest, build và phát hành cập nhật.
+
+## Current Session — Issue Slip Branding & Confirmation
+
+- [x] Thêm logo công ty bên trái thông tin đầu phiếu cấp phát vật tư PDF.
+- [x] Khóa trường phòng ban sau khi tự động điền từ hồ sơ nhân sự.
+- [x] Thêm hộp thoại xác nhận có tóm tắt trước khi tạo phiếu cấp phát.
+- [x] Bổ sung hồi quy, kiểm tra giao diện, TypeScript, Vitest, build và phát hành cập nhật.

@@ -241,6 +241,20 @@ describe("modal presentation contract", () => {
     expect(pdf).toContain("openPdfPreview");
   });
 
+  it("brands issue-slip PDFs and protects automatically sourced recipient departments", () => {
+    const supplies = readProjectFile("client/src/pages/SuppliesInventoryView.tsx");
+    const pdf = readProjectFile("client/src/lib/supplyIssueSlipPdf.ts");
+
+    expect(pdf).toContain("loadCompanyLogoForPdf");
+    expect(pdf).toContain('doc.addImage(headerLogo, "PNG", margin, 10, 19, 19');
+    expect(pdf).toContain("companyTextX");
+    expect(supplies).toContain("departmentAutoLocked");
+    expect(supplies).toContain("disabled={departmentAutoLocked}");
+    expect(supplies).toContain("Phòng ban được khóa theo hồ sơ nhân sự đã chọn.");
+    expect(supplies).toContain("window.confirm(`Xác nhận tạo phiếu cấp phát?");
+    expect(supplies).toContain("confirmIssueSlip()");
+  });
+
   it("uses only company branding rather than the product name in document headers", () => {
     const home = readProjectFile("client/src/pages/Home.tsx");
     const operations = readProjectFile("client/src/pages/OperationsModules.tsx");
