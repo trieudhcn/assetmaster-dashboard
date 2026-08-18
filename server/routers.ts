@@ -31,6 +31,7 @@ import {
   deleteAssetCategory,
   deleteVendorDocument,
   getAssetById,
+  getAssetImportSessionById,
   getAuditItemById,
   getAuditSession,
   getAssetCategoryByCode,
@@ -74,6 +75,7 @@ import {
   listAuditItems,
   listAuditSessions,
   listAssetImportItems,
+  listAssetImportSessions,
   listActivityLogs,
   listHandoverReturnDecisionHistory,
   listAllDepartments,
@@ -527,7 +529,36 @@ export const appRouter = router({
       const undoDeadline = getImportUndoDeadline(session.createdAt);
       return { ...session, undoDeadline, canUndo: !session.isUndone && canUndoImport(session.createdAt) };
     }),
+    importHistory: adminProcedure.input(z.object({ page: z.number().int().positive().default(1), pageSize: z.number().int().min(1).max(20).default(5) })).query(async ({ input }) => {
+      const history = await listAssetImportSessions(input.page, input.pageSize);
+      return { ...history, items: history.items.map((session) => ({ ...session, undoDeadline: getImportUndoDeadline(session.createdAt), canUndo: !session.isUndone && canUndoImport(session.createdAt) })) };
+    }),
     history: adminProcedure.input(z.object({ assetId: z.number().int().positive(), page: z.number().int().positive().default(1), pageSize: z.number().int().min(1).max(50).default(10) })).query(({ input }) => listAssetFieldChanges(input.assetId, input.page, input.pageSize)),
+    undoImportSession: adminProcedure.input(z.object({ sessionId: z.number().int().positive() })).mutation(async ({ input, ctx }) => {
+      const session = await getAssetImportSessionById(input.sessionId);
+      if (!session) throw new TRPCError({ code: "NOT_FOUND", message: "Không tìm thấy phiên import cần hoàn tác." });
+      if (session.isUndone) throw new TRPCError({ code: "BAD_REQUEST", message: "Phiên import này đã được hoàn tác." });
+      if (!canUndoImport(session.createdAt)) throw new TRPCError({ code: "BAD_REQUEST", message: "Đã quá thời hạn 24 giờ cho phép hoàn tác phiên import này." });
+      return runAssetImportTransaction(async (transaction) => {
+        const items = await listAssetImportItems(session.id, transaction);
+        for (const item of items) {
+          const current = await getAssetById(item.assetId, transaction);
+          if (!current) continue;
+          const before = assetSnapshot(current as unknown as Record<string, unknown>);
+          if (item.action === "created") {
+            await updateAsset(item.assetId, { isArchived: true }, transaction);
+            await createAssetFieldChanges(fieldChanges(item.assetId, before, { ...before, isArchived: true }, "undo", ctx.user!.id, ctx.user!.name, session.id), transaction);
+          } else {
+            const restore = (item.beforeSnapshot || {}) as Record<string, unknown>;
+            await updateAsset(item.assetId, restore as any, transaction);
+            await createAssetFieldChanges(fieldChanges(item.assetId, before, restore, "undo", ctx.user!.id, ctx.user!.name, session.id), transaction);
+          }
+        }
+        await updateAssetImportSession(session.id, { isUndone: true, undoneAt: new Date(), undoneByUserId: ctx.user!.id }, transaction);
+        await recordActivity({ entityType: "assetImport", entityId: session.id, action: "undone", actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: `Hoàn tác phiên import ${session.referenceCode}` }, transaction);
+        return { success: true, sessionId: session.id };
+      });
+    }),
     undoLatestImport: adminProcedure.input(z.object({ sessionId: z.number().int().positive() })).mutation(async ({ input, ctx }) => {
       const latest = await getLatestAssetImportSession();
       if (!latest || latest.id !== input.sessionId) throw new TRPCError({ code: "BAD_REQUEST", message: "Chỉ có thể hoàn tác phiên import gần nhất." });

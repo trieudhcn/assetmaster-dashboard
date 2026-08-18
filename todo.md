@@ -1572,3 +1572,10 @@
 - [x] Thêm nút thu nhỏ cho thẻ hoàn tác import để không che nội dung giao diện.
 - [x] Tự ẩn thẻ sau thời gian quy định và cho phép khôi phục lại khi cần.
 - [x] Bổ sung hồi quy, kiểm tra giao diện, TypeScript, Vitest, build và phát hành cập nhật.
+
+## Current Session — Import History & Per-session Undo
+
+- [x] Rà soát dữ liệu phiên import, API hiện có và quy tắc thời hạn hoàn tác.
+- [x] Thêm API liệt kê lịch sử import phân trang và hoàn tác theo mã phiên.
+- [x] Xây dựng giao diện xem lịch sử, trạng thái hiệu lực và xác nhận hoàn tác từng phiên.
+- [x] Bổ sung hồi quy, kiểm tra giao diện, TypeScript, Vitest, build và phát hành cập nhật.

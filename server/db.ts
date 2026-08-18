@@ -392,8 +392,8 @@ export async function listAssets() {
   return db.select().from(assets).where(eq(assets.isArchived, false)).orderBy(desc(assets.updatedAt));
 }
 
-export async function getAssetById(id: number) {
-  const db = await getDb();
+export async function getAssetById(id: number, executor?: any) {
+  const db = executor ?? await getDb();
   if (!db) return undefined;
   return (await db.select().from(assets).where(eq(assets.id, id)).limit(1))[0];
 }
@@ -456,6 +456,23 @@ export async function getLatestAssetImportSession() {
   return (await db.select().from(assetImportSessions).orderBy(desc(assetImportSessions.createdAt)).limit(1))[0];
 }
 
+export async function getAssetImportSessionById(id: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+  return (await db.select().from(assetImportSessions).where(eq(assetImportSessions.id, id)).limit(1))[0];
+}
+
+export async function listAssetImportSessions(page = 1, pageSize = 10) {
+  const db = await getDb();
+  const safePage = Math.max(1, Math.floor(page));
+  const safePageSize = Math.min(50, Math.max(1, Math.floor(pageSize)));
+  if (!db) return { items: [], total: 0, page: safePage, pageSize: safePageSize, totalPages: 0 };
+  const [{ total }] = await db.select({ total: sql<number>`count(*)` }).from(assetImportSessions);
+  const items = await db.select().from(assetImportSessions).orderBy(desc(assetImportSessions.createdAt)).limit(safePageSize).offset((safePage - 1) * safePageSize);
+  const totalNumber = Number(total || 0);
+  return { items, total: totalNumber, page: safePage, pageSize: safePageSize, totalPages: Math.ceil(totalNumber / safePageSize) };
+}
+
 export async function createAssetImportItem(data: typeof assetImportItems.$inferInsert, executor?: any) {
   const db = executor ?? await getDb();
   if (!db) throw new Error("Database unavailable");
@@ -463,8 +480,8 @@ export async function createAssetImportItem(data: typeof assetImportItems.$infer
   return Number(result[0].insertId);
 }
 
-export async function listAssetImportItems(sessionId: number) {
-  const db = await getDb();
+export async function listAssetImportItems(sessionId: number, executor?: any) {
+  const db = executor ?? await getDb();
   if (!db) return [];
   return db.select().from(assetImportItems).where(eq(assetImportItems.importSessionId, sessionId));
 }

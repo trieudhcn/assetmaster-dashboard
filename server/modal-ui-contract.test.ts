@@ -116,6 +116,7 @@ describe("modal presentation contract", () => {
   it("shows a guided import preview with update control, field comparison and detailed progress", () => {
     const importModal = readProjectFile("client/src/components/AssetImportModal.tsx");
     const importRecovery = readProjectFile("client/src/components/AssetImportRecovery.tsx");
+    const importHistory = readProjectFile("client/src/components/ImportHistoryDrawer.tsx");
 
     expect(importModal).toContain("Tự động cập nhật tài sản trùng Serial/IMEI");
     expect(importModal).toContain("Trường sẽ thay đổi khi cập nhật");
@@ -125,6 +126,9 @@ describe("modal presentation contract", () => {
     expect(importRecovery).toContain("AUTO_COLLAPSE_MS = 12_000");
     expect(importRecovery).toContain('aria-label="Thu nhỏ thẻ hoàn tác import"');
     expect(importRecovery).toContain('aria-label="Mở thẻ hoàn tác import"');
+    expect(importHistory).toContain("Lịch sử import tài sản");
+    expect(importHistory).toContain("undoImportSession.useMutation");
+    expect(importHistory).toContain("Có thể hoàn tác");
   });
 
   it("surfaces maintenance assets with a quick request action and prevents duplicate open tickets", () => {
