@@ -1280,7 +1280,7 @@ function drawHandoverBrandMark(doc: jsPDF, x: number, y: number, logoDataUrl?: s
   doc.text("AM", x + 9, y - 1, { align: "center" });
 }
 
-async function downloadHandoverPdf(item: Handover, signature: string | undefined, companyInfo: CompanyInfo, output: "download" | "print" = "download") {
+async function downloadHandoverPdf(item: Handover, signature: string | undefined, companyInfo: CompanyInfo) {
   const doc = new jsPDF({ unit: "mm", format: "a4" });
   const fontBuffer = await loadHandoverPdfFont();
   registerVietnamesePdfFont(doc, fontBuffer);
@@ -1354,16 +1354,7 @@ async function downloadHandoverPdf(item: Handover, signature: string | undefined
   doc.text(`Biên bản được tạo ngày ${new Date().toLocaleDateString("vi-VN")}`, left, 282);
   const watermark = await createPdfLogoWatermark(companyInfo.logoUrl).catch(() => null);
   applyPdfLogoWatermark(doc, watermark);
-  if (output === "print") {
-    const printWindow = window.open(doc.output("bloburl"), "_blank");
-    if (!printWindow) {
-      openPdfPreview(doc, `${item.referenceCode}-bien-ban-ban-giao.pdf`, "BIÊN BẢN BÀN GIAO");
-      throw new Error("Trình duyệt đã chặn cửa sổ in. Hệ thống đã mở bản xem trước để bạn tải và in thủ công.");
-    }
-    printWindow.addEventListener("load", () => printWindow.print(), { once: true });
-    return;
-  }
-  openPdfPreview(doc, `${item.referenceCode}-bien-ban-ban-giao.pdf`, "BIÊN BẢN BÀN GIAO");
+  openPdfPreview(doc, `${item.referenceCode}-phieu-cap-phat-tai-san.pdf`, `Phiếu cấp phát tài sản ${item.referenceCode}`);
 }
 
 function HandoverDetailModalLegacyPersisted({ item, companyInfo, onClose, onDataChanged }: { item: Handover; companyInfo: CompanyInfo; onClose: () => void; onDataChanged: () => void }) {
@@ -1419,7 +1410,7 @@ function HandoverDetailModal({ item: listItem, companyInfo, onClose, onDataChang
         <section className="rounded-xl border border-[#E7EEF3] p-4"><div className="text-[10px] font-extrabold uppercase tracking-[0.12em] text-[#8AA0B6]">Tình trạng, phụ kiện và ghi chú</div><div className="mt-3 grid gap-4 sm:grid-cols-3"><div><div className="text-xs text-[#8AA0B6]">Tình trạng</div><div className="mt-1 text-sm font-bold text-[#193B57]">{item.condition}</div></div><div><div className="text-xs text-[#8AA0B6]">Phụ kiện</div><div className="mt-1 text-sm font-bold text-[#193B57]">{item.accessories || "Không có"}</div></div><div><div className="text-xs text-[#8AA0B6]">Ghi chú</div><div className="mt-1 text-sm font-bold text-[#193B57]">{item.note || "Không có"}</div></div></div></section>
         <section className="rounded-xl border border-[#E7EEF3] bg-[#FBFCFD] p-4"><div className="mb-3 flex items-center gap-2 text-[10px] font-extrabold uppercase tracking-[0.12em] text-[#527089]"><History size={14} />Lịch sử quyết định hoàn trả</div>{returnDecisionHistoryQuery.isLoading ? <p className="text-xs text-[#71869A]">Đang tải lịch sử quyết định...</p> : returnDecisionHistoryQuery.data?.length ? <div className="space-y-3">{returnDecisionHistoryQuery.data.map((entry) => { const approved = entry.action === "return_approved"; return <div key={entry.id} className="flex gap-3"><div className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${approved ? "bg-[#0F8C8C]" : "bg-[#D26767]"}`} /><div><div className={`text-xs font-extrabold ${approved ? "text-[#087A6A]" : "text-[#B44545]"}`}>{approved ? "Đã duyệt yêu cầu hoàn trả" : "Đã từ chối yêu cầu hoàn trả"}</div><div className="mt-1 text-[11px] text-[#60758A]">{entry.summary}</div><div className="mt-1 text-[10px] text-[#8AA0B6]">{entry.actorName || "Quản trị viên"} · {new Date(entry.createdAt).toLocaleString("vi-VN")}</div></div></div>; })}</div> : <p className="text-xs text-[#71869A]">Chưa có quyết định hoàn trả nào cho phiếu này.</p>}</section>
         <section className="rounded-xl border border-[#CDE5E5] bg-[#F4FBFA] p-4"><div className="mb-3 flex items-center justify-between"><div><div className="flex items-center gap-2 text-[10px] font-extrabold uppercase tracking-[0.12em] text-[#087A6A]"><Signature size={14} />Ký tên điện tử</div><p className="mt-1 text-[11px] text-[#6B8F8D]">Chữ ký được lưu an toàn cùng phiếu bàn giao.</p></div>{signed && <span className="flex items-center gap-1 text-[10px] font-extrabold text-[#087A6A]"><CheckCircle2 size={13} />Đã ký</span>}</div><SignaturePad onSigned={saveSignature} /></section>
-        <div className="flex flex-wrap justify-end gap-2 border-t border-[#E7EEF3] pt-4"><button onClick={onClose} className="rounded-lg border border-[#DDE7F0] px-4 py-2 text-xs font-bold text-[#60758A]">Đóng</button><button disabled={isBusy} onClick={() => { void downloadHandoverPdf(item, signature, companyInfo, "download").then(() => toast.success("Đã tải biên bản PDF.")); }} className="flex items-center gap-2 rounded-lg border border-[#CDE5E5] px-4 py-2 text-xs font-bold text-[#087A6A] disabled:opacity-50"><Download size={14} />Tải PDF</button><button disabled={isBusy} onClick={() => { void downloadHandoverPdf(item, signature, companyInfo, "print").then(() => toast.success("Đã mở hộp thoại in phiếu bàn giao.")).catch((error: Error) => toast.info(error.message)); }} className="flex items-center gap-2 rounded-lg bg-[#102A43] px-4 py-2 text-xs font-bold text-white hover:bg-[#193B57] disabled:opacity-50"><Printer size={14} />In phiếu</button>{nextAction && <button disabled={isBusy || (nextAction.status === "active" && !signed)} onClick={() => updateStatus(nextAction.status)} className="flex items-center gap-2 rounded-lg bg-[#0F8C8C] px-4 py-2 text-xs font-bold text-white hover:bg-[#087A6A] disabled:cursor-not-allowed disabled:opacity-50"><Signature size={14} />{isBusy ? "Đang lưu..." : nextAction.label}</button>}</div>
+        <div className="flex flex-wrap justify-end gap-2 border-t border-[#E7EEF3] pt-4"><button onClick={onClose} className="rounded-lg border border-[#DDE7F0] px-4 py-2 text-xs font-bold text-[#60758A]">Đóng</button><button disabled={isBusy} onClick={() => { void downloadHandoverPdf(item, signature, companyInfo).then(() => toast.success("Đã mở xem trước. Bạn có thể in hoặc tải PDF từ màn hình này.")); }} className="flex items-center gap-2 rounded-lg border border-[#CDE5E5] px-4 py-2 text-xs font-bold text-[#087A6A] disabled:opacity-50"><FileText size={14} />Xem trước PDF</button>{nextAction && <button disabled={isBusy || (nextAction.status === "active" && !signed)} onClick={() => updateStatus(nextAction.status)} className="flex items-center gap-2 rounded-lg bg-[#0F8C8C] px-4 py-2 text-xs font-bold text-white hover:bg-[#087A6A] disabled:cursor-not-allowed disabled:opacity-50"><Signature size={14} />{isBusy ? "Đang lưu..." : nextAction.label}</button>}</div>
       </div>
     </div>
   </div>;

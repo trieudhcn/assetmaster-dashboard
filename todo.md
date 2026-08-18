@@ -1673,3 +1673,9 @@
 - [x] Khóa trường phòng ban sau khi tự động điền từ hồ sơ nhân sự.
 - [x] Thêm hộp thoại xác nhận có tóm tắt trước khi tạo phiếu cấp phát.
 - [x] Bổ sung hồi quy, kiểm tra giao diện, TypeScript, Vitest, build và phát hành cập nhật.
+
+## Current Session — Asset Assignment Slip Preview
+
+- [x] Rà soát PDF và luồng phiếu cấp phát tài sản hiện có.
+- [x] Thêm xem trước trước khi tải, in và tải PDF cho phiếu cấp phát tài sản.
+- [x] Bổ sung hồi quy, kiểm tra giao diện, TypeScript, Vitest, build và phát hành cập nhật.

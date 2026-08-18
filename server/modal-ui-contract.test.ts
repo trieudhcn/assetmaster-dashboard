@@ -271,6 +271,16 @@ describe("modal presentation contract", () => {
     expect(home).toContain("doc.text(`MST: ${companyInfo.taxCode} · Điện thoại: ${companyInfo.phone}`, left + 24, y + 8)");
   });
 
+  it("opens asset-assignment PDFs in the shared preview before users print or download", () => {
+    const home = readProjectFile("client/src/pages/Home.tsx");
+
+    expect(home).toContain("Phiếu cấp phát tài sản ${item.referenceCode}");
+    expect(home).toContain("-phieu-cap-phat-tai-san.pdf");
+    expect(home).toContain("Xem trước PDF");
+    expect(home).toContain("Bạn có thể in hoặc tải PDF từ màn hình này.");
+    expect(home).not.toContain('window.open(doc.output("bloburl"), "_blank")');
+  });
+
   it("surfaces maintenance assets with a quick request action and prevents duplicate open tickets", () => {
     const operations = readProjectFile("client/src/pages/OperationsModules.tsx");
     const routers = readProjectFile("server/routers.ts");
