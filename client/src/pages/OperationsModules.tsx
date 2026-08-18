@@ -1135,13 +1135,10 @@ export function AuditPage() {
       doc.setTextColor(16, 42, 67);
       doc.setFontSize(13);
       doc.text(company.name || "Công ty quản lý tài sản", left + 24, 16);
-      doc.setTextColor(15, 140, 140);
-      doc.setFontSize(8);
-      doc.text(company.websiteTitle || "AssetMaster – Hệ thống Quản lý Tài sản", left + 24, 21);
       doc.setTextColor(96, 117, 138);
       doc.setFontSize(7);
-      doc.text(`Địa chỉ: ${company.address || "Chưa cập nhật"} · MST: ${company.taxCode || "Chưa cập nhật"}`, left + 24, 26);
-      doc.text(`Điện thoại: ${company.phone || "Chưa cập nhật"}${company.email ? ` · Email: ${company.email}` : ""}`, left + 24, 31);
+      doc.text(`Địa chỉ: ${company.address || "Chưa cập nhật"} · MST: ${company.taxCode || "Chưa cập nhật"}`, left + 24, 22);
+      doc.text(`Điện thoại: ${company.phone || "Chưa cập nhật"}${company.email ? ` · Email: ${company.email}` : ""}`, left + 24, 27);
       doc.setDrawColor(15, 140, 140);
       doc.line(left, 37, 194, 37);
       let y = 48;
@@ -1220,14 +1217,11 @@ export function AuditPage() {
       doc.setTextColor(16, 42, 67);
       doc.setFontSize(15);
       doc.text(company.name || "Công ty quản lý tài sản", left + 24, y - 2);
-      doc.setTextColor(15, 140, 140);
-      doc.setFontSize(8.5);
-      doc.text(company.websiteTitle || "AssetMaster – Hệ thống Quản lý Tài sản", left + 24, y + 4);
       doc.setTextColor(96, 117, 138);
       doc.setFontSize(7.5);
       const companyLine = `Địa chỉ: ${company.address || "Chưa cập nhật"} · MST: ${company.taxCode || "Chưa cập nhật"}`;
-      doc.text(doc.splitTextToSize(companyLine, contentWidth - 24), left + 24, y + 10);
-      doc.text(`Điện thoại: ${company.phone || "Chưa cập nhật"}${company.email ? ` · Email: ${company.email}` : ""}`, left + 24, y + 15);
+      doc.text(doc.splitTextToSize(companyLine, contentWidth - 24), left + 24, y + 5);
+      doc.text(`Điện thoại: ${company.phone || "Chưa cập nhật"}${company.email ? ` · Email: ${company.email}` : ""}`, left + 24, y + 10);
       doc.setDrawColor(15, 140, 140);
       doc.line(left, y + 22, right, y + 22);
       y += 35;
@@ -1284,7 +1278,7 @@ export function AuditPage() {
       y += 6;
       doc.setTextColor(96, 117, 138);
       doc.setFontSize(8.5);
-      doc.text("Biên bản được lập từ dữ liệu đã chốt trên hệ thống AssetMaster.", left, y);
+      doc.text("Biên bản được lập từ dữ liệu đã chốt của đơn vị.", left, y);
       y += 8;
       const signatureColumns = [left + 25, left + contentWidth / 2, right - 25];
       const signatureLabels = ["NGƯỜI KIỂM KÊ", "ĐẠI DIỆN ĐƠN VỊ QUẢN LÝ", "NGƯỜI PHÊ DUYỆT"];
@@ -1304,7 +1298,7 @@ export function AuditPage() {
         doc.line(left, 286, right, 286);
         doc.setTextColor(112, 134, 154);
         doc.setFontSize(7.5);
-        doc.text(`${company.name || "AssetMaster"} · ${selectedAudit.referenceCode}`, left, 291);
+        doc.text(`${company.name || "Đơn vị quản lý"} · ${selectedAudit.referenceCode}`, left, 291);
         doc.text(`Trang ${page}/${pageCount}`, right, 291, { align: "right" });
       }
       const watermark = await createPdfLogoWatermark(company.logoUrl).catch(() => null);

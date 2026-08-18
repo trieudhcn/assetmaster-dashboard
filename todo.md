@@ -1592,3 +1592,9 @@
 - [x] Đưa nút lịch sử import vào khu vực bộ lọc Danh mục tài sản dưới dạng icon gọn.
 - [x] Chỉ liệt kê phiên import có tài sản được tạo hoặc cập nhật thành công.
 - [x] Bổ sung hồi quy, kiểm tra giao diện, TypeScript, Vitest, build và phát hành cập nhật.
+
+## Current Session — Document Header Branding
+
+- [x] Loại bỏ dòng chữ AssetMaster khỏi phần đầu các biên bản.
+- [x] Giữ nguyên logo và thông tin công ty từ Cài đặt hệ thống trong biên bản.
+- [x] Bổ sung hồi quy, kiểm tra TypeScript, Vitest, build và phát hành cập nhật.

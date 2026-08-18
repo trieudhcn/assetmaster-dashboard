@@ -142,6 +142,15 @@ describe("modal presentation contract", () => {
     expect(employees).toContain('aria-label="Trang nhân sự sau"');
   });
 
+  it("uses only company branding rather than the product name in document headers", () => {
+    const home = readProjectFile("client/src/pages/Home.tsx");
+    const operations = readProjectFile("client/src/pages/OperationsModules.tsx");
+    expect(home).not.toContain('doc.text("AssetMaster", left + 24, y)');
+    expect(home).toContain('doc.text(`Biên bản được tạo ngày ${new Date().toLocaleDateString("vi-VN")}`, left, 282)');
+    expect(operations).not.toContain('doc.text(company.websiteTitle || "AssetMaster – Hệ thống Quản lý Tài sản"');
+    expect(operations).toContain("Biên bản được lập từ dữ liệu đã chốt của đơn vị.");
+  });
+
   it("surfaces maintenance assets with a quick request action and prevents duplicate open tickets", () => {
     const operations = readProjectFile("client/src/pages/OperationsModules.tsx");
     const routers = readProjectFile("server/routers.ts");

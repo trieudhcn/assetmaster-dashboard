@@ -1287,20 +1287,17 @@ async function downloadHandoverPdf(item: Handover, signature: string | undefined
   let y = 22;
   doc.setTextColor(16, 42, 67);
   drawHandoverBrandMark(doc, left, y, logoDataUrl);
-  doc.setFontSize(18);
-  doc.text("AssetMaster", left + 24, y);
-  doc.setFontSize(9);
   doc.setTextColor(15, 140, 140);
-  doc.setFontSize(9);
-  doc.text(companyInfo.name, left + 24, y + 7);
+  doc.setFontSize(10);
+  doc.text(companyInfo.name, left + 24, y);
   doc.setFontSize(8);
   doc.setTextColor(112, 134, 154);
-  doc.text(`Địa chỉ: ${companyInfo.address}`, left + 24, y + 13);
-  doc.text(`MST: ${companyInfo.taxCode} · Điện thoại: ${companyInfo.phone}`, left + 24, y + 19);
+  doc.text(`Địa chỉ: ${companyInfo.address}`, left + 24, y + 6);
+  doc.text(`MST: ${companyInfo.taxCode} · Điện thoại: ${companyInfo.phone}`, left + 24, y + 12);
   doc.setTextColor(16, 42, 67);
   doc.setDrawColor(15, 140, 140);
-  doc.line(left, y + 24, 192, y + 24);
-  y += 42;
+  doc.line(left, y + 18, 192, y + 18);
+  y += 36;
   doc.setFontSize(15);
   doc.text("BIÊN BẢN BÀN GIAO TÀI SẢN", 105, y, { align: "center" });
   y += 12;
@@ -1352,7 +1349,7 @@ async function downloadHandoverPdf(item: Handover, signature: string | undefined
   doc.text(item.recipient, 119, y + 39);
   doc.setFontSize(8);
   doc.setTextColor(138, 160, 182);
-  doc.text(`AssetMaster · Biên bản được tạo ngày ${new Date().toLocaleDateString("vi-VN")}`, left, 282);
+  doc.text(`Biên bản được tạo ngày ${new Date().toLocaleDateString("vi-VN")}`, left, 282);
   const watermark = await createPdfLogoWatermark(companyInfo.logoUrl).catch(() => null);
   applyPdfLogoWatermark(doc, watermark);
   if (output === "print") {
