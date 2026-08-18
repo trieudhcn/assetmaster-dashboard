@@ -1598,3 +1598,8 @@
 - [x] Loại bỏ dòng chữ AssetMaster khỏi phần đầu các biên bản.
 - [x] Giữ nguyên logo và thông tin công ty từ Cài đặt hệ thống trong biên bản.
 - [x] Bổ sung hồi quy, kiểm tra TypeScript, Vitest, build và phát hành cập nhật.
+
+## Current Session — Import History Filter Visibility Fix
+
+- [x] Thay cơ chế chèn DOM bằng nút React hiển thị trực tiếp trong hàng bộ lọc Danh mục tài sản.
+- [x] Bổ sung hồi quy, kiểm tra giao diện, TypeScript, Vitest, build và phát hành cập nhật.

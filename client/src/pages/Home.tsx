@@ -897,8 +897,8 @@ function PaginatedAssetCatalogPage({ assets, query, category, status, department
     const openAssetImport = () => window.dispatchEvent(new Event("assetmaster:open-asset-import"));
     importButton.addEventListener("click", openAssetImport);
 
-    const warrantySelect = Array.from(document.querySelectorAll<HTMLSelectElement>("select")).find((select) => Array.from(select.options).some((option) => option.text === "Tất cả bảo hành"));
-    const filterBar = warrantySelect?.parentElement?.parentElement;
+    const filterSearchInput = Array.from(document.querySelectorAll<HTMLInputElement>("input")).find((input) => input.placeholder === "Tìm mã, tên hoặc người giữ...");
+    const filterBar = filterSearchInput?.parentElement?.parentElement;
     const importHistoryButton = document.createElement("button");
     importHistoryButton.type = "button";
     importHistoryButton.dataset.assetImportHistory = "true";
