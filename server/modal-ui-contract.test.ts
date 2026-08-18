@@ -187,8 +187,13 @@ describe("modal presentation contract", () => {
     expect(supplies).toContain("groupFilter");
     expect(supplies).toContain("Lọc theo nhóm");
     expect(supplies).toContain("nextAccessoryCodeQuery");
+    expect(supplies).toContain("AccessoryGroupSummary");
+    expect(supplies).toContain("Tồn kho phụ kiện theo nhóm");
+    expect(supplies).toContain("Tạo nhóm phụ kiện");
+    expect(supplies).toContain("Mã phụ kiện được hệ thống khóa sau khi tạo mới.");
     expect(routers).toContain("supplies: router");
     expect(routers).toContain("nextCode:");
+    expect(routers).toContain("createAccessoryGroup:");
     expect(routers).toContain("Tồn kho không đủ");
   });
 

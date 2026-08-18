@@ -357,6 +357,17 @@ export async function getAssetCategoryByName(name: string) {
   return (await db.select().from(assetCategories).where(eq(assetCategories.name, name)).limit(1))[0];
 }
 
+export async function getNextAccessoryGroupSequence() {
+  const db = await getDb();
+  if (!db) throw new Error("Database unavailable");
+  const rows: Array<{ code: string }> = await db.select({ code: assetCategories.code }).from(assetCategories).where(like(assetCategories.code, "PKG-%"));
+  const maxSequence = rows.reduce((maximum: number, row) => {
+    const match = row.code.match(/^PKG-(\d+)$/);
+    return Math.max(maximum, match ? Number(match[1]) : 0);
+  }, 0);
+  return maxSequence + 1;
+}
+
 export async function createAssetCategory(data: typeof assetCategories.$inferInsert) {
   const db = await getDb();
   if (!db) throw new Error("Database unavailable");

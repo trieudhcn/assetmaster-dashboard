@@ -43,6 +43,7 @@ import {
   getAssetCategoryByCode,
   getAssetCategoryById,
   getAssetCategoryByName,
+  getNextAccessoryGroupSequence,
   getLatestAssetImportSession,
   getBrandById,
   getBrandByName,
@@ -469,6 +470,13 @@ export const appRouter = router({
       await recordActivity({ entityType: "asset_category", entityId: id, action: "created", actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: `Tạo phân loại ${input.name} (${input.code})` });
       return { id };
     }),
+    createAccessoryGroup: adminProcedure.input(z.object({ name: z.string().trim().min(2).max(160) })).mutation(async ({ input, ctx }) => {
+      if (await getAssetCategoryByName(input.name)) throw new TRPCError({ code: "BAD_REQUEST", message: "Nhóm phụ kiện này đã tồn tại." });
+      const code = `PKG-${String(await getNextAccessoryGroupSequence()).padStart(3, "0")}`;
+      const id = await createAssetCategory({ name: input.name, code, description: "Nhóm phụ kiện", isActive: true });
+      await recordActivity({ entityType: "asset_category", entityId: id, action: "created", actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: `Tạo nhóm phụ kiện ${input.name} (${code})` });
+      return { id, code, name: input.name };
+    }),
     update: adminProcedure.input(z.object({ id: z.number().int().positive(), name: z.string().trim().min(2).max(160).optional(), code: z.string().trim().min(1).max(12).regex(/^[A-Za-z0-9-]+$/).transform((value) => value.toUpperCase()).optional(), description: nullableText, isActive: z.boolean().optional() })).mutation(async ({ input, ctx }) => {
       const existing = await getAssetCategoryById(input.id);
       if (!existing) throw new TRPCError({ code: "NOT_FOUND", message: "Không tìm thấy phân loại." });
@@ -656,10 +664,10 @@ export const appRouter = router({
     update: adminProcedure.input(z.object({ id: z.number().int().positive(), code: z.string().trim().min(2).max(64).regex(/^[A-Za-z0-9-]+$/).transform((value) => value.toUpperCase()).optional(), name: z.string().trim().min(2).max(255).optional(), categoryId: z.number().int().positive().nullable().optional(), vendorId: z.number().int().positive().nullable().optional(), brandId: z.number().int().positive().nullable().optional(), unit: z.string().trim().min(1).max(32).optional(), minimumQuantity: z.number().finite().min(0).optional(), unitCost: z.number().finite().min(0).nullable().optional(), location: nullableText, note: nullableText, isActive: z.boolean().optional() })).mutation(async ({ input, ctx }) => {
       const supply = await getInventorySupplyById(input.id);
       if (!supply) throw new TRPCError({ code: "NOT_FOUND", message: "Không tìm thấy phụ kiện." });
-      if (input.code && input.code !== supply.code && await getInventorySupplyByCode(input.code)) throw new TRPCError({ code: "BAD_REQUEST", message: "Mã phụ kiện này đã tồn tại." });
-      const { id, minimumQuantity, unitCost, ...changes } = input;
+      if (input.code !== undefined && input.code !== supply.code) throw new TRPCError({ code: "BAD_REQUEST", message: "Mã phụ kiện đã được khóa sau khi tạo mới." });
+      const { id, minimumQuantity, unitCost, code: _lockedCode, ...changes } = input;
       await updateInventorySupply(id, { ...changes, minimumQuantity: minimumQuantity === undefined ? undefined : String(minimumQuantity), unitCost: unitCost === undefined ? undefined : unitCost === null ? null : String(unitCost) });
-      await recordActivity({ entityType: "supply", entityId: id, action: "updated", actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: `Cập nhật phụ kiện ${changes.name || supply.name}${changes.code && changes.code !== supply.code ? `, mã ${supply.code} → ${changes.code}` : ""}` });
+      await recordActivity({ entityType: "supply", entityId: id, action: "updated", actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: `Cập nhật phụ kiện ${changes.name || supply.name}` });
       return { success: true };
     }),
     move: adminProcedure.input(z.object({ supplyId: z.number().int().positive(), movementType: z.enum(["receipt", "issue", "adjustment"]), quantity: z.number().finite(), recipientUserId: z.number().int().positive().nullable().optional(), recipientName: z.string().trim().max(160).optional(), recipientDepartmentId: z.number().int().positive().nullable().optional(), note: z.string().trim().min(2).max(1000) }).superRefine((input, issue) => {

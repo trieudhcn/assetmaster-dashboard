@@ -1740,3 +1740,10 @@
 - [x] Tự sinh mã phụ kiện mới theo tiền tố PK- và giữ nguyên mã lịch sử.
 - [x] Thêm bộ lọc theo nhóm phụ kiện trên màn hình tồn kho.
 - [x] Bổ sung hồi quy, kiểm tra TypeScript, Vitest, build, giao diện và phát hành cập nhật.
+
+## Current Session — Accessory Group Insights & Code Protection
+
+- [x] Hiển thị thống kê tồn kho tổng quan theo từng nhóm phụ kiện.
+- [x] Cho phép tạo nhanh nhóm phụ kiện ngay từ bộ lọc nhóm.
+- [x] Tự động khóa mã phụ kiện sau khi tạo mới để tránh chỉnh sửa nhầm.
+- [x] Bổ sung hồi quy, kiểm tra TypeScript, Vitest, build, giao diện và phát hành cập nhật.
