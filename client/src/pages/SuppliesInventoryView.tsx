@@ -364,13 +364,14 @@ function SupplyCreateModal({ form, setForm, categoryOptions, vendorOptions, bran
     clear.textContent = "×";
     const words = document.createElement("p");
     words.className = "mt-1 pl-1 text-[10px] font-medium leading-4 text-[#8AA0B6]";
-    const refresh = (raw: string) => { const amount = parseVndAmount(raw); const formatted = amount === null ? "" : formatVndInput(amount); words.textContent = formatted ? numberToVietnameseWords(formatted) : ""; clear.style.display = formatted ? "grid" : "none"; setForm((current) => ({ ...current, unitCost: amount === null ? "" : String(amount) })); window.requestAnimationFrame(() => { input.value = formatted; }); };
-    const handleInput = (event: Event) => { event.stopPropagation(); refresh((event.currentTarget as HTMLInputElement).value); };
-    const handleClear = () => { refresh(""); input.focus(); };
+    const renderCurrency = (raw: string) => { const amount = parseVndAmount(raw); const formatted = amount === null ? "" : formatVndInput(amount); input.value = formatted; words.textContent = formatted ? numberToVietnameseWords(formatted) : ""; clear.style.display = formatted ? "grid" : "none"; };
+    const commitCurrency = (raw: string) => { const amount = parseVndAmount(raw); setForm((current) => ({ ...current, unitCost: amount === null ? "" : String(amount) })); window.requestAnimationFrame(() => renderCurrency(amount === null ? "" : String(amount))); };
+    const handleInput = (event: Event) => { event.stopPropagation(); commitCurrency((event.currentTarget as HTMLInputElement).value); };
+    const handleClear = () => { commitCurrency(""); input.focus(); };
     input.addEventListener("input", handleInput, true); clear.addEventListener("click", handleClear);
-    container.append(suffix, clear); label.append(words); refresh(form.unitCost);
+    container.append(suffix, clear); label.append(words); renderCurrency(form.unitCost);
     return () => { input.removeEventListener("input", handleInput, true); clear.removeEventListener("click", handleClear); suffix.remove(); clear.remove(); words.remove(); delete container.dataset.accessoryCurrencyReady; input.style.paddingRight = ""; };
-  }, []);
+  }, [form]);
   useEffect(() => {
     const dialog = document.querySelector<HTMLElement>('[aria-labelledby="supply-create-title"]');
     const header = dialog?.querySelector<HTMLElement>("header");

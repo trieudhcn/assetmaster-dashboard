@@ -1801,3 +1801,9 @@
 
 - [x] Điều chỉnh khoảng đệm để mô tả trong tiêu đề Thêm phụ kiện không chồng lên đường viền.
 - [x] Kiểm tra hiển thị tiêu đề ở desktop và mobile, sau đó chạy hồi quy và phát hành sửa lỗi.
+
+## Current Session — Persistent Accessory Currency Formatting
+
+- [x] Giữ dấu phân cách hàng nghìn của đơn giá sau khi thay đổi mức tồn tối thiểu hoặc trường khác.
+- [x] Bổ sung hồi quy cho việc đồng bộ định dạng tiền qua các lần React render.
+- [x] Kiểm tra TypeScript, Vitest, build và phát hành sửa lỗi.
