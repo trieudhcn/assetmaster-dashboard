@@ -85,7 +85,7 @@ export function AssetImportModal({ onClose, onImported }: { onClose: () => void;
       setPhase("complete");
       setStatusDetail(result.errors.length ? `Hoàn tất: ${result.created} tạo mới, ${result.updated} cập nhật; ${result.errors.length} dòng cần xử lý.` : `Hoàn tất: ${result.created} tạo mới, ${result.updated} cập nhật.`);
       if (result.created || result.updated) {
-        toast.success(`Đã tạo ${result.created} và cập nhật ${result.updated} tài sản.`);
+        toast.success(`Đã tạo ${result.created} và cập nhật ${result.updated} tài sản.`, { description: "Bạn có thể hoàn tác trong Lịch sử import ở hàng bộ lọc Danh mục tài sản." });
         onImported();
         window.setTimeout(onClose, 650);
       }

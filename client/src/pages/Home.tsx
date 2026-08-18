@@ -34,7 +34,7 @@ import { LoginGateway } from "./LoginGateway";
 import { UserDashboard } from "./UserDashboard";
 import { HelpCenter } from "./HelpCenter";
 import { AssetImportModal } from "@/components/AssetImportModal";
-import { AssetFieldHistoryDrawer, LatestImportUndo } from "@/components/AssetImportRecovery";
+import { AssetFieldHistoryDrawer } from "@/components/AssetImportRecovery";
 import { ImportHistoryLauncher } from "@/components/ImportHistoryDrawer";
 import { AssetCatalogDropdowns } from "@/components/AssetCatalogDropdowns";
 import { AssetCategoryPicker } from "@/components/AssetCategoryPicker";
@@ -755,7 +755,6 @@ export default function Home() {
         </div>
         {assetModal && <AssetModal mode={assetModal} asset={selectedAsset} formData={formData} setFormData={setFormData} isSaving={createAssetMutation.isPending || updateAssetMutation.isPending} onClose={() => setAssetModal(null)} onSave={saveAsset} onEdit={() => selectedAsset && openEditModal(selectedAsset)} onStartHandover={(assetCode) => { setAssetModal(null); setHandoverAssetCode(assetCode); }} />}
         {assetImportOpen && <AssetImportModal onClose={() => setAssetImportOpen(false)} onImported={() => { void assetQuery.refetch(); }} />}
-        {isAdmin && <LatestImportUndo onUndone={() => { void assetQuery.refetch(); }} />}
         {isAdmin && <ImportHistoryLauncher onUndone={() => { void assetQuery.refetch(); }} />}
         {assetHistoryId && <AssetFieldHistoryDrawer assetId={assetHistoryId} onClose={() => setAssetHistoryId(null)} />}
         {qrAsset && <AssetQrModal asset={qrAsset} onClose={() => setQrAsset(null)} />}

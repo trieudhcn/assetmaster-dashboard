@@ -1608,3 +1608,9 @@
 
 - [x] Căn giữa theo chiều dọc khối thông tin công ty với logo trong phần đầu biên bản.
 - [x] Bổ sung hồi quy, kiểm tra TypeScript, Vitest, build và phát hành cập nhật.
+
+## Current Session — Import Undo Guidance
+
+- [x] Ẩn thẻ hoàn tác import nổi ở góc màn hình.
+- [x] Thông báo sau import thành công về vị trí Lịch sử import để hoàn tác.
+- [x] Bổ sung hồi quy, kiểm tra TypeScript, Vitest, build và phát hành cập nhật.

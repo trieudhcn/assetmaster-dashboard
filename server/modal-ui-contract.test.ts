@@ -143,6 +143,13 @@ describe("modal presentation contract", () => {
     expect(employees).toContain('aria-label="Trang nhân sự sau"');
   });
 
+  it("guides completed imports to the history drawer without rendering a floating undo card", () => {
+    const home = readProjectFile("client/src/pages/Home.tsx");
+    const importModal = readProjectFile("client/src/components/AssetImportModal.tsx");
+    expect(home).not.toContain("LatestImportUndo");
+    expect(importModal).toContain("Bạn có thể hoàn tác trong Lịch sử import ở hàng bộ lọc Danh mục tài sản.");
+  });
+
   it("uses only company branding rather than the product name in document headers", () => {
     const home = readProjectFile("client/src/pages/Home.tsx");
     const operations = readProjectFile("client/src/pages/OperationsModules.tsx");
@@ -853,7 +860,7 @@ describe("maintenance history and filter layout contract", () => {
 
   it("closes the asset import modal after a successful import notification", () => {
     const assetImport = readProjectFile("client/src/components/AssetImportModal.tsx");
-    expect(assetImport).toContain("toast.success(`Đã tạo ${result.created} và cập nhật ${result.updated} tài sản.`)");
+    expect(assetImport).toContain("toast.success(`Đã tạo ${result.created} và cập nhật ${result.updated} tài sản.`, { description: \"Bạn có thể hoàn tác trong Lịch sử import ở hàng bộ lọc Danh mục tài sản.\" })");
     expect(assetImport).toContain("window.setTimeout(onClose, 650)");
   });
 
