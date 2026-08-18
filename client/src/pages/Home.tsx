@@ -30,6 +30,7 @@ import { ReportsManagementView } from "./ReportsManagementView";
 import { OrganizationManagementPage } from "./OrganizationManagementPage";
 import { VendorBrandManagementPage } from "./VendorBrandManagementPage";
 import { AssetCategoryManagementPage } from "./AssetCategoryManagementPage";
+import { SuppliesInventoryView } from "./SuppliesInventoryView";
 import { LoginGateway } from "./LoginGateway";
 import { UserDashboard } from "./UserDashboard";
 import { HelpCenter } from "./HelpCenter";
@@ -125,6 +126,7 @@ function getWarrantyState(value: unknown, now = new Date()): WarrantyState {
 const navItems = [
   { label: "Tổng quan", icon: LayoutDashboard },
   { label: "Danh mục tài sản", icon: Archive },
+  { label: "Vật tư & Tồn kho", icon: Box },
   { label: "Phân loại tài sản", icon: Tags },
   { label: "Bàn giao & Cấp phát", icon: PackageCheck },
   { label: "Bảo trì & Báo hỏng", icon: Wrench },
@@ -303,7 +305,7 @@ export default function Home() {
 
   const [activeNav, setActiveNav] = useState(() => {
     const view = new URLSearchParams(window.location.search).get("view");
-    const deepLinks: Record<string, string> = { assets: "Danh mục tài sản", categories: "Phân loại tài sản", maintenance: "Bảo trì & Báo hỏng", audit: "Kiểm kê", reports: "Báo cáo", employees: "Quản lý nhân viên", organization: "Phòng Ban & Bộ Phận", vendors: "Nhà cung cấp & Hãng", handovers: "Bàn giao & Cấp phát", help: "Trợ giúp & hướng dẫn" };
+    const deepLinks: Record<string, string> = { assets: "Danh mục tài sản", supplies: "Vật tư & Tồn kho", categories: "Phân loại tài sản", maintenance: "Bảo trì & Báo hỏng", audit: "Kiểm kê", reports: "Báo cáo", employees: "Quản lý nhân viên", organization: "Phòng Ban & Bộ Phận", vendors: "Nhà cung cấp & Hãng", handovers: "Bàn giao & Cấp phát", help: "Trợ giúp & hướng dẫn" };
     return view ? deepLinks[view] || "Tổng quan" : "Tổng quan";
   });
   const [assetRows, setAssetRows] = useState<Asset[]>([]);
@@ -718,6 +720,7 @@ export default function Home() {
 
         {activeNav === "Bàn giao & Cấp phát" ? <AssignmentsPage showComingSoon={showComingSoon} companyInfo={companyInfo} /> : null}
         {activeNav === "Phân loại tài sản" ? <AssetCategoryManagementPage /> : null}
+        {activeNav === "Vật tư & Tồn kho" ? <SuppliesInventoryView /> : null}
         {activeNav === "Cài đặt" ? <><CompanyBrandSettings companyInfo={companyInfo} onSave={(next) => { setCompanyInfo(next); localStorage.setItem("assetmaster-company-info", JSON.stringify(next)); document.title = next.websiteTitle; saveCompanyMutation.mutate({ name: next.name, address: next.address || null, taxCode: next.taxCode || null, phone: next.phone || null, logoUrl: next.logoUrl || null, websiteTitle: next.websiteTitle || null, brandColor: next.brandColor || "#0F8C8C", faviconUrl: next.faviconUrl || null, loginBackgroundUrl: next.loginBackgroundUrl || null, loginGreeting: next.loginGreeting || null, loginBackgroundOverlay: next.loginBackgroundOverlay }, { onSuccess: () => { void companyQuery.refetch(); toast.success("Đã lưu cài đặt thương hiệu."); }, onError: (error) => toast.error(error.message || "Không thể lưu cài đặt thương hiệu.") }); }} /><BrandEnhancementsPanel info={companyInfo} onSave={(next) => { setCompanyInfo(next); localStorage.setItem("assetmaster-company-info", JSON.stringify(next)); document.documentElement.style.setProperty("--assetmaster-brand", next.brandColor); const favicon = document.querySelector<HTMLLinkElement>('link[rel="icon"]') || Object.assign(document.createElement("link"), { rel: "icon" }); if (next.faviconUrl) { favicon.href = next.faviconUrl; if (!favicon.parentNode) document.head.appendChild(favicon); } saveCompanyMutation.mutate({ name: next.name, address: next.address || null, taxCode: next.taxCode || null, phone: next.phone || null, logoUrl: next.logoUrl || null, websiteTitle: next.websiteTitle || null, brandColor: next.brandColor || "#0F8C8C", faviconUrl: next.faviconUrl || null, loginBackgroundUrl: next.loginBackgroundUrl || null, loginGreeting: next.loginGreeting || null, loginBackgroundOverlay: next.loginBackgroundOverlay }, { onSuccess: () => { void companyQuery.refetch(); } }); }} /></> : null}
         {activeNav === "Bảo trì & Báo hỏng" ? <MaintenancePage /> : null}
         {activeNav === "Kiểm kê" ? <AuditPage /> : null}

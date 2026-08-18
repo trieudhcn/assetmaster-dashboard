@@ -16,6 +16,8 @@ import {
   handovers,
   helpGuides,
   helpGuideVersions,
+  inventoryMovements,
+  inventorySupplies,
   maintenanceTickets,
   uiLabels,
   type InsertUser,
@@ -423,6 +425,55 @@ export async function listAssetsByCodes(assetCodes: string[]) {
   return db.select().from(assets).where(inArray(assets.assetCode, assetCodes));
 }
 
+export async function listInventorySupplies() {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(inventorySupplies).orderBy(desc(inventorySupplies.updatedAt));
+}
+
+export async function getInventorySupplyById(id: number, executor?: any) {
+  const db = executor ?? await getDb();
+  if (!db) return undefined;
+  return (await db.select().from(inventorySupplies).where(eq(inventorySupplies.id, id)).limit(1))[0];
+}
+
+export async function getInventorySupplyByCode(code: string, executor?: any) {
+  const db = executor ?? await getDb();
+  if (!db) return undefined;
+  return (await db.select().from(inventorySupplies).where(eq(inventorySupplies.code, code)).limit(1))[0];
+}
+
+export async function createInventorySupply(data: typeof inventorySupplies.$inferInsert, executor?: any) {
+  const db = executor ?? await getDb();
+  if (!db) throw new Error("Database unavailable");
+  const result = await db.insert(inventorySupplies).values(data);
+  return Number(result[0].insertId);
+}
+
+export async function updateInventorySupply(id: number, data: Partial<typeof inventorySupplies.$inferInsert>, executor?: any) {
+  const db = executor ?? await getDb();
+  if (!db) throw new Error("Database unavailable");
+  await db.update(inventorySupplies).set(data).where(eq(inventorySupplies.id, id));
+}
+
+export async function createInventoryMovement(data: typeof inventoryMovements.$inferInsert, executor?: any) {
+  const db = executor ?? await getDb();
+  if (!db) throw new Error("Database unavailable");
+  const result = await db.insert(inventoryMovements).values(data);
+  return Number(result[0].insertId);
+}
+
+export async function listInventoryMovements(supplyId: number, page = 1, pageSize = 10) {
+  const db = await getDb();
+  const safePage = Math.max(1, Math.floor(page));
+  const safePageSize = Math.min(50, Math.max(1, Math.floor(pageSize)));
+  if (!db) return { items: [], total: 0, page: safePage, pageSize: safePageSize, totalPages: 0 };
+  const [{ total }] = await db.select({ total: sql<number>`count(*)` }).from(inventoryMovements).where(eq(inventoryMovements.supplyId, supplyId));
+  const items = await db.select().from(inventoryMovements).where(eq(inventoryMovements.supplyId, supplyId)).orderBy(desc(inventoryMovements.createdAt)).limit(safePageSize).offset((safePage - 1) * safePageSize);
+  const totalNumber = Number(total || 0);
+  return { items, total: totalNumber, page: safePage, pageSize: safePageSize, totalPages: Math.ceil(totalNumber / safePageSize) };
+}
+
 export async function createAssetsBulk(data: Array<typeof assets.$inferInsert>) {
   const db = await getDb();
   if (!db) throw new Error("Database unavailable");
@@ -766,6 +817,12 @@ export async function recordActivity(data: typeof activityLogs.$inferInsert, exe
 }
 
 export async function runAssetImportTransaction<T>(callback: (transaction: any) => Promise<T>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database unavailable");
+  return db.transaction(async (transaction) => callback(transaction));
+}
+
+export async function runInventoryTransaction<T>(callback: (transaction: any) => Promise<T>) {
   const db = await getDb();
   if (!db) throw new Error("Database unavailable");
   return db.transaction(async (transaction) => callback(transaction));

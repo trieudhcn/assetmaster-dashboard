@@ -179,6 +179,40 @@ export const assets = mysqlTable("assets", {
   index("assets_brand_idx").on(table.brandId),
 ]);
 
+export const inventorySupplies = mysqlTable("inventorySupplies", {
+  id: int("id").autoincrement().primaryKey(),
+  code: varchar("code", { length: 64 }).notNull().unique(),
+  name: varchar("name", { length: 255 }).notNull(),
+  categoryId: int("categoryId").references(() => assetCategories.id, { onDelete: "set null", onUpdate: "cascade" }),
+  vendorId: int("vendorId").references(() => vendors.id, { onDelete: "set null", onUpdate: "cascade" }),
+  brandId: int("brandId").references(() => brands.id, { onDelete: "set null", onUpdate: "cascade" }),
+  unit: varchar("unit", { length: 32 }).default("Cái").notNull(),
+  stockQuantity: decimal("stockQuantity", { precision: 15, scale: 2 }).default("0").notNull(),
+  minimumQuantity: decimal("minimumQuantity", { precision: 15, scale: 2 }).default("0").notNull(),
+  unitCost: decimal("unitCost", { precision: 15, scale: 2 }),
+  location: varchar("location", { length: 255 }),
+  note: text("note"),
+  isActive: boolean("isActive").default(true).notNull(),
+  createdByUserId: int("createdByUserId"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+}, (table) => [index("inventory_supplies_category_idx").on(table.categoryId), index("inventory_supplies_active_idx").on(table.isActive)]);
+
+export const inventoryMovements = mysqlTable("inventoryMovements", {
+  id: int("id").autoincrement().primaryKey(),
+  supplyId: int("supplyId").notNull().references(() => inventorySupplies.id, { onDelete: "restrict", onUpdate: "cascade" }),
+  movementType: mysqlEnum("movementType", ["receipt", "issue", "adjustment"]).notNull(),
+  quantity: decimal("quantity", { precision: 15, scale: 2 }).notNull(),
+  quantityBefore: decimal("quantityBefore", { precision: 15, scale: 2 }).notNull(),
+  quantityAfter: decimal("quantityAfter", { precision: 15, scale: 2 }).notNull(),
+  recipientName: varchar("recipientName", { length: 160 }),
+  recipientDepartmentId: int("recipientDepartmentId"),
+  note: text("note"),
+  createdByUserId: int("createdByUserId"),
+  createdByName: varchar("createdByName", { length: 160 }),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+}, (table) => [index("inventory_movements_supply_idx").on(table.supplyId), index("inventory_movements_created_idx").on(table.createdAt)]);
+
 export const handovers = mysqlTable("handovers", {
   id: int("id").autoincrement().primaryKey(),
   referenceCode: varchar("referenceCode", { length: 64 }).notNull().unique(),

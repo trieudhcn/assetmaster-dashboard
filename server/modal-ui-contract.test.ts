@@ -163,6 +163,20 @@ describe("modal presentation contract", () => {
     expect(importHistory).toContain("undoReason.trim().length < 10");
   });
 
+  it("exposes a quantity-based supply inventory workflow with movements and low-stock warnings", () => {
+    const home = readProjectFile("client/src/pages/Home.tsx");
+    const supplies = readProjectFile("client/src/pages/SuppliesInventoryView.tsx");
+    const routers = readProjectFile("server/routers.ts");
+    expect(home).toContain('label: "Vật tư & Tồn kho"');
+    expect(home).toContain('<SuppliesInventoryView />');
+    expect(supplies).toContain("Không yêu cầu Serial/IMEI.");
+    expect(supplies).toContain("Sắp hết hàng");
+    expect(supplies).toContain("Nhập/Xuất");
+    expect(supplies).toContain("Lịch sử biến động");
+    expect(routers).toContain("supplies: router");
+    expect(routers).toContain("Tồn kho không đủ");
+  });
+
   it("uses only company branding rather than the product name in document headers", () => {
     const home = readProjectFile("client/src/pages/Home.tsx");
     const operations = readProjectFile("client/src/pages/OperationsModules.tsx");

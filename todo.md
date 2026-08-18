@@ -1628,3 +1628,11 @@
 - [x] Yêu cầu lý do hoàn tác bắt buộc trước khi xác nhận thao tác.
 - [x] Lưu và hiển thị lý do hoàn tác trong lịch sử phiên import.
 - [x] Bổ sung hồi quy, kiểm tra giao diện, TypeScript, Vitest, build và phát hành cập nhật.
+
+## Current Session — Quantity-based Inventory Supplies
+
+- [x] Rà soát luồng tài sản, cấp phát, kiểm kê và mô hình dữ liệu hiện có.
+- [x] Tạo dữ liệu vật tư, tồn kho và giao dịch nhập–xuất/cấp phát theo số lượng.
+- [x] Thêm API quản lý danh mục vật tư, số lượng tồn, mức tồn tối thiểu và lịch sử biến động.
+- [x] Xây dựng giao diện quản lý vật tư, nhập–xuất và cảnh báo sắp hết hàng.
+- [x] Bổ sung hồi quy, kiểm tra giao diện, TypeScript, Vitest, migration, build và phát hành cập nhật.

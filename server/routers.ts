@@ -23,6 +23,8 @@ import {
   createDepartment,
   createDivision,
   createHandover,
+  createInventoryMovement,
+  createInventorySupply,
   createMaintenanceTicket,
   createVendor,
   createVendorDocument,
@@ -47,6 +49,8 @@ import {
   getDivisionByCode,
   getCompany,
   getHandoverById,
+  getInventorySupplyByCode,
+  getInventorySupplyById,
   listHelpGuides,
   listUiLabels,
   getNextHandoverSequence,
@@ -84,12 +88,15 @@ import {
   listDivisions,
   listHandovers,
   listHandoversByRecipient,
+  listInventoryMovements,
+  listInventorySupplies,
   listHelpGuideVersions,
   listVendors,
   listVendorDocuments,
   listUsers,
   recordActivity,
   runAssetImportTransaction,
+  runInventoryTransaction,
   saveCompany,
   saveHelpGuide,
   saveUserNotificationPreferences,
@@ -101,6 +108,7 @@ import {
   updateDivision,
   updateVendor,
   updateHandover,
+  updateInventorySupply,
   updateMaintenanceTicket,
   updateUserRole,
   updateUserActiveStatus,
@@ -473,6 +481,56 @@ export const appRouter = router({
       await recordActivity({ entityType: "asset_category", entityId: input.id, action: "deleted", actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: `Xóa phân loại ${existing.name}` });
       return { success: true };
     }),
+  }),
+  supplies: router({
+    list: adminProcedure.query(() => listInventorySupplies()),
+    history: adminProcedure.input(z.object({ supplyId: z.number().int().positive(), page: z.number().int().positive().default(1), pageSize: z.number().int().min(1).max(50).default(10) })).query(({ input }) => listInventoryMovements(input.supplyId, input.page, input.pageSize)),
+    create: adminProcedure.input(z.object({
+      code: z.string().trim().min(2).max(64).regex(/^[A-Za-z0-9-]+$/).transform((value) => value.toUpperCase()),
+      name: z.string().trim().min(2).max(255),
+      categoryId: z.number().int().positive().nullable().optional(),
+      vendorId: z.number().int().positive().nullable().optional(),
+      brandId: z.number().int().positive().nullable().optional(),
+      unit: z.string().trim().min(1).max(32).default("Cái"),
+      openingQuantity: z.number().finite().min(0).default(0),
+      minimumQuantity: z.number().finite().min(0).default(0),
+      unitCost: z.number().finite().min(0).nullable().optional(),
+      location: nullableText,
+      note: nullableText,
+    })).mutation(async ({ input, ctx }) => {
+      if (await getInventorySupplyByCode(input.code)) throw new TRPCError({ code: "BAD_REQUEST", message: "Mã vật tư này đã tồn tại." });
+      return runInventoryTransaction(async (transaction) => {
+        const supplyId = await createInventorySupply({ code: input.code, name: input.name, categoryId: input.categoryId ?? null, vendorId: input.vendorId ?? null, brandId: input.brandId ?? null, unit: input.unit, stockQuantity: String(input.openingQuantity), minimumQuantity: String(input.minimumQuantity), unitCost: input.unitCost === null || input.unitCost === undefined ? null : String(input.unitCost), location: input.location ?? null, note: input.note ?? null, isActive: true, createdByUserId: ctx.user!.id }, transaction);
+        if (input.openingQuantity > 0) await createInventoryMovement({ supplyId, movementType: "receipt", quantity: String(input.openingQuantity), quantityBefore: "0", quantityAfter: String(input.openingQuantity), note: "Tồn đầu kỳ khi tạo vật tư", createdByUserId: ctx.user!.id, createdByName: ctx.user!.name ?? "Quản trị viên" }, transaction);
+        await recordActivity({ entityType: "supply", entityId: supplyId, action: "created", actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: `Tạo vật tư ${input.name} (${input.code}), tồn đầu ${input.openingQuantity} ${input.unit}` }, transaction);
+        return { id: supplyId };
+      });
+    }),
+    update: adminProcedure.input(z.object({ id: z.number().int().positive(), name: z.string().trim().min(2).max(255).optional(), categoryId: z.number().int().positive().nullable().optional(), vendorId: z.number().int().positive().nullable().optional(), brandId: z.number().int().positive().nullable().optional(), unit: z.string().trim().min(1).max(32).optional(), minimumQuantity: z.number().finite().min(0).optional(), unitCost: z.number().finite().min(0).nullable().optional(), location: nullableText, note: nullableText, isActive: z.boolean().optional() })).mutation(async ({ input, ctx }) => {
+      const supply = await getInventorySupplyById(input.id);
+      if (!supply) throw new TRPCError({ code: "NOT_FOUND", message: "Không tìm thấy vật tư." });
+      const { id, minimumQuantity, unitCost, ...changes } = input;
+      await updateInventorySupply(id, { ...changes, minimumQuantity: minimumQuantity === undefined ? undefined : String(minimumQuantity), unitCost: unitCost === undefined ? undefined : unitCost === null ? null : String(unitCost) });
+      await recordActivity({ entityType: "supply", entityId: id, action: "updated", actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: `Cập nhật vật tư ${changes.name || supply.name}` });
+      return { success: true };
+    }),
+    move: adminProcedure.input(z.object({ supplyId: z.number().int().positive(), movementType: z.enum(["receipt", "issue", "adjustment"]), quantity: z.number().finite(), recipientName: z.string().trim().max(160).optional(), recipientDepartmentId: z.number().int().positive().nullable().optional(), note: z.string().trim().min(2).max(1000) }).superRefine((input, issue) => {
+      if (input.movementType !== "adjustment" && input.quantity <= 0) issue.addIssue({ code: z.ZodIssueCode.custom, path: ["quantity"], message: "Số lượng phải lớn hơn 0." });
+      if (input.movementType === "adjustment" && input.quantity === 0) issue.addIssue({ code: z.ZodIssueCode.custom, path: ["quantity"], message: "Số lượng điều chỉnh không được bằng 0." });
+      if (input.movementType === "issue" && !input.recipientName) issue.addIssue({ code: z.ZodIssueCode.custom, path: ["recipientName"], message: "Vui lòng nhập người hoặc bộ phận nhận vật tư." });
+    })).mutation(async ({ input, ctx }) => runInventoryTransaction(async (transaction) => {
+      const supply = await getInventorySupplyById(input.supplyId, transaction);
+      if (!supply || !supply.isActive) throw new TRPCError({ code: "NOT_FOUND", message: "Không tìm thấy vật tư đang hoạt động." });
+      const before = Number(supply.stockQuantity);
+      const signedQuantity = input.movementType === "issue" ? -input.quantity : input.quantity;
+      const after = before + signedQuantity;
+      if (after < 0) throw new TRPCError({ code: "BAD_REQUEST", message: `Tồn kho không đủ. Hiện còn ${before} ${supply.unit}.` });
+      await updateInventorySupply(supply.id, { stockQuantity: String(after) }, transaction);
+      const movementId = await createInventoryMovement({ supplyId: supply.id, movementType: input.movementType, quantity: String(signedQuantity), quantityBefore: String(before), quantityAfter: String(after), recipientName: input.recipientName ?? null, recipientDepartmentId: input.recipientDepartmentId ?? null, note: input.note, createdByUserId: ctx.user!.id, createdByName: ctx.user!.name ?? "Quản trị viên" }, transaction);
+      const actionLabel = input.movementType === "receipt" ? "Nhập kho" : input.movementType === "issue" ? "Cấp phát/xuất kho" : "Điều chỉnh tồn";
+      await recordActivity({ entityType: "supply", entityId: supply.id, action: input.movementType, actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: `${actionLabel} ${Math.abs(signedQuantity)} ${supply.unit} vật tư ${supply.name}. Tồn: ${after} ${supply.unit}.` }, transaction);
+      return { movementId, stockQuantity: after, isLowStock: after <= Number(supply.minimumQuantity) };
+    })),
   }),
   assets: router({
     list: adminProcedure.query(() => listAssets()),
