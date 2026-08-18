@@ -87,6 +87,7 @@ export function AssetImportModal({ onClose, onImported }: { onClose: () => void;
       if (result.created || result.updated) {
         toast.success(`Đã tạo ${result.created} và cập nhật ${result.updated} tài sản.`);
         onImported();
+        window.setTimeout(onClose, 650);
       }
       if (result.errors.length) toast.warning(`Có ${result.errors.length} dòng chưa được xử lý.`);
     },

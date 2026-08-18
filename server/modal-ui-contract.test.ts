@@ -815,6 +815,12 @@ describe("maintenance history and filter layout contract", () => {
     expect(assetImport).toContain("Trang preview import tài sản sau");
   });
 
+  it("closes the asset import modal after a successful import notification", () => {
+    const assetImport = readProjectFile("client/src/components/AssetImportModal.tsx");
+    expect(assetImport).toContain("toast.success(`Đã tạo ${result.created} và cập nhật ${result.updated} tài sản.`)");
+    expect(assetImport).toContain("window.setTimeout(onClose, 650)");
+  });
+
   it("exposes a per-maintenance-ticket history drawer and protected history query", () => {
     const operations = readProjectFile("client/src/pages/OperationsModules.tsx");
     const router = readProjectFile("server/routers.ts");

@@ -1561,3 +1561,8 @@
 - [x] Thêm công tắc cập nhật tự động và bảng so sánh các trường sẽ thay đổi.
 - [x] Hoàn thiện thanh tiến trình, thông báo trạng thái theo từng bước import.
 - [x] Bổ sung hồi quy, kiểm tra giao diện, TypeScript, build và phát hành cập nhật.
+
+## Current Session — Auto-close Asset Import
+
+- [x] Tự đóng hộp thoại import sau khi hiển thị thông báo import thành công.
+- [x] Bổ sung hồi quy, kiểm tra TypeScript, Vitest, production build và phát hành cập nhật.
