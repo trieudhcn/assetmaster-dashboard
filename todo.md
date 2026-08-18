@@ -1759,3 +1759,9 @@
 - [x] Chuẩn hóa tiêu đề cột, tên sheet và tên tệp Excel mẫu theo Phụ kiện.
 - [x] Bảo đảm nút tải file mẫu xuất hiện trực tiếp tại khu vực nhập Excel.
 - [x] Bổ sung hồi quy, kiểm tra TypeScript, Vitest, build và phát hành cập nhật.
+
+## Current Session — Manual Accessory Code & Excel Preview
+
+- [x] Bỏ tự sinh và tự điền mã phụ kiện để người dùng tự đặt mã khi tạo mới.
+- [x] Bổ sung bước xác nhận rõ ràng sau khi xem trước Excel, trước khi lưu dữ liệu vào hệ thống.
+- [x] Bổ sung hồi quy, kiểm tra TypeScript, Vitest, build, giao diện và phát hành cập nhật.

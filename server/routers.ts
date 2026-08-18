@@ -56,7 +56,6 @@ import {
   getHandoverById,
   getInventorySupplyByCode,
   getInventorySupplyById,
-  getNextInventorySupplySequence,
   getNextSupplyIssueSequence,
   getSupplyIssueSlipById,
   getSupplyIssueSlipItemById,
@@ -510,7 +509,6 @@ export const appRouter = router({
   }),
   supplies: router({
     list: adminProcedure.query(() => listInventorySupplies()),
-    nextCode: adminProcedure.query(async () => ({ code: `PK-${String(await getNextInventorySupplySequence()).padStart(3, "0")}` })),
     history: adminProcedure.input(z.object({ supplyId: z.number().int().positive(), page: z.number().int().positive().default(1), pageSize: z.number().int().min(1).max(50).default(10) })).query(({ input }) => listInventoryMovements(input.supplyId, input.page, input.pageSize)),
     historyReport: adminProcedure.query(() => listInventoryMovementReport()),
     importHistory: adminProcedure.input(z.object({ page: z.number().int().positive().default(1), pageSize: z.number().int().min(1).max(50).default(10) })).query(({ input }) => listSupplyImportSessions(input.page, input.pageSize)),

@@ -186,7 +186,9 @@ describe("modal presentation contract", () => {
     expect(supplies).toContain("Lịch sử biến động");
     expect(supplies).toContain("groupFilter");
     expect(supplies).toContain("Lọc theo nhóm");
-    expect(supplies).toContain("nextAccessoryCodeQuery");
+    expect(supplies).not.toContain("nextAccessoryCodeQuery");
+    expect(supplies).toContain("setForm(emptyForm)");
+    expect(supplies).toContain("Xác nhận ${rows.length} dòng");
     expect(supplies).toContain("AccessoryGroupSummary");
     expect(supplies).toContain("Tồn kho phụ kiện theo nhóm");
     expect(supplies).toContain("Tạo nhóm phụ kiện");
@@ -199,7 +201,7 @@ describe("modal presentation contract", () => {
     expect(supplies).toContain("template-nhap-phu-kien.xlsx");
     expect(supplies).toContain("Tải mẫu phụ kiện");
     expect(routers).toContain("supplies: router");
-    expect(routers).toContain("nextCode:");
+    expect(routers).not.toContain("supplies: router({\n    nextCode:");
     expect(routers).toContain("createAccessoryGroup:");
     expect(routers).toContain("Tồn kho không đủ");
   });
