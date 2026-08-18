@@ -1566,3 +1566,9 @@
 
 - [x] Tự đóng hộp thoại import sau khi hiển thị thông báo import thành công.
 - [x] Bổ sung hồi quy, kiểm tra TypeScript, Vitest, production build và phát hành cập nhật.
+
+## Current Session — Import Undo Card Visibility
+
+- [x] Thêm nút thu nhỏ cho thẻ hoàn tác import để không che nội dung giao diện.
+- [x] Tự ẩn thẻ sau thời gian quy định và cho phép khôi phục lại khi cần.
+- [x] Bổ sung hồi quy, kiểm tra giao diện, TypeScript, Vitest, build và phát hành cập nhật.
