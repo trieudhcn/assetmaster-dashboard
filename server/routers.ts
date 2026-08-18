@@ -548,7 +548,7 @@ export const appRouter = router({
       return { session: { id: session.id, referenceCode: session.referenceCode }, items, total, page: safePage, pageSize: safePageSize, totalPages: Math.ceil(total / safePageSize) };
     }),
     history: adminProcedure.input(z.object({ assetId: z.number().int().positive(), page: z.number().int().positive().default(1), pageSize: z.number().int().min(1).max(50).default(10) })).query(({ input }) => listAssetFieldChanges(input.assetId, input.page, input.pageSize)),
-    undoImportSession: adminProcedure.input(z.object({ sessionId: z.number().int().positive() })).mutation(async ({ input, ctx }) => {
+    undoImportSession: adminProcedure.input(z.object({ sessionId: z.number().int().positive(), reason: z.string().trim().min(10, "Vui lòng nhập lý do hoàn tác tối thiểu 10 ký tự.").max(1000) })).mutation(async ({ input, ctx }) => {
       const session = await getAssetImportSessionById(input.sessionId);
       if (!session) throw new TRPCError({ code: "NOT_FOUND", message: "Không tìm thấy phiên import cần hoàn tác." });
       if (session.isUndone) throw new TRPCError({ code: "BAD_REQUEST", message: "Phiên import này đã được hoàn tác." });
@@ -568,12 +568,12 @@ export const appRouter = router({
             await createAssetFieldChanges(fieldChanges(item.assetId, before, restore, "undo", ctx.user!.id, ctx.user!.name, session.id), transaction);
           }
         }
-        await updateAssetImportSession(session.id, { isUndone: true, undoneAt: new Date(), undoneByUserId: ctx.user!.id }, transaction);
-        await recordActivity({ entityType: "assetImport", entityId: session.id, action: "undone", actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: `Hoàn tác phiên import ${session.referenceCode}` }, transaction);
+        await updateAssetImportSession(session.id, { isUndone: true, undoneAt: new Date(), undoneByUserId: ctx.user!.id, undoReason: input.reason }, transaction);
+        await recordActivity({ entityType: "assetImport", entityId: session.id, action: "undone", actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: `Hoàn tác phiên import ${session.referenceCode}: ${input.reason}` }, transaction);
         return { success: true, sessionId: session.id };
       });
     }),
-    undoLatestImport: adminProcedure.input(z.object({ sessionId: z.number().int().positive() })).mutation(async ({ input, ctx }) => {
+    undoLatestImport: adminProcedure.input(z.object({ sessionId: z.number().int().positive(), reason: z.string().trim().min(10, "Vui lòng nhập lý do hoàn tác tối thiểu 10 ký tự.").max(1000) })).mutation(async ({ input, ctx }) => {
       const latest = await getLatestAssetImportSession();
       if (!latest || latest.id !== input.sessionId) throw new TRPCError({ code: "BAD_REQUEST", message: "Chỉ có thể hoàn tác phiên import gần nhất." });
       if (latest.isUndone) throw new TRPCError({ code: "BAD_REQUEST", message: "Phiên import này đã được hoàn tác." });
@@ -592,8 +592,8 @@ export const appRouter = router({
           await createAssetFieldChanges(fieldChanges(item.assetId, before, restore, "undo", ctx.user!.id, ctx.user!.name, latest.id));
         }
       }
-      await updateAssetImportSession(latest.id, { isUndone: true, undoneAt: new Date(), undoneByUserId: ctx.user!.id });
-      await recordActivity({ entityType: "assetImport", entityId: latest.id, action: "undone", actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: `Hoàn tác phiên import ${latest.referenceCode}` });
+      await updateAssetImportSession(latest.id, { isUndone: true, undoneAt: new Date(), undoneByUserId: ctx.user!.id, undoReason: input.reason });
+      await recordActivity({ entityType: "assetImport", entityId: latest.id, action: "undone", actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: `Hoàn tác phiên import ${latest.referenceCode}: ${input.reason}` });
       return { success: true };
     }),
     create: adminProcedure.input(assetInput).mutation(async ({ input, ctx }) => {

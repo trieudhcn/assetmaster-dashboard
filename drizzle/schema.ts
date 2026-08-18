@@ -287,6 +287,7 @@ export const assetImportSessions = mysqlTable("assetImportSessions", {
   isUndone: boolean("isUndone").default(false).notNull(),
   undoneAt: timestamp("undoneAt"),
   undoneByUserId: int("undoneByUserId"),
+  undoReason: text("undoReason"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 }, (table) => [index("asset_import_sessions_created_idx").on(table.createdAt)]);
 

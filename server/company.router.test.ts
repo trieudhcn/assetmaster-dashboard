@@ -150,8 +150,12 @@ describe("asset Excel import safeguards", () => {
     const session = { id: 41, referenceCode: "IMP-2026-ABC", isUndone: false, createdAt: new Date(), createdCount: 1, updatedCount: 0 };
     mocks.getAssetImportSessionById.mockResolvedValue(session);
     mocks.listAssetImportItems.mockResolvedValue([]);
-    await expect(adminCaller().assets.undoImportSession({ sessionId: 41 })).resolves.toMatchObject({ success: true, sessionId: 41 });
+    await expect(adminCaller().assets.undoImportSession({ sessionId: 41, reason: "Import nhầm lô dữ liệu cần xử lý lại." })).resolves.toMatchObject({ success: true, sessionId: 41 });
     expect(mocks.runAssetImportTransaction).toHaveBeenCalledTimes(1);
-    expect(mocks.updateAssetImportSession).toHaveBeenCalledWith(41, expect.objectContaining({ isUndone: true }), expect.anything());
+    expect(mocks.updateAssetImportSession).toHaveBeenCalledWith(41, expect.objectContaining({ isUndone: true, undoReason: "Import nhầm lô dữ liệu cần xử lý lại." }), expect.anything());
+  });
+
+  it("requires a sufficiently detailed reason before undoing an import session", async () => {
+    await expect(adminCaller().assets.undoImportSession({ sessionId: 41, reason: "nhầm" })).rejects.toThrow("Vui lòng nhập lý do hoàn tác tối thiểu 10 ký tự.");
   });
 });

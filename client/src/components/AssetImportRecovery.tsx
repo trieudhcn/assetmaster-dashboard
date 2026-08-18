@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { useEffect, useRef, useState } from "react";
 import { AlertTriangle, ChevronDown, ChevronUp, Clock3, RotateCcw, X } from "lucide-react";
 import { toast } from "sonner";

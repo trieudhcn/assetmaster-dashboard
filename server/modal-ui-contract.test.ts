@@ -158,6 +158,9 @@ describe("modal presentation contract", () => {
     expect(importHistory).toContain("assetmaster-import-undo-warning-");
     expect(importHistory).toContain("Phiên import sắp hết hạn hoàn tác");
     expect(importHistory).toContain('label: "Mở Lịch sử"');
+    expect(importHistory).toContain("animate-pulse");
+    expect(importHistory).toContain("Lý do hoàn tác");
+    expect(importHistory).toContain("undoReason.trim().length < 10");
   });
 
   it("uses only company branding rather than the product name in document headers", () => {

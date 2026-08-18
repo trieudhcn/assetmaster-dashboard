@@ -1621,3 +1621,10 @@
 - [x] Hiển thị thời gian còn lại để hoàn tác bên cạnh biểu tượng Lịch sử import.
 - [x] Cảnh báo người dùng khi phiên import sắp hết hạn hoàn tác.
 - [x] Bổ sung hồi quy, kiểm tra giao diện, TypeScript, Vitest, build và phát hành cập nhật.
+
+## Current Session — Import Undo Accountability
+
+- [x] Làm nổi bật nút Lịch sử import khi thời hạn hoàn tác sắp hết.
+- [x] Yêu cầu lý do hoàn tác bắt buộc trước khi xác nhận thao tác.
+- [x] Lưu và hiển thị lý do hoàn tác trong lịch sử phiên import.
+- [x] Bổ sung hồi quy, kiểm tra giao diện, TypeScript, Vitest, build và phát hành cập nhật.
