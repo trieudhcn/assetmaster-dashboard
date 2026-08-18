@@ -113,6 +113,16 @@ describe("modal presentation contract", () => {
     expect(home).toContain("formData.statusType === \"maintenance\"");
   });
 
+  it("shows a guided import preview with update control, field comparison and detailed progress", () => {
+    const importModal = readProjectFile("client/src/components/AssetImportModal.tsx");
+
+    expect(importModal).toContain("Tự động cập nhật tài sản trùng Serial/IMEI");
+    expect(importModal).toContain("Trường sẽ thay đổi khi cập nhật");
+    expect(importModal).toContain("Đang kiểm tra sheet, header, ngày tháng và số tiền");
+    expect(importModal).toContain("Đang ghi ${rowsForImport.length} dòng trong một transaction an toàn");
+    expect(importModal).toContain("Xung đột Serial");
+  });
+
   it("surfaces maintenance assets with a quick request action and prevents duplicate open tickets", () => {
     const operations = readProjectFile("client/src/pages/OperationsModules.tsx");
     const routers = readProjectFile("server/routers.ts");

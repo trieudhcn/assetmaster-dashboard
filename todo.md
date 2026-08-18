@@ -1554,3 +1554,10 @@
 - [x] Xác thực chặt header, sheet, ngày tháng và số tiền trước khi mở preview/import.
 - [x] Liên kết Nhà cung cấp, triển khai updateExisting và transaction toàn lô.
 - [x] Bổ sung hồi quy toàn luồng, kiểm tra giao diện, TypeScript, build và phát hành cập nhật.
+
+## Current Session — Guided Asset Import Preview
+
+- [x] Rà soát dữ liệu preview, Serial/IMEI trùng và trạng thái import hiện có.
+- [x] Thêm công tắc cập nhật tự động và bảng so sánh các trường sẽ thay đổi.
+- [x] Hoàn thiện thanh tiến trình, thông báo trạng thái theo từng bước import.
+- [x] Bổ sung hồi quy, kiểm tra giao diện, TypeScript, build và phát hành cập nhật.
