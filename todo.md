@@ -1705,3 +1705,11 @@
 - [x] Điều hướng đúng vật tư và mở sẵn giao dịch Nhập kho từ cảnh báo.
 - [x] Thay khung Thêm vật tư cố định bằng nút và hộp thoại thêm vật tư.
 - [x] Bổ sung hồi quy, kiểm tra giao diện, TypeScript, Vitest, build và phát hành cập nhật.
+
+## Current Session — Supply Excel Import & Alignment
+
+- [x] Thêm nhập danh sách vật tư hàng loạt bằng Excel trong modal Thêm vật tư.
+- [x] Kiểm tra dữ liệu import và hiển thị kết quả tạo vật tư rõ ràng.
+- [x] Chuẩn hóa kích thước, icon và căn giữa nút Hủy/Tạo vật tư.
+- [x] Căn giữa nhãn cùng số liệu các thẻ Mặt hàng, Tồn kho và Sắp hết.
+- [x] Bổ sung hồi quy, kiểm tra giao diện, TypeScript, Vitest, build và phát hành cập nhật.

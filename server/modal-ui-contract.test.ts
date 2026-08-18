@@ -169,7 +169,11 @@ describe("modal presentation contract", () => {
     const routers = readProjectFile("server/routers.ts");
     expect(home).toContain('label: "Vật tư & Tồn kho"');
     expect(home).toContain('<SuppliesInventoryView />');
-    expect(supplies).toContain("Không yêu cầu Serial/IMEI.");
+    expect(supplies).toContain("Tạo từng vật tư hoặc nhập nhanh danh sách Excel");
+    expect(supplies).toContain("Nhập danh sách từ Excel");
+    expect(supplies).toContain("Tải mẫu");
+    expect(supplies).toContain("bulkCreate");
+    expect(supplies).toContain("text-center shadow-sm");
     expect(supplies).toContain("Sắp hết hàng");
     expect(supplies).toContain('aria-label="Ghi nhận nhập, xuất hoặc cấp phát"');
     expect(supplies).toContain("Lịch sử biến động");

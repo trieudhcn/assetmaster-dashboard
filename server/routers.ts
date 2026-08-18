@@ -583,6 +583,36 @@ export const appRouter = router({
         return { id: supplyId };
       });
     }),
+    bulkCreate: adminProcedure.input(z.object({ items: z.array(z.object({
+      code: z.string().trim().min(2).max(64).regex(/^[A-Za-z0-9-]+$/).transform((value) => value.toUpperCase()),
+      name: z.string().trim().min(2).max(255),
+      categoryId: z.number().int().positive().nullable().optional(),
+      vendorId: z.number().int().positive().nullable().optional(),
+      brandId: z.number().int().positive().nullable().optional(),
+      unit: z.string().trim().min(1).max(32).default("Cái"),
+      openingQuantity: z.number().finite().min(0).default(0),
+      minimumQuantity: z.number().finite().min(0).default(0),
+      unitCost: z.number().finite().min(0).nullable().optional(),
+      location: nullableText,
+      note: nullableText,
+    })).min(1).max(200) })).mutation(async ({ input, ctx }) => {
+      const fileCodes = new Set<string>();
+      for (const item of input.items) {
+        if (fileCodes.has(item.code)) throw new TRPCError({ code: "BAD_REQUEST", message: `Mã vật tư ${item.code} bị lặp trong file Excel.` });
+        fileCodes.add(item.code);
+      }
+      return runInventoryTransaction(async (transaction) => {
+        for (const item of input.items) if (await getInventorySupplyByCode(item.code, transaction)) throw new TRPCError({ code: "BAD_REQUEST", message: `Mã vật tư ${item.code} đã tồn tại.` });
+        const ids: number[] = [];
+        for (const item of input.items) {
+          const supplyId = await createInventorySupply({ code: item.code, name: item.name, categoryId: item.categoryId ?? null, vendorId: item.vendorId ?? null, brandId: item.brandId ?? null, unit: item.unit, stockQuantity: String(item.openingQuantity), minimumQuantity: String(item.minimumQuantity), unitCost: item.unitCost === null || item.unitCost === undefined ? null : String(item.unitCost), location: item.location ?? null, note: item.note ?? null, isActive: true, createdByUserId: ctx.user!.id }, transaction);
+          if (item.openingQuantity > 0) await createInventoryMovement({ supplyId, movementType: "receipt", quantity: String(item.openingQuantity), quantityBefore: "0", quantityAfter: String(item.openingQuantity), note: "Tồn đầu kỳ khi nhập Excel vật tư", createdByUserId: ctx.user!.id, createdByName: ctx.user!.name ?? "Quản trị viên" }, transaction);
+          await recordActivity({ entityType: "supply", entityId: supplyId, action: "bulk_imported", actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: `Nhập Excel vật tư ${item.name} (${item.code}), tồn đầu ${item.openingQuantity} ${item.unit}` }, transaction);
+          ids.push(supplyId);
+        }
+        return { created: ids.length, ids };
+      });
+    }),
     update: adminProcedure.input(z.object({ id: z.number().int().positive(), code: z.string().trim().min(2).max(64).regex(/^[A-Za-z0-9-]+$/).transform((value) => value.toUpperCase()).optional(), name: z.string().trim().min(2).max(255).optional(), categoryId: z.number().int().positive().nullable().optional(), vendorId: z.number().int().positive().nullable().optional(), brandId: z.number().int().positive().nullable().optional(), unit: z.string().trim().min(1).max(32).optional(), minimumQuantity: z.number().finite().min(0).optional(), unitCost: z.number().finite().min(0).nullable().optional(), location: nullableText, note: nullableText, isActive: z.boolean().optional() })).mutation(async ({ input, ctx }) => {
       const supply = await getInventorySupplyById(input.id);
       if (!supply) throw new TRPCError({ code: "NOT_FOUND", message: "Không tìm thấy vật tư." });

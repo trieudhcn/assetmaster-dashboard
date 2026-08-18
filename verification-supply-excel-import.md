@@ -1,0 +1,4 @@
+- Modal **Thêm vật tư** hiển thị khối nhập Excel rõ ràng với hai thao tác **Tải mẫu** và **Chọn Excel**, cùng biểu mẫu tạo thủ công ở bên dưới.
+- Các nút Hủy và Tạo vật tư đã có cùng chiều cao, icon và nhãn căn giữa. Ba thẻ Mặt hàng, Tồn kho, Sắp hết trên đầu trang được căn giữa theo cả trục ngang và dọc.
+- Không tạo hoặc thay đổi dữ liệu vật tư trong quá trình kiểm tra giao diện.
+- Nút **Tải mẫu** đã tạo tệp template-nhap-vat-tu.xlsx thành công. Modal được đóng bằng nút Hủy sau kiểm tra, không phát sinh giao dịch nhập kho hoặc tạo vật tư.

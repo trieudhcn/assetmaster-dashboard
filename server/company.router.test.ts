@@ -169,6 +169,18 @@ describe("asset Excel import safeguards", () => {
     expect(mocks.createInventoryMovement).toHaveBeenCalledWith(expect.objectContaining({ movementType: "receipt", quantityBefore: "0", quantityAfter: "20" }), expect.anything());
   });
 
+  it("imports multiple quantity-managed supplies atomically and records opening balances", async () => {
+    mocks.getInventorySupplyByCode.mockResolvedValue(undefined);
+    mocks.runInventoryTransaction.mockImplementation(async (callback: any) => callback({ transaction: true }));
+    mocks.createInventorySupply.mockResolvedValue(81);
+    await expect(adminCaller().supplies.bulkCreate({ items: [
+      { code: "VT-BAN-PHIM", name: "Bàn phím", unit: "Cái", openingQuantity: 10, minimumQuantity: 3, unitCost: 200000, location: "Kho CNTT", categoryId: null, vendorId: null, brandId: null, note: null },
+      { code: "VT-LOT-CHUOT", name: "Lót chuột", unit: "Cái", openingQuantity: 0, minimumQuantity: 2, unitCost: null, location: null, categoryId: null, vendorId: null, brandId: null, note: null },
+    ] })).resolves.toMatchObject({ created: 2 });
+    expect(mocks.createInventorySupply).toHaveBeenCalledTimes(2);
+    expect(mocks.createInventoryMovement).toHaveBeenCalledWith(expect.objectContaining({ supplyId: 81, movementType: "receipt", quantityAfter: "10", note: "Tồn đầu kỳ khi nhập Excel vật tư" }), expect.anything());
+  });
+
   it("records a quantity issue atomically and rejects issues beyond stock", async () => {
     mocks.runInventoryTransaction.mockImplementation(async (callback: any) => callback({ transaction: true }));
     mocks.getInventorySupplyById.mockResolvedValue({ id: 81, name: "Chuột phổ thông", unit: "Cái", stockQuantity: "5", minimumQuantity: "3", isActive: true });
