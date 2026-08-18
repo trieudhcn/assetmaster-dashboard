@@ -1734,3 +1734,9 @@
 - [x] Đổi tiêu đề Vật tư & tồn kho thành Phụ kiện.
 - [x] Chuyển mã phiếu cấp phát mới sang PK-Năm-001, tự tăng và đặt lại theo năm.
 - [x] Giữ khả năng xem phiếu VT cũ và bổ sung hồi quy, kiểm tra TypeScript, Vitest, build và phát hành cập nhật.
+
+## Current Session — Accessory Codes & Group Filter
+
+- [x] Tự sinh mã phụ kiện mới theo tiền tố PK- và giữ nguyên mã lịch sử.
+- [x] Thêm bộ lọc theo nhóm phụ kiện trên màn hình tồn kho.
+- [x] Bổ sung hồi quy, kiểm tra TypeScript, Vitest, build, giao diện và phát hành cập nhật.

@@ -447,6 +447,17 @@ export async function getInventorySupplyByCode(code: string, executor?: any) {
   return (await db.select().from(inventorySupplies).where(eq(inventorySupplies.code, code)).limit(1))[0];
 }
 
+export async function getNextInventorySupplySequence(executor?: any) {
+  const db = executor ?? await getDb();
+  if (!db) throw new Error("Database unavailable");
+  const rows: Array<{ code: string }> = await db.select({ code: inventorySupplies.code }).from(inventorySupplies).where(like(inventorySupplies.code, "PK-%"));
+  const maxSequence = rows.reduce((maximum: number, row) => {
+    const match = row.code.match(/^PK-(\d+)$/);
+    return Math.max(maximum, match ? Number(match[1]) : 0);
+  }, 0);
+  return maxSequence + 1;
+}
+
 export async function createInventorySupply(data: typeof inventorySupplies.$inferInsert, executor?: any) {
   const db = executor ?? await getDb();
   if (!db) throw new Error("Database unavailable");

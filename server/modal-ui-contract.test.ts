@@ -184,7 +184,11 @@ describe("modal presentation contract", () => {
     expect(supplies).toContain("Sắp hết hàng");
     expect(supplies).toContain('aria-label="Ghi nhận nhập, xuất hoặc cấp phát"');
     expect(supplies).toContain("Lịch sử biến động");
+    expect(supplies).toContain("groupFilter");
+    expect(supplies).toContain("Lọc theo nhóm");
+    expect(supplies).toContain("nextAccessoryCodeQuery");
     expect(routers).toContain("supplies: router");
+    expect(routers).toContain("nextCode:");
     expect(routers).toContain("Tồn kho không đủ");
   });
 
