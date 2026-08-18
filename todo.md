@@ -1772,3 +1772,9 @@
 - [x] Kiểm tra lại từng dòng sau khi chỉnh sửa và chỉ mở xác nhận lưu khi hợp lệ.
 - [x] Làm nổi bật các hàng và ô có dữ liệu không hợp lệ bằng cảnh báo trực quan.
 - [x] Bổ sung hồi quy, kiểm tra TypeScript, Vitest, build, giao diện và phát hành cập nhật.
+
+## Current Session — Accessory Unit Cost Formatting
+
+- [x] Áp dụng phân cách hàng nghìn, hậu tố VNĐ và hỗ trợ dán tiền Việt Nam cho đơn giá phụ kiện.
+- [x] Hiển thị số tiền bằng chữ dưới trường đơn giá như form Thêm tài sản.
+- [x] Bổ sung hồi quy, kiểm tra TypeScript, Vitest, build, giao diện và phát hành cập nhật.

@@ -192,6 +192,10 @@ describe("modal presentation contract", () => {
     expect(supplies).toContain("các ô có cảnh báo trước khi xác nhận lưu");
     expect(supplies).toContain("bg-[#FFF5EE]");
     expect(supplies).toContain("Xác nhận lưu ${rows.length} dòng");
+    expect(supplies).toContain("formatVndInput");
+    expect(supplies).toContain("parseVndAmount");
+    expect(supplies).toContain("numberToVietnameseWords");
+    expect(supplies).toContain("Ví dụ: 42.500.000");
     expect(supplies).toContain("AccessoryGroupSummary");
     expect(supplies).toContain("Tồn kho phụ kiện theo nhóm");
     expect(supplies).toContain("Tạo nhóm phụ kiện");
