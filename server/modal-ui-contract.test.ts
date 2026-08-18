@@ -259,6 +259,10 @@ describe("modal presentation contract", () => {
     expect(supplies).toContain("Tồn kho sau cấp");
     expect(supplies).toContain("Cảnh báo tồn kho thấp");
     expect(supplies).toContain("thấp hơn mức tối thiểu");
+    expect(supplies).toContain("SupplyCreateModal");
+    expect(supplies).toContain("assetmaster-open-supply-receipt-id");
+    expect(supplies).toContain("Danh mục kho");
+    expect(supplies).toContain("Hãy dùng nút Thêm vật tư");
   });
 
   it("requires a branded confirmation before recording an asset return", () => {
@@ -1134,4 +1138,6 @@ it("hiển thị danh sách vật tư chạm mức tồn tối thiểu trên tra
   expect(home).toContain("Tồn / tối thiểu");
   expect(home).toContain("Mở vật tư & tồn kho");
   expect(home).toContain("Tồn kho vật tư đang an toàn");
+  expect(home).toContain("Tạo phiếu nhập kho");
+  expect(home).toContain("assetmaster-open-supply-receipt-id");
 });

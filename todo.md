@@ -1698,3 +1698,10 @@
 - [x] Hiển thị danh sách vật tư chạm hoặc thấp hơn mức tồn tối thiểu trên trang Tổng quan.
 - [x] Hiển thị mã, số lượng hiện có, mức tối thiểu và lối tắt đến Vật tư & Tồn kho.
 - [x] Bổ sung hồi quy, kiểm tra giao diện, TypeScript, Vitest, build và phát hành cập nhật.
+
+## Current Session — Quick Replenishment & Supply Creation Modal
+
+- [x] Thêm nút Tạo phiếu nhập kho cho từng vật tư chạm mức tồn tối thiểu trên Tổng quan.
+- [x] Điều hướng đúng vật tư và mở sẵn giao dịch Nhập kho từ cảnh báo.
+- [x] Thay khung Thêm vật tư cố định bằng nút và hộp thoại thêm vật tư.
+- [x] Bổ sung hồi quy, kiểm tra giao diện, TypeScript, Vitest, build và phát hành cập nhật.

@@ -1,0 +1,3 @@
+- Trang Vật tư & Tồn kho đã gọn lại: biểu mẫu thêm vật tư không còn chiếm cột cố định, thay bằng nút **Thêm vật tư** ở phần đầu trang.
+- Khi mở, modal hiển thị đầy đủ các trường mã, tên, đơn vị, tồn đầu kỳ, mức tối thiểu, đơn giá, vị trí, phân loại, nhà cung cấp, hãng và ghi chú; có nền mờ, nút Hủy/Đóng và không tạo dữ liệu trong quá trình kiểm tra.
+- Đã đóng modal bằng nút Hủy và trang vật tư trở lại bố cục bảng gọn, ổn định.
