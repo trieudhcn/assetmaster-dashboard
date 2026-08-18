@@ -1541,3 +1541,9 @@
 - [x] Rà soát luồng xuất mẫu nhập tài sản và nguồn dữ liệu phân loại, nhà cung cấp, nhãn hàng.
 - [x] Đổi hàng tiêu đề sang xám nhạt và thêm dropdown đồng bộ dữ liệu hiện có trong template Excel.
 - [x] Bổ sung hồi quy workbook, kiểm tra TypeScript, export và phát hành cập nhật.
+
+## Current Session — Bulk Import Process Review
+
+- [x] Rà soát tạo template, danh mục dropdown và cấu trúc workbook.
+- [x] Kiểm tra đọc tệp, xác thực, xem trước, import và cập nhật dữ liệu.
+- [x] Đánh giá rủi ro vận hành, lập khuyến nghị ưu tiên và bàn giao báo cáo.
