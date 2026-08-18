@@ -251,8 +251,10 @@ describe("modal presentation contract", () => {
     expect(supplies).toContain("departmentAutoLocked");
     expect(supplies).toContain("disabled={departmentAutoLocked}");
     expect(supplies).toContain("Phòng ban được khóa theo hồ sơ nhân sự đã chọn.");
-    expect(supplies).toContain("window.confirm(`Xác nhận tạo phiếu cấp phát?");
-    expect(supplies).toContain("confirmIssueSlip()");
+    expect(supplies).toContain("IssueSlipConfirmationDialog");
+    expect(supplies).toContain("Tạo phiếu cấp phát?");
+    expect(supplies).not.toContain("window.confirm");
+    expect(supplies).toContain("onConfirm={confirmIssueSlip}");
   });
 
   it("uses only company branding rather than the product name in document headers", () => {
