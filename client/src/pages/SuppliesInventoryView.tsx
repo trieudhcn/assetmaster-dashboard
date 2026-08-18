@@ -297,7 +297,7 @@ function SupplyCreateModal({ form, setForm, categoryOptions, vendorOptions, bran
     clear.textContent = "×";
     const words = document.createElement("p");
     words.className = "mt-1 pl-1 text-[10px] font-medium leading-4 text-[#8AA0B6]";
-    const refresh = (raw: string) => { const amount = parseVndAmount(raw); input.value = amount === null ? "" : formatVndInput(amount); words.textContent = input.value ? numberToVietnameseWords(input.value) : ""; clear.style.display = input.value ? "grid" : "none"; setForm((current) => ({ ...current, unitCost: amount === null ? "" : String(amount) })); };
+    const refresh = (raw: string) => { const amount = parseVndAmount(raw); const formatted = amount === null ? "" : formatVndInput(amount); words.textContent = formatted ? numberToVietnameseWords(formatted) : ""; clear.style.display = formatted ? "grid" : "none"; setForm((current) => ({ ...current, unitCost: amount === null ? "" : String(amount) })); window.requestAnimationFrame(() => { input.value = formatted; }); };
     const handleInput = (event: Event) => { event.stopPropagation(); refresh((event.currentTarget as HTMLInputElement).value); };
     const handleClear = () => { refresh(""); input.focus(); };
     input.addEventListener("input", handleInput, true); clear.addEventListener("click", handleClear);

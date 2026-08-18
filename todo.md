@@ -1784,3 +1784,9 @@
 - [x] Áp dụng phân cách hàng nghìn và hậu tố VNĐ cho cột đơn giá trong bảng xem trước Excel.
 - [x] Giữ giá trị số chính xác khi chỉnh sửa và xác nhận lưu dữ liệu xem trước.
 - [x] Bổ sung hồi quy, kiểm tra TypeScript, Vitest, build và phát hành cập nhật.
+
+## Current Session — Accessory Unit Cost Display Fix
+
+- [x] Thay luồng can thiệp DOM của đơn giá bằng thành phần tiền tệ React dùng chung.
+- [x] Hiển thị phân cách hàng nghìn ngay khi nhập tiền trong form Thêm phụ kiện.
+- [x] Bổ sung hồi quy, kiểm tra TypeScript, Vitest, build và phát hành sửa lỗi.
