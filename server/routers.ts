@@ -533,6 +533,20 @@ export const appRouter = router({
       const history = await listAssetImportSessions(input.page, input.pageSize);
       return { ...history, items: history.items.map((session) => ({ ...session, undoDeadline: getImportUndoDeadline(session.createdAt), canUndo: !session.isUndone && canUndoImport(session.createdAt) })) };
     }),
+    importSessionDetails: adminProcedure.input(z.object({ sessionId: z.number().int().positive(), page: z.number().int().positive().default(1), pageSize: z.number().int().min(1).max(25).default(10) })).query(async ({ input }) => {
+      const session = await getAssetImportSessionById(input.sessionId);
+      if (!session) throw new TRPCError({ code: "NOT_FOUND", message: "Không tìm thấy phiên import." });
+      const allItems = await listAssetImportItems(session.id);
+      const safePage = Math.max(1, input.page);
+      const safePageSize = Math.min(25, Math.max(1, input.pageSize));
+      const total = allItems.length;
+      const items = await Promise.all(allItems.slice((safePage - 1) * safePageSize, safePage * safePageSize).map(async (item: { id: number; assetId: number; action: "created" | "updated"; afterSnapshot: unknown }) => {
+        const asset = await getAssetById(item.assetId);
+        const snapshot = (item.afterSnapshot || {}) as Record<string, unknown>;
+        return { id: item.id, assetId: item.assetId, action: item.action, assetCode: asset?.assetCode || null, name: typeof snapshot.name === "string" ? snapshot.name : asset?.name || "Tài sản đã lưu trữ", serialNumber: typeof snapshot.serialNumber === "string" ? snapshot.serialNumber : asset?.serialNumber || null, status: typeof snapshot.status === "string" ? snapshot.status : asset?.status || null, isArchived: asset?.isArchived || false };
+      }));
+      return { session: { id: session.id, referenceCode: session.referenceCode }, items, total, page: safePage, pageSize: safePageSize, totalPages: Math.ceil(total / safePageSize) };
+    }),
     history: adminProcedure.input(z.object({ assetId: z.number().int().positive(), page: z.number().int().positive().default(1), pageSize: z.number().int().min(1).max(50).default(10) })).query(({ input }) => listAssetFieldChanges(input.assetId, input.page, input.pageSize)),
     undoImportSession: adminProcedure.input(z.object({ sessionId: z.number().int().positive() })).mutation(async ({ input, ctx }) => {
       const session = await getAssetImportSessionById(input.sessionId);

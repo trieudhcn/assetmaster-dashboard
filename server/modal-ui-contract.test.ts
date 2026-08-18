@@ -117,6 +117,8 @@ describe("modal presentation contract", () => {
     const importModal = readProjectFile("client/src/components/AssetImportModal.tsx");
     const importRecovery = readProjectFile("client/src/components/AssetImportRecovery.tsx");
     const importHistory = readProjectFile("client/src/components/ImportHistoryDrawer.tsx");
+    const home = readProjectFile("client/src/pages/Home.tsx");
+    const employees = readProjectFile("client/src/pages/EmployeeManagementView.tsx");
 
     expect(importModal).toContain("Tự động cập nhật tài sản trùng Serial/IMEI");
     expect(importModal).toContain("Trường sẽ thay đổi khi cập nhật");
@@ -129,6 +131,12 @@ describe("modal presentation contract", () => {
     expect(importHistory).toContain("Lịch sử import tài sản");
     expect(importHistory).toContain("undoImportSession.useMutation");
     expect(importHistory).toContain("Có thể hoàn tác");
+    expect(importHistory).toContain("importSessionDetails.useQuery");
+    expect(importHistory).toContain("Xem tài sản");
+    expect(home).toContain('className="relative z-[120]"');
+    expect(home).toContain("z-[130]");
+    expect(employees).toContain("EMPLOYEE_PAGE_SIZE = 10");
+    expect(employees).toContain('aria-label="Trang nhân sự sau"');
   });
 
   it("surfaces maintenance assets with a quick request action and prevents duplicate open tickets", () => {

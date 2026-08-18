@@ -1579,3 +1579,10 @@
 - [x] Thêm API liệt kê lịch sử import phân trang và hoàn tác theo mã phiên.
 - [x] Xây dựng giao diện xem lịch sử, trạng thái hiệu lực và xác nhận hoàn tác từng phiên.
 - [x] Bổ sung hồi quy, kiểm tra giao diện, TypeScript, Vitest, build và phát hành cập nhật.
+
+## Current Session — Notification, Import Detail & Employee Pagination
+
+- [x] Sửa lớp hiển thị để bảng thông báo không bị che bởi bộ lọc hoặc popup khác.
+- [x] Thêm xem chi tiết danh sách tài sản trong từng phiên import trước khi hoàn tác.
+- [x] Thêm phân trang cho Quản lý nhân sự theo mẫu điều hướng thống nhất của hệ thống.
+- [x] Bổ sung hồi quy, kiểm tra giao diện, TypeScript, Vitest, build và phát hành cập nhật.

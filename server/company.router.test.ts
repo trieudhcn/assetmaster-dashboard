@@ -138,6 +138,14 @@ describe("asset Excel import safeguards", () => {
     expect(mocks.listAssetImportSessions).toHaveBeenCalledWith(1, 5);
   });
 
+  it("returns the imported assets of a selected session for review before undo", async () => {
+    mocks.getAssetImportSessionById.mockResolvedValue({ id: 41, referenceCode: "IMP-2026-ABC" });
+    mocks.listAssetImportItems.mockResolvedValue([{ id: 5, assetId: 77, action: "created", afterSnapshot: { name: "Laptop mới", serialNumber: "SN-001", status: "available" } }]);
+    const result = await adminCaller().assets.importSessionDetails({ sessionId: 41, page: 1, pageSize: 10 });
+    expect(result).toMatchObject({ session: { id: 41, referenceCode: "IMP-2026-ABC" }, total: 1, page: 1 });
+    expect(result.items[0]).toMatchObject({ assetId: 77, action: "created", name: "Laptop mới", serialNumber: "SN-001" });
+  });
+
   it("undoes a selected active import session in one transaction", async () => {
     const session = { id: 41, referenceCode: "IMP-2026-ABC", isUndone: false, createdAt: new Date(), createdCount: 1, updatedCount: 0 };
     mocks.getAssetImportSessionById.mockResolvedValue(session);
