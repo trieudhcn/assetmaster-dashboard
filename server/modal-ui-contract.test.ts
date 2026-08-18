@@ -179,11 +179,18 @@ describe("modal presentation contract", () => {
 
   it("keeps supply search readable and supports staff or manual recipients for issues", () => {
     const supplies = readProjectFile("client/src/pages/SuppliesInventoryView.tsx");
+    const stylesheet = readProjectFile("client/src/index.css");
     const routers = readProjectFile("server/routers.ts");
     expect(supplies).toContain('className="field-input !pl-11"');
     expect(supplies).toContain("Sửa mã và tên vật tư");
     expect(supplies).toContain("Nhân sự hệ thống");
-    expect(supplies).toContain("✓ Người khác");
+    expect(supplies).toContain("Người khác");
+    expect(supplies).toContain("recipient?.departmentId");
+    expect(supplies).toContain('recipientMode !== "staff" || !recipientUserId');
+    expect(supplies).toContain("setRecipientDepartmentId((current)");
+    expect(stylesheet).toContain(".recipient-mode-active");
+    expect(stylesheet).toContain(".primary-action");
+    expect(stylesheet).toContain("align-items: center");
     expect(routers).toContain("Mã vật tư này đã tồn tại.");
     expect(routers).toContain("recipientUserId");
     expect(routers).toContain("Không tìm thấy nhân sự đang hoạt động được chọn.");

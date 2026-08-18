@@ -1659,3 +1659,10 @@
 - [x] Thêm biểu đồ cấp phát vật tư theo phòng ban hoặc nhân sự dựa trên dữ liệu thực.
 - [x] Thêm xuất, xem trước và in PDF phiếu cấp phát vật tư có nhận diện công ty.
 - [x] Bổ sung hồi quy, kiểm tra giao diện, TypeScript, Vitest, build và phát hành cập nhật.
+
+## Current Session — Recipient Department & Supply Button Alignment
+
+- [x] Tự điền phòng ban khi chọn nhân sự nhận vật tư từ danh mục nhân sự.
+- [x] Làm rõ trạng thái chọn Nhân sự hệ thống và Người khác trong phiếu cấp phát.
+- [x] Căn chỉnh icon và nhãn nút Tạo vật tư, Tạo phiếu cấp phát trên mọi kích thước màn hình.
+- [x] Bổ sung hồi quy, kiểm tra giao diện, TypeScript, Vitest, build và phát hành cập nhật.

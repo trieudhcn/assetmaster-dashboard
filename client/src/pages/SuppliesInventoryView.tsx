@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { AlertTriangle, ArchiveRestore, Boxes, ClipboardList, History, PackageMinus, PackagePlus, Pencil, Plus, Search, SlidersHorizontal, UsersRound, X } from "lucide-react";
+import { useEffect } from "react";
 import { toast } from "sonner";
 import { trpc } from "@/lib/trpc";
 import { SearchableSelect } from "@/components/SearchableSelect";
@@ -74,6 +75,12 @@ export function SuppliesInventoryView() {
     }
     moveSupply.mutate({ supplyId: selectedSupply.id, movementType, quantity: Number(movementQuantity), recipientUserId: null, recipientName: undefined, recipientDepartmentId: recipientDepartmentId ? Number(recipientDepartmentId) : null, note: movementNote.trim() });
   };
+  useEffect(() => {
+    if (recipientMode !== "staff" || !recipientUserId) return;
+    const recipient = (usersQuery.data || []).find((item) => String(item.id) === recipientUserId);
+    const departmentId = recipient?.departmentId ? String(recipient.departmentId) : "";
+    setRecipientDepartmentId((current) => current === departmentId ? current : departmentId);
+  }, [recipientMode, recipientUserId, usersQuery.data]);
   const beginEdit = (id: number) => { const item = supplies.find((supply) => supply.id === id); if (!item) return; setEditingId(id); setEditCode(item.code); setEditName(item.name); };
 
   return <div className="min-h-screen bg-[#F4F7FB] px-4 py-7 sm:px-6 lg:px-9 lg:py-8"><div className="mx-auto max-w-[1500px]">
