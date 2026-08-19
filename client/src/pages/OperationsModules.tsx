@@ -109,12 +109,12 @@ function auditPdfImageFormat(dataUrl: string) {
   return "PNG" as const;
 }
 
-function OperationalReminderPanel({ onCreateWarrantyTicket = () => undefined }: { onCreateWarrantyTicket?: (assetId: number) => void }) {
+function OperationalReminderPanel({ onCreateWarrantyTicket }: { onCreateWarrantyTicket?: (assetId: number) => void }) {
   const remindersQuery = trpc.reminders.list.useQuery();
   const reminders = remindersQuery.data || [];
   return <section className={`mb-5 ${card} overflow-hidden`}>
     <div className="flex items-center justify-between border-b border-[#E7EEF3] px-5 py-4"><div><div className="flex items-center gap-2 text-sm font-extrabold text-[#193B57]"><BellRing size={16} className="text-[#A86B00]" />Nhắc việc vận hành</div><p className="mt-1 text-xs text-[#71869A]">Tổng hợp hạn Bảo hành/Sửa chữa, kiểm kê trong 14 ngày và tài sản sắp hết bảo hành trong 30 ngày.</p></div><span className="rounded-full bg-[#FFF9EB] px-2.5 py-1 text-[10px] font-extrabold text-[#A86B00]">{reminders.length} việc cần theo dõi</span></div>
-    {remindersQuery.isLoading ? <div className="px-5 py-6 text-xs text-[#71869A]">Đang tải nhắc việc...</div> : remindersQuery.isError ? <div className="px-5 py-6 text-xs text-[#B44545]">Không thể tải nhắc việc. <button onClick={() => remindersQuery.refetch()} className="font-bold underline">Thử lại</button></div> : reminders.length === 0 ? <div className="px-5 py-6 text-xs text-[#71869A]">Chưa có hạn Bảo hành/Sửa chữa, kiểm kê hoặc bảo hành tài sản cần theo dõi.</div> : <div className="divide-y divide-[#EDF2F5]">{reminders.slice(0, 5).map((reminder) => { const isWarrantyExpiry = reminder.kind === "warranty"; const canCreateWarrantyTicket = isWarrantyExpiry && typeof reminder.assetId === "number"; return <div key={reminder.id} className={`flex flex-col gap-2 px-5 py-3 sm:flex-row sm:items-center sm:justify-between ${isWarrantyExpiry ? "bg-[#FFF9EB]" : ""}`}><div className="flex items-start gap-2"><CalendarClock size={15} className={`mt-0.5 ${isWarrantyExpiry ? "text-[#A86B00]" : "text-[#0F8C8C]"}`} /><div><div className="text-xs font-bold text-[#193B57]">{reminder.title}</div><div className="mt-0.5 text-[11px] text-[#71869A]">{isWarrantyExpiry ? "Bảo hành sắp hết hạn" : reminder.kind === "maintenance" ? "Bảo hành/Sửa chữa" : "Kiểm kê"} · {reminder.detail}{reminder.recurrenceDays ? ` · Lặp lại mỗi ${reminder.recurrenceDays} ngày` : ""}</div></div></div><div className="flex shrink-0 items-center gap-2"><span className={`w-fit rounded-full px-2 py-1 text-[10px] font-extrabold ${reminder.isOverdue ? "bg-[#FDEDEE] text-[#B44545]" : isWarrantyExpiry ? "bg-[#FFE7A4] text-[#8A5900]" : "bg-[#FFF9EB] text-[#A86B00]"}`}>{reminder.isOverdue ? "Đã quá hạn" : isWarrantyExpiry ? `Còn ${Math.max(0, Math.ceil((new Date(reminder.dueAt).getTime() - Date.now()) / 86_400_000))} ngày` : `Hạn ${new Date(reminder.dueAt).toLocaleDateString("vi-VN")}`}</span>{canCreateWarrantyTicket && <button type="button" onClick={() => onCreateWarrantyTicket(reminder.assetId!)} className="inline-flex h-8 items-center justify-center gap-1.5 rounded-lg bg-[#0F8C8C] px-3 text-[10px] font-extrabold text-white shadow-[0_4px_10px_rgba(15,140,140,0.2)] transition hover:bg-[#087A6A]"><Plus size={13} />Tạo phiếu bảo hành</button>}</div></div>; })}</div>}
+    {remindersQuery.isLoading ? <div className="px-5 py-6 text-xs text-[#71869A]">Đang tải nhắc việc...</div> : remindersQuery.isError ? <div className="px-5 py-6 text-xs text-[#B44545]">Không thể tải nhắc việc. <button onClick={() => remindersQuery.refetch()} className="font-bold underline">Thử lại</button></div> : reminders.length === 0 ? <div className="px-5 py-6 text-xs text-[#71869A]">Chưa có hạn Bảo hành/Sửa chữa, kiểm kê hoặc bảo hành tài sản cần theo dõi.</div> : <div className="divide-y divide-[#EDF2F5]">{reminders.slice(0, 5).map((reminder) => { const isWarrantyExpiry = reminder.kind === "warranty"; const canCreateWarrantyTicket = Boolean(onCreateWarrantyTicket) && isWarrantyExpiry && typeof reminder.assetId === "number"; return <div key={reminder.id} className={`flex flex-col gap-2 px-5 py-3 sm:flex-row sm:items-center sm:justify-between ${isWarrantyExpiry ? "bg-[#FFF9EB]" : ""}`}><div className="flex items-start gap-2"><CalendarClock size={15} className={`mt-0.5 ${isWarrantyExpiry ? "text-[#A86B00]" : "text-[#0F8C8C]"}`} /><div><div className="text-xs font-bold text-[#193B57]">{reminder.title}</div><div className="mt-0.5 text-[11px] text-[#71869A]">{isWarrantyExpiry ? "Bảo hành sắp hết hạn" : reminder.kind === "maintenance" ? "Bảo hành/Sửa chữa" : "Kiểm kê"} · {reminder.detail}{reminder.recurrenceDays ? ` · Lặp lại mỗi ${reminder.recurrenceDays} ngày` : ""}</div></div></div><div className="flex shrink-0 items-center gap-2"><span className={`w-fit rounded-full px-2 py-1 text-[10px] font-extrabold ${reminder.isOverdue ? "bg-[#FDEDEE] text-[#B44545]" : isWarrantyExpiry ? "bg-[#FFE7A4] text-[#8A5900]" : "bg-[#FFF9EB] text-[#A86B00]"}`}>{reminder.isOverdue ? "Đã quá hạn" : isWarrantyExpiry ? `Còn ${Math.max(0, Math.ceil((new Date(reminder.dueAt).getTime() - Date.now()) / 86_400_000))} ngày` : `Hạn ${new Date(reminder.dueAt).toLocaleDateString("vi-VN")}`}</span>{canCreateWarrantyTicket && <button type="button" onClick={() => onCreateWarrantyTicket?.(reminder.assetId!)} className="inline-flex h-8 items-center justify-center gap-1.5 rounded-lg bg-[#0F8C8C] px-3 text-[10px] font-extrabold text-white shadow-[0_4px_10px_rgba(15,140,140,0.2)] transition hover:bg-[#087A6A]"><Plus size={13} />Tạo phiếu bảo hành</button>}</div></div>; })}</div>}
   </section>;
 }
 
@@ -244,6 +244,7 @@ export function MaintenancePage() {
   const employees = employeesQuery.data || [];
   const assetById = new Map(assets.map((asset) => [asset.id, asset]));
   const employeeById = new Map(employees.map((employee) => [employee.id, employee]));
+  const selectedWarrantyHistory = assetId && serviceChannel === "warranty" ? tickets.filter((ticket) => ticket.assetId === Number(assetId) && (ticket.serviceChannel || "repair") === "warranty").sort((left, right) => new Date(right.openedAt).getTime() - new Date(left.openedAt).getTime()) : [];
 
   useEffect(() => {
     if (!historyTicket || (historyTicket.serviceChannel || "repair") !== "warranty") return;
@@ -290,18 +291,6 @@ export function MaintenancePage() {
     if (serviceChannel !== "warranty") { setWarrantyRequestCode(""); return; }
     if (nextWarrantyCodeQuery.data?.code) setWarrantyRequestCode(nextWarrantyCodeQuery.data.code);
   }, [serviceChannel, nextWarrantyCodeQuery.data?.code]);
-
-  const prepareWarrantyTicketFromReminder = (reminderAssetId: number) => {
-    const asset = assetById.get(reminderAssetId);
-    if (!asset) { toast.error("Không tìm thấy tài sản của nhắc hạn bảo hành."); return; }
-    if (assetsWithOpenTickets.has(asset.id)) { toast.warning("Tài sản này đã có phiếu đang mở."); return; }
-    setAssetId(String(asset.id));
-    setServiceChannel("warranty");
-    setIssueType("incident");
-    setDescription(`Kiểm tra và liên hệ bảo hành trước khi hết hạn cho ${asset.name}.`);
-    requestAnimationFrame(() => document.getElementById("maintenance-create-form")?.scrollIntoView({ behavior: "smooth", block: "center" }));
-    toast.info("Đã chuẩn bị phiếu Bảo hành từ nhắc hạn. Hãy kiểm tra nội dung và tạo phiếu.");
-  };
 
   useEffect(() => {
     setMaintenancePage(1);
@@ -412,6 +401,10 @@ export function MaintenancePage() {
     createMutation.mutate(payload);
   };
 
+  const requestQuickWarrantyTicket = (asset: (typeof assets)[number], description: string) => {
+    createMutation.mutate({ assetId: asset.id, issueType: "maintenance", serviceChannel: "warranty", priority: "medium", description, warrantyBrand: null, warrantyVendor: null, warrantyRequestCode: null, estimatedCost: null, dueAt: null, recurrenceDays: null });
+  };
+
   const exportMaintenanceCosts = () => {
     if (filteredTickets.length === 0) {
       toast.info("Chưa có phiếu Bảo hành/Sửa chữa trong phạm vi đang lọc để xuất.");
@@ -505,7 +498,7 @@ export function MaintenancePage() {
           </div>
         </div>
 
-        <OperationalReminderPanel onCreateWarrantyTicket={prepareWarrantyTicketFromReminder} />
+        <OperationalReminderPanel />
 
         <AlertDialog open={Boolean(repairWarrantyWarning)} onOpenChange={(open) => { if (!open) setRepairWarrantyWarning(null); }}>
           <AlertDialogContent className="overflow-hidden border-2 border-[#E8743B] bg-[#FFFDF8] p-0 shadow-[0_24px_70px_rgba(184,69,69,0.26)]">
@@ -519,10 +512,10 @@ export function MaintenancePage() {
 
         <section className={`mt-5 ${card} overflow-hidden`}>
           <div className="flex flex-col gap-2 border-b border-[#E7EEF3] px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
-            <div><div className="flex items-center gap-2 text-sm font-extrabold text-[#193B57]"><Wrench size={16} className="text-[#A86B00]" />Tài sản đang cần xử lý</div><p className="mt-1 text-xs text-[#8AA0B6]">Các tài sản vừa được chuyển sang trạng thái Bảo hành/Sửa chữa từ Danh mục tài sản; yêu cầu nhanh mặc định ở kênh Sửa chữa.</p></div>
+            <div><div className="flex items-center gap-2 text-sm font-extrabold text-[#193B57]"><Wrench size={16} className="text-[#A86B00]" />Tài sản đang cần xử lý</div><p className="mt-1 text-xs text-[#8AA0B6]">Các tài sản vừa được chuyển sang trạng thái Bảo hành/Sửa chữa từ Danh mục tài sản; có thể tạo nhanh phiếu Bảo hành hoặc Sửa chữa.</p></div>
             <span className="rounded-full bg-[#FFF5DC] px-2.5 py-1 text-[10px] font-extrabold text-[#A86B00]">{maintenanceAssets.length} tài sản</span>
           </div>
-          {assetsQuery.isLoading ? <div className="px-5 py-6 text-xs text-[#8AA0B6]">Đang tải tài sản...</div> : maintenanceAssets.length === 0 ? <div className="px-5 py-7 text-center text-xs font-semibold text-[#8AA0B6]">Chưa có tài sản nào đang chờ xử lý.</div> : <div className="overflow-x-auto overscroll-x-contain"><div className="flex min-w-max gap-3 p-4">{maintenanceAssets.map((asset) => { const quickDescription = asset.maintenanceReason?.trim() || `Kiểm tra và xử lý tình trạng bảo trì của ${asset.name}.`; return <div key={asset.id} className="w-[280px] shrink-0 rounded-xl border border-[#F2D596] bg-[#FFFDF7] p-4 sm:w-[320px]"><div className="flex items-start justify-between gap-3"><div className="min-w-0"><div className="font-mono text-[10px] font-bold text-[#A86B00]">{asset.assetCode}</div><div className="mt-1 truncate text-sm font-extrabold text-[#193B57]">{asset.name}</div></div><span className="shrink-0 rounded-full bg-[#FFF0C8] px-2 py-1 text-[10px] font-extrabold text-[#A86B00]">Sửa chữa</span></div><p className="mt-3 line-clamp-2 text-xs leading-5 text-[#60758A]">{quickDescription}</p><button type="button" disabled={createMutation.isPending} onClick={() => requestQuickRepairTicket(asset, quickDescription)} className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-lg border border-[#D7B65B] bg-white px-3 py-2 text-xs font-extrabold text-[#A86B00] transition hover:bg-[#FFF5DC] disabled:cursor-not-allowed disabled:opacity-60"><Plus size={14} />{createMutation.isPending ? "Đang tạo yêu cầu..." : "Tạo phiếu sửa chữa"}</button></div>; })}</div></div>}
+          {assetsQuery.isLoading ? <div className="px-5 py-6 text-xs text-[#8AA0B6]">Đang tải tài sản...</div> : maintenanceAssets.length === 0 ? <div className="px-5 py-7 text-center text-xs font-semibold text-[#8AA0B6]">Chưa có tài sản nào đang chờ xử lý.</div> : <div className="overflow-x-auto overscroll-x-contain"><div className="flex min-w-max gap-3 p-4">{maintenanceAssets.map((asset) => { const quickDescription = asset.maintenanceReason?.trim() || `Kiểm tra và xử lý tình trạng của ${asset.name}.`; return <div key={asset.id} className="w-[280px] shrink-0 rounded-xl border border-[#F2D596] bg-[#FFFDF7] p-4 sm:w-[320px]"><div className="flex items-start justify-between gap-3"><div className="min-w-0"><div className="font-mono text-[10px] font-bold text-[#A86B00]">{asset.assetCode}</div><div className="mt-1 truncate text-sm font-extrabold text-[#193B57]">{asset.name}</div></div><span className="shrink-0 rounded-full bg-[#FFF0C8] px-2 py-1 text-[10px] font-extrabold text-[#A86B00]">Cần xử lý</span></div><p className="mt-3 line-clamp-2 text-xs leading-5 text-[#60758A]">{quickDescription}</p><div className="mt-3 grid grid-cols-2 gap-2"><button type="button" disabled={createMutation.isPending} onClick={() => requestQuickWarrantyTicket(asset, quickDescription)} className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-[#0F8C8C] px-2 py-2 text-[11px] font-extrabold text-white transition hover:bg-[#087A6A] disabled:cursor-not-allowed disabled:opacity-60"><Plus size={13} />Bảo hành</button><button type="button" disabled={createMutation.isPending} onClick={() => requestQuickRepairTicket(asset, quickDescription)} className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-[#D7B65B] bg-white px-2 py-2 text-[11px] font-extrabold text-[#A86B00] transition hover:bg-[#FFF5DC] disabled:cursor-not-allowed disabled:opacity-60"><Plus size={13} />Sửa chữa</button></div></div>; })}</div></div>}
         </section>
 
         {recentlyCreatedTicketId && <section className="mb-5 flex flex-col gap-3 rounded-xl border border-[#CDE5E5] bg-[#ECF8F7] px-4 py-3.5 sm:flex-row sm:items-center sm:justify-between"><div><div className="text-xs font-extrabold text-[#087A6A]">Đã tạo phiếu Bảo hành/Sửa chữa thành công</div><p className="mt-1 text-[11px] text-[#4B8884]">{recentlyCreatedTicket ? `${recentlyCreatedTicket.ticketCode} · ${serviceChannelLabels[(recentlyCreatedTicket.serviceChannel || "repair") as keyof typeof serviceChannelLabels]} · ${recentlyCreatedTicket.description}` : "Đang đồng bộ thông tin phiếu vừa tạo..."}</p></div><button type="button" disabled={!recentlyCreatedTicket} onClick={() => { if (recentlyCreatedTicket) setHistoryTicket(recentlyCreatedTicket); }} className="inline-flex shrink-0 items-center justify-center gap-2 rounded-lg border border-[#8BCDC6] bg-white px-3 py-2 text-xs font-extrabold text-[#087A6A] transition hover:bg-[#DDF4F1] disabled:cursor-wait disabled:opacity-60"><FileText size={14} />{recentlyCreatedTicket ? "Mở phiếu vừa tạo" : "Đang tải phiếu..."}</button></section>}
@@ -549,6 +542,7 @@ export function MaintenancePage() {
               <Plus size={15} />{createMutation.isPending ? "Đang tạo" : "Tạo yêu cầu"}
             </button>
           </div>
+          {serviceChannel === "warranty" && assetId && <section data-warranty-create-history className="mt-4 rounded-xl border border-[#8BCDC6] bg-[#F4FBFA] p-4"><div className="flex flex-wrap items-center justify-between gap-2"><div className="flex items-center gap-2 text-xs font-extrabold text-[#087A6A]"><History size={15} />Lịch sử bảo hành trước đó</div><span className="rounded-full bg-[#DDF4F1] px-2 py-1 text-[10px] font-extrabold text-[#087A6A]">{selectedWarrantyHistory.length} phiếu</span></div>{ticketsQuery.isLoading ? <p className="mt-2 text-xs text-[#4B8884]">Đang tải lịch sử bảo hành...</p> : selectedWarrantyHistory.length ? <div className="mt-3 space-y-2">{selectedWarrantyHistory.slice(0, 3).map((ticket) => <div key={ticket.id} className="rounded-lg border border-[#CDE5E5] bg-white px-3 py-2.5"><div className="flex items-start justify-between gap-3"><div><div className="font-mono text-[10px] font-extrabold text-[#087A6A]">{ticket.warrantyRequestCode || ticket.ticketCode}</div><p className="mt-1 text-xs font-semibold text-[#193B57]">{ticket.description}</p></div><span className="text-[10px] font-bold text-[#71869A]">{new Date(ticket.openedAt).toLocaleDateString("vi-VN")}</span></div><p className="mt-1 text-[10px] text-[#71869A]">{maintenanceStatusLabels[ticket.status]}{ticket.resolution ? ` · ${ticket.resolution}` : ""}</p></div>)}</div> : <p className="mt-2 text-xs text-[#4B8884]">Tài sản này chưa có phiếu Bảo hành trước đó.</p>}</section>}
           {!assetsQuery.isLoading && assets.length === 0 && <p className="mt-3 text-xs text-[#A86B00]">Chưa có tài sản để tạo phiếu Bảo hành/Sửa chữa.</p>}
         </section>
 

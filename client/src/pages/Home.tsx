@@ -2038,13 +2038,9 @@ function AssetModal({ mode, asset, formData, setFormData, isSaving, onClose: dis
       dialog.querySelectorAll<HTMLElement>("button").forEach((button) => {
         if (button.textContent?.trim() === "Bảo trì") button.textContent = "Bảo hành/Sửa chữa";
       });
-      dialog.querySelectorAll<HTMLLabelElement>("label").forEach((label) => {
-        if (label.textContent?.includes("Nội dung cần bảo trì")) label.innerHTML = 'Nội dung cần Bảo hành/Sửa chữa <span class="text-[#B44545]">*</span>';
-      });
-      dialog.querySelectorAll<HTMLTextAreaElement>('textarea[aria-label="Nội dung cần bảo trì"]').forEach((textarea) => {
-        textarea.setAttribute("aria-label", "Nội dung cần Bảo hành/Sửa chữa");
-        textarea.placeholder = "Mô tả nội dung cần kiểm tra, bảo hành hoặc sửa chữa...";
-      });
+      if (formData.statusType === "maintenance") {
+        dialog.querySelectorAll<HTMLTextAreaElement>('textarea[aria-label="Nội dung cần bảo trì"]').forEach((textarea) => textarea.closest("div")?.remove());
+      }
     };
     refreshMaintenanceCopy();
     const observer = new MutationObserver(refreshMaintenanceCopy);
@@ -2146,22 +2142,7 @@ function AssetModal({ mode, asset, formData, setFormData, isSaving, onClose: dis
       statusField.after(field);
       return () => field.remove();
     }
-    if (formData.statusType !== "maintenance") return;
-    const field = document.createElement("div");
-    field.dataset.maintenanceReason = "true";
-    field.className = "sm:col-span-2";
-    const label = document.createElement("label");
-    label.className = "field-label";
-    label.innerHTML = 'Lý do bảo trì <span class="text-[#B44545]">*</span>';
-    const textarea = document.createElement("textarea");
-    textarea.required = true;
-    textarea.value = formData.maintenanceReason || "";
-    textarea.placeholder = "Mô tả lý do đưa tài sản vào bảo trì...";
-    textarea.className = "field-input mt-1 min-h-[78px] resize-y";
-    textarea.addEventListener("input", () => setFormData((current) => ({ ...current, maintenanceReason: textarea.value })));
-    field.append(label, textarea);
-    statusField.after(field);
-    return () => field.remove();
+    return;
   }, [isDetail, formData.statusType, retirementAttachmentFile, setFormData]);
   const title = mode === "create" ? "Thêm tài sản mới" : mode === "edit" ? "Chỉnh sửa tài sản" : "Chi tiết tài sản";
   const fields: Array<{ key: keyof Asset; label: string; placeholder: string }> = [

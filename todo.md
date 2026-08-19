@@ -1946,3 +1946,10 @@
 - [x] Khóa Hãng và Nhà cung cấp theo dữ liệu mua hàng trong biểu mẫu Bảo hành.
 - [x] Hiển thị biểu tượng khóa đỏ và mô tả khi rê chuột trên trường không thể chỉnh sửa.
 - [x] Bổ sung hồi quy, kiểm tra giao diện, build và phát hành cập nhật.
+
+## Current Session — Warranty Form History & Quick Actions
+
+- [x] Hiển thị lịch sử các lần bảo hành trước đó trong form tạo phiếu Bảo hành.
+- [x] Bỏ tạo phiếu Bảo hành từ nhắc hạn và thêm tạo nhanh Bảo hành trong danh sách tài sản cần xử lý.
+- [x] Ẩn ô Lý do bảo trì khi trạng thái tài sản là Bảo hành/Sửa chữa.
+- [x] Bổ sung hồi quy, kiểm tra giao diện, build và phát hành cập nhật.

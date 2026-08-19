@@ -455,7 +455,9 @@ describe("modal presentation contract", () => {
     const routers = readProjectFile("server/routers.ts");
     expect(operations).toContain('const maintenanceAssets = assets.filter((asset) => asset.status === "maintenance" && !assetsWithOpenTickets.has(asset.id) && !queuedMaintenanceAssetIds.has(asset.id))');
     expect(operations).toContain("Tài sản đang cần xử lý");
-    expect(operations).toContain("Tạo phiếu sửa chữa");
+    expect(operations).toContain("requestQuickWarrantyTicket");
+    expect(operations).toContain('serviceChannel: "warranty"');
+    expect(operations).toContain("Sửa chữa");
     expect(operations).toContain("setQueuedMaintenanceAssetIds");
     expect(operations).toContain("overflow-x-auto overscroll-x-contain");
     expect(operations).toContain('issueType: "maintenance"');
@@ -680,8 +682,11 @@ describe("modal presentation contract", () => {
     expect(operations).toContain("Vẫn tạo phiếu Sửa chữa");
     expect(operations).toContain("nextWarrantyCode");
     expect(operations).toContain("BH-NĂM-001");
-    expect(operations).toContain("Tạo phiếu bảo hành");
-    expect(operations).toContain("prepareWarrantyTicketFromReminder");
+    expect(operations).toContain("Lịch sử bảo hành trước đó");
+    expect(operations).toContain("selectedWarrantyHistory");
+    expect(operations).toContain("requestQuickWarrantyTicket");
+    expect(operations).toContain("Bảo hành");
+    expect(operations).not.toContain("prepareWarrantyTicketFromReminder");
     expect(operations).toContain("Lấy từ dữ liệu mua hàng; không thể chỉnh sửa.");
     expect(operations).toContain("LockKeyhole");
     expect(operations).toContain("Bảo hành sắp hết hạn");
@@ -700,7 +705,8 @@ describe("modal presentation contract", () => {
     expect(home).toContain('holder: "Bảo hành/Sửa chữa"');
     expect(home).toContain('status: "Bảo hành/Sửa chữa"');
     expect(home).toContain('label: "Bảo hành/Sửa chữa"');
-    expect(home).toContain("Nội dung cần Bảo hành/Sửa chữa");
+    expect(home).not.toContain("Nội dung cần Bảo hành/Sửa chữa");
+    expect(home).toContain('textarea[aria-label="Nội dung cần bảo trì"]');
     expect(operations).toContain("data-warranty-ticket-details");
     expect(operations).toContain("Thông tin bảo hành");
     expect(operations).toContain("Nhà cung cấp / trung tâm");
