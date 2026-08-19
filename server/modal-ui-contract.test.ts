@@ -691,6 +691,11 @@ describe("modal presentation contract", () => {
     expect(operations).toContain('accept="application/pdf,image/png,image/jpeg,image/webp"');
     expect(operations).toContain("createTicketWithEvidence");
     expect(operations).toContain("uploadAttachmentByTicketId");
+    expect(operations).toContain("warrantyUploadProgress");
+    expect(operations).toContain("warrantyUploadStatus");
+    expect(operations).toContain("data-warranty-upload-progress");
+    expect(operations).toContain("Đang tải chứng từ lên hệ thống...");
+    expect(operations).toContain("Đã tải chứng từ thành công.");
     expect(operations).toContain("requestQuickWarrantyTicket");
     expect(operations).toContain("Bảo hành");
     expect(operations).not.toContain("prepareWarrantyTicketFromReminder");

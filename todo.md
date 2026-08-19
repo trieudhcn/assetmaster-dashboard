@@ -1960,3 +1960,8 @@
 - [x] Thêm nút Xem tất cả mở popup lịch sử đầy đủ các phiếu Bảo hành của tài sản.
 - [x] Cho phép đính kèm hình ảnh hoặc chứng từ khi tạo phiếu Bảo hành mới.
 - [x] Bổ sung hồi quy, kiểm tra giao diện, build và phát hành cập nhật.
+
+## Current Session — Warranty Attachment Upload Progress
+
+- [x] Hiển thị tiến trình và trạng thái tải chứng từ khi tạo phiếu Bảo hành.
+- [x] Bổ sung hồi quy, kiểm tra giao diện, build và phát hành cập nhật.

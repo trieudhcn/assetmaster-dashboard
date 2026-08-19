@@ -37,6 +37,7 @@ import { applyPdfLogoWatermark, createPdfLogoWatermark, openPdfPreview } from "@
 import { ModuleEmptyState } from "@/components/ModuleEmptyState";
 import { EditableSectionLabel } from "@/components/EditableSectionLabel";
 import { ModalTableSkeleton } from "@/components/ModalTableSkeleton";
+import { Progress } from "@/components/ui/progress";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -167,6 +168,8 @@ export function MaintenancePage() {
   const [historyTicket, setHistoryTicket] = useState<(typeof tickets)[number] | null>(null);
   const [warrantyHistoryDialogOpen, setWarrantyHistoryDialogOpen] = useState(false);
   const [warrantyAttachmentFile, setWarrantyAttachmentFile] = useState<File | null>(null);
+  const [warrantyUploadProgress, setWarrantyUploadProgress] = useState<number | null>(null);
+  const [warrantyUploadStatus, setWarrantyUploadStatus] = useState<"reading" | "uploading" | "complete" | "error" | null>(null);
   const [recentlyCreatedTicketId, setRecentlyCreatedTicketId] = useState<number | null>(null);
   const [queuedMaintenanceAssetIds, setQueuedMaintenanceAssetIds] = useState<Set<number>>(() => new Set());
   const [repairWarrantyWarning, setRepairWarrantyWarning] = useState<{ assetName: string; warrantyUntil: Date; payload: MaintenanceCreatePayload } | null>(null);
@@ -373,7 +376,11 @@ export function MaintenancePage() {
 
   const createTicketWithEvidence = (payload: MaintenanceCreatePayload) => {
     const attachment = payload.serviceChannel === "warranty" ? warrantyAttachmentFile : null;
-    createMutation.mutate(payload, { onSuccess: ({ id }) => { if (attachment) uploadAttachmentByTicketId(id, attachment); } });
+    if (attachment) {
+      setWarrantyUploadProgress(5);
+      setWarrantyUploadStatus("reading");
+    }
+    createMutation.mutate(payload, { onSuccess: ({ id }) => { if (attachment) uploadAttachmentByTicketId(id, attachment, true); } });
   };
 
   const requestCreateTicket = () => {
@@ -468,7 +475,7 @@ export function MaintenancePage() {
     })(); }, 180);
   };
 
-  const uploadAttachmentByTicketId = (ticketId: number, file: File | undefined) => {
+  const uploadAttachmentByTicketId = (ticketId: number, file: File | undefined, showProgress = false) => {
     if (!file) return;
     const supportedTypes = ["application/pdf", "image/png", "image/jpeg", "image/webp"] as const;
     if (!supportedTypes.includes(file.type as (typeof supportedTypes)[number])) {
@@ -480,13 +487,45 @@ export function MaintenancePage() {
       return;
     }
     const reader = new FileReader();
-    reader.onerror = () => toast.error("Không thể đọc tệp chứng từ.");
+    reader.onerror = () => {
+      if (showProgress) {
+        setWarrantyUploadProgress(0);
+        setWarrantyUploadStatus("error");
+      }
+      toast.error("Không thể đọc tệp chứng từ.");
+    };
+    reader.onprogress = (event) => {
+      if (showProgress && event.lengthComputable) setWarrantyUploadProgress(Math.max(8, Math.min(65, Math.round((event.loaded / event.total) * 65))));
+    };
     reader.onload = () => {
       if (typeof reader.result !== "string") {
+        if (showProgress) {
+          setWarrantyUploadProgress(0);
+          setWarrantyUploadStatus("error");
+        }
         toast.error("Không thể đọc tệp chứng từ.");
         return;
       }
-      uploadAttachmentMutation.mutate({ id: ticketId, fileName: file.name, contentType: file.type as "application/pdf" | "image/png" | "image/jpeg" | "image/webp", dataUrl: reader.result });
+      if (showProgress) {
+        setWarrantyUploadProgress(75);
+        setWarrantyUploadStatus("uploading");
+      }
+      uploadAttachmentMutation.mutate({ id: ticketId, fileName: file.name, contentType: file.type as "application/pdf" | "image/png" | "image/jpeg" | "image/webp", dataUrl: reader.result }, {
+        onSuccess: () => {
+          if (!showProgress) return;
+          setWarrantyUploadProgress(100);
+          setWarrantyUploadStatus("complete");
+          window.setTimeout(() => {
+            setWarrantyUploadProgress(null);
+            setWarrantyUploadStatus(null);
+          }, 2200);
+        },
+        onError: () => {
+          if (!showProgress) return;
+          setWarrantyUploadProgress(0);
+          setWarrantyUploadStatus("error");
+        },
+      });
     };
     reader.readAsDataURL(file);
   };
@@ -540,7 +579,7 @@ export function MaintenancePage() {
             <input value={description} onChange={(event) => setDescription(event.target.value)} placeholder="Mô tả tình trạng cần xử lý" className="field-input" />
             <SearchableSelect value={serviceChannel} onChange={(value) => setServiceChannel(value as typeof serviceChannel)} placeholder="Chọn kênh xử lý" searchPlaceholder="Tìm kênh xử lý..." options={Object.entries(serviceChannelLabels).map(([value, label]) => ({ value, label }))} />
             {serviceChannel === "warranty" && <><div className="group relative z-10"><input value={warrantyBrand} disabled placeholder="Hãng bảo hành" aria-label="Hãng bảo hành được khóa" className="field-input cursor-not-allowed pr-10 opacity-75" /><span title="Được lấy từ dữ liệu mua hàng, không thể chỉnh sửa" className="pointer-events-none absolute right-2 top-2 grid h-6 w-6 place-items-center rounded-full bg-[#B44545] text-white opacity-0 shadow-sm transition-opacity group-hover:opacity-100"><LockKeyhole size={13} /></span><p className="mt-1 text-[10px] text-[#B44545]">Lấy từ dữ liệu mua hàng; không thể chỉnh sửa.</p></div><div className="group relative z-10"><input value={warrantyVendor} disabled placeholder="Nhà cung cấp / trung tâm bảo hành" aria-label="Nhà cung cấp hoặc trung tâm bảo hành được khóa" className="field-input cursor-not-allowed pr-10 opacity-75" /><span title="Được lấy từ dữ liệu mua hàng, không thể chỉnh sửa" className="pointer-events-none absolute right-2 top-2 grid h-6 w-6 place-items-center rounded-full bg-[#B44545] text-white opacity-0 shadow-sm transition-opacity group-hover:opacity-100"><LockKeyhole size={13} /></span><p className="mt-1 text-[10px] text-[#B44545]">Lấy từ dữ liệu mua hàng; không thể chỉnh sửa.</p></div><div className="group relative z-10"><input value={warrantyRequestCode} disabled placeholder="Đang cấp mã bảo hành..." aria-label="Mã bảo hành tự sinh được khóa" className="field-input cursor-not-allowed bg-[#F5F9FB] pr-10 font-mono font-bold text-[#087A6A] opacity-75" /><span title="Mã được hệ thống tự sinh, không thể chỉnh sửa" className="pointer-events-none absolute right-2 top-2 grid h-6 w-6 place-items-center rounded-full bg-[#B44545] text-white opacity-0 shadow-sm transition-opacity group-hover:opacity-100"><LockKeyhole size={13} /></span><p className="mt-1 text-[10px] text-[#087A6A]">Tự sinh theo mẫu BH-NĂM-001 khi tạo phiếu.</p></div></>}
-            {serviceChannel === "warranty" && <div><label className="field-label">Ảnh / chứng từ bảo hành <span className="font-normal text-[#8AA0B6]">(tùy chọn)</span></label><input type="file" accept="application/pdf,image/png,image/jpeg,image/webp" onChange={(event) => { const file = event.target.files?.[0] || null; if (file && file.size > 5 * 1024 * 1024) { toast.error("Chứng từ không được vượt quá 5 MB."); event.currentTarget.value = ""; setWarrantyAttachmentFile(null); return; } setWarrantyAttachmentFile(file); }} className="mt-1 block w-full text-xs text-[#60758A] file:mr-2 file:rounded-md file:border-0 file:bg-[#ECF8F7] file:px-3 file:py-2 file:text-xs file:font-bold file:text-[#087A6A]" />{warrantyAttachmentFile ? <p className="mt-1 truncate text-[10px] font-semibold text-[#087A6A]">Đã chọn: {warrantyAttachmentFile.name}</p> : <p className="mt-1 text-[10px] text-[#8AA0B6]">PDF, PNG, JPG hoặc WebP; tối đa 5 MB.</p>}</div>}
+            {serviceChannel === "warranty" && <div><label className="field-label">Ảnh / chứng từ bảo hành <span className="font-normal text-[#8AA0B6]">(tùy chọn)</span></label><input type="file" accept="application/pdf,image/png,image/jpeg,image/webp" disabled={warrantyUploadStatus === "reading" || warrantyUploadStatus === "uploading"} onChange={(event) => { const file = event.target.files?.[0] || null; if (file && file.size > 5 * 1024 * 1024) { toast.error("Chứng từ không được vượt quá 5 MB."); event.currentTarget.value = ""; setWarrantyAttachmentFile(null); setWarrantyUploadProgress(null); setWarrantyUploadStatus(null); return; } setWarrantyAttachmentFile(file); setWarrantyUploadProgress(null); setWarrantyUploadStatus(null); }} className="mt-1 block w-full text-xs text-[#60758A] file:mr-2 file:rounded-md file:border-0 file:bg-[#ECF8F7] file:px-3 file:py-2 file:text-xs file:font-bold file:text-[#087A6A] disabled:opacity-60" />{warrantyAttachmentFile ? <p className="mt-1 truncate text-[10px] font-semibold text-[#087A6A]">Đã chọn: {warrantyAttachmentFile.name}</p> : <p className="mt-1 text-[10px] text-[#8AA0B6]">PDF, PNG, JPG hoặc WebP; tối đa 5 MB.</p>}{warrantyUploadProgress !== null && <div data-warranty-upload-progress className="mt-2 rounded-lg border border-[#CDE5E5] bg-[#F8FCFC] p-2"><div className="flex items-center justify-between gap-2 text-[10px] font-bold"><span className={warrantyUploadStatus === "error" ? "text-[#B44545]" : warrantyUploadStatus === "complete" ? "text-[#087A6A]" : "text-[#4B8884]"}>{warrantyUploadStatus === "reading" ? "Đang đọc tệp chứng từ..." : warrantyUploadStatus === "uploading" ? "Đang tải chứng từ lên hệ thống..." : warrantyUploadStatus === "complete" ? "Đã tải chứng từ thành công." : "Không thể tải chứng từ. Vui lòng thử lại."}</span><span className="shrink-0 text-[#60758A]">{warrantyUploadProgress}%</span></div><Progress value={warrantyUploadProgress} className={warrantyUploadStatus === "error" ? "mt-1.5 bg-[#FBE4E4] [&>div]:bg-[#B44545]" : warrantyUploadStatus === "complete" ? "mt-1.5 bg-[#DDF4F1] [&>div]:bg-[#087A6A]" : "mt-1.5 bg-[#DDEFEF] [&>div]:bg-[#0F8C8C]"} /></div>}</div>}
             <SearchableSelect value={issueType} onChange={(value) => setIssueType(value as typeof issueType)} searchPlaceholder="Tìm loại yêu cầu..." options={Object.entries(issueTypeLabels).map(([value, label]) => ({ value, label }))} />
             <SearchableSelect value={priority} onChange={(value) => setPriority(value as typeof priority)} searchPlaceholder="Tìm mức ưu tiên..." options={Object.entries(priorityLabels).map(([value, label]) => ({ value, label: `${label} ưu tiên` }))} />
             <CurrencyInput value={estimatedCost} onChange={setEstimatedCost} placeholder="Chi phí dự kiến" aria-label="Chi phí dự kiến" showWords />
