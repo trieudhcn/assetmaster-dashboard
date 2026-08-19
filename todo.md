@@ -1887,3 +1887,10 @@
 - [x] Tạo file Excel danh sách tài sản đã thanh lý, gồm số biên bản TL-NĂM-001 và các thông tin hồ sơ cần thiết.
 - [x] Bổ sung nút xuất Excel tại khu vực báo cáo thanh lý và xử lý trạng thái không có dữ liệu.
 - [x] Bổ sung hồi quy, kiểm tra giao diện và phát hành cập nhật.
+
+## Current Session — Disposal Year Filter & Combined PDF
+
+- [x] Bổ sung bộ lọc theo năm thanh lý, áp dụng đồng bộ cho thống kê và xuất Excel.
+- [x] Cho phép chọn nhiều tài sản thanh lý trong danh sách báo cáo.
+- [x] Xuất một tệp PDF gộp biên bản thanh lý cho các tài sản đã chọn, có phân trang và nhận diện công ty.
+- [x] Bổ sung hồi quy, kiểm tra giao diện và phát hành cập nhật.

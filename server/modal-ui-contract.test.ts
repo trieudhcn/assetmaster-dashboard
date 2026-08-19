@@ -595,7 +595,7 @@ describe("modal presentation contract", () => {
   it("summarizes disposed asset values by retirement year", () => {
     const reports = readProjectFile("client/src/pages/ReportsManagementView.tsx");
 
-    expect(reports).toContain('const retiredAssets = useMemo(() => selectedAssets.filter((asset) => asset.status === "retired")');
+    expect(reports).toContain('const retirementCandidates = useMemo(() => selectedAssets.filter((asset) => asset.status === "retired")');
     expect(reports).toContain("retirementValueByYear");
     expect(reports).toContain("Giá trị tài sản Khấu hao/Thanh lý theo năm");
     expect(reports).toContain("Tổng giá trị thanh lý");
@@ -610,6 +610,20 @@ describe("modal presentation contract", () => {
     expect(reports).toContain('XLSX.utils.book_append_sheet(workbook, sheet, "Tài sản thanh lý")');
     expect(reports).toContain("assetmaster-danh-sach-thanh-ly-");
     expect(reports).toContain("Xuất danh sách tài sản thanh lý");
+  });
+
+  it("filters retired assets by year and exports selected disposal records as one PDF", () => {
+    const reports = readProjectFile("client/src/pages/ReportsManagementView.tsx");
+    const retirementPdf = readProjectFile("client/src/lib/retirementPdf.ts");
+
+    expect(reports).toContain("retirementYearOptions");
+    expect(reports).toContain("retirementYear === \"all\"");
+    expect(reports).toContain("selectedRetirementIds");
+    expect(reports).toContain("exportSelectedRetirementPdf");
+    expect(reports).toContain("Xuất PDF gộp");
+    expect(retirementPdf).toContain("openRetirementPdf");
+    expect(retirementPdf).toContain("doc.addPage()");
+    expect(retirementPdf).toContain("Trang ${page}/${totalPages}");
   });
 
   it("provides a dedicated supplier return report export", () => {
