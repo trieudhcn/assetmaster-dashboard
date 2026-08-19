@@ -15,6 +15,7 @@ const mocks = vi.hoisted(() => ({
   getAuditSession: vi.fn(),
   getMaintenanceTicket: vi.fn(),
   getNextMaintenanceTicketSequence: vi.fn(),
+  getNextWarrantyRequestSequence: vi.fn(),
   getNextAuditSequence: vi.fn(),
   getAssetById: vi.fn(),
   getAssetCategoryById: vi.fn(),
@@ -59,9 +60,10 @@ vi.mock("./db", () => ({
   getHandoverById: vi.fn(),
   getMaintenanceTicket: mocks.getMaintenanceTicket,
   getNextMaintenanceTicketSequence: mocks.getNextMaintenanceTicketSequence,
+  getNextWarrantyRequestSequence: mocks.getNextWarrantyRequestSequence,
   getNextAuditSequence: mocks.getNextAuditSequence,
   getNextRetirementCertificateSequence: vi.fn().mockResolvedValue(1),
-  listAssets: vi.fn(),
+  listAssets: mocks.listAssets,
   listAuditItems: mocks.listAuditItems,
   listAuditSessions: mocks.listAuditSessions,
   listDepartments: vi.fn(),
@@ -128,6 +130,7 @@ describe("operations management", () => {
     mocks.recordActivity.mockResolvedValue(undefined);
     mocks.getMaintenanceTicket.mockResolvedValue({ id: 30, assetId: 8, ticketCode: "BT-2026-002", ticketYear: 2026, ticketSequence: 2, status: "open", description: "Màn hình thiết bị bị nứt sau va chạm." });
     mocks.getNextMaintenanceTicketSequence.mockResolvedValue(1);
+    mocks.getNextWarrantyRequestSequence.mockResolvedValue(1);
     mocks.listMaintenanceTickets.mockResolvedValue([]);
     mocks.listMaintenanceTicketsByAsset.mockResolvedValue([]);
     mocks.listAuditSessions.mockResolvedValue([]);
@@ -151,7 +154,7 @@ describe("operations management", () => {
       priority: "high",
       description: "Màn hình thiết bị bị nứt sau va chạm.",
       estimatedCost: "1250000.00",
-    })).resolves.toEqual({ id: 30 });
+    })).resolves.toEqual({ id: 30, warrantyRequestCode: null });
 
     expect(mocks.createMaintenanceTicket).toHaveBeenCalledWith(expect.objectContaining({
       assetId: 8,
@@ -170,7 +173,7 @@ describe("operations management", () => {
     expect(mocks.updateAsset).toHaveBeenCalledWith(8, expect.objectContaining({ status: "maintenance", holderUserId: null, holderName: null, maintenanceReason: "Màn hình thiết bị bị nứt sau va chạm." }));
   });
 
-  it("stores the requested warranty service channel on a new ticket", async () => {
+  it("generates a year-scoped warranty code for a new warranty ticket", async () => {
     const caller = appRouter.createCaller(employeeContext);
 
     await caller.maintenance.create({
@@ -181,7 +184,7 @@ describe("operations management", () => {
       description: "Thiết bị gặp lỗi trong thời hạn bảo hành.",
       warrantyBrand: "Logitech",
       warrantyVendor: "Trung tâm bảo hành Logitech",
-      warrantyRequestCode: "BH-2026-015",
+      warrantyRequestCode: "BH-2099-999",
       estimatedCost: null,
       dueAt: null,
       recurrenceDays: null,
@@ -191,8 +194,9 @@ describe("operations management", () => {
       serviceChannel: "warranty",
       warrantyBrand: "Logitech",
       warrantyVendor: "Trung tâm bảo hành Logitech",
-      warrantyRequestCode: "BH-2026-015",
+      warrantyRequestCode: expect.stringMatching(/^BH-\d{4}-001$/),
     }));
+    await expect(caller.maintenance.nextWarrantyCode()).resolves.toEqual({ code: expect.stringMatching(/^BH-\d{4}-001$/) });
   });
 
   it("moves all source-category assets to an active target category and requires admin", async () => {
@@ -423,10 +427,11 @@ describe("operations management", () => {
     const tomorrow = new Date(Date.now() + 24 * 60 * 60 * 1000);
     mocks.listMaintenanceTickets.mockResolvedValue([{ id: 30, ticketCode: "BT-2026-ABC12345", status: "open", dueAt: tomorrow, description: "Bảo trì định kỳ", recurrenceDays: 30 }]);
     mocks.listAuditSessions.mockResolvedValue([{ id: 40, referenceCode: "KK-2026-ABC12345", name: "Kiểm kê quý", status: "draft", scheduledAt: tomorrow, recurrenceDays: 90 }]);
+    mocks.listAssets.mockResolvedValue([{ id: 8, assetCode: "LT00008", name: "Laptop QA", status: "available", isArchived: false, warrantyUntil: new Date(Date.now() + 20 * 24 * 60 * 60 * 1000) }]);
     mocks.listActivityLogs.mockResolvedValue([{ id: 1, entityType: "asset", entityId: 8, action: "updated", createdAt: new Date() }]);
 
     const employeeCaller = appRouter.createCaller(employeeContext);
-    await expect(employeeCaller.reminders.list()).resolves.toHaveLength(2);
+    await expect(employeeCaller.reminders.list()).resolves.toEqual(expect.arrayContaining([expect.objectContaining({ kind: "warranty", title: "Sắp hết hạn bảo hành · LT00008", detail: expect.stringContaining("còn 20 ngày") })]));
     await expect(employeeCaller.activity.list({ limit: 50 })).rejects.toMatchObject({ code: "FORBIDDEN" });
 
     const adminCaller = appRouter.createCaller(adminContext);

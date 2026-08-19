@@ -1,0 +1,1 @@
+ALTER TABLE `maintenanceTickets` ADD CONSTRAINT `maintenance_warranty_request_code_unique` UNIQUE(`warrantyRequestCode`);

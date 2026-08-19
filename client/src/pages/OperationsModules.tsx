@@ -112,8 +112,8 @@ function OperationalReminderPanel() {
   const remindersQuery = trpc.reminders.list.useQuery();
   const reminders = remindersQuery.data || [];
   return <section className={`mb-5 ${card} overflow-hidden`}>
-    <div className="flex items-center justify-between border-b border-[#E7EEF3] px-5 py-4"><div><div className="flex items-center gap-2 text-sm font-extrabold text-[#193B57]"><BellRing size={16} className="text-[#A86B00]" />Nhắc việc vận hành</div><p className="mt-1 text-xs text-[#71869A]">Tổng hợp tự động hạn bảo trì và đợt kiểm kê trong 14 ngày tới.</p></div><span className="rounded-full bg-[#FFF9EB] px-2.5 py-1 text-[10px] font-extrabold text-[#A86B00]">{reminders.length} việc cần theo dõi</span></div>
-    {remindersQuery.isLoading ? <div className="px-5 py-6 text-xs text-[#71869A]">Đang tải nhắc việc...</div> : remindersQuery.isError ? <div className="px-5 py-6 text-xs text-[#B44545]">Không thể tải nhắc việc. <button onClick={() => remindersQuery.refetch()} className="font-bold underline">Thử lại</button></div> : reminders.length === 0 ? <div className="px-5 py-6 text-xs text-[#71869A]">Chưa có lịch Bảo hành/Sửa chữa hoặc kiểm kê nào đến hạn trong 14 ngày tới.</div> : <div className="divide-y divide-[#EDF2F5]">{reminders.slice(0, 5).map((reminder) => <div key={reminder.id} className="flex flex-col gap-2 px-5 py-3 sm:flex-row sm:items-center sm:justify-between"><div className="flex items-start gap-2"><CalendarClock size={15} className="mt-0.5 text-[#0F8C8C]" /><div><div className="text-xs font-bold text-[#193B57]">{reminder.title}</div><div className="mt-0.5 text-[11px] text-[#71869A]">{reminder.kind === "maintenance" ? "Bảo hành/Sửa chữa" : "Kiểm kê"} · {reminder.detail}{reminder.recurrenceDays ? ` · Lặp lại mỗi ${reminder.recurrenceDays} ngày` : ""}</div></div></div><span className={`w-fit rounded-full px-2 py-1 text-[10px] font-extrabold ${reminder.isOverdue ? "bg-[#FDEDEE] text-[#B44545]" : "bg-[#FFF9EB] text-[#A86B00]"}`}>{reminder.isOverdue ? "Đã quá hạn" : `Hạn ${new Date(reminder.dueAt).toLocaleDateString("vi-VN")}`}</span></div>)}</div>}
+    <div className="flex items-center justify-between border-b border-[#E7EEF3] px-5 py-4"><div><div className="flex items-center gap-2 text-sm font-extrabold text-[#193B57]"><BellRing size={16} className="text-[#A86B00]" />Nhắc việc vận hành</div><p className="mt-1 text-xs text-[#71869A]">Tổng hợp hạn Bảo hành/Sửa chữa, kiểm kê trong 14 ngày và tài sản sắp hết bảo hành trong 30 ngày.</p></div><span className="rounded-full bg-[#FFF9EB] px-2.5 py-1 text-[10px] font-extrabold text-[#A86B00]">{reminders.length} việc cần theo dõi</span></div>
+    {remindersQuery.isLoading ? <div className="px-5 py-6 text-xs text-[#71869A]">Đang tải nhắc việc...</div> : remindersQuery.isError ? <div className="px-5 py-6 text-xs text-[#B44545]">Không thể tải nhắc việc. <button onClick={() => remindersQuery.refetch()} className="font-bold underline">Thử lại</button></div> : reminders.length === 0 ? <div className="px-5 py-6 text-xs text-[#71869A]">Chưa có hạn Bảo hành/Sửa chữa, kiểm kê hoặc bảo hành tài sản cần theo dõi.</div> : <div className="divide-y divide-[#EDF2F5]">{reminders.slice(0, 5).map((reminder) => { const isWarrantyExpiry = reminder.kind === "warranty"; return <div key={reminder.id} className={`flex flex-col gap-2 px-5 py-3 sm:flex-row sm:items-center sm:justify-between ${isWarrantyExpiry ? "bg-[#FFF9EB]" : ""}`}><div className="flex items-start gap-2"><CalendarClock size={15} className={`mt-0.5 ${isWarrantyExpiry ? "text-[#A86B00]" : "text-[#0F8C8C]"}`} /><div><div className="text-xs font-bold text-[#193B57]">{reminder.title}</div><div className="mt-0.5 text-[11px] text-[#71869A]">{isWarrantyExpiry ? "Bảo hành sắp hết hạn" : reminder.kind === "maintenance" ? "Bảo hành/Sửa chữa" : "Kiểm kê"} · {reminder.detail}{reminder.recurrenceDays ? ` · Lặp lại mỗi ${reminder.recurrenceDays} ngày` : ""}</div></div></div><span className={`w-fit rounded-full px-2 py-1 text-[10px] font-extrabold ${reminder.isOverdue ? "bg-[#FDEDEE] text-[#B44545]" : isWarrantyExpiry ? "bg-[#FFE7A4] text-[#8A5900]" : "bg-[#FFF9EB] text-[#A86B00]"}`}>{reminder.isOverdue ? "Đã quá hạn" : isWarrantyExpiry ? `Còn ${Math.max(0, Math.ceil((new Date(reminder.dueAt).getTime() - Date.now()) / 86_400_000))} ngày` : `Hạn ${new Date(reminder.dueAt).toLocaleDateString("vi-VN")}`}</span></div>; })}</div>}
   </section>;
 }
 
@@ -171,6 +171,7 @@ export function MaintenancePage() {
   const assetsQuery = trpc.assets.list.useQuery();
   const ticketsQuery = trpc.maintenance.list.useQuery();
   const brandsQuery = trpc.brands.list.useQuery();
+  const nextWarrantyCodeQuery = trpc.maintenance.nextWarrantyCode.useQuery(undefined, { enabled: serviceChannel === "warranty" });
   const historyQuery = trpc.maintenance.history.useQuery({ id: historyTicket?.id || 0 }, { enabled: Boolean(historyTicket) });
   const [historyPage, setHistoryPage] = useState(1);
   const historyPageSize = 10;
@@ -183,7 +184,7 @@ export function MaintenancePage() {
   const utils = trpc.useUtils();
 
   const createMutation = trpc.maintenance.create.useMutation({
-    onSuccess: ({ id }, variables) => {
+    onSuccess: ({ id, warrantyRequestCode: createdWarrantyRequestCode }, variables) => {
       setRecentlyCreatedTicketId(id);
       setQueuedMaintenanceAssetIds((current) => {
         const next = new Set(current);
@@ -203,7 +204,8 @@ export function MaintenancePage() {
       setWarrantyVendor("");
       setWarrantyRequestCode("");
       setPriority("medium");
-      toast.success(`Đã tạo yêu cầu ${variables.serviceChannel === "warranty" ? "bảo hành" : "sửa chữa"}.`);
+      if (variables.serviceChannel === "warranty") void nextWarrantyCodeQuery.refetch();
+      toast.success(createdWarrantyRequestCode ? `Đã tạo phiếu bảo hành · mã ${createdWarrantyRequestCode}.` : `Đã tạo yêu cầu ${variables.serviceChannel === "warranty" ? "bảo hành" : "sửa chữa"}.`);
     },
     onError: (error) => toast.error(error.message || "Không thể tạo yêu cầu bảo trì."),
   });
@@ -279,10 +281,14 @@ export function MaintenancePage() {
   useEffect(() => {
     const selectedAsset = assets.find((asset) => asset.id === Number(assetId));
     if (serviceChannel !== "warranty" || !selectedAsset) return;
-    if (selectedAsset.vendor && !warrantyVendor) setWarrantyVendor(selectedAsset.vendor);
+    setWarrantyVendor(selectedAsset.vendor || "");
     const selectedBrand = (brandsQuery.data || []).find((brand) => brand.id === selectedAsset.brandId);
-    if (selectedBrand?.name && !warrantyBrand) setWarrantyBrand(selectedBrand.name);
-  }, [assetId, assets, brandsQuery.data, serviceChannel, warrantyBrand, warrantyVendor]);
+    setWarrantyBrand(selectedBrand?.name || "");
+  }, [assetId, assets, brandsQuery.data, serviceChannel]);
+  useEffect(() => {
+    if (serviceChannel !== "warranty") { setWarrantyRequestCode(""); return; }
+    if (nextWarrantyCodeQuery.data?.code) setWarrantyRequestCode(nextWarrantyCodeQuery.data.code);
+  }, [serviceChannel, nextWarrantyCodeQuery.data?.code]);
 
   useEffect(() => {
     setMaintenancePage(1);
@@ -516,7 +522,7 @@ export function MaintenancePage() {
             <SearchableSelect value={assetId} onChange={setAssetId} disabled={assetsQuery.isLoading} placeholder="Chọn tài sản" searchPlaceholder="Tìm mã hoặc tên tài sản..." options={[{ value: "", label: "Chọn tài sản" }, ...assets.map((asset) => ({ value: String(asset.id), label: `${asset.assetCode} · ${asset.name}`, searchText: asset.assetCode }))]} />
             <input value={description} onChange={(event) => setDescription(event.target.value)} placeholder="Mô tả tình trạng cần xử lý" className="field-input" />
             <SearchableSelect value={serviceChannel} onChange={(value) => setServiceChannel(value as typeof serviceChannel)} placeholder="Chọn kênh xử lý" searchPlaceholder="Tìm kênh xử lý..." options={Object.entries(serviceChannelLabels).map(([value, label]) => ({ value, label }))} />
-            {serviceChannel === "warranty" && <><input value={warrantyBrand} onChange={(event) => setWarrantyBrand(event.target.value)} placeholder="Hãng bảo hành" maxLength={160} className="field-input" /><input value={warrantyVendor} onChange={(event) => setWarrantyVendor(event.target.value)} placeholder="Nhà cung cấp / trung tâm bảo hành" maxLength={255} className="field-input" /><input value={warrantyRequestCode} onChange={(event) => setWarrantyRequestCode(event.target.value)} placeholder="Mã yêu cầu bảo hành" maxLength={128} className="field-input" /></>}
+            {serviceChannel === "warranty" && <><div className="relative z-10"><input value={warrantyBrand} onChange={(event) => setWarrantyBrand(event.target.value)} placeholder="Hãng bảo hành" maxLength={160} aria-label="Hãng bảo hành" readOnly={false} className="field-input pointer-events-auto" /><p className="mt-1 text-[10px] text-[#71869A]">Tự điền theo tài sản; có thể điều chỉnh.</p></div><div className="relative z-10"><input value={warrantyVendor} onChange={(event) => setWarrantyVendor(event.target.value)} placeholder="Nhà cung cấp / trung tâm bảo hành" maxLength={255} aria-label="Nhà cung cấp hoặc trung tâm bảo hành" readOnly={false} className="field-input pointer-events-auto" /><p className="mt-1 text-[10px] text-[#71869A]">Tự điền theo tài sản; có thể điều chỉnh.</p></div><div className="relative z-10"><input value={warrantyRequestCode} readOnly aria-readonly="true" placeholder="Đang cấp mã bảo hành..." aria-label="Mã bảo hành tự sinh" className="field-input pointer-events-auto bg-[#F5F9FB] font-mono font-bold text-[#087A6A]" /><p className="mt-1 text-[10px] text-[#087A6A]">Tự sinh theo mẫu BH-NĂM-001 khi tạo phiếu.</p></div></>}
             <SearchableSelect value={issueType} onChange={(value) => setIssueType(value as typeof issueType)} searchPlaceholder="Tìm loại yêu cầu..." options={Object.entries(issueTypeLabels).map(([value, label]) => ({ value, label }))} />
             <SearchableSelect value={priority} onChange={(value) => setPriority(value as typeof priority)} searchPlaceholder="Tìm mức ưu tiên..." options={Object.entries(priorityLabels).map(([value, label]) => ({ value, label: `${label} ưu tiên` }))} />
             <CurrencyInput value={estimatedCost} onChange={setEstimatedCost} placeholder="Chi phí dự kiến" aria-label="Chi phí dự kiến" showWords />

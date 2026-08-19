@@ -1932,3 +1932,10 @@
 - [x] Hiển thị Hãng, Nhà cung cấp/Trung tâm bảo hành và Mã yêu cầu trong chi tiết phiếu Bảo hành.
 - [x] Làm nổi bật hộp thoại xác nhận Sửa chữa khi tài sản còn hạn bảo hành.
 - [x] Bổ sung hồi quy, kiểm tra giao diện, build và phát hành cập nhật.
+
+## Current Session — Warranty Code & Expiry Reminders
+
+- [x] Tự sinh mã bảo hành BH-NĂM-001, quay lại 001 theo năm và chống trùng lặp.
+- [x] Khắc phục khả năng thao tác, tự điền Hãng/Nhà cung cấp và hiển thị mã bảo hành trong biểu mẫu.
+- [x] Hiển thị thông báo nhắc các tài sản sắp hết hạn bảo hành trong 30 ngày.
+- [x] Bổ sung hồi quy, kiểm tra giao diện, build và phát hành cập nhật.

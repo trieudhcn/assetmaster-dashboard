@@ -746,6 +746,18 @@ export default function Home() {
       kind: "maintenance" as const,
       target: { type: "asset" as const, assetCode: asset.code },
     })) : [];
+    const warrantyExpiryNotifications = notificationPreferences.maintenanceEnabled ? assetRows.filter((asset) => getWarrantyState(asset.warrantyUntil) === "expiring").slice(0, 3).map((asset) => {
+      const warrantyUntil = normalizePurchaseDate(asset.warrantyUntil);
+      const remainingDays = warrantyUntil === null ? 0 : Math.max(0, Math.ceil((warrantyUntil - Date.now()) / 86_400_000));
+      return {
+        id: `warranty-expiry-${asset.code}-${warrantyUntil || "unknown"}`,
+        title: `${asset.code} sắp hết hạn bảo hành`,
+        description: `${asset.name} còn ${remainingDays} ngày bảo hành (đến ${warrantyUntil ? new Date(warrantyUntil).toLocaleDateString("vi-VN") : "chưa xác định"}).`,
+        createdAt: assetQuery.data?.find((item) => item.assetCode === asset.code)?.updatedAt || new Date(),
+        kind: "maintenance" as const,
+        target: { type: "asset" as const, assetCode: asset.code },
+      };
+    }) : [];
     const handoverNotifications = notificationPreferences.handoverEnabled ? (notificationHandoversQuery.data || []).filter((handover) => handover.status !== "returned" && handover.status !== "cancelled" && handover.returnRequestStatus !== "pending").slice(0, 3).map((handover) => {
       const asset = assetQuery.data?.find((item) => item.id === handover.assetId);
       const statusLabel = handover.status === "active" ? "đã bàn giao" : handover.status === "pending_signature" ? "chờ ký xác nhận" : "đang ở trạng thái nháp";
@@ -780,7 +792,7 @@ export default function Home() {
         target: { type: "asset" as const, assetCode: asset?.assetCode || "" },
       };
     }) : [];
-    return [...returnRequestNotifications, ...maintenanceRequestNotifications, ...maintenanceNotifications, ...handoverNotifications].sort((left, right) => right.createdAt.getTime() - left.createdAt.getTime());
+    return [...warrantyExpiryNotifications, ...returnRequestNotifications, ...maintenanceRequestNotifications, ...maintenanceNotifications, ...handoverNotifications].sort((left, right) => right.createdAt.getTime() - left.createdAt.getTime());
   }, [assetQuery.data, assetRows, maintenanceTicketsQuery.data, notificationHandoversQuery.data, notificationPreferences]);
   const unreadNotifications = headerNotifications.filter((notification) => !readNotificationIds.includes(notification.id));
   const hasUnreadNotifications = unreadNotifications.length > 0;

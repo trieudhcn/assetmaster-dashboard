@@ -919,6 +919,17 @@ export async function getNextMaintenanceTicketSequence(ticketYear: number) {
   return Number(result[0]?.maxSequence || 0) + 1;
 }
 
+export async function getNextWarrantyRequestSequence(warrantyYear: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database unavailable");
+  const rows = await db.select({ warrantyRequestCode: maintenanceTickets.warrantyRequestCode }).from(maintenanceTickets).where(like(maintenanceTickets.warrantyRequestCode, `BH-${warrantyYear}-%`));
+  const maxSequence = rows.reduce((maximum, row) => {
+    const match = row.warrantyRequestCode?.match(new RegExp(`^BH-${warrantyYear}-(\\d+)$`));
+    return Math.max(maximum, match ? Number(match[1]) : 0);
+  }, 0);
+  return maxSequence + 1;
+}
+
 export async function listMaintenanceTicketsByAsset(assetId: number) {
   const db = await getDb();
   if (!db) return [];

@@ -345,7 +345,7 @@ export const maintenanceTickets = mysqlTable("maintenanceTickets", {
   resolvedAt: timestamp("resolvedAt"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
-}, (table) => [index("maintenance_asset_idx").on(table.assetId), index("maintenance_status_idx").on(table.status), index("maintenance_channel_idx").on(table.serviceChannel), index("maintenance_year_sequence_idx").on(table.ticketYear, table.ticketSequence)]);
+}, (table) => [index("maintenance_asset_idx").on(table.assetId), index("maintenance_status_idx").on(table.status), index("maintenance_channel_idx").on(table.serviceChannel), index("maintenance_year_sequence_idx").on(table.ticketYear, table.ticketSequence), uniqueIndex("maintenance_warranty_request_code_unique").on(table.warrantyRequestCode)]);
 
 export const maintenanceMonthlyBudgets = mysqlTable("maintenanceMonthlyBudgets", {
   id: int("id").autoincrement().primaryKey(),

@@ -678,10 +678,16 @@ describe("modal presentation contract", () => {
     expect(operations).toContain("repairWarrantyWarning");
     expect(operations).toContain("Tài sản vẫn còn thời hạn bảo hành");
     expect(operations).toContain("Vẫn tạo phiếu Sửa chữa");
+    expect(operations).toContain("nextWarrantyCode");
+    expect(operations).toContain("BH-NĂM-001");
+    expect(operations).toContain("Tự điền theo tài sản; có thể điều chỉnh.");
+    expect(operations).toContain("Bảo hành sắp hết hạn");
     expect(home).toContain("warrantyTotal");
     expect(home).toContain("repairTotal");
+    expect(home).toContain("sắp hết hạn bảo hành");
     expect(home).toContain("Chi phí Bảo hành/Sửa chữa theo tháng");
     expect(routers).toContain("warrantyRequestCode: z.string().trim().max(128)");
+    expect(routers).toContain("getNextWarrantyRequestSequence");
   });
 
   it("uses the Bao hanh/Sua chua label for asset status and shows a prominent warranty warning", () => {

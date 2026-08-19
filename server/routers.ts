@@ -73,6 +73,7 @@ import {
   listMaintenanceMonthlyBudgets,
   listMaintenanceTicketsByAsset,
   getNextMaintenanceTicketSequence,
+  getNextWarrantyRequestSequence,
   listActivityLogsByEntity,
   getVendorById,
   getVendorByName,
@@ -1003,6 +1004,11 @@ export const appRouter = router({
   }),
   maintenance: router({
     list: protectedProcedure.query(() => listMaintenanceTickets()),
+    nextWarrantyCode: protectedProcedure.query(async () => {
+      const warrantyYear = new Date().getFullYear();
+      const warrantySequence = await getNextWarrantyRequestSequence(warrantyYear);
+      return { code: `BH-${warrantyYear}-${String(warrantySequence).padStart(3, "0")}` };
+    }),
     monthlyBudgets: adminProcedure.input(z.object({ year: z.number().int().min(2000).max(2100) })).query(({ input }) => listMaintenanceMonthlyBudgets(input.year)),
     saveMonthlyBudget: adminProcedure.input(z.object({ year: z.number().int().min(2000).max(2100), month: z.number().int().min(1).max(12), amount: z.string().regex(/^\d+(\.\d{1,2})?$/) })).mutation(({ input, ctx }) => saveMaintenanceMonthlyBudget({ ...input, updatedByUserId: ctx.user!.id })),
     byAsset: protectedProcedure.input(z.object({ assetId: z.number().int().positive() })).query(({ input }) => listMaintenanceTicketsByAsset(input.assetId)),
@@ -1021,16 +1027,17 @@ export const appRouter = router({
       const ticketYear = new Date().getFullYear();
       const ticketSequence = await getNextMaintenanceTicketSequence(ticketYear);
       const ticketCode = `BT-${ticketYear}-${String(ticketSequence).padStart(3, "0")}`;
+      const warrantyRequestCode = input.serviceChannel === "warranty" ? `BH-${ticketYear}-${String(await getNextWarrantyRequestSequence(ticketYear)).padStart(3, "0")}` : null;
       const warrantyDetails = input.serviceChannel === "warranty" ? {
         warrantyBrand: input.warrantyBrand?.trim() || null,
         warrantyVendor: input.warrantyVendor?.trim() || null,
-        warrantyRequestCode: input.warrantyRequestCode?.trim() || null,
+        warrantyRequestCode,
       } : { warrantyBrand: null, warrantyVendor: null, warrantyRequestCode: null };
       const id = await createMaintenanceTicket({ ...input, ...warrantyDetails, ticketYear, ticketSequence, ticketCode, reporterUserId: ctx.user!.id, reporterName: ctx.user!.name ?? "Người dùng", status: "open" });
       await updateAsset(asset.id, { status: "maintenance", holderUserId: null, holderName: null, maintenanceReason: input.description.trim() });
-      await recordActivity({ entityType: "maintenance", entityId: id, action: "reported", actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: `Tạo yêu cầu ${input.serviceChannel === "warranty" ? "bảo hành" : "sửa chữa"}${warrantyDetails.warrantyRequestCode ? ` · mã yêu cầu ${warrantyDetails.warrantyRequestCode}` : ""}` });
+      await recordActivity({ entityType: "maintenance", entityId: id, action: "reported", actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: `Tạo yêu cầu ${input.serviceChannel === "warranty" ? "bảo hành" : "sửa chữa"}${warrantyDetails.warrantyRequestCode ? ` · mã bảo hành ${warrantyDetails.warrantyRequestCode}` : ""}` });
       await recordActivity({ entityType: "asset", entityId: asset.id, action: "maintenance_reported", actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: `Đưa ${asset.assetCode} vào Bảo trì` });
-      return { id };
+      return { id, warrantyRequestCode: warrantyDetails.warrantyRequestCode };
     }),
     update: adminProcedure.input(z.object({ id: z.number().int().positive(), status: z.enum(["open", "in_progress", "resolved", "closed"]), serviceChannel: z.enum(["warranty", "repair"]).optional(), assigneeUserId: z.number().int().positive().optional().nullable(), resolution: nullableText, estimatedCost: z.string().regex(/^\d+(\.\d{1,2})?$/).optional().nullable(), actualCost: z.string().regex(/^\d+(\.\d{1,2})?$/).optional().nullable(), dueAt: dateFromMs, recurrenceDays: z.number().int().min(1).max(3650).optional().nullable() })).mutation(async ({ input, ctx }) => {
       const ticket = await getMaintenanceTicket(input.id);
@@ -1155,11 +1162,16 @@ export const appRouter = router({
   reminders: router({
     list: protectedProcedure.query(async () => {
       const now = new Date();
-      const horizon = new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000);
-      const [tickets, audits] = await Promise.all([listMaintenanceTickets(), listAuditSessions()]);
+      const operationalHorizon = new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000);
+      const warrantyHorizon = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+      const [tickets, audits, assets] = await Promise.all([listMaintenanceTickets(), listAuditSessions(), listAssets()]);
       const reminders = [
-        ...tickets.filter((ticket) => (ticket.status === "open" || ticket.status === "in_progress") && ticket.dueAt && ticket.dueAt <= horizon).map((ticket) => ({ id: `maintenance-${ticket.id}`, kind: "maintenance" as const, title: `Bảo trì ${ticket.ticketCode}`, dueAt: ticket.dueAt!, isOverdue: ticket.dueAt! < now, detail: ticket.description, recurrenceDays: ticket.recurrenceDays })),
-        ...audits.filter((audit) => (audit.status === "draft" || audit.status === "active") && audit.scheduledAt && audit.scheduledAt <= horizon).map((audit) => ({ id: `audit-${audit.id}`, kind: "audit" as const, title: audit.name, dueAt: audit.scheduledAt!, isOverdue: audit.scheduledAt! < now, detail: audit.referenceCode, recurrenceDays: audit.recurrenceDays })),
+        ...tickets.filter((ticket) => (ticket.status === "open" || ticket.status === "in_progress") && ticket.dueAt && ticket.dueAt <= operationalHorizon).map((ticket) => ({ id: `maintenance-${ticket.id}`, kind: "maintenance" as const, title: `Bảo hành/Sửa chữa ${ticket.ticketCode}`, dueAt: ticket.dueAt!, isOverdue: ticket.dueAt! < now, detail: ticket.description, recurrenceDays: ticket.recurrenceDays })),
+        ...audits.filter((audit) => (audit.status === "draft" || audit.status === "active") && audit.scheduledAt && audit.scheduledAt <= operationalHorizon).map((audit) => ({ id: `audit-${audit.id}`, kind: "audit" as const, title: audit.name, dueAt: audit.scheduledAt!, isOverdue: audit.scheduledAt! < now, detail: audit.referenceCode, recurrenceDays: audit.recurrenceDays })),
+        ...assets.filter((asset) => !asset.isArchived && asset.status !== "returned_to_vendor" && asset.status !== "retired" && asset.warrantyUntil && asset.warrantyUntil >= now && asset.warrantyUntil <= warrantyHorizon).map((asset) => {
+          const remainingDays = Math.max(0, Math.ceil((asset.warrantyUntil!.getTime() - now.getTime()) / 86_400_000));
+          return { id: `warranty-expiry-${asset.id}`, kind: "warranty" as const, title: `Sắp hết hạn bảo hành · ${asset.assetCode}`, dueAt: asset.warrantyUntil!, isOverdue: false, detail: `${asset.name} · còn ${remainingDays} ngày`, recurrenceDays: null };
+        }),
       ];
       return reminders.sort((left, right) => left.dueAt.getTime() - right.dueAt.getTime());
     }),
