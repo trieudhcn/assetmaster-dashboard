@@ -128,6 +128,20 @@ type TicketDraft = {
   resolution: string;
 };
 
+type MaintenanceCreatePayload = {
+  assetId: number;
+  description: string;
+  issueType: "maintenance" | "incident" | "damage";
+  serviceChannel: "warranty" | "repair";
+  priority: "low" | "medium" | "high" | "critical";
+  warrantyBrand: string | null;
+  warrantyVendor: string | null;
+  warrantyRequestCode: string | null;
+  estimatedCost: string | null;
+  dueAt: number | null;
+  recurrenceDays: number | null;
+};
+
 export function MaintenancePage() {
   const { user } = useAuth();
   const isAdmin = user?.role === "admin";
@@ -135,6 +149,9 @@ export function MaintenancePage() {
   const [description, setDescription] = useState("");
   const [issueType, setIssueType] = useState<"maintenance" | "incident" | "damage">("incident");
   const [serviceChannel, setServiceChannel] = useState<"warranty" | "repair">("repair");
+  const [warrantyBrand, setWarrantyBrand] = useState("");
+  const [warrantyVendor, setWarrantyVendor] = useState("");
+  const [warrantyRequestCode, setWarrantyRequestCode] = useState("");
   const [priority, setPriority] = useState<"low" | "medium" | "high" | "critical">("medium");
   const [estimatedCost, setEstimatedCost] = useState("");
   const [dueDate, setDueDate] = useState("");
@@ -148,10 +165,12 @@ export function MaintenancePage() {
   const [historyTicket, setHistoryTicket] = useState<(typeof tickets)[number] | null>(null);
   const [recentlyCreatedTicketId, setRecentlyCreatedTicketId] = useState<number | null>(null);
   const [queuedMaintenanceAssetIds, setQueuedMaintenanceAssetIds] = useState<Set<number>>(() => new Set());
+  const [repairWarrantyWarning, setRepairWarrantyWarning] = useState<{ assetName: string; warrantyUntil: Date; payload: MaintenanceCreatePayload } | null>(null);
   const maintenancePageSize = 5;
 
   const assetsQuery = trpc.assets.list.useQuery();
   const ticketsQuery = trpc.maintenance.list.useQuery();
+  const brandsQuery = trpc.brands.list.useQuery();
   const historyQuery = trpc.maintenance.history.useQuery({ id: historyTicket?.id || 0 }, { enabled: Boolean(historyTicket) });
   const [historyPage, setHistoryPage] = useState(1);
   const historyPageSize = 10;
@@ -180,6 +199,9 @@ export function MaintenancePage() {
       setRecurrenceDays("");
       setIssueType("incident");
       setServiceChannel("repair");
+      setWarrantyBrand("");
+      setWarrantyVendor("");
+      setWarrantyRequestCode("");
       setPriority("medium");
       toast.success(`Đã tạo yêu cầu ${variables.serviceChannel === "warranty" ? "bảo hành" : "sửa chữa"}.`);
     },
@@ -219,6 +241,14 @@ export function MaintenancePage() {
   const employees = employeesQuery.data || [];
   const assetById = new Map(assets.map((asset) => [asset.id, asset]));
   const employeeById = new Map(employees.map((employee) => [employee.id, employee]));
+
+  useEffect(() => {
+    const selectedAsset = assets.find((asset) => asset.id === Number(assetId));
+    if (serviceChannel !== "warranty" || !selectedAsset) return;
+    if (selectedAsset.vendor && !warrantyVendor) setWarrantyVendor(selectedAsset.vendor);
+    const selectedBrand = (brandsQuery.data || []).find((brand) => brand.id === selectedAsset.brandId);
+    if (selectedBrand?.name && !warrantyBrand) setWarrantyBrand(selectedBrand.name);
+  }, [assetId, assets, brandsQuery.data, serviceChannel, warrantyBrand, warrantyVendor]);
 
   useEffect(() => {
     setMaintenancePage(1);
@@ -275,6 +305,60 @@ export function MaintenancePage() {
     });
   };
 
+  const buildCreatePayload = (): MaintenanceCreatePayload | null => {
+    if (!assetId || description.trim().length < 5) {
+      toast.error("Chọn tài sản và nhập mô tả tối thiểu 5 ký tự.");
+      return null;
+    }
+    return {
+      assetId: Number(assetId),
+      description,
+      issueType,
+      serviceChannel,
+      priority,
+      warrantyBrand: serviceChannel === "warranty" ? warrantyBrand.trim() || null : null,
+      warrantyVendor: serviceChannel === "warranty" ? warrantyVendor.trim() || null : null,
+      warrantyRequestCode: serviceChannel === "warranty" ? warrantyRequestCode.trim() || null : null,
+      estimatedCost: estimatedCost.trim() || null,
+      dueAt: dateInputToMs(dueDate),
+      recurrenceDays: recurrenceDays ? Number(recurrenceDays) : null,
+    };
+  };
+
+  const requestCreateTicket = () => {
+    const payload = buildCreatePayload();
+    if (!payload) return;
+    const selectedAsset = assets.find((asset) => asset.id === payload.assetId);
+    const warrantyUntil = selectedAsset?.warrantyUntil ? new Date(selectedAsset.warrantyUntil) : null;
+    if (payload.serviceChannel === "repair" && warrantyUntil && warrantyUntil.getTime() >= Date.now()) {
+      setRepairWarrantyWarning({ assetName: selectedAsset?.name || "Tài sản đã chọn", warrantyUntil, payload });
+      return;
+    }
+    createMutation.mutate(payload);
+  };
+
+  const requestQuickRepairTicket = (asset: (typeof assets)[number], description: string) => {
+    const payload: MaintenanceCreatePayload = {
+      assetId: asset.id,
+      issueType: "maintenance",
+      serviceChannel: "repair",
+      priority: "medium",
+      description,
+      warrantyBrand: null,
+      warrantyVendor: null,
+      warrantyRequestCode: null,
+      estimatedCost: null,
+      dueAt: null,
+      recurrenceDays: null,
+    };
+    const warrantyUntil = asset.warrantyUntil ? new Date(asset.warrantyUntil) : null;
+    if (warrantyUntil && warrantyUntil.getTime() >= Date.now()) {
+      setRepairWarrantyWarning({ assetName: asset.name, warrantyUntil, payload });
+      return;
+    }
+    createMutation.mutate(payload);
+  };
+
   const exportMaintenanceCosts = () => {
     if (filteredTickets.length === 0) {
       toast.info("Chưa có phiếu Bảo hành/Sửa chữa trong phạm vi đang lọc để xuất.");
@@ -293,6 +377,9 @@ export function MaintenancePage() {
         "Mã tài sản": asset?.assetCode || "",
         "Tên tài sản": asset?.name || "",
         "Kênh xử lý": serviceChannelLabels[(ticket.serviceChannel || "repair") as keyof typeof serviceChannelLabels],
+        "Hãng bảo hành": ticket.warrantyBrand || "",
+        "Nhà cung cấp / trung tâm bảo hành": ticket.warrantyVendor || "",
+        "Mã yêu cầu bảo hành": ticket.warrantyRequestCode || "",
         "Loại yêu cầu": issueTypeLabels[ticket.issueType as keyof typeof issueTypeLabels] || ticket.issueType,
         "Mức ưu tiên": priorityLabels[ticket.priority as keyof typeof priorityLabels] || ticket.priority,
         "Trạng thái": maintenanceStatusLabels[ticket.status as keyof typeof maintenanceStatusLabels] || ticket.status,
@@ -308,7 +395,7 @@ export function MaintenancePage() {
       };
     });
         const worksheet = XLSX.utils.json_to_sheet(rows);
-        worksheet["!cols"] = [{ wch: 14 }, { wch: 16 }, { wch: 24 }, { wch: 18 }, { wch: 14 }, { wch: 16 }, { wch: 20 }, { wch: 32 }, { wch: 20 }, { wch: 32 }, { wch: 14 }, { wch: 14 }, { wch: 22 }, { wch: 42 }, { wch: 42 }];
+        worksheet["!cols"] = [{ wch: 14 }, { wch: 16 }, { wch: 24 }, { wch: 18 }, { wch: 18 }, { wch: 30 }, { wch: 20 }, { wch: 14 }, { wch: 16 }, { wch: 20 }, { wch: 32 }, { wch: 20 }, { wch: 32 }, { wch: 14 }, { wch: 14 }, { wch: 22 }, { wch: 42 }, { wch: 42 }];
         const workbook = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(workbook, worksheet, "Bảo hành-Sửa chữa");
         await writeBrandedWorkbook(workbook, {
@@ -367,12 +454,27 @@ export function MaintenancePage() {
 
         <OperationalReminderPanel />
 
+        <AlertDialog open={Boolean(repairWarrantyWarning)} onOpenChange={(open) => { if (!open) setRepairWarrantyWarning(null); }}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Tài sản vẫn còn thời hạn bảo hành</AlertDialogTitle>
+              <AlertDialogDescription>
+                {repairWarrantyWarning ? `${repairWarrantyWarning.assetName} còn bảo hành đến ${repairWarrantyWarning.warrantyUntil.toLocaleDateString("vi-VN")}. Hãy cân nhắc tạo phiếu Bảo hành để theo dõi hãng/nhà cung cấp và mã yêu cầu.` : ""}
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Quay lại chọn Bảo hành</AlertDialogCancel>
+              <AlertDialogAction disabled={createMutation.isPending} onClick={() => { if (!repairWarrantyWarning) return; const { payload } = repairWarrantyWarning; setRepairWarrantyWarning(null); createMutation.mutate(payload); }}>{createMutation.isPending ? "Đang tạo..." : "Vẫn tạo phiếu Sửa chữa"}</AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
         <section className={`mt-5 ${card} overflow-hidden`}>
           <div className="flex flex-col gap-2 border-b border-[#E7EEF3] px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
             <div><div className="flex items-center gap-2 text-sm font-extrabold text-[#193B57]"><Wrench size={16} className="text-[#A86B00]" />Tài sản đang cần xử lý</div><p className="mt-1 text-xs text-[#8AA0B6]">Các tài sản vừa được chuyển sang trạng thái Bảo trì từ Danh mục tài sản; yêu cầu nhanh mặc định ở kênh Sửa chữa.</p></div>
             <span className="rounded-full bg-[#FFF5DC] px-2.5 py-1 text-[10px] font-extrabold text-[#A86B00]">{maintenanceAssets.length} tài sản</span>
           </div>
-          {assetsQuery.isLoading ? <div className="px-5 py-6 text-xs text-[#8AA0B6]">Đang tải tài sản...</div> : maintenanceAssets.length === 0 ? <div className="px-5 py-7 text-center text-xs font-semibold text-[#8AA0B6]">Chưa có tài sản nào đang chờ xử lý.</div> : <div className="overflow-x-auto overscroll-x-contain"><div className="flex min-w-max gap-3 p-4">{maintenanceAssets.map((asset) => { const quickDescription = asset.maintenanceReason?.trim() || `Kiểm tra và xử lý tình trạng bảo trì của ${asset.name}.`; return <div key={asset.id} className="w-[280px] shrink-0 rounded-xl border border-[#F2D596] bg-[#FFFDF7] p-4 sm:w-[320px]"><div className="flex items-start justify-between gap-3"><div className="min-w-0"><div className="font-mono text-[10px] font-bold text-[#A86B00]">{asset.assetCode}</div><div className="mt-1 truncate text-sm font-extrabold text-[#193B57]">{asset.name}</div></div><span className="shrink-0 rounded-full bg-[#FFF0C8] px-2 py-1 text-[10px] font-extrabold text-[#A86B00]">Sửa chữa</span></div><p className="mt-3 line-clamp-2 text-xs leading-5 text-[#60758A]">{quickDescription}</p><button type="button" disabled={createMutation.isPending} onClick={() => createMutation.mutate({ assetId: asset.id, issueType: "maintenance", serviceChannel: "repair", priority: "medium", description: quickDescription, estimatedCost: null, dueAt: null, recurrenceDays: null })} className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-lg border border-[#D7B65B] bg-white px-3 py-2 text-xs font-extrabold text-[#A86B00] transition hover:bg-[#FFF5DC] disabled:cursor-not-allowed disabled:opacity-60"><Plus size={14} />{createMutation.isPending ? "Đang tạo yêu cầu..." : "Tạo phiếu sửa chữa"}</button></div>; })}</div></div>}
+          {assetsQuery.isLoading ? <div className="px-5 py-6 text-xs text-[#8AA0B6]">Đang tải tài sản...</div> : maintenanceAssets.length === 0 ? <div className="px-5 py-7 text-center text-xs font-semibold text-[#8AA0B6]">Chưa có tài sản nào đang chờ xử lý.</div> : <div className="overflow-x-auto overscroll-x-contain"><div className="flex min-w-max gap-3 p-4">{maintenanceAssets.map((asset) => { const quickDescription = asset.maintenanceReason?.trim() || `Kiểm tra và xử lý tình trạng bảo trì của ${asset.name}.`; return <div key={asset.id} className="w-[280px] shrink-0 rounded-xl border border-[#F2D596] bg-[#FFFDF7] p-4 sm:w-[320px]"><div className="flex items-start justify-between gap-3"><div className="min-w-0"><div className="font-mono text-[10px] font-bold text-[#A86B00]">{asset.assetCode}</div><div className="mt-1 truncate text-sm font-extrabold text-[#193B57]">{asset.name}</div></div><span className="shrink-0 rounded-full bg-[#FFF0C8] px-2 py-1 text-[10px] font-extrabold text-[#A86B00]">Sửa chữa</span></div><p className="mt-3 line-clamp-2 text-xs leading-5 text-[#60758A]">{quickDescription}</p><button type="button" disabled={createMutation.isPending} onClick={() => requestQuickRepairTicket(asset, quickDescription)} className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-lg border border-[#D7B65B] bg-white px-3 py-2 text-xs font-extrabold text-[#A86B00] transition hover:bg-[#FFF5DC] disabled:cursor-not-allowed disabled:opacity-60"><Plus size={14} />{createMutation.isPending ? "Đang tạo yêu cầu..." : "Tạo phiếu sửa chữa"}</button></div>; })}</div></div>}
         </section>
 
         {recentlyCreatedTicketId && <section className="mb-5 flex flex-col gap-3 rounded-xl border border-[#CDE5E5] bg-[#ECF8F7] px-4 py-3.5 sm:flex-row sm:items-center sm:justify-between"><div><div className="text-xs font-extrabold text-[#087A6A]">Đã tạo phiếu Bảo hành/Sửa chữa thành công</div><p className="mt-1 text-[11px] text-[#4B8884]">{recentlyCreatedTicket ? `${recentlyCreatedTicket.ticketCode} · ${serviceChannelLabels[(recentlyCreatedTicket.serviceChannel || "repair") as keyof typeof serviceChannelLabels]} · ${recentlyCreatedTicket.description}` : "Đang đồng bộ thông tin phiếu vừa tạo..."}</p></div><button type="button" disabled={!recentlyCreatedTicket} onClick={() => { if (recentlyCreatedTicket) setHistoryTicket(recentlyCreatedTicket); }} className="inline-flex shrink-0 items-center justify-center gap-2 rounded-lg border border-[#8BCDC6] bg-white px-3 py-2 text-xs font-extrabold text-[#087A6A] transition hover:bg-[#DDF4F1] disabled:cursor-wait disabled:opacity-60"><FileText size={14} />{recentlyCreatedTicket ? "Mở phiếu vừa tạo" : "Đang tải phiếu..."}</button></section>}
@@ -385,6 +487,7 @@ export function MaintenancePage() {
             <SearchableSelect value={assetId} onChange={setAssetId} disabled={assetsQuery.isLoading} placeholder="Chọn tài sản" searchPlaceholder="Tìm mã hoặc tên tài sản..." options={[{ value: "", label: "Chọn tài sản" }, ...assets.map((asset) => ({ value: String(asset.id), label: `${asset.assetCode} · ${asset.name}`, searchText: asset.assetCode }))]} />
             <input value={description} onChange={(event) => setDescription(event.target.value)} placeholder="Mô tả tình trạng cần xử lý" className="field-input" />
             <SearchableSelect value={serviceChannel} onChange={(value) => setServiceChannel(value as typeof serviceChannel)} placeholder="Chọn kênh xử lý" searchPlaceholder="Tìm kênh xử lý..." options={Object.entries(serviceChannelLabels).map(([value, label]) => ({ value, label }))} />
+            {serviceChannel === "warranty" && <><input value={warrantyBrand} onChange={(event) => setWarrantyBrand(event.target.value)} placeholder="Hãng bảo hành" maxLength={160} className="field-input" /><input value={warrantyVendor} onChange={(event) => setWarrantyVendor(event.target.value)} placeholder="Nhà cung cấp / trung tâm bảo hành" maxLength={255} className="field-input" /><input value={warrantyRequestCode} onChange={(event) => setWarrantyRequestCode(event.target.value)} placeholder="Mã yêu cầu bảo hành" maxLength={128} className="field-input" /></>}
             <SearchableSelect value={issueType} onChange={(value) => setIssueType(value as typeof issueType)} searchPlaceholder="Tìm loại yêu cầu..." options={Object.entries(issueTypeLabels).map(([value, label]) => ({ value, label }))} />
             <SearchableSelect value={priority} onChange={(value) => setPriority(value as typeof priority)} searchPlaceholder="Tìm mức ưu tiên..." options={Object.entries(priorityLabels).map(([value, label]) => ({ value, label: `${label} ưu tiên` }))} />
             <CurrencyInput value={estimatedCost} onChange={setEstimatedCost} placeholder="Chi phí dự kiến" aria-label="Chi phí dự kiến" showWords />
@@ -392,13 +495,7 @@ export function MaintenancePage() {
             <input value={recurrenceDays} onChange={(event) => setRecurrenceDays(event.target.value.replace(/\D/g, ""))} placeholder="Lặp lại (ngày)" inputMode="numeric" className="field-input" />
             <button
               disabled={createMutation.isPending}
-              onClick={() => {
-                if (!assetId || description.trim().length < 5) {
-                  toast.error("Chọn tài sản và nhập mô tả tối thiểu 5 ký tự.");
-                  return;
-                }
-                createMutation.mutate({ assetId: Number(assetId), description, issueType, serviceChannel, priority, estimatedCost: estimatedCost.trim() || null, dueAt: dateInputToMs(dueDate), recurrenceDays: recurrenceDays ? Number(recurrenceDays) : null });
-              }}
+              onClick={requestCreateTicket}
               className="flex min-h-11 self-start items-center justify-center gap-2 rounded-lg bg-[#0F8C8C] px-4 py-2 text-xs font-bold text-white transition hover:bg-[#087A6A] disabled:cursor-not-allowed disabled:opacity-60"
             >
               <Plus size={15} />{createMutation.isPending ? "Đang tạo" : "Tạo yêu cầu"}

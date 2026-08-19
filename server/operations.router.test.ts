@@ -179,12 +179,20 @@ describe("operations management", () => {
       serviceChannel: "warranty",
       priority: "medium",
       description: "Thiết bị gặp lỗi trong thời hạn bảo hành.",
+      warrantyBrand: "Logitech",
+      warrantyVendor: "Trung tâm bảo hành Logitech",
+      warrantyRequestCode: "BH-2026-015",
       estimatedCost: null,
       dueAt: null,
       recurrenceDays: null,
     });
 
-    expect(mocks.createMaintenanceTicket).toHaveBeenCalledWith(expect.objectContaining({ serviceChannel: "warranty" }));
+    expect(mocks.createMaintenanceTicket).toHaveBeenCalledWith(expect.objectContaining({
+      serviceChannel: "warranty",
+      warrantyBrand: "Logitech",
+      warrantyVendor: "Trung tâm bảo hành Logitech",
+      warrantyRequestCode: "BH-2026-015",
+    }));
   });
 
   it("moves all source-category assets to an active target category and requires admin", async () => {

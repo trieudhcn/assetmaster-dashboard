@@ -1918,3 +1918,10 @@
 - [x] Cập nhật API, lịch sử, xuất Excel và báo cáo để giữ thông tin Kênh xử lý.
 - [x] Đổi menu Bảo trì & Báo hỏng thành Bảo hành/Sửa chữa, bổ sung lựa chọn kênh khi tạo phiếu và tab lọc riêng.
 - [x] Bổ sung hồi quy, kiểm tra giao diện và phát hành cập nhật.
+
+## Current Session — Warranty Detail, Alerts & Cost Breakdown
+
+- [x] Thêm hãng, nhà cung cấp và mã yêu cầu bảo hành cho phiếu Bảo hành.
+- [x] Cảnh báo khi lập phiếu Sửa chữa cho tài sản còn trong thời hạn bảo hành.
+- [x] Phân tách biểu đồ chi phí dashboard theo Kênh xử lý Bảo hành/Sửa chữa.
+- [x] Bổ sung hồi quy, kiểm tra giao diện và phát hành cập nhật.

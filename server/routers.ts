@@ -1011,7 +1011,7 @@ export const appRouter = router({
       if (!ticket) throw new TRPCError({ code: "NOT_FOUND", message: "Không tìm thấy yêu cầu bảo trì." });
       return listActivityLogsByEntity("maintenance", input.id);
     }),
-    create: protectedProcedure.input(z.object({ assetId: z.number().int().positive(), issueType: z.enum(["maintenance", "incident", "damage"]), serviceChannel: z.enum(["warranty", "repair"]).default("repair"), priority: z.enum(["low", "medium", "high", "critical"]).default("medium"), description: z.string().trim().min(5).max(5000), estimatedCost: z.string().regex(/^\d+(\.\d{1,2})?$/).optional().nullable(), dueAt: dateFromMs, recurrenceDays: z.number().int().min(1).max(3650).optional().nullable() })).mutation(async ({ input, ctx }) => {
+    create: protectedProcedure.input(z.object({ assetId: z.number().int().positive(), issueType: z.enum(["maintenance", "incident", "damage"]), serviceChannel: z.enum(["warranty", "repair"]).default("repair"), priority: z.enum(["low", "medium", "high", "critical"]).default("medium"), description: z.string().trim().min(5).max(5000), warrantyBrand: z.string().trim().max(160).optional().nullable(), warrantyVendor: z.string().trim().max(255).optional().nullable(), warrantyRequestCode: z.string().trim().max(128).optional().nullable(), estimatedCost: z.string().regex(/^\d+(\.\d{1,2})?$/).optional().nullable(), dueAt: dateFromMs, recurrenceDays: z.number().int().min(1).max(3650).optional().nullable() })).mutation(async ({ input, ctx }) => {
       const asset = await getAssetById(input.assetId);
       if (!asset || asset.isArchived) throw new TRPCError({ code: "NOT_FOUND", message: "Tài sản được chọn không tồn tại hoặc đã lưu trữ." });
       const existingTickets = await listMaintenanceTicketsByAsset(input.assetId);
@@ -1021,9 +1021,14 @@ export const appRouter = router({
       const ticketYear = new Date().getFullYear();
       const ticketSequence = await getNextMaintenanceTicketSequence(ticketYear);
       const ticketCode = `BT-${ticketYear}-${String(ticketSequence).padStart(3, "0")}`;
-      const id = await createMaintenanceTicket({ ...input, ticketYear, ticketSequence, ticketCode, reporterUserId: ctx.user!.id, reporterName: ctx.user!.name ?? "Người dùng", status: "open" });
+      const warrantyDetails = input.serviceChannel === "warranty" ? {
+        warrantyBrand: input.warrantyBrand?.trim() || null,
+        warrantyVendor: input.warrantyVendor?.trim() || null,
+        warrantyRequestCode: input.warrantyRequestCode?.trim() || null,
+      } : { warrantyBrand: null, warrantyVendor: null, warrantyRequestCode: null };
+      const id = await createMaintenanceTicket({ ...input, ...warrantyDetails, ticketYear, ticketSequence, ticketCode, reporterUserId: ctx.user!.id, reporterName: ctx.user!.name ?? "Người dùng", status: "open" });
       await updateAsset(asset.id, { status: "maintenance", holderUserId: null, holderName: null, maintenanceReason: input.description.trim() });
-      await recordActivity({ entityType: "maintenance", entityId: id, action: "reported", actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: `Tạo yêu cầu ${input.serviceChannel === "warranty" ? "bảo hành" : "sửa chữa"}` });
+      await recordActivity({ entityType: "maintenance", entityId: id, action: "reported", actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: `Tạo yêu cầu ${input.serviceChannel === "warranty" ? "bảo hành" : "sửa chữa"}${warrantyDetails.warrantyRequestCode ? ` · mã yêu cầu ${warrantyDetails.warrantyRequestCode}` : ""}` });
       await recordActivity({ entityType: "asset", entityId: asset.id, action: "maintenance_reported", actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: `Đưa ${asset.assetCode} vào Bảo trì` });
       return { id };
     }),

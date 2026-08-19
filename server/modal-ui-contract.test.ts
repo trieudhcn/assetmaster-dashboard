@@ -48,7 +48,7 @@ describe("modal presentation contract", () => {
     const supplies = readProjectFile("client/src/pages/SuppliesInventoryView.tsx");
 
     expect(home).toContain("monthlyMaintenanceCosts");
-    expect(home).toContain("Chi phí bảo trì theo tháng");
+    expect(home).toContain("Chi phí Bảo hành/Sửa chữa theo tháng");
     expect(home).toContain("data-maintenance-monthly-cost-chart");
     expect(currencyInput).toContain("normalizeVndIntegerInput");
     expect(currencyInput).toContain("Đơn giá chỉ nhận chữ số nguyên từ 0–9.");
@@ -64,7 +64,7 @@ describe("modal presentation contract", () => {
     expect(home).toContain("maintenanceChartYear");
     expect(home).toContain("maintenance.monthlyBudgets.useQuery");
     expect(home).toContain("maintenance.saveMonthlyBudget.useMutation");
-    expect(home).toContain("Xem phiếu bảo trì tháng");
+    expect(home).toContain("Xem phiếu Bảo hành/Sửa chữa tháng");
     expect(home).toContain("Ngân sách tháng (VNĐ)");
     expect(home).toContain("Vượt ngân sách");
     expect(database).toContain("listMaintenanceMonthlyBudgets");
@@ -665,6 +665,23 @@ describe("modal presentation contract", () => {
     expect(operations).toContain('role="tablist" aria-label="Lọc Kênh xử lý"');
     expect(operations).toContain('serviceChannel: "repair"');
     expect(routers).toContain('serviceChannel: z.enum(["warranty", "repair"]).default("repair")');
+  });
+
+  it("captures warranty request details, warns before repair, and splits dashboard costs by channel", () => {
+    const home = readProjectFile("client/src/pages/Home.tsx");
+    const operations = readProjectFile("client/src/pages/OperationsModules.tsx");
+    const routers = readProjectFile("server/routers.ts");
+
+    expect(operations).toContain("warrantyBrand");
+    expect(operations).toContain("warrantyVendor");
+    expect(operations).toContain("warrantyRequestCode");
+    expect(operations).toContain("repairWarrantyWarning");
+    expect(operations).toContain("Tài sản vẫn còn thời hạn bảo hành");
+    expect(operations).toContain("Vẫn tạo phiếu Sửa chữa");
+    expect(home).toContain("warrantyTotal");
+    expect(home).toContain("repairTotal");
+    expect(home).toContain("Chi phí Bảo hành/Sửa chữa theo tháng");
+    expect(routers).toContain("warrantyRequestCode: z.string().trim().max(128)");
   });
 
   it("provides a dedicated supplier return report export", () => {

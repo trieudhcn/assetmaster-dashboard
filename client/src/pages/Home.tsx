@@ -376,7 +376,7 @@ export default function Home() {
   const monthlyMaintenanceCosts = (() => {
     const months = Array.from({ length: 12 }, (_, index) => {
       const key = `${maintenanceChartYear}-${String(index + 1).padStart(2, "0")}`;
-      return { key, month: index + 1, label: `T${index + 1}`, total: 0, tickets: [] as Array<NonNullable<typeof maintenanceTicketsQuery.data>[number]> };
+      return { key, month: index + 1, label: `T${index + 1}`, total: 0, warrantyTotal: 0, repairTotal: 0, tickets: [] as Array<NonNullable<typeof maintenanceTicketsQuery.data>[number]> };
     });
     const byKey = new Map(months.map((month) => [month.key, month]));
     (maintenanceTicketsQuery.data || []).forEach((ticket) => {
@@ -388,6 +388,8 @@ export default function Home() {
       const amount = Number(ticket.actualCost ?? ticket.estimatedCost ?? 0);
       if (month && Number.isFinite(amount) && amount >= 0) {
         month.total += amount;
+        if (ticket.serviceChannel === "warranty") month.warrantyTotal += amount;
+        else month.repairTotal += amount;
         month.tickets?.push(ticket);
       }
     });
@@ -429,11 +431,13 @@ export default function Home() {
     existing?.remove();
     const max = Math.max(...monthlyMaintenanceCosts.map((item) => Math.max(item.total, item.budget || 0)), 1);
     const total = monthlyMaintenanceCosts.reduce((sum, item) => sum + item.total, 0);
+    const warrantyTotal = monthlyMaintenanceCosts.reduce((sum, item) => sum + item.warrantyTotal, 0);
+    const repairTotal = monthlyMaintenanceCosts.reduce((sum, item) => sum + item.repairTotal, 0);
     const selectedMonth = selectedMaintenanceChartMonth ? monthlyMaintenanceCosts.find((item) => item.month === selectedMaintenanceChartMonth) : null;
     const chart = document.createElement("section");
     chart.dataset.maintenanceMonthlyCostChart = "true";
     chart.className = "mt-5 rounded-xl border border-[#DFE9F0] bg-white p-5 shadow-[0_8px_24px_rgba(16,42,67,0.045)]";
-    chart.innerHTML = `<div class="flex flex-wrap items-start justify-between gap-3"><div><div class="flex items-center gap-2 text-sm font-extrabold text-[#193B57]"><span class="grid h-7 w-7 place-items-center rounded-lg bg-[#FFF5DC] text-[#A86B00]">₫</span>Chi phí bảo trì theo tháng</div><p class="mt-1 text-xs text-[#71869A]">Nhấp cột tháng để xem phiếu chi tiết và thiết lập ngân sách.</p></div><div class="flex items-center gap-2"><label class="sr-only" for="maintenance-chart-year">Chọn năm</label><select id="maintenance-chart-year" class="h-9 rounded-lg border border-[#D7E3EB] bg-white px-3 text-xs font-extrabold text-[#193B57] focus:border-[#0F8C8C] focus:outline-none"></select><div class="rounded-lg bg-[#FFF9EB] px-3 py-2 text-right"><div class="text-[10px] font-extrabold uppercase tracking-[.1em] text-[#8F6A31]">Tổng năm ${maintenanceChartYear}</div><div class="mt-1 text-sm font-extrabold text-[#A86B00]">${formatVnd(total)} VNĐ</div></div></div></div><div class="mt-4 flex items-center gap-2 text-[10px] text-[#71869A]"><span class="h-2.5 w-2.5 rounded-sm bg-[#0F8C8C]"></span> Trong ngân sách <span class="ml-2 h-2.5 w-2.5 rounded-sm bg-[#B44545]"></span> Vượt ngân sách <span class="ml-2 h-px w-4 border-t border-dashed border-[#A86B00]"></span> Mức ngân sách</div><div class="mt-4 grid h-48 grid-cols-6 items-end gap-2 sm:gap-3 lg:grid-cols-12" aria-label="Biểu đồ chi phí bảo trì theo tháng"></div>`;
+    chart.innerHTML = `<div class="flex flex-wrap items-start justify-between gap-3"><div><div class="flex items-center gap-2 text-sm font-extrabold text-[#193B57]"><span class="grid h-7 w-7 place-items-center rounded-lg bg-[#FFF5DC] text-[#A86B00]">₫</span>Chi phí Bảo hành/Sửa chữa theo tháng</div><p class="mt-1 text-xs text-[#71869A]">Cột xếp chồng hiển thị riêng hai Kênh xử lý; nhấp tháng để xem phiếu chi tiết và thiết lập ngân sách.</p></div><div class="flex items-center gap-2"><label class="sr-only" for="maintenance-chart-year">Chọn năm</label><select id="maintenance-chart-year" class="h-9 rounded-lg border border-[#D7E3EB] bg-white px-3 text-xs font-extrabold text-[#193B57] focus:border-[#0F8C8C] focus:outline-none"></select><div class="rounded-lg bg-[#FFF9EB] px-3 py-2 text-right"><div class="text-[10px] font-extrabold uppercase tracking-[.1em] text-[#8F6A31]">Tổng năm ${maintenanceChartYear}</div><div class="mt-1 text-sm font-extrabold text-[#A86B00]">${formatVnd(total)} VNĐ</div><div class="mt-1 flex justify-end gap-2 text-[10px] font-bold"><span class="text-[#087A6A]">BH ${formatVnd(warrantyTotal)}</span><span class="text-[#3855A6]">SC ${formatVnd(repairTotal)}</span></div></div></div></div><div class="mt-4 flex flex-wrap items-center gap-x-3 gap-y-1 text-[10px] text-[#71869A]"><span class="inline-flex items-center gap-1"><span class="h-2.5 w-2.5 rounded-sm bg-[#0F8C8C]"></span>Bảo hành</span><span class="inline-flex items-center gap-1"><span class="h-2.5 w-2.5 rounded-sm bg-[#3855A6]"></span>Sửa chữa</span><span class="inline-flex items-center gap-1"><span class="h-2.5 w-2.5 rounded-sm border-2 border-[#B44545]"></span>Vượt ngân sách</span><span class="inline-flex items-center gap-1"><span class="h-px w-4 border-t border-dashed border-[#A86B00]"></span>Mức ngân sách</span></div><div class="mt-4 grid h-48 grid-cols-6 items-end gap-2 sm:gap-3 lg:grid-cols-12" aria-label="Biểu đồ chi phí Bảo hành và Sửa chữa theo tháng"></div>`;
     const yearSelect = chart.querySelector<HTMLSelectElement>("#maintenance-chart-year");
     maintenanceChartYears.forEach((year) => {
       const option = document.createElement("option");
@@ -452,16 +456,28 @@ export default function Home() {
       const column = document.createElement("button");
       column.type = "button";
       column.className = "flex h-full min-w-0 flex-col items-center justify-end gap-1.5 rounded-md px-0.5 text-left transition hover:bg-[#F5FAFA] focus:outline-none focus:ring-2 focus:ring-[#0F8C8C]/35";
-      column.setAttribute("aria-label", `Xem phiếu bảo trì tháng ${item.month}/${maintenanceChartYear}`);
+      column.setAttribute("aria-label", `Xem phiếu Bảo hành/Sửa chữa tháng ${item.month}/${maintenanceChartYear}`);
       const value = document.createElement("span");
       value.className = `hidden max-w-full truncate text-[10px] font-bold sm:block ${isOverBudget ? "text-[#B44545]" : "text-[#60758A]"}`;
       value.textContent = item.total ? `${Math.round(item.total / 1000).toLocaleString("vi-VN")}k` : "0";
       const plot = document.createElement("div");
       plot.className = "relative flex h-[154px] w-full items-end";
       const bar = document.createElement("div");
-      bar.className = `w-full min-h-1 rounded-t-md transition-[height] duration-300 ${isOverBudget ? "bg-gradient-to-t from-[#B44545] to-[#ED9292]" : "bg-gradient-to-t from-[#0F8C8C] to-[#69BBB5]"}`;
+      bar.className = `flex w-full min-h-1 flex-col justify-end overflow-hidden rounded-t-md transition-[height] duration-300 ${isOverBudget ? "ring-2 ring-inset ring-[#B44545]" : ""}`;
       bar.style.height = `${item.total ? Math.max((item.total / max) * 100, 6) : 3}%`;
-      bar.title = `${item.label}: ${formatVnd(item.total)} VNĐ${item.budget !== null ? ` · Ngân sách: ${formatVnd(item.budget)} VNĐ` : " · Chưa đặt ngân sách"}`;
+      bar.title = `${item.label}: ${formatVnd(item.total)} VNĐ · Bảo hành: ${formatVnd(item.warrantyTotal)} VNĐ · Sửa chữa: ${formatVnd(item.repairTotal)} VNĐ${item.budget !== null ? ` · Ngân sách: ${formatVnd(item.budget)} VNĐ` : " · Chưa đặt ngân sách"}`;
+      if (item.warrantyTotal > 0) {
+        const warrantySegment = document.createElement("span");
+        warrantySegment.className = "w-full bg-gradient-to-t from-[#087A6A] to-[#69BBB5]";
+        warrantySegment.style.height = `${(item.warrantyTotal / item.total) * 100}%`;
+        bar.append(warrantySegment);
+      }
+      if (item.repairTotal > 0) {
+        const repairSegment = document.createElement("span");
+        repairSegment.className = "w-full bg-gradient-to-t from-[#3855A6] to-[#8CA2E8]";
+        repairSegment.style.height = `${(item.repairTotal / item.total) * 100}%`;
+        bar.append(repairSegment);
+      }
       plot.append(bar);
       if (item.budget !== null) {
         const budgetLine = document.createElement("span");
@@ -485,10 +501,10 @@ export default function Home() {
       const titleBlock = document.createElement("div");
       const title = document.createElement("h3");
       title.className = "font-bold text-[#193B57]";
-      title.textContent = `Phiếu bảo trì tháng ${selectedMonth.month}/${maintenanceChartYear}`;
+      title.textContent = `Phiếu Bảo hành/Sửa chữa tháng ${selectedMonth.month}/${maintenanceChartYear}`;
       const summary = document.createElement("p");
       summary.className = "mt-1 text-xs text-[#60758A]";
-      summary.textContent = `${selectedMonth.tickets.length} phiếu · Chi phí ${formatVnd(selectedMonth.total)} VNĐ${selectedMonth.budget !== null ? ` · Ngân sách ${formatVnd(selectedMonth.budget)} VNĐ` : " · Chưa đặt ngân sách"}`;
+      summary.textContent = `${selectedMonth.tickets.length} phiếu · Bảo hành ${formatVnd(selectedMonth.warrantyTotal)} VNĐ · Sửa chữa ${formatVnd(selectedMonth.repairTotal)} VNĐ · Tổng ${formatVnd(selectedMonth.total)} VNĐ${selectedMonth.budget !== null ? ` · Ngân sách ${formatVnd(selectedMonth.budget)} VNĐ` : " · Chưa đặt ngân sách"}`;
       titleBlock.append(title, summary);
       const close = document.createElement("button");
       close.type = "button";
@@ -526,7 +542,7 @@ export default function Home() {
       if (selectedMonth.tickets.length === 0) {
         const empty = document.createElement("p");
         empty.className = "rounded-lg border border-dashed border-[#D7E3EB] bg-white px-3 py-4 text-center text-xs text-[#71869A]";
-        empty.textContent = "Không có phiếu bảo trì phát sinh trong tháng này.";
+        empty.textContent = "Không có phiếu Bảo hành/Sửa chữa phát sinh trong tháng này.";
         ticketList.append(empty);
       } else {
         selectedMonth.tickets.forEach((ticket) => {
@@ -534,7 +550,7 @@ export default function Home() {
           row.className = "rounded-lg border border-[#E1EAEE] bg-white p-3";
           const code = document.createElement("div");
           code.className = "text-xs font-extrabold text-[#193B57]";
-          code.textContent = `${ticket.ticketCode} · ${ticket.status === "closed" ? "Đã đóng" : ticket.status === "resolved" ? "Đã xử lý" : ticket.status === "in_progress" ? "Đang xử lý" : "Mới mở"}`;
+          code.textContent = `${ticket.ticketCode} · ${ticket.serviceChannel === "warranty" ? "Bảo hành" : "Sửa chữa"} · ${ticket.status === "closed" ? "Đã đóng" : ticket.status === "resolved" ? "Đã xử lý" : ticket.status === "in_progress" ? "Đang xử lý" : "Mới mở"}`;
           const description = document.createElement("p");
           description.className = "mt-1 line-clamp-2 text-xs leading-5 text-[#60758A]";
           description.textContent = ticket.description;
