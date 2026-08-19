@@ -2039,7 +2039,13 @@ function AssetModal({ mode, asset, formData, setFormData, isSaving, onClose: dis
         if (button.textContent?.trim() === "Bảo trì") button.textContent = "Bảo hành/Sửa chữa";
       });
       if (formData.statusType === "maintenance") {
-        dialog.querySelectorAll<HTMLTextAreaElement>('textarea[aria-label="Nội dung cần bảo trì"]').forEach((textarea) => textarea.closest("div")?.remove());
+        dialog.querySelectorAll<HTMLLabelElement>("label").forEach((label) => {
+          if (label.textContent?.includes("Nội dung cần bảo trì")) label.innerHTML = 'Lý do Bảo hành/Sửa chữa <span class="text-[#B44545]">*</span>';
+        });
+        dialog.querySelectorAll<HTMLTextAreaElement>('textarea[aria-label="Nội dung cần bảo trì"]').forEach((textarea) => {
+          textarea.setAttribute("aria-label", "Lý do Bảo hành/Sửa chữa");
+          textarea.placeholder = "Mô tả lý do cần bảo hành hoặc sửa chữa...";
+        });
       }
     };
     refreshMaintenanceCopy();

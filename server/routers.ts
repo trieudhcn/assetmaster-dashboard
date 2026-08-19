@@ -819,6 +819,7 @@ export const appRouter = router({
       return { success: true };
     }),
     create: adminProcedure.input(assetInput).mutation(async ({ input, ctx }) => {
+      if (!hasRequiredMaintenanceReason(input.status, input.maintenanceReason)) throw new TRPCError({ code: "BAD_REQUEST", message: "Vui lòng nhập lý do Bảo hành/Sửa chữa khi đưa tài sản vào trạng thái này." });
       if (!hasRequiredRetirementReason(input.status, input.retirementReason)) throw new TRPCError({ code: "BAD_REQUEST", message: "Vui lòng nhập lý do thanh lý khi đưa tài sản vào Khấu hao/Thanh lý." });
       if (input.vendorId && !(await getVendorById(input.vendorId))?.isActive) throw new TRPCError({ code: "BAD_REQUEST", message: "Nhà cung cấp được chọn không tồn tại hoặc đã ngừng hoạt động." });
       if (input.brandId && !(await getBrandById(input.brandId))?.isActive) throw new TRPCError({ code: "BAD_REQUEST", message: "Hãng được chọn không tồn tại hoặc đã ngừng hoạt động." });
@@ -829,7 +830,7 @@ export const appRouter = router({
       })() : null;
       const retirementSequence = retirementCertificate ? await getNextRetirementCertificateSequence(retirementCertificate.year) : null;
       const retirementCertificateNumber = retirementCertificate && retirementSequence ? `TL-${retirementCertificate.year}-${String(retirementSequence).padStart(3, "0")}` : null;
-      const id = await createAsset({ ...input, holderName: input.status === "retired" ? "Khấu hao - Thanh lý" : input.holderName, maintenanceReason: null, retiredAt: retirementAt, retirementReason: input.status === "retired" ? input.retirementReason?.trim() || null : null, retirementCertificateNumber, retirementCertificateYear: retirementCertificate?.year ?? null, retirementCertificateSequence: retirementSequence, qrToken: crypto.randomUUID().replaceAll("-", ""), createdByUserId: ctx.user!.id });
+      const id = await createAsset({ ...input, holderName: input.status === "retired" ? "Khấu hao - Thanh lý" : input.holderName, maintenanceReason: input.status === "maintenance" ? input.maintenanceReason?.trim() || null : null, retiredAt: retirementAt, retirementReason: input.status === "retired" ? input.retirementReason?.trim() || null : null, retirementCertificateNumber, retirementCertificateYear: retirementCertificate?.year ?? null, retirementCertificateSequence: retirementSequence, qrToken: crypto.randomUUID().replaceAll("-", ""), createdByUserId: ctx.user!.id });
       await recordActivity({ entityType: "asset", entityId: id, action: "created", actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: `Tạo tài sản ${input.assetCode}` });
       return { id };
     }),
@@ -837,10 +838,11 @@ export const appRouter = router({
       const { id, ...changes } = input;
       const current = await getAssetById(id);
       if (!current) throw new TRPCError({ code: "NOT_FOUND", message: "Không tìm thấy tài sản cần cập nhật." });
+      if (!hasRequiredMaintenanceReason(changes.status, changes.maintenanceReason)) throw new TRPCError({ code: "BAD_REQUEST", message: "Vui lòng nhập lý do Bảo hành/Sửa chữa khi đưa tài sản vào trạng thái này." });
       if (!hasRequiredRetirementReason(changes.status, changes.retirementReason)) throw new TRPCError({ code: "BAD_REQUEST", message: "Vui lòng nhập lý do thanh lý khi đưa tài sản vào Khấu hao/Thanh lý." });
       if (changes.vendorId && !(await getVendorById(changes.vendorId))?.isActive) throw new TRPCError({ code: "BAD_REQUEST", message: "Nhà cung cấp được chọn không tồn tại hoặc đã ngừng hoạt động." });
       if (changes.brandId && !(await getBrandById(changes.brandId))?.isActive) throw new TRPCError({ code: "BAD_REQUEST", message: "Hãng được chọn không tồn tại hoặc đã ngừng hoạt động." });
-      const persistedChanges = changes.status ? { ...changes, maintenanceReason: null } : changes;
+      const persistedChanges = changes.status && changes.status !== "maintenance" ? { ...changes, maintenanceReason: null } : changes;
       const supplierReturnChanges = changes.status === "returned_to_vendor"
         ? { supplierReturnedAt: changes.supplierReturnedAt ?? current.supplierReturnedAt ?? new Date(), supplierReturnReason: changes.supplierReturnReason?.trim() || current.supplierReturnReason || null }
         : {};

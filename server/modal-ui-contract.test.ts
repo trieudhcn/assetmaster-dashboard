@@ -684,6 +684,13 @@ describe("modal presentation contract", () => {
     expect(operations).toContain("BH-NĂM-001");
     expect(operations).toContain("Lịch sử bảo hành trước đó");
     expect(operations).toContain("selectedWarrantyHistory");
+    expect(operations).toContain("Xem tất cả");
+    expect(operations).toContain("Lịch sử Bảo hành đầy đủ");
+    expect(operations).toContain("warrantyHistoryDialogOpen");
+    expect(operations).toContain("Ảnh / chứng từ bảo hành");
+    expect(operations).toContain('accept="application/pdf,image/png,image/jpeg,image/webp"');
+    expect(operations).toContain("createTicketWithEvidence");
+    expect(operations).toContain("uploadAttachmentByTicketId");
     expect(operations).toContain("requestQuickWarrantyTicket");
     expect(operations).toContain("Bảo hành");
     expect(operations).not.toContain("prepareWarrantyTicketFromReminder");
@@ -705,7 +712,7 @@ describe("modal presentation contract", () => {
     expect(home).toContain('holder: "Bảo hành/Sửa chữa"');
     expect(home).toContain('status: "Bảo hành/Sửa chữa"');
     expect(home).toContain('label: "Bảo hành/Sửa chữa"');
-    expect(home).not.toContain("Nội dung cần Bảo hành/Sửa chữa");
+    expect(home).toContain("Lý do Bảo hành/Sửa chữa");
     expect(home).toContain('textarea[aria-label="Nội dung cần bảo trì"]');
     expect(operations).toContain("data-warranty-ticket-details");
     expect(operations).toContain("Thông tin bảo hành");

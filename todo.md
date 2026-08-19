@@ -1953,3 +1953,10 @@
 - [x] Bỏ tạo phiếu Bảo hành từ nhắc hạn và thêm tạo nhanh Bảo hành trong danh sách tài sản cần xử lý.
 - [x] Ẩn ô Lý do bảo trì khi trạng thái tài sản là Bảo hành/Sửa chữa.
 - [x] Bổ sung hồi quy, kiểm tra giao diện, build và phát hành cập nhật.
+
+## Current Session — Warranty Reason, Full History & Evidence
+
+- [x] Hiển thị và lưu lý do Bảo hành/Sửa chữa khi trạng thái tài sản là Bảo hành/Sửa chữa.
+- [x] Thêm nút Xem tất cả mở popup lịch sử đầy đủ các phiếu Bảo hành của tài sản.
+- [x] Cho phép đính kèm hình ảnh hoặc chứng từ khi tạo phiếu Bảo hành mới.
+- [x] Bổ sung hồi quy, kiểm tra giao diện, build và phát hành cập nhật.

@@ -47,6 +47,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 const shell = "min-h-screen bg-[#F4F7FB] px-4 py-7 sm:px-6 lg:px-9 lg:py-8";
 const card = "rounded-xl border border-[#DFE9F0] bg-white shadow-[0_8px_24px_rgba(16,42,67,0.045)]";
@@ -164,6 +165,8 @@ export function MaintenancePage() {
   const [serviceChannelTab, setServiceChannelTab] = useState<"all" | "warranty" | "repair">("all");
   const [maintenancePage, setMaintenancePage] = useState(1);
   const [historyTicket, setHistoryTicket] = useState<(typeof tickets)[number] | null>(null);
+  const [warrantyHistoryDialogOpen, setWarrantyHistoryDialogOpen] = useState(false);
+  const [warrantyAttachmentFile, setWarrantyAttachmentFile] = useState<File | null>(null);
   const [recentlyCreatedTicketId, setRecentlyCreatedTicketId] = useState<number | null>(null);
   const [queuedMaintenanceAssetIds, setQueuedMaintenanceAssetIds] = useState<Set<number>>(() => new Set());
   const [repairWarrantyWarning, setRepairWarrantyWarning] = useState<{ assetName: string; warrantyUntil: Date; payload: MaintenanceCreatePayload } | null>(null);
@@ -204,6 +207,7 @@ export function MaintenancePage() {
       setWarrantyBrand("");
       setWarrantyVendor("");
       setWarrantyRequestCode("");
+      setWarrantyAttachmentFile(null);
       setPriority("medium");
       if (variables.serviceChannel === "warranty") void nextWarrantyCodeQuery.refetch();
       toast.success(createdWarrantyRequestCode ? `Đã tạo phiếu bảo hành · mã ${createdWarrantyRequestCode}.` : `Đã tạo yêu cầu ${variables.serviceChannel === "warranty" ? "bảo hành" : "sửa chữa"}.`);
@@ -367,6 +371,11 @@ export function MaintenancePage() {
     };
   };
 
+  const createTicketWithEvidence = (payload: MaintenanceCreatePayload) => {
+    const attachment = payload.serviceChannel === "warranty" ? warrantyAttachmentFile : null;
+    createMutation.mutate(payload, { onSuccess: ({ id }) => { if (attachment) uploadAttachmentByTicketId(id, attachment); } });
+  };
+
   const requestCreateTicket = () => {
     const payload = buildCreatePayload();
     if (!payload) return;
@@ -376,7 +385,7 @@ export function MaintenancePage() {
       setRepairWarrantyWarning({ assetName: selectedAsset?.name || "Tài sản đã chọn", warrantyUntil, payload });
       return;
     }
-    createMutation.mutate(payload);
+    createTicketWithEvidence(payload);
   };
 
   const requestQuickRepairTicket = (asset: (typeof assets)[number], description: string) => {
@@ -459,7 +468,7 @@ export function MaintenancePage() {
     })(); }, 180);
   };
 
-  const uploadAttachment = (ticket: (typeof tickets)[number], file: File | undefined) => {
+  const uploadAttachmentByTicketId = (ticketId: number, file: File | undefined) => {
     if (!file) return;
     const supportedTypes = ["application/pdf", "image/png", "image/jpeg", "image/webp"] as const;
     if (!supportedTypes.includes(file.type as (typeof supportedTypes)[number])) {
@@ -477,10 +486,12 @@ export function MaintenancePage() {
         toast.error("Không thể đọc tệp chứng từ.");
         return;
       }
-      uploadAttachmentMutation.mutate({ id: ticket.id, fileName: file.name, contentType: file.type as "application/pdf" | "image/png" | "image/jpeg" | "image/webp", dataUrl: reader.result });
+      uploadAttachmentMutation.mutate({ id: ticketId, fileName: file.name, contentType: file.type as "application/pdf" | "image/png" | "image/jpeg" | "image/webp", dataUrl: reader.result });
     };
     reader.readAsDataURL(file);
   };
+
+  const uploadAttachment = (ticket: (typeof tickets)[number], file: File | undefined) => uploadAttachmentByTicketId(ticket.id, file);
 
   return (
     <div className={shell}>
@@ -529,6 +540,7 @@ export function MaintenancePage() {
             <input value={description} onChange={(event) => setDescription(event.target.value)} placeholder="Mô tả tình trạng cần xử lý" className="field-input" />
             <SearchableSelect value={serviceChannel} onChange={(value) => setServiceChannel(value as typeof serviceChannel)} placeholder="Chọn kênh xử lý" searchPlaceholder="Tìm kênh xử lý..." options={Object.entries(serviceChannelLabels).map(([value, label]) => ({ value, label }))} />
             {serviceChannel === "warranty" && <><div className="group relative z-10"><input value={warrantyBrand} disabled placeholder="Hãng bảo hành" aria-label="Hãng bảo hành được khóa" className="field-input cursor-not-allowed pr-10 opacity-75" /><span title="Được lấy từ dữ liệu mua hàng, không thể chỉnh sửa" className="pointer-events-none absolute right-2 top-2 grid h-6 w-6 place-items-center rounded-full bg-[#B44545] text-white opacity-0 shadow-sm transition-opacity group-hover:opacity-100"><LockKeyhole size={13} /></span><p className="mt-1 text-[10px] text-[#B44545]">Lấy từ dữ liệu mua hàng; không thể chỉnh sửa.</p></div><div className="group relative z-10"><input value={warrantyVendor} disabled placeholder="Nhà cung cấp / trung tâm bảo hành" aria-label="Nhà cung cấp hoặc trung tâm bảo hành được khóa" className="field-input cursor-not-allowed pr-10 opacity-75" /><span title="Được lấy từ dữ liệu mua hàng, không thể chỉnh sửa" className="pointer-events-none absolute right-2 top-2 grid h-6 w-6 place-items-center rounded-full bg-[#B44545] text-white opacity-0 shadow-sm transition-opacity group-hover:opacity-100"><LockKeyhole size={13} /></span><p className="mt-1 text-[10px] text-[#B44545]">Lấy từ dữ liệu mua hàng; không thể chỉnh sửa.</p></div><div className="group relative z-10"><input value={warrantyRequestCode} disabled placeholder="Đang cấp mã bảo hành..." aria-label="Mã bảo hành tự sinh được khóa" className="field-input cursor-not-allowed bg-[#F5F9FB] pr-10 font-mono font-bold text-[#087A6A] opacity-75" /><span title="Mã được hệ thống tự sinh, không thể chỉnh sửa" className="pointer-events-none absolute right-2 top-2 grid h-6 w-6 place-items-center rounded-full bg-[#B44545] text-white opacity-0 shadow-sm transition-opacity group-hover:opacity-100"><LockKeyhole size={13} /></span><p className="mt-1 text-[10px] text-[#087A6A]">Tự sinh theo mẫu BH-NĂM-001 khi tạo phiếu.</p></div></>}
+            {serviceChannel === "warranty" && <div><label className="field-label">Ảnh / chứng từ bảo hành <span className="font-normal text-[#8AA0B6]">(tùy chọn)</span></label><input type="file" accept="application/pdf,image/png,image/jpeg,image/webp" onChange={(event) => { const file = event.target.files?.[0] || null; if (file && file.size > 5 * 1024 * 1024) { toast.error("Chứng từ không được vượt quá 5 MB."); event.currentTarget.value = ""; setWarrantyAttachmentFile(null); return; } setWarrantyAttachmentFile(file); }} className="mt-1 block w-full text-xs text-[#60758A] file:mr-2 file:rounded-md file:border-0 file:bg-[#ECF8F7] file:px-3 file:py-2 file:text-xs file:font-bold file:text-[#087A6A]" />{warrantyAttachmentFile ? <p className="mt-1 truncate text-[10px] font-semibold text-[#087A6A]">Đã chọn: {warrantyAttachmentFile.name}</p> : <p className="mt-1 text-[10px] text-[#8AA0B6]">PDF, PNG, JPG hoặc WebP; tối đa 5 MB.</p>}</div>}
             <SearchableSelect value={issueType} onChange={(value) => setIssueType(value as typeof issueType)} searchPlaceholder="Tìm loại yêu cầu..." options={Object.entries(issueTypeLabels).map(([value, label]) => ({ value, label }))} />
             <SearchableSelect value={priority} onChange={(value) => setPriority(value as typeof priority)} searchPlaceholder="Tìm mức ưu tiên..." options={Object.entries(priorityLabels).map(([value, label]) => ({ value, label: `${label} ưu tiên` }))} />
             <CurrencyInput value={estimatedCost} onChange={setEstimatedCost} placeholder="Chi phí dự kiến" aria-label="Chi phí dự kiến" showWords />
@@ -543,6 +555,8 @@ export function MaintenancePage() {
             </button>
           </div>
           {serviceChannel === "warranty" && assetId && <section data-warranty-create-history className="mt-4 rounded-xl border border-[#8BCDC6] bg-[#F4FBFA] p-4"><div className="flex flex-wrap items-center justify-between gap-2"><div className="flex items-center gap-2 text-xs font-extrabold text-[#087A6A]"><History size={15} />Lịch sử bảo hành trước đó</div><span className="rounded-full bg-[#DDF4F1] px-2 py-1 text-[10px] font-extrabold text-[#087A6A]">{selectedWarrantyHistory.length} phiếu</span></div>{ticketsQuery.isLoading ? <p className="mt-2 text-xs text-[#4B8884]">Đang tải lịch sử bảo hành...</p> : selectedWarrantyHistory.length ? <div className="mt-3 space-y-2">{selectedWarrantyHistory.slice(0, 3).map((ticket) => <div key={ticket.id} className="rounded-lg border border-[#CDE5E5] bg-white px-3 py-2.5"><div className="flex items-start justify-between gap-3"><div><div className="font-mono text-[10px] font-extrabold text-[#087A6A]">{ticket.warrantyRequestCode || ticket.ticketCode}</div><p className="mt-1 text-xs font-semibold text-[#193B57]">{ticket.description}</p></div><span className="text-[10px] font-bold text-[#71869A]">{new Date(ticket.openedAt).toLocaleDateString("vi-VN")}</span></div><p className="mt-1 text-[10px] text-[#71869A]">{maintenanceStatusLabels[ticket.status]}{ticket.resolution ? ` · ${ticket.resolution}` : ""}</p></div>)}</div> : <p className="mt-2 text-xs text-[#4B8884]">Tài sản này chưa có phiếu Bảo hành trước đó.</p>}</section>}
+          {serviceChannel === "warranty" && assetId && selectedWarrantyHistory.length > 0 && <div className="mt-2 flex justify-end"><button type="button" onClick={() => setWarrantyHistoryDialogOpen(true)} className="rounded-md border border-[#8BCDC6] bg-white px-3 py-1.5 text-[10px] font-extrabold text-[#087A6A] transition hover:bg-[#DDF4F1]">Xem tất cả</button></div>}
+          <Dialog open={warrantyHistoryDialogOpen} onOpenChange={setWarrantyHistoryDialogOpen}><DialogContent className="max-h-[85vh] max-w-2xl overflow-y-auto"><DialogHeader><DialogTitle>Lịch sử Bảo hành đầy đủ</DialogTitle><DialogDescription>{assetById.get(Number(assetId))?.name || "Tài sản đã chọn"} · {selectedWarrantyHistory.length} phiếu Bảo hành.</DialogDescription></DialogHeader><div className="space-y-3">{selectedWarrantyHistory.map((ticket) => <article key={ticket.id} className="rounded-xl border border-[#CDE5E5] bg-[#F8FCFC] p-3.5"><div className="flex flex-wrap items-start justify-between gap-2"><div><div className="font-mono text-[11px] font-extrabold text-[#087A6A]">{ticket.warrantyRequestCode || ticket.ticketCode}</div><p className="mt-1 text-sm font-bold text-[#193B57]">{ticket.description}</p></div><span className="rounded-full bg-white px-2 py-1 text-[10px] font-extrabold text-[#60758A]">{maintenanceStatusLabels[ticket.status]}</span></div><div className="mt-2 grid gap-2 text-[11px] text-[#60758A] sm:grid-cols-2"><span>Ngày tạo: {new Date(ticket.openedAt).toLocaleDateString("vi-VN")}</span><span>{ticket.warrantyBrand || "Chưa cập nhật hãng"} · {ticket.warrantyVendor || "Chưa cập nhật nhà cung cấp"}</span></div>{ticket.resolution && <p className="mt-2 rounded-lg border border-[#DDEFEF] bg-white px-2.5 py-2 text-xs text-[#4B636E]"><b>Kết quả:</b> {ticket.resolution}</p>}{ticket.attachmentUrl && <a href={ticket.attachmentUrl} target="_blank" rel="noreferrer" className="mt-2 inline-flex items-center gap-1.5 text-xs font-bold text-[#087A6A] hover:underline"><FileText size={13} />{ticket.attachmentName || "Mở chứng từ"}</a>}</article>)}{selectedWarrantyHistory.length === 0 && <p className="py-6 text-center text-sm text-[#71869A]">Chưa có phiếu Bảo hành trước đó.</p>}</div></DialogContent></Dialog>
           {!assetsQuery.isLoading && assets.length === 0 && <p className="mt-3 text-xs text-[#A86B00]">Chưa có tài sản để tạo phiếu Bảo hành/Sửa chữa.</p>}
         </section>
 
