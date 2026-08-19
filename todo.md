@@ -1881,3 +1881,9 @@
 - [x] Hiển thị số biên bản và chứng từ trong biên bản PDF cùng hồ sơ chi tiết tài sản.
 - [x] Bổ sung bộ lọc trạng thái tài sản đã thanh lý trong Danh mục tài sản.
 - [x] Bổ sung hồi quy, kiểm tra giao diện và phát hành cập nhật.
+
+## Current Session — Disposal List Excel Export
+
+- [x] Tạo file Excel danh sách tài sản đã thanh lý, gồm số biên bản TL-NĂM-001 và các thông tin hồ sơ cần thiết.
+- [x] Bổ sung nút xuất Excel tại khu vực báo cáo thanh lý và xử lý trạng thái không có dữ liệu.
+- [x] Bổ sung hồi quy, kiểm tra giao diện và phát hành cập nhật.

@@ -601,6 +601,17 @@ describe("modal presentation contract", () => {
     expect(reports).toContain("Tổng giá trị thanh lý");
   });
 
+  it("exports a detailed retirement asset list with disposal certificate information", () => {
+    const reports = readProjectFile("client/src/pages/ReportsManagementView.tsx");
+
+    expect(reports).toContain("exportRetirementExcel");
+    expect(reports).toContain('"Số biên bản thanh lý": asset.retirementCertificateNumber');
+    expect(reports).toContain('"Chứng từ đính kèm": asset.retirementAttachmentName');
+    expect(reports).toContain('XLSX.utils.book_append_sheet(workbook, sheet, "Tài sản thanh lý")');
+    expect(reports).toContain("assetmaster-danh-sach-thanh-ly-");
+    expect(reports).toContain("Xuất danh sách tài sản thanh lý");
+  });
+
   it("provides a dedicated supplier return report export", () => {
     const reports = readProjectFile("client/src/pages/ReportsManagementView.tsx");
     expect(reports).toContain('const supplierReturnedAssets = useMemo(() => selectedAssets.filter((asset) => asset.status === "returned_to_vendor")');

@@ -44,7 +44,7 @@ export function ReportsManagementView() {
   const [activityQuery, setActivityQuery] = useState("");
   const [activityType, setActivityType] = useState("all");
   const [currencyMode, setCurrencyMode] = useState<CurrencyDisplayMode>("full");
-  const [exporting, setExporting] = useState<"inventory" | "returned" | null>(null);
+  const [exporting, setExporting] = useState<"inventory" | "returned" | "retired" | null>(null);
   const assetsQuery = trpc.assets.list.useQuery();
   const handoversQuery = trpc.handovers.list.useQuery();
   const maintenanceQuery = trpc.maintenance.list.useQuery();
@@ -52,6 +52,7 @@ export function ReportsManagementView() {
   const departmentsQuery = trpc.departments.listAll.useQuery(undefined, { enabled: isAdmin });
   const divisionsQuery = trpc.departments.listAllDivisions.useQuery(undefined, { enabled: isAdmin });
   const brandsQuery = trpc.brands.list.useQuery();
+  const assetCategoriesQuery = trpc.assetCategories.list.useQuery();
   const activitiesQuery = trpc.activity.list.useQuery({ limit: 150 }, { enabled: isAdmin });
 
   const departments = departmentsQuery.data || [];
@@ -61,6 +62,7 @@ export function ReportsManagementView() {
   const departmentById = new Map(departments.map((item) => [item.id, item]));
   const divisionById = new Map(divisions.map((item) => [item.id, item]));
   const brandById = new Map((brandsQuery.data || []).map((item) => [item.id, item]));
+  const categoryById = new Map((assetCategoriesQuery.data || []).map((item) => [item.id, item]));
   const availableDivisions = divisions.filter((item) => item.isActive && (departmentId === "all" || item.departmentId === Number(departmentId)));
   const selectedDepartment = departmentId === "all" ? undefined : departmentById.get(Number(departmentId));
   const selectedDivision = divisionId === "all" ? undefined : divisionById.get(Number(divisionId));
@@ -167,6 +169,57 @@ export function ReportsManagementView() {
     })(); }, 180);
   };
 
+  const exportRetirementExcel = () => {
+    if (!retiredAssets.length || exporting) return;
+    setExporting("retired");
+    const loadingToast = toast.loading("Đang tạo danh sách tài sản thanh lý...");
+    window.setTimeout(() => { void (async () => {
+      try {
+        const rows = retiredAssets.map((asset) => {
+          const holder = asset.holderUserId ? employeeById.get(asset.holderUserId) : undefined;
+          const division = holder?.divisionId ? divisionById.get(holder.divisionId) : undefined;
+          const department = asset.departmentId ? departmentById.get(asset.departmentId) : undefined;
+          return {
+            "Số biên bản thanh lý": asset.retirementCertificateNumber || "Chưa được cấp",
+            "Năm biên bản": asset.retirementCertificateYear || "",
+            "Số thứ tự": asset.retirementCertificateSequence || "",
+            "Mã tài sản": asset.assetCode,
+            "Tên tài sản": asset.name,
+            "Phân loại": asset.categoryId ? categoryById.get(asset.categoryId)?.name || "Chưa phân loại" : "Chưa phân loại",
+            "Phòng Ban": department?.name || "Chưa gán",
+            "Bộ Phận": division?.name || "Chưa gán",
+            "Người/Phòng giữ": asset.holderName || "Khấu hao - Thanh lý",
+            "Ngày mua": asset.purchaseDate ? new Date(asset.purchaseDate).toLocaleDateString("vi-VN") : "",
+            "Ngày thanh lý": asset.retiredAt ? new Date(asset.retiredAt).toLocaleDateString("vi-VN") : "",
+            "Lý do thanh lý": asset.retirementReason || "",
+            "Giá trị nguyên giá (VNĐ)": Number(asset.purchaseValue || 0),
+            "Serial/IMEI": asset.serialNumber || "",
+            "Vị trí": asset.location || "",
+            "Nhà cung cấp": asset.vendor || "",
+            "Chứng từ đính kèm": asset.retirementAttachmentName || "Không đính kèm",
+            "Ghi chú": asset.note || "",
+          };
+        });
+        const workbook = XLSX.utils.book_new();
+        const sheet = XLSX.utils.json_to_sheet(rows);
+        sheet["!cols"] = [{ wch: 23 }, { wch: 12 }, { wch: 12 }, { wch: 16 }, { wch: 34 }, { wch: 22 }, { wch: 22 }, { wch: 22 }, { wch: 24 }, { wch: 15 }, { wch: 16 }, { wch: 42 }, { wch: 20 }, { wch: 20 }, { wch: 22 }, { wch: 24 }, { wch: 30 }, { wch: 32 }];
+        XLSX.utils.book_append_sheet(workbook, sheet, "Tài sản thanh lý");
+        const scope = selectedDivision?.name || selectedDepartment?.name || "tat-ca";
+        await writeBrandedWorkbook(workbook, {
+          documentTitle: "DANH SÁCH TÀI SẢN KHẤU HAO / THANH LÝ",
+          fileName: `assetmaster-danh-sach-thanh-ly-${scope.replace(/[^a-zA-Z0-9]/g, "-")}.xlsx`,
+          description: `Danh sách ${rows.length} tài sản thanh lý, gồm số biên bản, ngày/lý do thanh lý và chứng từ đính kèm theo phạm vi lọc hiện tại.`,
+        });
+        toast.success(`Đã xuất ${rows.length} tài sản thanh lý.`, { id: loadingToast });
+      } catch (error) {
+        console.error(error);
+        toast.error("Không thể xuất danh sách tài sản thanh lý.", { id: loadingToast });
+      } finally {
+        setExporting(null);
+      }
+    })(); }, 180);
+  };
+
   const exportExcel = () => {
     if (!inventoryAssets.length || exporting) return;
     setExporting("inventory");
@@ -210,9 +263,14 @@ export function ReportsManagementView() {
       <section className={`mt-5 ${card} p-5`}><div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between"><div><div className="flex items-center gap-2 text-sm font-extrabold text-[#193B57]"><Download size={16} className="text-[#087A6A]" />Xuất tài sản theo cơ cấu</div><p className="mt-1 text-xs text-[#71869A]">{selectedDepartment ? `Phòng Ban: ${selectedDepartment.name}` : "Tất cả Phòng Ban"}{selectedDivision ? ` · Bộ Phận: ${selectedDivision.name}` : ""}</p></div><button onClick={exportExcel} disabled={!isAdmin || !inventoryAssets.length || exporting !== null} className="inline-flex items-center justify-center gap-2 rounded-lg bg-[#0F8C8C] px-4 py-2.5 text-xs font-bold text-white hover:bg-[#087A6A] disabled:cursor-not-allowed disabled:opacity-60"><Download size={15} className={exporting === "inventory" ? "animate-pulse" : ""} />{exporting === "inventory" ? "Đang xuất..." : `Xuất Excel (${inventoryAssets.length})`}</button></div></section>
       <section className={`mt-5 ${card} border-[#F3C4C4] p-5`}><div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between"><div><div className="flex items-center gap-2 text-sm font-extrabold text-[#B44545]"><History size={16} />Tài sản đã trả nhà cung cấp</div><p className="mt-1 text-xs text-[#71869A]">Báo cáo riêng gồm ngày trả, lý do, giá trị và thông tin nhận diện của từng tài sản. Hiện có <b className="text-[#B44545]">{supplierReturnedAssets.length}</b> tài sản trong phạm vi lọc.</p></div><button onClick={exportSupplierReturnExcel} disabled={!isAdmin || !supplierReturnedAssets.length || exporting !== null} className="inline-flex items-center justify-center gap-2 rounded-lg border border-[#E7A6A6] bg-[#FFF7F7] px-4 py-2.5 text-xs font-bold text-[#B44545] hover:bg-white disabled:cursor-not-allowed disabled:opacity-60"><Download size={15} className={exporting === "returned" ? "animate-pulse" : ""} />{exporting === "returned" ? "Đang xuất..." : "Xuất báo cáo trả NCC"}</button></div></section>
       <section className={`mt-5 ${card} border-[#E7D9B9] p-5`}><div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between"><div><div className="flex items-center gap-2 text-sm font-extrabold text-[#8F5A00]"><FileBarChart size={16} />Giá trị tài sản Khấu hao/Thanh lý theo năm</div><p className="mt-1 text-xs text-[#71869A]">Tổng hợp theo ngày thanh lý đã ghi nhận trong hồ sơ tài sản, theo phạm vi lọc hiện tại.</p></div><div className="rounded-lg bg-[#FFF7E3] px-3 py-2 text-right"><div className="text-[10px] font-extrabold uppercase tracking-[0.1em] text-[#A86B00]">Tổng giá trị thanh lý</div><div className="mt-1 text-sm font-extrabold text-[#8F5A00]">{currency(retiredTotalValue, currencyMode)}</div></div></div>{assetsQuery.isLoading ? <div className="mt-4 grid min-h-24 place-items-center text-xs text-[#71869A]">Đang tổng hợp giá trị thanh lý...</div> : retirementValueByYear.length ? <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">{retirementValueByYear.map((item) => <div key={item.year} className="rounded-lg border border-[#F0DFC0] bg-[#FFFDF7] px-4 py-3"><div className="flex items-center justify-between gap-3"><span className="text-xs font-extrabold text-[#8F5A00]">Năm {item.year}</span><span className="rounded-full bg-white px-2 py-1 text-[10px] font-bold text-[#A86B00]">{item.count} tài sản</span></div><div className="mt-3 text-lg font-extrabold text-[#193B57]">{currency(item.value, currencyMode)}</div><div className="mt-1 text-[10px] text-[#8AA0B6]">Tổng theo nguyên giá tài sản</div></div>)}</div> : <div className="mt-4 rounded-lg border border-dashed border-[#E7D9B9] bg-[#FFFDF7] px-4 py-6 text-center text-xs text-[#8A7140]">Chưa có tài sản Khấu hao/Thanh lý trong phạm vi lọc.</div>}</section>
+      <DisposalExcelExportCard count={retiredAssets.length} totalValue={retiredTotalValue} currencyMode={currencyMode} exporting={exporting === "retired"} disabled={!isAdmin || !retiredAssets.length || exporting !== null} onExport={exportRetirementExcel} />
     </>}
     {isAdmin && <ActivityLog data={filteredActivities} loading={activitiesQuery.isLoading} query={activityQuery} type={activityType} onQueryChange={setActivityQuery} onTypeChange={setActivityType} allActivities={activitiesQuery.data || []} />}
   </div></div>;
+}
+
+function DisposalExcelExportCard({ count, totalValue, currencyMode, exporting, disabled, onExport }: { count: number; totalValue: number; currencyMode: CurrencyDisplayMode; exporting: boolean; disabled: boolean; onExport: () => void }) {
+  return <section className={`mt-5 ${card} border-[#E7D9B9] p-5`}><div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between"><div><div className="flex items-center gap-2 text-sm font-extrabold text-[#8F5A00]"><Download size={16} />Xuất danh sách tài sản thanh lý</div><p className="mt-1 text-xs text-[#71869A]">File Excel gồm số biên bản TL-NĂM-001, ngày/lý do thanh lý, giá trị, nhận diện tài sản và tên chứng từ đính kèm. Hiện có <b className="text-[#8F5A00]">{count}</b> tài sản, tổng nguyên giá {currency(totalValue, currencyMode)}.</p></div><button onClick={onExport} disabled={disabled} className="inline-flex items-center justify-center gap-2 rounded-lg border border-[#E7D9B9] bg-[#FFF7E3] px-4 py-2.5 text-xs font-bold text-[#8F5A00] hover:bg-white disabled:cursor-not-allowed disabled:opacity-60"><Download size={15} className={exporting ? "animate-pulse" : ""} />{exporting ? "Đang xuất..." : `Xuất Excel (${count})`}</button></div>{!count && <p className="mt-3 rounded-lg border border-dashed border-[#E7D9B9] bg-[#FFFDF7] px-3 py-2 text-xs text-[#8A7140]">Chưa có tài sản thanh lý trong phạm vi lọc để xuất file.</p>}</section>;
 }
 
 function DivisionValueChart({ data, totalValue, isLoading, scope, currencyMode }: { data: DivisionValue[]; totalValue: number; isLoading: boolean; scope: string; currencyMode: CurrencyDisplayMode }) {
