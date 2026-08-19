@@ -717,6 +717,9 @@ describe("modal presentation contract", () => {
     expect(home).toContain('holder: "Bảo hành/Sửa chữa"');
     expect(home).toContain('status: "Bảo hành/Sửa chữa"');
     expect(home).toContain('label: "Bảo hành/Sửa chữa"');
+    expect(home).toContain('const normalizedStatus = status === "Bảo trì" ? "Bảo hành/Sửa chữa" : status;');
+    expect(home).toContain('normalizedStatus === "Bảo hành/Sửa chữa" && asset.statusType === "maintenance"');
+    expect(home).toContain('label: option === "Bảo trì" ? "Bảo hành/Sửa chữa" : option');
     expect(home).toContain("Lý do Bảo hành/Sửa chữa");
     expect(home).toContain('textarea[aria-label="Nội dung cần bảo trì"]');
     expect(operations).toContain("data-warranty-ticket-details");

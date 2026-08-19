@@ -1965,3 +1965,8 @@
 
 - [x] Hiển thị tiến trình và trạng thái tải chứng từ khi tạo phiếu Bảo hành.
 - [x] Bổ sung hồi quy, kiểm tra giao diện, build và phát hành cập nhật.
+
+## Current Session — Warranty Status Filter Fix
+
+- [x] Sửa bộ lọc trạng thái Bảo hành/Sửa chữa trong Danh mục tài sản để trả đúng dữ liệu.
+- [x] Bổ sung hồi quy, kiểm tra giao diện, build và phát hành cập nhật.

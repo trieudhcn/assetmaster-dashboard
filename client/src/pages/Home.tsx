@@ -702,7 +702,8 @@ export default function Home() {
   const filteredAssets = useMemo(() => assetRows.filter((asset) => {
     const matchesQuery = matchesVietnameseSearch(`${asset.code} ${asset.name} ${asset.holder}`, query);
     const matchesCategory = category === "Tất cả loại tài sản" || asset.category === category;
-    const matchesStatus = status === "Tất cả trạng thái" || asset.status === status;
+    const normalizedStatus = status === "Bảo trì" ? "Bảo hành/Sửa chữa" : status;
+    const matchesStatus = normalizedStatus === "Tất cả trạng thái" || asset.status === normalizedStatus || (normalizedStatus === "Bảo hành/Sửa chữa" && asset.statusType === "maintenance");
     const matchesDepartment = department === "Tất cả phòng ban" || asset.holder.includes(department);
     const matchesVendor = vendorFilter === "Tất cả nhà cung cấp" || asset.supplier === vendorFilter;
     const matchesBrand = brandFilter === "Tất cả hãng" || asset.brand === brandFilter;
@@ -1108,7 +1109,6 @@ function PaginatedAssetCatalogPage({ assets, query, category, status, department
       document.querySelectorAll<HTMLElement>("div, p, button, [role=option]").forEach((element) => {
         const text = element.textContent?.trim();
         if (text === "Bảo trì / hỏng trong phạm vi") element.textContent = "Bảo hành/Sửa chữa trong phạm vi";
-        if (text === "Bảo trì") element.textContent = "Bảo hành/Sửa chữa";
         if (text === "Tài sản bảo trì") element.textContent = "Tài sản Bảo hành/Sửa chữa";
       });
       document.querySelectorAll<HTMLButtonElement>("button").forEach((button) => {
@@ -1121,7 +1121,7 @@ function PaginatedAssetCatalogPage({ assets, query, category, status, department
     const observer = new MutationObserver(refreshMaintenanceLabels);
     observer.observe(document.body, { childList: true, subtree: true });
     return () => observer.disconnect();
-  }, [status, pageAssets.length, isExportingMaintenance]);
+  }, [pageAssets.length, isExportingMaintenance]);
   useEffect(() => {
     const tooltipByPrefix: Array<[string, string]> = [["Hồ sơ", "Xem hồ sơ tài sản"], ["Chỉnh sửa", "Chỉnh sửa tài sản"], ["Mã QR", "Tạo / xem mã QR"], ["Cấp phát", "Tạo phiếu bàn giao"]];
     document.querySelectorAll<HTMLButtonElement>("button[aria-label]").forEach((button) => {
@@ -2212,5 +2212,5 @@ function QrLookupModal({ assets, onClose, onOpenAsset }: { assets: Asset[]; onCl
 
 function FilterSelect({ value, onChange, options }: { value: string; onChange: (value: string) => void; options: string[] }) {
   const normalizedOptions = options.includes("Trả nhà cung cấp") && !options.includes("Khấu hao/Thanh lý") ? [...options, "Khấu hao/Thanh lý"] : options;
-  return <SearchableSelect value={value} onChange={onChange} options={normalizedOptions.map((option) => ({ value: option, label: option }))} placeholder={normalizedOptions[0] || "Chọn một giá trị"} searchPlaceholder="Tìm trong dropdown..." className="w-full shrink-0 sm:w-[180px]" />;
+  return <SearchableSelect value={value} onChange={onChange} options={normalizedOptions.map((option) => ({ value: option, label: option === "Bảo trì" ? "Bảo hành/Sửa chữa" : option }))} placeholder={normalizedOptions[0] || "Chọn một giá trị"} searchPlaceholder="Tìm trong dropdown..." className="w-full shrink-0 sm:w-[180px]" />;
 }
