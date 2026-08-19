@@ -1835,3 +1835,8 @@
 - [x] Chỉ cho phép chữ số nguyên trong thao tác gõ và dán; chặn chữ, `đ`, `VNĐ` và mọi ký hiệu.
 - [x] Áp dụng thống nhất cho form, modal và bảng xem trước có trường Đơn giá.
 - [x] Bổ sung hồi quy, kiểm tra TypeScript, Vitest, build, giao diện và phát hành bản sửa lỗi.
+
+## Current Session — Unit Price Quick Clear
+
+- [x] Bổ sung nút X xóa nhanh cho các ô Đơn giá còn thiếu.
+- [x] Kiểm tra hồi quy giao diện và phát hành bản cập nhật.

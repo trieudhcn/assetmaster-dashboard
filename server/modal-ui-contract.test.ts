@@ -32,6 +32,16 @@ describe("modal presentation contract", () => {
     expect(supplies).toContain("Đơn giá không đúng định dạng");
   });
 
+  it("provides a quick-clear action for unit-price inputs", () => {
+    const currencyInput = readProjectFile("client/src/components/CurrencyInput.tsx");
+    const supplies = readProjectFile("client/src/pages/SuppliesInventoryView.tsx");
+
+    expect(currencyInput).toContain('aria-label="Xóa số tiền"');
+    expect(supplies).toContain('aria-label", "Xóa đơn giá"');
+    expect(supplies).toContain('aria-label", "Xóa đơn giá dòng xem trước"');
+    expect(supplies).toContain("const handleClear = () => { input.value = \"\"");
+  });
+
   it("summarizes maintenance costs by month and filters non-numeric unit-price input", () => {
     const home = readProjectFile("client/src/pages/Home.tsx");
     const currencyInput = readProjectFile("client/src/components/CurrencyInput.tsx");
