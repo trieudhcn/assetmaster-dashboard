@@ -155,10 +155,14 @@ export function hasRequiredMaintenanceReason(status: string | undefined, mainten
   return status !== "maintenance" || Boolean(maintenanceReason?.trim());
 }
 
+export function hasRequiredRetirementReason(status: string | undefined, retirementReason: string | null | undefined) {
+  return status !== "retired" || Boolean(retirementReason?.trim());
+}
+
 const assetInput = z.object({
   assetCode: z.string().trim().min(2).max(64), name: z.string().trim().min(2).max(255), categoryId: z.number().int().positive().optional().nullable(), departmentId: z.number().int().positive().optional().nullable(), holderName: nullableText,
   status: z.enum(["available", "assigned", "maintenance", "retired", "lost", "returned_to_vendor"]).default("available"), condition: z.enum(["good", "fair", "needs_inspection", "damaged"]).default("good"),
-  purchaseDate: dateFromMs, purchaseValue: z.string().regex(/^\d+(\.\d{1,2})?$/).optional().nullable(), supplierReturnedAt: dateFromMs, supplierReturnReason: nullableText, vendor: nullableText, vendorId: z.number().int().positive().optional().nullable(), brandId: z.number().int().positive().optional().nullable(), serialNumber: nullableText, location: nullableText, warrantyUntil: dateFromMs, note: nullableText, maintenanceReason: nullableText,
+  purchaseDate: dateFromMs, purchaseValue: z.string().regex(/^\d+(\.\d{1,2})?$/).optional().nullable(), supplierReturnedAt: dateFromMs, supplierReturnReason: nullableText, retiredAt: dateFromMs, retirementReason: nullableText, vendor: nullableText, vendorId: z.number().int().positive().optional().nullable(), brandId: z.number().int().positive().optional().nullable(), serialNumber: nullableText, location: nullableText, warrantyUntil: dateFromMs, note: nullableText, maintenanceReason: nullableText,
 });
 
 const assetImportRow = z.object({
@@ -814,9 +818,10 @@ export const appRouter = router({
     }),
     create: adminProcedure.input(assetInput).mutation(async ({ input, ctx }) => {
       if (!hasRequiredMaintenanceReason(input.status, input.maintenanceReason)) throw new TRPCError({ code: "BAD_REQUEST", message: "Vui lòng nhập lý do bảo trì khi đưa tài sản vào Bảo trì." });
+      if (!hasRequiredRetirementReason(input.status, input.retirementReason)) throw new TRPCError({ code: "BAD_REQUEST", message: "Vui lòng nhập lý do thanh lý khi đưa tài sản vào Khấu hao/Thanh lý." });
       if (input.vendorId && !(await getVendorById(input.vendorId))?.isActive) throw new TRPCError({ code: "BAD_REQUEST", message: "Nhà cung cấp được chọn không tồn tại hoặc đã ngừng hoạt động." });
       if (input.brandId && !(await getBrandById(input.brandId))?.isActive) throw new TRPCError({ code: "BAD_REQUEST", message: "Hãng được chọn không tồn tại hoặc đã ngừng hoạt động." });
-      const id = await createAsset({ ...input, maintenanceReason: input.status === "maintenance" ? input.maintenanceReason : null, qrToken: crypto.randomUUID().replaceAll("-", ""), createdByUserId: ctx.user!.id });
+      const id = await createAsset({ ...input, holderName: input.status === "retired" ? "Khấu hao - Thanh lý" : input.holderName, maintenanceReason: input.status === "maintenance" ? input.maintenanceReason : null, retiredAt: input.status === "retired" ? input.retiredAt ?? new Date() : null, retirementReason: input.status === "retired" ? input.retirementReason?.trim() || null : null, qrToken: crypto.randomUUID().replaceAll("-", ""), createdByUserId: ctx.user!.id });
       await recordActivity({ entityType: "asset", entityId: id, action: "created", actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: `Tạo tài sản ${input.assetCode}` });
       return { id };
     }),
@@ -825,14 +830,18 @@ export const appRouter = router({
       const current = await getAssetById(id);
       if (!current) throw new TRPCError({ code: "NOT_FOUND", message: "Không tìm thấy tài sản cần cập nhật." });
       if (!hasRequiredMaintenanceReason(changes.status, changes.maintenanceReason)) throw new TRPCError({ code: "BAD_REQUEST", message: "Vui lòng nhập lý do bảo trì khi đưa tài sản vào Bảo trì." });
+      if (!hasRequiredRetirementReason(changes.status, changes.retirementReason)) throw new TRPCError({ code: "BAD_REQUEST", message: "Vui lòng nhập lý do thanh lý khi đưa tài sản vào Khấu hao/Thanh lý." });
       if (changes.vendorId && !(await getVendorById(changes.vendorId))?.isActive) throw new TRPCError({ code: "BAD_REQUEST", message: "Nhà cung cấp được chọn không tồn tại hoặc đã ngừng hoạt động." });
       if (changes.brandId && !(await getBrandById(changes.brandId))?.isActive) throw new TRPCError({ code: "BAD_REQUEST", message: "Hãng được chọn không tồn tại hoặc đã ngừng hoạt động." });
       const persistedChanges = changes.status && changes.status !== "maintenance" ? { ...changes, maintenanceReason: null } : changes;
       const supplierReturnChanges = changes.status === "returned_to_vendor"
         ? { supplierReturnedAt: changes.supplierReturnedAt ?? current.supplierReturnedAt ?? new Date(), supplierReturnReason: changes.supplierReturnReason?.trim() || current.supplierReturnReason || null }
         : {};
+      const retirementChanges = changes.status === "retired"
+        ? { holderName: "Khấu hao - Thanh lý", retiredAt: changes.retiredAt ?? current.retiredAt ?? new Date(), retirementReason: changes.retirementReason?.trim() || current.retirementReason || null }
+        : {};
       // Ngày mua là dữ liệu gốc từ lúc nhập kho; không được thay đổi sau khi tài sản đã tạo/import.
-      const safeChanges = { ...persistedChanges, ...supplierReturnChanges, purchaseDate: current.purchaseDate };
+      const safeChanges = { ...persistedChanges, ...supplierReturnChanges, ...retirementChanges, purchaseDate: current.purchaseDate };
       await updateAsset(id, safeChanges);
       await createAssetFieldChanges(fieldChanges(id, assetSnapshot(current as unknown as Record<string, unknown>), assetSnapshot({ ...(current as unknown as Record<string, unknown>), ...safeChanges }), "manual", ctx.user!.id, ctx.user!.name));
       await recordActivity({ entityType: "asset", entityId: id, action: "updated", actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: "Cập nhật thông tin tài sản" });

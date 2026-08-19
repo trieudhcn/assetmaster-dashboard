@@ -487,7 +487,7 @@ describe("modal presentation contract", () => {
     expect(home).toContain('Hạn bảo hành');
     expect(home).toContain('DatePickerField value={dateInputValue(formData.warrantyUntil)}');
     expect(home).toContain('disabled={preservePurchaseDate}');
-    expect(routers).toContain('const safeChanges = { ...persistedChanges, ...supplierReturnChanges, purchaseDate: current.purchaseDate }');
+    expect(routers).toContain('const safeChanges = { ...persistedChanges, ...supplierReturnChanges, ...retirementChanges, purchaseDate: current.purchaseDate }');
     expect(routers).toContain('purchaseDate: current.purchaseDate');
   });
 
@@ -546,7 +546,7 @@ describe("modal presentation contract", () => {
     expect(home).toContain("Trả nhà cung cấp");
     expect(home).toContain('const preservePurchaseDate = mode === "edit" && Boolean(asset?.code)');
     expect(router).toContain('"returned_to_vendor"');
-    expect(router).toContain("const safeChanges = { ...persistedChanges, ...supplierReturnChanges, purchaseDate: current.purchaseDate }");
+    expect(router).toContain("const safeChanges = { ...persistedChanges, ...supplierReturnChanges, ...retirementChanges, purchaseDate: current.purchaseDate }");
   });
 
   it("shows warranty expiry warnings and provides warranty filters in the asset catalog", () => {
@@ -567,6 +567,30 @@ describe("modal presentation contract", () => {
     expect(home).toContain("Lý do trả nhà cung cấp");
     expect(home).toContain("supplierReturnedAt: normalizePurchaseDate");
     expect(home).toContain("supplierReturnReason");
+  });
+
+  it("captures retirement date and reason and can export a disposal record as PDF", () => {
+    const home = readProjectFile("client/src/pages/Home.tsx");
+    const router = readProjectFile("server/routers.ts");
+    const schema = readProjectFile("drizzle/schema.ts");
+
+    expect(home).toContain("Ngày thanh lý");
+    expect(home).toContain("Lý do thanh lý");
+    expect(home).toContain("downloadAssetRetirementPdf");
+    expect(home).toContain("BIÊN BẢN KHẤU HAO / THANH LÝ TÀI SẢN");
+    expect(router).toContain("hasRequiredRetirementReason");
+    expect(router).toContain("retiredAt: changes.retiredAt");
+    expect(schema).toContain('retiredAt: timestamp("retiredAt")');
+    expect(schema).toContain('retirementReason: text("retirementReason")');
+  });
+
+  it("summarizes disposed asset values by retirement year", () => {
+    const reports = readProjectFile("client/src/pages/ReportsManagementView.tsx");
+
+    expect(reports).toContain('const retiredAssets = useMemo(() => selectedAssets.filter((asset) => asset.status === "retired")');
+    expect(reports).toContain("retirementValueByYear");
+    expect(reports).toContain("Giá trị tài sản Khấu hao/Thanh lý theo năm");
+    expect(reports).toContain("Tổng giá trị thanh lý");
   });
 
   it("provides a dedicated supplier return report export", () => {

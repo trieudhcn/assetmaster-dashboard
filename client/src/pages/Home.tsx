@@ -162,6 +162,8 @@ type Asset = {
   warrantyUntil?: string | number | Date | null;
   supplierReturnedAt?: string | number | Date | null;
   supplierReturnReason?: string;
+  retiredAt?: string | number | Date | null;
+  retirementReason?: string;
   supplierReturnAttachmentUrl?: string | null;
   supplierReturnAttachmentName?: string | null;
   supplierReturnAttachmentContentType?: string | null;
@@ -560,9 +562,12 @@ export default function Home() {
   }, [assetQuery.data, vendorsQuery.data, brandsQuery.data, assetCategoriesQuery.data]);
 
   useEffect(() => {
-    const retiredCodes = new Set((assetQuery.data || []).filter((asset) => asset.status === "retired").map((asset) => asset.assetCode));
-    if (!retiredCodes.size) return;
-    setAssetRows((current) => current.map((asset) => retiredCodes.has(asset.code) ? { ...asset, holder: "Khấu hao - Thanh lý", status: "Khấu hao/Thanh lý", statusType: "retired" } : asset));
+    const retiredAssets = new Map((assetQuery.data || []).filter((asset) => asset.status === "retired").map((asset) => [asset.assetCode, asset]));
+    if (!retiredAssets.size) return;
+    setAssetRows((current) => current.map((asset) => {
+      const retiredAsset = retiredAssets.get(asset.code);
+      return retiredAsset ? { ...asset, holder: "Khấu hao - Thanh lý", status: "Khấu hao/Thanh lý", statusType: "retired", retiredAt: retiredAsset.retiredAt ? dateInputValue(retiredAsset.retiredAt) : "", retirementReason: retiredAsset.retirementReason || "" } : asset;
+    }));
   }, [assetQuery.data]);
 
   useEffect(() => {
@@ -807,13 +812,14 @@ export default function Home() {
     }
   };
 
-  const openCreateModal = () => { setFormData({ code: "", name: "", category: "", holder: "", status: "Sẵn có", statusType: "available", date: new Date().toISOString().slice(0, 10), value: "", location: "", serial: "", maintenanceReason: "", supplier: "", warrantyUntil: "", supplierReturnedAt: "", supplierReturnReason: "", note: "" }); setSelectedAsset(null); setAssetModal("create"); };
+  const openCreateModal = () => { setFormData({ code: "", name: "", category: "", holder: "", status: "Sẵn có", statusType: "available", date: new Date().toISOString().slice(0, 10), value: "", location: "", serial: "", maintenanceReason: "", supplier: "", warrantyUntil: "", supplierReturnedAt: "", supplierReturnReason: "", retiredAt: "", retirementReason: "", note: "" }); setSelectedAsset(null); setAssetModal("create"); };
   const openEditModal = (asset: Asset) => { setSelectedAsset(asset); setFormData({ ...asset, date: dateInputValue(asset.purchaseDate || asset.date) }); setAssetModal("edit"); };
   const openDetailModal = (asset: Asset) => { setSelectedAsset(asset); setAssetModal("detail"); };
   const saveAsset = (attachment?: SupplierReturnAttachment) => {
     if (!formData.name.trim() || !formData.value.trim()) { toast.error("Vui lòng nhập tên tài sản và giá trị."); return; }
     if (!formData.categoryId || !formData.code) { toast.error("Vui lòng chọn Phân loại để hệ thống tạo mã tài sản."); return; }
     if (formData.statusType === "maintenance" && !formData.maintenanceReason?.trim()) { toast.error("Vui lòng nhập lý do bảo trì trước khi lưu."); return; }
+    if (formData.statusType === "retired" && (!formData.retiredAt || !formData.retirementReason?.trim())) { toast.error("Vui lòng nhập ngày và lý do thanh lý trước khi lưu."); return; }
     const payload = {
       assetCode: formData.code,
       name: formData.name,
@@ -832,6 +838,8 @@ export default function Home() {
       warrantyUntil: normalizePurchaseDate(formData.warrantyUntil),
       supplierReturnedAt: normalizePurchaseDate(formData.supplierReturnedAt),
       supplierReturnReason: formData.statusType === "returned" ? (formData.supplierReturnReason || "").trim() || null : formData.supplierReturnReason || null,
+      retiredAt: normalizePurchaseDate(formData.retiredAt),
+      retirementReason: formData.statusType === "retired" ? (formData.retirementReason || "").trim() || null : formData.retirementReason || null,
       categoryId: formData.categoryId,
       departmentId: null,
     };
@@ -1571,6 +1579,65 @@ async function downloadHandoverPdf(item: Handover, signature: string | undefined
   openPdfPreview(doc, `${item.referenceCode}-phieu-cap-phat-tai-san.pdf`, `Phiếu cấp phát tài sản ${item.referenceCode}`);
 }
 
+async function downloadAssetRetirementPdf(asset: Asset, companyInfo: CompanyInfo) {
+  const doc = new jsPDF({ unit: "mm", format: "a4" });
+  registerVietnamesePdfFont(doc, await loadHandoverPdfFont());
+  const logoDataUrl = companyInfo.logoUrl ? await loadImageData(companyInfo.logoUrl).catch(() => undefined) : undefined;
+  const left = 18;
+  let y = 22;
+  doc.setTextColor(16, 42, 67);
+  drawHandoverBrandMark(doc, left, y, logoDataUrl);
+  doc.setTextColor(15, 140, 140);
+  doc.setFontSize(10);
+  doc.text(companyInfo.name, left + 24, y - 4);
+  doc.setFontSize(8);
+  doc.setTextColor(112, 134, 154);
+  doc.text(`Địa chỉ: ${companyInfo.address || "Chưa cập nhật"}`, left + 24, y + 2);
+  doc.text(`MST: ${companyInfo.taxCode || "Chưa cập nhật"} · Điện thoại: ${companyInfo.phone || "Chưa cập nhật"}`, left + 24, y + 8);
+  y += 36;
+  doc.setTextColor(16, 42, 67);
+  doc.setFontSize(15);
+  doc.text("BIÊN BẢN KHẤU HAO / THANH LÝ TÀI SẢN", 105, y, { align: "center" });
+  y += 14;
+  doc.setFontSize(10);
+  const rows = [
+    ["Mã tài sản", asset.code],
+    ["Tên tài sản", asset.name],
+    ["Phân loại", asset.category || "Chưa phân loại"],
+    ["Ngày mua", asset.date || "Chưa ghi nhận"],
+    ["Nguyên giá", `${formatVnd(asset.value)} VNĐ`],
+    ["Số serial / IMEI", asset.serial || "Chưa cập nhật"],
+    ["Vị trí lưu trữ", asset.location || "Chưa cập nhật"],
+    ["Ngày thanh lý", asset.retiredAt ? new Date(asset.retiredAt).toLocaleDateString("vi-VN") : "Chưa ghi nhận"],
+    ["Lý do thanh lý", asset.retirementReason || "Chưa ghi nhận"],
+    ["Ghi chú", asset.note || "Không có"],
+  ];
+  rows.forEach(([label, value]) => {
+    const wrapped = doc.splitTextToSize(String(value), 120);
+    doc.setTextColor(112, 134, 154);
+    doc.text(label, left, y);
+    doc.setTextColor(25, 59, 87);
+    doc.text(wrapped, 72, y);
+    y += Math.max(9, wrapped.length * 5 + 3);
+  });
+  y += 10;
+  doc.setDrawColor(221, 231, 240);
+  doc.line(left, y, 192, y);
+  y += 16;
+  doc.setTextColor(16, 42, 67);
+  doc.setFontSize(10);
+  doc.text("XÁC NHẬN CỦA CÁC BÊN", left, y);
+  doc.setFontSize(8);
+  doc.setTextColor(112, 134, 154);
+  doc.text("Người lập biên bản", 42, y + 10, { align: "center" });
+  doc.text("Đại diện bộ phận quản lý", 105, y + 10, { align: "center" });
+  doc.text("Người phê duyệt", 168, y + 10, { align: "center" });
+  doc.setTextColor(138, 160, 182);
+  doc.text(`Biên bản được tạo ngày ${new Date().toLocaleDateString("vi-VN")}`, left, 282);
+  applyPdfLogoWatermark(doc, await createPdfLogoWatermark(companyInfo.logoUrl).catch(() => null));
+  openPdfPreview(doc, `${asset.code}-bien-ban-thanh-ly.pdf`, `Biên bản thanh lý ${asset.code}`);
+}
+
 function HandoverDetailModalLegacyPersisted({ item, companyInfo, onClose, onDataChanged }: { item: Handover; companyInfo: CompanyInfo; onClose: () => void; onDataChanged: () => void }) {
   const [signature, setSignature] = useState(item.recipientSignatureUrl || "");
   const [signed, setSigned] = useState(Boolean(item.recipientSignatureUrl));
@@ -1675,6 +1742,7 @@ function AssetModal({ mode, asset, formData, setFormData, isSaving, onClose: dis
   const [repairDescription, setRepairDescription] = useState("");
   const [repairPriority, setRepairPriority] = useState<"low" | "medium" | "high" | "critical">("medium");
   const assetsQuery = trpc.assets.list.useQuery(undefined, { enabled: isDetail && Boolean(asset) });
+  const retirementCompanyQuery = trpc.company.get.useQuery(undefined, { enabled: isDetail && asset?.statusType === "retired" });
   const persistedAsset = assetsQuery.data?.find((candidate) => candidate.assetCode === asset?.code);
   const maintenanceHistoryQuery = trpc.maintenance.byAsset.useQuery({ assetId: persistedAsset?.id || 0 }, { enabled: isDetail && Boolean(persistedAsset?.id) });
   const assetFieldHistoryQuery = trpc.assets.history.useQuery({ assetId: persistedAsset?.id || 0 }, { enabled: isDetail && Boolean(persistedAsset?.id) });
@@ -1723,6 +1791,27 @@ function AssetModal({ mode, asset, formData, setFormData, isSaving, onClose: dis
       if (originalTitle) tooltipTarget.setAttribute("title", originalTitle);
     };
   }, [isDetail, persistedAsset?.id, latestUpdateActorTooltip]);
+  useEffect(() => {
+    if (!isDetail || asset?.statusType !== "retired") return;
+    const dialog = document.querySelector('[role="dialog"][aria-label="Chi tiết tài sản"]');
+    const closeButton = dialog?.querySelector('button[aria-label="Đóng"]');
+    const header = closeButton?.parentElement;
+    if (!header || header.querySelector("[data-retirement-pdf]")) return;
+    const button = document.createElement("button");
+    button.type = "button";
+    button.dataset.retirementPdf = "true";
+    button.className = "mr-2 inline-flex min-h-10 items-center rounded-lg border border-[#E7D9B9] bg-[#FFFDF7] px-3 py-2 text-[11px] font-bold text-[#8F5A00] transition hover:bg-[#FFF7E3] active:scale-[0.98]";
+    button.textContent = "Xuất biên bản PDF";
+    button.setAttribute("aria-label", "Xuất biên bản thanh lý PDF");
+    const handleExport = () => {
+      const company = retirementCompanyQuery.data;
+      const companyInfo: CompanyInfo = { name: company?.name || "AssetMaster", address: company?.address || "", taxCode: company?.taxCode || "", phone: company?.phone || "", websiteTitle: company?.websiteTitle || "AssetMaster", logoUrl: company?.logoUrl || "", brandColor: company?.brandColor || "#0F8C8C", faviconUrl: "", loginBackgroundUrl: "", loginGreeting: "", loginBackgroundOverlay: "light" };
+      void downloadAssetRetirementPdf(asset, companyInfo).then(() => toast.success("Đã mở xem trước biên bản thanh lý PDF.")).catch(() => toast.error("Không thể tạo biên bản thanh lý PDF."));
+    };
+    button.addEventListener("click", handleExport);
+    header.insertBefore(button, closeButton);
+    return () => { button.removeEventListener("click", handleExport); button.remove(); };
+  }, [isDetail, asset, retirementCompanyQuery.data]);
   const utils = trpc.useUtils();
   const [quickEntryType, setQuickEntryType] = useState<"vendor" | "brand" | null>(null);
   const [quickEntryName, setQuickEntryName] = useState("");
@@ -1791,7 +1880,7 @@ function AssetModal({ mode, asset, formData, setFormData, isSaving, onClose: dis
     const statusLabel = formData.statusType === "available" ? "Chưa bàn giao" : formData.statusType === "maintenance" ? "Bảo trì" : formData.statusType === "returned" ? "Đã trả NCC" : formData.statusType === "retired" ? "Khấu hao - Thanh lý" : "";
     const displayStatus = formData.statusType === "retired" ? "Khấu hao/Thanh lý" : formData.status;
     if (statusLabel && (formData.holder !== statusLabel || formData.status !== displayStatus)) {
-      setFormData((current) => ({ ...current, holder: statusLabel, status: displayStatus }));
+      setFormData((current) => ({ ...current, holder: statusLabel, status: displayStatus, retiredAt: formData.statusType === "retired" && !current.retiredAt ? new Date().toISOString().slice(0, 10) : current.retiredAt }));
       return;
     }
     if (formData.statusType === "active" && ["Chưa bàn giao", "Bảo trì", "Đã trả NCC", "Khấu hao - Thanh lý"].includes(formData.holder)) {
@@ -1815,11 +1904,47 @@ function AssetModal({ mode, asset, formData, setFormData, isSaving, onClose: dis
   }, [isDetail, formData.statusType, formData.holder]);
   useEffect(() => {
     if (isDetail) return;
-    const statusLabel = Array.from(document.querySelectorAll("label")).find((label) => label.textContent?.trim() === "Trạng thái");
+    const assetDialog = document.querySelector<HTMLElement>('[role="dialog"][aria-modal="true"]');
+    const statusLabel = Array.from(assetDialog?.querySelectorAll("label") || []).find((label) => label.textContent?.trim() === "Trạng thái");
     const statusField = statusLabel?.parentElement;
     const grid = statusField?.parentElement;
     if (!statusField || !grid) return;
     grid.querySelector("[data-maintenance-reason]")?.remove();
+    grid.querySelector("[data-retirement-details]")?.remove();
+    if (formData.statusType === "retired") {
+      const field = document.createElement("div");
+      field.dataset.retirementDetails = "true";
+      field.className = "sm:col-span-2 grid gap-4 rounded-xl border border-[#E7D9B9] bg-[#FFFDF7] p-3 sm:grid-cols-2";
+      const dateBlock = document.createElement("div");
+      const dateLabel = document.createElement("label");
+      dateLabel.className = "field-label";
+      dateLabel.innerHTML = 'Ngày thanh lý <span class="text-[#B44545]">*</span>';
+      const dateInput = document.createElement("input");
+      dateInput.type = "date";
+      dateInput.value = dateInputValue(formData.retiredAt) || new Date().toISOString().slice(0, 10);
+      dateInput.className = "field-input mt-1";
+      dateInput.setAttribute("aria-label", "Ngày thanh lý");
+      dateInput.addEventListener("input", () => { setFormDirty(true); setFormData((current) => ({ ...current, retiredAt: dateInput.value })); });
+      const dateHelp = document.createElement("p");
+      dateHelp.className = "mt-1 text-[10px] text-[#8AA0B6]";
+      dateHelp.textContent = "Ngày chính thức đưa tài sản ra khỏi sử dụng.";
+      dateBlock.append(dateLabel, dateInput, dateHelp);
+      const reasonBlock = document.createElement("div");
+      const reasonLabel = document.createElement("label");
+      reasonLabel.className = "field-label";
+      reasonLabel.innerHTML = 'Lý do thanh lý <span class="text-[#B44545]">*</span>';
+      const reasonInput = document.createElement("textarea");
+      reasonInput.required = true;
+      reasonInput.value = formData.retirementReason || "";
+      reasonInput.placeholder = "Ví dụ: Hết khấu hao, hư hỏng không thể sửa chữa...";
+      reasonInput.className = "field-input mt-1 min-h-[76px] resize-y";
+      reasonInput.setAttribute("aria-label", "Lý do thanh lý");
+      reasonInput.addEventListener("input", () => { setFormDirty(true); setFormData((current) => ({ ...current, retirementReason: reasonInput.value })); });
+      reasonBlock.append(reasonLabel, reasonInput);
+      field.append(dateBlock, reasonBlock);
+      statusField.after(field);
+      return () => field.remove();
+    }
     if (formData.statusType !== "maintenance") return;
     const field = document.createElement("div");
     field.dataset.maintenanceReason = "true";
@@ -1836,7 +1961,7 @@ function AssetModal({ mode, asset, formData, setFormData, isSaving, onClose: dis
     field.append(label, textarea);
     statusField.after(field);
     return () => field.remove();
-  }, [isDetail, formData.statusType, setFormData]);
+  }, [isDetail, formData.statusType, formData.retiredAt, formData.retirementReason, setFormData]);
   const title = mode === "create" ? "Thêm tài sản mới" : mode === "edit" ? "Chỉnh sửa tài sản" : "Chi tiết tài sản";
   const fields: Array<{ key: keyof Asset; label: string; placeholder: string }> = [
     { key: "name", label: "Tên tài sản", placeholder: "Ví dụ: MacBook Pro 14-inch M3" },

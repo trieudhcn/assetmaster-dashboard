@@ -160,6 +160,8 @@ export const assets = mysqlTable("assets", {
   warrantyUntil: timestamp("warrantyUntil"),
   supplierReturnedAt: timestamp("supplierReturnedAt"),
   supplierReturnReason: text("supplierReturnReason"),
+  retiredAt: timestamp("retiredAt"),
+  retirementReason: text("retirementReason"),
   supplierReturnAttachmentUrl: text("supplierReturnAttachmentUrl"),
   supplierReturnAttachmentName: varchar("supplierReturnAttachmentName", { length: 255 }),
   supplierReturnAttachmentContentType: varchar("supplierReturnAttachmentContentType", { length: 100 }),

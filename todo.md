@@ -1866,3 +1866,10 @@
 - [x] Tự điền và khóa Người/Phòng giữ là Khấu hao - Thanh lý khi chọn trạng thái.
 - [x] Loại trừ tài sản Khấu hao/Thanh lý khỏi danh sách và quy trình kiểm kê.
 - [x] Bổ sung hồi quy, kiểm tra giao diện và phát hành cập nhật.
+
+## Current Session — Disposal Workflow Documents & Reporting
+
+- [x] Thêm ngày thanh lý và lý do thanh lý khi chọn trạng thái Khấu hao/Thanh lý.
+- [x] Tạo và xuất biên bản thanh lý PDF cho từng tài sản đã thanh lý.
+- [x] Thêm báo cáo tổng giá trị tài sản đã thanh lý theo từng năm.
+- [x] Bổ sung hồi quy, kiểm tra giao diện và phát hành cập nhật.
