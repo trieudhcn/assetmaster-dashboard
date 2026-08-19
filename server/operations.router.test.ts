@@ -328,7 +328,18 @@ describe("operations management", () => {
 
     await expect(caller.audits.addItem({ sessionId: 40, assetId: 8, expectedStatus: "returned_to_vendor" })).rejects.toMatchObject({
       code: "BAD_REQUEST",
-      message: "Tài sản đã trả nhà cung cấp không thuộc phạm vi kiểm kê.",
+      message: "Tài sản đã trả nhà cung cấp hoặc Khấu hao/Thanh lý không thuộc phạm vi kiểm kê.",
+    });
+    expect(mocks.createAuditItem).not.toHaveBeenCalled();
+  });
+
+  it("rejects assets marked as Khấu hao/Thanh lý from editable audits", async () => {
+    mocks.getAssetById.mockResolvedValue({ id: 8, assetCode: "LT00008", name: "Laptop thanh lý", isArchived: false, status: "retired" } as any);
+    const caller = appRouter.createCaller(adminContext);
+
+    await expect(caller.audits.addItem({ sessionId: 40, assetId: 8, expectedStatus: "retired" })).rejects.toMatchObject({
+      code: "BAD_REQUEST",
+      message: "Tài sản đã trả nhà cung cấp hoặc Khấu hao/Thanh lý không thuộc phạm vi kiểm kê.",
     });
     expect(mocks.createAuditItem).not.toHaveBeenCalled();
   });
@@ -340,7 +351,7 @@ describe("operations management", () => {
 
     await expect(caller.audits.importItems({ sessionId: 40, items: [{ id: 50, actualStatus: "returned_to_vendor", result: "mismatch", note: "Đã trả NCC" }] })).rejects.toMatchObject({
       code: "BAD_REQUEST",
-      message: "File Excel chứa tài sản đã trả nhà cung cấp, không thuộc phạm vi kiểm kê.",
+      message: "File Excel chứa tài sản đã trả nhà cung cấp hoặc Khấu hao/Thanh lý, không thuộc phạm vi kiểm kê.",
     });
     expect(mocks.updateAuditItem).not.toHaveBeenCalled();
   });

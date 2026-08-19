@@ -43,8 +43,10 @@ export function SearchableSelect({ value, onChange, options, placeholder = "Ch�
   const [menuPlacement, setMenuPlacement] = useState<"bottom" | "top">("bottom");
   const closeTimerRef = useRef<number | null>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
-  const selected = options.find((option) => option.value === value);
-  const filteredOptions = useMemo(() => options.filter((option) => matchesVietnameseSearch(`${option.label} ${option.searchText || ""}`, query)), [options, query]);
+  const isAssetStatusOptions = options.some((option) => option.value === "returned") && options.some((option) => option.value === "maintenance") && options.some((option) => option.value === "active");
+  const displayOptions = isAssetStatusOptions && !options.some((option) => option.value === "retired") ? [...options, { value: "retired", label: "Khấu hao/Thanh lý" }] : options;
+  const selected = displayOptions.find((option) => option.value === value);
+  const filteredOptions = useMemo(() => displayOptions.filter((option) => matchesVietnameseSearch(`${option.label} ${option.searchText || ""}`, query)), [displayOptions, query]);
 
   const closeMenu = () => {
     setOpen(false);

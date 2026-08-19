@@ -73,6 +73,20 @@ describe("modal presentation contract", () => {
     expect(routers).toContain("saveMonthlyBudget: adminProcedure");
   });
 
+  it("handles Khấu hao/Thanh lý like assets returned to vendors", () => {
+    const home = readProjectFile("client/src/pages/Home.tsx");
+    const operations = readProjectFile("client/src/pages/OperationsModules.tsx");
+    const routers = readProjectFile("server/routers.ts");
+
+    expect(home).toContain('"retired"');
+    expect(home).toContain('Khấu hao/Thanh lý');
+    expect(home).toContain('"Khấu hao - Thanh lý"');
+    expect(home).toContain('statusType !== "retired"');
+    expect(operations).toContain('asset.status !== "returned_to_vendor" && asset.status !== "retired"');
+    expect(routers).toContain('asset.status === "returned_to_vendor" || asset.status === "retired"');
+    expect(routers).toContain('asset?.status !== "returned_to_vendor" && asset?.status !== "retired"');
+  });
+
   it("keeps new-maintenance request controls aligned when the estimated cost shows words", () => {
     const operations = readProjectFile("client/src/pages/OperationsModules.tsx");
 
@@ -593,12 +607,12 @@ describe("modal presentation contract", () => {
   });
 
 
-  it("excludes returned vendor assets from company inventory statistics", () => {
+  it("excludes returned and disposed assets from company inventory statistics", () => {
     const home = readProjectFile("client/src/pages/Home.tsx");
     const categories = readProjectFile("client/src/pages/AssetCategoryManagementPage.tsx");
-    expect(home).toContain('const inventoryAssetRows = useMemo(() => assetRows.filter((asset) => asset.statusType !== "returned")');
+    expect(home).toContain('const inventoryAssetRows = useMemo(() => assetRows.filter((asset) => asset.statusType !== "returned" && asset.statusType !== "retired")');
     expect(home).toContain('detail: "Tài sản còn thuộc công ty"');
-    expect(categories).toContain('asset.status === "returned_to_vendor"');
+    expect(categories).toContain('asset.status === "returned_to_vendor" || asset.status === "retired"');
   });
 
   it("shows supplier return decision history and evidence preview in asset detail", () => {
@@ -621,7 +635,7 @@ describe("modal presentation contract", () => {
 
   it("keeps supplier-return report separate from company inventory report", () => {
     const reports = readProjectFile("client/src/pages/ReportsManagementView.tsx");
-    expect(reports).toContain('const inventoryAssets = useMemo(() => selectedAssets.filter((asset) => asset.status !== "returned_to_vendor")');
+    expect(reports).toContain('const inventoryAssets = useMemo(() => selectedAssets.filter((asset) => asset.status !== "returned_to_vendor" && asset.status !== "retired")');
     expect(reports).toContain('const supplierReturnedAssets = useMemo(() => selectedAssets.filter((asset) => asset.status === "returned_to_vendor")');
     expect(reports).toContain('const selectedValue = inventoryAssets.reduce');
     expect(reports).toContain('const rows = inventoryAssets.map');
@@ -1077,15 +1091,15 @@ describe("maintenance history and filter layout contract", () => {
     expect(router).toContain("deleteDraft:");
   });
 
-  it("excludes supplier-returned assets from editable audit choices and exports", () => {
+  it("excludes supplier-returned and disposed assets from editable audit choices and exports", () => {
     const operations = readProjectFile("client/src/pages/OperationsModules.tsx");
     const router = readProjectFile("server/routers.ts");
-    expect(operations).toContain('const auditableAssets = assets.filter((asset) => asset.status !== "returned_to_vendor")');
+    expect(operations).toContain('const auditableAssets = assets.filter((asset) => asset.status !== "returned_to_vendor" && asset.status !== "retired")');
     expect(operations).toContain("auditItemsForCurrentSession");
     expect(operations).toContain("tài sản Trả nhà cung cấp đã được loại trừ khỏi phạm vi kiểm kê.");
     expect(operations).toContain("không thuộc phạm vi kiểm kê");
-    expect(router).toContain('asset.status === "returned_to_vendor"');
-    expect(router).toContain("Tài sản đã trả nhà cung cấp không thuộc phạm vi kiểm kê.");
+    expect(router).toContain('asset.status === "returned_to_vendor" || asset.status === "retired"');
+    expect(router).toContain("Tài sản đã trả nhà cung cấp hoặc Khấu hao/Thanh lý không thuộc phạm vi kiểm kê.");
   });
 
   it("lets users select multiple audit import rows and apply a shared note", () => {

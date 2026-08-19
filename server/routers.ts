@@ -1037,7 +1037,7 @@ export const appRouter = router({
       await requireEditableAuditSession(input.sessionId);
       const asset = await getAssetById(input.assetId);
       if (!asset || asset.isArchived) throw new TRPCError({ code: "NOT_FOUND", message: "Tài sản được chọn không tồn tại hoặc đã lưu trữ." });
-      if (asset.status === "returned_to_vendor") throw new TRPCError({ code: "BAD_REQUEST", message: "Tài sản đã trả nhà cung cấp không thuộc phạm vi kiểm kê." });
+      if (asset.status === "returned_to_vendor" || asset.status === "retired") throw new TRPCError({ code: "BAD_REQUEST", message: "Tài sản đã trả nhà cung cấp hoặc Khấu hao/Thanh lý không thuộc phạm vi kiểm kê." });
       const id = await createAuditItem({ auditSessionId: input.sessionId, assetId: input.assetId, expectedStatus: input.expectedStatus, result: "pending" });
       await recordActivity({ entityType: "auditItem", entityId: id, action: "added", actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: "Thêm tài sản vào kiểm kê" });
       return { id };
@@ -1064,7 +1064,7 @@ export const appRouter = router({
       if (!auditItem) throw new TRPCError({ code: "NOT_FOUND", message: "Không tìm thấy tài sản trong đợt kiểm kê." });
       await requireEditableAuditSession(auditItem.auditSessionId);
       const asset = await getAssetById(auditItem.assetId);
-      if (asset?.status === "returned_to_vendor") throw new TRPCError({ code: "BAD_REQUEST", message: "Tài sản đã trả nhà cung cấp không thuộc phạm vi kiểm kê." });
+      if (asset?.status === "returned_to_vendor" || asset?.status === "retired") throw new TRPCError({ code: "BAD_REQUEST", message: "Tài sản đã trả nhà cung cấp hoặc Khấu hao/Thanh lý không thuộc phạm vi kiểm kê." });
       await updateAuditItem(input.id, { actualStatus: input.actualStatus, result: input.result, note: input.note, checkedByUserId: ctx.user!.id, checkedAt: new Date() });
       await recordActivity({ entityType: "auditItem", entityId: input.id, action: input.result, actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: "Cập nhật kết quả kiểm kê" });
       return { success: true };
@@ -1086,7 +1086,7 @@ export const appRouter = router({
       if (input.items.some((item) => !sessionItemIds.has(item.id))) throw new TRPCError({ code: "BAD_REQUEST", message: "File Excel chứa tài sản không thuộc đợt kiểm kê đang mở." });
       const sessionItemById = new Map(sessionItems.map((item) => [item.id, item]));
       const importedAssets = await Promise.all(input.items.map(async (item) => ({ item, asset: await getAssetById(sessionItemById.get(item.id)!.assetId) })));
-      if (importedAssets.some(({ asset }) => asset?.status === "returned_to_vendor")) throw new TRPCError({ code: "BAD_REQUEST", message: "File Excel chứa tài sản đã trả nhà cung cấp, không thuộc phạm vi kiểm kê." });
+      if (importedAssets.some(({ asset }) => asset?.status === "returned_to_vendor" || asset?.status === "retired")) throw new TRPCError({ code: "BAD_REQUEST", message: "File Excel chứa tài sản đã trả nhà cung cấp hoặc Khấu hao/Thanh lý, không thuộc phạm vi kiểm kê." });
       const checkedAt = new Date();
       await Promise.all(input.items.map((item) => updateAuditItem(item.id, { actualStatus: item.actualStatus, result: item.result, note: item.note, checkedByUserId: ctx.user!.id, checkedAt })));
       await recordActivity({ entityType: "audit", entityId: input.sessionId, action: "excel_imported", actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: `Nhập Excel và cập nhật ${input.items.length} kết quả kiểm kê` });
@@ -1095,7 +1095,7 @@ export const appRouter = router({
     finalize: adminProcedure.input(z.object({ sessionId: z.number().int().positive() })).mutation(async ({ input, ctx }) => {
       const session = await requireEditableAuditSession(input.sessionId);
       const sessionItems = await listAuditItems(input.sessionId);
-      const auditableItems = (await Promise.all(sessionItems.map(async (item) => ({ item, asset: await getAssetById(item.assetId) })))).filter(({ asset }) => asset?.status !== "returned_to_vendor").map(({ item }) => item);
+      const auditableItems = (await Promise.all(sessionItems.map(async (item) => ({ item, asset: await getAssetById(item.assetId) })))).filter(({ asset }) => asset?.status !== "returned_to_vendor" && asset?.status !== "retired").map(({ item }) => item);
       if (!auditableItems.length) throw new TRPCError({ code: "BAD_REQUEST", message: "Cần có ít nhất một tài sản đủ điều kiện trước khi chốt biên bản kiểm kê." });
       if (auditableItems.some((item) => item.result === "pending")) throw new TRPCError({ code: "BAD_REQUEST", message: "Cần hoàn tất kết quả cho toàn bộ tài sản đủ điều kiện trước khi chốt biên bản." });
       await updateAuditSession(session.id, { status: "completed", completedAt: new Date() });

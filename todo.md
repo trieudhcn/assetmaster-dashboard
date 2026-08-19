@@ -1859,3 +1859,10 @@
 - [x] Hiển thị số lượng phụ kiện đang giữ và đã trả của nhân sự được chọn.
 - [x] Đổi chỉ số tóm tắt tab Phòng ban sang số lượng đang cấp.
 - [x] Bổ sung hồi quy, kiểm tra responsive và phát hành cập nhật.
+
+## Current Session — Asset Depreciation & Disposal
+
+- [x] Thêm trạng thái Khấu hao/Thanh lý trong quản lý tài sản.
+- [x] Tự điền và khóa Người/Phòng giữ là Khấu hao - Thanh lý khi chọn trạng thái.
+- [x] Loại trừ tài sản Khấu hao/Thanh lý khỏi danh sách và quy trình kiểm kê.
+- [x] Bổ sung hồi quy, kiểm tra giao diện và phát hành cập nhật.

@@ -563,7 +563,7 @@ const auditAssetStatusLabels: Record<string, string> = {
   assigned: "Đang cấp phát",
   maintenance: "Bảo trì",
   returned_to_vendor: "Trả nhà cung cấp",
-  retired: "Ngừng sử dụng",
+  retired: "Khấu hao/Thanh lý",
   lost: "Thất lạc",
   damaged: "Hư hỏng",
 };
@@ -701,7 +701,7 @@ export function AuditPage() {
   const selectedAudit = auditSessions.find((audit) => audit.id === selectedSessionId);
   const isAuditLocked = selectedAudit?.status === "completed" || selectedAudit?.status === "cancelled";
   const assetById = new Map(assets.map((asset) => [asset.id, asset]));
-  const auditableAssets = assets.filter((asset) => asset.status !== "returned_to_vendor");
+  const auditableAssets = assets.filter((asset) => asset.status !== "returned_to_vendor" && asset.status !== "retired");
   const auditableAssetIds = new Set(auditableAssets.map((asset) => asset.id));
   // Đợt đã chốt là hồ sơ lịch sử, còn đợt mở chỉ hiển thị tài sản vẫn thuộc công ty.
   const auditItemsForCurrentSession = isAuditLocked ? auditItems : auditItems.filter((item) => auditableAssetIds.has(item.assetId));

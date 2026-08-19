@@ -36,7 +36,7 @@ export function AssetCategoryManagementPage() {
   const categories = (categoriesQuery.data || []) as Category[];
   const assetStatsByCategory = new Map<number, CategoryAssetStats>();
   (assetsQuery.data || []).forEach((asset) => {
-    if (!asset.categoryId || asset.status === "returned_to_vendor") return;
+    if (!asset.categoryId || asset.status === "returned_to_vendor" || asset.status === "retired") return;
     const current = assetStatsByCategory.get(asset.categoryId) || { total: 0, assigned: 0, maintenance: 0, damaged: 0 };
     current.total += 1;
     if (asset.status === "assigned") current.assigned += 1;
