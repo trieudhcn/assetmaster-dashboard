@@ -680,7 +680,10 @@ describe("modal presentation contract", () => {
     expect(operations).toContain("Vẫn tạo phiếu Sửa chữa");
     expect(operations).toContain("nextWarrantyCode");
     expect(operations).toContain("BH-NĂM-001");
-    expect(operations).toContain("Tự điền theo tài sản; có thể điều chỉnh.");
+    expect(operations).toContain("Tạo phiếu bảo hành");
+    expect(operations).toContain("prepareWarrantyTicketFromReminder");
+    expect(operations).toContain("Lấy từ dữ liệu mua hàng; không thể chỉnh sửa.");
+    expect(operations).toContain("LockKeyhole");
     expect(operations).toContain("Bảo hành sắp hết hạn");
     expect(home).toContain("warrantyTotal");
     expect(home).toContain("repairTotal");

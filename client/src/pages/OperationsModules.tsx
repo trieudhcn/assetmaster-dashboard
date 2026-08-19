@@ -11,6 +11,7 @@ import {
   FileBarChart,
   FileText,
   History,
+  LockKeyhole,
   Plus,
   QrCode,
   Save,
@@ -108,12 +109,12 @@ function auditPdfImageFormat(dataUrl: string) {
   return "PNG" as const;
 }
 
-function OperationalReminderPanel() {
+function OperationalReminderPanel({ onCreateWarrantyTicket = () => undefined }: { onCreateWarrantyTicket?: (assetId: number) => void }) {
   const remindersQuery = trpc.reminders.list.useQuery();
   const reminders = remindersQuery.data || [];
   return <section className={`mb-5 ${card} overflow-hidden`}>
     <div className="flex items-center justify-between border-b border-[#E7EEF3] px-5 py-4"><div><div className="flex items-center gap-2 text-sm font-extrabold text-[#193B57]"><BellRing size={16} className="text-[#A86B00]" />Nhắc việc vận hành</div><p className="mt-1 text-xs text-[#71869A]">Tổng hợp hạn Bảo hành/Sửa chữa, kiểm kê trong 14 ngày và tài sản sắp hết bảo hành trong 30 ngày.</p></div><span className="rounded-full bg-[#FFF9EB] px-2.5 py-1 text-[10px] font-extrabold text-[#A86B00]">{reminders.length} việc cần theo dõi</span></div>
-    {remindersQuery.isLoading ? <div className="px-5 py-6 text-xs text-[#71869A]">Đang tải nhắc việc...</div> : remindersQuery.isError ? <div className="px-5 py-6 text-xs text-[#B44545]">Không thể tải nhắc việc. <button onClick={() => remindersQuery.refetch()} className="font-bold underline">Thử lại</button></div> : reminders.length === 0 ? <div className="px-5 py-6 text-xs text-[#71869A]">Chưa có hạn Bảo hành/Sửa chữa, kiểm kê hoặc bảo hành tài sản cần theo dõi.</div> : <div className="divide-y divide-[#EDF2F5]">{reminders.slice(0, 5).map((reminder) => { const isWarrantyExpiry = reminder.kind === "warranty"; return <div key={reminder.id} className={`flex flex-col gap-2 px-5 py-3 sm:flex-row sm:items-center sm:justify-between ${isWarrantyExpiry ? "bg-[#FFF9EB]" : ""}`}><div className="flex items-start gap-2"><CalendarClock size={15} className={`mt-0.5 ${isWarrantyExpiry ? "text-[#A86B00]" : "text-[#0F8C8C]"}`} /><div><div className="text-xs font-bold text-[#193B57]">{reminder.title}</div><div className="mt-0.5 text-[11px] text-[#71869A]">{isWarrantyExpiry ? "Bảo hành sắp hết hạn" : reminder.kind === "maintenance" ? "Bảo hành/Sửa chữa" : "Kiểm kê"} · {reminder.detail}{reminder.recurrenceDays ? ` · Lặp lại mỗi ${reminder.recurrenceDays} ngày` : ""}</div></div></div><span className={`w-fit rounded-full px-2 py-1 text-[10px] font-extrabold ${reminder.isOverdue ? "bg-[#FDEDEE] text-[#B44545]" : isWarrantyExpiry ? "bg-[#FFE7A4] text-[#8A5900]" : "bg-[#FFF9EB] text-[#A86B00]"}`}>{reminder.isOverdue ? "Đã quá hạn" : isWarrantyExpiry ? `Còn ${Math.max(0, Math.ceil((new Date(reminder.dueAt).getTime() - Date.now()) / 86_400_000))} ngày` : `Hạn ${new Date(reminder.dueAt).toLocaleDateString("vi-VN")}`}</span></div>; })}</div>}
+    {remindersQuery.isLoading ? <div className="px-5 py-6 text-xs text-[#71869A]">Đang tải nhắc việc...</div> : remindersQuery.isError ? <div className="px-5 py-6 text-xs text-[#B44545]">Không thể tải nhắc việc. <button onClick={() => remindersQuery.refetch()} className="font-bold underline">Thử lại</button></div> : reminders.length === 0 ? <div className="px-5 py-6 text-xs text-[#71869A]">Chưa có hạn Bảo hành/Sửa chữa, kiểm kê hoặc bảo hành tài sản cần theo dõi.</div> : <div className="divide-y divide-[#EDF2F5]">{reminders.slice(0, 5).map((reminder) => { const isWarrantyExpiry = reminder.kind === "warranty"; const canCreateWarrantyTicket = isWarrantyExpiry && typeof reminder.assetId === "number"; return <div key={reminder.id} className={`flex flex-col gap-2 px-5 py-3 sm:flex-row sm:items-center sm:justify-between ${isWarrantyExpiry ? "bg-[#FFF9EB]" : ""}`}><div className="flex items-start gap-2"><CalendarClock size={15} className={`mt-0.5 ${isWarrantyExpiry ? "text-[#A86B00]" : "text-[#0F8C8C]"}`} /><div><div className="text-xs font-bold text-[#193B57]">{reminder.title}</div><div className="mt-0.5 text-[11px] text-[#71869A]">{isWarrantyExpiry ? "Bảo hành sắp hết hạn" : reminder.kind === "maintenance" ? "Bảo hành/Sửa chữa" : "Kiểm kê"} · {reminder.detail}{reminder.recurrenceDays ? ` · Lặp lại mỗi ${reminder.recurrenceDays} ngày` : ""}</div></div></div><div className="flex shrink-0 items-center gap-2"><span className={`w-fit rounded-full px-2 py-1 text-[10px] font-extrabold ${reminder.isOverdue ? "bg-[#FDEDEE] text-[#B44545]" : isWarrantyExpiry ? "bg-[#FFE7A4] text-[#8A5900]" : "bg-[#FFF9EB] text-[#A86B00]"}`}>{reminder.isOverdue ? "Đã quá hạn" : isWarrantyExpiry ? `Còn ${Math.max(0, Math.ceil((new Date(reminder.dueAt).getTime() - Date.now()) / 86_400_000))} ngày` : `Hạn ${new Date(reminder.dueAt).toLocaleDateString("vi-VN")}`}</span>{canCreateWarrantyTicket && <button type="button" onClick={() => onCreateWarrantyTicket(reminder.assetId!)} className="inline-flex h-8 items-center justify-center gap-1.5 rounded-lg bg-[#0F8C8C] px-3 text-[10px] font-extrabold text-white shadow-[0_4px_10px_rgba(15,140,140,0.2)] transition hover:bg-[#087A6A]"><Plus size={13} />Tạo phiếu bảo hành</button>}</div></div>; })}</div>}
   </section>;
 }
 
@@ -289,6 +290,18 @@ export function MaintenancePage() {
     if (serviceChannel !== "warranty") { setWarrantyRequestCode(""); return; }
     if (nextWarrantyCodeQuery.data?.code) setWarrantyRequestCode(nextWarrantyCodeQuery.data.code);
   }, [serviceChannel, nextWarrantyCodeQuery.data?.code]);
+
+  const prepareWarrantyTicketFromReminder = (reminderAssetId: number) => {
+    const asset = assetById.get(reminderAssetId);
+    if (!asset) { toast.error("Không tìm thấy tài sản của nhắc hạn bảo hành."); return; }
+    if (assetsWithOpenTickets.has(asset.id)) { toast.warning("Tài sản này đã có phiếu đang mở."); return; }
+    setAssetId(String(asset.id));
+    setServiceChannel("warranty");
+    setIssueType("incident");
+    setDescription(`Kiểm tra và liên hệ bảo hành trước khi hết hạn cho ${asset.name}.`);
+    requestAnimationFrame(() => document.getElementById("maintenance-create-form")?.scrollIntoView({ behavior: "smooth", block: "center" }));
+    toast.info("Đã chuẩn bị phiếu Bảo hành từ nhắc hạn. Hãy kiểm tra nội dung và tạo phiếu.");
+  };
 
   useEffect(() => {
     setMaintenancePage(1);
@@ -492,7 +505,7 @@ export function MaintenancePage() {
           </div>
         </div>
 
-        <OperationalReminderPanel />
+        <OperationalReminderPanel onCreateWarrantyTicket={prepareWarrantyTicketFromReminder} />
 
         <AlertDialog open={Boolean(repairWarrantyWarning)} onOpenChange={(open) => { if (!open) setRepairWarrantyWarning(null); }}>
           <AlertDialogContent className="overflow-hidden border-2 border-[#E8743B] bg-[#FFFDF8] p-0 shadow-[0_24px_70px_rgba(184,69,69,0.26)]">
@@ -514,7 +527,7 @@ export function MaintenancePage() {
 
         {recentlyCreatedTicketId && <section className="mb-5 flex flex-col gap-3 rounded-xl border border-[#CDE5E5] bg-[#ECF8F7] px-4 py-3.5 sm:flex-row sm:items-center sm:justify-between"><div><div className="text-xs font-extrabold text-[#087A6A]">Đã tạo phiếu Bảo hành/Sửa chữa thành công</div><p className="mt-1 text-[11px] text-[#4B8884]">{recentlyCreatedTicket ? `${recentlyCreatedTicket.ticketCode} · ${serviceChannelLabels[(recentlyCreatedTicket.serviceChannel || "repair") as keyof typeof serviceChannelLabels]} · ${recentlyCreatedTicket.description}` : "Đang đồng bộ thông tin phiếu vừa tạo..."}</p></div><button type="button" disabled={!recentlyCreatedTicket} onClick={() => { if (recentlyCreatedTicket) setHistoryTicket(recentlyCreatedTicket); }} className="inline-flex shrink-0 items-center justify-center gap-2 rounded-lg border border-[#8BCDC6] bg-white px-3 py-2 text-xs font-extrabold text-[#087A6A] transition hover:bg-[#DDF4F1] disabled:cursor-wait disabled:opacity-60"><FileText size={14} />{recentlyCreatedTicket ? "Mở phiếu vừa tạo" : "Đang tải phiếu..."}</button></section>}
 
-        <section className={`${card} p-5`}>
+        <section id="maintenance-create-form" className={`${card} p-5`}>
           <div className="mb-4 flex items-center gap-2 text-sm font-extrabold text-[#193B57]">
             <Wrench size={16} className="text-[#A86B00]" />Tạo phiếu Bảo hành/Sửa chữa
           </div>
@@ -522,7 +535,7 @@ export function MaintenancePage() {
             <SearchableSelect value={assetId} onChange={setAssetId} disabled={assetsQuery.isLoading} placeholder="Chọn tài sản" searchPlaceholder="Tìm mã hoặc tên tài sản..." options={[{ value: "", label: "Chọn tài sản" }, ...assets.map((asset) => ({ value: String(asset.id), label: `${asset.assetCode} · ${asset.name}`, searchText: asset.assetCode }))]} />
             <input value={description} onChange={(event) => setDescription(event.target.value)} placeholder="Mô tả tình trạng cần xử lý" className="field-input" />
             <SearchableSelect value={serviceChannel} onChange={(value) => setServiceChannel(value as typeof serviceChannel)} placeholder="Chọn kênh xử lý" searchPlaceholder="Tìm kênh xử lý..." options={Object.entries(serviceChannelLabels).map(([value, label]) => ({ value, label }))} />
-            {serviceChannel === "warranty" && <><div className="relative z-10"><input value={warrantyBrand} onChange={(event) => setWarrantyBrand(event.target.value)} placeholder="Hãng bảo hành" maxLength={160} aria-label="Hãng bảo hành" readOnly={false} className="field-input pointer-events-auto" /><p className="mt-1 text-[10px] text-[#71869A]">Tự điền theo tài sản; có thể điều chỉnh.</p></div><div className="relative z-10"><input value={warrantyVendor} onChange={(event) => setWarrantyVendor(event.target.value)} placeholder="Nhà cung cấp / trung tâm bảo hành" maxLength={255} aria-label="Nhà cung cấp hoặc trung tâm bảo hành" readOnly={false} className="field-input pointer-events-auto" /><p className="mt-1 text-[10px] text-[#71869A]">Tự điền theo tài sản; có thể điều chỉnh.</p></div><div className="relative z-10"><input value={warrantyRequestCode} readOnly aria-readonly="true" placeholder="Đang cấp mã bảo hành..." aria-label="Mã bảo hành tự sinh" className="field-input pointer-events-auto bg-[#F5F9FB] font-mono font-bold text-[#087A6A]" /><p className="mt-1 text-[10px] text-[#087A6A]">Tự sinh theo mẫu BH-NĂM-001 khi tạo phiếu.</p></div></>}
+            {serviceChannel === "warranty" && <><div className="group relative z-10"><input value={warrantyBrand} disabled placeholder="Hãng bảo hành" aria-label="Hãng bảo hành được khóa" className="field-input cursor-not-allowed pr-10 opacity-75" /><span title="Được lấy từ dữ liệu mua hàng, không thể chỉnh sửa" className="pointer-events-none absolute right-2 top-2 grid h-6 w-6 place-items-center rounded-full bg-[#B44545] text-white opacity-0 shadow-sm transition-opacity group-hover:opacity-100"><LockKeyhole size={13} /></span><p className="mt-1 text-[10px] text-[#B44545]">Lấy từ dữ liệu mua hàng; không thể chỉnh sửa.</p></div><div className="group relative z-10"><input value={warrantyVendor} disabled placeholder="Nhà cung cấp / trung tâm bảo hành" aria-label="Nhà cung cấp hoặc trung tâm bảo hành được khóa" className="field-input cursor-not-allowed pr-10 opacity-75" /><span title="Được lấy từ dữ liệu mua hàng, không thể chỉnh sửa" className="pointer-events-none absolute right-2 top-2 grid h-6 w-6 place-items-center rounded-full bg-[#B44545] text-white opacity-0 shadow-sm transition-opacity group-hover:opacity-100"><LockKeyhole size={13} /></span><p className="mt-1 text-[10px] text-[#B44545]">Lấy từ dữ liệu mua hàng; không thể chỉnh sửa.</p></div><div className="group relative z-10"><input value={warrantyRequestCode} disabled placeholder="Đang cấp mã bảo hành..." aria-label="Mã bảo hành tự sinh được khóa" className="field-input cursor-not-allowed bg-[#F5F9FB] pr-10 font-mono font-bold text-[#087A6A] opacity-75" /><span title="Mã được hệ thống tự sinh, không thể chỉnh sửa" className="pointer-events-none absolute right-2 top-2 grid h-6 w-6 place-items-center rounded-full bg-[#B44545] text-white opacity-0 shadow-sm transition-opacity group-hover:opacity-100"><LockKeyhole size={13} /></span><p className="mt-1 text-[10px] text-[#087A6A]">Tự sinh theo mẫu BH-NĂM-001 khi tạo phiếu.</p></div></>}
             <SearchableSelect value={issueType} onChange={(value) => setIssueType(value as typeof issueType)} searchPlaceholder="Tìm loại yêu cầu..." options={Object.entries(issueTypeLabels).map(([value, label]) => ({ value, label }))} />
             <SearchableSelect value={priority} onChange={(value) => setPriority(value as typeof priority)} searchPlaceholder="Tìm mức ưu tiên..." options={Object.entries(priorityLabels).map(([value, label]) => ({ value, label: `${label} ưu tiên` }))} />
             <CurrencyInput value={estimatedCost} onChange={setEstimatedCost} placeholder="Chi phí dự kiến" aria-label="Chi phí dự kiến" showWords />

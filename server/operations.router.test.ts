@@ -18,6 +18,7 @@ const mocks = vi.hoisted(() => ({
   getNextWarrantyRequestSequence: vi.fn(),
   getNextAuditSequence: vi.fn(),
   getAssetById: vi.fn(),
+  getBrandById: vi.fn(),
   getAssetCategoryById: vi.fn(),
   updateAsset: vi.fn(),
   listAssets: vi.fn(),
@@ -55,7 +56,7 @@ vi.mock("./db", () => ({
   getDivisionById: vi.fn(),
   getVendorById: vi.fn(),
   getVendorByName: vi.fn(),
-  getBrandById: vi.fn(),
+  getBrandById: mocks.getBrandById,
   getBrandByName: vi.fn(),
   getHandoverById: vi.fn(),
   getMaintenanceTicket: mocks.getMaintenanceTicket,
@@ -138,8 +139,9 @@ describe("operations management", () => {
     mocks.listActivityLogs.mockResolvedValue([]);
     mocks.listActivityLogsByEntity.mockResolvedValue([]);
     mocks.storagePut.mockResolvedValue({ key: "maintenance/30/chung-tu.pdf", url: "/manus-storage/maintenance/30/chung-tu.pdf" });
-    const asset = { id: 8, assetCode: "LT00008", name: "Laptop QA", isArchived: false, status: "available" };
+    const asset = { id: 8, assetCode: "LT00008", name: "Laptop QA", isArchived: false, status: "available", vendor: "FPT", brandId: 1 };
     mocks.getAssetById.mockResolvedValue(asset as any);
+    mocks.getBrandById.mockResolvedValue({ id: 1, name: "Logitech" });
     mocks.getAuditItemById.mockResolvedValue({ id: 50, auditSessionId: 40, assetId: 8 });
     mocks.getAuditSession.mockResolvedValue({ id: 40, referenceCode: "KK-2026-LOCK", status: "draft" });
     mocks.getAssetCategoryById.mockImplementation(async (id: number) => id === 1 ? { id: 1, name: "Laptop", code: "LT", isActive: true } : { id, name: "Thiết bị", code: "TB", isActive: true });
@@ -193,7 +195,7 @@ describe("operations management", () => {
     expect(mocks.createMaintenanceTicket).toHaveBeenCalledWith(expect.objectContaining({
       serviceChannel: "warranty",
       warrantyBrand: "Logitech",
-      warrantyVendor: "Trung tâm bảo hành Logitech",
+      warrantyVendor: "FPT",
       warrantyRequestCode: expect.stringMatching(/^BH-\d{4}-001$/),
     }));
     await expect(caller.maintenance.nextWarrantyCode()).resolves.toEqual({ code: expect.stringMatching(/^BH-\d{4}-001$/) });
@@ -431,7 +433,7 @@ describe("operations management", () => {
     mocks.listActivityLogs.mockResolvedValue([{ id: 1, entityType: "asset", entityId: 8, action: "updated", createdAt: new Date() }]);
 
     const employeeCaller = appRouter.createCaller(employeeContext);
-    await expect(employeeCaller.reminders.list()).resolves.toEqual(expect.arrayContaining([expect.objectContaining({ kind: "warranty", title: "Sắp hết hạn bảo hành · LT00008", detail: expect.stringContaining("còn 20 ngày") })]));
+    await expect(employeeCaller.reminders.list()).resolves.toEqual(expect.arrayContaining([expect.objectContaining({ kind: "warranty", assetId: 8, title: "Sắp hết hạn bảo hành · LT00008", detail: expect.stringContaining("còn 20 ngày") })]));
     await expect(employeeCaller.activity.list({ limit: 50 })).rejects.toMatchObject({ code: "FORBIDDEN" });
 
     const adminCaller = appRouter.createCaller(adminContext);

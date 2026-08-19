@@ -1028,9 +1028,10 @@ export const appRouter = router({
       const ticketSequence = await getNextMaintenanceTicketSequence(ticketYear);
       const ticketCode = `BT-${ticketYear}-${String(ticketSequence).padStart(3, "0")}`;
       const warrantyRequestCode = input.serviceChannel === "warranty" ? `BH-${ticketYear}-${String(await getNextWarrantyRequestSequence(ticketYear)).padStart(3, "0")}` : null;
+      const assetBrand = input.serviceChannel === "warranty" && asset.brandId ? await getBrandById(asset.brandId) : null;
       const warrantyDetails = input.serviceChannel === "warranty" ? {
-        warrantyBrand: input.warrantyBrand?.trim() || null,
-        warrantyVendor: input.warrantyVendor?.trim() || null,
+        warrantyBrand: assetBrand?.name || null,
+        warrantyVendor: asset.vendor?.trim() || null,
         warrantyRequestCode,
       } : { warrantyBrand: null, warrantyVendor: null, warrantyRequestCode: null };
       const id = await createMaintenanceTicket({ ...input, ...warrantyDetails, ticketYear, ticketSequence, ticketCode, reporterUserId: ctx.user!.id, reporterName: ctx.user!.name ?? "Người dùng", status: "open" });
@@ -1170,7 +1171,7 @@ export const appRouter = router({
         ...audits.filter((audit) => (audit.status === "draft" || audit.status === "active") && audit.scheduledAt && audit.scheduledAt <= operationalHorizon).map((audit) => ({ id: `audit-${audit.id}`, kind: "audit" as const, title: audit.name, dueAt: audit.scheduledAt!, isOverdue: audit.scheduledAt! < now, detail: audit.referenceCode, recurrenceDays: audit.recurrenceDays })),
         ...assets.filter((asset) => !asset.isArchived && asset.status !== "returned_to_vendor" && asset.status !== "retired" && asset.warrantyUntil && asset.warrantyUntil >= now && asset.warrantyUntil <= warrantyHorizon).map((asset) => {
           const remainingDays = Math.max(0, Math.ceil((asset.warrantyUntil!.getTime() - now.getTime()) / 86_400_000));
-          return { id: `warranty-expiry-${asset.id}`, kind: "warranty" as const, title: `Sắp hết hạn bảo hành · ${asset.assetCode}`, dueAt: asset.warrantyUntil!, isOverdue: false, detail: `${asset.name} · còn ${remainingDays} ngày`, recurrenceDays: null };
+          return { id: `warranty-expiry-${asset.id}`, kind: "warranty" as const, assetId: asset.id, title: `Sắp hết hạn bảo hành · ${asset.assetCode}`, dueAt: asset.warrantyUntil!, isOverdue: false, detail: `${asset.name} · còn ${remainingDays} ngày`, recurrenceDays: null };
         }),
       ];
       return reminders.sort((left, right) => left.dueAt.getTime() - right.dueAt.getTime());

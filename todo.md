@@ -1939,3 +1939,10 @@
 - [x] Khắc phục khả năng thao tác, tự điền Hãng/Nhà cung cấp và hiển thị mã bảo hành trong biểu mẫu.
 - [x] Hiển thị thông báo nhắc các tài sản sắp hết hạn bảo hành trong 30 ngày.
 - [x] Bổ sung hồi quy, kiểm tra giao diện, build và phát hành cập nhật.
+
+## Current Session — Warranty Reminder Actions & Locked Purchase Data
+
+- [x] Thêm nút Tạo phiếu bảo hành trong từng nhắc hạn bảo hành.
+- [x] Khóa Hãng và Nhà cung cấp theo dữ liệu mua hàng trong biểu mẫu Bảo hành.
+- [x] Hiển thị biểu tượng khóa đỏ và mô tả khi rê chuột trên trường không thể chỉnh sửa.
+- [x] Bổ sung hồi quy, kiểm tra giao diện, build và phát hành cập nhật.
