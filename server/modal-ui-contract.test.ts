@@ -454,8 +454,8 @@ describe("modal presentation contract", () => {
     const operations = readProjectFile("client/src/pages/OperationsModules.tsx");
     const routers = readProjectFile("server/routers.ts");
     expect(operations).toContain('const maintenanceAssets = assets.filter((asset) => asset.status === "maintenance" && !assetsWithOpenTickets.has(asset.id) && !queuedMaintenanceAssetIds.has(asset.id))');
-    expect(operations).toContain("Tài sản đang cần bảo trì");
-    expect(operations).toContain("Tạo yêu cầu nhanh");
+    expect(operations).toContain("Tài sản đang cần xử lý");
+    expect(operations).toContain("Tạo phiếu sửa chữa");
     expect(operations).toContain("setQueuedMaintenanceAssetIds");
     expect(operations).toContain("overflow-x-auto overscroll-x-contain");
     expect(operations).toContain('issueType: "maintenance"');
@@ -652,6 +652,19 @@ describe("modal presentation contract", () => {
     expect(home).toContain("Hết hạn sử dụng hoặc đã khấu hao hết");
     expect(home).toContain("Chi phí sửa chữa vượt giá trị còn lại");
     expect(home).toContain('reasonInput.dispatchEvent(new Event("input", { bubbles: true }));');
+  });
+
+  it("separates warranty and repair tickets through a processing channel and tabs", () => {
+    const home = readProjectFile("client/src/pages/Home.tsx");
+    const operations = readProjectFile("client/src/pages/OperationsModules.tsx");
+    const routers = readProjectFile("server/routers.ts");
+
+    expect(home).toContain('label: "Bảo hành/Sửa chữa"');
+    expect(operations).toContain('const serviceChannelLabels =');
+    expect(operations).toContain('const [serviceChannelTab, setServiceChannelTab]');
+    expect(operations).toContain('role="tablist" aria-label="Lọc Kênh xử lý"');
+    expect(operations).toContain('serviceChannel: "repair"');
+    expect(routers).toContain('serviceChannel: z.enum(["warranty", "repair"]).default("repair")');
   });
 
   it("provides a dedicated supplier return report export", () => {
@@ -962,7 +975,7 @@ describe("currency input and scrollbar contract", () => {
     expect(operations).toContain("exportMaintenanceCosts");
     expect(operations).toContain('"Chi phí dự kiến bằng chữ"');
     expect(operations).toContain('"Chi phí thực tế bằng chữ"');
-    expect(operations).toContain("assetmaster-chi-phi-bao-tri-");
+    expect(operations).toContain("assetmaster-bao-hanh-sua-chua-");
     expect(operations).toContain("isExportingCosts");
     expect(operations).toContain("toast.loading");
     expect(operations).toContain("Đang xuất...");

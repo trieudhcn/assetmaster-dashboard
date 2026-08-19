@@ -1911,3 +1911,10 @@
 - [x] Rà soát mô hình, API và giao diện Bảo trì/Báo hỏng để đánh giá tách Bảo hành/Sửa chữa trong cùng menu.
 - [x] Bổ sung hồi quy, kiểm tra giao diện và phát hành mẫu lý do thanh lý.
 - [x] Chuẩn bị khuyến nghị lộ trình, rủi ro và phạm vi thay đổi cho Bảo hành/Sửa chữa.
+
+## Current Session — Warranty & Repair Processing Channel
+
+- [x] Thêm trường Kênh xử lý Bảo hành/Sửa chữa cho phiếu vận hành và chuẩn hóa dữ liệu cũ.
+- [x] Cập nhật API, lịch sử, xuất Excel và báo cáo để giữ thông tin Kênh xử lý.
+- [x] Đổi menu Bảo trì & Báo hỏng thành Bảo hành/Sửa chữa, bổ sung lựa chọn kênh khi tạo phiếu và tab lọc riêng.
+- [x] Bổ sung hồi quy, kiểm tra giao diện và phát hành cập nhật.

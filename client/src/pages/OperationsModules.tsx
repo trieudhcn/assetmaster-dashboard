@@ -71,6 +71,11 @@ const issueTypeLabels = {
   damage: "Báo hỏng",
 } as const;
 
+const serviceChannelLabels = {
+  warranty: "Bảo hành",
+  repair: "Sửa chữa",
+} as const;
+
 const toDateInputValue = (value: Date | null | undefined) => value ? new Date(value).toISOString().slice(0, 10) : "";
 const dateInputToMs = (value: string) => value ? new Date(`${value}T09:00:00`).getTime() : null;
 
@@ -108,13 +113,14 @@ function OperationalReminderPanel() {
   const reminders = remindersQuery.data || [];
   return <section className={`mb-5 ${card} overflow-hidden`}>
     <div className="flex items-center justify-between border-b border-[#E7EEF3] px-5 py-4"><div><div className="flex items-center gap-2 text-sm font-extrabold text-[#193B57]"><BellRing size={16} className="text-[#A86B00]" />Nhắc việc vận hành</div><p className="mt-1 text-xs text-[#71869A]">Tổng hợp tự động hạn bảo trì và đợt kiểm kê trong 14 ngày tới.</p></div><span className="rounded-full bg-[#FFF9EB] px-2.5 py-1 text-[10px] font-extrabold text-[#A86B00]">{reminders.length} việc cần theo dõi</span></div>
-    {remindersQuery.isLoading ? <div className="px-5 py-6 text-xs text-[#71869A]">Đang tải nhắc việc...</div> : remindersQuery.isError ? <div className="px-5 py-6 text-xs text-[#B44545]">Không thể tải nhắc việc. <button onClick={() => remindersQuery.refetch()} className="font-bold underline">Thử lại</button></div> : reminders.length === 0 ? <div className="px-5 py-6 text-xs text-[#71869A]">Chưa có lịch bảo trì hoặc kiểm kê nào đến hạn trong 14 ngày tới.</div> : <div className="divide-y divide-[#EDF2F5]">{reminders.slice(0, 5).map((reminder) => <div key={reminder.id} className="flex flex-col gap-2 px-5 py-3 sm:flex-row sm:items-center sm:justify-between"><div className="flex items-start gap-2"><CalendarClock size={15} className="mt-0.5 text-[#0F8C8C]" /><div><div className="text-xs font-bold text-[#193B57]">{reminder.title}</div><div className="mt-0.5 text-[11px] text-[#71869A]">{reminder.kind === "maintenance" ? "Bảo trì" : "Kiểm kê"} · {reminder.detail}{reminder.recurrenceDays ? ` · Lặp lại mỗi ${reminder.recurrenceDays} ngày` : ""}</div></div></div><span className={`w-fit rounded-full px-2 py-1 text-[10px] font-extrabold ${reminder.isOverdue ? "bg-[#FDEDEE] text-[#B44545]" : "bg-[#FFF9EB] text-[#A86B00]"}`}>{reminder.isOverdue ? "Đã quá hạn" : `Hạn ${new Date(reminder.dueAt).toLocaleDateString("vi-VN")}`}</span></div>)}</div>}
+    {remindersQuery.isLoading ? <div className="px-5 py-6 text-xs text-[#71869A]">Đang tải nhắc việc...</div> : remindersQuery.isError ? <div className="px-5 py-6 text-xs text-[#B44545]">Không thể tải nhắc việc. <button onClick={() => remindersQuery.refetch()} className="font-bold underline">Thử lại</button></div> : reminders.length === 0 ? <div className="px-5 py-6 text-xs text-[#71869A]">Chưa có lịch Bảo hành/Sửa chữa hoặc kiểm kê nào đến hạn trong 14 ngày tới.</div> : <div className="divide-y divide-[#EDF2F5]">{reminders.slice(0, 5).map((reminder) => <div key={reminder.id} className="flex flex-col gap-2 px-5 py-3 sm:flex-row sm:items-center sm:justify-between"><div className="flex items-start gap-2"><CalendarClock size={15} className="mt-0.5 text-[#0F8C8C]" /><div><div className="text-xs font-bold text-[#193B57]">{reminder.title}</div><div className="mt-0.5 text-[11px] text-[#71869A]">{reminder.kind === "maintenance" ? "Bảo hành/Sửa chữa" : "Kiểm kê"} · {reminder.detail}{reminder.recurrenceDays ? ` · Lặp lại mỗi ${reminder.recurrenceDays} ngày` : ""}</div></div></div><span className={`w-fit rounded-full px-2 py-1 text-[10px] font-extrabold ${reminder.isOverdue ? "bg-[#FDEDEE] text-[#B44545]" : "bg-[#FFF9EB] text-[#A86B00]"}`}>{reminder.isOverdue ? "Đã quá hạn" : `Hạn ${new Date(reminder.dueAt).toLocaleDateString("vi-VN")}`}</span></div>)}</div>}
   </section>;
 }
 
 type TicketDraft = {
   assigneeUserId: string;
   status: "open" | "in_progress" | "resolved" | "closed";
+  serviceChannel: "warranty" | "repair";
   estimatedCost: string;
   actualCost: string;
   dueDate: string;
@@ -128,6 +134,7 @@ export function MaintenancePage() {
   const [assetId, setAssetId] = useState("");
   const [description, setDescription] = useState("");
   const [issueType, setIssueType] = useState<"maintenance" | "incident" | "damage">("incident");
+  const [serviceChannel, setServiceChannel] = useState<"warranty" | "repair">("repair");
   const [priority, setPriority] = useState<"low" | "medium" | "high" | "critical">("medium");
   const [estimatedCost, setEstimatedCost] = useState("");
   const [dueDate, setDueDate] = useState("");
@@ -136,6 +143,7 @@ export function MaintenancePage() {
   const [isExportingCosts, setIsExportingCosts] = useState(false);
   const currentYear = new Date().getFullYear();
   const [maintenanceYear, setMaintenanceYear] = useState(String(currentYear));
+  const [serviceChannelTab, setServiceChannelTab] = useState<"all" | "warranty" | "repair">("all");
   const [maintenancePage, setMaintenancePage] = useState(1);
   const [historyTicket, setHistoryTicket] = useState<(typeof tickets)[number] | null>(null);
   const [recentlyCreatedTicketId, setRecentlyCreatedTicketId] = useState<number | null>(null);
@@ -171,8 +179,9 @@ export function MaintenancePage() {
       setDueDate("");
       setRecurrenceDays("");
       setIssueType("incident");
+      setServiceChannel("repair");
       setPriority("medium");
-      toast.success("Đã tạo yêu cầu bảo trì.");
+      toast.success(`Đã tạo yêu cầu ${variables.serviceChannel === "warranty" ? "bảo hành" : "sửa chữa"}.`);
     },
     onError: (error) => toast.error(error.message || "Không thể tạo yêu cầu bảo trì."),
   });
@@ -185,7 +194,7 @@ export function MaintenancePage() {
         delete next[variables.id];
         return next;
       });
-      toast.success("Đã cập nhật yêu cầu bảo trì.");
+      toast.success("Đã cập nhật phiếu Bảo hành/Sửa chữa.");
     },
     onError: (error) => toast.error(error.message || "Không thể cập nhật yêu cầu bảo trì."),
   });
@@ -203,7 +212,8 @@ export function MaintenancePage() {
   const recentlyCreatedTicket = recentlyCreatedTicketId ? tickets.find((ticket) => ticket.id === recentlyCreatedTicketId) : null;
   const maintenanceAssets = assets.filter((asset) => asset.status === "maintenance" && !assetsWithOpenTickets.has(asset.id) && !queuedMaintenanceAssetIds.has(asset.id));
   const maintenanceYears = Array.from(new Set([currentYear, ...tickets.map((ticket) => ticket.ticketYear || new Date(ticket.openedAt).getFullYear())])).sort((left, right) => right - left);
-  const filteredTickets = tickets.filter((ticket) => maintenanceYear === "all" || (ticket.ticketYear || new Date(ticket.openedAt).getFullYear()) === Number(maintenanceYear));
+  const yearTickets = tickets.filter((ticket) => maintenanceYear === "all" || (ticket.ticketYear || new Date(ticket.openedAt).getFullYear()) === Number(maintenanceYear));
+  const filteredTickets = yearTickets.filter((ticket) => serviceChannelTab === "all" || ticket.serviceChannel === serviceChannelTab);
   const maintenanceTotalPages = Math.max(1, Math.ceil(filteredTickets.length / maintenancePageSize));
   const pagedTickets = filteredTickets.slice((maintenancePage - 1) * maintenancePageSize, maintenancePage * maintenancePageSize);
   const employees = employeesQuery.data || [];
@@ -212,7 +222,7 @@ export function MaintenancePage() {
 
   useEffect(() => {
     setMaintenancePage(1);
-  }, [maintenanceYear]);
+  }, [maintenanceYear, serviceChannelTab]);
   useEffect(() => {
     setMaintenancePage((page) => Math.min(page, maintenanceTotalPages));
   }, [maintenanceTotalPages]);
@@ -221,6 +231,7 @@ export function MaintenancePage() {
     return ticketEdits[ticket.id] || {
       assigneeUserId: ticket.assigneeUserId ? String(ticket.assigneeUserId) : "",
       status: ticket.status,
+      serviceChannel: (ticket.serviceChannel || "repair") as TicketDraft["serviceChannel"],
       estimatedCost: ticket.estimatedCost ? String(ticket.estimatedCost) : "",
       actualCost: ticket.actualCost ? String(ticket.actualCost) : "",
       dueDate: toDateInputValue(ticket.dueAt),
@@ -236,6 +247,7 @@ export function MaintenancePage() {
         ...{
           assigneeUserId: ticket.assigneeUserId ? String(ticket.assigneeUserId) : "",
           status: ticket.status,
+          serviceChannel: (ticket.serviceChannel || "repair") as TicketDraft["serviceChannel"],
           estimatedCost: ticket.estimatedCost ? String(ticket.estimatedCost) : "",
           actualCost: ticket.actualCost ? String(ticket.actualCost) : "",
           dueDate: toDateInputValue(ticket.dueAt),
@@ -253,6 +265,7 @@ export function MaintenancePage() {
     updateMutation.mutate({
       id: ticket.id,
       status: draft.status,
+      serviceChannel: draft.serviceChannel,
       assigneeUserId: draft.assigneeUserId ? Number(draft.assigneeUserId) : null,
       resolution: draft.resolution.trim() || null,
       estimatedCost: draft.estimatedCost.trim() || null,
@@ -263,15 +276,15 @@ export function MaintenancePage() {
   };
 
   const exportMaintenanceCosts = () => {
-    if (tickets.length === 0) {
-      toast.info("Chưa có dữ liệu chi phí bảo trì để xuất.");
+    if (filteredTickets.length === 0) {
+      toast.info("Chưa có phiếu Bảo hành/Sửa chữa trong phạm vi đang lọc để xuất.");
       return;
     }
     setIsExportingCosts(true);
     const toastId = toast.loading("Đang chuẩn bị file Excel chi phí bảo trì...");
     window.setTimeout(() => { void (async () => {
       try {
-        const rows = tickets.map((ticket) => {
+        const rows = filteredTickets.map((ticket) => {
       const estimated = parseVndAmount(String(ticket.estimatedCost ?? ""));
       const actual = parseVndAmount(String(ticket.actualCost ?? ""));
       const asset = assetById.get(ticket.assetId);
@@ -279,6 +292,7 @@ export function MaintenancePage() {
         "Mã phiếu": `BT-${ticket.id}`,
         "Mã tài sản": asset?.assetCode || "",
         "Tên tài sản": asset?.name || "",
+        "Kênh xử lý": serviceChannelLabels[(ticket.serviceChannel || "repair") as keyof typeof serviceChannelLabels],
         "Loại yêu cầu": issueTypeLabels[ticket.issueType as keyof typeof issueTypeLabels] || ticket.issueType,
         "Mức ưu tiên": priorityLabels[ticket.priority as keyof typeof priorityLabels] || ticket.priority,
         "Trạng thái": maintenanceStatusLabels[ticket.status as keyof typeof maintenanceStatusLabels] || ticket.status,
@@ -296,16 +310,16 @@ export function MaintenancePage() {
         const worksheet = XLSX.utils.json_to_sheet(rows);
         worksheet["!cols"] = [{ wch: 14 }, { wch: 16 }, { wch: 24 }, { wch: 18 }, { wch: 14 }, { wch: 16 }, { wch: 20 }, { wch: 32 }, { wch: 20 }, { wch: 32 }, { wch: 14 }, { wch: 14 }, { wch: 22 }, { wch: 42 }, { wch: 42 }];
         const workbook = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(workbook, worksheet, "Chi phí bảo trì");
+        XLSX.utils.book_append_sheet(workbook, worksheet, "Bảo hành-Sửa chữa");
         await writeBrandedWorkbook(workbook, {
-          documentTitle: "BÁO CÁO CHI PHÍ BẢO TRÌ",
-          fileName: `assetmaster-chi-phi-bao-tri-${new Date().toISOString().slice(0, 10)}.xlsx`,
-          description: `Tổng hợp ${rows.length} phiếu bảo trì/báo hỏng trong danh sách hiện tại.`,
+          documentTitle: "BÁO CÁO CHI PHÍ BẢO HÀNH/SỬA CHỮA",
+          fileName: `assetmaster-bao-hanh-sua-chua-${new Date().toISOString().slice(0, 10)}.xlsx`,
+          description: `Tổng hợp ${rows.length} phiếu Bảo hành/Sửa chữa trong phạm vi đang lọc.`,
         });
-        toast.success(`Đã xuất ${rows.length} dòng chi phí bảo trì.`, { id: toastId });
+        toast.success(`Đã xuất ${rows.length} phiếu Bảo hành/Sửa chữa.`, { id: toastId });
       } catch (error) {
         console.error(error);
-        toast.error("Không thể tạo file Excel chi phí bảo trì.", { id: toastId });
+        toast.error("Không thể tạo file Excel Bảo hành/Sửa chữa.", { id: toastId });
       } finally {
         setIsExportingCosts(false);
       }
@@ -343,8 +357,8 @@ export function MaintenancePage() {
             <div className="mb-2 flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.16em] text-[#A86B00]">
               <span className="h-1.5 w-1.5 rounded-full bg-[#F0A516]" />Service operations
             </div>
-            <h1 className="font-display text-[30px] font-extrabold tracking-[-0.04em] text-[#102A43]">Bảo trì & Báo hỏng</h1>
-            <p className="mt-1 text-sm text-[#71869A]">Ghi nhận sự cố, giao người xử lý, theo dõi tiến độ và đối soát chi phí.</p>
+            <h1 className="font-display text-[30px] font-extrabold tracking-[-0.04em] text-[#102A43]">Bảo hành/Sửa chữa</h1>
+            <p className="mt-1 text-sm text-[#71869A]">Phân loại rõ phiếu bảo hành và sửa chữa, giao người xử lý, theo dõi tiến độ và đối soát chi phí.</p>
           </div>
           <div className="rounded-lg border border-[#F2D596] bg-[#FFF9EB] px-3 py-2 text-xs font-semibold text-[#A86B00]">
             {isAdmin ? "Quản trị viên có thể phân công và cập nhật xử lý." : "Chỉ quản trị viên có thể cập nhật phân công và chi phí."}
@@ -355,21 +369,22 @@ export function MaintenancePage() {
 
         <section className={`mt-5 ${card} overflow-hidden`}>
           <div className="flex flex-col gap-2 border-b border-[#E7EEF3] px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
-            <div><div className="flex items-center gap-2 text-sm font-extrabold text-[#193B57]"><Wrench size={16} className="text-[#A86B00]" />Tài sản đang cần bảo trì</div><p className="mt-1 text-xs text-[#8AA0B6]">Các tài sản vừa được chuyển sang trạng thái Bảo trì từ Danh mục tài sản.</p></div>
+            <div><div className="flex items-center gap-2 text-sm font-extrabold text-[#193B57]"><Wrench size={16} className="text-[#A86B00]" />Tài sản đang cần xử lý</div><p className="mt-1 text-xs text-[#8AA0B6]">Các tài sản vừa được chuyển sang trạng thái Bảo trì từ Danh mục tài sản; yêu cầu nhanh mặc định ở kênh Sửa chữa.</p></div>
             <span className="rounded-full bg-[#FFF5DC] px-2.5 py-1 text-[10px] font-extrabold text-[#A86B00]">{maintenanceAssets.length} tài sản</span>
           </div>
-          {assetsQuery.isLoading ? <div className="px-5 py-6 text-xs text-[#8AA0B6]">Đang tải tài sản...</div> : maintenanceAssets.length === 0 ? <div className="px-5 py-7 text-center text-xs font-semibold text-[#8AA0B6]">Chưa có tài sản nào ở trạng thái Bảo trì.</div> : <div className="overflow-x-auto overscroll-x-contain"><div className="flex min-w-max gap-3 p-4">{maintenanceAssets.map((asset) => { const quickDescription = asset.maintenanceReason?.trim() || `Kiểm tra và xử lý tình trạng bảo trì của ${asset.name}.`; return <div key={asset.id} className="w-[280px] shrink-0 rounded-xl border border-[#F2D596] bg-[#FFFDF7] p-4 sm:w-[320px]"><div className="flex items-start justify-between gap-3"><div className="min-w-0"><div className="font-mono text-[10px] font-bold text-[#A86B00]">{asset.assetCode}</div><div className="mt-1 truncate text-sm font-extrabold text-[#193B57]">{asset.name}</div></div><span className="shrink-0 rounded-full bg-[#FFF0C8] px-2 py-1 text-[10px] font-extrabold text-[#A86B00]">Bảo trì</span></div><p className="mt-3 line-clamp-2 text-xs leading-5 text-[#60758A]">{quickDescription}</p><button type="button" disabled={createMutation.isPending} onClick={() => createMutation.mutate({ assetId: asset.id, issueType: "maintenance", priority: "medium", description: quickDescription, estimatedCost: null, dueAt: null, recurrenceDays: null })} className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-lg border border-[#D7B65B] bg-white px-3 py-2 text-xs font-extrabold text-[#A86B00] transition hover:bg-[#FFF5DC] disabled:cursor-not-allowed disabled:opacity-60"><Plus size={14} />{createMutation.isPending ? "Đang tạo yêu cầu..." : "Tạo yêu cầu nhanh"}</button></div>; })}</div></div>}
+          {assetsQuery.isLoading ? <div className="px-5 py-6 text-xs text-[#8AA0B6]">Đang tải tài sản...</div> : maintenanceAssets.length === 0 ? <div className="px-5 py-7 text-center text-xs font-semibold text-[#8AA0B6]">Chưa có tài sản nào đang chờ xử lý.</div> : <div className="overflow-x-auto overscroll-x-contain"><div className="flex min-w-max gap-3 p-4">{maintenanceAssets.map((asset) => { const quickDescription = asset.maintenanceReason?.trim() || `Kiểm tra và xử lý tình trạng bảo trì của ${asset.name}.`; return <div key={asset.id} className="w-[280px] shrink-0 rounded-xl border border-[#F2D596] bg-[#FFFDF7] p-4 sm:w-[320px]"><div className="flex items-start justify-between gap-3"><div className="min-w-0"><div className="font-mono text-[10px] font-bold text-[#A86B00]">{asset.assetCode}</div><div className="mt-1 truncate text-sm font-extrabold text-[#193B57]">{asset.name}</div></div><span className="shrink-0 rounded-full bg-[#FFF0C8] px-2 py-1 text-[10px] font-extrabold text-[#A86B00]">Sửa chữa</span></div><p className="mt-3 line-clamp-2 text-xs leading-5 text-[#60758A]">{quickDescription}</p><button type="button" disabled={createMutation.isPending} onClick={() => createMutation.mutate({ assetId: asset.id, issueType: "maintenance", serviceChannel: "repair", priority: "medium", description: quickDescription, estimatedCost: null, dueAt: null, recurrenceDays: null })} className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-lg border border-[#D7B65B] bg-white px-3 py-2 text-xs font-extrabold text-[#A86B00] transition hover:bg-[#FFF5DC] disabled:cursor-not-allowed disabled:opacity-60"><Plus size={14} />{createMutation.isPending ? "Đang tạo yêu cầu..." : "Tạo phiếu sửa chữa"}</button></div>; })}</div></div>}
         </section>
 
-        {recentlyCreatedTicketId && <section className="mb-5 flex flex-col gap-3 rounded-xl border border-[#CDE5E5] bg-[#ECF8F7] px-4 py-3.5 sm:flex-row sm:items-center sm:justify-between"><div><div className="text-xs font-extrabold text-[#087A6A]">Đã tạo yêu cầu bảo trì thành công</div><p className="mt-1 text-[11px] text-[#4B8884]">{recentlyCreatedTicket ? `${recentlyCreatedTicket.ticketCode} · ${recentlyCreatedTicket.description}` : "Đang đồng bộ thông tin phiếu vừa tạo..."}</p></div><button type="button" disabled={!recentlyCreatedTicket} onClick={() => { if (recentlyCreatedTicket) setHistoryTicket(recentlyCreatedTicket); }} className="inline-flex shrink-0 items-center justify-center gap-2 rounded-lg border border-[#8BCDC6] bg-white px-3 py-2 text-xs font-extrabold text-[#087A6A] transition hover:bg-[#DDF4F1] disabled:cursor-wait disabled:opacity-60"><FileText size={14} />{recentlyCreatedTicket ? "Mở phiếu vừa tạo" : "Đang tải phiếu..."}</button></section>}
+        {recentlyCreatedTicketId && <section className="mb-5 flex flex-col gap-3 rounded-xl border border-[#CDE5E5] bg-[#ECF8F7] px-4 py-3.5 sm:flex-row sm:items-center sm:justify-between"><div><div className="text-xs font-extrabold text-[#087A6A]">Đã tạo phiếu Bảo hành/Sửa chữa thành công</div><p className="mt-1 text-[11px] text-[#4B8884]">{recentlyCreatedTicket ? `${recentlyCreatedTicket.ticketCode} · ${serviceChannelLabels[(recentlyCreatedTicket.serviceChannel || "repair") as keyof typeof serviceChannelLabels]} · ${recentlyCreatedTicket.description}` : "Đang đồng bộ thông tin phiếu vừa tạo..."}</p></div><button type="button" disabled={!recentlyCreatedTicket} onClick={() => { if (recentlyCreatedTicket) setHistoryTicket(recentlyCreatedTicket); }} className="inline-flex shrink-0 items-center justify-center gap-2 rounded-lg border border-[#8BCDC6] bg-white px-3 py-2 text-xs font-extrabold text-[#087A6A] transition hover:bg-[#DDF4F1] disabled:cursor-wait disabled:opacity-60"><FileText size={14} />{recentlyCreatedTicket ? "Mở phiếu vừa tạo" : "Đang tải phiếu..."}</button></section>}
 
         <section className={`${card} p-5`}>
           <div className="mb-4 flex items-center gap-2 text-sm font-extrabold text-[#193B57]">
-            <Wrench size={16} className="text-[#A86B00]" />Tạo yêu cầu mới
+            <Wrench size={16} className="text-[#A86B00]" />Tạo phiếu Bảo hành/Sửa chữa
           </div>
           <div className="grid items-start gap-3 sm:grid-cols-2 xl:grid-cols-4">
             <SearchableSelect value={assetId} onChange={setAssetId} disabled={assetsQuery.isLoading} placeholder="Chọn tài sản" searchPlaceholder="Tìm mã hoặc tên tài sản..." options={[{ value: "", label: "Chọn tài sản" }, ...assets.map((asset) => ({ value: String(asset.id), label: `${asset.assetCode} · ${asset.name}`, searchText: asset.assetCode }))]} />
             <input value={description} onChange={(event) => setDescription(event.target.value)} placeholder="Mô tả tình trạng cần xử lý" className="field-input" />
+            <SearchableSelect value={serviceChannel} onChange={(value) => setServiceChannel(value as typeof serviceChannel)} placeholder="Chọn kênh xử lý" searchPlaceholder="Tìm kênh xử lý..." options={Object.entries(serviceChannelLabels).map(([value, label]) => ({ value, label }))} />
             <SearchableSelect value={issueType} onChange={(value) => setIssueType(value as typeof issueType)} searchPlaceholder="Tìm loại yêu cầu..." options={Object.entries(issueTypeLabels).map(([value, label]) => ({ value, label }))} />
             <SearchableSelect value={priority} onChange={(value) => setPriority(value as typeof priority)} searchPlaceholder="Tìm mức ưu tiên..." options={Object.entries(priorityLabels).map(([value, label]) => ({ value, label: `${label} ưu tiên` }))} />
             <CurrencyInput value={estimatedCost} onChange={setEstimatedCost} placeholder="Chi phí dự kiến" aria-label="Chi phí dự kiến" showWords />
@@ -382,37 +397,47 @@ export function MaintenancePage() {
                   toast.error("Chọn tài sản và nhập mô tả tối thiểu 5 ký tự.");
                   return;
                 }
-                createMutation.mutate({ assetId: Number(assetId), description, issueType, priority, estimatedCost: estimatedCost.trim() || null, dueAt: dateInputToMs(dueDate), recurrenceDays: recurrenceDays ? Number(recurrenceDays) : null });
+                createMutation.mutate({ assetId: Number(assetId), description, issueType, serviceChannel, priority, estimatedCost: estimatedCost.trim() || null, dueAt: dateInputToMs(dueDate), recurrenceDays: recurrenceDays ? Number(recurrenceDays) : null });
               }}
               className="flex min-h-11 self-start items-center justify-center gap-2 rounded-lg bg-[#0F8C8C] px-4 py-2 text-xs font-bold text-white transition hover:bg-[#087A6A] disabled:cursor-not-allowed disabled:opacity-60"
             >
               <Plus size={15} />{createMutation.isPending ? "Đang tạo" : "Tạo yêu cầu"}
             </button>
           </div>
-          {!assetsQuery.isLoading && assets.length === 0 && <p className="mt-3 text-xs text-[#A86B00]">Chưa có tài sản để tạo yêu cầu bảo trì.</p>}
+          {!assetsQuery.isLoading && assets.length === 0 && <p className="mt-3 text-xs text-[#A86B00]">Chưa có tài sản để tạo phiếu Bảo hành/Sửa chữa.</p>}
         </section>
 
         <section className={`mt-5 overflow-hidden ${card}`}>
           <div className="flex flex-col gap-2 border-b border-[#E7EEF3] px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <h2 className="text-sm font-extrabold text-[#193B57]">Quản lý yêu cầu</h2>
-              <p className="mt-1 text-xs text-[#8AA0B6]">Phân công, tiến độ, chi phí dự kiến và chi phí thực tế được lưu tập trung.</p>
+              <h2 className="text-sm font-extrabold text-[#193B57]">Quản lý phiếu Bảo hành/Sửa chữa</h2>
+              <p className="mt-1 text-xs text-[#8AA0B6]">Phân công, tiến độ, chi phí và Kênh xử lý được lưu tập trung.</p>
             </div>
-            <div className="flex flex-wrap items-center gap-2"><label className="flex min-w-[180px] items-center gap-2 text-xs font-bold text-[#60758A]"><span className="shrink-0">Năm</span><SearchableSelect value={maintenanceYear} onChange={setMaintenanceYear} className="min-w-0 flex-1" placeholder="Tất cả năm" searchPlaceholder="Tìm năm..." options={[{ value: "all", label: "Tất cả năm" }, ...maintenanceYears.map((year) => ({ value: String(year), label: String(year) }))]} /></label><button type="button" onClick={exportMaintenanceCosts} disabled={ticketsQuery.isLoading || tickets.length === 0 || isExportingCosts} className="inline-flex items-center gap-2 rounded-lg border border-[#CDE5E5] bg-white px-3 py-2 text-xs font-bold text-[#087A6A] transition hover:bg-[#ECF8F7] disabled:cursor-not-allowed disabled:opacity-50"><Download size={14} className={isExportingCosts ? "animate-pulse" : ""} />{isExportingCosts ? "Đang xuất..." : "Xuất Excel chi phí"}</button><span className="text-xs font-bold text-[#60758A]">{filteredTickets.length} yêu cầu</span></div>
+            <div className="flex flex-wrap items-center gap-2"><label className="flex min-w-[180px] items-center gap-2 text-xs font-bold text-[#60758A]"><span className="shrink-0">Năm</span><SearchableSelect value={maintenanceYear} onChange={setMaintenanceYear} className="min-w-0 flex-1" placeholder="Tất cả năm" searchPlaceholder="Tìm năm..." options={[{ value: "all", label: "Tất cả năm" }, ...maintenanceYears.map((year) => ({ value: String(year), label: String(year) }))]} /></label><button type="button" onClick={exportMaintenanceCosts} disabled={ticketsQuery.isLoading || filteredTickets.length === 0 || isExportingCosts} className="inline-flex items-center gap-2 rounded-lg border border-[#CDE5E5] bg-white px-3 py-2 text-xs font-bold text-[#087A6A] transition hover:bg-[#ECF8F7] disabled:cursor-not-allowed disabled:opacity-50"><Download size={14} className={isExportingCosts ? "animate-pulse" : ""} />{isExportingCosts ? "Đang xuất..." : "Xuất Excel theo tab"}</button><span className="text-xs font-bold text-[#60758A]">{filteredTickets.length} phiếu</span></div>
+          </div>
+
+          <div className="flex flex-wrap gap-2 border-b border-[#E7EEF3] px-5 py-3" role="tablist" aria-label="Lọc Kênh xử lý">
+            {(["all", "warranty", "repair"] as const).map((channel) => {
+              const count = channel === "all" ? yearTickets.length : yearTickets.filter((ticket) => ticket.serviceChannel === channel).length;
+              const label = channel === "all" ? "Tất cả" : serviceChannelLabels[channel];
+              const active = serviceChannelTab === channel;
+              return <button key={channel} type="button" role="tab" aria-selected={active} onClick={() => setServiceChannelTab(channel)} className={`rounded-full border px-3 py-1.5 text-xs font-extrabold transition ${active ? "border-[#0F8C8C] bg-[#0F8C8C] text-white" : "border-[#DDE7F0] bg-white text-[#60758A] hover:border-[#8BCDC6] hover:bg-[#ECF8F7]"}`}>{label}<span className={`ml-1.5 rounded-full px-1.5 py-0.5 text-[10px] ${active ? "bg-white/20" : "bg-[#F0F5F8] text-[#60758A]"}`}>{count}</span></button>;
+            })}
           </div>
 
           {ticketsQuery.isError ? (
             <div className="m-5 rounded-xl border border-[#F2D596] bg-[#FFF9EB] p-4 text-sm">
-              <div className="flex items-center gap-2 font-bold text-[#A86B00]"><AlertTriangle size={16} />Không thể tải yêu cầu bảo trì</div>
+              <div className="flex items-center gap-2 font-bold text-[#A86B00]"><AlertTriangle size={16} />Không thể tải phiếu Bảo hành/Sửa chữa</div>
               <p className="mt-1 text-xs leading-5 text-[#71869A]">{ticketsQuery.error.message || "Vui lòng kiểm tra kết nối và thử lại."}</p>
               <button onClick={() => ticketsQuery.refetch()} className="mt-3 rounded-lg border border-[#F2D596] px-3 py-2 text-xs font-bold text-[#A86B00] hover:bg-white">Thử lại</button>
             </div>
           ) : (
             <div className="mobile-table-scroll overflow-x-auto">
-              <table className="w-full min-w-[1280px] text-left text-xs">
+              <table className="w-full min-w-[1420px] text-left text-xs">
                 <thead className="bg-[#FBFCFD] text-[10px] uppercase tracking-[.12em] text-[#8AA0B6]">
                   <tr>
                     <th className="px-5 py-3">Phiếu / tài sản</th>
+                    <th className="px-4 py-3">Kênh xử lý</th>
                     <th className="px-4 py-3">Sự cố</th>
                     <th className="px-4 py-3">Ưu tiên</th>
                     <th className="px-4 py-3">Người xử lý</th>
@@ -424,7 +449,7 @@ export function MaintenancePage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {ticketsQuery.isLoading && <tr><td colSpan={9}><ModalTableSkeleton rows={5} columns={9} /></td></tr>}
+                  {ticketsQuery.isLoading && <tr><td colSpan={10}><ModalTableSkeleton rows={5} columns={10} /></td></tr>}
                   {!ticketsQuery.isLoading && pagedTickets.map((ticket) => {
                     const draft = draftFor(ticket);
                     const asset = assetById.get(ticket.assetId);
@@ -440,6 +465,7 @@ export function MaintenancePage() {
                           <div className="mt-1 text-[10px] text-[#8AA0B6]">{asset?.assetCode || "Mã tài sản không còn khả dụng"} · Báo bởi {ticket.reporterName || "Người dùng"}</div>
                           <button type="button" onClick={() => setHistoryTicket(ticket)} className="mt-2 inline-flex items-center gap-1 rounded-md border border-[#CDE5E5] px-2 py-1 text-[10px] font-bold text-[#087A6A] transition hover:bg-[#ECF8F7]" aria-label={`Xem lịch sử ${ticket.ticketCode}`}><History size={12} />Xem lịch sử</button>
                         </td>
+                        <td className="px-4 py-4"><SearchableSelect value={draft.serviceChannel} onChange={(value) => updateDraft(ticket, { serviceChannel: value as TicketDraft["serviceChannel"] })} disabled={!canEditTicket || updateMutation.isPending} className="min-w-[132px]" searchPlaceholder="Tìm kênh..." options={Object.entries(serviceChannelLabels).map(([value, label]) => ({ value, label }))} /></td>
                         <td className="max-w-[230px] px-4 py-4"><div className="font-semibold text-[#193B57]">{issueTypeLabels[ticket.issueType]}</div><p className="mt-1 leading-5 text-[#60758A]">{ticket.description}</p></td>
                         <td className="px-4 py-4"><span className={`inline-flex rounded-full px-2 py-1 text-[10px] font-extrabold ${priorityTone}`}>{priorityLabels[ticket.priority]}</span></td>
                         <td className="px-4 py-4">
@@ -463,7 +489,7 @@ export function MaintenancePage() {
                   })}
                 </tbody>
               </table>
-              {!ticketsQuery.isLoading && filteredTickets.length === 0 && <ModuleEmptyState module="maintenance" title="Chưa có yêu cầu bảo trì" description="Khi có sự cố hoặc lịch bảo trì mới, yêu cầu sẽ hiển thị tại đây để bạn theo dõi và xử lý." />}
+              {!ticketsQuery.isLoading && filteredTickets.length === 0 && <ModuleEmptyState module="maintenance" title={`Chưa có phiếu ${serviceChannelTab === "all" ? "Bảo hành/Sửa chữa" : serviceChannelLabels[serviceChannelTab]}`} description="Khi có sự cố hoặc lịch xử lý mới, phiếu sẽ hiển thị tại đây để bạn theo dõi và xử lý." />}
               {filteredTickets.length > 0 && <div className="flex flex-wrap items-center justify-between gap-3 border-t border-[#E7EEF3] px-5 py-4 text-xs text-[#8AA0B6]"><span>Trang <b className="text-[#60758A]">{maintenancePage}</b> / {maintenanceTotalPages}</span><div className="flex items-center gap-2"><button type="button" onClick={() => setMaintenancePage((page) => Math.max(1, page - 1))} disabled={maintenancePage === 1} className="rounded-md border border-[#DDE7F0] px-3 py-1.5 font-bold text-[#60758A] disabled:cursor-not-allowed disabled:opacity-40">‹</button><button type="button" onClick={() => setMaintenancePage((page) => Math.min(maintenanceTotalPages, page + 1))} disabled={maintenancePage === maintenanceTotalPages} className="rounded-md border border-[#DDE7F0] px-3 py-1.5 font-bold text-[#60758A] disabled:cursor-not-allowed disabled:opacity-40">›</button></div></div>}
             </div>
           )}

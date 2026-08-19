@@ -326,6 +326,7 @@ export const maintenanceTickets = mysqlTable("maintenanceTickets", {
   reporterName: varchar("reporterName", { length: 160 }),
   assigneeUserId: int("assigneeUserId"),
   issueType: mysqlEnum("issueType", ["maintenance", "incident", "damage"]).notNull(),
+  serviceChannel: mysqlEnum("serviceChannel", ["warranty", "repair"]).default("repair").notNull(),
   priority: mysqlEnum("priority", ["low", "medium", "high", "critical"]).default("medium").notNull(),
   status: mysqlEnum("status", ["open", "in_progress", "resolved", "closed"]).default("open").notNull(),
   description: text("description").notNull(),
@@ -341,7 +342,7 @@ export const maintenanceTickets = mysqlTable("maintenanceTickets", {
   resolvedAt: timestamp("resolvedAt"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
-}, (table) => [index("maintenance_asset_idx").on(table.assetId), index("maintenance_status_idx").on(table.status), index("maintenance_year_sequence_idx").on(table.ticketYear, table.ticketSequence)]);
+}, (table) => [index("maintenance_asset_idx").on(table.assetId), index("maintenance_status_idx").on(table.status), index("maintenance_channel_idx").on(table.serviceChannel), index("maintenance_year_sequence_idx").on(table.ticketYear, table.ticketSequence)]);
 
 export const maintenanceMonthlyBudgets = mysqlTable("maintenanceMonthlyBudgets", {
   id: int("id").autoincrement().primaryKey(),

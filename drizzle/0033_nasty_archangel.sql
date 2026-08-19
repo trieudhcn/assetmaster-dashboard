@@ -1,0 +1,2 @@
+ALTER TABLE `maintenanceTickets` ADD `serviceChannel` enum('warranty','repair') DEFAULT 'repair' NOT NULL;--> statement-breakpoint
+CREATE INDEX `maintenance_channel_idx` ON `maintenanceTickets` (`serviceChannel`);

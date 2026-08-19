@@ -232,6 +232,13 @@
       "when": 1787105250401,
       "tag": "0032_last_clint_barton",
       "breakpoints": true
+    },
+    {
+      "idx": 33,
+      "version": "5",
+      "when": 1787108916094,
+      "tag": "0033_nasty_archangel",
+      "breakpoints": true
     }
   ]
 }

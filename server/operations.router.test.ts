@@ -158,6 +158,7 @@ describe("operations management", () => {
       reporterUserId: 2,
       reporterName: "Nhân viên",
       issueType: "damage",
+      serviceChannel: "repair",
       priority: "high",
       status: "open",
       estimatedCost: "1250000.00",
@@ -167,6 +168,23 @@ describe("operations management", () => {
     }));
     expect(mocks.recordActivity).toHaveBeenCalledWith(expect.objectContaining({ entityType: "maintenance", entityId: 30, action: "reported" }));
     expect(mocks.updateAsset).toHaveBeenCalledWith(8, expect.objectContaining({ status: "maintenance", holderUserId: null, holderName: null, maintenanceReason: "Màn hình thiết bị bị nứt sau va chạm." }));
+  });
+
+  it("stores the requested warranty service channel on a new ticket", async () => {
+    const caller = appRouter.createCaller(employeeContext);
+
+    await caller.maintenance.create({
+      assetId: 8,
+      issueType: "incident",
+      serviceChannel: "warranty",
+      priority: "medium",
+      description: "Thiết bị gặp lỗi trong thời hạn bảo hành.",
+      estimatedCost: null,
+      dueAt: null,
+      recurrenceDays: null,
+    });
+
+    expect(mocks.createMaintenanceTicket).toHaveBeenCalledWith(expect.objectContaining({ serviceChannel: "warranty" }));
   });
 
   it("moves all source-category assets to an active target category and requires admin", async () => {
