@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildFilteredAssetExportRows, buildMaintenanceExportRows, canCreateCatalogOption, filterNamedCatalogOptions, getHandoverActionTooltip, getMaintenanceBadgeCount, getNewMaintenanceRequestBadge, getPaginationWindow, matchesVietnameseSearch, normalizeVietnameseSearch, toggleMaintenanceStatusFilter } from "../client/src/lib/catalogUi";
+import { buildFilteredAssetExportRows, buildMaintenanceExportRows, canCreateCatalogOption, filterNamedCatalogOptions, getAssetStatusFilterCounts, getHandoverActionTooltip, getMaintenanceBadgeCount, getNewMaintenanceRequestBadge, getPaginationWindow, matchesVietnameseSearch, normalizeVietnameseSearch, toggleMaintenanceStatusFilter } from "../client/src/lib/catalogUi";
 
 describe("Catalog UI helpers", () => {
   it("clamps pagination and preserves a non-overlapping final record range", () => {
@@ -35,6 +35,17 @@ describe("Catalog UI helpers", () => {
   it("counts only actual maintenance assets for the navigation badge", () => {
     expect(getMaintenanceBadgeCount([{ statusType: "available" }, { statusType: "assigned" }])).toBe(0);
     expect(getMaintenanceBadgeCount([{ statusType: "maintenance" }, { statusType: "maintenance" }, { statusType: "available" }])).toBe(2);
+  });
+
+  it("returns stable counts for every asset-status option, including retired assets", () => {
+    expect(getAssetStatusFilterCounts([{ statusType: "available" }, { statusType: "active" }, { statusType: "maintenance" }, { statusType: "returned" }, { statusType: "retired" }, { statusType: "maintenance" }])).toEqual({
+      "Tất cả trạng thái": 6,
+      "Sẵn có": 1,
+      "Đang cấp phát": 1,
+      "Bảo trì": 2,
+      "Trả nhà cung cấp": 1,
+      "Khấu hao/Thanh lý": 1,
+    });
   });
 
   it("counts only new maintenance requests and escalates the badge to the highest priority", () => {

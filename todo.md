@@ -1970,3 +1970,10 @@
 
 - [x] Sửa bộ lọc trạng thái Bảo hành/Sửa chữa trong Danh mục tài sản để trả đúng dữ liệu.
 - [x] Bổ sung hồi quy, kiểm tra giao diện, build và phát hành cập nhật.
+
+## Current Session — Service Channel Codes, Links & Filter Counts
+
+- [x] Khóa Kênh xử lý theo loại phiếu và đổi mã Sửa chữa sang SC-NĂM-001.
+- [x] Thêm liên kết nhanh từ dòng tài sản tới phiếu Bảo hành/Sửa chữa liên quan.
+- [x] Hiển thị số lượng tài sản bên cạnh từng trạng thái trong bộ lọc Danh mục tài sản.
+- [x] Bổ sung hồi quy, kiểm tra giao diện, build và phát hành cập nhật.

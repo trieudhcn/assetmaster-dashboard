@@ -930,6 +930,17 @@ export async function getNextWarrantyRequestSequence(warrantyYear: number) {
   return maxSequence + 1;
 }
 
+export async function getNextRepairTicketSequence(ticketYear: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database unavailable");
+  const rows = await db.select({ ticketCode: maintenanceTickets.ticketCode }).from(maintenanceTickets).where(like(maintenanceTickets.ticketCode, `SC-${ticketYear}-%`));
+  const maxSequence = rows.reduce((maximum, row) => {
+    const match = row.ticketCode.match(new RegExp(`^SC-${ticketYear}-(\\d+)$`));
+    return Math.max(maximum, match ? Number(match[1]) : 0);
+  }, 0);
+  return maxSequence + 1;
+}
+
 export async function listMaintenanceTicketsByAsset(assetId: number) {
   const db = await getDb();
   if (!db) return [];

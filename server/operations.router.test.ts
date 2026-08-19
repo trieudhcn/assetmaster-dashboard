@@ -14,7 +14,7 @@ const mocks = vi.hoisted(() => ({
   getAuditItemById: vi.fn(),
   getAuditSession: vi.fn(),
   getMaintenanceTicket: vi.fn(),
-  getNextMaintenanceTicketSequence: vi.fn(),
+  getNextRepairTicketSequence: vi.fn(),
   getNextWarrantyRequestSequence: vi.fn(),
   getNextAuditSequence: vi.fn(),
   getAssetById: vi.fn(),
@@ -60,7 +60,7 @@ vi.mock("./db", () => ({
   getBrandByName: vi.fn(),
   getHandoverById: vi.fn(),
   getMaintenanceTicket: mocks.getMaintenanceTicket,
-  getNextMaintenanceTicketSequence: mocks.getNextMaintenanceTicketSequence,
+  getNextRepairTicketSequence: mocks.getNextRepairTicketSequence,
   getNextWarrantyRequestSequence: mocks.getNextWarrantyRequestSequence,
   getNextAuditSequence: mocks.getNextAuditSequence,
   getNextRetirementCertificateSequence: vi.fn().mockResolvedValue(1),
@@ -129,8 +129,8 @@ describe("operations management", () => {
     mocks.updateAuditItem.mockResolvedValue(undefined);
     mocks.updateAuditSession.mockResolvedValue(undefined);
     mocks.recordActivity.mockResolvedValue(undefined);
-    mocks.getMaintenanceTicket.mockResolvedValue({ id: 30, assetId: 8, ticketCode: "BT-2026-002", ticketYear: 2026, ticketSequence: 2, status: "open", description: "Màn hình thiết bị bị nứt sau va chạm." });
-    mocks.getNextMaintenanceTicketSequence.mockResolvedValue(1);
+    mocks.getMaintenanceTicket.mockResolvedValue({ id: 30, assetId: 8, ticketCode: "SC-2026-002", ticketYear: 2026, ticketSequence: 2, serviceChannel: "repair", status: "open", description: "Màn hình thiết bị bị nứt sau va chạm." });
+    mocks.getNextRepairTicketSequence.mockResolvedValue(1);
     mocks.getNextWarrantyRequestSequence.mockResolvedValue(1);
     mocks.listMaintenanceTickets.mockResolvedValue([]);
     mocks.listMaintenanceTicketsByAsset.mockResolvedValue([]);
@@ -156,7 +156,7 @@ describe("operations management", () => {
       priority: "high",
       description: "Màn hình thiết bị bị nứt sau va chạm.",
       estimatedCost: "1250000.00",
-    })).resolves.toEqual({ id: 30, warrantyRequestCode: null });
+    })).resolves.toMatchObject({ id: 30, ticketCode: expect.stringMatching(/^SC-\d{4}-001$/), warrantyRequestCode: null });
 
     expect(mocks.createMaintenanceTicket).toHaveBeenCalledWith(expect.objectContaining({
       assetId: 8,
@@ -167,7 +167,7 @@ describe("operations management", () => {
       priority: "high",
       status: "open",
       estimatedCost: "1250000.00",
-      ticketCode: expect.stringMatching(/^BT-\d{4}-\d{3}$/),
+      ticketCode: expect.stringMatching(/^SC-\d{4}-\d{3}$/),
       ticketYear: expect.any(Number),
       ticketSequence: 1,
     }));
@@ -196,6 +196,7 @@ describe("operations management", () => {
       serviceChannel: "warranty",
       warrantyBrand: "Logitech",
       warrantyVendor: "FPT",
+      ticketCode: expect.stringMatching(/^BH-\d{4}-001$/),
       warrantyRequestCode: expect.stringMatching(/^BH-\d{4}-001$/),
     }));
     await expect(caller.maintenance.nextWarrantyCode()).resolves.toEqual({ code: expect.stringMatching(/^BH-\d{4}-001$/) });
@@ -257,6 +258,7 @@ describe("operations management", () => {
       actualCost: "1175000.00",
       resolvedAt: expect.any(Date),
     }));
+    expect(mocks.updateMaintenanceTicket.mock.calls[0]?.[1]).not.toHaveProperty("serviceChannel");
     expect(mocks.updateAsset).toHaveBeenCalledWith(8, expect.objectContaining({ status: "available", holderUserId: null, holderName: null, maintenanceReason: null }));
     expect(mocks.recordActivity).toHaveBeenCalledWith(expect.objectContaining({ entityType: "maintenance", entityId: 30, action: "resolved" }));
   });

@@ -123,7 +123,6 @@ function OperationalReminderPanel({ onCreateWarrantyTicket }: { onCreateWarranty
 type TicketDraft = {
   assigneeUserId: string;
   status: "open" | "in_progress" | "resolved" | "closed";
-  serviceChannel: "warranty" | "repair";
   estimatedCost: string;
   actualCost: string;
   dueDate: string;
@@ -191,7 +190,7 @@ export function MaintenancePage() {
   const utils = trpc.useUtils();
 
   const createMutation = trpc.maintenance.create.useMutation({
-    onSuccess: ({ id, warrantyRequestCode: createdWarrantyRequestCode }, variables) => {
+    onSuccess: ({ id, ticketCode, warrantyRequestCode: createdWarrantyRequestCode }, variables) => {
       setRecentlyCreatedTicketId(id);
       setQueuedMaintenanceAssetIds((current) => {
         const next = new Set(current);
@@ -213,7 +212,7 @@ export function MaintenancePage() {
       setWarrantyAttachmentFile(null);
       setPriority("medium");
       if (variables.serviceChannel === "warranty") void nextWarrantyCodeQuery.refetch();
-      toast.success(createdWarrantyRequestCode ? `Đã tạo phiếu bảo hành · mã ${createdWarrantyRequestCode}.` : `Đã tạo yêu cầu ${variables.serviceChannel === "warranty" ? "bảo hành" : "sửa chữa"}.`);
+      toast.success(`Đã tạo phiếu ${variables.serviceChannel === "warranty" ? "bảo hành" : "sửa chữa"} · mã ${createdWarrantyRequestCode || ticketCode}.`);
     },
     onError: (error) => toast.error(error.message || "Không thể tạo yêu cầu bảo trì."),
   });
@@ -303,6 +302,20 @@ export function MaintenancePage() {
     setMaintenancePage(1);
   }, [maintenanceYear, serviceChannelTab]);
   useEffect(() => {
+    const assetCode = sessionStorage.getItem("assetmaster-open-maintenance-asset-code");
+    if (!assetCode || assetsQuery.isLoading || ticketsQuery.isLoading) return;
+    const asset = assets.find((item) => item.assetCode === assetCode);
+    const relatedTicket = asset ? tickets.filter((ticket) => ticket.assetId === asset.id).sort((left, right) => new Date(right.openedAt).getTime() - new Date(left.openedAt).getTime())[0] : undefined;
+    sessionStorage.removeItem("assetmaster-open-maintenance-asset-code");
+    if (!relatedTicket) {
+      toast.info("Tài sản này chưa có phiếu Bảo hành/Sửa chữa để mở.");
+      return;
+    }
+    setMaintenanceYear(String(relatedTicket.ticketYear || new Date(relatedTicket.openedAt).getFullYear()));
+    setServiceChannelTab((relatedTicket.serviceChannel || "repair") as "warranty" | "repair");
+    setHistoryTicket(relatedTicket);
+  }, [assets, assetsQuery.isLoading, tickets, ticketsQuery.isLoading]);
+  useEffect(() => {
     setMaintenancePage((page) => Math.min(page, maintenanceTotalPages));
   }, [maintenanceTotalPages]);
 
@@ -310,7 +323,6 @@ export function MaintenancePage() {
     return ticketEdits[ticket.id] || {
       assigneeUserId: ticket.assigneeUserId ? String(ticket.assigneeUserId) : "",
       status: ticket.status,
-      serviceChannel: (ticket.serviceChannel || "repair") as TicketDraft["serviceChannel"],
       estimatedCost: ticket.estimatedCost ? String(ticket.estimatedCost) : "",
       actualCost: ticket.actualCost ? String(ticket.actualCost) : "",
       dueDate: toDateInputValue(ticket.dueAt),
@@ -326,7 +338,6 @@ export function MaintenancePage() {
         ...{
           assigneeUserId: ticket.assigneeUserId ? String(ticket.assigneeUserId) : "",
           status: ticket.status,
-          serviceChannel: (ticket.serviceChannel || "repair") as TicketDraft["serviceChannel"],
           estimatedCost: ticket.estimatedCost ? String(ticket.estimatedCost) : "",
           actualCost: ticket.actualCost ? String(ticket.actualCost) : "",
           dueDate: toDateInputValue(ticket.dueAt),
@@ -344,7 +355,6 @@ export function MaintenancePage() {
     updateMutation.mutate({
       id: ticket.id,
       status: draft.status,
-      serviceChannel: draft.serviceChannel,
       assigneeUserId: draft.assigneeUserId ? Number(draft.assigneeUserId) : null,
       resolution: draft.resolution.trim() || null,
       estimatedCost: draft.estimatedCost.trim() || null,
@@ -435,7 +445,7 @@ export function MaintenancePage() {
       const actual = parseVndAmount(String(ticket.actualCost ?? ""));
       const asset = assetById.get(ticket.assetId);
       return {
-        "Mã phiếu": `BT-${ticket.id}`,
+        "Mã phiếu": ticket.ticketCode,
         "Mã tài sản": asset?.assetCode || "",
         "Tên tài sản": asset?.name || "",
         "Kênh xử lý": serviceChannelLabels[(ticket.serviceChannel || "repair") as keyof typeof serviceChannelLabels],
@@ -657,7 +667,7 @@ export function MaintenancePage() {
                           <div className="mt-1 text-[10px] text-[#8AA0B6]">{asset?.assetCode || "Mã tài sản không còn khả dụng"} · Báo bởi {ticket.reporterName || "Người dùng"}</div>
                           <button type="button" onClick={() => setHistoryTicket(ticket)} className="mt-2 inline-flex items-center gap-1 rounded-md border border-[#CDE5E5] px-2 py-1 text-[10px] font-bold text-[#087A6A] transition hover:bg-[#ECF8F7]" aria-label={`Xem lịch sử ${ticket.ticketCode}`}><History size={12} />Xem lịch sử</button>
                         </td>
-                        <td className="px-4 py-4"><SearchableSelect value={draft.serviceChannel} onChange={(value) => updateDraft(ticket, { serviceChannel: value as TicketDraft["serviceChannel"] })} disabled={!canEditTicket || updateMutation.isPending} className="min-w-[132px]" searchPlaceholder="Tìm kênh..." options={Object.entries(serviceChannelLabels).map(([value, label]) => ({ value, label }))} /></td>
+                        <td className="px-4 py-4"><span className={`inline-flex min-w-[132px] items-center justify-center gap-1.5 rounded-md border px-2.5 py-2 text-[10px] font-extrabold ${ticket.serviceChannel === "warranty" ? "border-[#8BCDC6] bg-[#ECF8F7] text-[#087A6A]" : "border-[#F2D596] bg-[#FFF9EB] text-[#A86B00]"}`} title="Kênh xử lý được xác lập theo mã phiếu và không thể thay đổi sau khi tạo."><LockKeyhole size={12} aria-hidden="true" />{serviceChannelLabels[(ticket.serviceChannel || "repair") as keyof typeof serviceChannelLabels]}</span></td>
                         <td className="max-w-[230px] px-4 py-4"><div className="font-semibold text-[#193B57]">{issueTypeLabels[ticket.issueType]}</div><p className="mt-1 leading-5 text-[#60758A]">{ticket.description}</p></td>
                         <td className="px-4 py-4"><span className={`inline-flex rounded-full px-2 py-1 text-[10px] font-extrabold ${priorityTone}`}>{priorityLabels[ticket.priority]}</span></td>
                         <td className="px-4 py-4">

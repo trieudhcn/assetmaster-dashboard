@@ -40,6 +40,17 @@ export function getMaintenanceBadgeCount<T extends { statusType: string }>(asset
   return assets.reduce((count, asset) => count + (asset.statusType === "maintenance" ? 1 : 0), 0);
 }
 
+export function getAssetStatusFilterCounts<T extends { statusType: string }>(assets: T[]) {
+  return {
+    "Tất cả trạng thái": assets.length,
+    "Sẵn có": assets.filter((asset) => asset.statusType === "available").length,
+    "Đang cấp phát": assets.filter((asset) => asset.statusType === "active").length,
+    "Bảo trì": assets.filter((asset) => asset.statusType === "maintenance").length,
+    "Trả nhà cung cấp": assets.filter((asset) => asset.statusType === "returned").length,
+    "Khấu hao/Thanh lý": assets.filter((asset) => asset.statusType === "retired").length,
+  };
+}
+
 export type MaintenancePriority = "low" | "medium" | "high" | "critical";
 
 export function getNewMaintenanceRequestBadge<T extends { status: string; priority: MaintenancePriority }>(tickets: T[]) {

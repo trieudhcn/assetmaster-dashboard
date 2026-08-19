@@ -72,7 +72,7 @@ import {
   listMaintenanceTickets,
   listMaintenanceMonthlyBudgets,
   listMaintenanceTicketsByAsset,
-  getNextMaintenanceTicketSequence,
+  getNextRepairTicketSequence,
   getNextWarrantyRequestSequence,
   listActivityLogsByEntity,
   getVendorById,
@@ -1025,9 +1025,11 @@ export const appRouter = router({
         throw new TRPCError({ code: "CONFLICT", message: "Tài sản này đã có yêu cầu bảo trì đang mở." });
       }
       const ticketYear = new Date().getFullYear();
-      const ticketSequence = await getNextMaintenanceTicketSequence(ticketYear);
-      const ticketCode = `BT-${ticketYear}-${String(ticketSequence).padStart(3, "0")}`;
-      const warrantyRequestCode = input.serviceChannel === "warranty" ? `BH-${ticketYear}-${String(await getNextWarrantyRequestSequence(ticketYear)).padStart(3, "0")}` : null;
+      const ticketSequence = input.serviceChannel === "warranty"
+        ? await getNextWarrantyRequestSequence(ticketYear)
+        : await getNextRepairTicketSequence(ticketYear);
+      const ticketCode = `${input.serviceChannel === "warranty" ? "BH" : "SC"}-${ticketYear}-${String(ticketSequence).padStart(3, "0")}`;
+      const warrantyRequestCode = input.serviceChannel === "warranty" ? ticketCode : null;
       const assetBrand = input.serviceChannel === "warranty" && asset.brandId ? await getBrandById(asset.brandId) : null;
       const warrantyDetails = input.serviceChannel === "warranty" ? {
         warrantyBrand: assetBrand?.name || null,
@@ -1036,16 +1038,16 @@ export const appRouter = router({
       } : { warrantyBrand: null, warrantyVendor: null, warrantyRequestCode: null };
       const id = await createMaintenanceTicket({ ...input, ...warrantyDetails, ticketYear, ticketSequence, ticketCode, reporterUserId: ctx.user!.id, reporterName: ctx.user!.name ?? "Người dùng", status: "open" });
       await updateAsset(asset.id, { status: "maintenance", holderUserId: null, holderName: null, maintenanceReason: input.description.trim() });
-      await recordActivity({ entityType: "maintenance", entityId: id, action: "reported", actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: `Tạo yêu cầu ${input.serviceChannel === "warranty" ? "bảo hành" : "sửa chữa"}${warrantyDetails.warrantyRequestCode ? ` · mã bảo hành ${warrantyDetails.warrantyRequestCode}` : ""}` });
+      await recordActivity({ entityType: "maintenance", entityId: id, action: "reported", actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: `Tạo yêu cầu ${input.serviceChannel === "warranty" ? "bảo hành" : "sửa chữa"} · mã ${ticketCode}` });
       await recordActivity({ entityType: "asset", entityId: asset.id, action: "maintenance_reported", actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: `Đưa ${asset.assetCode} vào Bảo trì` });
-      return { id, warrantyRequestCode: warrantyDetails.warrantyRequestCode };
+      return { id, ticketCode, warrantyRequestCode: warrantyDetails.warrantyRequestCode };
     }),
-    update: adminProcedure.input(z.object({ id: z.number().int().positive(), status: z.enum(["open", "in_progress", "resolved", "closed"]), serviceChannel: z.enum(["warranty", "repair"]).optional(), assigneeUserId: z.number().int().positive().optional().nullable(), resolution: nullableText, estimatedCost: z.string().regex(/^\d+(\.\d{1,2})?$/).optional().nullable(), actualCost: z.string().regex(/^\d+(\.\d{1,2})?$/).optional().nullable(), dueAt: dateFromMs, recurrenceDays: z.number().int().min(1).max(3650).optional().nullable() })).mutation(async ({ input, ctx }) => {
+    update: adminProcedure.input(z.object({ id: z.number().int().positive(), status: z.enum(["open", "in_progress", "resolved", "closed"]), assigneeUserId: z.number().int().positive().optional().nullable(), resolution: nullableText, estimatedCost: z.string().regex(/^\d+(\.\d{1,2})?$/).optional().nullable(), actualCost: z.string().regex(/^\d+(\.\d{1,2})?$/).optional().nullable(), dueAt: dateFromMs, recurrenceDays: z.number().int().min(1).max(3650).optional().nullable() })).mutation(async ({ input, ctx }) => {
       const ticket = await getMaintenanceTicket(input.id);
       if (!ticket) throw new TRPCError({ code: "NOT_FOUND", message: "Không tìm thấy yêu cầu bảo trì." });
       if (ticket.status === "closed") throw new TRPCError({ code: "CONFLICT", message: "Phiếu đã đóng, không thể chỉnh sửa hoặc cập nhật thêm." });
-      const serviceChannel = input.serviceChannel ?? ticket.serviceChannel;
-      await updateMaintenanceTicket(input.id, { status: input.status, serviceChannel, assigneeUserId: input.assigneeUserId, resolution: input.resolution, estimatedCost: input.estimatedCost, actualCost: input.actualCost, dueAt: input.dueAt, recurrenceDays: input.recurrenceDays, resolvedAt: input.status === "resolved" || input.status === "closed" ? new Date() : null });
+      const serviceChannel = ticket.serviceChannel;
+      await updateMaintenanceTicket(input.id, { status: input.status, assigneeUserId: input.assigneeUserId, resolution: input.resolution, estimatedCost: input.estimatedCost, actualCost: input.actualCost, dueAt: input.dueAt, recurrenceDays: input.recurrenceDays, resolvedAt: input.status === "resolved" || input.status === "closed" ? new Date() : null });
       const asset = await getAssetById(ticket.assetId);
       if (asset) {
         if (input.status === "open" || input.status === "in_progress") {

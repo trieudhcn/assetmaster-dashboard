@@ -555,8 +555,8 @@ describe("modal presentation contract", () => {
     const home = readProjectFile("client/src/pages/Home.tsx");
 
     expect(home).toContain('type WarrantyState = "none" | "active" | "expiring" | "expired"');
-    expect(home).toContain('getWarrantyState(asset.warrantyUntil) === "expired"');
-    expect(home).toContain('getWarrantyState(asset.warrantyUntil) === "expiring"');
+    expect(home).toContain("const warrantyState = getWarrantyState(asset.warrantyUntil);");
+    expect(home).toContain('warrantyFilter === "Sắp hết hạn" && warrantyState === "expiring"');
     expect(home).toContain('"Sắp hết hạn"');
     expect(home).toContain('"Đã hết hạn"');
   });
@@ -667,6 +667,11 @@ describe("modal presentation contract", () => {
     expect(operations).toContain('role="tablist" aria-label="Lọc Kênh xử lý"');
     expect(operations).toContain('serviceChannel: "repair"');
     expect(routers).toContain('serviceChannel: z.enum(["warranty", "repair"]).default("repair")');
+    expect(routers).toContain("getNextRepairTicketSequence");
+    expect(routers).toContain('input.serviceChannel === "warranty" ? "BH" : "SC"');
+    expect(routers).not.toContain('serviceChannel: z.enum(["warranty", "repair"]).optional()');
+    expect(operations).toContain("Kênh xử lý được xác lập theo mã phiếu và không thể thay đổi sau khi tạo.");
+    expect(operations).not.toContain('<SearchableSelect value={draft.serviceChannel}');
   });
 
   it("captures warranty request details, warns before repair, and splits dashboard costs by channel", () => {
@@ -719,7 +724,11 @@ describe("modal presentation contract", () => {
     expect(home).toContain('label: "Bảo hành/Sửa chữa"');
     expect(home).toContain('const normalizedStatus = status === "Bảo trì" ? "Bảo hành/Sửa chữa" : status;');
     expect(home).toContain('normalizedStatus === "Bảo hành/Sửa chữa" && asset.statusType === "maintenance"');
-    expect(home).toContain('label: option === "Bảo trì" ? "Bảo hành/Sửa chữa" : option');
+    expect(home).toContain('const label = option === "Bảo trì" ? "Bảo hành/Sửa chữa" : option;');
+    expect(home).toContain('counts?.[option]');
+    expect(home).toContain("getAssetStatusFilterCounts");
+    expect(home).toContain("assetmaster-open-maintenance-asset-code");
+    expect(home).toContain("Mở phiếu Bảo hành/Sửa chữa");
     expect(home).toContain("Lý do Bảo hành/Sửa chữa");
     expect(home).toContain('textarea[aria-label="Nội dung cần bảo trì"]');
     expect(operations).toContain("data-warranty-ticket-details");
