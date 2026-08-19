@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
-import { formatVnd, isInvalidVndInput, numberToVietnameseWords, parseVndAmount } from "../client/src/lib/formatters";
+import { formatVnd, isInvalidVndInput, normalizeVndIntegerInput, numberToVietnameseWords, parseVndAmount } from "../client/src/lib/formatters";
 
 const projectRoot = resolve(import.meta.dirname, "..");
 const readProjectFile = (relativePath: string) => readFileSync(resolve(projectRoot, relativePath), "utf8");
@@ -17,14 +17,16 @@ describe("modal presentation contract", () => {
     expect(isInvalidVndInput("42,500,000 ₫")).toBe(false);
     expect(isInvalidVndInput("160000.00")).toBe(false);
     expect(isInvalidVndInput("42 nghìn")).toBe(true);
+    expect(normalizeVndIntegerInput("55.345.435")).toBe("55345435");
+    expect(normalizeVndIntegerInput("999đVNĐ")).toBe("999");
   });
 
   it("shows a shared inline warning and blocks accessory saving for invalid currency input", () => {
     const currencyInput = readProjectFile("client/src/components/CurrencyInput.tsx");
     const supplies = readProjectFile("client/src/pages/SuppliesInventoryView.tsx");
 
-    expect(currencyInput).toContain("isInvalidVndInput");
-    expect(currencyInput).toContain("Đơn giá chỉ nhận chữ số");
+    expect(currencyInput).toContain("normalizeVndIntegerInput");
+    expect(currencyInput).toContain("Đơn giá chỉ nhận chữ số nguyên từ 0–9.");
     expect(currencyInput).toContain("border-[#B44545]");
     expect(supplies).toContain("isInvalidVndInput(form.unitCost)");
     expect(supplies).toContain("Đơn giá không đúng định dạng");
@@ -38,8 +40,10 @@ describe("modal presentation contract", () => {
     expect(home).toContain("monthlyMaintenanceCosts");
     expect(home).toContain("Chi phí bảo trì theo tháng");
     expect(home).toContain("data-maintenance-monthly-cost-chart");
-    expect(currencyInput).toContain("raw.replace(/[^0-9.,]/g, \"\")");
-    expect(supplies).toContain("target.value.replace(/[^0-9.,]/g, \"\")");
+    expect(currencyInput).toContain("normalizeVndIntegerInput");
+    expect(currencyInput).toContain("Đơn giá chỉ nhận chữ số nguyên từ 0–9.");
+    expect(supplies).toContain("normalizeVndIntegerInput");
+    expect(supplies).not.toContain("input.value.replace(/[^0-9.,]/g, \"\")");
   });
 
   it("supports maintenance chart year filtering, ticket drilldown and monthly budgets", () => {

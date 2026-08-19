@@ -22,6 +22,11 @@ export function formatVndInput(value: number | string | null | undefined): strin
   return numericValue === null ? "" : formatVnd(numericValue);
 }
 
+/** Chỉ giữ chữ số nguyên cho các trường nhập đơn giá. */
+export function normalizeVndIntegerInput(value: string | number | null | undefined): string {
+  return String(value ?? "").replace(/\D/g, "");
+}
+
 export function isInvalidVndInput(value: string | number | null | undefined): boolean {
   const raw = String(value ?? "").trim();
   if (!raw) return false;

@@ -1828,3 +1828,10 @@
 - [x] Cho phép nhấn cột tháng để xem danh sách phiếu bảo trì và chi phí chi tiết.
 - [x] Lưu thiết lập ngân sách bảo trì hàng tháng và cảnh báo vượt ngưỡng trên biểu đồ.
 - [x] Bổ sung hồi quy, kiểm tra TypeScript, Vitest, build, giao diện và phát hành cập nhật.
+
+## Current Session — Strict Integer Unit Price Input
+
+- [x] Rà soát lỗi phân cách hàng nghìn bị mất khi nhập đơn giá.
+- [x] Chỉ cho phép chữ số nguyên trong thao tác gõ và dán; chặn chữ, `đ`, `VNĐ` và mọi ký hiệu.
+- [x] Áp dụng thống nhất cho form, modal và bảng xem trước có trường Đơn giá.
+- [x] Bổ sung hồi quy, kiểm tra TypeScript, Vitest, build, giao diện và phát hành bản sửa lỗi.
