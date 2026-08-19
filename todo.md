@@ -1852,3 +1852,10 @@
 - [x] Kiểm kê các hàng biểu mẫu có trường tiền tệ hoặc văn bản ghi chú bên dưới.
 - [x] Áp dụng căn chỉnh độc lập để ghi chú không kéo giãn các trường cùng hàng.
 - [x] Bổ sung hồi quy, kiểm tra desktop/mobile và phát hành chuẩn bố cục.
+
+## Current Session — Accessory Distribution Statistics
+
+- [x] Thêm bộ chọn và tìm kiếm nhân sự trong tab thống kê Nhân sự.
+- [x] Hiển thị số lượng phụ kiện đang giữ và đã trả của nhân sự được chọn.
+- [x] Đổi chỉ số tóm tắt tab Phòng ban sang số lượng đang cấp.
+- [x] Bổ sung hồi quy, kiểm tra responsive và phát hành cập nhật.

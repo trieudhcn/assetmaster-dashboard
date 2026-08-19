@@ -365,6 +365,18 @@ describe("modal presentation contract", () => {
     expect(pdf).toContain("openPdfPreview");
   });
 
+  it("filters accessory distribution statistics by searchable employee and reports active quantities", () => {
+    const issueSlips = readProjectFile("client/src/components/SupplyIssueSlipManager.tsx");
+
+    expect(issueSlips).toContain("trpc.employees.list.useQuery()");
+    expect(issueSlips).toContain('<SearchableSelect value={selectedEmployeeId}');
+    expect(issueSlips).toContain("Nhân sự cần kiểm tra");
+    expect(issueSlips).toContain("Chọn một nhân sự để xem số lượng phụ kiện đang giữ và đã trả.");
+    expect(issueSlips).toContain("đang giữ · ${numberText(item.returned)} đã trả");
+    expect(issueSlips).toContain('summaryLabel = mode === "department" ? "Đang cấp"');
+    expect(issueSlips).toContain("totalOutstanding");
+  });
+
   it("brands issue-slip PDFs and protects automatically sourced recipient departments", () => {
     const supplies = readProjectFile("client/src/pages/SuppliesInventoryView.tsx");
     const pdf = readProjectFile("client/src/lib/supplyIssueSlipPdf.ts");
