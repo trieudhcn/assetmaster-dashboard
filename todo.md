@@ -1840,3 +1840,9 @@
 
 - [x] Bổ sung nút X xóa nhanh cho các ô Đơn giá còn thiếu.
 - [x] Kiểm tra hồi quy giao diện và phát hành bản cập nhật.
+
+## Current Session — Maintenance Cost Form Alignment
+
+- [x] Sửa giãn chiều cao hàng biểu mẫu khi Chi phí dự kiến hiển thị số tiền bằng chữ.
+- [x] Giữ chiều cao đồng nhất cho Chọn ngày, Lặp lại và nút Tạo yêu cầu.
+- [x] Bổ sung hồi quy, kiểm tra responsive và phát hành bản sửa lỗi.

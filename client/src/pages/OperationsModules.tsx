@@ -367,7 +367,7 @@ export function MaintenancePage() {
           <div className="mb-4 flex items-center gap-2 text-sm font-extrabold text-[#193B57]">
             <Wrench size={16} className="text-[#A86B00]" />Tạo yêu cầu mới
           </div>
-          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          <div className="grid items-start gap-3 sm:grid-cols-2 xl:grid-cols-4">
             <SearchableSelect value={assetId} onChange={setAssetId} disabled={assetsQuery.isLoading} placeholder="Chọn tài sản" searchPlaceholder="Tìm mã hoặc tên tài sản..." options={[{ value: "", label: "Chọn tài sản" }, ...assets.map((asset) => ({ value: String(asset.id), label: `${asset.assetCode} · ${asset.name}`, searchText: asset.assetCode }))]} />
             <input value={description} onChange={(event) => setDescription(event.target.value)} placeholder="Mô tả tình trạng cần xử lý" className="field-input" />
             <SearchableSelect value={issueType} onChange={(value) => setIssueType(value as typeof issueType)} searchPlaceholder="Tìm loại yêu cầu..." options={Object.entries(issueTypeLabels).map(([value, label]) => ({ value, label }))} />
@@ -384,7 +384,7 @@ export function MaintenancePage() {
                 }
                 createMutation.mutate({ assetId: Number(assetId), description, issueType, priority, estimatedCost: estimatedCost.trim() || null, dueAt: dateInputToMs(dueDate), recurrenceDays: recurrenceDays ? Number(recurrenceDays) : null });
               }}
-              className="flex items-center justify-center gap-2 rounded-lg bg-[#0F8C8C] px-4 py-2 text-xs font-bold text-white transition hover:bg-[#087A6A] disabled:cursor-not-allowed disabled:opacity-60"
+              className="flex min-h-11 self-start items-center justify-center gap-2 rounded-lg bg-[#0F8C8C] px-4 py-2 text-xs font-bold text-white transition hover:bg-[#087A6A] disabled:cursor-not-allowed disabled:opacity-60"
             >
               <Plus size={15} />{createMutation.isPending ? "Đang tạo" : "Tạo yêu cầu"}
             </button>

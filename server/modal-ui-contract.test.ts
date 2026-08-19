@@ -73,6 +73,14 @@ describe("modal presentation contract", () => {
     expect(routers).toContain("saveMonthlyBudget: adminProcedure");
   });
 
+  it("keeps new-maintenance request controls aligned when the estimated cost shows words", () => {
+    const operations = readProjectFile("client/src/pages/OperationsModules.tsx");
+
+    expect(operations).toContain('grid items-start gap-3 sm:grid-cols-2 xl:grid-cols-4');
+    expect(operations).toContain('CurrencyInput value={estimatedCost}');
+    expect(operations).toContain('className="flex min-h-11 self-start items-center justify-center');
+  });
+
   it("renders action tooltip from a body-level portal rather than a clipping pseudo-element", () => {
     const tooltipComponent = readProjectFile("client/src/components/FloatingActionTooltip.tsx");
     const home = readProjectFile("client/src/pages/Home.tsx");
