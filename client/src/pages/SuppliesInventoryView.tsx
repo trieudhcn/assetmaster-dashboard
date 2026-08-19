@@ -363,6 +363,8 @@ function SupplyCreateModal({ form, setForm, categoryOptions, vendorOptions, bran
     const input = label?.querySelector("input");
     const container = input?.parentElement;
     if (!label || !input || !container || container.dataset.accessoryCurrencyReady === "true") return;
+    const formGrid = label.closest<HTMLElement>(".grid");
+    formGrid?.classList.add("form-helper-grid");
     container.dataset.accessoryCurrencyReady = "true";
     container.style.position = "relative";
     input.style.paddingRight = "6.5rem";
@@ -384,7 +386,7 @@ function SupplyCreateModal({ form, setForm, categoryOptions, vendorOptions, bran
     const handleClear = () => { commitCurrency(""); input.focus(); };
     input.addEventListener("input", handleInput, true); clear.addEventListener("click", handleClear);
     container.append(suffix, clear); label.append(words, formatError); renderCurrency(form.unitCost);
-    return () => { input.removeEventListener("input", handleInput, true); clear.removeEventListener("click", handleClear); suffix.remove(); clear.remove(); words.remove(); formatError.remove(); delete container.dataset.accessoryCurrencyReady; input.style.paddingRight = ""; input.style.borderColor = ""; input.style.backgroundColor = ""; };
+    return () => { input.removeEventListener("input", handleInput, true); clear.removeEventListener("click", handleClear); suffix.remove(); clear.remove(); words.remove(); formatError.remove(); formGrid?.classList.remove("form-helper-grid"); delete container.dataset.accessoryCurrencyReady; input.style.paddingRight = ""; input.style.borderColor = ""; input.style.backgroundColor = ""; };
   }, [form]);
   useEffect(() => {
     const dialog = document.querySelector<HTMLElement>('[aria-labelledby="supply-create-title"]');

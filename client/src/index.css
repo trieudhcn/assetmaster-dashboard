@@ -168,6 +168,11 @@ button[aria-label="Mở menu người dùng"] + div { animation: popover-in 180m
 .field-input:disabled { cursor: not-allowed; }
 .asset-date-input::-webkit-calendar-picker-indicator { position: absolute; right: 0; width: 2.75rem; height: 100%; opacity: 0; cursor: pointer; }
 
+/* Helper text belongs below its own control, never as extra height for siblings in a form row. */
+.form-helper-grid,
+.grid:has(.currency-input-with-helper) { align-items: start; }
+.form-helper-grid > * { align-self: start; }
+
 /* Supply toolbar and table actions preserve a predictable horizontal rhythm at every desktop width. */
 .supply-filter-action { display: inline-flex; min-height: 2.45rem; align-items: center; justify-content: center; gap: 0.45rem; border: 1px solid #DDE7F0; border-radius: 0.55rem; background: #FFFFFF; padding: 0.5rem 0.75rem; color: #526779; font-size: 0.75rem; font-weight: 800; line-height: 1; white-space: nowrap; transition: border-color 160ms ease-out, background-color 160ms ease-out, color 160ms ease-out, box-shadow 160ms ease-out, transform 160ms ease-out; }
 .supply-filter-action:hover { border-color: #9CCFCB; background: #F4FBFA; color: #087A6A; box-shadow: 0 3px 10px rgba(15, 140, 140, 0.10); }

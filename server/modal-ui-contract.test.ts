@@ -81,6 +81,19 @@ describe("modal presentation contract", () => {
     expect(operations).toContain('className="flex min-h-11 self-start items-center justify-center');
   });
 
+  it("prevents helper text below fields from stretching sibling controls across forms", () => {
+    const stylesheet = readProjectFile("client/src/index.css");
+    const currencyInput = readProjectFile("client/src/components/CurrencyInput.tsx");
+    const catalogDropdowns = readProjectFile("client/src/components/AssetCatalogDropdowns.tsx");
+    const supplies = readProjectFile("client/src/pages/SuppliesInventoryView.tsx");
+
+    expect(currencyInput).toContain('className="currency-input-with-helper w-full"');
+    expect(stylesheet).toContain('.grid:has(.currency-input-with-helper) { align-items: start; }');
+    expect(stylesheet).toContain('.form-helper-grid > * { align-self: start; }');
+    expect(catalogDropdowns).toContain('className="form-helper-grid sm:col-span-2 grid');
+    expect(supplies).toContain('formGrid?.classList.add("form-helper-grid")');
+  });
+
   it("renders action tooltip from a body-level portal rather than a clipping pseudo-element", () => {
     const tooltipComponent = readProjectFile("client/src/components/FloatingActionTooltip.tsx");
     const home = readProjectFile("client/src/pages/Home.tsx");

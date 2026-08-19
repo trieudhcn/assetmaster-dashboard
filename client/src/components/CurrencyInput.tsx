@@ -22,7 +22,7 @@ export function CurrencyInput({ value, onChange, suffix = "VNĐ", showWords = fa
   };
 
   return (
-    <div className="w-full">
+    <div className="currency-input-with-helper w-full">
       <div className="relative w-full">
         <input
         {...props}

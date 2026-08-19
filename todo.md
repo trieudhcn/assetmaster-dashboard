@@ -1846,3 +1846,9 @@
 - [x] Sửa giãn chiều cao hàng biểu mẫu khi Chi phí dự kiến hiển thị số tiền bằng chữ.
 - [x] Giữ chiều cao đồng nhất cho Chọn ngày, Lặp lại và nút Tạo yêu cầu.
 - [x] Bổ sung hồi quy, kiểm tra responsive và phát hành bản sửa lỗi.
+
+## Current Session — Form Helper Text Alignment
+
+- [x] Kiểm kê các hàng biểu mẫu có trường tiền tệ hoặc văn bản ghi chú bên dưới.
+- [x] Áp dụng căn chỉnh độc lập để ghi chú không kéo giãn các trường cùng hàng.
+- [x] Bổ sung hồi quy, kiểm tra desktop/mobile và phát hành chuẩn bố cục.
