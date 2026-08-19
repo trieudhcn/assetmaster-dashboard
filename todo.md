@@ -1904,3 +1904,10 @@
 
 - [x] Khắc phục lỗi trường Lý do thanh lý bị mất focus sau mỗi ký tự nhập.
 - [x] Bổ sung hồi quy, kiểm tra nhập liệu trực tiếp và phát hành cập nhật.
+
+## Current Session — Retirement Reason Templates & Warranty Feasibility
+
+- [x] Thêm danh sách mẫu lý do thanh lý phổ biến để chọn nhanh và đưa vào ô nhập liệu.
+- [x] Rà soát mô hình, API và giao diện Bảo trì/Báo hỏng để đánh giá tách Bảo hành/Sửa chữa trong cùng menu.
+- [x] Bổ sung hồi quy, kiểm tra giao diện và phát hành mẫu lý do thanh lý.
+- [x] Chuẩn bị khuyến nghị lộ trình, rủi ro và phạm vi thay đổi cho Bảo hành/Sửa chữa.

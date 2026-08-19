@@ -2019,7 +2019,26 @@ function AssetModal({ mode, asset, formData, setFormData, isSaving, onClose: dis
       reasonInput.className = "field-input mt-1 min-h-[76px] resize-y";
       reasonInput.setAttribute("aria-label", "Lý do thanh lý");
       reasonInput.addEventListener("input", () => { setFormDirty(true); setFormData((current) => ({ ...current, retirementReason: reasonInput.value })); });
-      reasonBlock.append(reasonLabel, reasonInput);
+      const reasonTemplates = document.createElement("div");
+      reasonTemplates.className = "mt-2 flex flex-wrap gap-1.5";
+      const templateHint = document.createElement("span");
+      templateHint.className = "w-full text-[10px] font-semibold text-[#8A7140]";
+      templateHint.textContent = "Chọn mẫu để điền nhanh; bạn vẫn có thể chỉnh sửa nội dung.";
+      reasonTemplates.append(templateHint);
+      ["Hư hỏng nặng, không thể sửa chữa", "Hết hạn sử dụng hoặc đã khấu hao hết", "Lỗi thời, không còn đáp ứng nhu cầu sử dụng", "Không còn nhu cầu sử dụng", "Chi phí sửa chữa vượt giá trị còn lại"].forEach((template) => {
+        const templateButton = document.createElement("button");
+        templateButton.type = "button";
+        templateButton.textContent = template;
+        templateButton.className = "rounded-full border border-[#E7D9B9] bg-white px-2.5 py-1 text-[10px] font-bold text-[#8F5A00] transition hover:bg-[#FFF3D5] focus:outline-none focus:ring-2 focus:ring-[#E8C56B]";
+        templateButton.setAttribute("aria-label", `Chọn mẫu lý do thanh lý: ${template}`);
+        templateButton.addEventListener("click", () => {
+          reasonInput.value = template;
+          reasonInput.dispatchEvent(new Event("input", { bubbles: true }));
+          reasonInput.focus();
+        });
+        reasonTemplates.append(templateButton);
+      });
+      reasonBlock.append(reasonLabel, reasonInput, reasonTemplates);
       const attachmentBlock = document.createElement("div");
       attachmentBlock.className = "sm:col-span-2";
       const attachmentLabel = document.createElement("label");

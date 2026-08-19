@@ -644,6 +644,16 @@ describe("modal presentation contract", () => {
     expect(home).not.toContain('}, [isDetail, formData.statusType, formData.retiredAt, formData.retirementReason, retirementAttachmentFile, setFormData]);');
   });
 
+  it("offers common retirement reason templates for quick selection", () => {
+    const home = readProjectFile("client/src/pages/Home.tsx");
+
+    expect(home).toContain("Chọn mẫu để điền nhanh; bạn vẫn có thể chỉnh sửa nội dung.");
+    expect(home).toContain("Hư hỏng nặng, không thể sửa chữa");
+    expect(home).toContain("Hết hạn sử dụng hoặc đã khấu hao hết");
+    expect(home).toContain("Chi phí sửa chữa vượt giá trị còn lại");
+    expect(home).toContain('reasonInput.dispatchEvent(new Event("input", { bubbles: true }));');
+  });
+
   it("provides a dedicated supplier return report export", () => {
     const reports = readProjectFile("client/src/pages/ReportsManagementView.tsx");
     expect(reports).toContain('const supplierReturnedAssets = useMemo(() => selectedAssets.filter((asset) => asset.status === "returned_to_vendor")');
