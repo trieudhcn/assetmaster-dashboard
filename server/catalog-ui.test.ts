@@ -28,8 +28,8 @@ describe("Catalog UI helpers", () => {
   });
 
   it("toggles the maintenance-only status filter without resetting other filters", () => {
-    expect(toggleMaintenanceStatusFilter("Tất cả trạng thái")).toBe("Bảo trì");
-    expect(toggleMaintenanceStatusFilter("Bảo trì")).toBe("Tất cả trạng thái");
+    expect(toggleMaintenanceStatusFilter("Tất cả trạng thái")).toBe("Bảo hành/Sửa chữa");
+    expect(toggleMaintenanceStatusFilter("Bảo hành/Sửa chữa")).toBe("Tất cả trạng thái");
   });
 
   it("counts only actual maintenance assets for the navigation badge", () => {
@@ -44,11 +44,11 @@ describe("Catalog UI helpers", () => {
 
   it("creates maintenance export rows only for assets in maintenance with their reason", () => {
     const rows = buildMaintenanceExportRows([
-      { statusType: "maintenance", code: "TS-001", name: "Máy in", category: "Thiết bị", holder: "Bảo trì", maintenanceReason: "Kẹt giấy liên tục", value: "3200000" },
+      { statusType: "maintenance", code: "TS-001", name: "Máy in", category: "Thiết bị", holder: "Bảo hành/Sửa chữa", maintenanceReason: "Kẹt giấy liên tục", value: "3200000" },
       { statusType: "active", code: "TS-002", name: "Laptop", category: "CNTT", holder: "Phòng Kế toán", maintenanceReason: "Không được xuất", value: "25000000" },
     ]);
     expect(rows).toHaveLength(1);
-    expect(rows[0]).toMatchObject({ "Mã tài sản": "TS-001", "Trạng thái": "Bảo trì", "Lý do bảo trì": "Kẹt giấy liên tục" });
+    expect(rows[0]).toMatchObject({ "Mã tài sản": "TS-001", "Trạng thái": "Bảo hành/Sửa chữa", "Nội dung Bảo hành/Sửa chữa": "Kẹt giấy liên tục" });
   });
 
   it("keeps every supplied filtered asset and its operational fields in the catalog export", () => {

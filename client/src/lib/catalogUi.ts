@@ -33,7 +33,7 @@ export function filterNamedCatalogOptions<T extends NamedCatalogOption>(items: T
 }
 
 export function toggleMaintenanceStatusFilter(currentStatus: string) {
-  return currentStatus === "Bảo trì" ? "Tất cả trạng thái" : "Bảo trì";
+  return currentStatus === "Bảo hành/Sửa chữa" ? "Tất cả trạng thái" : "Bảo hành/Sửa chữa";
 }
 
 export function getMaintenanceBadgeCount<T extends { statusType: string }>(assets: T[]) {
@@ -70,9 +70,9 @@ export function buildMaintenanceExportRows<T extends MaintenanceExportAsset>(ass
     "Mã tài sản": asset.code,
     "Tên tài sản": asset.name,
     "Phân loại": asset.category || "Chưa phân loại",
-    "Trạng thái": "Bảo trì",
-    "Lý do bảo trì": asset.maintenanceReason?.trim() || "Chưa ghi nhận lý do",
-    "Người / Phòng giữ": asset.holder || "Bảo trì",
+    "Trạng thái": "Bảo hành/Sửa chữa",
+    "Nội dung Bảo hành/Sửa chữa": asset.maintenanceReason?.trim() || "Chưa ghi nhận nội dung",
+    "Người / Phòng giữ": asset.holder || "Bảo hành/Sửa chữa",
     "Vị trí": asset.location || "Chưa cập nhật",
     "Serial / IMEI": asset.serial || "Chưa cập nhật",
     "Nhà cung cấp": asset.supplier || "Chưa cập nhật",

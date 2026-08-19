@@ -243,6 +243,40 @@ export function MaintenancePage() {
   const employeeById = new Map(employees.map((employee) => [employee.id, employee]));
 
   useEffect(() => {
+    if (!historyTicket || (historyTicket.serviceChannel || "repair") !== "warranty") return;
+    const drawer = document.querySelector<HTMLElement>(`[aria-label="Chi tiết và lịch sử phiếu ${historyTicket.ticketCode}"]`);
+    const historyBody = drawer?.querySelector<HTMLElement>(".mt-5.space-y-3");
+    if (!drawer || !historyBody || drawer.querySelector("[data-warranty-ticket-details]")) return;
+    const asset = assetById.get(historyTicket.assetId);
+    const section = document.createElement("section");
+    section.dataset.warrantyTicketDetails = "true";
+    section.className = "rounded-xl border border-[#8BCDC6] bg-[#F4FBFA] p-4 shadow-[0_6px_18px_rgba(15,140,140,0.08)]";
+    const heading = document.createElement("div");
+    heading.className = "flex items-center gap-2 text-[11px] font-extrabold uppercase tracking-[0.12em] text-[#087A6A]";
+    heading.innerHTML = '<span class="grid h-6 w-6 place-items-center rounded-md bg-[#DDF4F1] text-sm">✓</span>Thông tin bảo hành';
+    const subtitle = document.createElement("p");
+    subtitle.className = "mt-1 text-xs leading-5 text-[#4B8884]";
+    subtitle.textContent = `Theo dõi hồ sơ bảo hành cho ${asset?.name || `tài sản #${historyTicket.assetId}`}.`;
+    const grid = document.createElement("div");
+    grid.className = "mt-3 grid gap-2 sm:grid-cols-2";
+    [["Hãng", historyTicket.warrantyBrand || "Chưa cập nhật"], ["Nhà cung cấp / trung tâm", historyTicket.warrantyVendor || "Chưa cập nhật"], ["Mã yêu cầu", historyTicket.warrantyRequestCode || "Chưa cập nhật"]].forEach(([label, value]) => {
+      const item = document.createElement("div");
+      item.className = "rounded-lg border border-[#CDE5E5] bg-white px-3 py-2.5";
+      const itemLabel = document.createElement("div");
+      itemLabel.className = "text-[10px] font-bold uppercase tracking-[0.1em] text-[#4B8884]";
+      itemLabel.textContent = label;
+      const itemValue = document.createElement("div");
+      itemValue.className = "mt-1 break-words text-xs font-bold leading-5 text-[#193B57]";
+      itemValue.textContent = String(value);
+      item.append(itemLabel, itemValue);
+      grid.append(item);
+    });
+    section.append(heading, subtitle, grid);
+    historyBody.before(section);
+    return () => section.remove();
+  }, [historyTicket, assetById]);
+
+  useEffect(() => {
     const selectedAsset = assets.find((asset) => asset.id === Number(assetId));
     if (serviceChannel !== "warranty" || !selectedAsset) return;
     if (selectedAsset.vendor && !warrantyVendor) setWarrantyVendor(selectedAsset.vendor);
@@ -455,23 +489,18 @@ export function MaintenancePage() {
         <OperationalReminderPanel />
 
         <AlertDialog open={Boolean(repairWarrantyWarning)} onOpenChange={(open) => { if (!open) setRepairWarrantyWarning(null); }}>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>Tài sản vẫn còn thời hạn bảo hành</AlertDialogTitle>
-              <AlertDialogDescription>
-                {repairWarrantyWarning ? `${repairWarrantyWarning.assetName} còn bảo hành đến ${repairWarrantyWarning.warrantyUntil.toLocaleDateString("vi-VN")}. Hãy cân nhắc tạo phiếu Bảo hành để theo dõi hãng/nhà cung cấp và mã yêu cầu.` : ""}
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel>Quay lại chọn Bảo hành</AlertDialogCancel>
-              <AlertDialogAction disabled={createMutation.isPending} onClick={() => { if (!repairWarrantyWarning) return; const { payload } = repairWarrantyWarning; setRepairWarrantyWarning(null); createMutation.mutate(payload); }}>{createMutation.isPending ? "Đang tạo..." : "Vẫn tạo phiếu Sửa chữa"}</AlertDialogAction>
-            </AlertDialogFooter>
+          <AlertDialogContent className="overflow-hidden border-2 border-[#E8743B] bg-[#FFFDF8] p-0 shadow-[0_24px_70px_rgba(184,69,69,0.26)]">
+            <div className="border-b border-[#F2B18B] bg-[#FDEDE4] px-6 py-5">
+              <div className="flex items-start gap-3"><div className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-[#B44545] text-white shadow-[0_8px_18px_rgba(180,69,69,0.28)]"><AlertTriangle size={22} /></div><AlertDialogHeader className="space-y-1.5 text-left"><AlertDialogTitle className="text-lg text-[#8F2626]">Tài sản vẫn còn thời hạn bảo hành</AlertDialogTitle><AlertDialogDescription className="text-sm leading-6 text-[#8C4B36]">{repairWarrantyWarning ? <><b className="font-extrabold text-[#7B2929]">{repairWarrantyWarning.assetName}</b> còn bảo hành đến <b className="font-extrabold text-[#7B2929]">{repairWarrantyWarning.warrantyUntil.toLocaleDateString("vi-VN")}</b>. Hãy ưu tiên phiếu Bảo hành để lưu hãng, nhà cung cấp và mã yêu cầu.</> : ""}</AlertDialogDescription></AlertDialogHeader></div>
+            </div>
+            <div className="mx-6 mt-4 rounded-lg border border-[#F2B18B] bg-white px-3 py-3 text-xs leading-5 text-[#8C4B36]"><b>Lưu ý:</b> Nếu tiếp tục Sửa chữa, chi phí có thể không được phía bảo hành tiếp nhận. Bạn vẫn có thể quay lại đổi kênh trước khi tạo phiếu.</div>
+            <AlertDialogFooter className="m-0 gap-2 border-t border-[#F3D2BF] px-6 py-4 sm:justify-end"><AlertDialogCancel className="border-[#D6A47D] bg-white text-[#8C4B36] hover:bg-[#FFF4EB]">Quay lại chọn Bảo hành</AlertDialogCancel><AlertDialogAction className="bg-[#B44545] text-white hover:bg-[#933737] focus:ring-[#B44545]" disabled={createMutation.isPending} onClick={() => { if (!repairWarrantyWarning) return; const { payload } = repairWarrantyWarning; setRepairWarrantyWarning(null); createMutation.mutate(payload); }}>{createMutation.isPending ? "Đang tạo..." : "Vẫn tạo phiếu Sửa chữa"}</AlertDialogAction></AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
 
         <section className={`mt-5 ${card} overflow-hidden`}>
           <div className="flex flex-col gap-2 border-b border-[#E7EEF3] px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
-            <div><div className="flex items-center gap-2 text-sm font-extrabold text-[#193B57]"><Wrench size={16} className="text-[#A86B00]" />Tài sản đang cần xử lý</div><p className="mt-1 text-xs text-[#8AA0B6]">Các tài sản vừa được chuyển sang trạng thái Bảo trì từ Danh mục tài sản; yêu cầu nhanh mặc định ở kênh Sửa chữa.</p></div>
+            <div><div className="flex items-center gap-2 text-sm font-extrabold text-[#193B57]"><Wrench size={16} className="text-[#A86B00]" />Tài sản đang cần xử lý</div><p className="mt-1 text-xs text-[#8AA0B6]">Các tài sản vừa được chuyển sang trạng thái Bảo hành/Sửa chữa từ Danh mục tài sản; yêu cầu nhanh mặc định ở kênh Sửa chữa.</p></div>
             <span className="rounded-full bg-[#FFF5DC] px-2.5 py-1 text-[10px] font-extrabold text-[#A86B00]">{maintenanceAssets.length} tài sản</span>
           </div>
           {assetsQuery.isLoading ? <div className="px-5 py-6 text-xs text-[#8AA0B6]">Đang tải tài sản...</div> : maintenanceAssets.length === 0 ? <div className="px-5 py-7 text-center text-xs font-semibold text-[#8AA0B6]">Chưa có tài sản nào đang chờ xử lý.</div> : <div className="overflow-x-auto overscroll-x-contain"><div className="flex min-w-max gap-3 p-4">{maintenanceAssets.map((asset) => { const quickDescription = asset.maintenanceReason?.trim() || `Kiểm tra và xử lý tình trạng bảo trì của ${asset.name}.`; return <div key={asset.id} className="w-[280px] shrink-0 rounded-xl border border-[#F2D596] bg-[#FFFDF7] p-4 sm:w-[320px]"><div className="flex items-start justify-between gap-3"><div className="min-w-0"><div className="font-mono text-[10px] font-bold text-[#A86B00]">{asset.assetCode}</div><div className="mt-1 truncate text-sm font-extrabold text-[#193B57]">{asset.name}</div></div><span className="shrink-0 rounded-full bg-[#FFF0C8] px-2 py-1 text-[10px] font-extrabold text-[#A86B00]">Sửa chữa</span></div><p className="mt-3 line-clamp-2 text-xs leading-5 text-[#60758A]">{quickDescription}</p><button type="button" disabled={createMutation.isPending} onClick={() => requestQuickRepairTicket(asset, quickDescription)} className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-lg border border-[#D7B65B] bg-white px-3 py-2 text-xs font-extrabold text-[#A86B00] transition hover:bg-[#FFF5DC] disabled:cursor-not-allowed disabled:opacity-60"><Plus size={14} />{createMutation.isPending ? "Đang tạo yêu cầu..." : "Tạo phiếu sửa chữa"}</button></div>; })}</div></div>}

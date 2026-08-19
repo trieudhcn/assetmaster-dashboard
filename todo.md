@@ -1925,3 +1925,10 @@
 - [x] Cảnh báo khi lập phiếu Sửa chữa cho tài sản còn trong thời hạn bảo hành.
 - [x] Phân tách biểu đồ chi phí dashboard theo Kênh xử lý Bảo hành/Sửa chữa.
 - [x] Bổ sung hồi quy, kiểm tra giao diện và phát hành cập nhật.
+
+## Current Session — Warranty Status & Detail Refinement
+
+- [x] Đổi nhãn trạng thái Bảo trì thành Bảo hành/Sửa chữa và đồng bộ trường Người/Phòng giữ.
+- [x] Hiển thị Hãng, Nhà cung cấp/Trung tâm bảo hành và Mã yêu cầu trong chi tiết phiếu Bảo hành.
+- [x] Làm nổi bật hộp thoại xác nhận Sửa chữa khi tài sản còn hạn bảo hành.
+- [x] Bổ sung hồi quy, kiểm tra giao diện, build và phát hành cập nhật.

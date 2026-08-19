@@ -684,6 +684,21 @@ describe("modal presentation contract", () => {
     expect(routers).toContain("warrantyRequestCode: z.string().trim().max(128)");
   });
 
+  it("uses the Bao hanh/Sua chua label for asset status and shows a prominent warranty warning", () => {
+    const home = readProjectFile("client/src/pages/Home.tsx");
+    const operations = readProjectFile("client/src/pages/OperationsModules.tsx");
+
+    expect(home).toContain('holder: "Bảo hành/Sửa chữa"');
+    expect(home).toContain('status: "Bảo hành/Sửa chữa"');
+    expect(home).toContain('label: "Bảo hành/Sửa chữa"');
+    expect(home).toContain("Nội dung cần Bảo hành/Sửa chữa");
+    expect(operations).toContain("data-warranty-ticket-details");
+    expect(operations).toContain("Thông tin bảo hành");
+    expect(operations).toContain("Nhà cung cấp / trung tâm");
+    expect(operations).toContain("border-2 border-[#E8743B]");
+    expect(operations).toContain("Lưu ý:");
+  });
+
   it("provides a dedicated supplier return report export", () => {
     const reports = readProjectFile("client/src/pages/ReportsManagementView.tsx");
     expect(reports).toContain('const supplierReturnedAssets = useMemo(() => selectedAssets.filter((asset) => asset.status === "returned_to_vendor")');

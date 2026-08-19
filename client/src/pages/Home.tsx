@@ -583,16 +583,18 @@ export default function Home() {
   useEffect(() => {
     if (!assetQuery.data) return;
     setAssetRows(assetQuery.data.map((asset) => ({
-      code: asset.assetCode, qrToken: asset.qrToken, name: asset.name, category: asset.categoryId ? assetCategoriesQuery.data?.find((category) => category.id === asset.categoryId)?.name || "Chưa phân loại" : typeof (asset.metadata as { category?: unknown } | null)?.category === "string" ? String((asset.metadata as { category?: unknown }).category) : "Chưa phân loại", categoryId: asset.categoryId || undefined, holder: asset.holderName || (asset.status === "maintenance" ? "Bảo trì" : asset.status === "available" ? "Chưa bàn giao" : "Chưa cấp phát"), status: asset.status === "assigned" ? "Đang cấp phát" : asset.status === "maintenance" ? "Bảo trì" : asset.status === "returned_to_vendor" ? "Trả nhà cung cấp" : "Sẵn có", statusType: asset.status === "assigned" ? "active" : asset.status === "maintenance" ? "maintenance" : asset.status === "returned_to_vendor" ? "returned" : "available", date: asset.purchaseDate ? new Date(asset.purchaseDate).toLocaleDateString("vi-VN") : "—", purchaseDate: asset.purchaseDate ? dateInputValue(asset.purchaseDate) : "", value: asset.purchaseValue ? String(asset.purchaseValue) : "0", location: asset.location || "", serial: asset.serialNumber || "", maintenanceReason: asset.maintenanceReason || "", supplier: asset.vendor || vendorsQuery.data?.find((vendor) => vendor.id === asset.vendorId)?.name || "", vendorId: asset.vendorId || undefined, brand: brandsQuery.data?.find((brand) => brand.id === asset.brandId)?.name || "", brandId: asset.brandId || undefined, note: asset.note || "", warrantyUntil: asset.warrantyUntil ? new Date(asset.warrantyUntil).toISOString().slice(0, 10) : "", supplierReturnedAt: asset.supplierReturnedAt ? new Date(asset.supplierReturnedAt).toISOString().slice(0, 10) : "", supplierReturnReason: asset.supplierReturnReason || "", retirementCertificateNumber: asset.retirementCertificateNumber || null, retirementCertificateYear: asset.retirementCertificateYear || null, retirementCertificateSequence: asset.retirementCertificateSequence || null, retirementAttachmentUrl: asset.retirementAttachmentUrl || null, retirementAttachmentName: asset.retirementAttachmentName || null, retirementAttachmentContentType: asset.retirementAttachmentContentType || null, supplierReturnAttachmentUrl: asset.supplierReturnAttachmentUrl || null, supplierReturnAttachmentName: asset.supplierReturnAttachmentName || null, supplierReturnAttachmentContentType: asset.supplierReturnAttachmentContentType || null,
+      code: asset.assetCode, qrToken: asset.qrToken, name: asset.name, category: asset.categoryId ? assetCategoriesQuery.data?.find((category) => category.id === asset.categoryId)?.name || "Chưa phân loại" : typeof (asset.metadata as { category?: unknown } | null)?.category === "string" ? String((asset.metadata as { category?: unknown }).category) : "Chưa phân loại", categoryId: asset.categoryId || undefined, holder: asset.holderName || (asset.status === "maintenance" ? "Bảo hành/Sửa chữa" : asset.status === "available" ? "Chưa bàn giao" : "Chưa cấp phát"), status: asset.status === "assigned" ? "Đang cấp phát" : asset.status === "maintenance" ? "Bảo hành/Sửa chữa" : asset.status === "returned_to_vendor" ? "Trả nhà cung cấp" : "Sẵn có", statusType: asset.status === "assigned" ? "active" : asset.status === "maintenance" ? "maintenance" : asset.status === "returned_to_vendor" ? "returned" : "available", date: asset.purchaseDate ? new Date(asset.purchaseDate).toLocaleDateString("vi-VN") : "—", purchaseDate: asset.purchaseDate ? dateInputValue(asset.purchaseDate) : "", value: asset.purchaseValue ? String(asset.purchaseValue) : "0", location: asset.location || "", serial: asset.serialNumber || "", maintenanceReason: asset.maintenanceReason || "", supplier: asset.vendor || vendorsQuery.data?.find((vendor) => vendor.id === asset.vendorId)?.name || "", vendorId: asset.vendorId || undefined, brand: brandsQuery.data?.find((brand) => brand.id === asset.brandId)?.name || "", brandId: asset.brandId || undefined, note: asset.note || "", warrantyUntil: asset.warrantyUntil ? new Date(asset.warrantyUntil).toISOString().slice(0, 10) : "", supplierReturnedAt: asset.supplierReturnedAt ? new Date(asset.supplierReturnedAt).toISOString().slice(0, 10) : "", supplierReturnReason: asset.supplierReturnReason || "", retirementCertificateNumber: asset.retirementCertificateNumber || null, retirementCertificateYear: asset.retirementCertificateYear || null, retirementCertificateSequence: asset.retirementCertificateSequence || null, retirementAttachmentUrl: asset.retirementAttachmentUrl || null, retirementAttachmentName: asset.retirementAttachmentName || null, retirementAttachmentContentType: asset.retirementAttachmentContentType || null, supplierReturnAttachmentUrl: asset.supplierReturnAttachmentUrl || null, supplierReturnAttachmentName: asset.supplierReturnAttachmentName || null, supplierReturnAttachmentContentType: asset.supplierReturnAttachmentContentType || null,
     })));
   }, [assetQuery.data, vendorsQuery.data, brandsQuery.data, assetCategoriesQuery.data]);
 
   useEffect(() => {
-    const retiredAssets = new Map((assetQuery.data || []).filter((asset) => asset.status === "retired").map((asset) => [asset.assetCode, asset]));
-    if (!retiredAssets.size) return;
+    const persistedAssets = new Map((assetQuery.data || []).filter((asset) => asset.status === "retired" || asset.status === "maintenance").map((asset) => [asset.assetCode, asset]));
+    if (!persistedAssets.size) return;
     setAssetRows((current) => current.map((asset) => {
-      const retiredAsset = retiredAssets.get(asset.code);
-      return retiredAsset ? { ...asset, holder: "Khấu hao - Thanh lý", status: "Khấu hao/Thanh lý", statusType: "retired", retiredAt: retiredAsset.retiredAt ? dateInputValue(retiredAsset.retiredAt) : "", retirementReason: retiredAsset.retirementReason || "", retirementCertificateNumber: retiredAsset.retirementCertificateNumber || null, retirementCertificateYear: retiredAsset.retirementCertificateYear || null, retirementCertificateSequence: retiredAsset.retirementCertificateSequence || null, retirementAttachmentUrl: retiredAsset.retirementAttachmentUrl || null, retirementAttachmentName: retiredAsset.retirementAttachmentName || null, retirementAttachmentContentType: retiredAsset.retirementAttachmentContentType || null } : asset;
+      const persistedAsset = persistedAssets.get(asset.code);
+      if (!persistedAsset) return asset;
+      if (persistedAsset.status === "maintenance") return { ...asset, holder: "Bảo hành/Sửa chữa", status: "Bảo hành/Sửa chữa", statusType: "maintenance" };
+      return { ...asset, holder: "Khấu hao - Thanh lý", status: "Khấu hao/Thanh lý", statusType: "retired", retiredAt: persistedAsset.retiredAt ? dateInputValue(persistedAsset.retiredAt) : "", retirementReason: persistedAsset.retirementReason || "", retirementCertificateNumber: persistedAsset.retirementCertificateNumber || null, retirementCertificateYear: persistedAsset.retirementCertificateYear || null, retirementCertificateSequence: persistedAsset.retirementCertificateSequence || null, retirementAttachmentUrl: persistedAsset.retirementAttachmentUrl || null, retirementAttachmentName: persistedAsset.retirementAttachmentName || null, retirementAttachmentContentType: persistedAsset.retirementAttachmentContentType || null };
     }));
   }, [assetQuery.data]);
 
@@ -738,7 +740,7 @@ export default function Home() {
   const headerNotifications = useMemo<HeaderNotification[]>(() => {
     const maintenanceNotifications = notificationPreferences.maintenanceEnabled ? assetRows.filter((asset) => asset.statusType === "maintenance").slice(0, 2).map((asset) => ({
       id: `maintenance-${asset.code}`,
-      title: `${asset.code} đang bảo trì`,
+      title: `${asset.code} đang Bảo hành/Sửa chữa`,
       description: asset.maintenanceReason?.trim() || `Theo dõi tiến độ xử lý cho ${asset.name}.`,
       createdAt: assetQuery.data?.find((item) => item.assetCode === asset.code)?.updatedAt || new Date(),
       kind: "maintenance" as const,
@@ -820,7 +822,7 @@ export default function Home() {
   const dashboardKpis = [
     { label: "Tổng tài sản", value: String(inventoryAssetRows.length), detail: "Tài sản còn thuộc công ty", icon: Box, tone: "teal" },
     { label: "Đang sử dụng", value: String(inventoryAssetRows.filter((asset) => asset.statusType === "active").length), detail: "Tài sản đã cấp phát", icon: UsersRound, tone: "blue" },
-    { label: "Đang bảo trì / Hỏng", value: String(inventoryAssetRows.filter((asset) => asset.statusType === "maintenance").length), detail: "Cần theo dõi xử lý", icon: Wrench, tone: "amber" },
+    { label: "Bảo hành/Sửa chữa", value: String(inventoryAssetRows.filter((asset) => asset.statusType === "maintenance").length), detail: "Cần theo dõi xử lý", icon: Wrench, tone: "amber" },
     { label: "Tổng giá trị", value: `${formatVnd(assetValueTotal)} VNĐ`, detail: "Giá trị nguyên giá", icon: Tags, tone: "navy" },
   ];
   const lowStockSupplies = useMemo(() => (suppliesQuery.data || []).filter((supply) => Number(supply.stockQuantity) <= Number(supply.minimumQuantity)).sort((left, right) => (Number(left.stockQuantity) - Number(left.minimumQuantity)) - (Number(right.stockQuantity) - Number(right.minimumQuantity))), [suppliesQuery.data]);
@@ -998,7 +1000,7 @@ export default function Home() {
 
             <section className="mt-8 hidden overflow-hidden rounded-xl border border-[#DFE9F0] bg-white shadow-[0_8px_24px_rgba(16,42,67,0.045)]">
               <div className="flex flex-col gap-4 border-b border-[#E7EEF3] px-5 py-5 lg:flex-row lg:items-center lg:justify-between"><div><h2 className="font-display text-[17px] font-extrabold tracking-[-0.025em] text-[#102A43]">Danh mục tài sản</h2><p className="mt-1 text-xs text-[#8AA0B6]">Quản lý và tra cứu tài sản trong doanh nghiệp</p></div><div className="flex flex-wrap items-center gap-2"><button onClick={() => { setQuery(""); setCategory("Tất cả loại tài sản"); setStatus("Tất cả trạng thái"); setDepartment("Tất cả phòng ban"); }} className="flex h-9 items-center gap-2 rounded-lg border border-[#DDE7F0] px-3 text-xs font-bold text-[#60758A] hover:bg-[#F7FAFC]"><SlidersHorizontal size={14} />Đặt lại</button><button onClick={() => showComingSoon("Bộ lọc nâng cao")} className="flex h-9 items-center gap-2 rounded-lg border border-[#DDE7F0] px-3 text-xs font-bold text-[#60758A] hover:bg-[#F7FAFC]"><Filter size={14} />Bộ lọc nâng cao</button></div></div>
-              <div className="grid gap-3 border-b border-[#E7EEF3] bg-[#FBFCFD] px-5 py-4 sm:grid-cols-2 xl:grid-cols-4"><div className="relative sm:col-span-2 xl:col-span-1"><Search className="absolute left-3 top-2.5 text-[#9BAEC0]" size={16} /><input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Tìm kiếm tài sản..." className="h-9 w-full rounded-lg border border-[#DDE7F0] bg-white pl-9 pr-3 text-xs outline-none focus:border-[#0F8C8C]" /></div><FilterSelect value={category} onChange={setCategory} options={["Tất cả loại tài sản", "CNTT", "Văn phòng", "Thiết bị"]} /><FilterSelect value={status} onChange={setStatus} options={["Tất cả trạng thái", "Sẵn có", "Đang cấp phát", "Bảo trì", "Trả nhà cung cấp"]} /><FilterSelect value={department} onChange={setDepartment} options={["Tất cả phòng ban", "Phòng Thiết kế", "Phòng Hành chính"]} /></div>
+              <div className="grid gap-3 border-b border-[#E7EEF3] bg-[#FBFCFD] px-5 py-4 sm:grid-cols-2 xl:grid-cols-4"><div className="relative sm:col-span-2 xl:col-span-1"><Search className="absolute left-3 top-2.5 text-[#9BAEC0]" size={16} /><input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Tìm kiếm tài sản..." className="h-9 w-full rounded-lg border border-[#DDE7F0] bg-white pl-9 pr-3 text-xs outline-none focus:border-[#0F8C8C]" /></div><FilterSelect value={category} onChange={setCategory} options={["Tất cả loại tài sản", "CNTT", "Văn phòng", "Thiết bị"]} /><FilterSelect value={status} onChange={setStatus} options={["Tất cả trạng thái", "Sẵn có", "Đang cấp phát", "Bảo hành/Sửa chữa", "Trả nhà cung cấp"]} /><FilterSelect value={department} onChange={setDepartment} options={["Tất cả phòng ban", "Phòng Thiết kế", "Phòng Hành chính"]} /></div>
               <div className="mobile-table-scroll overflow-x-auto"><table className="w-full min-w-[980px] border-collapse text-left"><thead><tr className="border-b border-[#E7EEF3] bg-[#FCFDFE] text-[10px] font-extrabold uppercase tracking-[0.12em] text-[#8AA0B6]"><th className="px-5 py-3.5">Mã TS</th><th className="px-4 py-3.5">Tên tài sản</th><th className="px-4 py-3.5">Phân loại</th><th className="px-4 py-3.5">Người / Phòng giữ</th><th className="px-4 py-3.5">Trạng thái</th><th className="px-4 py-3.5">Ngày mua</th><th className="px-4 py-3.5 text-right">Giá trị</th><th className="px-5 py-3.5 text-right">Hành động</th></tr></thead><tbody>{filteredAssets.map((asset) => <tr key={asset.code} className="group border-b border-[#EDF2F5] transition hover:bg-[#F8FBFC]"><td className="px-5 py-4 font-mono text-[11px] font-bold text-[#0F8C8C]">{asset.code}</td><td className="px-4 py-4"><div className="flex items-center gap-3"><div className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-[#F0F5F8] text-[#527089]"><Laptop size={15} /></div><div><div className="text-xs font-bold text-[#193B57]">{asset.name}</div><div className="mt-0.5 text-[10px] text-[#9BAEC0]">Tài sản cố định</div></div></div></td><td className="px-4 py-4 text-xs font-semibold text-[#60758A]">{asset.category}</td><td className="px-4 py-4 text-xs font-semibold text-[#60758A]">{asset.holder}</td><td className="px-4 py-4"><span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-extrabold ring-1 ring-inset ${statusStyles[asset.statusType as keyof typeof statusStyles]}`}><span className="h-1.5 w-1.5 rounded-full bg-current" />{asset.status}</span></td><td className="px-4 py-4 text-xs font-medium text-[#71869A]">{asset.date}</td><td className="px-4 py-4 text-right text-xs font-extrabold tabular-nums text-[#193B57]">{formatVnd(asset.value)} <span className="text-[10px] font-semibold text-[#9BAEC0]">VNĐ</span></td><td className="px-5 py-4"><div className="flex justify-end gap-1 opacity-60 transition group-hover:opacity-100"><button onClick={() => openEditModal(asset)} className="rounded-md p-2 text-[#60758A] hover:bg-[#EAF3FF] hover:text-[#2666A8]" aria-label="Chỉnh sửa"><Settings2 size={15} /></button><button onClick={() => setQrAsset(asset)} className="rounded-md p-2 text-[#60758A] hover:bg-[#E8F7F5] hover:text-[#087A6A]" aria-label={`Mã QR ${asset.code}`}><QrCode size={15} /></button><button onClick={() => showComingSoon(`Bàn giao ${asset.code}`)} className="rounded-md p-2 text-[#60758A] hover:bg-[#FFF5DC] hover:text-[#A86B00]" aria-label="Bàn giao"><PackageCheck size={15} /></button></div></td></tr>)}</tbody></table>{filteredAssets.length === 0 && <div className="px-6 py-16 text-center"><div className="mx-auto grid h-12 w-12 place-items-center rounded-full bg-[#F0F5F8] text-[#8AA0B6]"><Search size={19} /></div><div className="mt-3 text-sm font-bold text-[#193B57]">Không tìm thấy tài sản</div><p className="mt-1 text-xs text-[#8AA0B6]">Thử thay đổi từ khóa hoặc bộ lọc.</p></div>}</div>
               <div className="flex flex-col items-center justify-between gap-3 px-5 py-4 sm:flex-row"><div className="text-xs text-[#8AA0B6]">Hiển thị <span className="font-bold text-[#60758A]">{filteredAssets.length}</span> trên <span className="font-bold text-[#60758A]">{assetRows.length}</span> tài sản</div><div className="flex items-center gap-1"><button className="grid h-8 w-8 place-items-center rounded-md border border-[#DDE7F0] text-[#B1C0CC]" disabled>‹</button><button className="grid h-8 w-8 place-items-center rounded-md bg-[#102A43] text-xs font-bold text-white">1</button><button onClick={() => showComingSoon("Phân trang sẽ mở khi danh mục có nhiều hơn một trang")} className="grid h-8 w-8 place-items-center rounded-md border border-[#DDE7F0] text-xs font-semibold text-[#60758A] hover:bg-[#F5F8FB]">›</button></div></div>
             </section>
@@ -1089,6 +1091,25 @@ function PaginatedAssetCatalogPage({ assets, query, category, status, department
   };
   useEffect(() => { setPage(1); }, [query, category, status, department, vendor, brand, warranty, pageSize]);
   useEffect(() => { setJumpPage(String(currentPage)); }, [currentPage]);
+  useEffect(() => {
+    const refreshMaintenanceLabels = () => {
+      document.querySelectorAll<HTMLElement>("div, p, button, [role=option]").forEach((element) => {
+        const text = element.textContent?.trim();
+        if (text === "Bảo trì / hỏng trong phạm vi") element.textContent = "Bảo hành/Sửa chữa trong phạm vi";
+        if (text === "Bảo trì") element.textContent = "Bảo hành/Sửa chữa";
+        if (text === "Tài sản bảo trì") element.textContent = "Tài sản Bảo hành/Sửa chữa";
+      });
+      document.querySelectorAll<HTMLButtonElement>("button").forEach((button) => {
+        if (button.title === "Chỉ hiển thị tài sản đang bảo trì") button.title = "Chỉ hiển thị tài sản Bảo hành/Sửa chữa";
+        if (button.title === "Bỏ lọc tài sản đang bảo trì") button.title = "Bỏ lọc tài sản Bảo hành/Sửa chữa";
+        if (button.title === "Xuất danh sách tài sản đang bảo trì ra Excel") button.title = "Xuất danh sách tài sản Bảo hành/Sửa chữa ra Excel";
+      });
+    };
+    refreshMaintenanceLabels();
+    const observer = new MutationObserver(refreshMaintenanceLabels);
+    observer.observe(document.body, { childList: true, subtree: true });
+    return () => observer.disconnect();
+  }, [status, pageAssets.length, isExportingMaintenance]);
   useEffect(() => {
     const tooltipByPrefix: Array<[string, string]> = [["Hồ sơ", "Xem hồ sơ tài sản"], ["Chỉnh sửa", "Chỉnh sửa tài sản"], ["Mã QR", "Tạo / xem mã QR"], ["Cấp phát", "Tạo phiếu bàn giao"]];
     document.querySelectorAll<HTMLButtonElement>("button[aria-label]").forEach((button) => {
@@ -1972,13 +1993,13 @@ function AssetModal({ mode, asset, formData, setFormData, isSaving, onClose: dis
     const holderLabel = Array.from(document.querySelectorAll("label")).find((label) => label.textContent?.trim().startsWith("Người / Phòng giữ"));
     const holderInput = holderLabel?.parentElement?.querySelector("input") as HTMLInputElement | null;
     if (!holderInput) return;
-    const statusLabel = formData.statusType === "available" ? "Chưa bàn giao" : formData.statusType === "maintenance" ? "Bảo trì" : formData.statusType === "returned" ? "Đã trả NCC" : formData.statusType === "retired" ? "Khấu hao - Thanh lý" : "";
-    const displayStatus = formData.statusType === "retired" ? "Khấu hao/Thanh lý" : formData.status;
+    const statusLabel = formData.statusType === "available" ? "Chưa bàn giao" : formData.statusType === "maintenance" ? "Bảo hành/Sửa chữa" : formData.statusType === "returned" ? "Đã trả NCC" : formData.statusType === "retired" ? "Khấu hao - Thanh lý" : "";
+    const displayStatus = formData.statusType === "maintenance" ? "Bảo hành/Sửa chữa" : formData.statusType === "retired" ? "Khấu hao/Thanh lý" : formData.status;
     if (statusLabel && (formData.holder !== statusLabel || formData.status !== displayStatus)) {
       setFormData((current) => ({ ...current, holder: statusLabel, status: displayStatus, retiredAt: formData.statusType === "retired" && !current.retiredAt ? new Date().toISOString().slice(0, 10) : current.retiredAt }));
       return;
     }
-    if (formData.statusType === "active" && ["Chưa bàn giao", "Bảo trì", "Đã trả NCC", "Khấu hao - Thanh lý"].includes(formData.holder)) {
+    if (formData.statusType === "active" && ["Chưa bàn giao", "Bảo hành/Sửa chữa", "Đã trả NCC", "Khấu hao - Thanh lý"].includes(formData.holder)) {
       setFormData((current) => ({ ...current, holder: "" }));
       return;
     }
@@ -1997,6 +2018,27 @@ function AssetModal({ mode, asset, formData, setFormData, isSaving, onClose: dis
     holderInput.classList.add("bg-[#F5F8FB]", "text-[#60758A]");
     holderInput.title = "Tự động cập nhật theo trạng thái Khấu hao/Thanh lý";
   }, [isDetail, formData.statusType, formData.holder]);
+  useEffect(() => {
+    if (isDetail) return;
+    const dialog = document.querySelector<HTMLElement>('[role="dialog"][aria-modal="true"]');
+    if (!dialog) return;
+    const refreshMaintenanceCopy = () => {
+      dialog.querySelectorAll<HTMLElement>("button").forEach((button) => {
+        if (button.textContent?.trim() === "Bảo trì") button.textContent = "Bảo hành/Sửa chữa";
+      });
+      dialog.querySelectorAll<HTMLLabelElement>("label").forEach((label) => {
+        if (label.textContent?.includes("Nội dung cần bảo trì")) label.innerHTML = 'Nội dung cần Bảo hành/Sửa chữa <span class="text-[#B44545]">*</span>';
+      });
+      dialog.querySelectorAll<HTMLTextAreaElement>('textarea[aria-label="Nội dung cần bảo trì"]').forEach((textarea) => {
+        textarea.setAttribute("aria-label", "Nội dung cần Bảo hành/Sửa chữa");
+        textarea.placeholder = "Mô tả nội dung cần kiểm tra, bảo hành hoặc sửa chữa...";
+      });
+    };
+    refreshMaintenanceCopy();
+    const observer = new MutationObserver(refreshMaintenanceCopy);
+    observer.observe(dialog, { childList: true, subtree: true });
+    return () => observer.disconnect();
+  }, [isDetail, formData.statusType, formData.status]);
   useEffect(() => {
     if (isDetail) return;
     const assetDialog = document.querySelector<HTMLElement>('[role="dialog"][aria-modal="true"]');
