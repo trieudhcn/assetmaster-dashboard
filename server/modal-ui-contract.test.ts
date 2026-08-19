@@ -636,6 +636,14 @@ describe("modal presentation contract", () => {
     expect(previewHost).toContain('payload.kind === "pdf" ? "Tải PDF" : "Tải Excel"');
   });
 
+  it("keeps the retirement reason textarea mounted while the user types", () => {
+    const home = readProjectFile("client/src/pages/Home.tsx");
+
+    expect(home).toContain('reasonInput.addEventListener("input", () => { setFormDirty(true); setFormData((current) => ({ ...current, retirementReason: reasonInput.value })); });');
+    expect(home).toContain('}, [isDetail, formData.statusType, retirementAttachmentFile, setFormData]);');
+    expect(home).not.toContain('}, [isDetail, formData.statusType, formData.retiredAt, formData.retirementReason, retirementAttachmentFile, setFormData]);');
+  });
+
   it("provides a dedicated supplier return report export", () => {
     const reports = readProjectFile("client/src/pages/ReportsManagementView.tsx");
     expect(reports).toContain('const supplierReturnedAssets = useMemo(() => selectedAssets.filter((asset) => asset.status === "returned_to_vendor")');

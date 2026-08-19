@@ -1899,3 +1899,8 @@
 
 - [x] Hoàn thiện luồng xem trước PDF gộp biên bản thanh lý trong giao diện trước khi tải tệp.
 - [x] Bổ sung kiểm tra trực quan, hồi quy và phát hành cập nhật.
+
+## Current Session — Retirement Reason Input Focus Fix
+
+- [x] Khắc phục lỗi trường Lý do thanh lý bị mất focus sau mỗi ký tự nhập.
+- [x] Bổ sung hồi quy, kiểm tra nhập liệu trực tiếp và phát hành cập nhật.

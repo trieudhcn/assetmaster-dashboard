@@ -2073,7 +2073,7 @@ function AssetModal({ mode, asset, formData, setFormData, isSaving, onClose: dis
     field.append(label, textarea);
     statusField.after(field);
     return () => field.remove();
-  }, [isDetail, formData.statusType, formData.retiredAt, formData.retirementReason, retirementAttachmentFile, setFormData]);
+  }, [isDetail, formData.statusType, retirementAttachmentFile, setFormData]);
   const title = mode === "create" ? "Thêm tài sản mới" : mode === "edit" ? "Chỉnh sửa tài sản" : "Chi tiết tài sản";
   const fields: Array<{ key: keyof Asset; label: string; placeholder: string }> = [
     { key: "name", label: "Tên tài sản", placeholder: "Ví dụ: MacBook Pro 14-inch M3" },
