@@ -1894,3 +1894,8 @@
 - [x] Cho phép chọn nhiều tài sản thanh lý trong danh sách báo cáo.
 - [x] Xuất một tệp PDF gộp biên bản thanh lý cho các tài sản đã chọn, có phân trang và nhận diện công ty.
 - [x] Bổ sung hồi quy, kiểm tra giao diện và phát hành cập nhật.
+
+## Current Session — Combined Disposal PDF Preview
+
+- [x] Hoàn thiện luồng xem trước PDF gộp biên bản thanh lý trong giao diện trước khi tải tệp.
+- [x] Bổ sung kiểm tra trực quan, hồi quy và phát hành cập nhật.

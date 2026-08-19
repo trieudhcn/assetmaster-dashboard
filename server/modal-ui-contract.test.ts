@@ -620,10 +620,20 @@ describe("modal presentation contract", () => {
     expect(reports).toContain("retirementYear === \"all\"");
     expect(reports).toContain("selectedRetirementIds");
     expect(reports).toContain("exportSelectedRetirementPdf");
-    expect(reports).toContain("Xuất PDF gộp");
+    expect(reports).toContain("Xem trước PDF gộp");
     expect(retirementPdf).toContain("openRetirementPdf");
     expect(retirementPdf).toContain("doc.addPage()");
     expect(retirementPdf).toContain("Trang ${page}/${totalPages}");
+  });
+
+  it("opens the combined disposal PDF in an in-app preview before download", () => {
+    const reports = readProjectFile("client/src/pages/ReportsManagementView.tsx");
+    const previewHost = readProjectFile("client/src/components/ExportPreviewHost.tsx");
+
+    expect(reports).toContain("Xem trước PDF gộp");
+    expect(previewHost).toContain("Bản xem trước PDF gộp");
+    expect(previewHost).toContain("Kiểm tra nội dung trực tiếp trên web trước khi tải PDF.");
+    expect(previewHost).toContain('payload.kind === "pdf" ? "Tải PDF" : "Tải Excel"');
   });
 
   it("provides a dedicated supplier return report export", () => {
