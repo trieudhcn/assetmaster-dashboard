@@ -1873,3 +1873,11 @@
 - [x] Tạo và xuất biên bản thanh lý PDF cho từng tài sản đã thanh lý.
 - [x] Thêm báo cáo tổng giá trị tài sản đã thanh lý theo từng năm.
 - [x] Bổ sung hồi quy, kiểm tra giao diện và phát hành cập nhật.
+
+## Current Session — Disposal Certificate Numbering, Attachments & Filter
+
+- [x] Tự động sinh và lưu số biên bản thanh lý theo cấu trúc TL-NĂM-001, đặt lại số thứ tự khi sang năm mới.
+- [x] Cho phép tải lên, lưu an toàn và mở tệp chứng từ đính kèm của tài sản thanh lý.
+- [x] Hiển thị số biên bản và chứng từ trong biên bản PDF cùng hồ sơ chi tiết tài sản.
+- [x] Bổ sung bộ lọc trạng thái tài sản đã thanh lý trong Danh mục tài sản.
+- [x] Bổ sung hồi quy, kiểm tra giao diện và phát hành cập nhật.

@@ -404,6 +404,14 @@ export async function getNextAssetCodeForPrefix(prefix: string, executor?: any) 
   return `${prefix}${String(largestSequence + 1).padStart(5, "0")}`;
 }
 
+export async function getNextRetirementCertificateSequence(retirementYear: number, executor?: any) {
+  const db = executor ?? await getDb();
+  if (!db) throw new Error("Database unavailable");
+  const rows: Array<{ sequence: number | null }> = await db.select({ sequence: assets.retirementCertificateSequence }).from(assets).where(eq(assets.retirementCertificateYear, retirementYear));
+  const maxSequence = rows.reduce((maximum, row) => Math.max(maximum, Number(row.sequence || 0)), 0);
+  return maxSequence + 1;
+}
+
 export async function listAssets() {
   const db = await getDb();
   if (!db) return [];

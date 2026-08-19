@@ -578,10 +578,18 @@ describe("modal presentation contract", () => {
     expect(home).toContain("Lý do thanh lý");
     expect(home).toContain("downloadAssetRetirementPdf");
     expect(home).toContain("BIÊN BẢN KHẤU HAO / THANH LÝ TÀI SẢN");
+    expect(home).toContain("retirementCertificateNumber");
+    expect(home).toContain("Chứng từ thanh lý đính kèm");
+    expect(home).toContain("Khấu hao/Thanh lý");
     expect(router).toContain("hasRequiredRetirementReason");
-    expect(router).toContain("retiredAt: changes.retiredAt");
+    expect(router).toContain("getNextRetirementCertificateSequence");
+    expect(router).toContain("TL-${retirementCertificateChanges.year}");
+    expect(router).toContain("uploadRetirementAttachment");
+    expect(router).toContain("assets/${asset.id}/retirement/");
     expect(schema).toContain('retiredAt: timestamp("retiredAt")');
     expect(schema).toContain('retirementReason: text("retirementReason")');
+    expect(schema).toContain('retirementCertificateNumber: varchar("retirementCertificateNumber", { length: 64 })');
+    expect(schema).toContain('retirementAttachmentUrl: text("retirementAttachmentUrl")');
   });
 
   it("summarizes disposed asset values by retirement year", () => {

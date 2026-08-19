@@ -60,6 +60,7 @@ vi.mock("./db", () => ({
   getMaintenanceTicket: mocks.getMaintenanceTicket,
   getNextMaintenanceTicketSequence: mocks.getNextMaintenanceTicketSequence,
   getNextAuditSequence: mocks.getNextAuditSequence,
+  getNextRetirementCertificateSequence: vi.fn().mockResolvedValue(1),
   listAssets: vi.fn(),
   listAuditItems: mocks.listAuditItems,
   listAuditSessions: mocks.listAuditSessions,

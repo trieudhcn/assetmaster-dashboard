@@ -66,6 +66,7 @@ import {
   getNextAuditSequence,
   getMaintenanceTicket,
   getNextAssetCodeForPrefix,
+  getNextRetirementCertificateSequence,
   getUserNotificationPreferences,
   saveUiLabel,
   listMaintenanceTickets,
@@ -821,7 +822,14 @@ export const appRouter = router({
       if (!hasRequiredRetirementReason(input.status, input.retirementReason)) throw new TRPCError({ code: "BAD_REQUEST", message: "Vui lòng nhập lý do thanh lý khi đưa tài sản vào Khấu hao/Thanh lý." });
       if (input.vendorId && !(await getVendorById(input.vendorId))?.isActive) throw new TRPCError({ code: "BAD_REQUEST", message: "Nhà cung cấp được chọn không tồn tại hoặc đã ngừng hoạt động." });
       if (input.brandId && !(await getBrandById(input.brandId))?.isActive) throw new TRPCError({ code: "BAD_REQUEST", message: "Hãng được chọn không tồn tại hoặc đã ngừng hoạt động." });
-      const id = await createAsset({ ...input, holderName: input.status === "retired" ? "Khấu hao - Thanh lý" : input.holderName, maintenanceReason: input.status === "maintenance" ? input.maintenanceReason : null, retiredAt: input.status === "retired" ? input.retiredAt ?? new Date() : null, retirementReason: input.status === "retired" ? input.retirementReason?.trim() || null : null, qrToken: crypto.randomUUID().replaceAll("-", ""), createdByUserId: ctx.user!.id });
+      const retirementAt = input.status === "retired" ? input.retiredAt ?? new Date() : null;
+      const retirementCertificate = retirementAt ? (() => {
+        const year = retirementAt.getUTCFullYear();
+        return { year };
+      })() : null;
+      const retirementSequence = retirementCertificate ? await getNextRetirementCertificateSequence(retirementCertificate.year) : null;
+      const retirementCertificateNumber = retirementCertificate && retirementSequence ? `TL-${retirementCertificate.year}-${String(retirementSequence).padStart(3, "0")}` : null;
+      const id = await createAsset({ ...input, holderName: input.status === "retired" ? "Khấu hao - Thanh lý" : input.holderName, maintenanceReason: input.status === "maintenance" ? input.maintenanceReason : null, retiredAt: retirementAt, retirementReason: input.status === "retired" ? input.retirementReason?.trim() || null : null, retirementCertificateNumber, retirementCertificateYear: retirementCertificate?.year ?? null, retirementCertificateSequence: retirementSequence, qrToken: crypto.randomUUID().replaceAll("-", ""), createdByUserId: ctx.user!.id });
       await recordActivity({ entityType: "asset", entityId: id, action: "created", actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: `Tạo tài sản ${input.assetCode}` });
       return { id };
     }),
@@ -837,8 +845,16 @@ export const appRouter = router({
       const supplierReturnChanges = changes.status === "returned_to_vendor"
         ? { supplierReturnedAt: changes.supplierReturnedAt ?? current.supplierReturnedAt ?? new Date(), supplierReturnReason: changes.supplierReturnReason?.trim() || current.supplierReturnReason || null }
         : {};
+      const retirementAt = changes.status === "retired" ? changes.retiredAt ?? current.retiredAt ?? new Date() : null;
+      const retirementCertificateChanges = retirementAt && !current.retirementCertificateNumber
+        ? (() => {
+          const year = retirementAt.getUTCFullYear();
+          return { year };
+        })()
+        : null;
+      const retirementSequence = retirementCertificateChanges ? await getNextRetirementCertificateSequence(retirementCertificateChanges.year) : null;
       const retirementChanges = changes.status === "retired"
-        ? { holderName: "Khấu hao - Thanh lý", retiredAt: changes.retiredAt ?? current.retiredAt ?? new Date(), retirementReason: changes.retirementReason?.trim() || current.retirementReason || null }
+        ? { holderName: "Khấu hao - Thanh lý", retiredAt: retirementAt, retirementReason: changes.retirementReason?.trim() || current.retirementReason || null, ...(retirementCertificateChanges && retirementSequence ? { retirementCertificateNumber: `TL-${retirementCertificateChanges.year}-${String(retirementSequence).padStart(3, "0")}`, retirementCertificateYear: retirementCertificateChanges.year, retirementCertificateSequence: retirementSequence } : {}) }
         : {};
       // Ngày mua là dữ liệu gốc từ lúc nhập kho; không được thay đổi sau khi tài sản đã tạo/import.
       const safeChanges = { ...persistedChanges, ...supplierReturnChanges, ...retirementChanges, purchaseDate: current.purchaseDate };
@@ -861,6 +877,24 @@ export const appRouter = router({
       const { url } = await storagePut(`assets/${asset.id}/supplier-return/${Date.now()}-${safeBaseName}.${extension}`, Buffer.from(input.dataUrl.split(",", 2)[1], "base64"), input.contentType);
       await updateAsset(asset.id, { supplierReturnAttachmentUrl: url, supplierReturnAttachmentName: input.fileName, supplierReturnAttachmentContentType: input.contentType });
       await recordActivity({ entityType: "asset", entityId: asset.id, action: "supplier_return_attachment_uploaded", actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: `Đính kèm xác nhận trả NCC: ${input.fileName}` });
+      return { url, name: input.fileName, contentType: input.contentType };
+    }),
+    uploadRetirementAttachment: adminProcedure.input(z.object({
+      id: z.number().int().positive(),
+      fileName: z.string().trim().min(1).max(255),
+      contentType: z.enum(["application/pdf", "image/png", "image/jpeg", "image/webp"]),
+      dataUrl: z.string().max(7_000_000).regex(/^data:(application\/pdf|image\/(png|jpeg|webp));base64,/),
+    })).mutation(async ({ input, ctx }) => {
+      const asset = await getAssetById(input.id);
+      if (!asset) throw new TRPCError({ code: "NOT_FOUND", message: "Không tìm thấy tài sản." });
+      if (asset.status !== "retired") throw new TRPCError({ code: "BAD_REQUEST", message: "Chỉ tài sản đang ở trạng thái Khấu hao/Thanh lý mới được đính kèm chứng từ." });
+      const bytes = Buffer.from(input.dataUrl.split(",", 2)[1], "base64");
+      if (!bytes.length || bytes.length > 5 * 1024 * 1024) throw new TRPCError({ code: "BAD_REQUEST", message: "Tệp chứng từ phải có dung lượng từ 1 byte đến tối đa 5 MB." });
+      const extension = input.contentType === "application/pdf" ? "pdf" : input.contentType.split("/")[1].replace("jpeg", "jpg");
+      const safeBaseName = input.fileName.replace(/[^a-zA-Z0-9._-]/g, "-").replace(/-+/g, "-").slice(0, 120) || "chung-tu-thanh-ly";
+      const { url } = await storagePut(`assets/${asset.id}/retirement/${Date.now()}-${safeBaseName}.${extension}`, bytes, input.contentType);
+      await updateAsset(asset.id, { retirementAttachmentUrl: url, retirementAttachmentName: input.fileName, retirementAttachmentContentType: input.contentType });
+      await recordActivity({ entityType: "asset", entityId: asset.id, action: "retirement_attachment_uploaded", actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: `Đính kèm chứng từ thanh lý: ${input.fileName}` });
       return { url, name: input.fileName, contentType: input.contentType };
     }),
     archive: adminProcedure.input(z.object({ id: z.number().int().positive() })).mutation(async ({ input, ctx }) => {

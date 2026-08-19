@@ -225,6 +225,13 @@
       "when": 1787104041555,
       "tag": "0031_curly_nebula",
       "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "5",
+      "when": 1787105250401,
+      "tag": "0032_last_clint_barton",
+      "breakpoints": true
     }
   ]
 }

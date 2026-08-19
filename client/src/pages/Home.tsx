@@ -164,12 +164,20 @@ type Asset = {
   supplierReturnReason?: string;
   retiredAt?: string | number | Date | null;
   retirementReason?: string;
+  retirementCertificateNumber?: string | null;
+  retirementCertificateYear?: number | null;
+  retirementCertificateSequence?: number | null;
+  retirementAttachmentUrl?: string | null;
+  retirementAttachmentName?: string | null;
+  retirementAttachmentContentType?: string | null;
   supplierReturnAttachmentUrl?: string | null;
   supplierReturnAttachmentName?: string | null;
   supplierReturnAttachmentContentType?: string | null;
 };
 
 type SupplierReturnAttachment = { fileName: string; contentType: "application/pdf" | "image/png" | "image/jpeg" | "image/webp"; dataUrl: string };
+type RetirementAttachment = SupplierReturnAttachment;
+type AssetSaveAttachments = { supplierReturn?: SupplierReturnAttachment; retirement?: RetirementAttachment };
 
 type CompanyInfo = {
   name: string;
@@ -323,6 +331,7 @@ export default function Home() {
   const [assetHistoryId, setAssetHistoryId] = useState<number | null>(null);
   const [formData, setFormData] = useState<Asset>({ code: "", name: "", category: "", holder: "", status: "Sẵn có", statusType: "available", date: new Date().toISOString().slice(0, 10), value: "", location: "", serial: "", supplier: "", note: "" });
   const pendingSupplierReturnAttachmentRef = useRef<SupplierReturnAttachment | null>(null);
+  const pendingRetirementAttachmentRef = useRef<RetirementAttachment | null>(null);
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState("Tất cả loại tài sản");
   const [status, setStatus] = useState("Tất cả trạng thái");
@@ -407,9 +416,10 @@ export default function Home() {
     },
     onError: (error) => toast.error(error.message || "Không thể lưu tùy chọn thông báo."),
   });
-  const createAssetMutation = trpc.assets.create.useMutation({ onSuccess: () => { void assetQuery.refetch(); setAssetModal(null); toast.success("Đã tạo tài sản và lưu vào hệ thống."); }, onError: (error) => toast.error(error.message || "Không thể tạo tài sản.") });
   const uploadSupplierReturnAttachmentMutation = trpc.assets.uploadSupplierReturnAttachment.useMutation({ onSuccess: () => { void assetQuery.refetch(); toast.success("Đã lưu tệp xác nhận trả nhà cung cấp."); }, onError: (error) => toast.error(error.message || "Không thể lưu tệp xác nhận trả nhà cung cấp.") });
-  const updateAssetMutation = trpc.assets.update.useMutation({ onSuccess: (_result, variables) => { void assetQuery.refetch(); void maintenanceTicketsQuery.refetch(); setAssetModal(null); toast.success("Đã cập nhật tài sản và trạng thái bảo trì."); if (variables.id && pendingSupplierReturnAttachmentRef.current) { const attachment = pendingSupplierReturnAttachmentRef.current; pendingSupplierReturnAttachmentRef.current = null; uploadSupplierReturnAttachmentMutation.mutate({ id: variables.id, ...attachment }); } }, onError: (error) => { pendingSupplierReturnAttachmentRef.current = null; toast.error(error.message || "Không thể cập nhật tài sản."); } });
+  const uploadRetirementAttachmentMutation = trpc.assets.uploadRetirementAttachment.useMutation({ onSuccess: () => { void assetQuery.refetch(); toast.success("Đã lưu chứng từ thanh lý."); }, onError: (error) => toast.error(error.message || "Không thể lưu chứng từ thanh lý.") });
+  const createAssetMutation = trpc.assets.create.useMutation({ onSuccess: (result) => { void assetQuery.refetch(); setAssetModal(null); toast.success("Đã tạo tài sản và lưu vào hệ thống."); if (pendingRetirementAttachmentRef.current) { const attachment = pendingRetirementAttachmentRef.current; pendingRetirementAttachmentRef.current = null; uploadRetirementAttachmentMutation.mutate({ id: result.id, ...attachment }); } }, onError: (error) => { pendingRetirementAttachmentRef.current = null; toast.error(error.message || "Không thể tạo tài sản."); } });
+  const updateAssetMutation = trpc.assets.update.useMutation({ onSuccess: (_result, variables) => { void assetQuery.refetch(); void maintenanceTicketsQuery.refetch(); setAssetModal(null); toast.success("Đã cập nhật tài sản và trạng thái bảo trì."); if (variables.id && pendingSupplierReturnAttachmentRef.current) { const attachment = pendingSupplierReturnAttachmentRef.current; pendingSupplierReturnAttachmentRef.current = null; uploadSupplierReturnAttachmentMutation.mutate({ id: variables.id, ...attachment }); } if (variables.id && pendingRetirementAttachmentRef.current) { const attachment = pendingRetirementAttachmentRef.current; pendingRetirementAttachmentRef.current = null; uploadRetirementAttachmentMutation.mutate({ id: variables.id, ...attachment }); } }, onError: (error) => { pendingSupplierReturnAttachmentRef.current = null; pendingRetirementAttachmentRef.current = null; toast.error(error.message || "Không thể cập nhật tài sản."); } });
 
   useEffect(() => {
     if (!isAuthenticated || !isAdmin) return;
@@ -557,7 +567,7 @@ export default function Home() {
   useEffect(() => {
     if (!assetQuery.data) return;
     setAssetRows(assetQuery.data.map((asset) => ({
-      code: asset.assetCode, qrToken: asset.qrToken, name: asset.name, category: asset.categoryId ? assetCategoriesQuery.data?.find((category) => category.id === asset.categoryId)?.name || "Chưa phân loại" : typeof (asset.metadata as { category?: unknown } | null)?.category === "string" ? String((asset.metadata as { category?: unknown }).category) : "Chưa phân loại", categoryId: asset.categoryId || undefined, holder: asset.holderName || (asset.status === "maintenance" ? "Bảo trì" : asset.status === "available" ? "Chưa bàn giao" : "Chưa cấp phát"), status: asset.status === "assigned" ? "Đang cấp phát" : asset.status === "maintenance" ? "Bảo trì" : asset.status === "returned_to_vendor" ? "Trả nhà cung cấp" : "Sẵn có", statusType: asset.status === "assigned" ? "active" : asset.status === "maintenance" ? "maintenance" : asset.status === "returned_to_vendor" ? "returned" : "available", date: asset.purchaseDate ? new Date(asset.purchaseDate).toLocaleDateString("vi-VN") : "—", purchaseDate: asset.purchaseDate ? dateInputValue(asset.purchaseDate) : "", value: asset.purchaseValue ? String(asset.purchaseValue) : "0", location: asset.location || "", serial: asset.serialNumber || "", maintenanceReason: asset.maintenanceReason || "", supplier: asset.vendor || vendorsQuery.data?.find((vendor) => vendor.id === asset.vendorId)?.name || "", vendorId: asset.vendorId || undefined, brand: brandsQuery.data?.find((brand) => brand.id === asset.brandId)?.name || "", brandId: asset.brandId || undefined, note: asset.note || "", warrantyUntil: asset.warrantyUntil ? new Date(asset.warrantyUntil).toISOString().slice(0, 10) : "", supplierReturnedAt: asset.supplierReturnedAt ? new Date(asset.supplierReturnedAt).toISOString().slice(0, 10) : "", supplierReturnReason: asset.supplierReturnReason || "", supplierReturnAttachmentUrl: asset.supplierReturnAttachmentUrl || null, supplierReturnAttachmentName: asset.supplierReturnAttachmentName || null, supplierReturnAttachmentContentType: asset.supplierReturnAttachmentContentType || null,
+      code: asset.assetCode, qrToken: asset.qrToken, name: asset.name, category: asset.categoryId ? assetCategoriesQuery.data?.find((category) => category.id === asset.categoryId)?.name || "Chưa phân loại" : typeof (asset.metadata as { category?: unknown } | null)?.category === "string" ? String((asset.metadata as { category?: unknown }).category) : "Chưa phân loại", categoryId: asset.categoryId || undefined, holder: asset.holderName || (asset.status === "maintenance" ? "Bảo trì" : asset.status === "available" ? "Chưa bàn giao" : "Chưa cấp phát"), status: asset.status === "assigned" ? "Đang cấp phát" : asset.status === "maintenance" ? "Bảo trì" : asset.status === "returned_to_vendor" ? "Trả nhà cung cấp" : "Sẵn có", statusType: asset.status === "assigned" ? "active" : asset.status === "maintenance" ? "maintenance" : asset.status === "returned_to_vendor" ? "returned" : "available", date: asset.purchaseDate ? new Date(asset.purchaseDate).toLocaleDateString("vi-VN") : "—", purchaseDate: asset.purchaseDate ? dateInputValue(asset.purchaseDate) : "", value: asset.purchaseValue ? String(asset.purchaseValue) : "0", location: asset.location || "", serial: asset.serialNumber || "", maintenanceReason: asset.maintenanceReason || "", supplier: asset.vendor || vendorsQuery.data?.find((vendor) => vendor.id === asset.vendorId)?.name || "", vendorId: asset.vendorId || undefined, brand: brandsQuery.data?.find((brand) => brand.id === asset.brandId)?.name || "", brandId: asset.brandId || undefined, note: asset.note || "", warrantyUntil: asset.warrantyUntil ? new Date(asset.warrantyUntil).toISOString().slice(0, 10) : "", supplierReturnedAt: asset.supplierReturnedAt ? new Date(asset.supplierReturnedAt).toISOString().slice(0, 10) : "", supplierReturnReason: asset.supplierReturnReason || "", retirementCertificateNumber: asset.retirementCertificateNumber || null, retirementCertificateYear: asset.retirementCertificateYear || null, retirementCertificateSequence: asset.retirementCertificateSequence || null, retirementAttachmentUrl: asset.retirementAttachmentUrl || null, retirementAttachmentName: asset.retirementAttachmentName || null, retirementAttachmentContentType: asset.retirementAttachmentContentType || null, supplierReturnAttachmentUrl: asset.supplierReturnAttachmentUrl || null, supplierReturnAttachmentName: asset.supplierReturnAttachmentName || null, supplierReturnAttachmentContentType: asset.supplierReturnAttachmentContentType || null,
     })));
   }, [assetQuery.data, vendorsQuery.data, brandsQuery.data, assetCategoriesQuery.data]);
 
@@ -566,7 +576,7 @@ export default function Home() {
     if (!retiredAssets.size) return;
     setAssetRows((current) => current.map((asset) => {
       const retiredAsset = retiredAssets.get(asset.code);
-      return retiredAsset ? { ...asset, holder: "Khấu hao - Thanh lý", status: "Khấu hao/Thanh lý", statusType: "retired", retiredAt: retiredAsset.retiredAt ? dateInputValue(retiredAsset.retiredAt) : "", retirementReason: retiredAsset.retirementReason || "" } : asset;
+      return retiredAsset ? { ...asset, holder: "Khấu hao - Thanh lý", status: "Khấu hao/Thanh lý", statusType: "retired", retiredAt: retiredAsset.retiredAt ? dateInputValue(retiredAsset.retiredAt) : "", retirementReason: retiredAsset.retirementReason || "", retirementCertificateNumber: retiredAsset.retirementCertificateNumber || null, retirementCertificateYear: retiredAsset.retirementCertificateYear || null, retirementCertificateSequence: retiredAsset.retirementCertificateSequence || null, retirementAttachmentUrl: retiredAsset.retirementAttachmentUrl || null, retirementAttachmentName: retiredAsset.retirementAttachmentName || null, retirementAttachmentContentType: retiredAsset.retirementAttachmentContentType || null } : asset;
     }));
   }, [assetQuery.data]);
 
@@ -815,7 +825,7 @@ export default function Home() {
   const openCreateModal = () => { setFormData({ code: "", name: "", category: "", holder: "", status: "Sẵn có", statusType: "available", date: new Date().toISOString().slice(0, 10), value: "", location: "", serial: "", maintenanceReason: "", supplier: "", warrantyUntil: "", supplierReturnedAt: "", supplierReturnReason: "", retiredAt: "", retirementReason: "", note: "" }); setSelectedAsset(null); setAssetModal("create"); };
   const openEditModal = (asset: Asset) => { setSelectedAsset(asset); setFormData({ ...asset, date: dateInputValue(asset.purchaseDate || asset.date) }); setAssetModal("edit"); };
   const openDetailModal = (asset: Asset) => { setSelectedAsset(asset); setAssetModal("detail"); };
-  const saveAsset = (attachment?: SupplierReturnAttachment) => {
+  const saveAsset = (attachments?: AssetSaveAttachments) => {
     if (!formData.name.trim() || !formData.value.trim()) { toast.error("Vui lòng nhập tên tài sản và giá trị."); return; }
     if (!formData.categoryId || !formData.code) { toast.error("Vui lòng chọn Phân loại để hệ thống tạo mã tài sản."); return; }
     if (formData.statusType === "maintenance" && !formData.maintenanceReason?.trim()) { toast.error("Vui lòng nhập lý do bảo trì trước khi lưu."); return; }
@@ -846,9 +856,11 @@ export default function Home() {
     if (assetModal === "edit") {
       const target = assetQuery.data?.find((asset) => asset.assetCode === formData.code);
       if (!target) { toast.error("Không tìm thấy tài sản để cập nhật."); return; }
-      pendingSupplierReturnAttachmentRef.current = attachment || null;
+      pendingSupplierReturnAttachmentRef.current = attachments?.supplierReturn || null;
+      pendingRetirementAttachmentRef.current = attachments?.retirement || null;
       updateAssetMutation.mutate({ id: target.id, ...payload });
     } else {
+      pendingRetirementAttachmentRef.current = attachments?.retirement || null;
       createAssetMutation.mutate(payload);
     }
   };
@@ -1601,6 +1613,7 @@ async function downloadAssetRetirementPdf(asset: Asset, companyInfo: CompanyInfo
   y += 14;
   doc.setFontSize(10);
   const rows = [
+    ["Số biên bản thanh lý", asset.retirementCertificateNumber || "Đang cấp số"],
     ["Mã tài sản", asset.code],
     ["Tên tài sản", asset.name],
     ["Phân loại", asset.category || "Chưa phân loại"],
@@ -1610,6 +1623,7 @@ async function downloadAssetRetirementPdf(asset: Asset, companyInfo: CompanyInfo
     ["Vị trí lưu trữ", asset.location || "Chưa cập nhật"],
     ["Ngày thanh lý", asset.retiredAt ? new Date(asset.retiredAt).toLocaleDateString("vi-VN") : "Chưa ghi nhận"],
     ["Lý do thanh lý", asset.retirementReason || "Chưa ghi nhận"],
+    ["Chứng từ đính kèm", asset.retirementAttachmentName || "Không đính kèm"],
     ["Ghi chú", asset.note || "Không có"],
   ];
   rows.forEach(([label, value]) => {
@@ -1635,7 +1649,7 @@ async function downloadAssetRetirementPdf(asset: Asset, companyInfo: CompanyInfo
   doc.setTextColor(138, 160, 182);
   doc.text(`Biên bản được tạo ngày ${new Date().toLocaleDateString("vi-VN")}`, left, 282);
   applyPdfLogoWatermark(doc, await createPdfLogoWatermark(companyInfo.logoUrl).catch(() => null));
-  openPdfPreview(doc, `${asset.code}-bien-ban-thanh-ly.pdf`, `Biên bản thanh lý ${asset.code}`);
+  openPdfPreview(doc, `${asset.retirementCertificateNumber || asset.code}-bien-ban-thanh-ly.pdf`, `Biên bản thanh lý ${asset.retirementCertificateNumber || asset.code}`);
 }
 
 function HandoverDetailModalLegacyPersisted({ item, companyInfo, onClose, onDataChanged }: { item: Handover; companyInfo: CompanyInfo; onClose: () => void; onDataChanged: () => void }) {
@@ -1709,16 +1723,17 @@ function SignaturePad({ onSigned }: { onSigned: (dataUrl: string) => void }) {
   return <div><div className="overflow-hidden rounded-lg border border-dashed border-[#8BCDC6] bg-white"><canvas ref={canvasRef} width={900} height={180} onPointerDown={start} onPointerMove={move} onPointerUp={stop} onPointerLeave={stop} className="h-[120px] w-full touch-none cursor-crosshair" aria-label="Vùng ký điện tử" /></div><div className="mt-2 flex items-center justify-between"><span className="text-[10px] text-[#8AA0B6]">Dùng chuột hoặc ngón tay để ký</span><div className="flex gap-2"><button onClick={clear} className="text-[11px] font-bold text-[#60758A] hover:text-[#193B57]">Xóa / ký lại</button><button onClick={confirm} className="rounded-md bg-[#0F8C8C] px-3 py-1.5 text-[11px] font-bold text-white hover:bg-[#087A6A]">Xác nhận chữ ký</button></div></div></div>;
 }
 
-function AssetModal({ mode, asset, formData, setFormData, isSaving, onClose: dismiss, onSave, onEdit, onStartHandover }: { mode: "create" | "edit" | "detail"; asset: Asset | null; formData: Asset; setFormData: React.Dispatch<React.SetStateAction<Asset>>; isSaving: boolean; onClose: () => void; onSave: (attachment?: SupplierReturnAttachment) => void; onEdit: () => void; onStartHandover: (assetCode: string) => void }) {
+function AssetModal({ mode, asset, formData, setFormData, isSaving, onClose: dismiss, onSave, onEdit, onStartHandover }: { mode: "create" | "edit" | "detail"; asset: Asset | null; formData: Asset; setFormData: React.Dispatch<React.SetStateAction<Asset>>; isSaving: boolean; onClose: () => void; onSave: (attachments?: AssetSaveAttachments) => void; onEdit: () => void; onStartHandover: (assetCode: string) => void }) {
   const isDetail = mode === "detail";
   const preservePurchaseDate = mode === "edit" && Boolean(asset?.code);
   const [repairOpen, setRepairOpen] = useState(false);
   const [formDirty, setFormDirty] = useState(false);
   const [supplierReturnConfirmOpen, setSupplierReturnConfirmOpen] = useState(false);
   const [supplierReturnFile, setSupplierReturnFile] = useState<File | null>(null);
+  const [retirementAttachmentFile, setRetirementAttachmentFile] = useState<File | null>(null);
   const [supplierReturnPreviewUrl, setSupplierReturnPreviewUrl] = useState("");
   useEffect(() => { if (!supplierReturnFile) { setSupplierReturnPreviewUrl(""); return; } const url = URL.createObjectURL(supplierReturnFile); setSupplierReturnPreviewUrl(url); return () => URL.revokeObjectURL(url); }, [supplierReturnFile]);
-  useEffect(() => { setFormDirty(false); }, [mode, asset?.code]);
+  useEffect(() => { setFormDirty(false); setSupplierReturnFile(null); setRetirementAttachmentFile(null); }, [mode, asset?.code]);
   const onClose = () => {
     if (isSaving) return;
     if (!isDetail && formDirty) { toast.warning("Đóng form chưa lưu?", { description: "Các thay đổi tài sản hiện tại sẽ bị hủy.", action: { label: "Bỏ thay đổi", onClick: dismiss } }); return; }
@@ -1729,14 +1744,24 @@ function AssetModal({ mode, asset, formData, setFormData, isSaving, onClose: dis
     const dataUrl = await new Promise<string>((resolve, reject) => { const reader = new FileReader(); reader.onload = () => resolve(String(reader.result)); reader.onerror = () => reject(new Error("Không thể đọc tệp.")); reader.readAsDataURL(supplierReturnFile); });
     return { fileName: supplierReturnFile.name, contentType: supplierReturnFile.type as SupplierReturnAttachment["contentType"], dataUrl };
   };
+  const prepareRetirementAttachment = async (): Promise<RetirementAttachment | undefined> => {
+    if (!retirementAttachmentFile) return undefined;
+    const dataUrl = await new Promise<string>((resolve, reject) => { const reader = new FileReader(); reader.onload = () => resolve(String(reader.result)); reader.onerror = () => reject(new Error("Không thể đọc chứng từ thanh lý.")); reader.readAsDataURL(retirementAttachmentFile); });
+    return { fileName: retirementAttachmentFile.name, contentType: retirementAttachmentFile.type as RetirementAttachment["contentType"], dataUrl };
+  };
+  const saveWithAttachments = async (supplierReturn?: SupplierReturnAttachment) => {
+    const retirement = await prepareRetirementAttachment();
+    onSave({ ...(supplierReturn ? { supplierReturn } : {}), ...(retirement ? { retirement } : {}) });
+  };
   const requestSave = () => {
     if (isSaving) return;
-    if (formData.statusType !== "returned" || mode !== "edit") { onSave(); return; }
+    if (formData.statusType === "retired" && (!formData.retiredAt || !formData.retirementReason?.trim())) { toast.error("Vui lòng nhập ngày và lý do thanh lý trước khi lưu."); return; }
+    if (formData.statusType !== "returned" || mode !== "edit") { void saveWithAttachments(); return; }
     if (!formData.supplierReturnedAt || !formData.supplierReturnReason?.trim()) { toast.error("Vui lòng nhập ngày và lý do trả nhà cung cấp trước khi xác nhận."); return; }
     setSupplierReturnConfirmOpen(true);
   };
   const confirmSupplierReturn = async () => {
-    try { const attachment = await prepareSupplierReturnAttachment(); setSupplierReturnConfirmOpen(false); onSave(attachment); } catch (error) { toast.error(error instanceof Error ? error.message : "Không thể đọc tệp đính kèm."); }
+    try { const attachment = await prepareSupplierReturnAttachment(); setSupplierReturnConfirmOpen(false); await saveWithAttachments(attachment); } catch (error) { toast.error(error instanceof Error ? error.message : "Không thể đọc tệp đính kèm."); }
   };
   useModalDismiss(onClose);
   const [repairDescription, setRepairDescription] = useState("");
@@ -1812,6 +1837,60 @@ function AssetModal({ mode, asset, formData, setFormData, isSaving, onClose: dis
     header.insertBefore(button, closeButton);
     return () => { button.removeEventListener("click", handleExport); button.remove(); };
   }, [isDetail, asset, retirementCompanyQuery.data]);
+  useEffect(() => {
+    if (!isDetail || asset?.statusType !== "retired") return;
+    const dialog = document.querySelector('[role="dialog"][aria-label="Chi tiết tài sản"]');
+    const historySection = Array.from(dialog?.querySelectorAll("section") || []).find((section) => section.textContent?.includes("Lịch sử quyết định trả nhà cung cấp"));
+    if (!historySection || dialog?.querySelector("[data-retirement-record]")) return;
+    const certificateNumber = persistedAsset?.retirementCertificateNumber || asset.retirementCertificateNumber || "Đang cấp số";
+    const retirementDate = persistedAsset?.retiredAt || asset.retiredAt;
+    const retirementReason = persistedAsset?.retirementReason || asset.retirementReason || "Chưa ghi nhận";
+    const attachmentUrl = persistedAsset?.retirementAttachmentUrl || asset.retirementAttachmentUrl;
+    const attachmentName = persistedAsset?.retirementAttachmentName || asset.retirementAttachmentName || "Mở chứng từ thanh lý";
+    const record = document.createElement("section");
+    record.dataset.retirementRecord = "true";
+    record.className = "rounded-xl border border-[#E7D9B9] bg-[#FFFDF7] p-4";
+    const title = document.createElement("div");
+    title.className = "text-[11px] font-extrabold uppercase tracking-[0.12em] text-[#8F5A00]";
+    title.textContent = "Hồ sơ thanh lý";
+    const grid = document.createElement("div");
+    grid.className = "mt-3 grid gap-3 sm:grid-cols-2";
+    [["Số biên bản", certificateNumber], ["Ngày thanh lý", retirementDate ? new Date(retirementDate).toLocaleDateString("vi-VN") : "Chưa ghi nhận"], ["Lý do", retirementReason]].forEach(([label, value]) => {
+      const item = document.createElement("div");
+      item.className = "rounded-lg border border-[#F1E5C7] bg-white px-3 py-2.5";
+      const itemLabel = document.createElement("div");
+      itemLabel.className = "text-[10px] font-bold uppercase tracking-[0.1em] text-[#9A7A38]";
+      itemLabel.textContent = label;
+      const itemValue = document.createElement("div");
+      itemValue.className = "mt-1 text-xs font-bold leading-5 text-[#5E470D]";
+      itemValue.textContent = String(value);
+      item.append(itemLabel, itemValue);
+      grid.append(item);
+    });
+    const attachment = document.createElement("div");
+    attachment.className = "mt-3 border-t border-[#F1E5C7] pt-3";
+    const attachmentLabel = document.createElement("div");
+    attachmentLabel.className = "text-[10px] font-extrabold uppercase tracking-[0.1em] text-[#9A7A38]";
+    attachmentLabel.textContent = "Chứng từ đính kèm";
+    attachment.append(attachmentLabel);
+    if (attachmentUrl) {
+      const link = document.createElement("a");
+      link.href = attachmentUrl;
+      link.target = "_blank";
+      link.rel = "noreferrer";
+      link.className = "mt-2 inline-flex items-center gap-2 rounded-lg border border-[#E7D9B9] bg-white px-3 py-2 text-xs font-bold text-[#8F5A00] hover:bg-[#FFF7E3]";
+      link.textContent = attachmentName;
+      attachment.append(link);
+    } else {
+      const empty = document.createElement("p");
+      empty.className = "mt-2 text-xs text-[#8AA0B6]";
+      empty.textContent = "Chưa có chứng từ đính kèm.";
+      attachment.append(empty);
+    }
+    record.append(title, grid, attachment);
+    historySection.before(record);
+    return () => record.remove();
+  }, [isDetail, asset?.statusType, asset?.retirementCertificateNumber, asset?.retiredAt, asset?.retirementReason, asset?.retirementAttachmentUrl, asset?.retirementAttachmentName, persistedAsset?.retirementCertificateNumber, persistedAsset?.retiredAt, persistedAsset?.retirementReason, persistedAsset?.retirementAttachmentUrl, persistedAsset?.retirementAttachmentName]);
   const utils = trpc.useUtils();
   const [quickEntryType, setQuickEntryType] = useState<"vendor" | "brand" | null>(null);
   const [quickEntryName, setQuickEntryName] = useState("");
@@ -1941,7 +2020,40 @@ function AssetModal({ mode, asset, formData, setFormData, isSaving, onClose: dis
       reasonInput.setAttribute("aria-label", "Lý do thanh lý");
       reasonInput.addEventListener("input", () => { setFormDirty(true); setFormData((current) => ({ ...current, retirementReason: reasonInput.value })); });
       reasonBlock.append(reasonLabel, reasonInput);
-      field.append(dateBlock, reasonBlock);
+      const attachmentBlock = document.createElement("div");
+      attachmentBlock.className = "sm:col-span-2";
+      const attachmentLabel = document.createElement("label");
+      attachmentLabel.className = "field-label";
+      attachmentLabel.textContent = "Chứng từ đính kèm";
+      const attachmentHint = document.createElement("span");
+      attachmentHint.className = "ml-1 text-[10px] font-normal text-[#8AA0B6]";
+      attachmentHint.textContent = "(PDF, PNG, JPG, WEBP; tối đa 5 MB)";
+      attachmentLabel.append(attachmentHint);
+      const attachmentInput = document.createElement("input");
+      attachmentInput.type = "file";
+      attachmentInput.accept = "application/pdf,image/png,image/jpeg,image/webp";
+      attachmentInput.className = "mt-1 block w-full text-xs text-[#60758A] file:mr-3 file:rounded-md file:border-0 file:bg-[#FFF3D5] file:px-3 file:py-2 file:text-xs file:font-bold file:text-[#8F5A00]";
+      attachmentInput.setAttribute("aria-label", "Chứng từ thanh lý đính kèm");
+      attachmentInput.addEventListener("change", () => {
+        const selected = attachmentInput.files?.[0] || null;
+        const supported = ["application/pdf", "image/png", "image/jpeg", "image/webp"];
+        if (selected && (!supported.includes(selected.type) || selected.size > 5 * 1024 * 1024)) {
+          toast.error(selected.size > 5 * 1024 * 1024 ? "Tệp không được vượt quá 5 MB." : "Chỉ hỗ trợ tệp PDF, PNG, JPG hoặc WEBP.");
+          attachmentInput.value = "";
+          setRetirementAttachmentFile(null);
+          return;
+        }
+        setRetirementAttachmentFile(selected);
+        setFormDirty(true);
+      });
+      attachmentBlock.append(attachmentLabel, attachmentInput);
+      if (retirementAttachmentFile) {
+        const selectedName = document.createElement("p");
+        selectedName.className = "mt-1 text-[10px] font-semibold text-[#8F5A00]";
+        selectedName.textContent = `Đã chọn: ${retirementAttachmentFile.name}`;
+        attachmentBlock.append(selectedName);
+      }
+      field.append(dateBlock, reasonBlock, attachmentBlock);
       statusField.after(field);
       return () => field.remove();
     }
@@ -1961,7 +2073,7 @@ function AssetModal({ mode, asset, formData, setFormData, isSaving, onClose: dis
     field.append(label, textarea);
     statusField.after(field);
     return () => field.remove();
-  }, [isDetail, formData.statusType, formData.retiredAt, formData.retirementReason, setFormData]);
+  }, [isDetail, formData.statusType, formData.retiredAt, formData.retirementReason, retirementAttachmentFile, setFormData]);
   const title = mode === "create" ? "Thêm tài sản mới" : mode === "edit" ? "Chỉnh sửa tài sản" : "Chi tiết tài sản";
   const fields: Array<{ key: keyof Asset; label: string; placeholder: string }> = [
     { key: "name", label: "Tên tài sản", placeholder: "Ví dụ: MacBook Pro 14-inch M3" },
@@ -2023,5 +2135,6 @@ function QrLookupModal({ assets, onClose, onOpenAsset }: { assets: Asset[]; onCl
 }
 
 function FilterSelect({ value, onChange, options }: { value: string; onChange: (value: string) => void; options: string[] }) {
-  return <SearchableSelect value={value} onChange={onChange} options={options.map((option) => ({ value: option, label: option }))} placeholder={options[0] || "Chọn một giá trị"} searchPlaceholder="Tìm trong dropdown..." className="w-full shrink-0 sm:w-[180px]" />;
+  const normalizedOptions = options.includes("Trả nhà cung cấp") && !options.includes("Khấu hao/Thanh lý") ? [...options, "Khấu hao/Thanh lý"] : options;
+  return <SearchableSelect value={value} onChange={onChange} options={normalizedOptions.map((option) => ({ value: option, label: option }))} placeholder={normalizedOptions[0] || "Chọn một giá trị"} searchPlaceholder="Tìm trong dropdown..." className="w-full shrink-0 sm:w-[180px]" />;
 }

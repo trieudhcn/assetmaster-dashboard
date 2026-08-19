@@ -83,6 +83,7 @@ vi.mock("./db", () => ({
   getDivisionById: mocks.getDivisionById,
   getHandoverById: mocks.getHandoverById,
   getNextHandoverSequence: mocks.getNextHandoverSequence,
+  getNextRetirementCertificateSequence: vi.fn().mockResolvedValue(1),
   getUserNotificationPreferences: mocks.getUserNotificationPreferences,
   getMaintenanceTicket: vi.fn(),
   listAssets: vi.fn(),

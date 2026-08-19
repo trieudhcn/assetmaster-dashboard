@@ -162,6 +162,12 @@ export const assets = mysqlTable("assets", {
   supplierReturnReason: text("supplierReturnReason"),
   retiredAt: timestamp("retiredAt"),
   retirementReason: text("retirementReason"),
+  retirementCertificateNumber: varchar("retirementCertificateNumber", { length: 64 }),
+  retirementCertificateYear: int("retirementCertificateYear"),
+  retirementCertificateSequence: int("retirementCertificateSequence"),
+  retirementAttachmentUrl: text("retirementAttachmentUrl"),
+  retirementAttachmentName: varchar("retirementAttachmentName", { length: 255 }),
+  retirementAttachmentContentType: varchar("retirementAttachmentContentType", { length: 100 }),
   supplierReturnAttachmentUrl: text("supplierReturnAttachmentUrl"),
   supplierReturnAttachmentName: varchar("supplierReturnAttachmentName", { length: 255 }),
   supplierReturnAttachmentContentType: varchar("supplierReturnAttachmentContentType", { length: 100 }),
@@ -179,6 +185,7 @@ export const assets = mysqlTable("assets", {
   index("assets_department_idx").on(table.departmentId),
   index("assets_vendor_idx").on(table.vendorId),
   index("assets_brand_idx").on(table.brandId),
+  uniqueIndex("assets_retirement_certificate_number_unique").on(table.retirementCertificateNumber),
 ]);
 
 export const inventorySupplies = mysqlTable("inventorySupplies", {
