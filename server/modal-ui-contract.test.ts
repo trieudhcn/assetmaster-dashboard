@@ -404,6 +404,33 @@ describe("modal presentation contract", () => {
     expect(pdf).toContain("openPdfPreview");
   });
 
+  it("opens the multi-item issue-slip PDF from the newly created slip and preserves every issued item", () => {
+    const supplies = readProjectFile("client/src/pages/SuppliesInventoryView.tsx");
+    const pdf = readProjectFile("client/src/lib/supplyIssueSlipPdf.ts");
+
+    expect(supplies).toContain("previewIssueSlipPdf");
+    expect(supplies).toContain('label: "Xem & in PDF"');
+    expect(supplies).toContain("const createdSlip: CreatedIssueSlipPdf");
+    expect(supplies).toContain("issuePreviewItems.map((item) => ({ supplyCode:");
+    expect(pdf).toContain("items.forEach((item, index)");
+    expect(pdf).toContain('"Tên phụ kiện"');
+    expect(pdf).toContain("drawPdfCorporateFooter");
+  });
+
+  it("shows detailed accessory receipt and return history inside the employee profile", () => {
+    const employees = readProjectFile("client/src/pages/EmployeeManagementView.tsx");
+    const routers = readProjectFile("server/routers.ts");
+    const db = readProjectFile("server/db.ts");
+
+    expect(employees).toContain("trpc.employees.supplyHistory.useQuery");
+    expect(employees).toContain("Lịch sử nhận phụ kiện");
+    expect(employees).toContain("Đã trả {item.returnedQuantity} · Còn {outstanding}");
+    expect(employees).toContain("SUPPLY_HISTORY_PAGE_SIZE");
+    expect(routers).toContain("supplyHistory: adminProcedure");
+    expect(db).toContain("listSupplyIssueHistoryByRecipientUserId");
+    expect(db).toContain("recipientUserId: supplyIssueSlips.recipientUserId");
+  });
+
   it("filters accessory distribution statistics by searchable employee and reports active quantities", () => {
     const issueSlips = readProjectFile("client/src/components/SupplyIssueSlipManager.tsx");
 

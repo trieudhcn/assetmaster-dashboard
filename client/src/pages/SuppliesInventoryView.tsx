@@ -1,6 +1,5 @@
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { AlertTriangle, ArchiveRestore, Boxes, ClipboardList, Download, FileSpreadsheet, History, PackageMinus, PackagePlus, Pencil, Plus, Search, SlidersHorizontal, Trash2, Upload, UsersRound, X } from "lucide-react";
-import { useEffect } from "react";
 import { createPortal } from "react-dom";
 import * as XLSX from "xlsx";
 import { toast } from "sonner";
@@ -8,11 +7,13 @@ import { trpc } from "@/lib/trpc";
 import { SearchableSelect } from "@/components/SearchableSelect";
 import { SupplyIssueSlipManager } from "@/components/SupplyIssueSlipManager";
 import { formatVndInput, isInvalidVndInput, normalizeVndIntegerInput, numberToVietnameseWords, parseVndAmount } from "@/lib/formatters";
+import { openSupplyIssueSlipPdf } from "@/lib/supplyIssueSlipPdf";
 
 const PAGE_SIZE = 10;
 type SupplyForm = { code: string; name: string; unit: string; openingQuantity: string; minimumQuantity: string; unitCost: string; location: string; categoryId: string; vendorId: string; brandId: string; note: string };
 type IssueDraftItem = { supplyId: string; quantity: string };
 type IssuePreviewItem = { supplyId: number; supplyName: string; unit: string; quantity: number; stockAfterIssue: number; minimumStock: number };
+type CreatedIssueSlipPdf = { referenceCode: string; recipientName: string; issuedAt: Date; note: string | null; items: Array<{ supplyCode: string; supplyName: string; unit: string; issuedQuantity: string; returnedQuantity: string }> };
 const emptyForm: SupplyForm = { code: "", name: "", unit: "Cái", openingQuantity: "0", minimumQuantity: "0", unitCost: "", location: "", categoryId: "", vendorId: "", brandId: "", note: "" };
 const quantity = (value: string | number | null | undefined) => Number(value || 0).toLocaleString("vi-VN", { maximumFractionDigits: 2 });
 const money = (value: string | number | null | undefined) => value === null || value === undefined ? "—" : `${Number(value).toLocaleString("vi-VN", { maximumFractionDigits: 0 })} VNĐ`;
@@ -67,7 +68,15 @@ export function SuppliesInventoryView() {
   const createAccessoryGroup = trpc.assetCategories.createAccessoryGroup.useMutation({ onSuccess: (group) => { toast.success(`Đã tạo nhóm phụ kiện ${group.name}.`); setGroupFilter(String(group.id)); setQuickGroupName(null); void utils.assetCategories.list.invalidate(); }, onError: (error) => toast.error(error.message || "Không thể tạo nhóm phụ kiện.") });
   const updateSupply = trpc.supplies.update.useMutation({ onSuccess: () => { toast.success("Đã cập nhật phụ kiện."); setEditingId(null); void utils.supplies.list.invalidate(); }, onError: (error) => toast.error(error.message || "Không thể cập nhật phụ kiện.") });
   const moveSupply = trpc.supplies.move.useMutation({ onSuccess: (result) => { toast.success(result.isLowStock ? "Đã ghi nhận giao dịch. Phụ kiện đã chạm mức tồn tối thiểu." : "Đã ghi nhận giao dịch tồn kho."); setMovementQuantity(""); setRecipientUserId(""); setRecipientName(""); setRecipientDepartmentId(""); setMovementNote(""); void utils.supplies.list.invalidate(); void utils.supplies.history.invalidate(); }, onError: (error) => toast.error(error.message || "Không thể ghi nhận giao dịch.") });
-  const createIssueSlip = trpc.supplies.createIssueSlip.useMutation({ onSuccess: (result) => { toast.success(`Đã tạo phiếu cấp phát ${result.referenceCode} với ${issuePreviewItems.length} loại phụ kiện.`); setIssueConfirmationOpen(false); setMovementQuantity(""); setIssueItems([]); setIssueSupplyPicker(""); setRecipientUserId(""); setRecipientName(""); setRecipientDepartmentId(""); setMovementNote(""); void utils.supplies.list.invalidate(); void utils.supplies.issueSlips.invalidate(); void utils.supplies.history.invalidate(); }, onError: (error) => toast.error(error.message || "Không thể tạo phiếu cấp phát.") });
+  const previewIssueSlipPdf = async (slip: CreatedIssueSlipPdf) => {
+    try {
+      await openSupplyIssueSlipPdf({ referenceCode: slip.referenceCode, recipientName: slip.recipientName, issuedByName: null, issuedAt: slip.issuedAt, note: slip.note }, slip.items);
+      toast.success(`Đã mở bản xem trước phiếu ${slip.referenceCode}.`);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Không thể tạo bản PDF của phiếu cấp phát.");
+    }
+  };
+  const createIssueSlip = trpc.supplies.createIssueSlip.useMutation({ onSuccess: (result) => { const recipient = recipientMode === "staff" ? selectedRecipient?.name || "Nhân sự được chọn" : recipientName.trim(); const createdSlip: CreatedIssueSlipPdf = { referenceCode: result.referenceCode, recipientName: recipient, issuedAt: new Date(), note: movementNote.trim() || null, items: issuePreviewItems.map((item) => ({ supplyCode: supplies.find((supply) => supply.id === item.supplyId)?.code || "—", supplyName: item.supplyName, unit: item.unit, issuedQuantity: String(item.quantity), returnedQuantity: "0" })) }; toast.success(`Đã tạo phiếu cấp phát ${result.referenceCode} với ${issuePreviewItems.length} loại phụ kiện.`, { action: { label: "Xem & in PDF", onClick: () => { void previewIssueSlipPdf(createdSlip); } } }); setIssueConfirmationOpen(false); setMovementQuantity(""); setIssueItems([]); setIssueSupplyPicker(""); setRecipientUserId(""); setRecipientName(""); setRecipientDepartmentId(""); setMovementNote(""); void utils.supplies.list.invalidate(); void utils.supplies.issueSlips.invalidate(); void utils.supplies.history.invalidate(); }, onError: (error) => toast.error(error.message || "Không thể tạo phiếu cấp phát.") });
 
   const categoryOptions = [{ value: "", label: "Chưa gán phân loại" }, ...(categoriesQuery.data || []).map((item) => ({ value: String(item.id), label: item.name }))];
   const groupFilterOptions = [{ value: "all", label: "Tất cả nhóm" }, { value: "unassigned", label: "Chưa gán nhóm" }, ...(categoriesQuery.data || []).map((item) => ({ value: String(item.id), label: item.name }))];

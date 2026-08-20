@@ -2095,3 +2095,9 @@
 - [x] Cho phép chọn nhiều loại phụ kiện và số lượng trong cùng phiếu cấp phát cho một người nhận.
 - [x] Kiểm tra tồn kho, chống trùng dòng và ghi nhận đầy đủ từng phụ kiện trong phiếu.
 - [x] Bổ sung hồi quy, kiểm tra giao diện và build phát hành.
+
+## Current Session — Multi-item Issue PDF & Employee Supply History
+
+- [x] Chuẩn hóa PDF phiếu cấp phát nhiều phụ kiện với logo và định dạng doanh nghiệp.
+- [x] Hiển thị lịch sử nhận và hoàn trả phụ kiện chi tiết trong hồ sơ nhân viên.
+- [x] Bổ sung hồi quy, kiểm tra giao diện và build phát hành.

@@ -553,6 +553,25 @@ export async function listSupplyIssueSlipItems(issueSlipId: number, executor?: a
   return db.select().from(supplyIssueSlipItems).where(eq(supplyIssueSlipItems.issueSlipId, issueSlipId));
 }
 
+export async function listSupplyIssueHistoryByRecipientUserId(recipientUserId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select({
+    issueSlipId: supplyIssueSlips.id,
+    recipientUserId: supplyIssueSlips.recipientUserId,
+    referenceCode: supplyIssueSlips.referenceCode,
+    status: supplyIssueSlips.status,
+    issuedAt: supplyIssueSlips.issuedAt,
+    returnedAt: supplyIssueSlips.returnedAt,
+    note: supplyIssueSlips.note,
+    supplyCode: supplyIssueSlipItems.supplyCode,
+    supplyName: supplyIssueSlipItems.supplyName,
+    unit: supplyIssueSlipItems.unit,
+    issuedQuantity: supplyIssueSlipItems.issuedQuantity,
+    returnedQuantity: supplyIssueSlipItems.returnedQuantity,
+  }).from(supplyIssueSlipItems).innerJoin(supplyIssueSlips, eq(supplyIssueSlipItems.issueSlipId, supplyIssueSlips.id)).where(eq(supplyIssueSlips.recipientUserId, recipientUserId)).orderBy(desc(supplyIssueSlips.issuedAt), desc(supplyIssueSlipItems.id));
+}
+
 export async function getSupplyIssueSlipItemById(id: number, executor?: any) {
   const db = executor ?? await getDb();
   if (!db) return undefined;
