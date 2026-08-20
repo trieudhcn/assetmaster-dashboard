@@ -12,6 +12,7 @@ import { openRetirementPdf } from "@/lib/retirementPdf";
 import { InteractiveValueAllocation, type AllocationGroup } from "@/components/InteractiveValueAllocation";
 import { InteractiveAllocationAssetDetails } from "@/components/InteractiveAllocationAssetDetails";
 import { QuickServiceTicketPreview } from "@/components/QuickServiceTicketPreview";
+import { previewServiceTicketPdf } from "@/lib/serviceTicketPdf";
 
 const card = "rounded-xl border border-[#DFE9F0] bg-white shadow-[0_8px_24px_rgba(16,42,67,0.045)]";
 const divisionColors = ["#0F8C8C", "#2666A8", "#E59B24", "#7666B3", "#CF5C4B", "#3F9C6D", "#5B7FA3"];
@@ -59,6 +60,7 @@ export function ReportsManagementView() {
   const [selectedServiceCostMonth, setSelectedServiceCostMonth] = useState<number | null>(null);
   const [monthlyServiceTicketPage, setMonthlyServiceTicketPage] = useState(1);
   const [quickPreviewServiceTicketId, setQuickPreviewServiceTicketId] = useState<number | null>(null);
+  const [quickPreviewPdfAction, setQuickPreviewPdfAction] = useState<"preview" | "print" | null>(null);
   const [retirementYear, setRetirementYear] = useState("all");
   const [selectedRetirementIds, setSelectedRetirementIds] = useState<Set<number>>(() => new Set());
   const [allocationSelection, setAllocationSelection] = useState<{ type: "division" | "brand" | "supplier"; id: string; name: string } | null>(null);
@@ -433,6 +435,21 @@ export function ReportsManagementView() {
   const openMonthlyServiceTicket = (ticketId: number) => {
     setQuickPreviewServiceTicketId(ticketId);
   };
+  const openQuickPreviewPdf = async (autoPrint = false) => {
+    if (!quickPreviewServiceTicket || quickPreviewPdfAction) return;
+    const action = autoPrint ? "print" : "preview";
+    setQuickPreviewPdfAction(action);
+    const loadingToast = toast.loading(autoPrint ? `Đang chuẩn bị in phiếu ${quickPreviewServiceTicket.ticketCode}...` : `Đang tạo PDF phiếu ${quickPreviewServiceTicket.ticketCode}...`);
+    try {
+      await previewServiceTicketPdf({ ticket: quickPreviewServiceTicket, asset: quickPreviewAsset, assigneeName: quickPreviewAssigneeName, company: companyQuery.data || {}, autoPrint });
+      toast.success(autoPrint ? "Đã mở bản in PDF." : "Đã mở bản xem trước PDF.", { id: loadingToast });
+    } catch (error) {
+      console.error("[Reports] service ticket PDF export failed", error);
+      toast.error(error instanceof Error ? error.message : "Không thể tạo PDF phiếu Bảo hành/Sửa chữa.", { id: loadingToast });
+    } finally {
+      setQuickPreviewPdfAction(null);
+    }
+  };
 
   return <div className="min-h-screen bg-[#F4F7FB] px-4 py-7 sm:px-6 lg:px-9 lg:py-8"><div className="mx-auto max-w-[1500px]">
     <div className="mb-7"><div className="mb-2 flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.16em] text-[#2666A8]"><span className="h-1.5 w-1.5 rounded-full bg-[#2666A8]" />Live management data</div><h1 className="font-display text-[30px] font-extrabold tracking-[-0.04em] text-[#102A43]">Báo cáo tài sản</h1><p className="mt-1 text-sm text-[#71869A]">Thống kê, trực quan hóa và xuất danh mục tài sản theo Phòng Ban hoặc Bộ Phận của người sử dụng.</p></div>
@@ -471,7 +488,7 @@ export function ReportsManagementView() {
       <DisposalExportPanel assets={retiredAssets} years={retirementYearOptions} retirementYear={retirementYear} onRetirementYearChange={setRetirementYear} selectedIds={selectedRetirementIds} allSelected={allRetiredAssetsSelected} totalValue={retiredTotalValue} currencyMode={currencyMode} excelExporting={exporting === "retired"} pdfExporting={exporting === "retiredPdf"} excelDisabled={!isAdmin || !retiredAssets.length || exporting !== null} pdfDisabled={!isAdmin || !selectedRetirementAssets.length || exporting !== null} onToggleAll={() => setSelectedRetirementIds(allRetiredAssetsSelected ? new Set() : new Set(retiredAssets.map((asset) => asset.id)))} onToggleAsset={(id) => setSelectedRetirementIds((current) => { const next = new Set(current); next.has(id) ? next.delete(id) : next.add(id); return next; })} onExportExcel={exportRetirementExcel} onExportPdf={exportSelectedRetirementPdf} />
     </>}
     {isAdmin && <ActivityLog data={filteredActivities} loading={activitiesQuery.isLoading} query={activityQuery} type={activityType} onQueryChange={setActivityQuery} onTypeChange={setActivityType} allActivities={activitiesQuery.data || []} />}
-    {quickPreviewServiceTicket && <QuickServiceTicketPreview ticket={quickPreviewServiceTicket} asset={quickPreviewAsset} assigneeName={quickPreviewAssigneeName} currencyMode={currencyMode} onClose={() => setQuickPreviewServiceTicketId(null)} />}
+    {quickPreviewServiceTicket && <QuickServiceTicketPreview ticket={quickPreviewServiceTicket} asset={quickPreviewAsset} assigneeName={quickPreviewAssigneeName} currencyMode={currencyMode} pdfPreparing={quickPreviewPdfAction} onPrint={() => void openQuickPreviewPdf(true)} onExportPdf={() => void openQuickPreviewPdf(false)} onClose={() => setQuickPreviewServiceTicketId(null)} />}
   </div></div>;
 }
 

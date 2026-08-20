@@ -2196,3 +2196,9 @@
 - [x] Hiển thị nhanh chi tiết phiếu Bảo hành/Sửa chữa ngay trong trang Báo cáo.
 - [x] Giữ nguyên tháng, bộ lọc và trang danh sách khi đóng xem nhanh.
 - [x] Bổ sung hồi quy, kiểm tra giao diện và build phát hành.
+
+## Current Session — Quick Preview PDF Actions
+
+- [x] Dùng chung mẫu PDF và bản xem trước chuẩn cho phiếu Bảo hành/Sửa chữa từ popup xem nhanh.
+- [x] Bổ sung nút In và Xuất PDF trong popup xem nhanh phiếu.
+- [x] Bổ sung hồi quy, kiểm tra giao diện và build phát hành.

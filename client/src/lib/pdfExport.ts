@@ -54,6 +54,6 @@ export function applyPdfLogoWatermark(doc: PdfDocument, watermarkDataUrl: string
   }
 }
 
-export function openPdfPreview(doc: PdfDocument, fileName: string, title: string) {
-  openExportPreview({ blob: doc.output("blob"), fileName, title, kind: "pdf" });
+export function openPdfPreview(doc: PdfDocument, fileName: string, title: string, options?: { autoPrint?: boolean }) {
+  openExportPreview({ blob: doc.output("blob"), fileName, title, kind: "pdf", autoPrint: options?.autoPrint });
 }

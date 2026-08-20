@@ -875,6 +875,23 @@ describe("modal presentation contract", () => {
     expect(reports).toContain("setQuickPreviewServiceTicketId(ticketId)");
   });
 
+  it("uses one PDF preview and print flow from the quick service-ticket popup", () => {
+    const reports = readProjectFile("client/src/pages/ReportsManagementView.tsx");
+    const quickPreview = readProjectFile("client/src/components/QuickServiceTicketPreview.tsx");
+    const ticketPdf = readProjectFile("client/src/lib/serviceTicketPdf.ts");
+    const previewHost = readProjectFile("client/src/components/ExportPreviewHost.tsx");
+
+    expect(reports).toContain("previewServiceTicketPdf");
+    expect(reports).toContain("openQuickPreviewPdf");
+    expect(quickPreview).toContain("Xuất PDF");
+    expect(quickPreview).toContain("Đang chuẩn bị in...");
+    expect(ticketPdf).toContain("PHIẾU BẢO HÀNH TÀI SẢN");
+    expect(ticketPdf).toContain("PHIẾU SỬA CHỮA TÀI SẢN");
+    expect(ticketPdf).toContain("openPdfPreview");
+    expect(previewHost).toContain("autoPrint");
+    expect(previewHost).toContain("contentWindow?.print()");
+  });
+
   it("supports partial handover accessory returns and previews service costs in Excel", () => {
     const home = readProjectFile("client/src/pages/Home.tsx");
     const reports = readProjectFile("client/src/pages/ReportsManagementView.tsx");
@@ -969,9 +986,11 @@ describe("modal presentation contract", () => {
   it("offers preview, download, and print flows for each repair ticket PDF", () => {
     const operations = readProjectFile("client/src/pages/OperationsModules.tsx");
     const previewHost = readProjectFile("client/src/components/ExportPreviewHost.tsx");
+    const ticketPdf = readProjectFile("client/src/lib/serviceTicketPdf.ts");
 
     expect(operations).toContain("previewRepairTicketPdf");
-    expect(operations).toContain("PHIẾU SỬA CHỮA TÀI SẢN");
+    expect(operations).toContain("previewServiceTicketPdf");
+    expect(ticketPdf).toContain("PHIẾU SỬA CHỮA TÀI SẢN");
     expect(operations).toContain("PDF / In");
     expect(operations).toContain("companySettingsQuery");
     expect(previewHost).toContain("In PDF");
