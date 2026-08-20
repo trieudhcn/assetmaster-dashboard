@@ -347,6 +347,18 @@ describe("modal presentation contract", () => {
     expect(routers).toContain("historyReport");
   });
 
+  it("uses shared status tones and standard ten-row pagination for supply issue slips", () => {
+    const issueSlips = readProjectFile("client/src/components/SupplyIssueSlipManager.tsx");
+
+    expect(issueSlips).toContain("const slipsPageSize = 10");
+    expect(issueSlips).toContain("const activeSlipPage");
+    expect(issueSlips).toContain("Trang {activeSlipPage}/{slipsPageCount}");
+    expect(issueSlips).toContain('aria-label="Trang phiếu cấp phát trước"');
+    expect(issueSlips).toContain('aria-label="Trang phiếu cấp phát sau"');
+    expect(issueSlips).toContain('border-[#CDE5E5] bg-[#ECF8F7] text-[#087A6A]');
+    expect(issueSlips).toContain('border-[#C7DDF8] bg-[#EAF3FF] text-[#2666A8]');
+  });
+
   it("keeps supply filters and action icons aligned while exposing their names on hover", () => {
     const supplies = readProjectFile("client/src/pages/SuppliesInventoryView.tsx");
     const stylesheet = readProjectFile("client/src/index.css");

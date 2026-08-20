@@ -2083,3 +2083,9 @@
 - [x] Áp dụng phông Unicode nhúng cho PDF biên bản thanh lý và kiểm kê.
 - [x] Chuẩn hóa logo, tiêu đề và chân trang trên các mẫu PDF xuất hiện có.
 - [x] Bổ sung hồi quy PDF tiếng Việt và nhận diện doanh nghiệp, kiểm tra build phát hành.
+
+## Current Session — Supply Status & Pagination Consistency
+
+- [x] Đồng bộ màu nhãn trạng thái phụ kiện theo hệ màu của các danh sách hiện có.
+- [x] Thêm phân trang danh sách phụ kiện theo chuẩn 10 dòng mỗi trang với nút điều hướng.
+- [x] Bổ sung hồi quy, kiểm tra giao diện và build phát hành.
