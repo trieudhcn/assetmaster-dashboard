@@ -426,9 +426,17 @@ describe("modal presentation contract", () => {
     expect(employees).toContain("Lịch sử nhận phụ kiện");
     expect(employees).toContain("Đã trả {item.returnedQuantity} · Còn {outstanding}");
     expect(employees).toContain("SUPPLY_HISTORY_PAGE_SIZE");
+    expect(employees).toContain("EmployeeSupplyHistorySection");
+    expect(employees).toContain("openSlipPdf");
+    expect(employees).toContain("Mở lại PDF phiếu cấp phát");
+    expect(employees).toContain("Từ ngày");
+    expect(employees).toContain("Đến ngày");
+    expect(employees).toContain("Còn giữ");
     expect(routers).toContain("supplyHistory: adminProcedure");
     expect(db).toContain("listSupplyIssueHistoryByRecipientUserId");
     expect(db).toContain("recipientUserId: supplyIssueSlips.recipientUserId");
+    expect(db).toContain("recipientName: supplyIssueSlips.recipientName");
+    expect(db).toContain("issuedByName: supplyIssueSlips.issuedByName");
   });
 
   it("filters accessory distribution statistics by searchable employee and reports active quantities", () => {

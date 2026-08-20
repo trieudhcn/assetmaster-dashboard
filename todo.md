@@ -2101,3 +2101,9 @@
 - [x] Chuẩn hóa PDF phiếu cấp phát nhiều phụ kiện với logo và định dạng doanh nghiệp.
 - [x] Hiển thị lịch sử nhận và hoàn trả phụ kiện chi tiết trong hồ sơ nhân viên.
 - [x] Bổ sung hồi quy, kiểm tra giao diện và build phát hành.
+
+## Current Session — Employee Supply History Actions & Filters
+
+- [x] Thêm nút mở lại bản PDF cho từng phiếu trong lịch sử nhận phụ kiện của hồ sơ nhân viên.
+- [x] Thêm bộ lọc theo khoảng thời gian và trạng thái đã trả/còn giữ cho lịch sử nhận phụ kiện.
+- [x] Bổ sung hồi quy, kiểm tra giao diện và build phát hành.

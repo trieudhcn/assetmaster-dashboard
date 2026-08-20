@@ -560,6 +560,8 @@ export async function listSupplyIssueHistoryByRecipientUserId(recipientUserId: n
     issueSlipId: supplyIssueSlips.id,
     recipientUserId: supplyIssueSlips.recipientUserId,
     referenceCode: supplyIssueSlips.referenceCode,
+    recipientName: supplyIssueSlips.recipientName,
+    issuedByName: supplyIssueSlips.issuedByName,
     status: supplyIssueSlips.status,
     issuedAt: supplyIssueSlips.issuedAt,
     returnedAt: supplyIssueSlips.returnedAt,
