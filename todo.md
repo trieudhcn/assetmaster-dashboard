@@ -2236,3 +2236,9 @@
 - [x] Chỉ hiển thị cột Hạn bảo hành cho tài sản còn hiệu lực bảo hành.
 - [x] Khôi phục thao tác nhấn cột tháng để mở danh sách phiếu trên desktop.
 - [x] Bổ sung hồi quy, kiểm tra PDF/desktop và build phát hành.
+
+## Current Session — Warranty PDF Preview & Asset Table
+
+- [x] Hiển thị nút xem trước PDF cho phiếu Bảo hành trong quản lý phiếu.
+- [x] Bỏ cột Tình trạng khỏi bảng thông tin tài sản PDF.
+- [x] Bổ sung hồi quy, kiểm tra giao diện/PDF và build phát hành.

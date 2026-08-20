@@ -887,6 +887,7 @@ describe("modal presentation contract", () => {
     const quickPreview = readProjectFile("client/src/components/QuickServiceTicketPreview.tsx");
     const ticketPdf = readProjectFile("client/src/lib/serviceTicketPdf.ts");
     const previewHost = readProjectFile("client/src/components/ExportPreviewHost.tsx");
+    const operations = readProjectFile("client/src/pages/OperationsModules.tsx");
 
     expect(reports).toContain("previewServiceTicketPdf");
     expect(reports).toContain("openQuickPreviewPdf");
@@ -902,11 +903,15 @@ describe("modal presentation contract", () => {
     expect(ticketPdf).toContain("Serial");
     expect(ticketPdf).toContain("Tình trạng lỗi");
     expect(ticketPdf).toContain("hasActiveWarranty");
+    expect(ticketPdf).not.toContain('label: "Tình trạng",');
     expect(ticketPdf).toContain("Đại diện nhà cung cấp");
     expect(ticketPdf).toContain("Người bàn giao");
     expect(ticketPdf).not.toContain("Nội dung yêu cầu");
     expect(ticketPdf).not.toContain('doc.text("Người xử lý"');
     expect(ticketPdf).toContain("openPdfPreview");
+    expect(operations).toContain("const previewRepairTicketPdf");
+    expect(operations).not.toContain('if ((ticket.serviceChannel || "repair") !== "repair") return;');
+    expect(operations).toContain("Xem trước PDF phiếu ${serviceChannelLabels");
     expect(previewHost).toContain("autoPrint");
     expect(previewHost).toContain("contentWindow?.print()");
   });
