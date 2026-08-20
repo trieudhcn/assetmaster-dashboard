@@ -11,6 +11,7 @@ import { writeBrandedWorkbook } from "@/lib/brandedWorkbook";
 import { openRetirementPdf } from "@/lib/retirementPdf";
 import { InteractiveValueAllocation, type AllocationGroup } from "@/components/InteractiveValueAllocation";
 import { InteractiveAllocationAssetDetails } from "@/components/InteractiveAllocationAssetDetails";
+import { QuickServiceTicketPreview } from "@/components/QuickServiceTicketPreview";
 
 const card = "rounded-xl border border-[#DFE9F0] bg-white shadow-[0_8px_24px_rgba(16,42,67,0.045)]";
 const divisionColors = ["#0F8C8C", "#2666A8", "#E59B24", "#7666B3", "#CF5C4B", "#3F9C6D", "#5B7FA3"];
@@ -57,7 +58,7 @@ export function ReportsManagementView() {
   const [serviceCostChannel, setServiceCostChannel] = useState<"all" | "warranty" | "repair">("all");
   const [selectedServiceCostMonth, setSelectedServiceCostMonth] = useState<number | null>(null);
   const [monthlyServiceTicketPage, setMonthlyServiceTicketPage] = useState(1);
-  const [monthlyServiceScrollRestoreY, setMonthlyServiceScrollRestoreY] = useState<number | null>(null);
+  const [quickPreviewServiceTicketId, setQuickPreviewServiceTicketId] = useState<number | null>(null);
   const [retirementYear, setRetirementYear] = useState("all");
   const [selectedRetirementIds, setSelectedRetirementIds] = useState<Set<number>>(() => new Set());
   const [allocationSelection, setAllocationSelection] = useState<{ type: "division" | "brand" | "supplier"; id: string; name: string } | null>(null);
@@ -81,6 +82,9 @@ export function ReportsManagementView() {
   const divisionById = new Map(divisions.map((item) => [item.id, item]));
   const brandById = new Map((brandsQuery.data || []).map((item) => [item.id, item]));
   const categoryById = new Map((assetCategoriesQuery.data || []).map((item) => [item.id, item]));
+  const quickPreviewServiceTicket = (maintenanceQuery.data || []).find((ticket) => ticket.id === quickPreviewServiceTicketId);
+  const quickPreviewAsset = quickPreviewServiceTicket ? (assetsQuery.data || []).find((asset) => asset.id === quickPreviewServiceTicket.assetId) : undefined;
+  const quickPreviewAssigneeName = quickPreviewServiceTicket?.assigneeUserId ? employeeById.get(quickPreviewServiceTicket.assigneeUserId)?.name || undefined : undefined;
   const availableDivisions = divisions.filter((item) => item.isActive && (departmentId === "all" || item.departmentId === Number(departmentId)));
   const selectedDepartment = departmentId === "all" ? undefined : departmentById.get(Number(departmentId));
   const selectedDivision = divisionId === "all" ? undefined : divisionById.get(Number(divisionId));
@@ -233,35 +237,6 @@ export function ReportsManagementView() {
 
   useEffect(() => { setMonthlyServiceTicketPage(1); }, [selectedServiceCostMonth, serviceCostYear, serviceCostChannel]);
   useEffect(() => { setMonthlyServiceTicketPage((page) => Math.min(page, monthlyServiceTicketTotalPages)); }, [monthlyServiceTicketTotalPages]);
-
-  useEffect(() => {
-    const rawContext = sessionStorage.getItem("assetmaster-return-monthly-service-cost-list");
-    if (!rawContext) return;
-    sessionStorage.removeItem("assetmaster-return-monthly-service-cost-list");
-    const rawScrollY = sessionStorage.getItem("assetmaster-return-monthly-service-cost-scroll-y");
-    sessionStorage.removeItem("assetmaster-return-monthly-service-cost-scroll-y");
-    try {
-      const context = JSON.parse(rawContext) as { month?: number; year?: string; channel?: "all" | "warranty" | "repair" };
-      if (!Number.isInteger(context.month) || context.month! < 0 || context.month! > 11) throw new Error("invalid month");
-      setServiceCostYear(context.year || "all");
-      setServiceCostChannel(context.channel || "all");
-      setSelectedServiceCostMonth(context.month!);
-      setMonthlyServiceTicketPage(1);
-      const scrollY = Number(rawScrollY);
-      if (Number.isFinite(scrollY) && scrollY >= 0) setMonthlyServiceScrollRestoreY(scrollY);
-    } catch {
-      toast.error("Không thể khôi phục danh sách phiếu chi phí theo tháng.");
-    }
-  }, []);
-
-  useEffect(() => {
-    if (monthlyServiceScrollRestoreY === null || selectedServiceCostMonth === null) return;
-    const restoreTimer = window.setTimeout(() => {
-      window.scrollTo({ top: monthlyServiceScrollRestoreY, behavior: "auto" });
-      setMonthlyServiceScrollRestoreY(null);
-    }, 0);
-    return () => window.clearTimeout(restoreTimer);
-  }, [monthlyServiceScrollRestoreY, selectedServiceCostMonth, serviceCostYear, serviceCostChannel]);
 
   useEffect(() => {
     const rawContext = sessionStorage.getItem("assetmaster-return-asset-popup");
@@ -456,12 +431,7 @@ export function ReportsManagementView() {
     })(); }, 180);
   };
   const openMonthlyServiceTicket = (ticketId: number) => {
-    if (selectedServiceCostMonth !== null) {
-      sessionStorage.setItem("assetmaster-return-monthly-service-cost-list", JSON.stringify({ month: selectedServiceCostMonth, year: serviceCostYear, channel: serviceCostChannel }));
-      sessionStorage.setItem("assetmaster-return-monthly-service-cost-scroll-y", String(window.scrollY));
-    }
-    sessionStorage.setItem("assetmaster-open-maintenance-ticket-id", String(ticketId));
-    window.location.assign("/?view=maintenance");
+    setQuickPreviewServiceTicketId(ticketId);
   };
 
   return <div className="min-h-screen bg-[#F4F7FB] px-4 py-7 sm:px-6 lg:px-9 lg:py-8"><div className="mx-auto max-w-[1500px]">
@@ -501,6 +471,7 @@ export function ReportsManagementView() {
       <DisposalExportPanel assets={retiredAssets} years={retirementYearOptions} retirementYear={retirementYear} onRetirementYearChange={setRetirementYear} selectedIds={selectedRetirementIds} allSelected={allRetiredAssetsSelected} totalValue={retiredTotalValue} currencyMode={currencyMode} excelExporting={exporting === "retired"} pdfExporting={exporting === "retiredPdf"} excelDisabled={!isAdmin || !retiredAssets.length || exporting !== null} pdfDisabled={!isAdmin || !selectedRetirementAssets.length || exporting !== null} onToggleAll={() => setSelectedRetirementIds(allRetiredAssetsSelected ? new Set() : new Set(retiredAssets.map((asset) => asset.id)))} onToggleAsset={(id) => setSelectedRetirementIds((current) => { const next = new Set(current); next.has(id) ? next.delete(id) : next.add(id); return next; })} onExportExcel={exportRetirementExcel} onExportPdf={exportSelectedRetirementPdf} />
     </>}
     {isAdmin && <ActivityLog data={filteredActivities} loading={activitiesQuery.isLoading} query={activityQuery} type={activityType} onQueryChange={setActivityQuery} onTypeChange={setActivityType} allActivities={activitiesQuery.data || []} />}
+    {quickPreviewServiceTicket && <QuickServiceTicketPreview ticket={quickPreviewServiceTicket} asset={quickPreviewAsset} assigneeName={quickPreviewAssigneeName} currencyMode={currencyMode} onClose={() => setQuickPreviewServiceTicketId(null)} />}
   </div></div>;
 }
 

@@ -2190,3 +2190,9 @@
 - [x] Lưu vị trí cuộn trang trước khi mở phiếu gốc từ danh sách tháng.
 - [x] Khôi phục vị trí cuộn sau khi quay lại báo cáo và dựng lại danh sách tháng.
 - [x] Bổ sung hồi quy, kiểm tra giao diện và build phát hành.
+
+## Current Session — In-place Monthly Ticket Preview
+
+- [x] Hiển thị nhanh chi tiết phiếu Bảo hành/Sửa chữa ngay trong trang Báo cáo.
+- [x] Giữ nguyên tháng, bộ lọc và trang danh sách khi đóng xem nhanh.
+- [x] Bổ sung hồi quy, kiểm tra giao diện và build phát hành.

@@ -169,7 +169,6 @@ export function MaintenancePage() {
   const [maintenancePage, setMaintenancePage] = useState(1);
   const [expandedTicketId, setExpandedTicketId] = useState<number | null>(null);
   const [historyTicket, setHistoryTicket] = useState<(typeof tickets)[number] | null>(null);
-  const [returnToMonthlyCostList, setReturnToMonthlyCostList] = useState(false);
   const [warrantyHistoryDialogOpen, setWarrantyHistoryDialogOpen] = useState(false);
   const [warrantyAttachmentFile, setWarrantyAttachmentFile] = useState<File | null>(null);
   const [warrantyUploadProgress, setWarrantyUploadProgress] = useState<number | null>(null);
@@ -311,7 +310,6 @@ export function MaintenancePage() {
     const ticketId = Number(sessionStorage.getItem("assetmaster-open-maintenance-ticket-id"));
     if (ticketId && !assetsQuery.isLoading && !ticketsQuery.isLoading) {
       const directTicket = tickets.find((ticket) => ticket.id === ticketId);
-      setReturnToMonthlyCostList(Boolean(sessionStorage.getItem("assetmaster-return-monthly-service-cost-list")));
       sessionStorage.removeItem("assetmaster-open-maintenance-ticket-id");
       if (!directTicket) { toast.error("Không tìm thấy phiếu Bảo hành/Sửa chữa cần mở."); return; }
       setMaintenanceYear(String(directTicket.ticketYear || new Date(directTicket.openedAt).getFullYear()));
@@ -333,21 +331,6 @@ export function MaintenancePage() {
     setHistoryTicket(relatedTicket);
   }, [assets, assetsQuery.isLoading, tickets, ticketsQuery.isLoading]);
 
-  useEffect(() => {
-    if (!historyTicket || !returnToMonthlyCostList) return;
-    const drawer = document.querySelector<HTMLElement>(`[aria-label="Chi tiết và lịch sử phiếu ${historyTicket.ticketCode}"]`);
-    const historyBody = drawer?.querySelector<HTMLElement>(".mt-5.space-y-3");
-    if (!drawer || !historyBody || drawer.querySelector("[data-return-monthly-cost-list]")) return;
-    const button = document.createElement("button");
-    button.dataset.returnMonthlyCostList = "true";
-    button.type = "button";
-    button.className = "mb-3 inline-flex items-center gap-1.5 rounded-lg border border-[#C9DAE8] bg-[#F8FCFF] px-3 py-2 text-xs font-extrabold text-[#2666A8] hover:bg-[#EAF3FB]";
-    button.innerHTML = "‹ Quay lại danh sách tháng";
-    const returnToReport = () => window.location.assign("/?view=reports");
-    button.addEventListener("click", returnToReport);
-    historyBody.before(button);
-    return () => { button.removeEventListener("click", returnToReport); button.remove(); };
-  }, [historyTicket, returnToMonthlyCostList]);
   useEffect(() => {
     setMaintenancePage((page) => Math.min(page, maintenanceTotalPages));
   }, [maintenanceTotalPages]);
