@@ -48,9 +48,11 @@ export function ReportsManagementView() {
   const [activityType, setActivityType] = useState("all");
   const [currencyMode, setCurrencyMode] = useState<CurrencyDisplayMode>("full");
   const [exporting, setExporting] = useState<"inventory" | "returned" | "retired" | "retiredPdf" | "repairCosts" | null>(null);
+  const [serviceCostYear, setServiceCostYear] = useState("all");
   const [retirementYear, setRetirementYear] = useState("all");
   const [selectedRetirementIds, setSelectedRetirementIds] = useState<Set<number>>(() => new Set());
   const [allocationSelection, setAllocationSelection] = useState<{ type: "division" | "brand" | "supplier"; id: string; name: string } | null>(null);
+  const [returnAssetPopupId, setReturnAssetPopupId] = useState<number | null>(null);
   const assetsQuery = trpc.assets.list.useQuery();
   const handoversQuery = trpc.handovers.list.useQuery();
   const maintenanceQuery = trpc.maintenance.list.useQuery();
@@ -102,27 +104,31 @@ export function ReportsManagementView() {
   const selectedHandoverCount = (handoversQuery.data || []).filter((item) => selectedAssetIds.has(item.assetId)).length;
   const selectedMaintenanceCount = (maintenanceQuery.data || []).filter((item) => selectedAssetIds.has(item.assetId)).length;
   const selectedValue = inventoryAssets.reduce((sum, item) => sum + Number(item.purchaseValue || 0), 0);
-  const repairCostReport = useMemo(() => {
+  const serviceCostYears = useMemo(() => [...new Set((maintenanceQuery.data || []).filter((ticket) => selectedAssets.some((asset) => asset.id === ticket.assetId) && Number(ticket.actualCost || 0) > 0).map((ticket) => ticket.ticketYear || new Date(ticket.openedAt).getFullYear()))].sort((left, right) => right - left), [maintenanceQuery.data, selectedAssets]);
+  const serviceCostReport = useMemo(() => {
     const assetById = new Map(selectedAssets.map((asset) => [asset.id, asset]));
-    const byAsset = new Map<number, { assetCode: string; assetName: string; departmentName: string; cost: number; ticketCount: number }>();
-    const byDepartment = new Map<string, { departmentName: string; cost: number; assetIds: Set<number>; ticketCount: number }>();
-    (maintenanceQuery.data || []).filter((ticket) => (ticket.serviceChannel || "repair") === "repair" && assetById.has(ticket.assetId)).forEach((ticket) => {
+    const rows = (maintenanceQuery.data || []).filter((ticket) => {
       const cost = Number(ticket.actualCost || 0);
-      if (!Number.isFinite(cost) || cost <= 0) return;
+      const ticketYear = ticket.ticketYear || new Date(ticket.openedAt).getFullYear();
+      return assetById.has(ticket.assetId) && Number.isFinite(cost) && cost > 0 && (serviceCostYear === "all" || String(ticketYear) === serviceCostYear);
+    }).map((ticket) => {
       const asset = assetById.get(ticket.assetId)!;
-      const departmentName = asset.departmentId ? departmentById.get(asset.departmentId)?.name || "Chưa gán Phòng Ban" : "Chưa gán Phòng Ban";
-      const assetRow = byAsset.get(asset.id) || { assetCode: asset.assetCode, assetName: asset.name, departmentName, cost: 0, ticketCount: 0 };
-      assetRow.cost += cost;
-      assetRow.ticketCount += 1;
-      byAsset.set(asset.id, assetRow);
-      const departmentRow = byDepartment.get(departmentName) || { departmentName, cost: 0, assetIds: new Set<number>(), ticketCount: 0 };
-      departmentRow.cost += cost;
-      departmentRow.assetIds.add(asset.id);
-      departmentRow.ticketCount += 1;
-      byDepartment.set(departmentName, departmentRow);
-    });
-    return { totalCost: [...byAsset.values()].reduce((total, item) => total + item.cost, 0), byAsset: [...byAsset.values()].sort((left, right) => right.cost - left.cost), byDepartment: [...byDepartment.values()].map((item) => ({ ...item, assetCount: item.assetIds.size })).sort((left, right) => right.cost - left.cost) };
-  }, [selectedAssets, maintenanceQuery.data, departmentById]);
+      return {
+        ticketId: ticket.id,
+        ticketCode: ticket.ticketCode,
+        channel: ticket.serviceChannel === "warranty" ? "Bảo hành" : "Sửa chữa",
+        assetCode: asset.assetCode,
+        assetName: asset.name,
+        departmentName: asset.departmentId ? departmentById.get(asset.departmentId)?.name || "Chưa gán Phòng Ban" : "Chưa gán Phòng Ban",
+        openedAt: ticket.openedAt,
+        resolvedAt: ticket.resolvedAt,
+        status: ticket.status,
+        description: ticket.description,
+        actualCost: Number(ticket.actualCost || 0),
+      };
+    }).sort((left, right) => right.actualCost - left.actualCost || new Date(right.openedAt).getTime() - new Date(left.openedAt).getTime());
+    return { totalCost: rows.reduce((total, item) => total + item.actualCost, 0), ticketCount: rows.length, assetCount: new Set(rows.map((item) => item.assetCode)).size, rows };
+  }, [selectedAssets, maintenanceQuery.data, departmentById, serviceCostYear]);
   const divisionValueData = useMemo<DivisionValue[]>(() => {
     const buckets = new Map<string, Omit<DivisionValue, "color">>();
     inventoryAssets.forEach((asset) => {
@@ -195,6 +201,23 @@ export function ReportsManagementView() {
 
   useEffect(() => { setAllocationSelection(null); }, [departmentId, divisionId]);
 
+  useEffect(() => {
+    const rawContext = sessionStorage.getItem("assetmaster-return-asset-popup");
+    if (!rawContext || assetsQuery.isLoading) return;
+    sessionStorage.removeItem("assetmaster-return-asset-popup");
+    try {
+      const context = JSON.parse(rawContext) as { assetId?: number };
+      const asset = (assetsQuery.data || []).find((item) => item.id === context.assetId);
+      if (!asset) { toast.error("Không tìm thấy tài sản để quay lại popup chi tiết."); return; }
+      const holder = asset.holderUserId ? employeeById.get(asset.holderUserId) : undefined;
+      const division = holder?.divisionId ? divisionById.get(holder.divisionId) : undefined;
+      setAllocationSelection({ type: "division", id: division ? String(division.id) : "unassigned", name: division?.name || "Chưa gán Bộ Phận" });
+      setReturnAssetPopupId(asset.id);
+    } catch {
+      toast.error("Không thể khôi phục popup chi tiết tài sản.");
+    }
+  }, [assetsQuery.data, assetsQuery.isLoading, employeeById, divisionById]);
+
   const exportSupplierReturnExcel = () => {
     if (!supplierReturnedAssets.length || exporting) return;
     setExporting("returned");
@@ -232,30 +255,22 @@ export function ReportsManagementView() {
   };
 
   const exportRepairCostExcel = () => {
-    if (!repairCostReport.byAsset.length || exporting) return;
+    if (!serviceCostReport.rows.length || exporting) return;
     setExporting("repairCosts");
-    const loadingToast = toast.loading("Đang tạo báo cáo chi phí Sửa chữa...");
+    const loadingToast = toast.loading("Đang chuẩn bị bản xem trước chi phí Bảo hành/Sửa chữa...");
     window.setTimeout(() => { void (async () => {
       try {
-        const assetRows = repairCostReport.byAsset.map((item) => ({ "Mã tài sản": item.assetCode, "Tên tài sản": item.assetName, "Phòng Ban": item.departmentName, "Số phiếu Sửa chữa": item.ticketCount, "Tổng chi phí thực tế (VNĐ)": item.cost }));
-        const departmentRows = repairCostReport.byDepartment.map((item) => ({ "Phòng Ban": item.departmentName, "Số tài sản phát sinh": item.assetCount, "Số phiếu Sửa chữa": item.ticketCount, "Tổng chi phí thực tế (VNĐ)": item.cost }));
-        const summaryRows = [{ "Phạm vi Phòng Ban": selectedDepartment?.name || "Tất cả Phòng Ban", "Phạm vi Bộ Phận": selectedDivision?.name || "Tất cả Bộ Phận", "Tổng tài sản phát sinh chi phí": repairCostReport.byAsset.length, "Tổng chi phí Sửa chữa (VNĐ)": repairCostReport.totalCost, "Ngày xuất": new Date().toLocaleString("vi-VN") }];
+        const rows = serviceCostReport.rows.map((item) => ({ "Mã phiếu": item.ticketCode, "Kênh xử lý": item.channel, "Mã tài sản": item.assetCode, "Tên tài sản": item.assetName, "Phòng Ban": item.departmentName, "Ngày mở phiếu": new Date(item.openedAt).toLocaleDateString("vi-VN"), "Ngày hoàn tất": item.resolvedAt ? new Date(item.resolvedAt).toLocaleDateString("vi-VN") : "", "Trạng thái": item.status, "Nội dung": item.description, "Chi phí thực tế (VNĐ)": item.actualCost }));
         const workbook = XLSX.utils.book_new();
-        const assetSheet = XLSX.utils.json_to_sheet(assetRows);
-        assetSheet["!cols"] = [{ wch: 16 }, { wch: 34 }, { wch: 26 }, { wch: 18 }, { wch: 26 }];
-        const departmentSheet = XLSX.utils.json_to_sheet(departmentRows);
-        departmentSheet["!cols"] = [{ wch: 28 }, { wch: 22 }, { wch: 20 }, { wch: 26 }];
-        const summarySheet = XLSX.utils.json_to_sheet(summaryRows);
-        summarySheet["!cols"] = [{ wch: 32 }, { wch: 28 }, { wch: 28 }, { wch: 30 }, { wch: 24 }];
-        XLSX.utils.book_append_sheet(workbook, summarySheet, "Tổng hợp");
-        XLSX.utils.book_append_sheet(workbook, assetSheet, "Theo tài sản");
-        XLSX.utils.book_append_sheet(workbook, departmentSheet, "Theo Phòng Ban");
+        const sheet = XLSX.utils.json_to_sheet(rows);
+        sheet["!cols"] = [{ wch: 18 }, { wch: 18 }, { wch: 16 }, { wch: 34 }, { wch: 24 }, { wch: 16 }, { wch: 16 }, { wch: 16 }, { wch: 46 }, { wch: 24 }];
+        XLSX.utils.book_append_sheet(workbook, sheet, "Chi phí dịch vụ");
         const scope = (selectedDivision?.name || selectedDepartment?.name || "tat-ca").replace(/[^a-zA-Z0-9]/g, "-");
-        await writeBrandedWorkbook(workbook, { documentTitle: "BÁO CÁO CHI PHÍ SỬA CHỮA", fileName: `assetmaster-chi-phi-sua-chua-${scope}-${new Date().toISOString().slice(0, 10)}.xlsx`, description: "Tổng hợp chi phí thực tế Sửa chữa theo tài sản và Phòng Ban trong phạm vi lọc hiện tại." });
-        toast.success(`Đã xuất báo cáo ${assetRows.length} tài sản phát sinh chi phí.`, { id: loadingToast });
+        await writeBrandedWorkbook(workbook, { documentTitle: "DANH SÁCH CHI PHÍ BẢO HÀNH / SỬA CHỮA", fileName: `assetmaster-chi-phi-dich-vu-${serviceCostYear === "all" ? "tat-ca-nam" : serviceCostYear}-${scope}.xlsx`, description: `Năm ${serviceCostYear === "all" ? "tất cả" : serviceCostYear} · ${serviceCostReport.ticketCount} phiếu · ${serviceCostReport.assetCount} tài sản · Tổng chi phí ${serviceCostReport.totalCost.toLocaleString("vi-VN")} VNĐ.` });
+        toast.success(`Đã mở xem trước ${serviceCostReport.ticketCount} phiếu có chi phí.`, { id: loadingToast });
       } catch (error) {
         console.error(error);
-        toast.error("Không thể xuất báo cáo chi phí Sửa chữa.", { id: loadingToast });
+        toast.error("Không thể tạo bản xem trước chi phí Bảo hành/Sửa chữa.", { id: loadingToast });
       } finally {
         setExporting(null);
       }
@@ -383,12 +398,11 @@ export function ReportsManagementView() {
     {hasOrgError ? <section className="rounded-xl border border-[#F2D596] bg-[#FFF9EB] p-5"><div className="font-bold text-[#A86B00]">Không thể tải bộ lọc cơ cấu tổ chức</div><button onClick={() => { void employeesQuery.refetch(); void departmentsQuery.refetch(); void divisionsQuery.refetch(); }} className="mt-3 rounded-lg border border-[#F2D596] bg-white px-3 py-2 text-xs font-bold text-[#A86B00]">Thử lại</button></section> : <>
       <section className={`${card} p-5`}><div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between"><div className="min-w-0 max-w-xl"><div className="flex items-center gap-2 text-sm font-extrabold text-[#193B57]"><SlidersHorizontal size={16} className="text-[#2666A8]" />Phạm vi thống kê</div><p className="mt-1 text-xs text-[#71869A]">Bộ Phận được lọc theo nhân sự đang giữ tài sản và luôn thuộc Phòng Ban đã chọn.</p></div><div className="grid w-full gap-2 sm:grid-cols-2 xl:w-[680px] xl:grid-cols-4"><SearchableSelect value={currencyMode} onChange={(value) => setCurrencyMode(value as CurrencyDisplayMode)} className="min-w-0" placeholder="Đơn vị tiền" searchPlaceholder="Tìm đơn vị tiền..." options={[{ value: "full", label: "Đầy đủ (VNĐ)" }, { value: "million", label: "Triệu đồng" }, { value: "billion", label: "Tỷ đồng" }]} /><SearchableSelect value={departmentId} onChange={(value) => { setDepartmentId(value); setDivisionId("all"); }} disabled={!isAdmin || departmentsQuery.isLoading} className="min-w-0" placeholder="Tất cả Phòng Ban" searchPlaceholder="Tìm Phòng Ban..." options={[{ value: "all", label: "Tất cả Phòng Ban" }, ...departments.filter((item) => item.isActive).map((department) => ({ value: String(department.id), label: department.name }))]} /><SearchableSelect value={divisionId} onChange={setDivisionId} disabled={!isAdmin || divisionsQuery.isLoading} className="min-w-0" placeholder="Tất cả Bộ Phận" searchPlaceholder="Tìm Bộ Phận..." options={[{ value: "all", label: "Tất cả Bộ Phận" }, ...availableDivisions.map((division) => ({ value: String(division.id), label: division.name }))]} /><button onClick={() => { setDepartmentId("all"); setDivisionId("all"); }} className="inline-flex min-h-10 w-full shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-lg border border-[#DDE7F0] bg-white px-4 text-xs font-bold text-[#60758A] hover:bg-[#F7FAFC]"><SlidersHorizontal size={14} />Đặt lại</button></div></div></section>
       <div className="mt-5 grid gap-4 sm:grid-cols-2 xl:grid-cols-4"><Metric label="Tài sản trong phạm vi" value={String(inventoryAssets.length)} /><Metric label="Giá trị tài sản" value={currency(selectedValue, currencyMode)} /><Metric label="Phiếu bàn giao liên quan" value={String(selectedHandoverCount)} /><Metric label="Yêu cầu Bảo hành/Sửa chữa" value={String(selectedMaintenanceCount)} /></div>
-      <section className={`mt-5 ${card} overflow-hidden`}><div className="flex flex-col gap-3 border-b border-[#E7EEF3] px-5 py-4 sm:flex-row sm:items-start sm:justify-between"><div><div className="flex items-center gap-2 text-sm font-extrabold text-[#193B57]"><FileBarChart size={17} className="text-[#5B5BD6]" />Tổng chi phí Sửa chữa phát sinh</div><p className="mt-1 text-xs text-[#71869A]">Chỉ tổng hợp chi phí thực tế của phiếu Sửa chữa theo phạm vi Phòng Ban/Bộ Phận đang chọn.</p></div><div className="rounded-lg bg-[#EEF0FF] px-3 py-2 text-right"><div className="text-[10px] font-extrabold uppercase tracking-[0.1em] text-[#5B5BD6]">Tổng chi phí</div><div className="mt-1 text-sm font-extrabold text-[#3730A3]">{currency(repairCostReport.totalCost, currencyMode)}</div></div></div>{maintenanceQuery.isLoading ? <div className="grid min-h-40 place-items-center text-sm text-[#71869A]">Đang tổng hợp chi phí Sửa chữa...</div> : repairCostReport.byAsset.length ? <div className="grid gap-5 p-5 xl:grid-cols-2"><div><div className="mb-3 text-[10px] font-extrabold uppercase tracking-[0.12em] text-[#5B5BD6]">Theo tài sản</div><div className="overflow-x-auto rounded-lg border border-[#E0E3FF]"><table className="w-full min-w-[460px] text-left text-xs"><thead className="bg-[#F7F7FF] text-[10px] uppercase tracking-[0.08em] text-[#5B5BD6]"><tr><th className="px-3 py-2.5">Tài sản</th><th className="px-3 py-2.5">Phòng Ban</th><th className="px-3 py-2.5 text-right">Chi phí</th></tr></thead><tbody>{repairCostReport.byAsset.map((item) => <tr key={item.assetCode} className="border-t border-[#EEF0FF]"><td className="px-3 py-2.5"><div className="font-bold text-[#193B57]">{item.assetName}</div><div className="mt-0.5 font-mono text-[10px] text-[#8AA0B6]">{item.assetCode} · {item.ticketCount} phiếu</div></td><td className="px-3 py-2.5 text-[#60758A]">{item.departmentName}</td><td className="px-3 py-2.5 text-right font-extrabold text-[#3730A3]">{currency(item.cost, currencyMode)}</td></tr>)}</tbody></table></div></div><div><div className="mb-3 text-[10px] font-extrabold uppercase tracking-[0.12em] text-[#5B5BD6]">Theo Phòng Ban</div><div className="space-y-2">{repairCostReport.byDepartment.map((item) => <div key={item.departmentName} className="rounded-lg border border-[#E0E3FF] bg-[#F9F9FF] px-3 py-3"><div className="flex items-center justify-between gap-3"><div className="min-w-0"><div className="truncate text-xs font-extrabold text-[#193B57]">{item.departmentName}</div><div className="mt-1 text-[10px] text-[#71869A]">{item.assetCount} tài sản · {item.ticketCount} phiếu Sửa chữa</div></div><div className="shrink-0 text-sm font-extrabold text-[#3730A3]">{currency(item.cost, currencyMode)}</div></div></div>)}</div></div></div> : <div className="px-5 py-10 text-center text-sm text-[#71869A]">Chưa có chi phí thực tế của phiếu Sửa chữa trong phạm vi báo cáo.</div>}</section>
-      <div className="mt-3 flex justify-end"><button onClick={exportRepairCostExcel} disabled={!isAdmin || !repairCostReport.byAsset.length || exporting !== null} className="inline-flex items-center justify-center gap-2 rounded-lg border border-[#C9CCF4] bg-[#F7F7FF] px-4 py-2.5 text-xs font-bold text-[#4A45A5] hover:bg-white disabled:cursor-not-allowed disabled:opacity-60"><Download size={15} className={exporting === "repairCosts" ? "animate-pulse" : ""} />{exporting === "repairCosts" ? "Đang xuất Excel..." : `Xuất Excel chi phí Sửa chữa (${repairCostReport.byAsset.length})`}</button></div>
+      <section className={`mt-5 ${card} overflow-hidden`}><div className="flex flex-col gap-4 border-b border-[#E7EEF3] px-5 py-4 lg:flex-row lg:items-center lg:justify-between"><div><div className="flex items-center gap-2 text-sm font-extrabold text-[#193B57]"><FileBarChart size={17} className="text-[#5B5BD6]" />Tổng chi phí Bảo hành/Sửa chữa</div><p className="mt-1 text-xs text-[#71869A]">Tổng hợp chi phí thực tế của các phiếu Bảo hành và Sửa chữa trong phạm vi, theo năm được chọn.</p></div><div className="flex flex-wrap items-center gap-3"><div className="w-40"><SearchableSelect value={serviceCostYear} onChange={setServiceCostYear} options={[{ value: "all", label: "Tất cả các năm" }, ...serviceCostYears.map((year) => ({ value: String(year), label: `Năm ${year}` }))]} placeholder="Tất cả các năm" searchPlaceholder="Tìm năm..." /></div><div className="rounded-lg bg-[#EEF0FF] px-3 py-2 text-right"><div className="text-[10px] font-extrabold uppercase tracking-[0.1em] text-[#5B5BD6]">Tổng chi phí</div><div className="mt-1 text-sm font-extrabold text-[#3730A3]">{currency(serviceCostReport.totalCost, currencyMode)}</div></div></div></div>{maintenanceQuery.isLoading ? <div className="grid min-h-28 place-items-center text-sm text-[#71869A]">Đang tổng hợp chi phí Bảo hành/Sửa chữa...</div> : serviceCostReport.rows.length ? <div className="flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between"><div className="grid flex-1 gap-3 sm:grid-cols-3"><div className="rounded-lg border border-[#E0E3FF] bg-[#F9F9FF] px-3 py-3"><div className="text-[10px] font-extrabold uppercase tracking-[.1em] text-[#6B66B7]">Phiếu có chi phí</div><div className="mt-1 text-xl font-extrabold text-[#3730A3]">{serviceCostReport.ticketCount}</div></div><div className="rounded-lg border border-[#D9E8F3] bg-[#F8FCFF] px-3 py-3"><div className="text-[10px] font-extrabold uppercase tracking-[.1em] text-[#3278BD]">Tài sản phát sinh</div><div className="mt-1 text-xl font-extrabold text-[#193B57]">{serviceCostReport.assetCount}</div></div><div className="rounded-lg border border-[#D5ECE7] bg-[#F4FBFA] px-3 py-3"><div className="text-[10px] font-extrabold uppercase tracking-[.1em] text-[#087A6A]">Năm áp dụng</div><div className="mt-1 text-xl font-extrabold text-[#193B57]">{serviceCostYear === "all" ? "Tất cả" : serviceCostYear}</div></div></div><button onClick={exportRepairCostExcel} disabled={!isAdmin || exporting !== null} className="inline-flex shrink-0 items-center justify-center gap-2 rounded-lg border border-[#C9CCF4] bg-[#F7F7FF] px-4 py-2.5 text-xs font-bold text-[#4A45A5] hover:bg-white disabled:cursor-not-allowed disabled:opacity-60"><Download size={15} className={exporting === "repairCosts" ? "animate-pulse" : ""} />{exporting === "repairCosts" ? "Đang chuẩn bị..." : `Xem trước Excel (${serviceCostReport.ticketCount})`}</button></div> : <div className="px-5 py-9 text-center text-sm text-[#71869A]">Chưa có phiếu Bảo hành/Sửa chữa phát sinh chi phí trong năm và phạm vi đã chọn.</div>}</section>
       <InteractiveValueAllocation title="Phân bổ giá trị theo Bộ Phận" context={selectedDivision?.name || selectedDepartment?.name || "Tất cả cơ cấu"} data={divisionValueData as AllocationGroup[]} totalValue={selectedValue} isLoading={assetsQuery.isLoading || employeesQuery.isLoading || divisionsQuery.isLoading} currencyMode={currencyMode} accent="#7666B3" selectedId={allocationSelection?.type === "division" ? allocationSelection.id : null} onSelect={(item) => setAllocationSelection({ type: "division", id: item.id, name: item.name })} />
       <InteractiveValueAllocation title="Phân bổ giá trị theo Hãng" data={brandValueData as AllocationGroup[]} totalValue={selectedValue} isLoading={assetsQuery.isLoading || brandsQuery.isLoading} currencyMode={currencyMode} accent="#0F8C8C" selectedId={allocationSelection?.type === "brand" ? allocationSelection.id : null} onSelect={(item) => setAllocationSelection({ type: "brand", id: item.id, name: item.name })} />
       <InteractiveValueAllocation title="Phân bổ giá trị theo Nhà cung cấp" data={supplierValueData as AllocationGroup[]} totalValue={selectedValue} isLoading={assetsQuery.isLoading} currencyMode={currencyMode} accent="#2666A8" selectedId={allocationSelection?.type === "supplier" ? allocationSelection.id : null} onSelect={(item) => setAllocationSelection({ type: "supplier", id: item.id, name: item.name })} />
-      {allocationSelection && <InteractiveAllocationAssetDetails groupLabel={allocationSelection.type === "division" ? "Bộ Phận" : allocationSelection.type === "brand" ? "Hãng" : "Nhà cung cấp"} groupName={allocationSelection.name} assets={selectedAllocationAssets} handovers={handoversQuery.data || []} maintenanceTickets={maintenanceQuery.data || []} currencyMode={currencyMode} onClose={() => setAllocationSelection(null)} />}
+      {allocationSelection && <InteractiveAllocationAssetDetails groupLabel={allocationSelection.type === "division" ? "Bộ Phận" : allocationSelection.type === "brand" ? "Hãng" : "Nhà cung cấp"} groupName={allocationSelection.name} assets={selectedAllocationAssets} handovers={handoversQuery.data || []} maintenanceTickets={maintenanceQuery.data || []} currencyMode={currencyMode} autoOpenAssetId={returnAssetPopupId || undefined} onAssetPopupClose={() => setReturnAssetPopupId(null)} onClose={() => { setAllocationSelection(null); setReturnAssetPopupId(null); }} />}
       <section className={`mt-5 ${card} p-5`}><div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between"><div><div className="flex items-center gap-2 text-sm font-extrabold text-[#193B57]"><Download size={16} className="text-[#087A6A]" />Xuất tài sản theo cơ cấu</div><p className="mt-1 text-xs text-[#71869A]">{selectedDepartment ? `Phòng Ban: ${selectedDepartment.name}` : "Tất cả Phòng Ban"}{selectedDivision ? ` · Bộ Phận: ${selectedDivision.name}` : ""}</p></div><button onClick={exportExcel} disabled={!isAdmin || !inventoryAssets.length || exporting !== null} className="inline-flex items-center justify-center gap-2 rounded-lg bg-[#0F8C8C] px-4 py-2.5 text-xs font-bold text-white hover:bg-[#087A6A] disabled:cursor-not-allowed disabled:opacity-60"><Download size={15} className={exporting === "inventory" ? "animate-pulse" : ""} />{exporting === "inventory" ? "Đang xuất..." : `Xuất Excel (${inventoryAssets.length})`}</button></div></section>
       <section className={`mt-5 ${card} border-[#F3C4C4] p-5`}><div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between"><div><div className="flex items-center gap-2 text-sm font-extrabold text-[#B44545]"><History size={16} />Tài sản đã trả nhà cung cấp</div><p className="mt-1 text-xs text-[#71869A]">Báo cáo riêng gồm ngày trả, lý do, giá trị và thông tin nhận diện của từng tài sản. Hiện có <b className="text-[#B44545]">{supplierReturnedAssets.length}</b> tài sản trong phạm vi lọc.</p></div><button onClick={exportSupplierReturnExcel} disabled={!isAdmin || !supplierReturnedAssets.length || exporting !== null} className="inline-flex items-center justify-center gap-2 rounded-lg border border-[#E7A6A6] bg-[#FFF7F7] px-4 py-2.5 text-xs font-bold text-[#B44545] hover:bg-white disabled:cursor-not-allowed disabled:opacity-60"><Download size={15} className={exporting === "returned" ? "animate-pulse" : ""} />{exporting === "returned" ? "Đang xuất..." : "Xuất báo cáo trả NCC"}</button></div></section>
       <section className={`mt-5 ${card} border-[#E7D9B9] p-5`}><div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between"><div><div className="flex items-center gap-2 text-sm font-extrabold text-[#8F5A00]"><FileBarChart size={16} />Giá trị tài sản Khấu hao/Thanh lý theo năm</div><p className="mt-1 text-xs text-[#71869A]">Tổng hợp theo ngày thanh lý đã ghi nhận trong hồ sơ tài sản, theo phạm vi lọc hiện tại.</p></div><div className="rounded-lg bg-[#FFF7E3] px-3 py-2 text-right"><div className="text-[10px] font-extrabold uppercase tracking-[0.1em] text-[#A86B00]">Tổng giá trị thanh lý</div><div className="mt-1 text-sm font-extrabold text-[#8F5A00]">{currency(retiredTotalValue, currencyMode)}</div></div></div>{assetsQuery.isLoading ? <div className="mt-4 grid min-h-24 place-items-center text-xs text-[#71869A]">Đang tổng hợp giá trị thanh lý...</div> : retirementValueByYear.length ? <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">{retirementValueByYear.map((item) => <div key={item.year} className="rounded-lg border border-[#F0DFC0] bg-[#FFFDF7] px-4 py-3"><div className="flex items-center justify-between gap-3"><span className="text-xs font-extrabold text-[#8F5A00]">Năm {item.year}</span><span className="rounded-full bg-white px-2 py-1 text-[10px] font-bold text-[#A86B00]">{item.count} tài sản</span></div><div className="mt-3 text-lg font-extrabold text-[#193B57]">{currency(item.value, currencyMode)}</div><div className="mt-1 text-[10px] text-[#8AA0B6]">Tổng theo nguyên giá tài sản</div></div>)}</div> : <div className="mt-4 rounded-lg border border-dashed border-[#E7D9B9] bg-[#FFFDF7] px-4 py-6 text-center text-xs text-[#8A7140]">Chưa có tài sản Khấu hao/Thanh lý trong phạm vi lọc.</div>}</section>

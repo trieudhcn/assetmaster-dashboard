@@ -836,7 +836,7 @@ describe("modal presentation contract", () => {
     expect(routers).toContain('movementType: "issue"');
   });
 
-  it("returns stocked handover accessories and summarizes repair costs by asset and department", () => {
+  it("returns stocked handover accessories and summarizes service costs by year", () => {
     const home = readProjectFile("client/src/pages/Home.tsx");
     const reports = readProjectFile("client/src/pages/ReportsManagementView.tsx");
     const routers = readProjectFile("server/routers.ts");
@@ -849,12 +849,12 @@ describe("modal presentation contract", () => {
     expect(database).toContain("createHandoverSupplyItem");
     expect(home).toContain("Phụ kiện lấy từ kho");
     expect(home).toContain("phụ kiện kho đang giữ cũng tự động được hoàn về kho");
-    expect(reports).toContain("repairCostReport");
-    expect(reports).toContain("Tổng chi phí Sửa chữa phát sinh");
-    expect(reports).toContain("Theo Phòng Ban");
+    expect(reports).toContain("serviceCostReport");
+    expect(reports).toContain("Tổng chi phí Bảo hành/Sửa chữa");
+    expect(reports).toContain("serviceCostYear");
   });
 
-  it("supports partial handover accessory returns and exports repair costs to Excel", () => {
+  it("supports partial handover accessory returns and previews service costs in Excel", () => {
     const home = readProjectFile("client/src/pages/Home.tsx");
     const reports = readProjectFile("client/src/pages/ReportsManagementView.tsx");
     const routers = readProjectFile("server/routers.ts");
@@ -865,8 +865,8 @@ describe("modal presentation contract", () => {
     expect(routers).toContain("handoverReturnSupplyItems");
     expect(routers).toContain("outstandingAccessoryCount");
     expect(reports).toContain("exportRepairCostExcel");
-    expect(reports).toContain("Xuất Excel chi phí Sửa chữa");
-    expect(reports).toContain("Theo Phòng Ban");
+    expect(reports).toContain("Xem trước Excel");
+    expect(reports).toContain("Chi phí dịch vụ");
   });
 
   it("provides a recovery record PDF with actual accessory quantities and print access", () => {
@@ -1132,9 +1132,17 @@ describe("modal presentation contract", () => {
     expect(interactiveAssetDetails).toContain("assetmaster-open-handover-id");
     expect(interactiveAssetDetails).toContain("Mở phiếu {item.serviceChannel === \"warranty\" ? \"Bảo hành\" : \"Sửa chữa\"}");
     expect(interactiveAssetDetails).toContain("assetmaster-open-maintenance-ticket-id");
+    expect(interactiveAssetDetails).toContain("assetmaster-return-asset-popup");
     const operations = readProjectFile("client/src/pages/OperationsModules.tsx");
     expect(operations).toContain("assetmaster-open-maintenance-ticket-id");
     expect(operations).toContain("setHistoryTicket(directTicket)");
+    expect(reports).toContain("returnAssetPopupId");
+    expect(reports).toContain("assetmaster-return-asset-popup");
+    expect(reports).toContain("Tổng chi phí Bảo hành/Sửa chữa");
+    expect(reports).toContain("serviceCostYear");
+    expect(reports).toContain("serviceCostYears");
+    expect(reports).toContain("Xem trước Excel");
+    expect(reports).not.toContain("Theo tài sản</div><div className=\"overflow-x-auto rounded-lg border border-[#E0E3FF]\"");
   });
 
 describe("currency input and scrollbar contract", () => {

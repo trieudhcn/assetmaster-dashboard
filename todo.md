@@ -2141,3 +2141,11 @@
 - [x] Thêm nút mở trực tiếp phiếu Bàn giao gốc từ lịch sử tài sản.
 - [x] Thêm nút mở trực tiếp phiếu Bảo hành/Sửa chữa gốc từ lịch sử tài sản.
 - [x] Bổ sung hồi quy, kiểm tra giao diện và build phát hành.
+
+## Current Session — Return to Asset & Compact Service Costs
+
+- [x] Thêm thao tác quay lại popup chi tiết tài sản sau khi mở phiếu gốc.
+- [x] Thêm bộ lọc năm và tổng chi phí theo năm cho báo cáo Bảo hành/Sửa chữa.
+- [x] Tinh gọn khu vực chi phí, gỡ các khối Theo tài sản và Theo Phòng Ban.
+- [x] Chuyển xuất Excel chi phí thành luồng xem trước danh sách phiếu có chi phí.
+- [x] Bổ sung hồi quy, kiểm tra giao diện và build phát hành.
