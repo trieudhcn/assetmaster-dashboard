@@ -2178,3 +2178,9 @@
 
 - [x] Thêm nút mở trực tiếp phiếu Bảo hành/Sửa chữa gốc từ danh sách chi phí theo tháng.
 - [x] Bổ sung hồi quy, kiểm tra giao diện và build phát hành.
+
+## Current Session — Return to Monthly Tickets & Pagination
+
+- [x] Thêm thao tác quay lại danh sách phiếu chi phí theo tháng sau khi mở phiếu gốc.
+- [x] Phân trang danh sách phiếu chi phí theo tháng, 5 dòng mỗi trang.
+- [x] Bổ sung hồi quy, kiểm tra giao diện và build phát hành.
