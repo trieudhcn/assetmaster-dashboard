@@ -2209,3 +2209,9 @@
 - [x] Tối ưu popup xem nhanh phiếu Bảo hành/Sửa chữa cho viewport mobile.
 - [x] Sửa bố cục mobile của trang Quản lý phiếu Bảo hành/Sửa chữa.
 - [x] Bổ sung hồi quy, kiểm tra desktop/mobile và build phát hành.
+
+## Current Session — Mobile Monthly Cost Trend
+
+- [x] Sửa biểu đồ Biến động chi phí theo tháng để nhãn và cột không bị chồng/cắt trên mobile.
+- [x] Giữ thao tác chọn tháng và danh sách phiếu chi tiết tương ứng.
+- [x] Bổ sung hồi quy, kiểm tra mobile/desktop và build phát hành.

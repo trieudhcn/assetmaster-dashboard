@@ -860,6 +860,9 @@ describe("modal presentation contract", () => {
     expect(reports).toContain("Tổng cộng");
     expect(reports).toContain("monthlyServiceCostTrend");
     expect(reports).toContain("Biến động chi phí theo tháng");
+    expect(reports).toContain("min-w-[540px]");
+    expect(reports).toContain("Vuốt ngang để xem đủ 12 tháng.");
+    expect(reports).toContain("Đang chọn {data[selectedMonth]?.month");
     expect(reports).toContain("% tổng cộng");
     expect(reports).toContain("Tổng cộng (năm ${serviceCostYear})");
     expect(reports).toContain("selectedServiceCostMonth");
