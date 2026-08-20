@@ -347,6 +347,19 @@ describe("modal presentation contract", () => {
     expect(routers).toContain("historyReport");
   });
 
+  it("allows one recipient to receive multiple supply types in one issue slip", () => {
+    const supplies = readProjectFile("client/src/pages/SuppliesInventoryView.tsx");
+    const routers = readProjectFile("server/routers.ts");
+
+    expect(supplies).toContain("Danh sách phụ kiện cấp phát");
+    expect(supplies).toContain("Thêm phụ kiện vào phiếu");
+    expect(supplies).toContain("Tạo phiếu cấp phát nhiều loại?");
+    expect(supplies).toContain("issuePreviewItems.map((item) => ({ supplyId: item.supplyId, quantity: item.quantity }))");
+    expect(supplies).toContain("Một phụ kiện chỉ được chọn một lần trong cùng phiếu.");
+    expect(routers).toContain("items: z.array(z.object({ supplyId");
+    expect(routers).toContain("Một phụ kiện chỉ được xuất một lần trong cùng phiếu.");
+  });
+
   it("uses shared status tones and standard ten-row pagination for supply issue slips", () => {
     const issueSlips = readProjectFile("client/src/components/SupplyIssueSlipManager.tsx");
 

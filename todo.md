@@ -2089,3 +2089,9 @@
 - [x] Đồng bộ màu nhãn trạng thái phụ kiện theo hệ màu của các danh sách hiện có.
 - [x] Thêm phân trang danh sách phụ kiện theo chuẩn 10 dòng mỗi trang với nút điều hướng.
 - [x] Bổ sung hồi quy, kiểm tra giao diện và build phát hành.
+
+## Current Session — Multi-item Supply Issue Slip
+
+- [x] Cho phép chọn nhiều loại phụ kiện và số lượng trong cùng phiếu cấp phát cho một người nhận.
+- [x] Kiểm tra tồn kho, chống trùng dòng và ghi nhận đầy đủ từng phụ kiện trong phiếu.
+- [x] Bổ sung hồi quy, kiểm tra giao diện và build phát hành.
