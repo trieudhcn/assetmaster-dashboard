@@ -740,13 +740,30 @@ describe("modal presentation contract", () => {
 
   it("streamlines the asset catalog and supports BH/SC lookup with warranty dates", () => {
     const home = readProjectFile("client/src/pages/Home.tsx");
+    const operations = readProjectFile("client/src/pages/OperationsModules.tsx");
 
-    expect(home).toContain('ticketCodeQuery');
-    expect(home).toContain('assetmaster:ticket-code-filter');
-    expect(home).toContain('Tìm mã phiếu BH / SC...');
+    expect(home).not.toContain('ticketCodeQuery');
+    expect(home).not.toContain('assetmaster:ticket-code-filter');
+    expect(home).not.toContain('Tìm mã phiếu BH / SC...');
+    expect(operations).toContain('ticketCodeLookup');
+    expect(operations).toContain('Tra cứu mã phiếu BH / SC...');
+    expect(operations).toContain('ticketStatusFilter');
     expect(home).toContain('BH: ${warrantyUntil.toLocaleDateString("vi-VN")}');
     expect(home).toContain('actionBar.append(filteredExportButton, importButton, resetButton);');
     expect(home).not.toContain('actionBar.append(filteredExportButton, maintenanceButton, exportButton, importButton, resetButton);');
+  });
+
+  it("shows repair spending by asset and supports handover accessories from inventory or manual entry", () => {
+    const home = readProjectFile("client/src/pages/Home.tsx");
+    const routers = readProjectFile("server/routers.ts");
+
+    expect(home).toContain("repairCostByAssetId");
+    expect(home).toContain('SC: ${formatVnd(asset.repairCost)} VNĐ');
+    expect(home).toContain("Phụ kiện lấy từ kho");
+    expect(home).toContain("Phụ kiện ghi tay (không trừ kho)");
+    expect(routers).toContain("supplyItems: z.array");
+    expect(routers).toContain("Cấp phát kèm tài sản");
+    expect(routers).toContain('movementType: "issue"');
   });
 
   it("offers preview, download, and print flows for each repair ticket PDF", () => {

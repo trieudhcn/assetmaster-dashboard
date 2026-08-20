@@ -841,8 +841,8 @@ export async function getNextHandoverSequence(handoverYear: number) {
   return maxSequence + 1;
 }
 
-export async function createHandover(data: typeof handovers.$inferInsert) {
-  const db = await getDb();
+export async function createHandover(data: typeof handovers.$inferInsert, executor?: any) {
+  const db = executor ?? await getDb();
   if (!db) throw new Error("Database unavailable");
   const result = await db.insert(handovers).values(data);
   return Number(result[0].insertId);

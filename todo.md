@@ -1985,3 +1985,11 @@
 - [x] Thêm tra cứu Danh mục tài sản theo mã phiếu Bảo hành BH hoặc Sửa chữa SC.
 - [x] Thêm xem trước, xuất và in PDF cho từng phiếu Sửa chữa.
 - [x] Bổ sung hồi quy, kiểm tra giao diện, build và phát hành cập nhật.
+
+## Current Session — Repair Cost & Handover Accessories
+
+- [x] Hiển thị tổng chi phí Sửa chữa phát sinh theo từng tài sản trong Danh mục.
+- [x] Gỡ tra cứu BH/SC khỏi Danh mục và chuyển cụm tra cứu mã phiếu cùng lọc trạng thái vào Quản lý Bảo hành/Sửa chữa.
+- [x] Cho phép cấp phát tài sản chọn phụ kiện từ kho hoặc nhập tay.
+- [x] Tự động kiểm tra và trừ tồn kho phụ kiện khi cấp phát từ danh sách.
+- [x] Bổ sung hồi quy, kiểm tra giao diện, build và phát hành cập nhật.

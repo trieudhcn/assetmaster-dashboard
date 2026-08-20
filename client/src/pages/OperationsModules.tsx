@@ -164,6 +164,8 @@ export function MaintenancePage() {
   const currentYear = new Date().getFullYear();
   const [maintenanceYear, setMaintenanceYear] = useState(String(currentYear));
   const [serviceChannelTab, setServiceChannelTab] = useState<"all" | "warranty" | "repair">("all");
+  const [ticketCodeLookup, setTicketCodeLookup] = useState("");
+  const [ticketStatusFilter, setTicketStatusFilter] = useState<"all" | "open" | "in_progress" | "resolved" | "closed">("all");
   const [maintenancePage, setMaintenancePage] = useState(1);
   const [historyTicket, setHistoryTicket] = useState<(typeof tickets)[number] | null>(null);
   const [warrantyHistoryDialogOpen, setWarrantyHistoryDialogOpen] = useState(false);
@@ -247,7 +249,7 @@ export function MaintenancePage() {
   const maintenanceAssets = assets.filter((asset) => asset.status === "maintenance" && !assetsWithOpenTickets.has(asset.id) && !queuedMaintenanceAssetIds.has(asset.id));
   const maintenanceYears = Array.from(new Set([currentYear, ...tickets.map((ticket) => ticket.ticketYear || new Date(ticket.openedAt).getFullYear())])).sort((left, right) => right - left);
   const yearTickets = tickets.filter((ticket) => maintenanceYear === "all" || (ticket.ticketYear || new Date(ticket.openedAt).getFullYear()) === Number(maintenanceYear));
-  const filteredTickets = yearTickets.filter((ticket) => serviceChannelTab === "all" || ticket.serviceChannel === serviceChannelTab);
+  const filteredTickets = yearTickets.filter((ticket) => (serviceChannelTab === "all" || ticket.serviceChannel === serviceChannelTab) && (ticketStatusFilter === "all" || ticket.status === ticketStatusFilter) && (!ticketCodeLookup.trim() || `${ticket.ticketCode} ${ticket.warrantyRequestCode || ""}`.toLocaleLowerCase("vi").includes(ticketCodeLookup.trim().toLocaleLowerCase("vi"))));
   const maintenanceTotalPages = Math.max(1, Math.ceil(filteredTickets.length / maintenancePageSize));
   const pagedTickets = filteredTickets.slice((maintenancePage - 1) * maintenancePageSize, maintenancePage * maintenancePageSize);
   const employees = employeesQuery.data || [];
@@ -303,7 +305,7 @@ export function MaintenancePage() {
 
   useEffect(() => {
     setMaintenancePage(1);
-  }, [maintenanceYear, serviceChannelTab]);
+  }, [maintenanceYear, serviceChannelTab, ticketCodeLookup, ticketStatusFilter]);
   useEffect(() => {
     const assetCode = sessionStorage.getItem("assetmaster-open-maintenance-asset-code");
     if (!assetCode || assetsQuery.isLoading || ticketsQuery.isLoading) return;
@@ -726,7 +728,7 @@ export function MaintenancePage() {
               <h2 className="text-sm font-extrabold text-[#193B57]">Quản lý phiếu Bảo hành/Sửa chữa</h2>
               <p className="mt-1 text-xs text-[#8AA0B6]">Phân công, tiến độ, chi phí và Kênh xử lý được lưu tập trung.</p>
             </div>
-            <div className="flex flex-wrap items-center gap-2"><label className="flex min-w-[180px] items-center gap-2 text-xs font-bold text-[#60758A]"><span className="shrink-0">Năm</span><SearchableSelect value={maintenanceYear} onChange={setMaintenanceYear} className="min-w-0 flex-1" placeholder="Tất cả năm" searchPlaceholder="Tìm năm..." options={[{ value: "all", label: "Tất cả năm" }, ...maintenanceYears.map((year) => ({ value: String(year), label: String(year) }))]} /></label><button type="button" onClick={exportMaintenanceCosts} disabled={ticketsQuery.isLoading || filteredTickets.length === 0 || isExportingCosts} className="inline-flex items-center gap-2 rounded-lg border border-[#CDE5E5] bg-white px-3 py-2 text-xs font-bold text-[#087A6A] transition hover:bg-[#ECF8F7] disabled:cursor-not-allowed disabled:opacity-50"><Download size={14} className={isExportingCosts ? "animate-pulse" : ""} />{isExportingCosts ? "Đang xuất..." : "Xuất Excel theo tab"}</button><span className="text-xs font-bold text-[#60758A]">{filteredTickets.length} phiếu</span></div>
+            <div className="flex flex-wrap items-center gap-2"><div className="flex h-9 min-w-[205px] items-center rounded-lg border border-[#DDE7F0] bg-white px-3 focus-within:border-[#0F8C8C]"><input value={ticketCodeLookup} onChange={(event) => setTicketCodeLookup(event.target.value)} placeholder="Tra cứu mã phiếu BH / SC..." aria-label="Tra cứu mã phiếu Bảo hành hoặc Sửa chữa" className="min-w-0 flex-1 bg-transparent text-xs font-semibold text-[#193B57] outline-none placeholder:text-[#9BAEC0]" /></div><SearchableSelect value={ticketStatusFilter} onChange={(value) => setTicketStatusFilter(value as typeof ticketStatusFilter)} className="min-w-[172px]" placeholder="Tất cả trạng thái" searchPlaceholder="Tìm trạng thái xử lý..." options={[{ value: "all", label: "Tất cả trạng thái" }, ...Object.entries(maintenanceStatusLabels).map(([value, label]) => ({ value, label }))]} /><label className="flex min-w-[180px] items-center gap-2 text-xs font-bold text-[#60758A]"><span className="shrink-0">Năm</span><SearchableSelect value={maintenanceYear} onChange={setMaintenanceYear} className="min-w-0 flex-1" placeholder="Tất cả năm" searchPlaceholder="Tìm năm..." options={[{ value: "all", label: "Tất cả năm" }, ...maintenanceYears.map((year) => ({ value: String(year), label: String(year) }))]} /></label><button type="button" onClick={exportMaintenanceCosts} disabled={ticketsQuery.isLoading || filteredTickets.length === 0 || isExportingCosts} className="inline-flex items-center gap-2 rounded-lg border border-[#CDE5E5] bg-white px-3 py-2 text-xs font-bold text-[#087A6A] transition hover:bg-[#ECF8F7] disabled:cursor-not-allowed disabled:opacity-50"><Download size={14} className={isExportingCosts ? "animate-pulse" : ""} />{isExportingCosts ? "Đang xuất..." : "Xuất Excel theo tab"}</button><span className="text-xs font-bold text-[#60758A]">{filteredTickets.length} phiếu</span></div>
           </div>
 
           <div className="flex flex-wrap gap-2 border-b border-[#E7EEF3] px-5 py-3" role="tablist" aria-label="Lọc Kênh xử lý">

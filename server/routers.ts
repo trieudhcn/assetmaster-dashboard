@@ -963,17 +963,41 @@ export const appRouter = router({
       await recordActivity({ entityType: "handover", entityId: input.id, action: input.decision === "approved" ? "return_approved" : "return_rejected", actorUserId: ctx.user.id, actorName: ctx.user.name, summary: `${input.decision === "approved" ? "Duyệt" : "Từ chối"} yêu cầu hoàn trả ${handover.assetCode}` });
       return { success: true };
     }),
-    create: adminProcedure.input(z.object({ assetId: z.number().int().positive(), recipientUserId: z.number().int().positive().optional().nullable(), recipientName: z.string().trim().min(2).max(160), recipientDepartmentId: z.number().int().positive().optional().nullable(), recipientDepartmentName: nullableText, handedOverAt: z.number().int().transform((value) => new Date(value)), dueBackAt: dateFromMs, conditionOut: nullableText, accessories: nullableText, note: nullableText })).mutation(async ({ input, ctx }) => {
+    create: adminProcedure.input(z.object({ assetId: z.number().int().positive(), recipientUserId: z.number().int().positive().optional().nullable(), recipientName: z.string().trim().min(2).max(160), recipientDepartmentId: z.number().int().positive().optional().nullable(), recipientDepartmentName: nullableText, handedOverAt: z.number().int().transform((value) => new Date(value)), dueBackAt: dateFromMs, conditionOut: nullableText, accessories: nullableText, supplyItems: z.array(z.object({ supplyId: z.number().int().positive(), quantity: z.number().finite().positive().max(1_000_000) })).max(20).default([]), note: nullableText })).mutation(async ({ input, ctx }) => {
       const asset = await getAssetById(input.assetId);
       if (!asset || asset.isArchived) throw new TRPCError({ code: "NOT_FOUND", message: "Tài sản được chọn không tồn tại hoặc đã lưu trữ." });
       if (asset.status !== "available") throw new TRPCError({ code: "BAD_REQUEST", message: "Chỉ có thể lập phiếu cho tài sản đang sẵn có." });
       const handoverYear = input.handedOverAt.getFullYear();
+      const normalizedSupplyItems = Array.from(input.supplyItems.reduce((items, item) => {
+        items.set(item.supplyId, (items.get(item.supplyId) || 0) + item.quantity);
+        return items;
+      }, new Map<number, number>()).entries()).map(([supplyId, quantity]) => ({ supplyId, quantity }));
       let id: number | undefined;
       for (let attempt = 0; attempt < 5 && id === undefined; attempt += 1) {
         const handoverSequence = await getNextHandoverSequence(handoverYear);
         const referenceCode = `BG-${handoverYear}-${String(handoverSequence).padStart(3, "0")}`;
         try {
-          id = await createHandover({ ...input, referenceCode, handoverByUserId: ctx.user!.id, handoverByName: ctx.user!.name ?? "Quản trị viên", status: "draft" });
+          id = await runInventoryTransaction(async (transaction) => {
+            const stockAccessories: string[] = [];
+            const movements: Array<{ supplyId: number; quantity: number; quantityBefore: number; quantityAfter: number }> = [];
+            for (const item of normalizedSupplyItems) {
+              const supply = await getInventorySupplyById(item.supplyId, transaction);
+              if (!supply || !supply.isActive) throw new TRPCError({ code: "BAD_REQUEST", message: "Phụ kiện được chọn không còn khả dụng trong kho." });
+              const quantityBefore = Number(supply.stockQuantity);
+              if (!Number.isFinite(quantityBefore) || quantityBefore < item.quantity) throw new TRPCError({ code: "BAD_REQUEST", message: `Tồn kho phụ kiện ${supply.code} không đủ (còn ${Number.isFinite(quantityBefore) ? quantityBefore : 0} ${supply.unit}).` });
+              const quantityAfter = quantityBefore - item.quantity;
+              stockAccessories.push(`${supply.name} × ${item.quantity} ${supply.unit}${supply.code ? ` (${supply.code})` : ""}`);
+              movements.push({ supplyId: supply.id, quantity: item.quantity, quantityBefore, quantityAfter });
+            }
+            const { supplyItems: _supplyItems, accessories: manualAccessories, ...handoverInput } = input;
+            const combinedAccessories = [manualAccessories, ...stockAccessories].filter((value): value is string => Boolean(value && value.trim())).join(" · ") || null;
+            const handoverId = await createHandover({ ...handoverInput, accessories: combinedAccessories, referenceCode, handoverByUserId: ctx.user!.id, handoverByName: ctx.user!.name ?? "Quản trị viên", status: "draft" }, transaction);
+            for (const movement of movements) {
+              await updateInventorySupply(movement.supplyId, { stockQuantity: String(movement.quantityAfter) }, transaction);
+              await createInventoryMovement({ supplyId: movement.supplyId, movementType: "issue", quantity: String(movement.quantity), quantityBefore: String(movement.quantityBefore), quantityAfter: String(movement.quantityAfter), recipientUserId: input.recipientUserId || null, recipientName: input.recipientName, recipientDepartmentId: input.recipientDepartmentId || null, note: `Cấp phát kèm tài sản ${asset.assetCode} · Phiếu ${referenceCode}`, createdByUserId: ctx.user!.id, createdByName: ctx.user!.name ?? "Quản trị viên" }, transaction);
+            }
+            return handoverId;
+          });
         } catch (error) {
           const duplicateCode = typeof error === "object" && error !== null && (("code" in error && error.code === "ER_DUP_ENTRY") || ("errno" in error && Number(error.errno) === 1062));
           if (!duplicateCode || attempt === 4) throw error;
@@ -981,7 +1005,7 @@ export const appRouter = router({
       }
       if (id === undefined) throw new TRPCError({ code: "CONFLICT", message: "Không thể tạo mã phiếu bàn giao duy nhất. Vui lòng thử lại." });
       await recordActivity({ entityType: "handover", entityId: id, action: "created", actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: `Tạo phiếu bàn giao cho ${input.recipientName}` });
-      return { id };
+      return { id, issuedAccessoryCount: normalizedSupplyItems.length };
     }),
     updateStatus: adminProcedure.input(z.object({ id: z.number().int().positive(), status: z.enum(["draft", "pending_signature", "active", "returned", "cancelled"]), recipientSignatureUrl: nullableText, handoverSignatureUrl: nullableText })).mutation(async ({ input, ctx }) => {
       const existing = await getHandoverById(input.id);

@@ -12,7 +12,9 @@ const mocks = vi.hoisted(() => ({
   createVendorDocument: vi.fn(),
   deleteVendorDocument: vi.fn(),
   createHandover: vi.fn(),
+  createInventoryMovement: vi.fn(),
   getAssetById: vi.fn(),
+  getInventorySupplyById: vi.fn(),
   getVendorById: vi.fn(),
   getVendorByName: vi.fn(),
   getVendorDocumentById: vi.fn(),
@@ -39,6 +41,7 @@ const mocks = vi.hoisted(() => ({
   listHandoversByRecipient: vi.fn(),
   listHandoverReturnDecisionHistory: vi.fn(),
   recordActivity: vi.fn(),
+  runInventoryTransaction: vi.fn(),
   saveUserNotificationPreferences: vi.fn(),
   storagePut: vi.fn(),
   transitionHandoverStatus: vi.fn(),
@@ -49,6 +52,7 @@ const mocks = vi.hoisted(() => ({
   updateDepartment: vi.fn(),
   updateDivision: vi.fn(),
   updateHandover: vi.fn(),
+  updateInventorySupply: vi.fn(),
   updateVendor: vi.fn(),
   updateBrand: vi.fn(),
 }));
@@ -68,9 +72,11 @@ vi.mock("./db", () => ({
   createVendorDocument: mocks.createVendorDocument,
   deleteVendorDocument: mocks.deleteVendorDocument,
   createHandover: mocks.createHandover,
+  createInventoryMovement: mocks.createInventoryMovement,
   createMaintenanceTicket: vi.fn(),
   getActiveDepartmentById: mocks.getActiveDepartmentById,
   getAssetById: mocks.getAssetById,
+  getInventorySupplyById: mocks.getInventorySupplyById,
   getVendorById: mocks.getVendorById,
   getVendorByName: mocks.getVendorByName,
   getVendorDocumentById: mocks.getVendorDocumentById,
@@ -105,12 +111,14 @@ vi.mock("./db", () => ({
   listMaintenanceTickets: vi.fn(),
   listUsers: vi.fn(),
   recordActivity: mocks.recordActivity,
+  runInventoryTransaction: mocks.runInventoryTransaction,
   saveCompany: vi.fn(),
   saveHelpGuide: vi.fn(),
   saveUserNotificationPreferences: mocks.saveUserNotificationPreferences,
   updateAsset: vi.fn(),
   updateAuditItem: vi.fn(),
   updateHandover: mocks.updateHandover,
+  updateInventorySupply: mocks.updateInventorySupply,
   updateMaintenanceTicket: vi.fn(),
   transitionHandoverStatus: mocks.transitionHandoverStatus,
   updateUserActiveStatus: mocks.updateUserActiveStatus,
@@ -151,6 +159,8 @@ describe("employee administration", () => {
     mocks.getNextHandoverSequence.mockResolvedValue(1);
     mocks.listHandoverReturnDecisionHistory.mockResolvedValue([]);
     mocks.createHandover.mockResolvedValue(99);
+    mocks.runInventoryTransaction.mockImplementation(async (callback: (transaction: unknown) => Promise<unknown>) => callback({ transaction: true }));
+    mocks.getInventorySupplyById.mockResolvedValue({ id: 81, code: "PK-CHUOT", name: "Chuột không dây", unit: "Cái", stockQuantity: "5", isActive: true });
     mocks.transitionHandoverStatus.mockResolvedValue({ id: 99, assetId: 50 });
     mocks.getActiveDepartmentById.mockResolvedValue({ id: 12, code: "HCNS", name: "Hành chính - Nhân sự", isActive: true });
     mocks.getDepartmentByCode.mockResolvedValue(undefined);
@@ -399,8 +409,8 @@ describe("employee administration", () => {
   it("persists the recipient employee and department IDs for asset history", async () => {
     const caller = appRouter.createCaller(adminContext);
 
-    await expect(caller.handovers.create({ assetId: 50, recipientUserId: 7, recipientName: "Nguyễn Văn A", recipientDepartmentId: 12, recipientDepartmentName: "Hành chính - Nhân sự", handedOverAt: Date.now(), dueBackAt: null, conditionOut: "Tốt", accessories: "Sạc USB-C", note: "Bàn giao mới" })).resolves.toEqual({ id: 99 });
-    expect(mocks.createHandover).toHaveBeenCalledWith(expect.objectContaining({ assetId: 50, recipientUserId: 7, recipientDepartmentId: 12, recipientName: "Nguyễn Văn A", recipientDepartmentName: "Hành chính - Nhân sự", status: "draft" }));
+    await expect(caller.handovers.create({ assetId: 50, recipientUserId: 7, recipientName: "Nguyễn Văn A", recipientDepartmentId: 12, recipientDepartmentName: "Hành chính - Nhân sự", handedOverAt: Date.now(), dueBackAt: null, conditionOut: "Tốt", accessories: "Sạc USB-C", note: "Bàn giao mới" })).resolves.toEqual({ id: 99, issuedAccessoryCount: 0 });
+    expect(mocks.createHandover).toHaveBeenCalledWith(expect.objectContaining({ assetId: 50, recipientUserId: 7, recipientDepartmentId: 12, recipientName: "Nguyễn Văn A", recipientDepartmentName: "Hành chính - Nhân sự", status: "draft" }), expect.anything());
   });
 
   it("retries a duplicate handover code and advances the yearly sequence", async () => {
@@ -410,8 +420,19 @@ describe("employee administration", () => {
     mocks.createHandover.mockRejectedValueOnce(Object.assign(new Error("Duplicate entry"), { code: "ER_DUP_ENTRY" })).mockResolvedValueOnce(100);
     const caller = appRouter.createCaller(adminContext);
 
-    await expect(caller.handovers.create({ assetId: 50, recipientUserId: 7, recipientName: "Nguyễn Văn A", recipientDepartmentId: 12, recipientDepartmentName: "Hành chính - Nhân sự", handedOverAt: Date.now(), dueBackAt: null, conditionOut: "Tốt", accessories: null, note: null })).resolves.toEqual({ id: 100 });
-    expect(mocks.createHandover).toHaveBeenNthCalledWith(2, expect.objectContaining({ referenceCode: expect.stringMatching(/^BG-\d{4}-002$/) }));
+    await expect(caller.handovers.create({ assetId: 50, recipientUserId: 7, recipientName: "Nguyễn Văn A", recipientDepartmentId: 12, recipientDepartmentName: "Hành chính - Nhân sự", handedOverAt: Date.now(), dueBackAt: null, conditionOut: "Tốt", accessories: null, note: null })).resolves.toEqual({ id: 100, issuedAccessoryCount: 0 });
+    expect(mocks.createHandover).toHaveBeenNthCalledWith(2, expect.objectContaining({ referenceCode: expect.stringMatching(/^BG-\d{4}-002$/) }), expect.anything());
+  });
+
+  it("issues selected accessories with the handover and rejects quantities beyond stock", async () => {
+    const caller = appRouter.createCaller(adminContext);
+    await expect(caller.handovers.create({ assetId: 50, recipientUserId: 7, recipientName: "Nguyễn Văn A", recipientDepartmentId: 12, recipientDepartmentName: "Hành chính - Nhân sự", handedOverAt: Date.now(), dueBackAt: null, conditionOut: "Tốt", accessories: "Túi chống sốc", supplyItems: [{ supplyId: 81, quantity: 2 }], note: null })).resolves.toEqual({ id: 99, issuedAccessoryCount: 1 });
+    expect(mocks.createHandover).toHaveBeenCalledWith(expect.objectContaining({ accessories: expect.stringContaining("Chuột không dây × 2 Cái") }), expect.anything());
+    expect(mocks.updateInventorySupply).toHaveBeenCalledWith(81, { stockQuantity: "3" }, expect.anything());
+    expect(mocks.createInventoryMovement).toHaveBeenCalledWith(expect.objectContaining({ movementType: "issue", quantity: "2", quantityBefore: "5", quantityAfter: "3" }), expect.anything());
+
+    mocks.getInventorySupplyById.mockResolvedValueOnce({ id: 81, code: "PK-CHUOT", name: "Chuột không dây", unit: "Cái", stockQuantity: "1", isActive: true });
+    await expect(caller.handovers.create({ assetId: 50, recipientUserId: 7, recipientName: "Nguyễn Văn A", recipientDepartmentId: 12, recipientDepartmentName: "Hành chính - Nhân sự", handedOverAt: Date.now(), dueBackAt: null, conditionOut: "Tốt", accessories: null, supplyItems: [{ supplyId: 81, quantity: 2 }], note: null })).rejects.toThrow("Tồn kho phụ kiện PK-CHUOT không đủ");
   });
 
   it("requires a recipient signature before activating a handover", async () => {
