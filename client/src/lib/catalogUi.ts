@@ -12,7 +12,16 @@ export function normalizeVietnameseSearch(value: string) {
 }
 
 export function matchesVietnameseSearch(value: string, query: string) {
-  return normalizeVietnameseSearch(value).includes(normalizeVietnameseSearch(query));
+  const normalizedValue = normalizeVietnameseSearch(value);
+  const normalizedQuery = normalizeVietnameseSearch(query);
+  if (!normalizedQuery) return true;
+  if (normalizedValue.includes(normalizedQuery)) return true;
+
+  // Asset and certificate codes are routinely read or copied without their
+  // separators. Keep the normal text match, then retry a compact code match.
+  const compactValue = normalizedValue.replace(/[^a-z0-9]/g, "");
+  const compactQuery = normalizedQuery.replace(/[^a-z0-9]/g, "");
+  return compactQuery.length > 0 && compactValue.includes(compactQuery);
 }
 
 export function canCreateCatalogOption(keyword: string, matchedCount: number) {

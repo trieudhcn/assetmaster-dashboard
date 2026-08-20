@@ -1370,8 +1370,10 @@ function AssignmentsPage({ showComingSoon, companyInfo }: { showComingSoon: (lab
   const handoverDepartments = Array.from(new Set(handovers.map((item) => item.department).filter(Boolean))).sort((left, right) => left.localeCompare(right, "vi"));
   const handoverRecipients = Array.from(new Set(handovers.map((item) => item.recipient).filter(Boolean))).sort((left, right) => left.localeCompare(right, "vi"));
   const filtered = handovers.filter((item) => {
-    const itemYear = item.referenceCode.match(/^BG-(\\d{4})-/)?.[1] || item.date.split("/").at(-1);
-    return matchesVietnameseSearch(`${item.id} ${item.referenceCode} ${item.recoveryCertificateNumber || ""} ${item.assetName} ${item.recipient} ${item.department}`, query) && (statusFilter === "Tất cả trạng thái" || item.status === statusFilter) && (handoverYearFilter === "Tất cả các năm" || itemYear === handoverYearFilter) && (handoverDepartmentFilter === "Tất cả phòng ban" || item.department === handoverDepartmentFilter) && (handoverRecipientFilter === "Tất cả người nhận" || item.recipient === handoverRecipientFilter);
+    const itemYear = item.referenceCode.match(/^BG-(\d{4})-/)?.[1] || item.date.split("/").at(-1);
+    const hasRecoveryCertificate = Boolean(item.recoveryCertificateNumber);
+    const matchesStatus = statusFilter === "Tất cả trạng thái" || (statusFilter === "Đã có mã biên bản thu hồi" ? hasRecoveryCertificate : item.status === statusFilter);
+    return matchesVietnameseSearch(`${item.id} ${item.referenceCode} ${item.recoveryCertificateNumber || ""} ${item.assetName} ${item.recipient} ${item.department}`, query) && matchesStatus && (handoverYearFilter === "Tất cả các năm" || itemYear === handoverYearFilter) && (handoverDepartmentFilter === "Tất cả phòng ban" || item.department === handoverDepartmentFilter) && (handoverRecipientFilter === "Tất cả người nhận" || item.recipient === handoverRecipientFilter);
   });
   const handoverPageSize = 10;
   const handoverTotalPages = Math.max(1, Math.ceil(filtered.length / handoverPageSize));
@@ -2482,6 +2484,7 @@ function QrLookupModal({ assets, onClose, onOpenAsset }: { assets: Asset[]; onCl
 }
 
 function FilterSelect({ value, onChange, options, counts }: { value: string; onChange: (value: string) => void; options: string[]; counts?: Record<string, number> }) {
-  const normalizedOptions = options.includes("Trả nhà cung cấp") && !options.includes("Khấu hao/Thanh lý") ? [...options, "Khấu hao/Thanh lý"] : options;
+  const assetStatusOptions = options.includes("Trả nhà cung cấp") && !options.includes("Khấu hao/Thanh lý") ? [...options, "Khấu hao/Thanh lý"] : options;
+  const normalizedOptions = assetStatusOptions.includes("Đã hoàn trả") && !assetStatusOptions.includes("Đã có mã biên bản thu hồi") ? [...assetStatusOptions, "Đã có mã biên bản thu hồi"] : assetStatusOptions;
   return <SearchableSelect value={value} onChange={onChange} options={normalizedOptions.map((option) => { const label = option === "Bảo trì" ? "Bảo hành/Sửa chữa" : option; const count = counts?.[option]; return { value: option, label: typeof count === "number" ? `${label} (${count})` : label, searchText: label }; })} placeholder={normalizedOptions[0] || "Chọn một giá trị"} searchPlaceholder="Tìm trong dropdown..." className="w-full shrink-0 sm:w-[180px]" />;
 }

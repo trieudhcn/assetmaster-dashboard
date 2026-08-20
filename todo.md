@@ -2048,3 +2048,9 @@
 - [x] Thêm biểu tượng PDF nhận diện mã biên bản thu hồi có thể nhấn.
 - [x] Gỡ lựa chọn Sự cố không cần thiết khỏi biểu mẫu Bảo hành/Sửa chữa.
 - [x] Bổ sung hồi quy, kiểm tra giao diện và build phát hành.
+
+## Current Session — Recovery Filter & Flexible Search
+
+- [x] Thêm bộ lọc chỉ hiển thị các phiếu đã có mã biên bản thu hồi.
+- [x] Hỗ trợ tìm kiếm linh hoạt mã TH theo một phần ký tự hoặc khi bỏ dấu gạch nối.
+- [x] Bổ sung hồi quy, kiểm tra giao diện và build phát hành.

@@ -21,6 +21,12 @@ describe("Catalog UI helpers", () => {
     expect(matchesVietnameseSearch("Thiết bị văn phòng", "thiet bi")).toBe(true);
   });
 
+  it("matches recovery certificate codes flexibly when separators are omitted or only part of the code is supplied", () => {
+    expect(matchesVietnameseSearch("TH-202608-001", "TH202608001")).toBe(true);
+    expect(matchesVietnameseSearch("TH-202608-001", "202608")).toBe(true);
+    expect(matchesVietnameseSearch("TH-202608-001", "608-001")).toBe(true);
+  });
+
   it("offers creating a catalog option only for a meaningful empty search", () => {
     expect(canCreateCatalogOption("Sao Mai", 0)).toBe(true);
     expect(canCreateCatalogOption("Sao Mai", 1)).toBe(false);

@@ -868,6 +868,8 @@ describe("modal presentation contract", () => {
     expect(home).toContain("notifyPreparationComplete");
     expect(operations).toContain('useState<"maintenance" | "damage">("damage")');
     expect(operations).toContain('options={[{ value: "maintenance", label: issueTypeLabels.maintenance }, { value: "damage", label: issueTypeLabels.damage }]}');
+    expect(home).toContain('statusFilter === "Đã có mã biên bản thu hồi" ? hasRecoveryCertificate');
+    expect(home).toContain('"Đã có mã biên bản thu hồi"');
   });
 
   it("offers preview, download, and print flows for each repair ticket PDF", () => {
