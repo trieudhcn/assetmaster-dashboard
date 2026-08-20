@@ -9,6 +9,7 @@ import Home from "./pages/Home";
 import { LegacySectionLabelEnhancer } from "./components/LegacySectionLabelEnhancer";
 import { MotionSettingsRelocator } from "./components/MotionSettingsRelocator";
 import { SearchClearAffordance } from "./components/SearchClearAffordance";
+import { RecoveryCertificatePdfShortcut } from "./components/RecoveryCertificatePdfShortcut";
 
 function Router() {
   // make sure to consider if you need authentication for certain routes
@@ -37,6 +38,7 @@ function App() {
           <LegacySectionLabelEnhancer />
           <MotionSettingsRelocator />
           <SearchClearAffordance />
+          <RecoveryCertificatePdfShortcut />
           <Router />
         </TooltipProvider>
       </ThemeProvider>

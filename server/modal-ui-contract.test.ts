@@ -848,6 +848,18 @@ describe("modal presentation contract", () => {
     expect(home).toContain('`${item.referenceCode} · ${item.recoveryCertificateNumber}`');
   });
 
+  it("opens the existing recovery PDF preview when a TH certificate is selected from the handover list", () => {
+    const app = readProjectFile("client/src/App.tsx");
+    const shortcut = readProjectFile("client/src/components/RecoveryCertificatePdfShortcut.tsx");
+
+    expect(app).toContain("<RecoveryCertificatePdfShortcut />");
+    expect(shortcut).toContain("TH-\\d{6}-\\d{3}");
+    expect(shortcut).toContain("Mở xem trước biên bản thu hồi");
+    expect(shortcut).toContain('button[aria-label="Xem biên bản"]');
+    expect(shortcut).toContain("Biên bản thu hồi / In PDF");
+    expect(shortcut).toContain("pdfButton.click()");
+  });
+
   it("offers preview, download, and print flows for each repair ticket PDF", () => {
     const operations = readProjectFile("client/src/pages/OperationsModules.tsx");
     const previewHost = readProjectFile("client/src/components/ExportPreviewHost.tsx");

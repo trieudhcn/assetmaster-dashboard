@@ -2031,3 +2031,8 @@
 - [x] Chuẩn hóa nhãn Bảo trì thành Bảo hành/Sửa chữa trong mọi biểu mẫu thêm và sửa tài sản.
 - [x] Hiển thị mã biên bản thu hồi tại cột Mã phiếu cho các phiếu đã hoàn trả.
 - [x] Bổ sung hồi quy, kiểm tra giao diện và build phát hành.
+
+## Current Session — Recovery Certificate PDF Shortcut
+
+- [x] Cho phép nhấn mã biên bản thu hồi trong danh sách để mở nhanh bản xem trước PDF.
+- [x] Bổ sung hồi quy, kiểm tra giao diện và build phát hành.
