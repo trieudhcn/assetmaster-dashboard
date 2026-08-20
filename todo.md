@@ -2202,3 +2202,10 @@
 - [x] Dùng chung mẫu PDF và bản xem trước chuẩn cho phiếu Bảo hành/Sửa chữa từ popup xem nhanh.
 - [x] Bổ sung nút In và Xuất PDF trong popup xem nhanh phiếu.
 - [x] Bổ sung hồi quy, kiểm tra giao diện và build phát hành.
+
+## Current Session — PDF Preview Layer & Mobile Service Tickets
+
+- [x] Đưa lớp xem trước PDF lên trên popup xem nhanh, không còn bị che khuất.
+- [x] Tối ưu popup xem nhanh phiếu Bảo hành/Sửa chữa cho viewport mobile.
+- [x] Sửa bố cục mobile của trang Quản lý phiếu Bảo hành/Sửa chữa.
+- [x] Bổ sung hồi quy, kiểm tra desktop/mobile và build phát hành.

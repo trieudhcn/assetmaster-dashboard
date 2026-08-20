@@ -892,6 +892,19 @@ describe("modal presentation contract", () => {
     expect(previewHost).toContain("contentWindow?.print()");
   });
 
+  it("keeps the PDF preview above quick-ticket overlays and provides mobile ticket cards", () => {
+    const quickPreview = readProjectFile("client/src/components/QuickServiceTicketPreview.tsx");
+    const previewHost = readProjectFile("client/src/components/ExportPreviewHost.tsx");
+    const operations = readProjectFile("client/src/pages/OperationsModules.tsx");
+
+    expect(previewHost).toContain("z-[260]");
+    expect(quickPreview).toContain("h-[100dvh]");
+    expect(quickPreview).toContain("grid-rows-[auto_minmax(0,1fr)_auto]");
+    expect(operations).toContain("md:hidden");
+    expect(operations).toContain("mobile-${ticket.id}");
+    expect(operations).toContain("hidden md:block mobile-table-scroll");
+  });
+
   it("supports partial handover accessory returns and previews service costs in Excel", () => {
     const home = readProjectFile("client/src/pages/Home.tsx");
     const reports = readProjectFile("client/src/pages/ReportsManagementView.tsx");
