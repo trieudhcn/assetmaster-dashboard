@@ -2118,3 +2118,9 @@
 
 - [x] Tinh gọn khu vực Phân bổ giá trị trong tab Báo cáo để tăng khả năng quét thông tin.
 - [x] Bổ sung hồi quy, kiểm tra giao diện và build phát hành.
+
+## Current Session — Value Allocation Drill-down
+
+- [x] Cho phép nhấn vào nhóm trong biểu đồ phân bổ giá trị để xem tài sản thuộc nhóm đó.
+- [x] Hiển thị danh sách tài sản chi tiết tương ứng với nhóm Bộ Phận, Hãng hoặc Nhà cung cấp đã chọn.
+- [x] Bổ sung hồi quy, kiểm tra giao diện và build phát hành.

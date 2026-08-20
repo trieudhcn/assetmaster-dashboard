@@ -1103,12 +1103,20 @@ describe("modal presentation contract", () => {
     expect(reports).toContain("supplierValueData");
     expect(reports).toContain("Phân bổ giá trị theo Nhà cung cấp");
     expect(reports).toContain("CompactValueAllocation");
+    expect(reports).toContain("InteractiveValueAllocation");
+    expect(reports).toContain("AllocationAssetDetails");
+    expect(reports).toContain("allocationSelection");
+    expect(reports).toContain("selectedAllocationAssets");
     expect(reports).toContain("const topItems = data.slice(0, 5)");
     expect(reports).toContain("nhóm còn lại được gộp trong biểu đồ");
     expect(reports).toContain("Tổng giá trị");
     expect(reports).toContain('value: "million"');
     expect(reports).toContain('value: "billion"');
     expect(reports).toContain("currencyMode");
+    const interactiveAllocation = readProjectFile("client/src/components/InteractiveValueAllocation.tsx");
+    expect(interactiveAllocation).toContain("Biểu đồ phân bổ có thể chọn nhóm");
+    expect(interactiveAllocation).toContain("Xem tài sản nhóm");
+    expect(interactiveAllocation).toContain("Đóng danh sách");
   });
 
 describe("currency input and scrollbar contract", () => {
