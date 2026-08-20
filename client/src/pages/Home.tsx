@@ -1969,10 +1969,18 @@ function HandoverDetailModal({ item: listItem, companyInfo, onClose, onDataChang
   useEffect(() => { if (!item.supplyItems?.length) return; setReturnQuantities((current) => Object.fromEntries(item.supplyItems!.map((supplyItem: NonNullable<Handover["supplyItems"]>[number]) => [supplyItem.id, current[supplyItem.id] ?? String(Math.max(0, Number(supplyItem.issuedQuantity) - Number(supplyItem.returnedQuantity || 0)))]))); }, [item.id, item.supplyItems]);
   useEffect(() => {
     const certificate = typeof window === "undefined" ? null : sessionStorage.getItem("assetmaster-open-recovery-pdf-certificate");
-    if (!shouldAutoOpenRecoveryPdf || !certificate || handoverDetailQuery.isLoading || !handoverDetailQuery.data || item.status !== "Đã hoàn trả" || item.recoveryCertificateNumber !== certificate) return;
+    if (!shouldAutoOpenRecoveryPdf || !certificate || handoverDetailQuery.isLoading) return;
+    const notifyPreparationComplete = (success: boolean) => window.dispatchEvent(new CustomEvent("assetmaster-recovery-pdf-preparation-complete", { detail: { certificate, success } }));
+    if (!handoverDetailQuery.data || item.status !== "Đã hoàn trả" || item.recoveryCertificateNumber !== certificate) {
+      sessionStorage.removeItem("assetmaster-open-recovery-pdf-certificate");
+      setShouldAutoOpenRecoveryPdf(false);
+      notifyPreparationComplete(false);
+      toast.error("Không thể chuẩn bị bản xem trước biên bản thu hồi.");
+      return;
+    }
     sessionStorage.removeItem("assetmaster-open-recovery-pdf-certificate");
     setShouldAutoOpenRecoveryPdf(false);
-    void downloadAssetRecoveryPdf(item, companyInfo).then(() => toast.success("Đã mở biên bản thu hồi. Bạn có thể in hoặc tải PDF từ màn hình xem trước.")).catch(() => toast.error("Không thể mở bản xem trước biên bản thu hồi."));
+    void downloadAssetRecoveryPdf(item, companyInfo).then(() => { notifyPreparationComplete(true); toast.success("Đã mở biên bản thu hồi. Bạn có thể in hoặc tải PDF từ màn hình xem trước."); }).catch(() => { notifyPreparationComplete(false); toast.error("Không thể mở bản xem trước biên bản thu hồi."); });
   }, [shouldAutoOpenRecoveryPdf, handoverDetailQuery.isLoading, handoverDetailQuery.data, item.id, item.status, item.recoveryCertificateNumber, companyInfo]);
   useModalDismiss(onClose);
   const isBusy = saveRecipientSignature.isPending || updateHandoverStatus.isPending;

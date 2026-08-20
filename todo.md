@@ -2041,3 +2041,10 @@
 
 - [x] Sửa lỗi nhấn mã biên bản thu hồi trong danh sách chưa mở được bản xem trước PDF.
 - [x] Bổ sung hồi quy, tái hiện tương tác và build phát hành.
+
+## Current Session — Recovery PDF Feedback & Service Form Cleanup
+
+- [x] Hiển thị trạng thái Đang chuẩn bị PDF và chặn nhấn lặp khi mở từ mã TH.
+- [x] Thêm biểu tượng PDF nhận diện mã biên bản thu hồi có thể nhấn.
+- [x] Gỡ lựa chọn Sự cố không cần thiết khỏi biểu mẫu Bảo hành/Sửa chữa.
+- [x] Bổ sung hồi quy, kiểm tra giao diện và build phát hành.

@@ -852,6 +852,7 @@ describe("modal presentation contract", () => {
     const app = readProjectFile("client/src/App.tsx");
     const shortcut = readProjectFile("client/src/components/RecoveryCertificatePdfShortcut.tsx");
     const home = readProjectFile("client/src/pages/Home.tsx");
+    const operations = readProjectFile("client/src/pages/OperationsModules.tsx");
 
     expect(app).toContain("<RecoveryCertificatePdfShortcut />");
     expect(shortcut).toContain("TH-\\d{6}-\\d{3}");
@@ -861,6 +862,12 @@ describe("modal presentation contract", () => {
     expect(home).toContain("shouldAutoOpenRecoveryPdf");
     expect(home).toContain("assetmaster-open-recovery-pdf-certificate");
     expect(home).toContain("downloadAssetRecoveryPdf(item, companyInfo)");
+    expect(shortcut).toContain("Đang chuẩn bị PDF...");
+    expect(shortcut).toContain('icon.textContent = "PDF"');
+    expect(shortcut).toContain("assetmaster-recovery-pdf-preparation-complete");
+    expect(home).toContain("notifyPreparationComplete");
+    expect(operations).toContain('useState<"maintenance" | "damage">("damage")');
+    expect(operations).toContain('options={[{ value: "maintenance", label: issueTypeLabels.maintenance }, { value: "damage", label: issueTypeLabels.damage }]}');
   });
 
   it("offers preview, download, and print flows for each repair ticket PDF", () => {
