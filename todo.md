@@ -2155,3 +2155,9 @@
 - [x] Thêm bộ lọc kênh Bảo hành/Sửa chữa cho báo cáo chi phí theo năm.
 - [x] Đồng bộ bộ lọc kênh với bản xem trước Excel chi phí.
 - [x] Bổ sung hồi quy, kiểm tra giao diện và build phát hành.
+
+## Current Session — Stable Service Cost Summary
+
+- [x] Thay các ô tóm tắt bằng Sửa chữa, Bảo hành và Tổng cộng trong khu vực chi phí.
+- [x] Khóa nút xem trước Excel khi bộ lọc không có phiếu phát sinh chi phí.
+- [x] Bổ sung hồi quy, kiểm tra giao diện và build phát hành.
