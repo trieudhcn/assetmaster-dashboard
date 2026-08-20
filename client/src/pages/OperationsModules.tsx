@@ -33,7 +33,7 @@ import { CurrencyInput } from "@/components/CurrencyInput";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { matchesVietnameseSearch } from "@/lib/catalogUi";
 import { numberToVietnameseWords, parseVndAmount } from "@/lib/formatters";
-import { handoverPdfFontUrl, registerVietnamesePdfFont, vietnamesePdfFontFamily } from "@/lib/handoverPdf";
+import { drawPdfCorporateFooter, handoverPdfFontUrl, registerVietnamesePdfFont, vietnamesePdfFontFamily } from "@/lib/handoverPdf";
 import { writeBrandedWorkbook } from "@/lib/brandedWorkbook";
 import { applyPdfLogoWatermark, createPdfLogoWatermark, openPdfPreview } from "@/lib/pdfExport";
 import { ModuleEmptyState } from "@/components/ModuleEmptyState";
@@ -588,6 +588,7 @@ export function MaintenancePage() {
       doc.setFontSize(7.5);
       doc.text(`Tạo ngày ${new Date().toLocaleDateString("vi-VN")}`, left, 286);
       applyPdfLogoWatermark(doc, await createPdfLogoWatermark(company.logoUrl).catch(() => null));
+      drawPdfCorporateFooter(doc, company, "Phiếu sửa chữa tài sản");
       openPdfPreview(doc, `${ticket.ticketCode}-phieu-sua-chua.pdf`, `Phiếu Sửa chữa ${ticket.ticketCode}`);
       toast.success(`Đã mở xem trước PDF ${ticket.ticketCode}.`, { id: loadingToast });
     } catch (error) {
@@ -1497,6 +1498,7 @@ export function AuditPage() {
       });
       const watermark = await createPdfLogoWatermark(company.logoUrl).catch(() => null);
       applyPdfLogoWatermark(doc, watermark);
+      drawPdfCorporateFooter(doc, company, "Biên bản chênh lệch kiểm kê");
       openPdfPreview(doc, `assetmaster-chenh-lech-${selectedAudit.referenceCode}.pdf`, "BIÊN BẢN CHÊNH LỆCH KIỂM KÊ");
       toast.success(`Đã xuất ${discrepancyRows.length} chênh lệch ra PDF.`, { id: loadingToast });
     } catch (error) {
@@ -1614,18 +1616,9 @@ export function AuditPage() {
       signatureColumns.forEach((column) => doc.text("(Ký, ghi rõ họ tên)", column, y, { align: "center" }));
       y += 25;
       signatureColumns.forEach((column) => doc.line(column - 21, y, column + 21, y));
-      const pageCount = doc.getNumberOfPages();
-      for (let page = 1; page <= pageCount; page += 1) {
-        doc.setPage(page);
-        doc.setDrawColor(221, 231, 240);
-        doc.line(left, 286, right, 286);
-        doc.setTextColor(112, 134, 154);
-        doc.setFontSize(7.5);
-        doc.text(`${company.name || "Đơn vị quản lý"} · ${selectedAudit.referenceCode}`, left, 291);
-        doc.text(`Trang ${page}/${pageCount}`, right, 291, { align: "right" });
-      }
       const watermark = await createPdfLogoWatermark(company.logoUrl).catch(() => null);
       applyPdfLogoWatermark(doc, watermark);
+      drawPdfCorporateFooter(doc, company, `Biên bản kiểm kê · ${selectedAudit.referenceCode}`);
       openPdfPreview(doc, `assetmaster-bien-ban-kiem-ke-${selectedAudit.referenceCode}.pdf`, "BIÊN BẢN KIỂM KÊ ĐÃ CHỐT");
       toast.success("Đã xuất biên bản kiểm kê đã chốt ra PDF.", { id: loadingToast });
     } catch (error) {

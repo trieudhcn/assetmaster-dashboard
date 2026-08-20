@@ -625,7 +625,7 @@ describe("modal presentation contract", () => {
     expect(reports).toContain("Xem trước PDF gộp");
     expect(retirementPdf).toContain("openRetirementPdf");
     expect(retirementPdf).toContain("doc.addPage()");
-    expect(retirementPdf).toContain("Trang ${page}/${totalPages}");
+    expect(retirementPdf).toContain("drawPdfCorporateFooter");
   });
 
   it("opens the combined disposal PDF in an in-app preview before download", () => {
@@ -1335,7 +1335,7 @@ describe("maintenance history and filter layout contract", () => {
     expect(operations).toContain("NGƯỜI PHÊ DUYỆT");
     expect(operations).toContain("companySettingsQuery");
     expect(operations).toContain("loadAuditPdfImage");
-    expect(operations).toContain("Trang ${page}/${pageCount}");
+    expect(operations).toContain("drawPdfCorporateFooter");
     expect(operations).toContain("Lịch sử nhập Excel");
     expect(operations).toContain("auditImportHistoryQuery");
     expect(operations).toContain("Hiện trạng thực tế");

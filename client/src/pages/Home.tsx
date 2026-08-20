@@ -10,7 +10,7 @@ import { startLogin } from "@/const";
 import { trpc } from "@/lib/trpc";
 import { buildFilteredAssetExportRows, buildMaintenanceExportRows, canCreateCatalogOption, filterNamedCatalogOptions, getAssetStatusFilterCounts, getHandoverActionTooltip, getMaintenanceBadgeCount, getNewMaintenanceRequestBadge, getPaginationWindow, matchesVietnameseSearch, toggleMaintenanceStatusFilter } from "@/lib/catalogUi";
 import { getNotificationTargetLabel, type NotificationTarget } from "@/lib/notificationLinks";
-import { handoverPdfFontUrl, registerVietnamesePdfFont } from "@/lib/handoverPdf";
+import { drawPdfCorporateFooter, handoverPdfFontUrl, registerVietnamesePdfFont } from "@/lib/handoverPdf";
 import { formatVnd } from "@/lib/formatters";
 import { writeBrandedWorkbook } from "@/lib/brandedWorkbook";
 import { applyPdfLogoWatermark, createPdfLogoWatermark, openPdfPreview } from "@/lib/pdfExport";
@@ -1796,6 +1796,7 @@ async function downloadHandoverPdf(item: Handover, signature: string | undefined
   doc.text(`Biên bản được tạo ngày ${new Date().toLocaleDateString("vi-VN")}`, left, 282);
   const watermark = await createPdfLogoWatermark(companyInfo.logoUrl).catch(() => null);
   applyPdfLogoWatermark(doc, watermark);
+  drawPdfCorporateFooter(doc, companyInfo, "Biên bản bàn giao tài sản");
   openPdfPreview(doc, `${item.referenceCode}-phieu-cap-phat-tai-san.pdf`, `Phiếu cấp phát tài sản ${item.referenceCode}`);
 }
 
@@ -1909,6 +1910,7 @@ async function downloadAssetRecoveryPdf(item: Handover, companyInfo: CompanyInfo
   doc.text(item.handoverBy || "Quản trị viên", 119, y + 33);
   const watermark = await createPdfLogoWatermark(companyInfo.logoUrl).catch(() => null);
   applyPdfLogoWatermark(doc, watermark);
+  drawPdfCorporateFooter(doc, companyInfo, "Biên bản thu hồi tài sản");
   const recoveryCertificateNumber = item.recoveryCertificateNumber || item.referenceCode;
   openPdfPreview(doc, `${recoveryCertificateNumber}-bien-ban-thu-hoi-tai-san.pdf`, `Biên bản thu hồi tài sản ${recoveryCertificateNumber}`);
 }
@@ -1971,6 +1973,7 @@ async function downloadAssetRetirementPdf(asset: Asset, companyInfo: CompanyInfo
   doc.setTextColor(138, 160, 182);
   doc.text(`Biên bản được tạo ngày ${new Date().toLocaleDateString("vi-VN")}`, left, 282);
   applyPdfLogoWatermark(doc, await createPdfLogoWatermark(companyInfo.logoUrl).catch(() => null));
+  drawPdfCorporateFooter(doc, companyInfo, "Biên bản thanh lý tài sản");
   openPdfPreview(doc, `${asset.retirementCertificateNumber || asset.code}-bien-ban-thanh-ly.pdf`, `Biên bản thanh lý ${asset.retirementCertificateNumber || asset.code}`);
 }
 

@@ -2077,3 +2077,9 @@
 
 - [x] Chuẩn hóa phông Unicode nhúng cho toàn bộ nội dung PDF phiếu sửa chữa.
 - [x] Bổ sung hồi quy và xác minh tiếng Việt có dấu trong bản xem trước PDF.
+
+## Current Session — PDF Unicode & Corporate Identity Standardization
+
+- [x] Áp dụng phông Unicode nhúng cho PDF biên bản thanh lý và kiểm kê.
+- [x] Chuẩn hóa logo, tiêu đề và chân trang trên các mẫu PDF xuất hiện có.
+- [x] Bổ sung hồi quy PDF tiếng Việt và nhận diện doanh nghiệp, kiểm tra build phát hành.

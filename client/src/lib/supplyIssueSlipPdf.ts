@@ -1,6 +1,6 @@
 import { jsPDF } from "jspdf";
 import { createPdfLogoWatermark, applyPdfLogoWatermark, openPdfPreview } from "@/lib/pdfExport";
-import { handoverPdfFontUrl, registerVietnamesePdfFont } from "@/lib/handoverPdf";
+import { drawPdfCorporateFooter, handoverPdfFontUrl, registerVietnamesePdfFont } from "@/lib/handoverPdf";
 
 type CompanyInfo = { name?: string | null; address?: string | null; taxCode?: string | null; phone?: string | null; logoUrl?: string | null };
 type SupplyIssueSlipPdf = { referenceCode: string; recipientName: string; issuedByName: string | null; issuedAt: Date; note: string | null };
@@ -79,5 +79,6 @@ export async function openSupplyIssueSlipPdf(slip: SupplyIssueSlipPdf, items: Su
   doc.text("(Ký, ghi rõ họ tên)", pageWidth - margin - 30, signatureY + 5, { align: "center" });
   const watermark = await createPdfLogoWatermark(company.logoUrl);
   applyPdfLogoWatermark(doc, watermark);
+  drawPdfCorporateFooter(doc, company, "Phiếu cấp phát phụ kiện");
   openPdfPreview(doc, `${slip.referenceCode}.pdf`, `Phiếu cấp phát ${slip.referenceCode}`);
 }

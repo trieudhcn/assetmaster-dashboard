@@ -1,6 +1,6 @@
 import { jsPDF } from "jspdf";
 import { formatVnd } from "@/lib/formatters";
-import { handoverPdfFontUrl, registerVietnamesePdfFont } from "@/lib/handoverPdf";
+import { drawPdfCorporateFooter, handoverPdfFontUrl, registerVietnamesePdfFont } from "@/lib/handoverPdf";
 import { applyPdfLogoWatermark, createPdfLogoWatermark, openPdfPreview } from "@/lib/pdfExport";
 
 export type RetirementPdfCompany = { name?: string | null; address?: string | null; taxCode?: string | null; phone?: string | null; logoUrl?: string | null };
@@ -103,9 +103,6 @@ function drawRetirementRecord(doc: jsPDF, asset: RetirementPdfAsset, company: Re
   doc.text("Người lập biên bản", 42, y + 10, { align: "center" });
   doc.text("Đại diện bộ phận quản lý", 105, y + 10, { align: "center" });
   doc.text("Người phê duyệt", 168, y + 10, { align: "center" });
-  doc.setTextColor(138, 160, 182);
-  doc.text(`Biên bản được tạo ngày ${new Date().toLocaleDateString("vi-VN")}`, left, 282);
-  doc.text(`Trang ${page}/${totalPages}`, 192, 282, { align: "right" });
 }
 
 export async function openRetirementPdf(assets: RetirementPdfAsset[], company: RetirementPdfCompany, fileName?: string, title?: string) {
@@ -118,6 +115,7 @@ export async function openRetirementPdf(assets: RetirementPdfAsset[], company: R
     drawRetirementRecord(doc, asset, company, logoDataUrl, index + 1, assets.length);
   });
   applyPdfLogoWatermark(doc, await createPdfLogoWatermark(company.logoUrl).catch(() => null));
+  drawPdfCorporateFooter(doc, company, assets.length === 1 ? "Biên bản thanh lý tài sản" : "Biên bản thanh lý gộp");
   const defaultName = assets.length === 1 ? `${assets[0].retirementCertificateNumber || assets[0].code}-bien-ban-thanh-ly.pdf` : "assetmaster-bien-ban-thanh-ly-gop.pdf";
   const defaultTitle = assets.length === 1 ? `Biên bản thanh lý ${assets[0].retirementCertificateNumber || assets[0].code}` : `Biên bản thanh lý gộp (${assets.length} tài sản)`;
   openPdfPreview(doc, fileName || defaultName, title || defaultTitle);
