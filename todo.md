@@ -2107,3 +2107,9 @@
 - [x] Thêm nút mở lại bản PDF cho từng phiếu trong lịch sử nhận phụ kiện của hồ sơ nhân viên.
 - [x] Thêm bộ lọc theo khoảng thời gian và trạng thái đã trả/còn giữ cho lịch sử nhận phụ kiện.
 - [x] Bổ sung hồi quy, kiểm tra giao diện và build phát hành.
+
+## Current Session — Employee Supply History Simplification
+
+- [x] Gỡ bộ lọc thời gian và trạng thái khỏi lịch sử nhận phụ kiện trong hồ sơ nhân viên.
+- [x] Hiển thị số lượng phụ kiện dạng số nguyên gọn khi không có phần lẻ.
+- [x] Bổ sung hồi quy, kiểm tra bản dựng và phát hành.

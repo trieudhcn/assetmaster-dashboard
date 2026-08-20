@@ -427,6 +427,7 @@ describe("modal presentation contract", () => {
     expect(employees).toContain("Đã trả {item.returnedQuantity} · Còn {outstanding}");
     expect(employees).toContain("SUPPLY_HISTORY_PAGE_SIZE");
     expect(employees).toContain("EmployeeSupplyHistorySection");
+    expect(employees).toContain("CompactEmployeeSupplyHistorySection");
     expect(employees).toContain("openSlipPdf");
     expect(employees).toContain("Mở lại PDF phiếu cấp phát");
     expect(employees).toContain("Từ ngày");
@@ -437,6 +438,15 @@ describe("modal presentation contract", () => {
     expect(db).toContain("recipientUserId: supplyIssueSlips.recipientUserId");
     expect(db).toContain("recipientName: supplyIssueSlips.recipientName");
     expect(db).toContain("issuedByName: supplyIssueSlips.issuedByName");
+  });
+
+  it("keeps the employee accessory history compact and suppresses unnecessary decimal zeroes", () => {
+    const employees = readProjectFile("client/src/pages/EmployeeManagementView.tsx");
+
+    expect(employees).toContain("formatSupplyQuantity");
+    expect(employees).toContain("maximumFractionDigits: 2");
+    expect(employees).toContain("<CompactEmployeeSupplyHistorySection");
+    expect(employees).toContain("Theo dõi từng phiếu, số lượng đã nhận và đã hoàn trả.");
   });
 
   it("filters accessory distribution statistics by searchable employee and reports active quantities", () => {
