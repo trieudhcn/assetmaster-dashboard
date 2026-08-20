@@ -2060,3 +2060,9 @@
 - [x] Gỡ bộ chọn Báo hỏng/Bảo trì định kỳ khỏi biểu mẫu tạo phiếu Bảo hành/Sửa chữa.
 - [x] Sửa thao tác nhấn mã TH để mở trực tiếp bản xem trước biên bản thu hồi.
 - [x] Bổ sung hồi quy, tái hiện tương tác và build phát hành.
+
+## Current Session — Recovery Search & Direct Preview Fix
+
+- [x] Sửa tìm kiếm chuỗi con để mã đuôi như 001 trả về đúng các phiếu phù hợp.
+- [x] Sửa nhấn mã TH để chuyển thẳng đến bản xem trước PDF, không dừng ở chi tiết bàn giao.
+- [x] Bổ sung hồi quy, tái hiện tương tác và build phát hành.

@@ -1377,13 +1377,39 @@ function AssignmentsPage({ showComingSoon, companyInfo }: { showComingSoon: (lab
         toast.error("Không tìm thấy phiếu tương ứng với mã biên bản thu hồi.");
         return;
       }
-      setRecoveryPdfRequest(certificate);
-      setSelected(handover);
-      setModal("detail");
+      void utils.handovers.get.fetch({ id: handover.id }).then((detail) => {
+        const pdfItem: Handover = {
+          ...handover,
+          referenceCode: detail.referenceCode,
+          assetCode: detail.assetCode,
+          assetName: detail.assetName,
+          recipient: detail.recipientName,
+          department: detail.recipientDepartmentName || "Chưa xác định",
+          date: new Date(detail.handedOverAt).toLocaleDateString("vi-VN"),
+          returnedAt: detail.returnedAt,
+          recoveryCertificateNumber: detail.recoveryCertificateNumber,
+          recoveryCertificateYear: detail.recoveryCertificateYear,
+          recoveryCertificateMonth: detail.recoveryCertificateMonth,
+          recoveryCertificateSequence: detail.recoveryCertificateSequence,
+          conditionIn: detail.conditionIn,
+          condition: detail.conditionOut || "Tốt",
+          handoverBy: detail.handoverByName || "Quản trị viên",
+          note: detail.note || "",
+          accessories: detail.accessories || "",
+          supplyItems: detail.supplyItems,
+        };
+        return downloadAssetRecoveryPdf(pdfItem, companyInfo);
+      }).then(() => {
+        window.dispatchEvent(new CustomEvent("assetmaster-recovery-pdf-preparation-complete", { detail: { certificate, success: true } }));
+        toast.success("Đã mở biên bản thu hồi. Bạn có thể in hoặc tải PDF từ màn hình xem trước.");
+      }).catch(() => {
+        window.dispatchEvent(new CustomEvent("assetmaster-recovery-pdf-preparation-complete", { detail: { certificate, success: false } }));
+        toast.error("Không thể mở bản xem trước biên bản thu hồi.");
+      });
     };
     window.addEventListener("assetmaster-open-recovery-certificate", openRecoveryCertificate);
     return () => window.removeEventListener("assetmaster-open-recovery-certificate", openRecoveryCertificate);
-  }, [handovers]);
+  }, [handovers, utils, companyInfo]);
   const handoverYears = Array.from(new Set(handovers.map((item) => item.referenceCode.match(/^BG-(\\d{4})-/)?.[1] || item.date.split("/").at(-1)).filter((year): year is string => Boolean(year)))).sort((left, right) => Number(right) - Number(left));
   const handoverDepartments = Array.from(new Set(handovers.map((item) => item.department).filter(Boolean))).sort((left, right) => left.localeCompare(right, "vi"));
   const handoverRecipients = Array.from(new Set(handovers.map((item) => item.recipient).filter(Boolean))).sort((left, right) => left.localeCompare(right, "vi"));
@@ -1391,7 +1417,7 @@ function AssignmentsPage({ showComingSoon, companyInfo }: { showComingSoon: (lab
     const itemYear = item.referenceCode.match(/^BG-(\d{4})-/)?.[1] || item.date.split("/").at(-1);
     const hasRecoveryCertificate = Boolean(item.recoveryCertificateNumber);
     const matchesStatus = statusFilter === "Tất cả trạng thái" || (statusFilter === "Đã có mã biên bản thu hồi" ? hasRecoveryCertificate : item.status === statusFilter);
-    return matchesVietnameseSearch(`${item.id} ${item.referenceCode} ${item.recoveryCertificateNumber || ""} ${item.assetName} ${item.recipient} ${item.department}`, query) && matchesStatus && (handoverYearFilter === "Tất cả các năm" || itemYear === handoverYearFilter) && (handoverDepartmentFilter === "Tất cả phòng ban" || item.department === handoverDepartmentFilter) && (handoverRecipientFilter === "Tất cả người nhận" || item.recipient === handoverRecipientFilter);
+    return matchesVietnameseSearch(`${item.referenceCode} ${item.recoveryCertificateNumber || ""}`, query) && matchesStatus && (handoverYearFilter === "Tất cả các năm" || itemYear === handoverYearFilter) && (handoverDepartmentFilter === "Tất cả phòng ban" || item.department === handoverDepartmentFilter) && (handoverRecipientFilter === "Tất cả người nhận" || item.recipient === handoverRecipientFilter);
   });
   const handoverPageSize = 10;
   const handoverTotalPages = Math.max(1, Math.ceil(filtered.length / handoverPageSize));

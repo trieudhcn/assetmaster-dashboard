@@ -835,6 +835,7 @@ describe("modal presentation contract", () => {
     expect(clearAffordance).toContain("Tìm mã phiếu, mã thu hồi...");
     expect(app).toContain("<SearchClearAffordance />");
     expect(searchableSelect).toContain('aria-label="Xóa tìm kiếm trong dropdown"');
+    expect(home).toContain('matchesVietnameseSearch(`${item.referenceCode} ${item.recoveryCertificateNumber || ""}`, query)');
   });
 
   it("uses the warranty-repair label in asset forms and shows recovery numbers in returned handover rows", () => {
