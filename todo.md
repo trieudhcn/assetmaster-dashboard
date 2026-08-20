@@ -2161,3 +2161,9 @@
 - [x] Thay các ô tóm tắt bằng Sửa chữa, Bảo hành và Tổng cộng trong khu vực chi phí.
 - [x] Khóa nút xem trước Excel khi bộ lọc không có phiếu phát sinh chi phí.
 - [x] Bổ sung hồi quy, kiểm tra giao diện và build phát hành.
+
+## Current Session — Monthly Service Cost Trend
+
+- [x] Thêm biểu đồ cột biến động chi phí theo từng tháng trong năm đã chọn.
+- [x] Hiển thị tỷ trọng phần trăm Bảo hành và Sửa chữa so với Tổng cộng.
+- [x] Bổ sung hồi quy, kiểm tra giao diện và build phát hành.
