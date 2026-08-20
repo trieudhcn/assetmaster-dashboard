@@ -2221,3 +2221,11 @@
 - [x] Bổ sung tên người lập và ngày lập phiếu ở phần đầu PDF.
 - [x] Thay phần thông tin tài sản bằng bảng gồm các trường tài sản chính.
 - [x] Bổ sung hồi quy, kiểm tra PDF và build phát hành.
+
+## Current Session — PDF Signatures & Chart Swipe
+
+- [x] Thêm Serial vào bảng thông tin tài sản của PDF.
+- [x] Thay khu ký bằng Nhà cung cấp, Người bàn giao và Quản lý; bỏ Người xử lý.
+- [x] Loại bỏ các khối thông tin xử lý/phụ trong ảnh khỏi PDF.
+- [x] Bảo đảm biểu đồ chi phí theo tháng có thể vuốt ngang trên mobile.
+- [x] Bổ sung hồi quy, kiểm tra PDF/mobile và build phát hành.

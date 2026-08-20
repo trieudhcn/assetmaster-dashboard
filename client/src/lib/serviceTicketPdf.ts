@@ -1,7 +1,6 @@
 import { jsPDF } from "jspdf";
 import { drawPdfCorporateFooter, handoverPdfFontUrl, registerVietnamesePdfFont, vietnamesePdfFontFamily } from "@/lib/handoverPdf";
 import { applyPdfLogoWatermark, createPdfLogoWatermark, openPdfPreview } from "@/lib/pdfExport";
-import { parseVndAmount } from "@/lib/formatters";
 
 export type ServiceTicketPdfCompany = {
   name?: string | null;
@@ -19,9 +18,6 @@ type ServiceTicketPdfArgs = {
   autoPrint?: boolean;
 };
 
-const statusLabels: Record<string, string> = { open: "Mới tiếp nhận", pending: "Chờ xử lý", in_progress: "Đang xử lý", resolved: "Đã xử lý", closed: "Đã đóng", cancelled: "Đã hủy" };
-const priorityLabels: Record<string, string> = { low: "Thấp", medium: "Trung bình", high: "Cao", critical: "Khẩn cấp" };
-const issueTypeLabels: Record<string, string> = { maintenance: "Bảo trì định kỳ", incident: "Sự cố", damage: "Báo hỏng" };
 const assetConditionLabels: Record<string, string> = { good: "Tốt", fair: "Đã qua sử dụng", needs_inspection: "Cần kiểm tra", damaged: "Hư hỏng" };
 
 async function loadPdfImage(url: string) {
@@ -109,10 +105,11 @@ export async function previewServiceTicketPdf({ ticket, asset, assigneeName, com
   y += 5;
   const assetColumns = [
     { label: "Mã tài sản", value: asset?.assetCode || `Tài sản #${ticket.assetId}`, width: 28 },
-    { label: "Tên tài sản", value: asset?.name || "Không còn trong danh mục", width: 57 },
-    { label: "Tình trạng", value: assetConditionLabels[asset?.condition] || asset?.condition || "Chưa cập nhật", width: 30 },
-    { label: "Ngày mua", value: asset?.purchaseDate ? new Date(asset.purchaseDate).toLocaleDateString("vi-VN") : "Chưa cập nhật", width: 30 },
-    { label: "Hạn bảo hành", value: asset?.warrantyUntil ? new Date(asset.warrantyUntil).toLocaleDateString("vi-VN") : "Chưa cập nhật", width: 33 },
+    { label: "Tên tài sản", value: asset?.name || "Không còn trong danh mục", width: 43 },
+    { label: "Serial", value: asset?.serialNumber || "Chưa cập nhật", width: 28 },
+    { label: "Tình trạng", value: assetConditionLabels[asset?.condition] || asset?.condition || "Chưa cập nhật", width: 25 },
+    { label: "Ngày mua", value: asset?.purchaseDate ? new Date(asset.purchaseDate).toLocaleDateString("vi-VN") : "Chưa cập nhật", width: 25 },
+    { label: "Hạn bảo hành", value: asset?.warrantyUntil ? new Date(asset.warrantyUntil).toLocaleDateString("vi-VN") : "Chưa cập nhật", width: 29 },
   ];
   const assetValueLines = assetColumns.map((column) => doc.splitTextToSize(String(column.value), column.width - 4));
   const assetValueHeight = Math.max(10, Math.max(...assetValueLines.map((lines) => lines.length)) * 4.2 + 4);
@@ -139,65 +136,16 @@ export async function previewServiceTicketPdf({ ticket, asset, assigneeName, com
     assetColumnX += column.width;
   });
   y += 7 + assetValueHeight + 6;
-
-  const estimated = parseVndAmount(String(ticket.estimatedCost || ""));
-  const actual = parseVndAmount(String(ticket.actualCost || ""));
-  const fields: Array<[string, string]> = [
-    ["Kênh xử lý", channelLabel],
-    ["Loại yêu cầu", issueTypeLabels[ticket.issueType] || ticket.issueType || "Chưa cập nhật"],
-    ["Mức ưu tiên", priorityLabels[ticket.priority] || ticket.priority || "Chưa cập nhật"],
-    ["Trạng thái", statusLabels[ticket.status] || ticket.status || "Chưa cập nhật"],
-    ["Hạn xử lý", ticket.dueAt ? new Date(ticket.dueAt).toLocaleDateString("vi-VN") : "Chưa thiết lập"],
-    ["Người xử lý", assigneeName || (ticket.assigneeUserId ? `Nhân sự #${ticket.assigneeUserId}` : "Chưa phân công")],
-    ["Chi phí dự kiến", estimated ? `${estimated.toLocaleString("vi-VN")} VNĐ` : "Chưa ghi nhận"],
-    ["Chi phí thực tế", actual ? `${actual.toLocaleString("vi-VN")} VNĐ` : "Chưa ghi nhận"],
-  ];
-  doc.setFontSize(9);
-  fields.forEach(([label, value], index) => {
-    const rowY = y + index * 7;
-    doc.setFillColor(index % 2 ? 248 : 240, index % 2 ? 251 : 248, index % 2 ? 252 : 247);
-    doc.rect(left, rowY - 4.8, width, 7, "F");
-    doc.setFont(vietnamesePdfFontFamily, "bold");
-    doc.setTextColor(82, 112, 137);
-    doc.text(label, left + 3, rowY);
-    doc.setFont(vietnamesePdfFontFamily, "normal");
-    doc.setTextColor(25, 59, 87);
-    doc.text(doc.splitTextToSize(String(value), 110), left + 62, rowY);
-  });
-  y += fields.length * 7 + 5;
-  const warrantyInfo = warranty ? [ticket.warrantyBrand && `Hãng: ${ticket.warrantyBrand}`, ticket.warrantyVendor && `Đơn vị bảo hành: ${ticket.warrantyVendor}`, ticket.warrantyRequestCode && `Mã yêu cầu: ${ticket.warrantyRequestCode}`].filter(Boolean).join(" · ") || "Chưa cập nhật" : null;
-  const notes: Array<[string, string]> = [
-    ["Nội dung yêu cầu", ticket.description || "Chưa cập nhật"],
-    ...(warrantyInfo ? [["Thông tin bảo hành", warrantyInfo] as [string, string]] : []),
-    ["Kết quả xử lý", ticket.resolution || "Chưa ghi nhận kết quả xử lý"],
-    ["Chứng từ", ticket.attachmentName || "Chưa đính kèm"],
-  ];
-  notes.forEach(([label, value]) => {
-    const lines = doc.splitTextToSize(value, width - 8);
-    const height = Math.max(12, lines.length * 4.5 + 8);
-    if (y + height > 244) { doc.addPage(); y = 24; }
-    doc.setDrawColor(205, 229, 229);
-    doc.setFillColor(250, 253, 253);
-    doc.roundedRect(left, y, width, height, 2, 2, "FD");
-    doc.setFont(vietnamesePdfFontFamily, "bold");
-    doc.setFontSize(8.5);
-    doc.setTextColor(15, 140, 140);
-    doc.text(label, left + 4, y + 5);
-    doc.setFont(vietnamesePdfFontFamily, "normal");
-    doc.setTextColor(25, 59, 87);
-    doc.text(lines, left + 4, y + 10);
-    y += height + 4;
-  });
   if (y > 242) { doc.addPage(); y = 26; }
-  y += 6;
+  y += 12;
   doc.setDrawColor(221, 231, 240);
   doc.line(left, y, right, y);
   y += 9;
   doc.setFont(vietnamesePdfFontFamily, "normal");
   doc.setFontSize(8.5);
   doc.setTextColor(96, 117, 138);
-  doc.text("Người lập phiếu", left + 22, y, { align: "center" });
-  doc.text("Người xử lý", 105, y, { align: "center" });
+  doc.text("Đại diện nhà cung cấp", left + 22, y, { align: "center" });
+  doc.text("Người bàn giao", 105, y, { align: "center" });
   doc.text("Xác nhận quản lý", right - 22, y, { align: "center" });
   doc.setFontSize(7.5);
   doc.text(`Tạo ngày ${new Date().toLocaleDateString("vi-VN")}`, left, 286);

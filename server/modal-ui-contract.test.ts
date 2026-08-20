@@ -863,6 +863,9 @@ describe("modal presentation contract", () => {
     expect(reports).toContain("min-w-[540px]");
     expect(reports).toContain("Vuốt ngang để xem đủ 12 tháng.");
     expect(reports).toContain("Đang chọn {data[selectedMonth]?.month");
+    expect(reports).toContain("beginDrag");
+    expect(reports).toContain("moveDrag");
+    expect(reports).toContain("mobile-cost-trend-scroll");
     expect(reports).toContain("% tổng cộng");
     expect(reports).toContain("Tổng cộng (năm ${serviceCostYear})");
     expect(reports).toContain("selectedServiceCostMonth");
@@ -895,6 +898,11 @@ describe("modal presentation contract", () => {
     expect(ticketPdf).toContain("THÔNG TIN TÀI SẢN");
     expect(ticketPdf).toContain("Tình trạng");
     expect(ticketPdf).toContain("Hạn bảo hành");
+    expect(ticketPdf).toContain("Serial");
+    expect(ticketPdf).toContain("Đại diện nhà cung cấp");
+    expect(ticketPdf).toContain("Người bàn giao");
+    expect(ticketPdf).not.toContain("Nội dung yêu cầu");
+    expect(ticketPdf).not.toContain('doc.text("Người xử lý"');
     expect(ticketPdf).toContain("openPdfPreview");
     expect(previewHost).toContain("autoPrint");
     expect(previewHost).toContain("contentWindow?.print()");

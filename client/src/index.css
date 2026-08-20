@@ -76,6 +76,12 @@
 html { font-family: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif; background: #F4F7FB; }
 body { @apply bg-background text-foreground; margin: 0; }
 button, input, select { font: inherit; }
+.mobile-cost-trend-scroll {
+  overflow-y: hidden;
+  overscroll-behavior-x: contain;
+  touch-action: pan-x;
+  -webkit-overflow-scrolling: touch;
+}
 button:not(:disabled), [role="button"]:not([aria-disabled="true"]), select:not(:disabled), a[href] { @apply cursor-pointer; }
 .font-display { font-family: "Manrope", ui-sans-serif, system-ui, sans-serif; }
 
