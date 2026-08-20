@@ -57,6 +57,7 @@ export function ReportsManagementView() {
   const [serviceCostChannel, setServiceCostChannel] = useState<"all" | "warranty" | "repair">("all");
   const [selectedServiceCostMonth, setSelectedServiceCostMonth] = useState<number | null>(null);
   const [monthlyServiceTicketPage, setMonthlyServiceTicketPage] = useState(1);
+  const [monthlyServiceScrollRestoreY, setMonthlyServiceScrollRestoreY] = useState<number | null>(null);
   const [retirementYear, setRetirementYear] = useState("all");
   const [selectedRetirementIds, setSelectedRetirementIds] = useState<Set<number>>(() => new Set());
   const [allocationSelection, setAllocationSelection] = useState<{ type: "division" | "brand" | "supplier"; id: string; name: string } | null>(null);
@@ -237,6 +238,8 @@ export function ReportsManagementView() {
     const rawContext = sessionStorage.getItem("assetmaster-return-monthly-service-cost-list");
     if (!rawContext) return;
     sessionStorage.removeItem("assetmaster-return-monthly-service-cost-list");
+    const rawScrollY = sessionStorage.getItem("assetmaster-return-monthly-service-cost-scroll-y");
+    sessionStorage.removeItem("assetmaster-return-monthly-service-cost-scroll-y");
     try {
       const context = JSON.parse(rawContext) as { month?: number; year?: string; channel?: "all" | "warranty" | "repair" };
       if (!Number.isInteger(context.month) || context.month! < 0 || context.month! > 11) throw new Error("invalid month");
@@ -244,10 +247,21 @@ export function ReportsManagementView() {
       setServiceCostChannel(context.channel || "all");
       setSelectedServiceCostMonth(context.month!);
       setMonthlyServiceTicketPage(1);
+      const scrollY = Number(rawScrollY);
+      if (Number.isFinite(scrollY) && scrollY >= 0) setMonthlyServiceScrollRestoreY(scrollY);
     } catch {
       toast.error("Không thể khôi phục danh sách phiếu chi phí theo tháng.");
     }
   }, []);
+
+  useEffect(() => {
+    if (monthlyServiceScrollRestoreY === null || selectedServiceCostMonth === null) return;
+    const restoreTimer = window.setTimeout(() => {
+      window.scrollTo({ top: monthlyServiceScrollRestoreY, behavior: "auto" });
+      setMonthlyServiceScrollRestoreY(null);
+    }, 0);
+    return () => window.clearTimeout(restoreTimer);
+  }, [monthlyServiceScrollRestoreY, selectedServiceCostMonth, serviceCostYear, serviceCostChannel]);
 
   useEffect(() => {
     const rawContext = sessionStorage.getItem("assetmaster-return-asset-popup");
@@ -442,7 +456,10 @@ export function ReportsManagementView() {
     })(); }, 180);
   };
   const openMonthlyServiceTicket = (ticketId: number) => {
-    if (selectedServiceCostMonth !== null) sessionStorage.setItem("assetmaster-return-monthly-service-cost-list", JSON.stringify({ month: selectedServiceCostMonth, year: serviceCostYear, channel: serviceCostChannel }));
+    if (selectedServiceCostMonth !== null) {
+      sessionStorage.setItem("assetmaster-return-monthly-service-cost-list", JSON.stringify({ month: selectedServiceCostMonth, year: serviceCostYear, channel: serviceCostChannel }));
+      sessionStorage.setItem("assetmaster-return-monthly-service-cost-scroll-y", String(window.scrollY));
+    }
     sessionStorage.setItem("assetmaster-open-maintenance-ticket-id", String(ticketId));
     window.location.assign("/?view=maintenance");
   };

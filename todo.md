@@ -2184,3 +2184,9 @@
 - [x] Thêm thao tác quay lại danh sách phiếu chi phí theo tháng sau khi mở phiếu gốc.
 - [x] Phân trang danh sách phiếu chi phí theo tháng, 5 dòng mỗi trang.
 - [x] Bổ sung hồi quy, kiểm tra giao diện và build phát hành.
+
+## Current Session — Restore Monthly Report Scroll Position
+
+- [x] Lưu vị trí cuộn trang trước khi mở phiếu gốc từ danh sách tháng.
+- [x] Khôi phục vị trí cuộn sau khi quay lại báo cáo và dựng lại danh sách tháng.
+- [x] Bổ sung hồi quy, kiểm tra giao diện và build phát hành.

@@ -873,6 +873,9 @@ describe("modal presentation contract", () => {
     expect(reports).toContain("monthlyServiceTicketPageSize = 5");
     expect(reports).toContain("visibleMonthlyServiceTickets");
     expect(reports).toContain("Hiển thị {");
+    expect(reports).toContain("assetmaster-return-monthly-service-cost-scroll-y");
+    expect(reports).toContain("monthlyServiceScrollRestoreY");
+    expect(reports).toContain("window.scrollTo");
   });
 
   it("supports partial handover accessory returns and previews service costs in Excel", () => {
