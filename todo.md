@@ -2019,3 +2019,9 @@
 - [x] Tạo mã biên bản thu hồi duy nhất tự sinh theo năm và tháng.
 - [x] Hiển thị mã biên bản thu hồi trên chi tiết phiếu và file PDF.
 - [x] Bổ sung hồi quy, kiểm tra migration, giao diện và build phát hành.
+
+## Current Session — Recovery Search & Clear Controls
+
+- [x] Thêm thanh tìm kiếm theo mã biên bản thu hồi tại danh sách lịch sử thu hồi.
+- [x] Chuẩn hóa nút xóa nhanh từ khóa cho mọi ô tìm kiếm trong hệ thống.
+- [x] Bổ sung hồi quy, xác minh giao diện và build phát hành.

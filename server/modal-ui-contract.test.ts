@@ -822,6 +822,21 @@ describe("modal presentation contract", () => {
     expect(db).toContain("getNextRecoveryCertificateSequence");
   });
 
+  it("indexes recovery certificate numbers and gives every search input a quick-clear action", () => {
+    const home = readProjectFile("client/src/pages/Home.tsx");
+    const app = readProjectFile("client/src/App.tsx");
+    const clearAffordance = readProjectFile("client/src/components/SearchClearAffordance.tsx");
+    const searchableSelect = readProjectFile("client/src/components/SearchableSelect.tsx");
+
+    expect(home).toContain('${item.recoveryCertificateNumber || ""}');
+    expect(clearAffordance).toContain('input[placeholder]');
+    expect(clearAffordance).toContain("Xóa nhanh nội dung tìm kiếm");
+    expect(clearAffordance).toContain('input.placeholder === "Tìm mã phiếu, tài sản..."');
+    expect(clearAffordance).toContain("Tìm mã phiếu, mã thu hồi...");
+    expect(app).toContain("<SearchClearAffordance />");
+    expect(searchableSelect).toContain('aria-label="Xóa tìm kiếm trong dropdown"');
+  });
+
   it("offers preview, download, and print flows for each repair ticket PDF", () => {
     const operations = readProjectFile("client/src/pages/OperationsModules.tsx");
     const previewHost = readProjectFile("client/src/components/ExportPreviewHost.tsx");
