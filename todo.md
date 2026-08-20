@@ -1977,3 +1977,11 @@
 - [x] Thêm liên kết nhanh từ dòng tài sản tới phiếu Bảo hành/Sửa chữa liên quan.
 - [x] Hiển thị số lượng tài sản bên cạnh từng trạng thái trong bộ lọc Danh mục tài sản.
 - [x] Bổ sung hồi quy, kiểm tra giao diện, build và phát hành cập nhật.
+
+## Current Session — Catalog Warranty Lookup & Repair PDF
+
+- [x] Xóa hai nút trùng lặp “Tài sản Bảo hành/Sửa chữa” và “Xuất Excel” khỏi Danh mục tài sản.
+- [x] Hiển thị nhãn “BH: ngày hết hạn bảo hành” dưới tên tài sản kèm trạng thái sắp hết hạn/đã hết hạn.
+- [x] Thêm tra cứu Danh mục tài sản theo mã phiếu Bảo hành BH hoặc Sửa chữa SC.
+- [x] Thêm xem trước, xuất và in PDF cho từng phiếu Sửa chữa.
+- [x] Bổ sung hồi quy, kiểm tra giao diện, build và phát hành cập nhật.

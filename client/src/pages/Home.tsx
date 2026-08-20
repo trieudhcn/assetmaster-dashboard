@@ -333,6 +333,7 @@ export default function Home() {
   const pendingSupplierReturnAttachmentRef = useRef<SupplierReturnAttachment | null>(null);
   const pendingRetirementAttachmentRef = useRef<RetirementAttachment | null>(null);
   const [query, setQuery] = useState("");
+  const [ticketCodeQuery, setTicketCodeQuery] = useState("");
   const [category, setCategory] = useState("Tất cả loại tài sản");
   const [status, setStatus] = useState("Tất cả trạng thái");
   const [department, setDepartment] = useState("Tất cả phòng ban");
@@ -365,6 +366,12 @@ export default function Home() {
   const suppliesQuery = trpc.supplies.list.useQuery(undefined, { enabled: isAuthenticated && isAdmin });
   const assetCategoriesQuery = trpc.assetCategories.list.useQuery(undefined, { enabled: isAuthenticated && isAdmin });
   const maintenanceTicketsQuery = trpc.maintenance.list.useQuery(undefined, { enabled: isAuthenticated && isAdmin });
+  const ticketMatchedAssetCodes = useMemo(() => {
+    const keyword = ticketCodeQuery.trim();
+    if (!keyword) return null;
+    const assetCodeById = new Map((assetQuery.data || []).map((asset) => [asset.id, asset.assetCode]));
+    return new Set((maintenanceTicketsQuery.data || []).filter((ticket) => matchesVietnameseSearch(ticket.ticketCode || "", keyword)).map((ticket) => assetCodeById.get(ticket.assetId)).filter((assetCode): assetCode is string => Boolean(assetCode)));
+  }, [assetQuery.data, maintenanceTicketsQuery.data, ticketCodeQuery]);
   const maintenanceBudgetsQuery = trpc.maintenance.monthlyBudgets.useQuery({ year: maintenanceChartYear }, { enabled: isAuthenticated && isAdmin });
   const vendorsQuery = trpc.vendors.list.useQuery(undefined, { enabled: isAuthenticated && isAdmin });
   const brandsQuery = trpc.brands.list.useQuery(undefined, { enabled: isAuthenticated && isAdmin });
@@ -709,8 +716,9 @@ export default function Home() {
     const matchesBrand = brandFilter === "Tất cả hãng" || asset.brand === brandFilter;
     const warrantyState = getWarrantyState(asset.warrantyUntil);
     const matchesWarranty = warrantyFilter === "Tất cả bảo hành" || (warrantyFilter === "Đang bảo hành" && warrantyState === "active") || (warrantyFilter === "Sắp hết hạn" && warrantyState === "expiring") || (warrantyFilter === "Đã hết hạn" && warrantyState === "expired");
-    return matchesQuery && matchesCategory && matchesStatus && matchesDepartment && matchesVendor && matchesBrand && matchesWarranty;
-  }), [assetRows, query, category, status, department, vendorFilter, brandFilter, warrantyFilter]);
+    const matchesTicketCode = !ticketMatchedAssetCodes || ticketMatchedAssetCodes.has(asset.code);
+    return matchesQuery && matchesTicketCode && matchesCategory && matchesStatus && matchesDepartment && matchesVendor && matchesBrand && matchesWarranty;
+  }), [assetRows, query, ticketMatchedAssetCodes, category, status, department, vendorFilter, brandFilter, warrantyFilter]);
   const assetStatusFilterCounts = useMemo(() => getAssetStatusFilterCounts(assetRows), [assetRows]);
   const inventoryAssetRows = useMemo(() => assetRows.filter((asset) => asset.statusType !== "returned" && asset.statusType !== "retired"), [assetRows]);
   const assetValueTotal = inventoryAssetRows.reduce((total, asset) => total + Number(asset.value || 0), 0);
@@ -718,6 +726,11 @@ export default function Home() {
   const profileRole = user?.role === "admin" ? "Quản trị viên" : "Nhân viên";
   const profileInitials = profileName.split(" ").filter(Boolean).slice(-2).map((part) => part[0]).join("").toUpperCase() || "AM";
   useEffect(() => { notificationsOpenRef.current = notificationsOpen; }, [notificationsOpen]);
+  useEffect(() => {
+    const handleTicketCodeFilter = (event: Event) => setTicketCodeQuery(String((event as CustomEvent<string>).detail || ""));
+    window.addEventListener("assetmaster:ticket-code-filter", handleTicketCodeFilter);
+    return () => window.removeEventListener("assetmaster:ticket-code-filter", handleTicketCodeFilter);
+  }, []);
   const closeNotifications = () => {
     if (!notificationsOpenRef.current || notificationCloseTimerRef.current) return;
     setNotificationsClosing(true);
@@ -1164,24 +1177,6 @@ function PaginatedAssetCatalogPage({ assets, statusCounts, query, category, stat
     filteredExportButton.className = "inline-flex h-9 shrink-0 whitespace-nowrap items-center justify-center rounded-lg border border-[#C7DDF8] bg-white px-3 text-xs font-bold text-[#2666A8] hover:bg-[#EAF3FF] disabled:cursor-not-allowed disabled:opacity-50";
     filteredExportButton.addEventListener("click", exportFilteredAssetsExcel);
 
-    const maintenanceButton = document.createElement("button");
-    maintenanceButton.type = "button";
-    maintenanceButton.dataset.maintenanceFilter = "true";
-    maintenanceButton.className = status === "Bảo trì" ? "inline-flex h-9 shrink-0 whitespace-nowrap items-center justify-center gap-2 rounded-lg bg-[#A86B00] px-3 text-xs font-bold text-white" : "inline-flex h-9 shrink-0 whitespace-nowrap items-center justify-center gap-2 rounded-lg border border-[#F2D596] bg-[#FFF9EB] px-3 text-xs font-bold text-[#A86B00] hover:bg-white";
-    maintenanceButton.textContent = "Tài sản bảo trì";
-    maintenanceButton.title = status === "Bảo trì" ? "Bỏ lọc tài sản đang bảo trì" : "Chỉ hiển thị tài sản đang bảo trì";
-    const toggleMaintenance = () => onStatusChange(toggleMaintenanceStatusFilter(status));
-    maintenanceButton.addEventListener("click", toggleMaintenance);
-
-    const exportButton = document.createElement("button");
-    exportButton.type = "button";
-    exportButton.dataset.maintenanceExcelExport = "true";
-    exportButton.disabled = !maintenanceExportRows.length || isExportingMaintenance;
-    exportButton.textContent = isExportingMaintenance ? "Đang xuất..." : `Xuất Excel (${maintenanceExportRows.length})`;
-    exportButton.title = isExportingMaintenance ? "Đang tạo file Excel" : maintenanceExportRows.length ? "Xuất danh sách tài sản đang bảo trì ra Excel" : "Không có tài sản đang bảo trì trong phạm vi lọc hiện tại";
-    exportButton.className = "inline-flex h-9 shrink-0 whitespace-nowrap items-center justify-center rounded-lg border border-[#CDE5E5] bg-white px-3 text-xs font-bold text-[#087A6A] hover:bg-[#ECF8F7] disabled:cursor-not-allowed disabled:opacity-50";
-    exportButton.addEventListener("click", exportMaintenanceExcel);
-
     const importButton = document.createElement("button");
     importButton.type = "button";
     importButton.dataset.assetExcelImport = "true";
@@ -1193,6 +1188,14 @@ function PaginatedAssetCatalogPage({ assets, statusCounts, query, category, stat
 
     const filterSearchInput = Array.from(document.querySelectorAll<HTMLInputElement>("input")).find((input) => input.placeholder === "Tìm mã, tên hoặc người giữ...");
     const filterBar = filterSearchInput?.parentElement?.parentElement;
+    const ticketCodeSearch = document.createElement("input");
+    ticketCodeSearch.type = "search";
+    ticketCodeSearch.placeholder = "Tìm mã phiếu BH / SC...";
+    ticketCodeSearch.setAttribute("aria-label", "Tìm mã phiếu Bảo hành hoặc Sửa chữa");
+    ticketCodeSearch.className = "h-9 min-w-[210px] flex-[1_1_220px] rounded-lg border border-[#DDE7F0] bg-white px-3 text-xs font-semibold text-[#193B57] outline-none placeholder:text-[#9BAEC0] focus:border-[#0F8C8C]";
+    const handleTicketCodeSearch = () => window.dispatchEvent(new CustomEvent("assetmaster:ticket-code-filter", { detail: ticketCodeSearch.value }));
+    ticketCodeSearch.addEventListener("input", handleTicketCodeSearch);
+    if (filterBar && !filterBar.querySelector("[aria-label='Tìm mã phiếu Bảo hành hoặc Sửa chữa']")) filterBar.append(ticketCodeSearch);
     const importHistoryButton = document.createElement("button");
     importHistoryButton.type = "button";
     importHistoryButton.dataset.assetImportHistory = "true";
@@ -1205,28 +1208,53 @@ function PaginatedAssetCatalogPage({ assets, statusCounts, query, category, stat
     if (filterBar && !filterBar.querySelector("[data-asset-import-history]")) filterBar.append(importHistoryButton);
 
     resetButton.className = "inline-flex h-9 shrink-0 whitespace-nowrap items-center justify-center gap-2 rounded-lg border border-[#DDE7F0] px-3 text-xs font-bold text-[#60758A] hover:bg-[#F7FAFC]";
-    actionBar.append(filteredExportButton, maintenanceButton, exportButton, importButton, resetButton);
+    actionBar.append(filteredExportButton, importButton, resetButton);
     controls.append(actionBar);
 
     return () => {
       filteredExportButton.removeEventListener("click", exportFilteredAssetsExcel);
-      maintenanceButton.removeEventListener("click", toggleMaintenance);
-      exportButton.removeEventListener("click", exportMaintenanceExcel);
       importButton.removeEventListener("click", openAssetImport);
       importHistoryButton.removeEventListener("click", openImportHistory);
+      ticketCodeSearch.removeEventListener("input", handleTicketCodeSearch);
+      ticketCodeSearch.remove();
       importHistoryButton.remove();
       actionBar.replaceWith(resetButton);
       resetButton.className = originalResetClass;
       controls.className = originalControlsClass;
       if (titleBlock) titleBlock.className = originalTitleClass;
     };
-  }, [status, onStatusChange, filteredAssetExportRows, exportFilteredAssetsExcel, isExportingFilteredAssets, maintenanceExportRows, exportMaintenanceExcel, isExportingMaintenance]);
+  }, [filteredAssetExportRows, exportFilteredAssetsExcel, isExportingFilteredAssets]);
   useEffect(() => {
     const legacyFooter = document.querySelector("section.overflow-hidden > div:last-child");
     legacyFooter?.classList.add("hidden");
     return () => legacyFooter?.classList.remove("hidden");
   }, []);
-  const resetAndGoFirst = () => { setPage(1); onReset(); };
+  useEffect(() => {
+    const warrantyTone = { active: "border-[#8BCDC6] bg-[#ECF8F7] text-[#087A6A]", expiring: "border-[#F2D596] bg-[#FFF9EB] text-[#A86B00]", expired: "border-[#F6C7C7] bg-[#FDEDEE] text-[#B44545]" } as const;
+    pageAssets.forEach((asset) => {
+      const warrantyState = getWarrantyState(asset.warrantyUntil);
+      if (warrantyState === "none") return;
+      const row = Array.from(document.querySelectorAll<HTMLTableRowElement>("tbody tr")).find((candidate) => candidate.textContent?.includes(asset.code));
+      const nameNode = Array.from(row?.querySelectorAll<HTMLElement>("td:nth-child(2) div") || []).find((candidate) => candidate.textContent?.trim() === asset.name);
+      const metadata = nameNode?.nextElementSibling as HTMLElement | null;
+      if (!metadata || metadata.querySelector("[data-asset-warranty-until]")) return;
+      const warrantyUntil = new Date(asset.warrantyUntil as string | number | Date);
+      if (Number.isNaN(warrantyUntil.getTime())) return;
+      const badge = document.createElement("span");
+      badge.dataset.assetWarrantyUntil = "true";
+      badge.className = `ml-2 inline-flex items-center rounded-full border px-1.5 py-0.5 text-[10px] font-bold ${warrantyTone[warrantyState]}`;
+      badge.textContent = `BH: ${warrantyUntil.toLocaleDateString("vi-VN")}${warrantyState === "expired" ? " · Hết hạn BH" : warrantyState === "expiring" ? " · Sắp hết hạn" : ""}`;
+      badge.title = warrantyState === "expired" ? "Bảo hành đã hết hạn" : warrantyState === "expiring" ? "Bảo hành sắp hết hạn trong 30 ngày" : "Tài sản còn thời hạn bảo hành";
+      metadata.append(badge);
+    });
+  }, [pageAssets]);
+  const resetAndGoFirst = () => {
+    setPage(1);
+    window.dispatchEvent(new CustomEvent("assetmaster:ticket-code-filter", { detail: "" }));
+    const ticketSearch = document.querySelector<HTMLInputElement>("[aria-label='Tìm mã phiếu Bảo hành hoặc Sửa chữa']");
+    if (ticketSearch) ticketSearch.value = "";
+    onReset();
+  };
   const submitJumpPage = (value = jumpPage) => {
     const requestedPage = Number.parseInt(value, 10);
     if (!Number.isFinite(requestedPage) || requestedPage < 1 || requestedPage > totalPages) {

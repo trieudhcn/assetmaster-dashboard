@@ -738,6 +738,30 @@ describe("modal presentation contract", () => {
     expect(operations).toContain("Lưu ý:");
   });
 
+  it("streamlines the asset catalog and supports BH/SC lookup with warranty dates", () => {
+    const home = readProjectFile("client/src/pages/Home.tsx");
+
+    expect(home).toContain('ticketCodeQuery');
+    expect(home).toContain('assetmaster:ticket-code-filter');
+    expect(home).toContain('Tìm mã phiếu BH / SC...');
+    expect(home).toContain('BH: ${warrantyUntil.toLocaleDateString("vi-VN")}');
+    expect(home).toContain('actionBar.append(filteredExportButton, importButton, resetButton);');
+    expect(home).not.toContain('actionBar.append(filteredExportButton, maintenanceButton, exportButton, importButton, resetButton);');
+  });
+
+  it("offers preview, download, and print flows for each repair ticket PDF", () => {
+    const operations = readProjectFile("client/src/pages/OperationsModules.tsx");
+    const previewHost = readProjectFile("client/src/components/ExportPreviewHost.tsx");
+
+    expect(operations).toContain("previewRepairTicketPdf");
+    expect(operations).toContain("PHIẾU SỬA CHỮA TÀI SẢN");
+    expect(operations).toContain("PDF / In");
+    expect(operations).toContain("companySettingsQuery");
+    expect(previewHost).toContain("In PDF");
+    expect(previewHost).toContain("window.open(fileUrl");
+    expect(previewHost).toContain("Printer");
+  });
+
   it("provides a dedicated supplier return report export", () => {
     const reports = readProjectFile("client/src/pages/ReportsManagementView.tsx");
     expect(reports).toContain('const supplierReturnedAssets = useMemo(() => selectedAssets.filter((asset) => asset.status === "returned_to_vendor")');

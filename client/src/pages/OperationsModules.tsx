@@ -13,6 +13,7 @@ import {
   History,
   LockKeyhole,
   Plus,
+  Printer,
   QrCode,
   Save,
   Search,
@@ -172,10 +173,12 @@ export function MaintenancePage() {
   const [recentlyCreatedTicketId, setRecentlyCreatedTicketId] = useState<number | null>(null);
   const [queuedMaintenanceAssetIds, setQueuedMaintenanceAssetIds] = useState<Set<number>>(() => new Set());
   const [repairWarrantyWarning, setRepairWarrantyWarning] = useState<{ assetName: string; warrantyUntil: Date; payload: MaintenanceCreatePayload } | null>(null);
+  const [repairPdfTicketId, setRepairPdfTicketId] = useState<number | null>(null);
   const maintenancePageSize = 5;
 
   const assetsQuery = trpc.assets.list.useQuery();
   const ticketsQuery = trpc.maintenance.list.useQuery();
+  const companySettingsQuery = trpc.company.get.useQuery();
   const brandsQuery = trpc.brands.list.useQuery();
   const nextWarrantyCodeQuery = trpc.maintenance.nextWarrantyCode.useQuery(undefined, { enabled: serviceChannel === "warranty" });
   const historyQuery = trpc.maintenance.history.useQuery({ id: historyTicket?.id || 0 }, { enabled: Boolean(historyTicket) });
@@ -485,6 +488,114 @@ export function MaintenancePage() {
     })(); }, 180);
   };
 
+  const previewRepairTicketPdf = async (ticket: (typeof tickets)[number], asset: (typeof assets)[number] | undefined) => {
+    if ((ticket.serviceChannel || "repair") !== "repair") return;
+    setRepairPdfTicketId(ticket.id);
+    const loadingToast = toast.loading(`Đang tạo PDF phiếu ${ticket.ticketCode}...`);
+    try {
+      const doc = new jsPDF({ unit: "mm", format: "a4" });
+      const fontResponse = await fetch(handoverPdfFontUrl);
+      if (!fontResponse.ok) throw new Error("Không thể tải phông chữ tiếng Việt.");
+      registerVietnamesePdfFont(doc, await fontResponse.arrayBuffer());
+      const company = (companySettingsQuery.data || {}) as AuditCompanySettings;
+      const logoDataUrl = company.logoUrl ? await loadAuditPdfImage(company.logoUrl).catch(() => undefined) : undefined;
+      const left = 16;
+      const right = 194;
+      const width = right - left;
+      let y = 18;
+      if (logoDataUrl) {
+        try { doc.addImage(logoDataUrl, auditPdfImageFormat(logoDataUrl), left, y - 7, 18, 18, undefined, "FAST"); } catch { /* Dùng nhận diện chữ nếu logo không tương thích. */ }
+      }
+      doc.setTextColor(16, 42, 67);
+      doc.setFont("NotoSans", "bold");
+      doc.setFontSize(12);
+      doc.text(company.name || "ĐƠN VỊ QUẢN LÝ TÀI SẢN", logoDataUrl ? left + 22 : left, y);
+      doc.setFont("NotoSans", "normal");
+      doc.setFontSize(8.5);
+      doc.setTextColor(96, 117, 138);
+      const companyMeta = [company.address, company.taxCode ? `MST: ${company.taxCode}` : "", company.phone ? `ĐT: ${company.phone}` : ""].filter(Boolean).join(" · ");
+      doc.text(doc.splitTextToSize(companyMeta || "Hệ thống Quản lý Tài sản Doanh nghiệp", logoDataUrl ? width - 22 : width), logoDataUrl ? left + 22 : left, y + 5);
+      y += 27;
+      doc.setDrawColor(15, 140, 140);
+      doc.setLineWidth(0.7);
+      doc.line(left, y, right, y);
+      y += 11;
+      doc.setTextColor(16, 42, 67);
+      doc.setFont("NotoSans", "bold");
+      doc.setFontSize(17);
+      doc.text("PHIẾU SỬA CHỮA TÀI SẢN", 105, y, { align: "center" });
+      y += 7;
+      doc.setFontSize(9.5);
+      doc.setTextColor(56, 85, 166);
+      doc.text(ticket.ticketCode, 105, y, { align: "center" });
+      y += 11;
+      const estimated = parseVndAmount(String(ticket.estimatedCost || ""));
+      const actual = parseVndAmount(String(ticket.actualCost || ""));
+      const fields: Array<[string, string]> = [
+        ["Mã tài sản", asset?.assetCode || `Tài sản #${ticket.assetId}`],
+        ["Tên tài sản", asset?.name || "Không còn trong danh mục"],
+        ["Loại yêu cầu", issueTypeLabels[ticket.issueType as keyof typeof issueTypeLabels] || ticket.issueType],
+        ["Mức ưu tiên", priorityLabels[ticket.priority as keyof typeof priorityLabels] || ticket.priority],
+        ["Trạng thái", maintenanceStatusLabels[ticket.status as keyof typeof maintenanceStatusLabels] || ticket.status],
+        ["Ngày lập phiếu", new Date(ticket.openedAt || ticket.createdAt).toLocaleDateString("vi-VN")],
+        ["Hạn xử lý", ticket.dueAt ? new Date(ticket.dueAt).toLocaleDateString("vi-VN") : "Chưa thiết lập"],
+        ["Người báo", ticket.reporterName || "Chưa cập nhật"],
+        ["Người xử lý", ticket.assigneeUserId ? employeeById.get(ticket.assigneeUserId)?.name || `Nhân sự #${ticket.assigneeUserId}` : "Chưa phân công"],
+        ["Chi phí dự kiến", estimated ? `${estimated.toLocaleString("vi-VN")} VNĐ` : "Chưa ghi nhận"],
+        ["Chi phí thực tế", actual ? `${actual.toLocaleString("vi-VN")} VNĐ` : "Chưa ghi nhận"],
+      ];
+      doc.setFontSize(9);
+      fields.forEach(([label, value], index) => {
+        const rowY = y + index * 7;
+        doc.setFillColor(index % 2 ? 248 : 240, index % 2 ? 251 : 248, index % 2 ? 252 : 247);
+        doc.rect(left, rowY - 4.8, width, 7, "F");
+        doc.setFont("NotoSans", "bold");
+        doc.setTextColor(82, 112, 137);
+        doc.text(label, left + 3, rowY);
+        doc.setFont("NotoSans", "normal");
+        doc.setTextColor(25, 59, 87);
+        doc.text(doc.splitTextToSize(value, 110), left + 62, rowY);
+      });
+      y += fields.length * 7 + 5;
+      const notes: Array<[string, string]> = [["Mô tả sự cố", ticket.description || "Chưa cập nhật"], ["Kết quả xử lý", ticket.resolution || "Chưa ghi nhận kết quả xử lý"], ["Chứng từ", ticket.attachmentName || "Chưa đính kèm"]];
+      notes.forEach(([label, value]) => {
+        const lines = doc.splitTextToSize(value, width - 8);
+        const height = Math.max(12, lines.length * 4.5 + 8);
+        doc.setDrawColor(205, 229, 229);
+        doc.setFillColor(250, 253, 253);
+        doc.roundedRect(left, y, width, height, 2, 2, "FD");
+        doc.setFont("NotoSans", "bold");
+        doc.setFontSize(8.5);
+        doc.setTextColor(15, 140, 140);
+        doc.text(label, left + 4, y + 5);
+        doc.setFont("NotoSans", "normal");
+        doc.setTextColor(25, 59, 87);
+        doc.text(lines, left + 4, y + 10);
+        y += height + 4;
+      });
+      y = Math.min(y + 6, 252);
+      doc.setDrawColor(221, 231, 240);
+      doc.line(left, y, right, y);
+      y += 9;
+      doc.setFont("NotoSans", "normal");
+      doc.setFontSize(8.5);
+      doc.setTextColor(96, 117, 138);
+      doc.text("Người lập phiếu", left + 22, y, { align: "center" });
+      doc.text("Người xử lý", 105, y, { align: "center" });
+      doc.text("Xác nhận quản lý", right - 22, y, { align: "center" });
+      doc.setFontSize(7.5);
+      doc.text(`Tạo ngày ${new Date().toLocaleDateString("vi-VN")}`, left, 286);
+      applyPdfLogoWatermark(doc, await createPdfLogoWatermark(company.logoUrl).catch(() => null));
+      openPdfPreview(doc, `${ticket.ticketCode}-phieu-sua-chua.pdf`, `Phiếu Sửa chữa ${ticket.ticketCode}`);
+      toast.success(`Đã mở xem trước PDF ${ticket.ticketCode}.`, { id: loadingToast });
+    } catch (error) {
+      console.error("[MaintenancePage] repair PDF export failed", error);
+      toast.error(error instanceof Error ? error.message : "Không thể tạo PDF phiếu Sửa chữa.", { id: loadingToast });
+    } finally {
+      setRepairPdfTicketId(null);
+    }
+  };
+
   const uploadAttachmentByTicketId = (ticketId: number, file: File | undefined, showProgress = false) => {
     if (!file) return;
     const supportedTypes = ["application/pdf", "image/png", "image/jpeg", "image/webp"] as const;
@@ -665,7 +776,7 @@ export function MaintenancePage() {
                           <div className="font-mono text-[11px] font-bold text-[#0F8C8C]">{ticket.ticketCode}</div>
                           <div className="mt-1 flex items-center gap-1.5 font-semibold text-[#193B57]"><Wrench size={13} className="text-[#A86B00]" />{asset?.name || `Tài sản #${ticket.assetId}`}</div>
                           <div className="mt-1 text-[10px] text-[#8AA0B6]">{asset?.assetCode || "Mã tài sản không còn khả dụng"} · Báo bởi {ticket.reporterName || "Người dùng"}</div>
-                          <button type="button" onClick={() => setHistoryTicket(ticket)} className="mt-2 inline-flex items-center gap-1 rounded-md border border-[#CDE5E5] px-2 py-1 text-[10px] font-bold text-[#087A6A] transition hover:bg-[#ECF8F7]" aria-label={`Xem lịch sử ${ticket.ticketCode}`}><History size={12} />Xem lịch sử</button>
+                          <div className="mt-2 flex flex-wrap gap-1.5"><button type="button" onClick={() => setHistoryTicket(ticket)} className="inline-flex items-center gap-1 rounded-md border border-[#CDE5E5] px-2 py-1 text-[10px] font-bold text-[#087A6A] transition hover:bg-[#ECF8F7]" aria-label={`Xem lịch sử ${ticket.ticketCode}`}><History size={12} />Xem lịch sử</button>{ticket.serviceChannel === "repair" && <button type="button" disabled={repairPdfTicketId === ticket.id} onClick={() => void previewRepairTicketPdf(ticket, asset)} className="inline-flex items-center gap-1 rounded-md border border-[#C7DDF8] bg-[#EFF7FF] px-2 py-1 text-[10px] font-bold text-[#2666A8] transition hover:bg-[#EAF3FF] disabled:cursor-wait disabled:opacity-60" aria-label={`Xem trước PDF phiếu Sửa chữa ${ticket.ticketCode}`}><Printer size={12} />{repairPdfTicketId === ticket.id ? "Đang tạo PDF" : "PDF / In"}</button>}</div>
                         </td>
                         <td className="px-4 py-4"><span className={`inline-flex min-w-[132px] items-center justify-center gap-1.5 rounded-md border px-2.5 py-2 text-[10px] font-extrabold ${ticket.serviceChannel === "warranty" ? "border-[#8BCDC6] bg-[#ECF8F7] text-[#087A6A]" : "border-[#F2D596] bg-[#FFF9EB] text-[#A86B00]"}`} title="Kênh xử lý được xác lập theo mã phiếu và không thể thay đổi sau khi tạo."><LockKeyhole size={12} aria-hidden="true" />{serviceChannelLabels[(ticket.serviceChannel || "repair") as keyof typeof serviceChannelLabels]}</span></td>
                         <td className="max-w-[230px] px-4 py-4"><div className="font-semibold text-[#193B57]">{issueTypeLabels[ticket.issueType]}</div><p className="mt-1 leading-5 text-[#60758A]">{ticket.description}</p></td>
