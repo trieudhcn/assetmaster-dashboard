@@ -14,6 +14,7 @@ import {
   departments,
   divisions,
   handovers,
+  handoverSupplyItems,
   helpGuides,
   helpGuideVersions,
   inventoryMovements,
@@ -848,8 +849,27 @@ export async function createHandover(data: typeof handovers.$inferInsert, execut
   return Number(result[0].insertId);
 }
 
-export async function updateHandover(id: number, data: Partial<typeof handovers.$inferInsert>) {
-  const db = await getDb();
+export async function createHandoverSupplyItem(data: typeof handoverSupplyItems.$inferInsert, executor?: any) {
+  const db = executor ?? await getDb();
+  if (!db) throw new Error("Database unavailable");
+  const result = await db.insert(handoverSupplyItems).values(data);
+  return Number(result[0].insertId);
+}
+
+export async function listHandoverSupplyItems(handoverId: number, executor?: any) {
+  const db = executor ?? await getDb();
+  if (!db) return [];
+  return db.select().from(handoverSupplyItems).where(eq(handoverSupplyItems.handoverId, handoverId));
+}
+
+export async function updateHandoverSupplyItem(id: number, data: Partial<typeof handoverSupplyItems.$inferInsert>, executor?: any) {
+  const db = executor ?? await getDb();
+  if (!db) throw new Error("Database unavailable");
+  await db.update(handoverSupplyItems).set(data).where(eq(handoverSupplyItems.id, id));
+}
+
+export async function updateHandover(id: number, data: Partial<typeof handovers.$inferInsert>, executor?: any) {
+  const db = executor ?? await getDb();
   if (!db) throw new Error("Database unavailable");
   await db.update(handovers).set(data).where(eq(handovers.id, id));
 }
@@ -858,11 +878,12 @@ export async function transitionHandoverStatus(
   id: number,
   status: "draft" | "pending_signature" | "active" | "returned" | "cancelled",
   changes: Partial<typeof handovers.$inferInsert>,
+  executor?: any,
 ) {
-  const db = await getDb();
+  const db = executor ?? await getDb();
   if (!db) throw new Error("Database unavailable");
 
-  return db.transaction(async (tx) => {
+  const transition = async (tx: any) => {
     const existing = (await tx.select().from(handovers).where(eq(handovers.id, id)).limit(1))[0];
     if (!existing) throw new Error("Handover not found");
 
@@ -890,7 +911,8 @@ export async function transitionHandoverStatus(
     }
 
     return existing;
-  });
+  };
+  return executor ? transition(db) : db.transaction(transition);
 }
 
 export async function listMaintenanceTickets() {

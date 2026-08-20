@@ -12,6 +12,7 @@ const mocks = vi.hoisted(() => ({
   createVendorDocument: vi.fn(),
   deleteVendorDocument: vi.fn(),
   createHandover: vi.fn(),
+  createHandoverSupplyItem: vi.fn(),
   createInventoryMovement: vi.fn(),
   getAssetById: vi.fn(),
   getInventorySupplyById: vi.fn(),
@@ -39,6 +40,7 @@ const mocks = vi.hoisted(() => ({
   listAllBrands: vi.fn(),
   listVendorDocuments: vi.fn(),
   listHandoversByRecipient: vi.fn(),
+  listHandoverSupplyItems: vi.fn(),
   listHandoverReturnDecisionHistory: vi.fn(),
   recordActivity: vi.fn(),
   runInventoryTransaction: vi.fn(),
@@ -52,6 +54,7 @@ const mocks = vi.hoisted(() => ({
   updateDepartment: vi.fn(),
   updateDivision: vi.fn(),
   updateHandover: vi.fn(),
+  updateHandoverSupplyItem: vi.fn(),
   updateInventorySupply: vi.fn(),
   updateVendor: vi.fn(),
   updateBrand: vi.fn(),
@@ -72,6 +75,7 @@ vi.mock("./db", () => ({
   createVendorDocument: mocks.createVendorDocument,
   deleteVendorDocument: mocks.deleteVendorDocument,
   createHandover: mocks.createHandover,
+  createHandoverSupplyItem: mocks.createHandoverSupplyItem,
   createInventoryMovement: mocks.createInventoryMovement,
   createMaintenanceTicket: vi.fn(),
   getActiveDepartmentById: mocks.getActiveDepartmentById,
@@ -106,6 +110,7 @@ vi.mock("./db", () => ({
   listVendorDocuments: mocks.listVendorDocuments,
   listHandovers: vi.fn(),
   listHandoversByRecipient: mocks.listHandoversByRecipient,
+  listHandoverSupplyItems: mocks.listHandoverSupplyItems,
   listHandoverReturnDecisionHistory: mocks.listHandoverReturnDecisionHistory,
   listHelpGuides: vi.fn(),
   listMaintenanceTickets: vi.fn(),
@@ -118,6 +123,7 @@ vi.mock("./db", () => ({
   updateAsset: vi.fn(),
   updateAuditItem: vi.fn(),
   updateHandover: mocks.updateHandover,
+  updateHandoverSupplyItem: mocks.updateHandoverSupplyItem,
   updateInventorySupply: mocks.updateInventorySupply,
   updateMaintenanceTicket: vi.fn(),
   transitionHandoverStatus: mocks.transitionHandoverStatus,
@@ -155,12 +161,13 @@ describe("employee administration", () => {
     mocks.getUserNotificationPreferences.mockResolvedValue(null);
     mocks.saveUserNotificationPreferences.mockResolvedValue(undefined);
     mocks.listDepartments.mockResolvedValue([{ id: 12, code: "HCNS", name: "Hành chính - Nhân sự", isActive: true }]);
-    mocks.getHandoverById.mockResolvedValue({ id: 99, recipientSignatureUrl: "https://storage.example/signature.png" });
+    mocks.getHandoverById.mockResolvedValue({ id: 99, referenceCode: "BG-2026-001", assetCode: "TS-00050", recipientName: "Nguyễn Văn A", recipientUserId: 7, recipientDepartmentId: 12, recipientSignatureUrl: "https://storage.example/signature.png" });
     mocks.getNextHandoverSequence.mockResolvedValue(1);
     mocks.listHandoverReturnDecisionHistory.mockResolvedValue([]);
     mocks.createHandover.mockResolvedValue(99);
     mocks.runInventoryTransaction.mockImplementation(async (callback: (transaction: unknown) => Promise<unknown>) => callback({ transaction: true }));
     mocks.getInventorySupplyById.mockResolvedValue({ id: 81, code: "PK-CHUOT", name: "Chuột không dây", unit: "Cái", stockQuantity: "5", isActive: true });
+    mocks.listHandoverSupplyItems.mockResolvedValue([]);
     mocks.transitionHandoverStatus.mockResolvedValue({ id: 99, assetId: 50 });
     mocks.getActiveDepartmentById.mockResolvedValue({ id: 12, code: "HCNS", name: "Hành chính - Nhân sự", isActive: true });
     mocks.getDepartmentByCode.mockResolvedValue(undefined);
@@ -240,9 +247,21 @@ describe("employee administration", () => {
     const caller = appRouter.createCaller(adminContext);
 
     await expect(caller.handovers.resolveReturnRequest({ id: 99, decision: "approved", conditionIn: null, resolution: null })).rejects.toMatchObject({ code: "BAD_REQUEST" });
-    await expect(caller.handovers.resolveReturnRequest({ id: 99, decision: "approved", conditionIn: "Tốt", resolution: null, conditionPhoto: { fileName: "tinh-trang.png", contentType: "image/png", dataUrl: "data:image/png;base64,UE5H" } })).resolves.toEqual({ success: true });
+    await expect(caller.handovers.resolveReturnRequest({ id: 99, decision: "approved", conditionIn: "Tốt", resolution: null, conditionPhoto: { fileName: "tinh-trang.png", contentType: "image/png", dataUrl: "data:image/png;base64,UE5H" } })).resolves.toEqual({ success: true, returnedAccessoryCount: 0 });
     expect(mocks.storagePut).toHaveBeenCalledWith(expect.stringMatching(/^handovers\/99\/return-conditions\//), expect.any(Buffer), "image/png");
-    expect(mocks.transitionHandoverStatus).toHaveBeenCalledWith(99, "returned", expect.objectContaining({ returnRequestStatus: "approved", returnRequestResolvedByUserId: 1, conditionIn: "Tốt", returnConditionPhotoUrl: "/manus-storage/handovers/99/return-conditions/tinh-trang.png" }));
+    expect(mocks.transitionHandoverStatus).toHaveBeenCalledWith(99, "returned", expect.objectContaining({ returnRequestStatus: "approved", returnRequestResolvedByUserId: 1, conditionIn: "Tốt", returnConditionPhotoUrl: "/manus-storage/handovers/99/return-conditions/tinh-trang.png" }), expect.anything());
+  });
+
+  it("returns handover accessories to stock exactly once when the asset is recovered", async () => {
+    mocks.getHandoverById.mockResolvedValue({ id: 99, referenceCode: "BG-2026-001", assetCode: "TS-00099", recipientName: "Nguyễn Văn A", recipientUserId: 8, recipientDepartmentId: 12, status: "active", returnRequestStatus: "pending" });
+    mocks.listHandoverSupplyItems.mockResolvedValue([{ id: 501, handoverId: 99, supplyId: 81, supplyCode: "PK-CHUOT", supplyName: "Chuột không dây", unit: "Cái", issuedQuantity: "2", returnedQuantity: "0" }]);
+    mocks.getInventorySupplyById.mockResolvedValue({ id: 81, code: "PK-CHUOT", name: "Chuột không dây", unit: "Cái", stockQuantity: "3", isActive: true });
+    const caller = appRouter.createCaller(adminContext);
+
+    await expect(caller.handovers.resolveReturnRequest({ id: 99, decision: "approved", conditionIn: "Tốt", resolution: "Đã thu hồi đủ phụ kiện", conditionPhoto: null })).resolves.toEqual({ success: true, returnedAccessoryCount: 1 });
+    expect(mocks.updateInventorySupply).toHaveBeenCalledWith(81, { stockQuantity: "5" }, expect.anything());
+    expect(mocks.updateHandoverSupplyItem).toHaveBeenCalledWith(501, { returnedQuantity: "2" }, expect.anything());
+    expect(mocks.createInventoryMovement).toHaveBeenCalledWith(expect.objectContaining({ handoverId: 99, movementType: "return", quantity: "2", quantityBefore: "3", quantityAfter: "5" }), expect.anything());
   });
 
   it("allows administrators to create suppliers and brands while restricting employees", async () => {
@@ -446,8 +465,8 @@ describe("employee administration", () => {
   it("delegates a returned handover to the database transition helper", async () => {
     const caller = appRouter.createCaller(adminContext);
 
-    await expect(caller.handovers.updateStatus({ id: 99, status: "returned", recipientSignatureUrl: null, handoverSignatureUrl: null })).resolves.toEqual({ success: true });
-    expect(mocks.transitionHandoverStatus).toHaveBeenCalledWith(99, "returned", { recipientSignatureUrl: null, handoverSignatureUrl: null });
+    await expect(caller.handovers.updateStatus({ id: 99, status: "returned", recipientSignatureUrl: null, handoverSignatureUrl: null })).resolves.toEqual({ success: true, returnedAccessoryCount: 0 });
+    expect(mocks.transitionHandoverStatus).toHaveBeenCalledWith(99, "returned", { recipientSignatureUrl: null, handoverSignatureUrl: null }, expect.anything());
     expect(mocks.recordActivity).toHaveBeenCalledWith(expect.objectContaining({ entityType: "handover", entityId: 99, action: "returned" }));
   });
 

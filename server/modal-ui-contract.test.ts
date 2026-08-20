@@ -766,6 +766,24 @@ describe("modal presentation contract", () => {
     expect(routers).toContain('movementType: "issue"');
   });
 
+  it("returns stocked handover accessories and summarizes repair costs by asset and department", () => {
+    const home = readProjectFile("client/src/pages/Home.tsx");
+    const reports = readProjectFile("client/src/pages/ReportsManagementView.tsx");
+    const routers = readProjectFile("server/routers.ts");
+    const database = readProjectFile("server/db.ts");
+
+    expect(routers).toContain("restoreHandoverAccessories");
+    expect(routers).toContain('movementType: "return"');
+    expect(routers).toContain("returnedAccessoryCount");
+    expect(database).toContain("listHandoverSupplyItems");
+    expect(database).toContain("createHandoverSupplyItem");
+    expect(home).toContain("Phụ kiện lấy từ kho");
+    expect(home).toContain("phụ kiện kho đang giữ cũng tự động được hoàn về kho");
+    expect(reports).toContain("repairCostReport");
+    expect(reports).toContain("Tổng chi phí Sửa chữa phát sinh");
+    expect(reports).toContain("Theo Phòng Ban");
+  });
+
   it("offers preview, download, and print flows for each repair ticket PDF", () => {
     const operations = readProjectFile("client/src/pages/OperationsModules.tsx");
     const previewHost = readProjectFile("client/src/components/ExportPreviewHost.tsx");

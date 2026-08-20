@@ -1993,3 +1993,10 @@
 - [x] Cho phép cấp phát tài sản chọn phụ kiện từ kho hoặc nhập tay.
 - [x] Tự động kiểm tra và trừ tồn kho phụ kiện khi cấp phát từ danh sách.
 - [x] Bổ sung hồi quy, kiểm tra giao diện, build và phát hành cập nhật.
+
+## Current Session — Accessory Return & Repair Cost Report
+
+- [x] Tự động hoàn phụ kiện kho khi thu hồi tài sản và ghi nhận biến động nhập kho.
+- [x] Hiển thị danh sách phụ kiện đã cấp trong trang chi tiết phiếu bàn giao.
+- [x] Thêm báo cáo tổng chi phí Sửa chữa theo từng tài sản và phòng ban.
+- [x] Bổ sung hồi quy, kiểm tra giao diện, build và phát hành cập nhật.

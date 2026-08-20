@@ -23,6 +23,7 @@ import {
   createDepartment,
   createDivision,
   createHandover,
+  createHandoverSupplyItem,
   createInventoryMovement,
   createInventorySupply,
   createSupplyImportItem,
@@ -100,6 +101,7 @@ import {
   listDivisions,
   listHandovers,
   listHandoversByRecipient,
+  listHandoverSupplyItems,
   listInventoryMovements,
   listInventorySupplies,
   listInventoryMovementReport,
@@ -127,6 +129,7 @@ import {
   updateDivision,
   updateVendor,
   updateHandover,
+  updateHandoverSupplyItem,
   updateInventorySupply,
   updateSupplyImportSession,
   updateSupplyIssueSlip,
@@ -143,6 +146,33 @@ import {
 import { storagePut } from "./storage";
 
 const nullableText = z.string().trim().max(1000).optional().nullable();
+
+async function restoreHandoverAccessories(
+  handover: Awaited<ReturnType<typeof getHandoverById>> & {},
+  changes: Record<string, unknown>,
+  actor: { id: number; name?: string | null },
+) {
+  if (!handover) throw new TRPCError({ code: "NOT_FOUND", message: "Không tìm thấy phiếu bàn giao." });
+  return runInventoryTransaction(async (transaction) => {
+    const supplyItems = await listHandoverSupplyItems(handover.id, transaction);
+    let returnedAccessoryCount = 0;
+    for (const item of supplyItems) {
+      const outstandingQuantity = Number(item.issuedQuantity) - Number(item.returnedQuantity || 0);
+      if (!Number.isFinite(outstandingQuantity) || outstandingQuantity <= 0) continue;
+      const supply = await getInventorySupplyById(item.supplyId, transaction);
+      if (!supply) throw new TRPCError({ code: "CONFLICT", message: `Không tìm thấy phụ kiện ${item.supplyCode} để hoàn kho.` });
+      const quantityBefore = Number(supply.stockQuantity);
+      if (!Number.isFinite(quantityBefore)) throw new TRPCError({ code: "CONFLICT", message: `Tồn kho phụ kiện ${supply.code} không hợp lệ.` });
+      const quantityAfter = quantityBefore + outstandingQuantity;
+      await updateInventorySupply(supply.id, { stockQuantity: String(quantityAfter) }, transaction);
+      await updateHandoverSupplyItem(item.id, { returnedQuantity: String(Number(item.returnedQuantity || 0) + outstandingQuantity) }, transaction);
+      await createInventoryMovement({ supplyId: supply.id, handoverId: handover.id, movementType: "return", quantity: String(outstandingQuantity), quantityBefore: String(quantityBefore), quantityAfter: String(quantityAfter), recipientUserId: handover.recipientUserId || null, recipientName: handover.recipientName, recipientDepartmentId: handover.recipientDepartmentId || null, note: `Hoàn kho kèm thu hồi tài sản ${handover.assetCode} · Phiếu ${handover.referenceCode}`, createdByUserId: actor.id, createdByName: actor.name ?? "Quản trị viên" }, transaction);
+      returnedAccessoryCount += 1;
+    }
+    await transitionHandoverStatus(handover.id, "returned", changes, transaction);
+    return returnedAccessoryCount;
+  });
+}
 const dateFromMs = z.number().int().nonnegative().optional().nullable().transform((value) => value ? new Date(value) : null);
 
 async function requireEditableAuditSession(sessionId: number) {
@@ -914,7 +944,7 @@ export const appRouter = router({
     get: adminProcedure.input(z.object({ id: z.number().int().positive() })).query(async ({ input }) => {
       const handover = await getHandoverById(input.id);
       if (!handover) throw new TRPCError({ code: "NOT_FOUND", message: "Không tìm thấy phiếu bàn giao." });
-      return handover;
+      return { ...handover, supplyItems: await listHandoverSupplyItems(input.id) };
     }),
     requestReturn: protectedProcedure.input(z.object({ id: z.number().int().positive(), note: z.string().trim().min(3).max(1000).optional().nullable() })).mutation(async ({ input, ctx }) => {
       const handover = await getHandoverById(input.id);
@@ -958,10 +988,10 @@ export const appRouter = router({
         photoChanges = { returnConditionPhotoKey: uploaded.key, returnConditionPhotoUrl: uploaded.url, returnConditionPhotoName: input.conditionPhoto.fileName, returnConditionPhotoContentType: input.conditionPhoto.contentType };
       }
       const changes = { returnRequestStatus: input.decision, returnRequestResolvedAt: new Date(), returnRequestResolvedByUserId: ctx.user.id, returnRequestResolution: input.resolution || null, returnResultSeenAt: null, ...photoChanges, ...(input.decision === "approved" ? { conditionIn: input.conditionIn } : {}) };
-      if (input.decision === "approved") await transitionHandoverStatus(input.id, "returned", changes);
-      else await updateHandover(input.id, changes);
+      const returnedAccessoryCount = input.decision === "approved" ? await restoreHandoverAccessories(handover, changes, ctx.user!) : 0;
+      if (input.decision !== "approved") await updateHandover(input.id, changes);
       await recordActivity({ entityType: "handover", entityId: input.id, action: input.decision === "approved" ? "return_approved" : "return_rejected", actorUserId: ctx.user.id, actorName: ctx.user.name, summary: `${input.decision === "approved" ? "Duyệt" : "Từ chối"} yêu cầu hoàn trả ${handover.assetCode}` });
-      return { success: true };
+      return { success: true, returnedAccessoryCount };
     }),
     create: adminProcedure.input(z.object({ assetId: z.number().int().positive(), recipientUserId: z.number().int().positive().optional().nullable(), recipientName: z.string().trim().min(2).max(160), recipientDepartmentId: z.number().int().positive().optional().nullable(), recipientDepartmentName: nullableText, handedOverAt: z.number().int().transform((value) => new Date(value)), dueBackAt: dateFromMs, conditionOut: nullableText, accessories: nullableText, supplyItems: z.array(z.object({ supplyId: z.number().int().positive(), quantity: z.number().finite().positive().max(1_000_000) })).max(20).default([]), note: nullableText })).mutation(async ({ input, ctx }) => {
       const asset = await getAssetById(input.assetId);
@@ -994,7 +1024,10 @@ export const appRouter = router({
             const handoverId = await createHandover({ ...handoverInput, accessories: combinedAccessories, referenceCode, handoverByUserId: ctx.user!.id, handoverByName: ctx.user!.name ?? "Quản trị viên", status: "draft" }, transaction);
             for (const movement of movements) {
               await updateInventorySupply(movement.supplyId, { stockQuantity: String(movement.quantityAfter) }, transaction);
-              await createInventoryMovement({ supplyId: movement.supplyId, movementType: "issue", quantity: String(movement.quantity), quantityBefore: String(movement.quantityBefore), quantityAfter: String(movement.quantityAfter), recipientUserId: input.recipientUserId || null, recipientName: input.recipientName, recipientDepartmentId: input.recipientDepartmentId || null, note: `Cấp phát kèm tài sản ${asset.assetCode} · Phiếu ${referenceCode}`, createdByUserId: ctx.user!.id, createdByName: ctx.user!.name ?? "Quản trị viên" }, transaction);
+              const supply = await getInventorySupplyById(movement.supplyId, transaction);
+              if (!supply) throw new TRPCError({ code: "CONFLICT", message: "Phụ kiện được chọn không còn tồn tại." });
+              await createHandoverSupplyItem({ handoverId, supplyId: supply.id, supplyCode: supply.code, supplyName: supply.name, unit: supply.unit, issuedQuantity: String(movement.quantity), returnedQuantity: "0" }, transaction);
+              await createInventoryMovement({ supplyId: movement.supplyId, handoverId, movementType: "issue", quantity: String(movement.quantity), quantityBefore: String(movement.quantityBefore), quantityAfter: String(movement.quantityAfter), recipientUserId: input.recipientUserId || null, recipientName: input.recipientName, recipientDepartmentId: input.recipientDepartmentId || null, note: `Cấp phát kèm tài sản ${asset.assetCode} · Phiếu ${referenceCode}`, createdByUserId: ctx.user!.id, createdByName: ctx.user!.name ?? "Quản trị viên" }, transaction);
             }
             return handoverId;
           });
@@ -1013,9 +1046,11 @@ export const appRouter = router({
       if (input.status === "active" && !(input.recipientSignatureUrl ?? existing.recipientSignatureUrl)) {
         throw new TRPCError({ code: "BAD_REQUEST", message: "Cần có chữ ký người nhận trước khi xác nhận bàn giao." });
       }
-      await transitionHandoverStatus(input.id, input.status, { recipientSignatureUrl: input.recipientSignatureUrl, handoverSignatureUrl: input.handoverSignatureUrl });
+      const statusChanges = { recipientSignatureUrl: input.recipientSignatureUrl, handoverSignatureUrl: input.handoverSignatureUrl };
+      const returnedAccessoryCount = input.status === "returned" ? await restoreHandoverAccessories(existing, statusChanges, ctx.user!) : 0;
+      if (input.status !== "returned") await transitionHandoverStatus(input.id, input.status, statusChanges);
       await recordActivity({ entityType: "handover", entityId: input.id, action: input.status, actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: `Cập nhật trạng thái phiếu: ${input.status}` });
-      return { success: true };
+      return { success: true, returnedAccessoryCount };
     }),
     saveRecipientSignature: adminProcedure.input(z.object({ id: z.number().int().positive(), dataUrl: z.string().startsWith("data:image/png;base64,") })).mutation(async ({ input, ctx }) => {
       const handover = await getHandoverById(input.id);

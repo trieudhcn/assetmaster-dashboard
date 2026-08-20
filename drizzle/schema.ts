@@ -243,6 +243,7 @@ export const inventoryMovements = mysqlTable("inventoryMovements", {
   quantity: decimal("quantity", { precision: 15, scale: 2 }).notNull(),
   quantityBefore: decimal("quantityBefore", { precision: 15, scale: 2 }).notNull(),
   quantityAfter: decimal("quantityAfter", { precision: 15, scale: 2 }).notNull(),
+  handoverId: int("handoverId"),
   issueSlipId: int("issueSlipId").references(() => supplyIssueSlips.id, { onDelete: "set null", onUpdate: "cascade" }),
   issueSlipItemId: int("issueSlipItemId").references(() => supplyIssueSlipItems.id, { onDelete: "set null", onUpdate: "cascade" }),
   recipientUserId: int("recipientUserId").references(() => users.id, { onDelete: "set null", onUpdate: "cascade" }),
@@ -252,7 +253,7 @@ export const inventoryMovements = mysqlTable("inventoryMovements", {
   createdByUserId: int("createdByUserId"),
   createdByName: varchar("createdByName", { length: 160 }),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
-}, (table) => [index("inventory_movements_supply_idx").on(table.supplyId), index("inventory_movements_created_idx").on(table.createdAt), index("inventory_movements_slip_idx").on(table.issueSlipId)]);
+}, (table) => [index("inventory_movements_supply_idx").on(table.supplyId), index("inventory_movements_created_idx").on(table.createdAt), index("inventory_movements_slip_idx").on(table.issueSlipId), index("inventory_movements_handover_idx").on(table.handoverId)]);
 
 export const supplyImportSessions = mysqlTable("supplyImportSessions", {
   id: int("id").autoincrement().primaryKey(),
@@ -315,6 +316,19 @@ export const handovers = mysqlTable("handovers", {
   index("handovers_recipient_idx").on(table.recipientUserId),
   index("handovers_status_idx").on(table.status),
 ]);
+
+export const handoverSupplyItems = mysqlTable("handoverSupplyItems", {
+  id: int("id").autoincrement().primaryKey(),
+  handoverId: int("handoverId").notNull().references(() => handovers.id, { onDelete: "restrict", onUpdate: "cascade" }),
+  supplyId: int("supplyId").notNull().references(() => inventorySupplies.id, { onDelete: "restrict", onUpdate: "cascade" }),
+  supplyCode: varchar("supplyCode", { length: 64 }).notNull(),
+  supplyName: varchar("supplyName", { length: 255 }).notNull(),
+  unit: varchar("unit", { length: 32 }).notNull(),
+  issuedQuantity: decimal("issuedQuantity", { precision: 15, scale: 2 }).notNull(),
+  returnedQuantity: decimal("returnedQuantity", { precision: 15, scale: 2 }).default("0").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+}, (table) => [index("handover_supply_items_handover_idx").on(table.handoverId), index("handover_supply_items_supply_idx").on(table.supplyId)]);
 
 export const maintenanceTickets = mysqlTable("maintenanceTickets", {
   id: int("id").autoincrement().primaryKey(),
