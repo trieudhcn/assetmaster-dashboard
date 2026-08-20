@@ -2242,3 +2242,9 @@
 - [x] Hiển thị nút xem trước PDF cho phiếu Bảo hành trong quản lý phiếu.
 - [x] Bỏ cột Tình trạng khỏi bảng thông tin tài sản PDF.
 - [x] Bổ sung hồi quy, kiểm tra giao diện/PDF và build phát hành.
+
+## Current Session — PDF Creator Unit & Mobile Month Picker
+
+- [x] Hiển thị phòng ban và bộ phận của người lập trong biên bản Bảo hành/Sửa chữa.
+- [x] Thay cơ chế biểu đồ chi phí mobile bằng cách chọn tháng dễ dùng và mở danh sách phiếu ổn định.
+- [x] Bổ sung hồi quy, kiểm tra PDF/mobile và build phát hành.

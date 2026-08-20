@@ -14,11 +14,11 @@ type ServiceTicketPdfArgs = {
   ticket: any;
   asset?: any;
   assigneeName?: string;
+  reporterDepartmentName?: string;
+  reporterDivisionName?: string;
   company?: ServiceTicketPdfCompany | null;
   autoPrint?: boolean;
 };
-
-const assetConditionLabels: Record<string, string> = { good: "Tốt", fair: "Đã qua sử dụng", needs_inspection: "Cần kiểm tra", damaged: "Hư hỏng" };
 
 async function loadPdfImage(url: string) {
   const response = await fetch(url);
@@ -38,7 +38,7 @@ function pdfImageFormat(dataUrl: string) {
   return "PNG" as const;
 }
 
-export async function previewServiceTicketPdf({ ticket, asset, assigneeName, company: suppliedCompany, autoPrint = false }: ServiceTicketPdfArgs) {
+export async function previewServiceTicketPdf({ ticket, asset, assigneeName, reporterDepartmentName, reporterDivisionName, company: suppliedCompany, autoPrint = false }: ServiceTicketPdfArgs) {
   const company = suppliedCompany || {};
   const warranty = ticket.serviceChannel === "warranty";
   const channelLabel = warranty ? "Bảo hành" : "Sửa chữa";
@@ -84,9 +84,10 @@ export async function previewServiceTicketPdf({ ticket, asset, assigneeName, com
 
   const preparedBy = ticket.reporterName || "Chưa cập nhật";
   const issuedAt = new Date(ticket.createdAt || ticket.openedAt);
+  const reporterUnit = [reporterDepartmentName && `Phòng ban: ${reporterDepartmentName}`, reporterDivisionName && `Bộ phận: ${reporterDivisionName}`].filter(Boolean).join(" · ") || "Chưa cập nhật";
   doc.setDrawColor(207, 226, 248);
   doc.setFillColor(239, 247, 255);
-  doc.roundedRect(left, y - 4.5, width, 10, 2, 2, "FD");
+  doc.roundedRect(left, y - 4.5, width, 17, 2, 2, "FD");
   doc.setFont(vietnamesePdfFontFamily, "bold");
   doc.setFontSize(8.5);
   doc.setTextColor(38, 102, 168);
@@ -96,7 +97,13 @@ export async function previewServiceTicketPdf({ ticket, asset, assigneeName, com
   doc.setTextColor(25, 59, 87);
   doc.text(doc.splitTextToSize(preparedBy, 55), left + 31, y);
   doc.text(issuedAt.toLocaleDateString("vi-VN"), right - 4, y, { align: "right" });
-  y += 16;
+  doc.setFont(vietnamesePdfFontFamily, "bold");
+  doc.setTextColor(38, 102, 168);
+  doc.text("Phòng ban / Bộ phận", left + 4, y + 6.5);
+  doc.setFont(vietnamesePdfFontFamily, "normal");
+  doc.setTextColor(25, 59, 87);
+  doc.text(doc.splitTextToSize(reporterUnit, width - 56), left + 43, y + 6.5);
+  y += 23;
 
   doc.setFont(vietnamesePdfFontFamily, "bold");
   doc.setFontSize(9);

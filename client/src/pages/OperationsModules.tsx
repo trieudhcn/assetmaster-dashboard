@@ -194,6 +194,8 @@ export function MaintenancePage() {
   useEffect(() => { setHistoryPage(1); }, [historyTicket?.id]);
   useEffect(() => { setHistoryPage((current) => Math.min(current, historyTotalPages)); }, [historyTotalPages]);
   const employeesQuery = trpc.employees.list.useQuery(undefined, { enabled: isAdmin });
+  const departmentsQuery = trpc.departments.listAll.useQuery(undefined, { enabled: isAdmin });
+  const divisionsQuery = trpc.departments.listAllDivisions.useQuery(undefined, { enabled: isAdmin });
   const utils = trpc.useUtils();
 
   const createMutation = trpc.maintenance.create.useMutation({
@@ -506,7 +508,10 @@ export function MaintenancePage() {
     setRepairPdfTicketId(ticket.id);
     const loadingToast = toast.loading(`Đang tạo PDF phiếu ${ticket.ticketCode}...`);
     try {
-      await previewServiceTicketPdf({ ticket, asset, assigneeName: ticket.assigneeUserId ? employeeById.get(ticket.assigneeUserId)?.name || undefined : undefined, company: companySettingsQuery.data || {} });
+      const reporter = ticket.reporterUserId ? employeeById.get(ticket.reporterUserId) : undefined;
+      const reporterDepartmentName = reporter?.departmentId ? departmentsQuery.data?.find((item) => item.id === reporter.departmentId)?.name : undefined;
+      const reporterDivisionName = reporter?.divisionId ? divisionsQuery.data?.find((item) => item.id === reporter.divisionId)?.name : undefined;
+      await previewServiceTicketPdf({ ticket, asset, assigneeName: ticket.assigneeUserId ? employeeById.get(ticket.assigneeUserId)?.name || undefined : undefined, reporterDepartmentName, reporterDivisionName, company: companySettingsQuery.data || {} });
       toast.success(`Đã mở xem trước PDF ${ticket.ticketCode}.`, { id: loadingToast });
     } catch (error) {
       console.error("[MaintenancePage] service ticket PDF export failed", error);

@@ -860,13 +860,10 @@ describe("modal presentation contract", () => {
     expect(reports).toContain("Tổng cộng");
     expect(reports).toContain("monthlyServiceCostTrend");
     expect(reports).toContain("Biến động chi phí theo tháng");
-    expect(reports).toContain("min-w-[540px]");
-    expect(reports).toContain("Vuốt ngang để xem đủ 12 tháng.");
+    expect(reports).toContain("grid grid-cols-3 gap-2 sm:hidden");
+    expect(reports).toContain("Chọn tháng để xem phiếu");
     expect(reports).toContain("Đang chọn {data[selectedMonth]?.month");
-    expect(reports).toContain("beginDrag");
-    expect(reports).toContain("moveDrag");
-    expect(reports).toContain("mobile-cost-trend-scroll");
-    expect(reports).toContain('event.pointerType !== "touch"');
+    expect(reports).toContain("onSelectMonth(index)");
     expect(reports).toContain("% tổng cộng");
     expect(reports).toContain("Tổng cộng (năm ${serviceCostYear})");
     expect(reports).toContain("selectedServiceCostMonth");
@@ -897,6 +894,8 @@ describe("modal presentation contract", () => {
     expect(ticketPdf).toContain("PHIẾU SỬA CHỮA TÀI SẢN");
     expect(ticketPdf).toContain("Người lập phiếu");
     expect(ticketPdf).toContain("Ngày lập phiếu");
+    expect(ticketPdf).toContain("Phòng ban / Bộ phận");
+    expect(ticketPdf).toContain("reporterDepartmentName");
     expect(ticketPdf).toContain("THÔNG TIN TÀI SẢN");
     expect(ticketPdf).toContain("Tình trạng");
     expect(ticketPdf).toContain("Hạn bảo hành");
@@ -910,8 +909,11 @@ describe("modal presentation contract", () => {
     expect(ticketPdf).not.toContain('doc.text("Người xử lý"');
     expect(ticketPdf).toContain("openPdfPreview");
     expect(operations).toContain("const previewRepairTicketPdf");
+    expect(operations).toContain("departmentsQuery");
+    expect(operations).toContain("divisionsQuery");
     expect(operations).not.toContain('if ((ticket.serviceChannel || "repair") !== "repair") return;');
     expect(operations).toContain("Xem trước PDF phiếu ${serviceChannelLabels");
+    expect(reports).toContain("quickPreviewReporterDepartment");
     expect(previewHost).toContain("autoPrint");
     expect(previewHost).toContain("contentWindow?.print()");
   });
