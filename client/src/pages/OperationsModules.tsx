@@ -1,9 +1,10 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import {
   AlertTriangle,
-  BellRing,
-  CalendarClock,
+	  BellRing,
+	  CalendarClock,
 	  CheckCircle2,
+	  ChevronDown,
 	  ChevronLeft,
 	  ChevronRight,
 	  ClipboardCheck,
@@ -166,6 +167,7 @@ export function MaintenancePage() {
   const [ticketCodeLookup, setTicketCodeLookup] = useState("");
   const [ticketStatusFilter, setTicketStatusFilter] = useState<"all" | "open" | "in_progress" | "resolved" | "closed">("all");
   const [maintenancePage, setMaintenancePage] = useState(1);
+  const [expandedTicketId, setExpandedTicketId] = useState<number | null>(null);
   const [historyTicket, setHistoryTicket] = useState<(typeof tickets)[number] | null>(null);
   const [warrantyHistoryDialogOpen, setWarrantyHistoryDialogOpen] = useState(false);
   const [warrantyAttachmentFile, setWarrantyAttachmentFile] = useState<File | null>(null);
@@ -745,23 +747,19 @@ export function MaintenancePage() {
             </div>
           ) : (
             <div className="mobile-table-scroll overflow-x-auto">
-              <table className="w-full min-w-[1420px] text-left text-xs">
+              <table className="w-full min-w-[980px] text-left text-xs">
                 <thead className="bg-[#FBFCFD] text-[10px] uppercase tracking-[.12em] text-[#8AA0B6]">
                   <tr>
                     <th className="px-5 py-3">Phiếu / tài sản</th>
-                    <th className="px-4 py-3">Kênh xử lý</th>
-                    <th className="px-4 py-3">Sự cố</th>
-                    <th className="px-4 py-3">Ưu tiên</th>
+                    <th className="px-4 py-3">Kênh & ưu tiên</th>
                     <th className="px-4 py-3">Người xử lý</th>
                     <th className="px-4 py-3">Trạng thái</th>
                     <th className="px-4 py-3">Chi phí</th>
-                    <th className="px-4 py-3">Chứng từ</th>
-                    <th className="px-4 py-3">Kết quả xử lý</th>
-                    <th className="px-5 py-3 text-right">Lưu</th>
+                    <th className="px-5 py-3 text-right">Thao tác</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {ticketsQuery.isLoading && <tr><td colSpan={10}><ModalTableSkeleton rows={5} columns={10} /></td></tr>}
+                  {ticketsQuery.isLoading && <tr><td colSpan={6}><ModalTableSkeleton rows={5} columns={6} /></td></tr>}
                   {!ticketsQuery.isLoading && pagedTickets.map((ticket) => {
                     const draft = draftFor(ticket);
                     const asset = assetById.get(ticket.assetId);
@@ -769,34 +767,21 @@ export function MaintenancePage() {
                     const priorityTone = ticket.priority === "critical" ? "bg-[#FDEDEE] text-[#B44545]" : ticket.priority === "high" ? "bg-[#FFF5DC] text-[#A86B00]" : ticket.priority === "medium" ? "bg-[#EAF3FF] text-[#2666A8]" : "bg-[#F0F5F8] text-[#60758A]";
                     const isClosed = ticket.status === "closed";
                     const canEditTicket = isAdmin && !isClosed;
+                    const isExpanded = expandedTicketId === ticket.id;
+                    const estimatedCostLabel = Number(draft.estimatedCost || 0) > 0 ? `${Number(draft.estimatedCost).toLocaleString("vi-VN")} VNĐ` : "Chưa nhập";
+                    const actualCostLabel = Number(draft.actualCost || 0) > 0 ? `${Number(draft.actualCost).toLocaleString("vi-VN")} VNĐ` : "Chưa nhập";
                     return (
-                      <tr key={ticket.id} className={`border-t border-[#EDF2F5] align-top ${isClosed ? "bg-[#FBFCFD]" : ""}`}>
-                        <td className="px-5 py-4">
-                          <div className="font-mono text-[11px] font-bold text-[#0F8C8C]">{ticket.ticketCode}</div>
-                          <div className="mt-1 flex items-center gap-1.5 font-semibold text-[#193B57]"><Wrench size={13} className="text-[#A86B00]" />{asset?.name || `Tài sản #${ticket.assetId}`}</div>
-                          <div className="mt-1 text-[10px] text-[#8AA0B6]">{asset?.assetCode || "Mã tài sản không còn khả dụng"} · Báo bởi {ticket.reporterName || "Người dùng"}</div>
-                          <div className="mt-2 flex flex-wrap gap-1.5"><button type="button" onClick={() => setHistoryTicket(ticket)} className="inline-flex items-center gap-1 rounded-md border border-[#CDE5E5] px-2 py-1 text-[10px] font-bold text-[#087A6A] transition hover:bg-[#ECF8F7]" aria-label={`Xem lịch sử ${ticket.ticketCode}`}><History size={12} />Xem lịch sử</button>{ticket.serviceChannel === "repair" && <button type="button" disabled={repairPdfTicketId === ticket.id} onClick={() => void previewRepairTicketPdf(ticket, asset)} className="inline-flex items-center gap-1 rounded-md border border-[#C7DDF8] bg-[#EFF7FF] px-2 py-1 text-[10px] font-bold text-[#2666A8] transition hover:bg-[#EAF3FF] disabled:cursor-wait disabled:opacity-60" aria-label={`Xem trước PDF phiếu Sửa chữa ${ticket.ticketCode}`}><Printer size={12} />{repairPdfTicketId === ticket.id ? "Đang tạo PDF" : "PDF / In"}</button>}</div>
-                        </td>
-                        <td className="px-4 py-4"><span className={`inline-flex min-w-[132px] items-center justify-center gap-1.5 rounded-md border px-2.5 py-2 text-[10px] font-extrabold ${ticket.serviceChannel === "warranty" ? "border-[#8BCDC6] bg-[#ECF8F7] text-[#087A6A]" : "border-[#F2D596] bg-[#FFF9EB] text-[#A86B00]"}`} title="Kênh xử lý được xác lập theo mã phiếu và không thể thay đổi sau khi tạo."><LockKeyhole size={12} aria-hidden="true" />{serviceChannelLabels[(ticket.serviceChannel || "repair") as keyof typeof serviceChannelLabels]}</span></td>
-                        <td className="max-w-[230px] px-4 py-4"><div className="font-semibold text-[#193B57]">{issueTypeLabels[ticket.issueType]}</div><p className="mt-1 leading-5 text-[#60758A]">{ticket.description}</p></td>
-                        <td className="px-4 py-4"><span className={`inline-flex rounded-full px-2 py-1 text-[10px] font-extrabold ${priorityTone}`}>{priorityLabels[ticket.priority]}</span></td>
-                        <td className="px-4 py-4">
-                          <SearchableSelect value={draft.assigneeUserId} onChange={(value) => updateDraft(ticket, { assigneeUserId: value })} disabled={!canEditTicket || updateMutation.isPending || employeesQuery.isLoading} className="min-w-[155px]" placeholder="Chưa phân công" searchPlaceholder="Tìm người xử lý..." options={[{ value: "", label: "Chưa phân công" }, ...employees.map((employee) => ({ value: String(employee.id), label: `${employee.name || employee.email || `Nhân viên #${employee.id}`}${employee.isActive ? "" : " · Đã khóa"}`, searchText: employee.email || "" }))]} />
-                          {assignee && <div className="mt-1 flex items-center gap-1 text-[10px] text-[#8AA0B6]"><UserRound size={11} />Đang giao: {assignee.name || assignee.email}</div>}
-                        </td>
-                        <td className="px-4 py-4">
-                          <SearchableSelect value={draft.status} onChange={(value) => updateDraft(ticket, { status: value as TicketDraft["status"] })} disabled={!canEditTicket || updateMutation.isPending} className="min-w-[135px]" searchPlaceholder="Tìm trạng thái..." options={Object.entries(maintenanceStatusLabels).map(([value, label]) => ({ value, label }))} />
-                        </td>
-                        <td className="px-4 py-4">
-                          <div className="min-w-[148px] space-y-2"><label className="block text-[10px] font-bold text-[#8AA0B6]">Dự kiến<CurrencyInput disabled={!canEditTicket || updateMutation.isPending} value={draft.estimatedCost} onChange={(value) => updateDraft(ticket, { estimatedCost: value })} placeholder={canEditTicket ? "0" : "Chưa nhập"} aria-label="Chi phí dự kiến" showWords className="mt-1 h-9 !w-full min-w-[140px] text-xs" /></label><label className="block text-[10px] font-bold text-[#8AA0B6]">Thực tế<CurrencyInput disabled={!canEditTicket || updateMutation.isPending} value={draft.actualCost} onChange={(value) => updateDraft(ticket, { actualCost: value })} placeholder={canEditTicket ? "0" : "Chưa nhập"} aria-label="Chi phí thực tế" showWords className="mt-1 h-9 !w-full min-w-[140px] text-xs" /></label></div>
-                        </td>
-                        <td className="px-4 py-4">
-                          {ticket.attachmentUrl ? <a href={ticket.attachmentUrl} target="_blank" rel="noreferrer" className="block max-w-[160px] truncate text-xs font-bold text-[#087A6A] underline decoration-[#8BCDC6] underline-offset-2" title={ticket.attachmentName || "Mở chứng từ"}>{ticket.attachmentName || "Mở chứng từ"}</a> : <span className="text-[10px] text-[#8AA0B6]">Chưa có chứng từ</span>}
-                          {isAdmin && <label className={`mt-2 inline-flex items-center rounded-md border border-[#CDE5E5] px-2 py-1.5 text-[10px] font-bold ${canEditTicket ? "cursor-pointer text-[#087A6A] hover:bg-[#ECF8F7]" : "cursor-not-allowed text-[#8AA0B6] opacity-70"}`}><input type="file" accept="application/pdf,image/png,image/jpeg,image/webp" className="sr-only" disabled={!canEditTicket || uploadAttachmentMutation.isPending} onChange={(event) => { uploadAttachment(ticket, event.target.files?.[0]); event.currentTarget.value = ""; }} />{uploadAttachmentMutation.isPending ? "Đang tải" : isClosed ? "Phiếu đã đóng" : "Tải chứng từ"}</label>}
-                        </td>
-                        <td className="px-4 py-4"><textarea disabled={!canEditTicket || updateMutation.isPending} value={draft.resolution} onChange={(event) => updateDraft(ticket, { resolution: event.target.value })} placeholder="Nhập kết quả hoặc hướng xử lý..." className="min-h-[72px] w-[210px] resize-y rounded-md border border-[#DDE7F0] p-2 text-xs leading-5 text-[#193B57] outline-none focus:border-[#0F8C8C] disabled:cursor-not-allowed disabled:opacity-60" /></td>
-                        <td className="px-5 py-4 text-right"><button disabled={!canEditTicket || updateMutation.isPending} onClick={() => saveTicket(ticket)} className="inline-flex items-center gap-1.5 rounded-md bg-[#0F8C8C] px-3 py-2 text-[10px] font-bold text-white hover:bg-[#087A6A] disabled:cursor-not-allowed disabled:opacity-60"><Save size={13} />{updateMutation.isPending ? "Đang lưu" : isClosed ? "Đã đóng" : "Lưu"}</button></td>
-                      </tr>
+                      <Fragment key={ticket.id}>
+                        <tr className={`border-t border-[#EDF2F5] align-middle transition hover:bg-[#FAFDFD] ${isClosed ? "bg-[#FBFCFD]" : ""}`}>
+                          <td className="px-5 py-4"><div className="font-mono text-[11px] font-bold text-[#0F8C8C]">{ticket.ticketCode}</div><div className="mt-1 flex items-center gap-1.5 font-semibold text-[#193B57]"><Wrench size={13} className="text-[#A86B00]" />{asset?.name || `Tài sản #${ticket.assetId}`}</div><p className="mt-1 max-w-[280px] truncate text-[10px] text-[#71869A]" title={ticket.description}>{ticket.description}</p></td>
+                          <td className="px-4 py-4"><div className="flex flex-col items-start gap-1.5"><span title="Kênh xử lý được xác lập theo mã phiếu và không thể thay đổi sau khi tạo." className={`inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1.5 text-[10px] font-extrabold ${ticket.serviceChannel === "warranty" ? "border-[#8BCDC6] bg-[#ECF8F7] text-[#087A6A]" : "border-[#F2D596] bg-[#FFF9EB] text-[#A86B00]"}`}><LockKeyhole size={12} aria-hidden="true" />{serviceChannelLabels[(ticket.serviceChannel || "repair") as keyof typeof serviceChannelLabels]}</span><span className={`rounded-full px-2 py-1 text-[10px] font-extrabold ${priorityTone}`}>{priorityLabels[ticket.priority]}</span></div></td>
+                          <td className="px-4 py-4"><div className="flex items-center gap-1.5 text-xs font-semibold text-[#60758A]"><UserRound size={13} className="text-[#8AA0B6]" />{assignee?.name || assignee?.email || "Chưa phân công"}</div><div className="mt-1 text-[10px] text-[#9BAEC0]">Báo bởi {ticket.reporterName || "Người dùng"}</div></td>
+                          <td className="px-4 py-4"><span className={`inline-flex rounded-full px-2.5 py-1.5 text-[10px] font-extrabold ${draft.status === "closed" ? "bg-[#F0F5F8] text-[#60758A]" : draft.status === "resolved" ? "bg-[#ECF8F7] text-[#087A6A]" : "bg-[#FFF5DC] text-[#A86B00]"}`}>{maintenanceStatusLabels[draft.status]}</span></td>
+                          <td className="px-4 py-4"><div className="text-[10px] text-[#8AA0B6]">Thực tế</div><div className="mt-1 text-xs font-extrabold text-[#193B57]">{actualCostLabel}</div><div className="mt-1 text-[10px] text-[#8AA0B6]">Dự kiến: {estimatedCostLabel}</div></td>
+                          <td className="px-5 py-4 text-right"><div className="flex justify-end gap-1.5"><button type="button" onClick={() => setHistoryTicket(ticket)} className="rounded-md border border-[#CDE5E5] p-2 text-[#087A6A] transition hover:bg-[#ECF8F7]" aria-label={`Xem lịch sử ${ticket.ticketCode}`} title="Xem lịch sử"><History size={13} /></button>{ticket.serviceChannel === "repair" && <button type="button" disabled={repairPdfTicketId === ticket.id} onClick={() => void previewRepairTicketPdf(ticket, asset)} className="rounded-md border border-[#C7DDF8] bg-[#EFF7FF] p-2 text-[#2666A8] transition hover:bg-[#EAF3FF] disabled:cursor-wait disabled:opacity-60" aria-label={`Xem trước PDF phiếu Sửa chữa ${ticket.ticketCode}`} title="PDF / In"><Printer size={13} /></button>}<button type="button" onClick={() => setExpandedTicketId((current) => current === ticket.id ? null : ticket.id)} className="inline-flex items-center gap-1 rounded-md bg-[#0F8C8C] px-2.5 py-2 text-[10px] font-extrabold text-white transition hover:bg-[#087A6A]" aria-expanded={isExpanded}><span>{isExpanded ? "Thu gọn" : "Cập nhật"}</span><ChevronDown size={13} className={isExpanded ? "rotate-180 transition-transform" : "transition-transform"} /></button></div></td>
+                        </tr>
+                        {isExpanded && <tr className="border-t border-[#DCEDEF] bg-[#F7FBFB]"><td colSpan={6} className="px-5 py-4"><div className="grid gap-4 xl:grid-cols-[1fr_1fr_1.15fr_1.1fr_auto]"><div><label className="field-label">Người xử lý</label><SearchableSelect value={draft.assigneeUserId} onChange={(value) => updateDraft(ticket, { assigneeUserId: value })} disabled={!canEditTicket || updateMutation.isPending || employeesQuery.isLoading} placeholder="Chưa phân công" searchPlaceholder="Tìm người xử lý..." options={[{ value: "", label: "Chưa phân công" }, ...employees.map((employee) => ({ value: String(employee.id), label: `${employee.name || employee.email || `Nhân viên #${employee.id}`}${employee.isActive ? "" : " · Đã khóa"}`, searchText: employee.email || "" }))]} /></div><div><label className="field-label">Trạng thái</label><SearchableSelect value={draft.status} onChange={(value) => updateDraft(ticket, { status: value as TicketDraft["status"] })} disabled={!canEditTicket || updateMutation.isPending} searchPlaceholder="Tìm trạng thái..." options={Object.entries(maintenanceStatusLabels).map(([value, label]) => ({ value, label }))} /></div><div className="grid grid-cols-2 gap-3"><label className="field-label">Dự kiến<CurrencyInput disabled={!canEditTicket || updateMutation.isPending} value={draft.estimatedCost} onChange={(value) => updateDraft(ticket, { estimatedCost: value })} placeholder={canEditTicket ? "0" : "Chưa nhập"} aria-label="Chi phí dự kiến" showWords className="mt-1 h-9 !w-full text-xs" /></label><label className="field-label">Thực tế<CurrencyInput disabled={!canEditTicket || updateMutation.isPending} value={draft.actualCost} onChange={(value) => updateDraft(ticket, { actualCost: value })} placeholder={canEditTicket ? "0" : "Chưa nhập"} aria-label="Chi phí thực tế" showWords className="mt-1 h-9 !w-full text-xs" /></label></div><div><label className="field-label">Kết quả xử lý</label><textarea disabled={!canEditTicket || updateMutation.isPending} value={draft.resolution} onChange={(event) => updateDraft(ticket, { resolution: event.target.value })} placeholder="Nhập kết quả hoặc hướng xử lý..." className="mt-1 min-h-[74px] w-full resize-y rounded-md border border-[#DDE7F0] p-2 text-xs leading-5 text-[#193B57] outline-none focus:border-[#0F8C8C] disabled:cursor-not-allowed disabled:opacity-60" /></div><div className="flex min-w-[150px] flex-col justify-end gap-2"><div>{ticket.attachmentUrl ? <a href={ticket.attachmentUrl} target="_blank" rel="noreferrer" className="text-[10px] font-bold text-[#087A6A] underline" title={ticket.attachmentName || "Mở chứng từ"}>{ticket.attachmentName || "Mở chứng từ"}</a> : <span className="text-[10px] text-[#8AA0B6]">Chưa có chứng từ</span>}</div>{isAdmin && <label className={`inline-flex justify-center rounded-md border border-[#CDE5E5] px-2 py-1.5 text-[10px] font-bold ${canEditTicket ? "cursor-pointer text-[#087A6A] hover:bg-[#ECF8F7]" : "cursor-not-allowed text-[#8AA0B6] opacity-70"}`}><input type="file" accept="application/pdf,image/png,image/jpeg,image/webp" className="sr-only" disabled={!canEditTicket || uploadAttachmentMutation.isPending} onChange={(event) => { uploadAttachment(ticket, event.target.files?.[0]); event.currentTarget.value = ""; }} />{uploadAttachmentMutation.isPending ? "Đang tải" : isClosed ? "Phiếu đã đóng" : "Tải chứng từ"}</label>}<button disabled={!canEditTicket || updateMutation.isPending} onClick={() => saveTicket(ticket)} className="inline-flex items-center justify-center gap-1.5 rounded-md bg-[#0F8C8C] px-3 py-2 text-[10px] font-bold text-white hover:bg-[#087A6A] disabled:cursor-not-allowed disabled:opacity-60"><Save size={13} />{updateMutation.isPending ? "Đang lưu" : isClosed ? "Đã đóng" : "Lưu cập nhật"}</button></div></div></td></tr>}
+                      </Fragment>
                     );
                   })}
                 </tbody>

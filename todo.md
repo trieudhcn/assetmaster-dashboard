@@ -2066,3 +2066,9 @@
 - [x] Sửa tìm kiếm chuỗi con để mã đuôi như 001 trả về đúng các phiếu phù hợp.
 - [x] Sửa nhấn mã TH để chuyển thẳng đến bản xem trước PDF, không dừng ở chi tiết bàn giao.
 - [x] Bổ sung hồi quy, tái hiện tương tác và build phát hành.
+
+## Current Session — Service Ticket List Simplification
+
+- [x] Tinh gọn danh sách phiếu Bảo hành/Sửa chữa để ưu tiên mã phiếu, tài sản, kênh, trạng thái và chi phí.
+- [x] Chuyển thông tin xử lý chi tiết cùng thao tác cập nhật vào vùng mở rộng theo từng phiếu.
+- [x] Bổ sung hồi quy, kiểm tra giao diện và build phát hành.
