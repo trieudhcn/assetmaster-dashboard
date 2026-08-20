@@ -2072,3 +2072,8 @@
 - [x] Tinh gọn danh sách phiếu Bảo hành/Sửa chữa để ưu tiên mã phiếu, tài sản, kênh, trạng thái và chi phí.
 - [x] Chuyển thông tin xử lý chi tiết cùng thao tác cập nhật vào vùng mở rộng theo từng phiếu.
 - [x] Bổ sung hồi quy, kiểm tra giao diện và build phát hành.
+
+## Current Session — Repair PDF Unicode Font Fix
+
+- [x] Chuẩn hóa phông Unicode nhúng cho toàn bộ nội dung PDF phiếu sửa chữa.
+- [x] Bổ sung hồi quy và xác minh tiếng Việt có dấu trong bản xem trước PDF.

@@ -33,7 +33,7 @@ import { CurrencyInput } from "@/components/CurrencyInput";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { matchesVietnameseSearch } from "@/lib/catalogUi";
 import { numberToVietnameseWords, parseVndAmount } from "@/lib/formatters";
-import { handoverPdfFontUrl, registerVietnamesePdfFont } from "@/lib/handoverPdf";
+import { handoverPdfFontUrl, registerVietnamesePdfFont, vietnamesePdfFontFamily } from "@/lib/handoverPdf";
 import { writeBrandedWorkbook } from "@/lib/brandedWorkbook";
 import { applyPdfLogoWatermark, createPdfLogoWatermark, openPdfPreview } from "@/lib/pdfExport";
 import { ModuleEmptyState } from "@/components/ModuleEmptyState";
@@ -509,10 +509,10 @@ export function MaintenancePage() {
         try { doc.addImage(logoDataUrl, auditPdfImageFormat(logoDataUrl), left, y - 7, 18, 18, undefined, "FAST"); } catch { /* Dùng nhận diện chữ nếu logo không tương thích. */ }
       }
       doc.setTextColor(16, 42, 67);
-      doc.setFont("NotoSans", "bold");
+      doc.setFont(vietnamesePdfFontFamily, "bold");
       doc.setFontSize(12);
       doc.text(company.name || "ĐƠN VỊ QUẢN LÝ TÀI SẢN", logoDataUrl ? left + 22 : left, y);
-      doc.setFont("NotoSans", "normal");
+      doc.setFont(vietnamesePdfFontFamily, "normal");
       doc.setFontSize(8.5);
       doc.setTextColor(96, 117, 138);
       const companyMeta = [company.address, company.taxCode ? `MST: ${company.taxCode}` : "", company.phone ? `ĐT: ${company.phone}` : ""].filter(Boolean).join(" · ");
@@ -523,7 +523,7 @@ export function MaintenancePage() {
       doc.line(left, y, right, y);
       y += 11;
       doc.setTextColor(16, 42, 67);
-      doc.setFont("NotoSans", "bold");
+      doc.setFont(vietnamesePdfFontFamily, "bold");
       doc.setFontSize(17);
       doc.text("PHIẾU SỬA CHỮA TÀI SẢN", 105, y, { align: "center" });
       y += 7;
@@ -551,10 +551,10 @@ export function MaintenancePage() {
         const rowY = y + index * 7;
         doc.setFillColor(index % 2 ? 248 : 240, index % 2 ? 251 : 248, index % 2 ? 252 : 247);
         doc.rect(left, rowY - 4.8, width, 7, "F");
-        doc.setFont("NotoSans", "bold");
+        doc.setFont(vietnamesePdfFontFamily, "bold");
         doc.setTextColor(82, 112, 137);
         doc.text(label, left + 3, rowY);
-        doc.setFont("NotoSans", "normal");
+        doc.setFont(vietnamesePdfFontFamily, "normal");
         doc.setTextColor(25, 59, 87);
         doc.text(doc.splitTextToSize(value, 110), left + 62, rowY);
       });
@@ -566,11 +566,11 @@ export function MaintenancePage() {
         doc.setDrawColor(205, 229, 229);
         doc.setFillColor(250, 253, 253);
         doc.roundedRect(left, y, width, height, 2, 2, "FD");
-        doc.setFont("NotoSans", "bold");
+        doc.setFont(vietnamesePdfFontFamily, "bold");
         doc.setFontSize(8.5);
         doc.setTextColor(15, 140, 140);
         doc.text(label, left + 4, y + 5);
-        doc.setFont("NotoSans", "normal");
+        doc.setFont(vietnamesePdfFontFamily, "normal");
         doc.setTextColor(25, 59, 87);
         doc.text(lines, left + 4, y + 10);
         y += height + 4;
@@ -579,7 +579,7 @@ export function MaintenancePage() {
       doc.setDrawColor(221, 231, 240);
       doc.line(left, y, right, y);
       y += 9;
-      doc.setFont("NotoSans", "normal");
+      doc.setFont(vietnamesePdfFontFamily, "normal");
       doc.setFontSize(8.5);
       doc.setTextColor(96, 117, 138);
       doc.text("Người lập phiếu", left + 22, y, { align: "center" });
