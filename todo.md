@@ -2254,3 +2254,9 @@
 - [x] Sửa tính toán Tổng giá trị dự kiến trong biểu mẫu thêm phụ kiện.
 - [x] Hiển thị số phiếu Bảo hành và Sửa chữa trên từng ô tháng mobile.
 - [x] Bổ sung hồi quy, kiểm tra giao diện và build phát hành.
+
+## Current Session — Service PDF Creator Unit & Signatures
+
+- [x] Hiển thị riêng “Phòng ban: …” và “Bộ phận: …” trong phần thông tin người lập PDF.
+- [x] Sắp xếp khu ký nhận theo thứ tự Người bàn giao, Xác nhận quản lý, Đại diện nhà cung cấp.
+- [x] Bổ sung hồi quy, kiểm tra PDF và build phát hành.

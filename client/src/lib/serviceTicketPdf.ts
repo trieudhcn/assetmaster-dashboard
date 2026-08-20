@@ -84,10 +84,11 @@ export async function previewServiceTicketPdf({ ticket, asset, assigneeName, rep
 
   const preparedBy = ticket.reporterName || "Chưa cập nhật";
   const issuedAt = new Date(ticket.createdAt || ticket.openedAt);
-  const reporterUnit = [reporterDepartmentName && `Phòng ban: ${reporterDepartmentName}`, reporterDivisionName && `Bộ phận: ${reporterDivisionName}`].filter(Boolean).join(" · ") || "Chưa cập nhật";
+  const reporterDepartment = reporterDepartmentName || "Chưa cập nhật";
+  const reporterDivision = reporterDivisionName || "Chưa cập nhật";
   doc.setDrawColor(207, 226, 248);
   doc.setFillColor(239, 247, 255);
-  doc.roundedRect(left, y - 4.5, width, 17, 2, 2, "FD");
+  doc.roundedRect(left, y - 4.5, width, 23, 2, 2, "FD");
   doc.setFont(vietnamesePdfFontFamily, "bold");
   doc.setFontSize(8.5);
   doc.setTextColor(38, 102, 168);
@@ -99,11 +100,17 @@ export async function previewServiceTicketPdf({ ticket, asset, assigneeName, rep
   doc.text(issuedAt.toLocaleDateString("vi-VN"), right - 4, y, { align: "right" });
   doc.setFont(vietnamesePdfFontFamily, "bold");
   doc.setTextColor(38, 102, 168);
-  doc.text("Phòng ban / Bộ phận", left + 4, y + 6.5);
+  doc.text("Phòng ban:", left + 4, y + 6.5);
   doc.setFont(vietnamesePdfFontFamily, "normal");
   doc.setTextColor(25, 59, 87);
-  doc.text(doc.splitTextToSize(reporterUnit, width - 56), left + 43, y + 6.5);
-  y += 23;
+  doc.text(doc.splitTextToSize(reporterDepartment, width - 36), left + 30, y + 6.5);
+  doc.setFont(vietnamesePdfFontFamily, "bold");
+  doc.setTextColor(38, 102, 168);
+  doc.text("Bộ phận:", left + 4, y + 13);
+  doc.setFont(vietnamesePdfFontFamily, "normal");
+  doc.setTextColor(25, 59, 87);
+  doc.text(doc.splitTextToSize(reporterDivision, width - 36), left + 30, y + 13);
+  y += 29;
 
   doc.setFont(vietnamesePdfFontFamily, "bold");
   doc.setFontSize(9);
@@ -159,9 +166,9 @@ export async function previewServiceTicketPdf({ ticket, asset, assigneeName, rep
   doc.setFont(vietnamesePdfFontFamily, "normal");
   doc.setFontSize(8.5);
   doc.setTextColor(96, 117, 138);
-  doc.text("Đại diện nhà cung cấp", left + 22, y, { align: "center" });
-  doc.text("Người bàn giao", 105, y, { align: "center" });
-  doc.text("Xác nhận quản lý", right - 22, y, { align: "center" });
+  doc.text("Người bàn giao", left + 22, y, { align: "center" });
+  doc.text("Xác nhận quản lý", 105, y, { align: "center" });
+  doc.text("Đại diện nhà cung cấp", right - 22, y, { align: "center" });
   doc.setFontSize(7.5);
   doc.text(`Tạo ngày ${new Date().toLocaleDateString("vi-VN")}`, left, 286);
   applyPdfLogoWatermark(doc, await createPdfLogoWatermark(company.logoUrl).catch(() => null));

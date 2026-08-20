@@ -901,7 +901,8 @@ describe("modal presentation contract", () => {
     expect(ticketPdf).toContain("PHIẾU SỬA CHỮA TÀI SẢN");
     expect(ticketPdf).toContain("Người lập phiếu");
     expect(ticketPdf).toContain("Ngày lập phiếu");
-    expect(ticketPdf).toContain("Phòng ban / Bộ phận");
+    expect(ticketPdf).toContain('doc.text("Phòng ban:"');
+    expect(ticketPdf).toContain('doc.text("Bộ phận:"');
     expect(ticketPdf).toContain("reporterDepartmentName");
     expect(ticketPdf).toContain("THÔNG TIN TÀI SẢN");
     expect(ticketPdf).toContain("Tình trạng");
@@ -912,6 +913,9 @@ describe("modal presentation contract", () => {
     expect(ticketPdf).not.toContain('label: "Tình trạng",');
     expect(ticketPdf).toContain("Đại diện nhà cung cấp");
     expect(ticketPdf).toContain("Người bàn giao");
+    expect(ticketPdf).toContain('doc.text("Người bàn giao", left + 22');
+    expect(ticketPdf).toContain('doc.text("Xác nhận quản lý", 105');
+    expect(ticketPdf).toContain('doc.text("Đại diện nhà cung cấp", right - 22');
     expect(ticketPdf).not.toContain("Nội dung yêu cầu");
     expect(ticketPdf).not.toContain('doc.text("Người xử lý"');
     expect(ticketPdf).toContain("openPdfPreview");
