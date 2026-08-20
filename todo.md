@@ -2054,3 +2054,9 @@
 - [x] Thêm bộ lọc chỉ hiển thị các phiếu đã có mã biên bản thu hồi.
 - [x] Hỗ trợ tìm kiếm linh hoạt mã TH theo một phần ký tự hoặc khi bỏ dấu gạch nối.
 - [x] Bổ sung hồi quy, kiểm tra giao diện và build phát hành.
+
+## Current Session — Recovery PDF Direct Open & Service Form Simplification
+
+- [x] Gỡ bộ chọn Báo hỏng/Bảo trì định kỳ khỏi biểu mẫu tạo phiếu Bảo hành/Sửa chữa.
+- [x] Sửa thao tác nhấn mã TH để mở trực tiếp bản xem trước biên bản thu hồi.
+- [x] Bổ sung hồi quy, tái hiện tương tác và build phát hành.

@@ -56,8 +56,6 @@ export function RecoveryCertificatePdfShortcut() {
       event.preventDefault();
       event.stopPropagation();
       if (preparingCertificate || shortcut.disabled) return;
-      const detailButton = shortcut.closest("tr")?.querySelector<HTMLButtonElement>('button[aria-label="Xem biên bản"]');
-      if (!detailButton) return;
       const certificate = shortcut.dataset.recoveryCertificateShortcut || "";
       preparingCertificate = certificate;
       shortcut.disabled = true;
@@ -65,11 +63,7 @@ export function RecoveryCertificatePdfShortcut() {
       shortcut.setAttribute("aria-label", `Đang chuẩn bị PDF cho biên bản thu hồi ${certificate}`);
       const label = shortcut.querySelector<HTMLElement>("[data-recovery-certificate-label]");
       if (label) label.textContent = "Đang chuẩn bị PDF...";
-      sessionStorage.setItem(
-        "assetmaster-open-recovery-pdf-certificate",
-        certificate
-      );
-      detailButton.click();
+      window.dispatchEvent(new CustomEvent("assetmaster-open-recovery-certificate", { detail: { certificate } }));
     };
 
     const restoreShortcut = (event: Event) => {
