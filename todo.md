@@ -2279,3 +2279,9 @@
 - [x] Sửa bố cục/nút đóng xem trước PDF.
 - [x] Rà soát và đồng bộ các modal xem trước PDF có cùng cấu trúc.
 - [x] Bổ sung hồi quy, kiểm tra desktop/mobile và build phát hành.
+
+## Current Session — BG Sequence & Handover Supply Holdings
+- [x] Rà soát và chuẩn hóa các mã BG-2026 hiện có trong dữ liệu.
+- [x] Giữ mã BG dự kiến/ghi nhận tiếp theo theo chuỗi số tuần tự.
+- [x] Đồng bộ phụ kiện đi kèm bàn giao vào trạng thái nhân sự đang giữ.
+- [x] Bổ sung hồi quy, kiểm tra dữ liệu/giao diện và build phát hành.

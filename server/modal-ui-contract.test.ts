@@ -442,6 +442,21 @@ describe("modal presentation contract", () => {
     expect(db).toContain("issuedByName: supplyIssueSlips.issuedByName");
   });
 
+  it("includes handover accessories in employee holdings without creating a duplicate PK issue slip", () => {
+    const employees = readProjectFile("client/src/pages/EmployeeManagementView.tsx");
+    const issueSlips = readProjectFile("client/src/components/SupplyIssueSlipManager.tsx");
+    const db = readProjectFile("server/db.ts");
+
+    expect(db).toContain("handoverSupplyItems.issuedQuantity");
+    expect(db).toContain("inArray(handovers.status, [\"active\", \"returned\"])");
+    expect(db).toContain('source: "handover" as const');
+    expect(db).toContain("recipientUserId: handovers.recipientUserId");
+    expect(issueSlips).toContain("row.recipientUserId !== Number(selectedEmployeeId)");
+    expect(employees).toContain('const recordKey = `${entry.source || "issue-slip"}-${entry.issueSlipId}`');
+    expect(employees).toContain('slip.source === "handover"');
+    expect(employees).toContain("không tạo thêm phiếu cấp phát PK");
+  });
+
   it("keeps the employee accessory history compact and suppresses unnecessary decimal zeroes", () => {
     const employees = readProjectFile("client/src/pages/EmployeeManagementView.tsx");
 

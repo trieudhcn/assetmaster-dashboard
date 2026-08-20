@@ -79,11 +79,12 @@ function AccessNotice({ title, description, onRetry }: { title: string; descript
 function EmployeeDrawer({ employee, departments, divisions, roleHistory, supplyHistory, selectedDepartment, selectedDivision, availableDivisions, pendingRoleChange, onClose, onRequestRole, onCancelRole, onConfirmRole, onDepartmentChange, onDivisionChange, isSaving, roleHistoryLoading, supplyHistoryLoading }: any) {
   const [supplyPage, setSupplyPage] = useState(1);
   const supplySlips = useMemo(() => {
-    const grouped = new Map<number, any>();
+    const grouped = new Map<string, any>();
     supplyHistory.forEach((entry: any) => {
-      const slip = grouped.get(entry.issueSlipId) ?? { ...entry, items: [] };
+      const recordKey = `${entry.source || "issue-slip"}-${entry.issueSlipId}`;
+      const slip = grouped.get(recordKey) ?? { ...entry, recordKey, items: [] };
       slip.items.push(entry);
-      grouped.set(entry.issueSlipId, slip);
+      grouped.set(recordKey, slip);
     });
     return Array.from(grouped.values());
   }, [supplyHistory]);
@@ -155,6 +156,10 @@ function CompactEmployeeSupplyHistorySection({ slips, isLoading }: any) {
   useEffect(() => { setPage(1); }, [slips]);
 
   const openSlipPdf = async (slip: any) => {
+    if (slip.source === "handover") {
+      toast.message(`Phụ kiện của ${slip.referenceCode} được quản lý trong biên bản bàn giao, không tạo thêm phiếu cấp phát PK.`);
+      return;
+    }
     setOpeningPdfSlipId(slip.issueSlipId);
     try {
       await openSupplyIssueSlipPdf({ referenceCode: slip.referenceCode, recipientName: slip.recipientName || "Nhân viên", issuedByName: slip.issuedByName || null, issuedAt: new Date(slip.issuedAt), note: slip.note || null }, slip.items.map((item: any) => ({ supplyCode: item.supplyCode, supplyName: item.supplyName, unit: item.unit, issuedQuantity: String(item.issuedQuantity), returnedQuantity: String(item.returnedQuantity) })));

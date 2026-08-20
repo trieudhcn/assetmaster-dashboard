@@ -556,7 +556,7 @@ export async function listSupplyIssueSlipItems(issueSlipId: number, executor?: a
 export async function listSupplyIssueHistoryByRecipientUserId(recipientUserId: number) {
   const db = await getDb();
   if (!db) return [];
-  return db.select({
+  const issueSlipRows = await db.select({
     issueSlipId: supplyIssueSlips.id,
     recipientUserId: supplyIssueSlips.recipientUserId,
     referenceCode: supplyIssueSlips.referenceCode,
@@ -572,6 +572,26 @@ export async function listSupplyIssueHistoryByRecipientUserId(recipientUserId: n
     issuedQuantity: supplyIssueSlipItems.issuedQuantity,
     returnedQuantity: supplyIssueSlipItems.returnedQuantity,
   }).from(supplyIssueSlipItems).innerJoin(supplyIssueSlips, eq(supplyIssueSlipItems.issueSlipId, supplyIssueSlips.id)).where(eq(supplyIssueSlips.recipientUserId, recipientUserId)).orderBy(desc(supplyIssueSlips.issuedAt), desc(supplyIssueSlipItems.id));
+  const handoverRows = await db.select({
+    issueSlipId: handovers.id,
+    recipientUserId: handovers.recipientUserId,
+    referenceCode: handovers.referenceCode,
+    recipientName: handovers.recipientName,
+    issuedByName: handovers.handoverByName,
+    status: handovers.status,
+    issuedAt: handovers.handedOverAt,
+    returnedAt: handovers.returnedAt,
+    note: handovers.note,
+    supplyCode: handoverSupplyItems.supplyCode,
+    supplyName: handoverSupplyItems.supplyName,
+    unit: handoverSupplyItems.unit,
+    issuedQuantity: handoverSupplyItems.issuedQuantity,
+    returnedQuantity: handoverSupplyItems.returnedQuantity,
+  }).from(handoverSupplyItems).innerJoin(handovers, eq(handoverSupplyItems.handoverId, handovers.id)).where(and(eq(handovers.recipientUserId, recipientUserId), inArray(handovers.status, ["active", "returned"]))).orderBy(desc(handovers.handedOverAt), desc(handoverSupplyItems.id));
+  return [
+    ...issueSlipRows.map((row) => ({ ...row, source: "issue-slip" as const })),
+    ...handoverRows.map((row) => ({ ...row, source: "handover" as const })),
+  ].sort((left, right) => new Date(right.issuedAt).getTime() - new Date(left.issuedAt).getTime());
 }
 
 export async function getSupplyIssueSlipItemById(id: number, executor?: any) {
@@ -615,13 +635,32 @@ export async function listInventoryMovementReport() {
 export async function listSupplyIssueAnalytics() {
   const db = await getDb();
   if (!db) return [];
-  return db.select({
+  const issueSlipRows = await db.select({
+    recipientUserId: supplyIssueSlips.recipientUserId,
     recipientName: supplyIssueSlips.recipientName,
     departmentName: departments.name,
     issuedQuantity: sql<number>`sum(${supplyIssueSlipItems.issuedQuantity})`,
     returnedQuantity: sql<number>`sum(${supplyIssueSlipItems.returnedQuantity})`,
     outstandingQuantity: sql<number>`sum(${supplyIssueSlipItems.issuedQuantity} - ${supplyIssueSlipItems.returnedQuantity})`,
-  }).from(supplyIssueSlipItems).innerJoin(supplyIssueSlips, eq(supplyIssueSlipItems.issueSlipId, supplyIssueSlips.id)).leftJoin(departments, eq(supplyIssueSlips.recipientDepartmentId, departments.id)).groupBy(supplyIssueSlips.recipientName, departments.name).orderBy(desc(sql`sum(${supplyIssueSlipItems.issuedQuantity} - ${supplyIssueSlipItems.returnedQuantity})`));
+  }).from(supplyIssueSlipItems).innerJoin(supplyIssueSlips, eq(supplyIssueSlipItems.issueSlipId, supplyIssueSlips.id)).leftJoin(departments, eq(supplyIssueSlips.recipientDepartmentId, departments.id)).groupBy(supplyIssueSlips.recipientUserId, supplyIssueSlips.recipientName, departments.name);
+  const handoverRows = await db.select({
+    recipientUserId: handovers.recipientUserId,
+    recipientName: handovers.recipientName,
+    departmentName: handovers.recipientDepartmentName,
+    issuedQuantity: sql<number>`sum(${handoverSupplyItems.issuedQuantity})`,
+    returnedQuantity: sql<number>`sum(${handoverSupplyItems.returnedQuantity})`,
+    outstandingQuantity: sql<number>`sum(${handoverSupplyItems.issuedQuantity} - ${handoverSupplyItems.returnedQuantity})`,
+  }).from(handoverSupplyItems).innerJoin(handovers, eq(handoverSupplyItems.handoverId, handovers.id)).where(inArray(handovers.status, ["active", "returned"])).groupBy(handovers.recipientUserId, handovers.recipientName, handovers.recipientDepartmentName);
+  const totals = new Map<string, { recipientUserId: number | null; recipientName: string; departmentName: string | null; issuedQuantity: number; returnedQuantity: number; outstandingQuantity: number }>();
+  [...issueSlipRows, ...handoverRows].forEach((row) => {
+    const key = `${row.recipientUserId ?? "external"}:${row.recipientName}:${row.departmentName ?? "unassigned"}`;
+    const previous = totals.get(key) ?? { recipientUserId: row.recipientUserId, recipientName: row.recipientName, departmentName: row.departmentName, issuedQuantity: 0, returnedQuantity: 0, outstandingQuantity: 0 };
+    previous.issuedQuantity += Number(row.issuedQuantity || 0);
+    previous.returnedQuantity += Number(row.returnedQuantity || 0);
+    previous.outstandingQuantity += Number(row.outstandingQuantity || 0);
+    totals.set(key, previous);
+  });
+  return [...totals.values()].sort((left, right) => right.outstandingQuantity - left.outstandingQuantity);
 }
 
 export async function createAssetsBulk(data: Array<typeof assets.$inferInsert>) {

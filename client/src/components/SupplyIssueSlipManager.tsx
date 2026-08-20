@@ -146,7 +146,7 @@ export function SupplyIssueSlipManager() {
   </section>;
 }
 
-type SupplyAnalyticsRow = { recipientName: string; departmentName: string | null; issuedQuantity: number | string; returnedQuantity: number | string; outstandingQuantity: number | string };
+type SupplyAnalyticsRow = { recipientUserId: number | null; recipientName: string; departmentName: string | null; issuedQuantity: number | string; returnedQuantity: number | string; outstandingQuantity: number | string };
 
 function SupplyIssueAnalytics({ rows, loading }: { rows: SupplyAnalyticsRow[]; loading: boolean }) {
   const [mode, setMode] = useState<"department" | "recipient">("department");
@@ -159,7 +159,7 @@ function SupplyIssueAnalytics({ rows, loading }: { rows: SupplyAnalyticsRow[]; l
     const totals = new Map<string, { issued: number; returned: number; outstanding: number }>();
     rows.forEach((row) => {
       const key = mode === "department" ? row.departmentName || "Chưa gán phòng ban" : row.recipientName || "Chưa xác định";
-      if (mode === "recipient" && key !== selectedEmployee?.label) return;
+      if (mode === "recipient" && row.recipientUserId !== Number(selectedEmployeeId)) return;
       const previous = totals.get(key) || { issued: 0, returned: 0, outstanding: 0 };
       totals.set(key, { issued: previous.issued + Number(row.issuedQuantity || 0), returned: previous.returned + Number(row.returnedQuantity || 0), outstanding: previous.outstanding + Number(row.outstandingQuantity || 0) });
     });
