@@ -2124,3 +2124,8 @@
 - [x] Cho phép nhấn vào nhóm trong biểu đồ phân bổ giá trị để xem tài sản thuộc nhóm đó.
 - [x] Hiển thị danh sách tài sản chi tiết tương ứng với nhóm Bộ Phận, Hãng hoặc Nhà cung cấp đã chọn.
 - [x] Bổ sung hồi quy, kiểm tra giao diện và build phát hành.
+
+## Current Session — Drill-down Asset Detail Popup
+
+- [x] Cho phép nhấn từng dòng tài sản trong danh sách drill-down để mở popup chi tiết đầy đủ.
+- [x] Bổ sung hồi quy, kiểm tra giao diện và build phát hành.

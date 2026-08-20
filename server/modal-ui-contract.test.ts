@@ -1117,6 +1117,12 @@ describe("modal presentation contract", () => {
     expect(interactiveAllocation).toContain("Biểu đồ phân bổ có thể chọn nhóm");
     expect(interactiveAllocation).toContain("Xem tài sản nhóm");
     expect(interactiveAllocation).toContain("Đóng danh sách");
+    const interactiveAssetDetails = readProjectFile("client/src/components/InteractiveAllocationAssetDetails.tsx");
+    expect(reports).toContain("InteractiveAllocationAssetDetails");
+    expect(interactiveAssetDetails).toContain("Nhấn vào từng dòng để xem đầy đủ thông tin");
+    expect(interactiveAssetDetails).toContain("Xem chi tiết tài sản");
+    expect(interactiveAssetDetails).toContain("Thông tin tài sản");
+    expect(interactiveAssetDetails).toContain("Đóng popup chi tiết tài sản");
   });
 
 describe("currency input and scrollbar contract", () => {
