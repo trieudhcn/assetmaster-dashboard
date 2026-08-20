@@ -45,8 +45,9 @@ export function SearchableSelect({ value, onChange, options, placeholder = "Ch�
   const searchInputRef = useRef<HTMLInputElement>(null);
   const isAssetStatusOptions = options.some((option) => option.value === "returned") && options.some((option) => option.value === "maintenance") && options.some((option) => option.value === "active");
   const displayOptions = isAssetStatusOptions && !options.some((option) => option.value === "retired") ? [...options, { value: "retired", label: "Khấu hao/Thanh lý" }] : options;
-  const selected = displayOptions.find((option) => option.value === value);
-  const filteredOptions = useMemo(() => displayOptions.filter((option) => matchesVietnameseSearch(`${option.label} ${option.searchText || ""}`, query)), [displayOptions, query]);
+  const presentedOptions = displayOptions.map((option) => option.value === "maintenance" && option.label === "Bảo trì" ? { ...option, label: "Bảo hành/Sửa chữa", searchText: `${option.searchText || ""} Bảo trì Bảo hành Sửa chữa` } : option);
+  const selected = presentedOptions.find((option) => option.value === value);
+  const filteredOptions = useMemo(() => presentedOptions.filter((option) => matchesVietnameseSearch(`${option.label} ${option.searchText || ""}`, query)), [presentedOptions, query]);
 
   const closeMenu = () => {
     setOpen(false);

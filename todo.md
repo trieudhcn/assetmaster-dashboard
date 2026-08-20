@@ -2025,3 +2025,9 @@
 - [x] Thêm thanh tìm kiếm theo mã biên bản thu hồi tại danh sách lịch sử thu hồi.
 - [x] Chuẩn hóa nút xóa nhanh từ khóa cho mọi ô tìm kiếm trong hệ thống.
 - [x] Bổ sung hồi quy, xác minh giao diện và build phát hành.
+
+## Current Session — Warranty Label & Recovery List Visibility
+
+- [x] Chuẩn hóa nhãn Bảo trì thành Bảo hành/Sửa chữa trong mọi biểu mẫu thêm và sửa tài sản.
+- [x] Hiển thị mã biên bản thu hồi tại cột Mã phiếu cho các phiếu đã hoàn trả.
+- [x] Bổ sung hồi quy, kiểm tra giao diện và build phát hành.

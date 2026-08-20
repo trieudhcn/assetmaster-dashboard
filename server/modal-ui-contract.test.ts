@@ -837,6 +837,17 @@ describe("modal presentation contract", () => {
     expect(searchableSelect).toContain('aria-label="Xóa tìm kiếm trong dropdown"');
   });
 
+  it("uses the warranty-repair label in asset forms and shows recovery numbers in returned handover rows", () => {
+    const home = readProjectFile("client/src/pages/Home.tsx");
+    const searchableSelect = readProjectFile("client/src/components/SearchableSelect.tsx");
+
+    expect(searchableSelect).toContain('label: "Bảo hành/Sửa chữa"');
+    expect(home).toContain('status: "Bảo hành/Sửa chữa"');
+    expect(home).toContain('"Nội dung Bảo hành/Sửa chữa"');
+    expect(home).toContain('"Thông tin này sẽ được lưu cùng tài sản để theo dõi và hiển thị trong thông báo Bảo hành/Sửa chữa."');
+    expect(home).toContain('`${item.referenceCode} · ${item.recoveryCertificateNumber}`');
+  });
+
   it("offers preview, download, and print flows for each repair ticket PDF", () => {
     const operations = readProjectFile("client/src/pages/OperationsModules.tsx");
     const previewHost = readProjectFile("client/src/components/ExportPreviewHost.tsx");

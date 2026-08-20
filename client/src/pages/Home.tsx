@@ -1355,7 +1355,7 @@ function AssignmentsPage({ showComingSoon, companyInfo }: { showComingSoon: (lab
   const [returnDecision, setReturnDecision] = useState<{ item: Handover; decision: "approved" | "rejected" } | null>(null);
   const [form, setForm] = useState<Handover>({ id: 0, referenceCode: "", assetCode: "", assetName: "", recipient: "", department: "", date: "", status: "Nháp", condition: "Tốt", handoverBy: "", note: "", accessories: "", recipientUserId: null, recipientDepartmentId: null });
   const [supplyItems, setSupplyItems] = useState<HandoverSupplyItem[]>([]);
-  useEffect(() => { if (!handoversQuery.data) return; setHandovers(handoversQuery.data.map((item) => ({ id: item.id, referenceCode: item.referenceCode, assetCode: assignmentAssetsQuery.data?.find((asset) => asset.id === item.assetId)?.assetCode || `TS-${item.assetId}`, assetName: assignmentAssetsQuery.data?.find((asset) => asset.id === item.assetId)?.name || "Tài sản", recipient: item.recipientName, department: item.recipientDepartmentName || "Chưa xác định", date: new Date(item.handedOverAt).toLocaleDateString("vi-VN"), status: item.status === "active" ? "Đã bàn giao" : item.status === "pending_signature" ? "Chờ ký" : item.status === "returned" ? "Đã hoàn trả" : "Nháp", condition: item.conditionOut || "Tốt", handoverBy: item.handoverByName || "Quản trị viên", note: item.note || "", accessories: item.accessories || "", recipientSignatureUrl: item.recipientSignatureUrl, recoveryCertificateNumber: item.recoveryCertificateNumber, recoveryCertificateYear: item.recoveryCertificateYear, recoveryCertificateMonth: item.recoveryCertificateMonth, recoveryCertificateSequence: item.recoveryCertificateSequence }))); }, [handoversQuery.data, assignmentAssetsQuery.data]);
+  useEffect(() => { if (!handoversQuery.data) return; setHandovers(handoversQuery.data.map((item) => ({ id: item.id, referenceCode: item.status === "returned" && item.recoveryCertificateNumber ? `${item.referenceCode} · ${item.recoveryCertificateNumber}` : item.referenceCode, assetCode: assignmentAssetsQuery.data?.find((asset) => asset.id === item.assetId)?.assetCode || `TS-${item.assetId}`, assetName: assignmentAssetsQuery.data?.find((asset) => asset.id === item.assetId)?.name || "Tài sản", recipient: item.recipientName, department: item.recipientDepartmentName || "Chưa xác định", date: new Date(item.handedOverAt).toLocaleDateString("vi-VN"), status: item.status === "active" ? "Đã bàn giao" : item.status === "pending_signature" ? "Chờ ký" : item.status === "returned" ? "Đã hoàn trả" : "Nháp", condition: item.conditionOut || "Tốt", handoverBy: item.handoverByName || "Quản trị viên", note: item.note || "", accessories: item.accessories || "", recipientSignatureUrl: item.recipientSignatureUrl, recoveryCertificateNumber: item.recoveryCertificateNumber, recoveryCertificateYear: item.recoveryCertificateYear, recoveryCertificateMonth: item.recoveryCertificateMonth, recoveryCertificateSequence: item.recoveryCertificateSequence }))); }, [handoversQuery.data, assignmentAssetsQuery.data]);
   useEffect(() => { if (!handoversQuery.data) return; setHandovers((current) => current.map((item) => { const source = handoversQuery.data.find((handover) => handover.id === item.id); return source ? { ...item, dueBackAt: source.dueBackAt, returnRequestStatus: source.returnRequestStatus, returnRequestedAt: source.returnRequestedAt, returnRequestNote: source.returnRequestNote } : item; })); }, [handoversQuery.data]);
   useEffect(() => {
     const selectedHandoverId = Number(sessionStorage.getItem("assetmaster-open-handover-id"));
@@ -2385,6 +2385,26 @@ function AssetModal({ mode, asset, formData, setFormData, isSaving, onClose: dis
     }
     return;
   }, [isDetail, formData.statusType, retirementAttachmentFile, setFormData]);
+  useEffect(() => {
+    if (isDetail || formData.statusType !== "maintenance") return;
+    setFormData((current) => current.status === "Bảo hành/Sửa chữa" ? current : { ...current, status: "Bảo hành/Sửa chữa" });
+    const ariaLabel = mode === "create" ? "Thêm tài sản mới" : "Chỉnh sửa tài sản";
+    const dialog = document.querySelector<HTMLElement>(`[role="dialog"][aria-label="${ariaLabel}"]`);
+    if (!dialog) return;
+    const replacements = new Map([
+      ["Nội dung cần bảo trì", "Nội dung Bảo hành/Sửa chữa"],
+      ["Thông tin này sẽ được lưu cùng tài sản để theo dõi và hiển thị trong thông báo bảo trì.", "Thông tin này sẽ được lưu cùng tài sản để theo dõi và hiển thị trong thông báo Bảo hành/Sửa chữa."],
+    ]);
+    const walker = document.createTreeWalker(dialog, NodeFilter.SHOW_TEXT);
+    let textNode: Text | null;
+    while ((textNode = walker.nextNode() as Text | null)) {
+      const replacement = replacements.get(textNode.nodeValue?.trim() || "");
+      if (replacement) textNode.nodeValue = replacement;
+    }
+    dialog.querySelectorAll<HTMLElement>("[aria-label]").forEach((element) => {
+      if (element.getAttribute("aria-label") === "Nội dung cần bảo trì") element.setAttribute("aria-label", "Nội dung Bảo hành/Sửa chữa");
+    });
+  }, [formData.statusType, formData.status, isDetail, mode]);
   const title = mode === "create" ? "Thêm tài sản mới" : mode === "edit" ? "Chỉnh sửa tài sản" : "Chi tiết tài sản";
   const fields: Array<{ key: keyof Asset; label: string; placeholder: string }> = [
     { key: "name", label: "Tên tài sản", placeholder: "Ví dụ: MacBook Pro 14-inch M3" },
