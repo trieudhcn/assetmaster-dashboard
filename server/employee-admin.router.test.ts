@@ -29,6 +29,7 @@ const mocks = vi.hoisted(() => ({
   getDivisionByCode: vi.fn(),
   getHandoverById: vi.fn(),
   getNextHandoverSequence: vi.fn(),
+  getNextRecoveryCertificateSequence: vi.fn(),
   getUserNotificationPreferences: vi.fn(),
   listDepartments: vi.fn(),
   listAllDepartments: vi.fn(),
@@ -93,6 +94,7 @@ vi.mock("./db", () => ({
   getDivisionById: mocks.getDivisionById,
   getHandoverById: mocks.getHandoverById,
   getNextHandoverSequence: mocks.getNextHandoverSequence,
+  getNextRecoveryCertificateSequence: mocks.getNextRecoveryCertificateSequence,
   getNextRetirementCertificateSequence: vi.fn().mockResolvedValue(1),
   getUserNotificationPreferences: mocks.getUserNotificationPreferences,
   getMaintenanceTicket: vi.fn(),
@@ -163,6 +165,7 @@ describe("employee administration", () => {
     mocks.listDepartments.mockResolvedValue([{ id: 12, code: "HCNS", name: "Hành chính - Nhân sự", isActive: true }]);
     mocks.getHandoverById.mockResolvedValue({ id: 99, referenceCode: "BG-2026-001", assetCode: "TS-00050", recipientName: "Nguyễn Văn A", recipientUserId: 7, recipientDepartmentId: 12, recipientSignatureUrl: "https://storage.example/signature.png" });
     mocks.getNextHandoverSequence.mockResolvedValue(1);
+    mocks.getNextRecoveryCertificateSequence.mockResolvedValue(1);
     mocks.listHandoverReturnDecisionHistory.mockResolvedValue([]);
     mocks.createHandover.mockResolvedValue(99);
     mocks.runInventoryTransaction.mockImplementation(async (callback: (transaction: unknown) => Promise<unknown>) => callback({ transaction: true }));
@@ -247,7 +250,7 @@ describe("employee administration", () => {
     const caller = appRouter.createCaller(adminContext);
 
     await expect(caller.handovers.resolveReturnRequest({ id: 99, decision: "approved", conditionIn: null, resolution: null })).rejects.toMatchObject({ code: "BAD_REQUEST" });
-    await expect(caller.handovers.resolveReturnRequest({ id: 99, decision: "approved", conditionIn: "Tốt", resolution: null, conditionPhoto: { fileName: "tinh-trang.png", contentType: "image/png", dataUrl: "data:image/png;base64,UE5H" } })).resolves.toEqual({ success: true, returnedAccessoryCount: 0, outstandingAccessoryCount: 0 });
+    await expect(caller.handovers.resolveReturnRequest({ id: 99, decision: "approved", conditionIn: "Tốt", resolution: null, conditionPhoto: { fileName: "tinh-trang.png", contentType: "image/png", dataUrl: "data:image/png;base64,UE5H" } })).resolves.toMatchObject({ success: true, returnedAccessoryCount: 0, outstandingAccessoryCount: 0, recoveryCertificateNumber: expect.stringMatching(/^TH-\d{6}-001$/) });
     expect(mocks.storagePut).toHaveBeenCalledWith(expect.stringMatching(/^handovers\/99\/return-conditions\//), expect.any(Buffer), "image/png");
     expect(mocks.transitionHandoverStatus).toHaveBeenCalledWith(99, "returned", expect.objectContaining({ returnRequestStatus: "approved", returnRequestResolvedByUserId: 1, conditionIn: "Tốt", returnConditionPhotoUrl: "/manus-storage/handovers/99/return-conditions/tinh-trang.png" }), expect.anything());
   });
@@ -258,7 +261,7 @@ describe("employee administration", () => {
     mocks.getInventorySupplyById.mockResolvedValue({ id: 81, code: "PK-CHUOT", name: "Chuột không dây", unit: "Cái", stockQuantity: "3", isActive: true });
     const caller = appRouter.createCaller(adminContext);
 
-    await expect(caller.handovers.resolveReturnRequest({ id: 99, decision: "approved", conditionIn: "Tốt", resolution: "Đã thu hồi đủ phụ kiện", conditionPhoto: null })).resolves.toEqual({ success: true, returnedAccessoryCount: 1, outstandingAccessoryCount: 0 });
+    await expect(caller.handovers.resolveReturnRequest({ id: 99, decision: "approved", conditionIn: "Tốt", resolution: "Đã thu hồi đủ phụ kiện", conditionPhoto: null })).resolves.toMatchObject({ success: true, returnedAccessoryCount: 1, outstandingAccessoryCount: 0, recoveryCertificateNumber: expect.stringMatching(/^TH-\d{6}-001$/) });
     expect(mocks.updateInventorySupply).toHaveBeenCalledWith(81, { stockQuantity: "5" }, expect.anything());
     expect(mocks.updateHandoverSupplyItem).toHaveBeenCalledWith(501, { returnedQuantity: "2" }, expect.anything());
     expect(mocks.createInventoryMovement).toHaveBeenCalledWith(expect.objectContaining({ handoverId: 99, movementType: "return", quantity: "2", quantityBefore: "3", quantityAfter: "5" }), expect.anything());
@@ -270,10 +273,21 @@ describe("employee administration", () => {
     mocks.getInventorySupplyById.mockResolvedValue({ id: 81, code: "PK-CHUOT", name: "Chuột không dây", unit: "Cái", stockQuantity: "4", isActive: true });
     const caller = appRouter.createCaller(adminContext);
 
-    await expect(caller.handovers.resolveReturnRequest({ id: 99, decision: "approved", conditionIn: "Tốt", resolution: null, conditionPhoto: null, returnedSupplyItems: [{ handoverSupplyItemId: 501, quantity: 1 }] })).resolves.toEqual({ success: true, returnedAccessoryCount: 1, outstandingAccessoryCount: 1 });
+    await expect(caller.handovers.resolveReturnRequest({ id: 99, decision: "approved", conditionIn: "Tốt", resolution: null, conditionPhoto: null, returnedSupplyItems: [{ handoverSupplyItemId: 501, quantity: 1 }] })).resolves.toMatchObject({ success: true, returnedAccessoryCount: 1, outstandingAccessoryCount: 1, recoveryCertificateNumber: expect.stringMatching(/^TH-\d{6}-001$/) });
     expect(mocks.updateInventorySupply).toHaveBeenCalledWith(81, { stockQuantity: "5" }, expect.anything());
     expect(mocks.updateHandoverSupplyItem).toHaveBeenCalledWith(501, { returnedQuantity: "1" }, expect.anything());
     expect(mocks.createInventoryMovement).toHaveBeenCalledWith(expect.objectContaining({ movementType: "return", quantity: "1", quantityBefore: "4", quantityAfter: "5" }), expect.anything());
+  });
+
+  it("issues and persists a unique recovery certificate number by year and month", async () => {
+    mocks.getHandoverById.mockResolvedValue({ id: 99, referenceCode: "BG-2026-001", assetCode: "TS-00099", recipientName: "Nguyễn Văn A", recipientUserId: 8, recipientDepartmentId: 12, status: "active", returnRequestStatus: "pending", returnedAt: new Date("2026-08-14T03:00:00.000Z") });
+    mocks.getNextRecoveryCertificateSequence.mockResolvedValue(7);
+    mocks.listHandoverSupplyItems.mockResolvedValue([]);
+    const caller = appRouter.createCaller(adminContext);
+
+    await expect(caller.handovers.resolveReturnRequest({ id: 99, decision: "approved", conditionIn: "Tốt", resolution: null, conditionPhoto: null })).resolves.toMatchObject({ success: true, recoveryCertificateNumber: "TH-202608-007" });
+    expect(mocks.getNextRecoveryCertificateSequence).toHaveBeenCalledWith(2026, 8, expect.anything());
+    expect(mocks.transitionHandoverStatus).toHaveBeenCalledWith(99, "returned", expect.objectContaining({ recoveryCertificateNumber: "TH-202608-007", recoveryCertificateYear: 2026, recoveryCertificateMonth: 8, recoveryCertificateSequence: 7 }), expect.anything());
   });
 
   it("allows administrators to create suppliers and brands while restricting employees", async () => {
@@ -477,8 +491,8 @@ describe("employee administration", () => {
   it("delegates a returned handover to the database transition helper", async () => {
     const caller = appRouter.createCaller(adminContext);
 
-    await expect(caller.handovers.updateStatus({ id: 99, status: "returned", recipientSignatureUrl: null, handoverSignatureUrl: null })).resolves.toEqual({ success: true, returnedAccessoryCount: 0, outstandingAccessoryCount: 0 });
-    expect(mocks.transitionHandoverStatus).toHaveBeenCalledWith(99, "returned", { recipientSignatureUrl: null, handoverSignatureUrl: null }, expect.anything());
+    await expect(caller.handovers.updateStatus({ id: 99, status: "returned", recipientSignatureUrl: null, handoverSignatureUrl: null })).resolves.toMatchObject({ success: true, returnedAccessoryCount: 0, outstandingAccessoryCount: 0, recoveryCertificateNumber: expect.stringMatching(/^TH-\d{6}-001$/) });
+    expect(mocks.transitionHandoverStatus).toHaveBeenCalledWith(99, "returned", expect.objectContaining({ recipientSignatureUrl: null, handoverSignatureUrl: null, recoveryCertificateNumber: expect.stringMatching(/^TH-\d{6}-001$/), recoveryCertificateYear: 2026, recoveryCertificateMonth: 8, recoveryCertificateSequence: 1 }), expect.anything());
     expect(mocks.recordActivity).toHaveBeenCalledWith(expect.objectContaining({ entityType: "handover", entityId: 99, action: "returned" }));
   });
 

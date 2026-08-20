@@ -2013,3 +2013,9 @@
 - [x] Tạo biên bản thu hồi tài sản PDF có danh sách phụ kiện thực tế đã hoàn/chưa hoàn.
 - [x] Thêm xem trước, tải và in biên bản thu hồi từ chi tiết phiếu bàn giao.
 - [x] Bổ sung hồi quy, kiểm tra PDF, giao diện và build phát hành.
+
+## Current Session — Recovery Certificate Number
+
+- [x] Tạo mã biên bản thu hồi duy nhất tự sinh theo năm và tháng.
+- [x] Hiển thị mã biên bản thu hồi trên chi tiết phiếu và file PDF.
+- [x] Bổ sung hồi quy, kiểm tra migration, giao diện và build phát hành.

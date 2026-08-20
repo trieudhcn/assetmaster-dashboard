@@ -64,6 +64,7 @@ import {
   listHelpGuides,
   listUiLabels,
   getNextHandoverSequence,
+  getNextRecoveryCertificateSequence,
   getNextAuditSequence,
   getMaintenanceTicket,
   getNextAssetCodeForPrefix,
@@ -155,39 +156,52 @@ async function restoreHandoverAccessories(
   returnedSupplyItems?: Array<{ handoverSupplyItemId: number; quantity: number }>,
 ) {
   if (!handover) throw new TRPCError({ code: "NOT_FOUND", message: "Không tìm thấy phiếu bàn giao." });
-  return runInventoryTransaction(async (transaction) => {
-    const supplyItems = await listHandoverSupplyItems(handover.id, transaction);
-    const returnQuantityByItem = new Map<number, number>();
-    for (const returnedItem of returnedSupplyItems || []) {
-      if (returnQuantityByItem.has(returnedItem.handoverSupplyItemId)) throw new TRPCError({ code: "BAD_REQUEST", message: "Mỗi phụ kiện chỉ được khai báo hoàn trả một lần." });
-      const supplyItem = supplyItems.find((item: { id: number }) => item.id === returnedItem.handoverSupplyItemId);
-      if (!supplyItem) throw new TRPCError({ code: "BAD_REQUEST", message: "Phụ kiện hoàn trả không thuộc phiếu bàn giao này." });
-      const outstandingQuantity = Number(supplyItem.issuedQuantity) - Number(supplyItem.returnedQuantity || 0);
-      if (returnedItem.quantity > outstandingQuantity) throw new TRPCError({ code: "BAD_REQUEST", message: `Số lượng hoàn ${supplyItem.supplyName} vượt quá số đang giữ (${outstandingQuantity} ${supplyItem.unit}).` });
-      returnQuantityByItem.set(returnedItem.handoverSupplyItemId, returnedItem.quantity);
+  const recoveryDate = handover.returnedAt || new Date();
+  const recoveryYear = recoveryDate.getFullYear();
+  const recoveryMonth = recoveryDate.getMonth() + 1;
+  for (let attempt = 0; attempt < 5; attempt += 1) {
+    try {
+      return await runInventoryTransaction(async (transaction) => {
+        const recoverySequence = handover.recoveryCertificateSequence || await getNextRecoveryCertificateSequence(recoveryYear, recoveryMonth, transaction);
+        const recoveryCertificateNumber = handover.recoveryCertificateNumber || `TH-${recoveryYear}${String(recoveryMonth).padStart(2, "0")}-${String(recoverySequence).padStart(3, "0")}`;
+        const supplyItems = await listHandoverSupplyItems(handover.id, transaction);
+        const returnQuantityByItem = new Map<number, number>();
+        for (const returnedItem of returnedSupplyItems || []) {
+          if (returnQuantityByItem.has(returnedItem.handoverSupplyItemId)) throw new TRPCError({ code: "BAD_REQUEST", message: "Mỗi phụ kiện chỉ được khai báo hoàn trả một lần." });
+          const supplyItem = supplyItems.find((item: { id: number }) => item.id === returnedItem.handoverSupplyItemId);
+          if (!supplyItem) throw new TRPCError({ code: "BAD_REQUEST", message: "Phụ kiện hoàn trả không thuộc phiếu bàn giao này." });
+          const outstandingQuantity = Number(supplyItem.issuedQuantity) - Number(supplyItem.returnedQuantity || 0);
+          if (returnedItem.quantity > outstandingQuantity) throw new TRPCError({ code: "BAD_REQUEST", message: `Số lượng hoàn ${supplyItem.supplyName} vượt quá số đang giữ (${outstandingQuantity} ${supplyItem.unit}).` });
+          returnQuantityByItem.set(returnedItem.handoverSupplyItemId, returnedItem.quantity);
+        }
+        let returnedAccessoryCount = 0;
+        let outstandingAccessoryCount = 0;
+        for (const item of supplyItems) {
+          const outstandingQuantity = Number(item.issuedQuantity) - Number(item.returnedQuantity || 0);
+          if (!Number.isFinite(outstandingQuantity) || outstandingQuantity <= 0) continue;
+          const returnQuantity = returnedSupplyItems ? returnQuantityByItem.get(item.id) || 0 : outstandingQuantity;
+          if (returnQuantity <= 0) { outstandingAccessoryCount += 1; continue; }
+          const supply = await getInventorySupplyById(item.supplyId, transaction);
+          if (!supply) throw new TRPCError({ code: "CONFLICT", message: `Không tìm thấy phụ kiện ${item.supplyCode} để hoàn kho.` });
+          const quantityBefore = Number(supply.stockQuantity);
+          if (!Number.isFinite(quantityBefore)) throw new TRPCError({ code: "CONFLICT", message: `Tồn kho phụ kiện ${supply.code} không hợp lệ.` });
+          const quantityAfter = quantityBefore + returnQuantity;
+          await updateInventorySupply(supply.id, { stockQuantity: String(quantityAfter) }, transaction);
+          const returnedQuantityAfter = Number(item.returnedQuantity || 0) + returnQuantity;
+          await updateHandoverSupplyItem(item.id, { returnedQuantity: String(returnedQuantityAfter) }, transaction);
+          await createInventoryMovement({ supplyId: supply.id, handoverId: handover.id, movementType: "return", quantity: String(returnQuantity), quantityBefore: String(quantityBefore), quantityAfter: String(quantityAfter), recipientUserId: handover.recipientUserId || null, recipientName: handover.recipientName, recipientDepartmentId: handover.recipientDepartmentId || null, note: `Hoàn kho kèm thu hồi tài sản ${handover.assetCode} · Phiếu ${handover.referenceCode} · Biên bản ${recoveryCertificateNumber}`, createdByUserId: actor.id, createdByName: actor.name ?? "Quản trị viên" }, transaction);
+          returnedAccessoryCount += 1;
+          if (returnedQuantityAfter < Number(item.issuedQuantity)) outstandingAccessoryCount += 1;
+        }
+        await transitionHandoverStatus(handover.id, "returned", { ...changes, returnedAt: recoveryDate, recoveryCertificateNumber, recoveryCertificateYear: recoveryYear, recoveryCertificateMonth: recoveryMonth, recoveryCertificateSequence: recoverySequence }, transaction);
+        return { returnedAccessoryCount, outstandingAccessoryCount, recoveryCertificateNumber };
+      });
+    } catch (error) {
+      const duplicateCertificate = typeof error === "object" && error !== null && (("code" in error && error.code === "ER_DUP_ENTRY") || ("errno" in error && Number(error.errno) === 1062));
+      if (!duplicateCertificate || attempt === 4) throw error;
     }
-    let returnedAccessoryCount = 0;
-    let outstandingAccessoryCount = 0;
-    for (const item of supplyItems) {
-      const outstandingQuantity = Number(item.issuedQuantity) - Number(item.returnedQuantity || 0);
-      if (!Number.isFinite(outstandingQuantity) || outstandingQuantity <= 0) continue;
-      const returnQuantity = returnedSupplyItems ? returnQuantityByItem.get(item.id) || 0 : outstandingQuantity;
-      if (returnQuantity <= 0) { outstandingAccessoryCount += 1; continue; }
-      const supply = await getInventorySupplyById(item.supplyId, transaction);
-      if (!supply) throw new TRPCError({ code: "CONFLICT", message: `Không tìm thấy phụ kiện ${item.supplyCode} để hoàn kho.` });
-      const quantityBefore = Number(supply.stockQuantity);
-      if (!Number.isFinite(quantityBefore)) throw new TRPCError({ code: "CONFLICT", message: `Tồn kho phụ kiện ${supply.code} không hợp lệ.` });
-      const quantityAfter = quantityBefore + returnQuantity;
-      await updateInventorySupply(supply.id, { stockQuantity: String(quantityAfter) }, transaction);
-      const returnedQuantityAfter = Number(item.returnedQuantity || 0) + returnQuantity;
-      await updateHandoverSupplyItem(item.id, { returnedQuantity: String(returnedQuantityAfter) }, transaction);
-      await createInventoryMovement({ supplyId: supply.id, handoverId: handover.id, movementType: "return", quantity: String(returnQuantity), quantityBefore: String(quantityBefore), quantityAfter: String(quantityAfter), recipientUserId: handover.recipientUserId || null, recipientName: handover.recipientName, recipientDepartmentId: handover.recipientDepartmentId || null, note: `Hoàn kho kèm thu hồi tài sản ${handover.assetCode} · Phiếu ${handover.referenceCode}`, createdByUserId: actor.id, createdByName: actor.name ?? "Quản trị viên" }, transaction);
-      returnedAccessoryCount += 1;
-      if (returnedQuantityAfter < Number(item.issuedQuantity)) outstandingAccessoryCount += 1;
-    }
-    await transitionHandoverStatus(handover.id, "returned", changes, transaction);
-    return { returnedAccessoryCount, outstandingAccessoryCount };
-  });
+  }
+  throw new TRPCError({ code: "CONFLICT", message: "Không thể tạo mã biên bản thu hồi duy nhất. Vui lòng thử lại." });
 }
 const dateFromMs = z.number().int().nonnegative().optional().nullable().transform((value) => value ? new Date(value) : null);
 

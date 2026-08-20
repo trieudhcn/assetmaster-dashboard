@@ -809,6 +809,19 @@ describe("modal presentation contract", () => {
     expect(home).toContain("-bien-ban-thu-hoi-tai-san.pdf");
   });
 
+  it("shows the unique month-based recovery certificate on the handover and its PDF", () => {
+    const home = readProjectFile("client/src/pages/Home.tsx");
+    const router = readProjectFile("server/routers.ts");
+    const db = readProjectFile("server/db.ts");
+
+    expect(home).toContain("Số biên bản thu hồi");
+    expect(home).toContain("Mã tự sinh theo năm và tháng");
+    expect(home).toContain("recoveryCertificateNumber");
+    expect(router).toContain("TH-${recoveryYear}${String(recoveryMonth).padStart(2, \"0\")}-${String(recoverySequence).padStart(3, \"0\")}");
+    expect(router).toContain("Không thể tạo mã biên bản thu hồi duy nhất");
+    expect(db).toContain("getNextRecoveryCertificateSequence");
+  });
+
   it("offers preview, download, and print flows for each repair ticket PDF", () => {
     const operations = readProjectFile("client/src/pages/OperationsModules.tsx");
     const previewHost = readProjectFile("client/src/components/ExportPreviewHost.tsx");

@@ -801,6 +801,10 @@ export async function getHandoverById(id: number) {
     handedOverAt: handovers.handedOverAt,
     dueBackAt: handovers.dueBackAt,
     returnedAt: handovers.returnedAt,
+    recoveryCertificateNumber: handovers.recoveryCertificateNumber,
+    recoveryCertificateYear: handovers.recoveryCertificateYear,
+    recoveryCertificateMonth: handovers.recoveryCertificateMonth,
+    recoveryCertificateSequence: handovers.recoveryCertificateSequence,
     status: handovers.status,
     returnRequestStatus: handovers.returnRequestStatus,
     returnRequestedAt: handovers.returnRequestedAt,
@@ -839,6 +843,14 @@ export async function getNextHandoverSequence(handoverYear: number) {
     const match = row.referenceCode.match(new RegExp(`^BG-${handoverYear}-(\\\\d+)$`));
     return Math.max(maximum, match ? Number(match[1]) : 0);
   }, 0);
+  return maxSequence + 1;
+}
+
+export async function getNextRecoveryCertificateSequence(recoveryYear: number, recoveryMonth: number, executor?: any) {
+  const db = executor ?? await getDb();
+  if (!db) throw new Error("Database unavailable");
+  const rows: Array<{ sequence: number | null }> = await db.select({ sequence: handovers.recoveryCertificateSequence }).from(handovers).where(and(eq(handovers.recoveryCertificateYear, recoveryYear), eq(handovers.recoveryCertificateMonth, recoveryMonth)));
+  const maxSequence = rows.reduce((maximum, row) => Math.max(maximum, Number(row.sequence || 0)), 0);
   return maxSequence + 1;
 }
 
