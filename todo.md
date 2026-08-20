@@ -2036,3 +2036,8 @@
 
 - [x] Cho phép nhấn mã biên bản thu hồi trong danh sách để mở nhanh bản xem trước PDF.
 - [x] Bổ sung hồi quy, kiểm tra giao diện và build phát hành.
+
+## Current Session — Recovery Certificate PDF Shortcut Fix
+
+- [x] Sửa lỗi nhấn mã biên bản thu hồi trong danh sách chưa mở được bản xem trước PDF.
+- [x] Bổ sung hồi quy, tái hiện tương tác và build phát hành.

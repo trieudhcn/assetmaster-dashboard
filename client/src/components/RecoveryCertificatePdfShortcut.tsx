@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect } from "react";
 
 const CERTIFICATE_ROW_PATTERN = /^(.*)\s·\s(TH-\d{6}-\d{3})$/;
 
@@ -8,8 +8,6 @@ const CERTIFICATE_ROW_PATTERN = /^(.*)\s·\s(TH-\d{6}-\d{3})$/;
  * detail view, then activates the recovery-PDF action already used there.
  */
 export function RecoveryCertificatePdfShortcut() {
-  const pendingCertificateRef = useRef<string | null>(null);
-
   useEffect(() => {
     let frame = 0;
 
@@ -35,21 +33,10 @@ export function RecoveryCertificatePdfShortcut() {
       });
     };
 
-    const openPendingPreview = () => {
-      if (!pendingCertificateRef.current) return;
-      const pdfButton = Array.from(document.querySelectorAll<HTMLButtonElement>("button")).find(
-        (button) => button.textContent?.includes("Biên bản thu hồi / In PDF")
-      );
-      if (!pdfButton) return;
-      pendingCertificateRef.current = null;
-      pdfButton.click();
-    };
-
     const synchronize = () => {
       cancelAnimationFrame(frame);
       frame = requestAnimationFrame(() => {
         enhanceCertificateCells();
-        openPendingPreview();
       });
     };
 
@@ -62,9 +49,11 @@ export function RecoveryCertificatePdfShortcut() {
       event.stopPropagation();
       const detailButton = shortcut.closest("tr")?.querySelector<HTMLButtonElement>('button[aria-label="Xem biên bản"]');
       if (!detailButton) return;
-      pendingCertificateRef.current = shortcut.dataset.recoveryCertificateShortcut || null;
+      sessionStorage.setItem(
+        "assetmaster-open-recovery-pdf-certificate",
+        shortcut.dataset.recoveryCertificateShortcut || ""
+      );
       detailButton.click();
-      synchronize();
     };
 
     synchronize();

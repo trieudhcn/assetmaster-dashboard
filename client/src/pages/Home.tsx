@@ -1949,6 +1949,7 @@ function HandoverDetailModal({ item: listItem, companyInfo, onClose, onDataChang
   const [signature, setSignature] = useState(listItem.recipientSignatureUrl || "");
   const [signed, setSigned] = useState(Boolean(listItem.recipientSignatureUrl));
   const [returnQuantities, setReturnQuantities] = useState<Record<number, string>>({});
+  const [shouldAutoOpenRecoveryPdf, setShouldAutoOpenRecoveryPdf] = useState(() => typeof window !== "undefined" && Boolean(sessionStorage.getItem("assetmaster-open-recovery-pdf-certificate")));
   const handoverDetailQuery = trpc.handovers.get.useQuery({ id: listItem.id });
   const returnDecisionHistoryQuery = trpc.handovers.returnDecisionHistory.useQuery({ id: listItem.id });
   const item = handoverDetailQuery.data ? { ...listItem, id: handoverDetailQuery.data.id, referenceCode: handoverDetailQuery.data.referenceCode, assetCode: handoverDetailQuery.data.assetCode, assetName: handoverDetailQuery.data.assetName, recipient: handoverDetailQuery.data.recipientName, department: handoverDetailQuery.data.recipientDepartmentName || "Chưa xác định", date: new Date(handoverDetailQuery.data.handedOverAt).toLocaleDateString("vi-VN"), returnedAt: handoverDetailQuery.data.returnedAt, recoveryCertificateNumber: handoverDetailQuery.data.recoveryCertificateNumber, recoveryCertificateYear: handoverDetailQuery.data.recoveryCertificateYear, recoveryCertificateMonth: handoverDetailQuery.data.recoveryCertificateMonth, recoveryCertificateSequence: handoverDetailQuery.data.recoveryCertificateSequence, conditionIn: handoverDetailQuery.data.conditionIn, status: handoverDetailQuery.data.status === "active" ? "Đã bàn giao" as const : handoverDetailQuery.data.status === "pending_signature" ? "Chờ ký" as const : handoverDetailQuery.data.status === "returned" ? "Đã hoàn trả" as const : "Nháp" as const, condition: handoverDetailQuery.data.conditionOut || "Tốt", handoverBy: handoverDetailQuery.data.handoverByName || "Quản trị viên", note: handoverDetailQuery.data.note || "", accessories: handoverDetailQuery.data.accessories || "", supplyItems: handoverDetailQuery.data.supplyItems, recipientUserId: handoverDetailQuery.data.recipientUserId, recipientDepartmentId: handoverDetailQuery.data.recipientDepartmentId, recipientSignatureUrl: handoverDetailQuery.data.recipientSignatureUrl } : listItem;
@@ -1966,6 +1967,13 @@ function HandoverDetailModal({ item: listItem, companyInfo, onClose, onDataChang
   });
   useEffect(() => { setSignature(item.recipientSignatureUrl || ""); setSigned(Boolean(item.recipientSignatureUrl)); }, [item.id, item.recipientSignatureUrl]);
   useEffect(() => { if (!item.supplyItems?.length) return; setReturnQuantities((current) => Object.fromEntries(item.supplyItems!.map((supplyItem: NonNullable<Handover["supplyItems"]>[number]) => [supplyItem.id, current[supplyItem.id] ?? String(Math.max(0, Number(supplyItem.issuedQuantity) - Number(supplyItem.returnedQuantity || 0)))]))); }, [item.id, item.supplyItems]);
+  useEffect(() => {
+    const certificate = typeof window === "undefined" ? null : sessionStorage.getItem("assetmaster-open-recovery-pdf-certificate");
+    if (!shouldAutoOpenRecoveryPdf || !certificate || handoverDetailQuery.isLoading || !handoverDetailQuery.data || item.status !== "Đã hoàn trả" || item.recoveryCertificateNumber !== certificate) return;
+    sessionStorage.removeItem("assetmaster-open-recovery-pdf-certificate");
+    setShouldAutoOpenRecoveryPdf(false);
+    void downloadAssetRecoveryPdf(item, companyInfo).then(() => toast.success("Đã mở biên bản thu hồi. Bạn có thể in hoặc tải PDF từ màn hình xem trước.")).catch(() => toast.error("Không thể mở bản xem trước biên bản thu hồi."));
+  }, [shouldAutoOpenRecoveryPdf, handoverDetailQuery.isLoading, handoverDetailQuery.data, item.id, item.status, item.recoveryCertificateNumber, companyInfo]);
   useModalDismiss(onClose);
   const isBusy = saveRecipientSignature.isPending || updateHandoverStatus.isPending;
   const saveSignature = (dataUrl: string) => saveRecipientSignature.mutate({ id: item.id, dataUrl });
