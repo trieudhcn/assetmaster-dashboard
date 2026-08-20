@@ -799,6 +799,16 @@ describe("modal presentation contract", () => {
     expect(reports).toContain("Theo Phòng Ban");
   });
 
+  it("provides a recovery record PDF with actual accessory quantities and print access", () => {
+    const home = readProjectFile("client/src/pages/Home.tsx");
+
+    expect(home).toContain("downloadAssetRecoveryPdf");
+    expect(home).toContain("BIÊN BẢN THU HỒI TÀI SẢN");
+    expect(home).toContain("DANH SÁCH PHỤ KIỆN THỰC TẾ");
+    expect(home).toContain("Biên bản thu hồi / In PDF");
+    expect(home).toContain("-bien-ban-thu-hoi-tai-san.pdf");
+  });
+
   it("offers preview, download, and print flows for each repair ticket PDF", () => {
     const operations = readProjectFile("client/src/pages/OperationsModules.tsx");
     const previewHost = readProjectFile("client/src/components/ExportPreviewHost.tsx");

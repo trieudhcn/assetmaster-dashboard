@@ -2007,3 +2007,9 @@
 - [x] Cảnh báo rõ phụ kiện còn thiếu trước khi xác nhận thu hồi.
 - [x] Xuất Excel báo cáo chi phí Sửa chữa theo tài sản và Phòng Ban.
 - [x] Bổ sung hồi quy, kiểm tra giao diện, build và phát hành cập nhật.
+
+## Current Session — Asset Recovery PDF
+
+- [x] Tạo biên bản thu hồi tài sản PDF có danh sách phụ kiện thực tế đã hoàn/chưa hoàn.
+- [x] Thêm xem trước, tải và in biên bản thu hồi từ chi tiết phiếu bàn giao.
+- [x] Bổ sung hồi quy, kiểm tra PDF, giao diện và build phát hành.

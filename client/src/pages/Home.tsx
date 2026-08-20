@@ -1289,7 +1289,7 @@ function CompanySettingsPage({ companyInfo, onSave }: { companyInfo: CompanyInfo
   return <div className="min-h-screen bg-[#F4F7FB] px-4 py-7 sm:px-6 lg:px-9 lg:py-8"><div className="mx-auto max-w-[1000px]"><div className="mb-7"><div className="mb-2 flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.16em] text-[#0F8C8C]"><span className="h-1.5 w-1.5 rounded-full bg-[#F0A516]" />Workspace settings</div><h1 className="font-display text-[28px] font-extrabold tracking-[-0.045em] text-[#102A43] sm:text-[34px]">Cài đặt hệ thống</h1><p className="mt-1.5 text-sm text-[#71869A]">Quản lý thông tin doanh nghiệp hiển thị trên tiêu đề biên bản bàn giao PDF.</p></div><div className="grid gap-5 lg:grid-cols-[1fr_0.72fr]"><section className="rounded-xl border border-[#DFE9F0] bg-white p-6 shadow-[0_8px_24px_rgba(16,42,67,0.045)]"><div className="flex items-start gap-3 border-b border-[#E7EEF3] pb-5"><div className="grid h-10 w-10 place-items-center rounded-xl bg-[#E6F6F2] text-[#0F8C8C]"><Building2 size={19} /></div><div><h2 className="font-display text-base font-extrabold text-[#102A43]">Thông tin công ty</h2><p className="mt-1 text-xs text-[#8AA0B6]">Các trường này sẽ được tự động điền vào phần đầu biên bản PDF.</p></div></div><div className="mt-5 space-y-4"><div><label className="field-label">Tên công ty <span className="text-[#0F8C8C]">*</span></label><input value={draft.name} onChange={(e) => update("name", e.target.value)} placeholder="Ví dụ: Công ty Cổ phần AssetMaster" className="field-input" /></div><div><label className="field-label">Địa chỉ trụ sở <span className="text-[#0F8C8C]">*</span></label><textarea value={draft.address} onChange={(e) => update("address", e.target.value)} placeholder="Nhập địa chỉ đầy đủ" className="field-input min-h-[76px] resize-y" /></div><div className="grid gap-4 sm:grid-cols-2"><div><label className="field-label">Mã số thuế</label><input value={draft.taxCode} onChange={(e) => update("taxCode", e.target.value)} placeholder="0101234567" className="field-input" /></div><div><label className="field-label">Số điện thoại</label><input value={draft.phone} onChange={(e) => update("phone", e.target.value)} placeholder="024 3789 2468" className="field-input" /></div></div></div><div className="mt-6 flex justify-end border-t border-[#E7EEF3] pt-4"><button onClick={() => { if (!draft.name.trim() || !draft.address.trim()) { toast.error("Vui lòng nhập tên công ty và địa chỉ."); return; } onSave(draft); }} className="flex items-center gap-2 rounded-lg bg-[#0F8C8C] px-4 py-2.5 text-xs font-bold text-white shadow-[0_5px_14px_rgba(15,140,140,0.2)] hover:bg-[#087A6A]"><CheckCircle2 size={15} />Lưu thông tin công ty</button></div></section><aside className="rounded-xl border border-[#CDE5E5] bg-[#ECF8F7] p-6"><div className="text-[10px] font-extrabold uppercase tracking-[0.14em] text-[#0F8C8C]">PDF header preview</div><div className="mt-4 rounded-xl bg-white p-5 shadow-[0_8px_20px_rgba(16,42,67,0.06)]"><div className="flex items-center gap-3"><img src="/manus-storage/assetmaster-logo_f5d79b06.png" alt="AssetMaster" className="h-11 w-11 rounded-xl bg-[#102A43] p-1.5" /><div><div className="font-display text-base font-extrabold text-[#102A43]">{draft.name || "Tên công ty"}</div><div className="mt-1 text-[10px] font-semibold text-[#0F8C8C]">HỆ THỐNG QUẢN LÝ TÀI SẢN DOANH NGHIỆP</div></div></div><div className="mt-5 border-t border-[#E7EEF3] pt-4 text-[11px] leading-5 text-[#60758A]"><div>{draft.address || "Địa chỉ công ty"}</div><div> MST: {draft.taxCode || "Chưa cập nhật"} · ĐT: {draft.phone || "Chưa cập nhật"}</div></div><div className="mt-5 text-center font-display text-sm font-extrabold text-[#193B57]">BIÊN BẢN BÀN GIAO TÀI SẢN</div></div><p className="mt-4 text-xs leading-5 text-[#4B8884]">Thông tin được lưu trong trình duyệt này và sẽ được dùng cho các lần xuất biên bản tiếp theo.</p></aside></div></div></div>;
 }
 
-type Handover = { id: number; referenceCode: string; assetCode: string; assetName: string; recipient: string; department: string; date: string; dueBackAt?: Date | string | null; returnRequestStatus?: "none" | "pending" | "approved" | "rejected"; returnRequestedAt?: Date | null; returnRequestNote?: string | null; status: "Đã bàn giao" | "Chờ ký" | "Nháp" | "Đã hoàn trả"; condition: string; handoverBy: string; note: string; accessories: string; supplyItems?: Array<{ id: number; supplyId: number; supplyCode: string; supplyName: string; unit: string; issuedQuantity: string | number; returnedQuantity: string | number }>; recipientUserId?: number | null; recipientDepartmentId?: number | null; recipientSignatureUrl?: string | null; };
+type Handover = { id: number; referenceCode: string; assetCode: string; assetName: string; recipient: string; department: string; date: string; dueBackAt?: Date | string | null; returnedAt?: Date | string | null; conditionIn?: string | null; returnRequestStatus?: "none" | "pending" | "approved" | "rejected"; returnRequestedAt?: Date | null; returnRequestNote?: string | null; status: "Đã bàn giao" | "Chờ ký" | "Nháp" | "Đã hoàn trả"; condition: string; handoverBy: string; note: string; accessories: string; supplyItems?: Array<{ id: number; supplyId: number; supplyCode: string; supplyName: string; unit: string; issuedQuantity: string | number; returnedQuantity: string | number }>; recipientUserId?: number | null; recipientDepartmentId?: number | null; recipientSignatureUrl?: string | null; };
 type HandoverSupplyItem = { supplyId: number; quantity: number };
 
 function PartialAccessoryReturnPanel({ supplyItems, quantities, onQuantityChange }: { supplyItems: NonNullable<Handover["supplyItems"]>; quantities: Record<number, string>; onQuantityChange: (id: number, quantity: string) => void }) {
@@ -1753,6 +1753,118 @@ async function downloadHandoverPdf(item: Handover, signature: string | undefined
   openPdfPreview(doc, `${item.referenceCode}-phieu-cap-phat-tai-san.pdf`, `Phiếu cấp phát tài sản ${item.referenceCode}`);
 }
 
+async function downloadAssetRecoveryPdf(item: Handover, companyInfo: CompanyInfo) {
+  const doc = new jsPDF({ unit: "mm", format: "a4" });
+  registerVietnamesePdfFont(doc, await loadHandoverPdfFont());
+  const logoDataUrl = companyInfo.logoUrl ? await loadImageData(companyInfo.logoUrl).catch(() => undefined) : undefined;
+  const left = 18;
+  const right = 192;
+  let y = 22;
+  doc.setTextColor(16, 42, 67);
+  drawHandoverBrandMark(doc, left, y, logoDataUrl);
+  doc.setTextColor(15, 140, 140);
+  doc.setFontSize(10);
+  doc.text(companyInfo.name || "Doanh nghiệp", left + 24, y - 4);
+  doc.setFontSize(8);
+  doc.setTextColor(112, 134, 154);
+  doc.text(`Địa chỉ: ${companyInfo.address || "Chưa cập nhật"}`, left + 24, y + 2);
+  doc.text(`MST: ${companyInfo.taxCode || "Chưa cập nhật"} · Điện thoại: ${companyInfo.phone || "Chưa cập nhật"}`, left + 24, y + 8);
+  doc.setDrawColor(15, 140, 140);
+  doc.line(left, y + 18, right, y + 18);
+  y += 36;
+  doc.setTextColor(16, 42, 67);
+  doc.setFontSize(15);
+  doc.text("BIÊN BẢN THU HỒI TÀI SẢN", 105, y, { align: "center" });
+  y += 12;
+  doc.setFontSize(9);
+  doc.setTextColor(112, 134, 154);
+  doc.text(`Căn cứ theo phiếu bàn giao: ${item.referenceCode}`, 105, y, { align: "center" });
+  y += 13;
+  const rows = [
+    ["Tài sản", `${item.assetName} (${item.assetCode})`],
+    ["Người bàn giao lại", item.recipient],
+    ["Phòng Ban", item.department],
+    ["Ngày bàn giao", item.date],
+    ["Ngày thu hồi", item.returnedAt ? new Date(item.returnedAt).toLocaleDateString("vi-VN") : new Date().toLocaleDateString("vi-VN")],
+    ["Tình trạng khi nhận", item.conditionIn || "Chưa cập nhật"],
+    ["Ghi chú", item.note || "Không có"],
+  ];
+  doc.setFontSize(9.5);
+  rows.forEach(([label, value]) => {
+    const wrapped = doc.splitTextToSize(String(value), 120);
+    doc.setTextColor(112, 134, 154);
+    doc.text(label, left, y);
+    doc.setTextColor(25, 59, 87);
+    doc.text(wrapped, 72, y);
+    y += Math.max(8, wrapped.length * 4.5 + 2.5);
+  });
+  y += 5;
+  doc.setDrawColor(221, 231, 240);
+  doc.line(left, y, right, y);
+  y += 10;
+  doc.setTextColor(16, 42, 67);
+  doc.setFontSize(11);
+  doc.text("DANH SÁCH PHỤ KIỆN THỰC TẾ", left, y);
+  y += 7;
+  const columns = { name: left, issued: 112, returned: 139, outstanding: 166 };
+  doc.setFillColor(240, 248, 247);
+  doc.roundedRect(left, y - 5, right - left, 8, 1.5, 1.5, "F");
+  doc.setTextColor(8, 122, 106);
+  doc.setFontSize(8);
+  doc.text("Phụ kiện", columns.name + 2, y);
+  doc.text("Đã cấp", columns.issued, y, { align: "right" });
+  doc.text("Đã hoàn", columns.returned, y, { align: "right" });
+  doc.text("Còn giữ", columns.outstanding, y, { align: "right" });
+  y += 8;
+  const supplyItems = item.supplyItems || [];
+  if (!supplyItems.length) {
+    doc.setTextColor(112, 134, 154);
+    doc.setFontSize(9);
+    doc.text("Không có phụ kiện được lấy từ kho kèm theo phiếu này.", left, y + 2);
+    y += 12;
+  } else {
+    supplyItems.forEach((supplyItem) => {
+      const issued = Number(supplyItem.issuedQuantity);
+      const returned = Number(supplyItem.returnedQuantity || 0);
+      const outstanding = Math.max(0, issued - returned);
+      const lines = doc.splitTextToSize(`${supplyItem.supplyName} (${supplyItem.supplyCode})`, 82);
+      const rowHeight = Math.max(8, lines.length * 4 + 3);
+      if (y + rowHeight > 255) { doc.addPage(); y = 22; }
+      doc.setDrawColor(232, 238, 243);
+      doc.line(left, y + rowHeight - 2, right, y + rowHeight - 2);
+      doc.setTextColor(25, 59, 87);
+      doc.setFontSize(8.5);
+      doc.text(lines, columns.name + 2, y + 2);
+      doc.setTextColor(96, 117, 138);
+      doc.text(`${issued} ${supplyItem.unit}`, columns.issued, y + 2, { align: "right" });
+      doc.setTextColor(8, 122, 106);
+      doc.text(`${returned} ${supplyItem.unit}`, columns.returned, y + 2, { align: "right" });
+      doc.setTextColor(outstanding > 0 ? 168 : 8, outstanding > 0 ? 107 : 122, outstanding > 0 ? 0 : 106);
+      doc.text(`${outstanding} ${supplyItem.unit}`, columns.outstanding, y + 2, { align: "right" });
+      y += rowHeight;
+    });
+  }
+  y += 10;
+  if (y > 240) { doc.addPage(); y = 28; }
+  doc.setDrawColor(221, 231, 240);
+  doc.line(left, y, right, y);
+  y += 13;
+  doc.setTextColor(16, 42, 67);
+  doc.setFontSize(10);
+  doc.text("XÁC NHẬN THU HỒI", left, y);
+  y += 10;
+  doc.setFontSize(9);
+  doc.setTextColor(112, 134, 154);
+  doc.text("Người bàn giao lại", left + 18, y);
+  doc.text("Người thu hồi / Đại diện đơn vị", 125, y);
+  doc.setTextColor(25, 59, 87);
+  doc.text(item.recipient, left + 10, y + 33);
+  doc.text(item.handoverBy || "Quản trị viên", 119, y + 33);
+  const watermark = await createPdfLogoWatermark(companyInfo.logoUrl).catch(() => null);
+  applyPdfLogoWatermark(doc, watermark);
+  openPdfPreview(doc, `${item.referenceCode}-bien-ban-thu-hoi-tai-san.pdf`, `Biên bản thu hồi tài sản ${item.referenceCode}`);
+}
+
 async function downloadAssetRetirementPdf(asset: Asset, companyInfo: CompanyInfo) {
   const doc = new jsPDF({ unit: "mm", format: "a4" });
   registerVietnamesePdfFont(doc, await loadHandoverPdfFont());
@@ -1837,7 +1949,7 @@ function HandoverDetailModal({ item: listItem, companyInfo, onClose, onDataChang
   const [returnQuantities, setReturnQuantities] = useState<Record<number, string>>({});
   const handoverDetailQuery = trpc.handovers.get.useQuery({ id: listItem.id });
   const returnDecisionHistoryQuery = trpc.handovers.returnDecisionHistory.useQuery({ id: listItem.id });
-  const item = handoverDetailQuery.data ? { ...listItem, id: handoverDetailQuery.data.id, referenceCode: handoverDetailQuery.data.referenceCode, assetCode: handoverDetailQuery.data.assetCode, assetName: handoverDetailQuery.data.assetName, recipient: handoverDetailQuery.data.recipientName, department: handoverDetailQuery.data.recipientDepartmentName || "Chưa xác định", date: new Date(handoverDetailQuery.data.handedOverAt).toLocaleDateString("vi-VN"), status: handoverDetailQuery.data.status === "active" ? "Đã bàn giao" as const : handoverDetailQuery.data.status === "pending_signature" ? "Chờ ký" as const : handoverDetailQuery.data.status === "returned" ? "Đã hoàn trả" as const : "Nháp" as const, condition: handoverDetailQuery.data.conditionOut || "Tốt", handoverBy: handoverDetailQuery.data.handoverByName || "Quản trị viên", note: handoverDetailQuery.data.note || "", accessories: handoverDetailQuery.data.accessories || "", supplyItems: handoverDetailQuery.data.supplyItems, recipientUserId: handoverDetailQuery.data.recipientUserId, recipientDepartmentId: handoverDetailQuery.data.recipientDepartmentId, recipientSignatureUrl: handoverDetailQuery.data.recipientSignatureUrl } : listItem;
+  const item = handoverDetailQuery.data ? { ...listItem, id: handoverDetailQuery.data.id, referenceCode: handoverDetailQuery.data.referenceCode, assetCode: handoverDetailQuery.data.assetCode, assetName: handoverDetailQuery.data.assetName, recipient: handoverDetailQuery.data.recipientName, department: handoverDetailQuery.data.recipientDepartmentName || "Chưa xác định", date: new Date(handoverDetailQuery.data.handedOverAt).toLocaleDateString("vi-VN"), returnedAt: handoverDetailQuery.data.returnedAt, conditionIn: handoverDetailQuery.data.conditionIn, status: handoverDetailQuery.data.status === "active" ? "Đã bàn giao" as const : handoverDetailQuery.data.status === "pending_signature" ? "Chờ ký" as const : handoverDetailQuery.data.status === "returned" ? "Đã hoàn trả" as const : "Nháp" as const, condition: handoverDetailQuery.data.conditionOut || "Tốt", handoverBy: handoverDetailQuery.data.handoverByName || "Quản trị viên", note: handoverDetailQuery.data.note || "", accessories: handoverDetailQuery.data.accessories || "", supplyItems: handoverDetailQuery.data.supplyItems, recipientUserId: handoverDetailQuery.data.recipientUserId, recipientDepartmentId: handoverDetailQuery.data.recipientDepartmentId, recipientSignatureUrl: handoverDetailQuery.data.recipientSignatureUrl } : listItem;
   const saveRecipientSignature = trpc.handovers.saveRecipientSignature.useMutation({
     onSuccess: ({ url }) => { setSignature(url); setSigned(true); void handoverDetailQuery.refetch(); onDataChanged(); toast.success("Đã lưu chữ ký điện tử."); },
     onError: (error) => toast.error(error.message || "Không thể lưu chữ ký điện tử."),
@@ -1873,6 +1985,7 @@ function HandoverDetailModal({ item: listItem, companyInfo, onClose, onDataChang
         <section className="rounded-xl border border-[#E7EEF3] bg-[#FBFCFD] p-4"><div className="mb-3 flex items-center gap-2 text-[10px] font-extrabold uppercase tracking-[0.12em] text-[#527089]"><History size={14} />Lịch sử quyết định hoàn trả</div>{returnDecisionHistoryQuery.isLoading ? <p className="text-xs text-[#71869A]">Đang tải lịch sử quyết định...</p> : returnDecisionHistoryQuery.data?.length ? <div className="space-y-3">{returnDecisionHistoryQuery.data.map((entry) => { const approved = entry.action === "return_approved"; return <div key={entry.id} className="flex gap-3"><div className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${approved ? "bg-[#0F8C8C]" : "bg-[#D26767]"}`} /><div><div className={`text-xs font-extrabold ${approved ? "text-[#087A6A]" : "text-[#B44545]"}`}>{approved ? "Đã duyệt yêu cầu hoàn trả" : "Đã từ chối yêu cầu hoàn trả"}</div><div className="mt-1 text-[11px] text-[#60758A]">{entry.summary}</div><div className="mt-1 text-[10px] text-[#8AA0B6]">{entry.actorName || "Quản trị viên"} · {new Date(entry.createdAt).toLocaleString("vi-VN")}</div></div></div>; })}</div> : <p className="text-xs text-[#71869A]">Chưa có quyết định hoàn trả nào cho phiếu này.</p>}</section>
         {nextAction?.status === "returned" && <PartialAccessoryReturnPanel supplyItems={item.supplyItems || []} quantities={returnQuantities} onQuantityChange={(id, quantity) => setReturnQuantities((current) => ({ ...current, [id]: quantity }))} />}
         <section className="rounded-xl border border-[#CDE5E5] bg-[#F4FBFA] p-4"><div className="mb-3 flex items-center justify-between"><div><div className="flex items-center gap-2 text-[10px] font-extrabold uppercase tracking-[0.12em] text-[#087A6A]"><Signature size={14} />Ký tên điện tử</div><p className="mt-1 text-[11px] text-[#6B8F8D]">Chữ ký được lưu an toàn cùng phiếu bàn giao.</p></div>{signed && <span className="flex items-center gap-1 text-[10px] font-extrabold text-[#087A6A]"><CheckCircle2 size={13} />Đã ký</span>}</div><SignaturePad onSigned={saveSignature} /></section>
+        {item.status === "Đã hoàn trả" && <div className="flex justify-end"><button disabled={isBusy} onClick={() => { void downloadAssetRecoveryPdf(item, companyInfo).then(() => toast.success("Đã mở biên bản thu hồi. Bạn có thể in hoặc tải PDF từ màn hình xem trước.")); }} className="flex items-center gap-2 rounded-lg border border-[#F0DFC0] bg-[#FFFDF7] px-4 py-2.5 text-xs font-bold text-[#8F5A00] transition hover:bg-white disabled:opacity-50"><Printer size={14} />Biên bản thu hồi / In PDF</button></div>}
         <div className="flex flex-wrap justify-end gap-2 border-t border-[#E7EEF3] pt-4"><button onClick={onClose} className="rounded-lg border border-[#DDE7F0] px-4 py-2 text-xs font-bold text-[#60758A]">Đóng</button><button disabled={isBusy} onClick={() => { void downloadHandoverPdf(item, signature, companyInfo).then(() => toast.success("Đã mở xem trước. Bạn có thể in hoặc tải PDF từ màn hình này.")); }} className="flex items-center gap-2 rounded-lg border border-[#CDE5E5] px-4 py-2 text-xs font-bold text-[#087A6A] disabled:opacity-50"><FileText size={14} />Xem trước PDF</button>{nextAction?.status === "returned" ? <AlertDialog><AlertDialogTrigger asChild><button disabled={isBusy} className="flex items-center gap-2 rounded-lg bg-[#0F8C8C] px-4 py-2 text-xs font-bold text-white hover:bg-[#087A6A] disabled:cursor-not-allowed disabled:opacity-50"><Signature size={14} />{nextAction.label}</button></AlertDialogTrigger><AlertDialogContent className="max-w-md border-[#CDE5E5] bg-white"><AlertDialogHeader><div className="mb-1 flex h-10 w-10 items-center justify-center rounded-xl bg-[#FFF2E9] text-[#C75419]"><AlertTriangle size={19} /></div><AlertDialogTitle className="font-display text-xl font-extrabold text-[#102A43]">Xác nhận ghi nhận hoàn trả?</AlertDialogTitle><AlertDialogDescription className="text-sm leading-6 text-[#60758A]">Tài sản sẽ được chuyển về trạng thái sẵn có; phụ kiện kho đang giữ cũng tự động được hoàn về kho.</AlertDialogDescription></AlertDialogHeader><div className="rounded-xl border border-[#E7EEF3] bg-[#FBFCFD] px-4 py-3 text-xs"><div className="font-extrabold text-[#193B57]">{item.assetName}</div><div className="mt-1 font-mono text-[11px] text-[#71869A]">{item.assetCode}</div><div className="mt-2 text-[#60758A]">Người đang nhận: <span className="font-bold text-[#193B57]">{item.recipient}</span></div></div><AlertDialogFooter><AlertDialogCancel disabled={isBusy}>Hủy</AlertDialogCancel><AlertDialogAction disabled={isBusy} onClick={() => updateStatus("returned")} className="bg-[#0F8C8C] hover:bg-[#087A6A]">{isBusy ? "Đang ghi nhận..." : "Xác nhận hoàn trả"}</AlertDialogAction></AlertDialogFooter></AlertDialogContent></AlertDialog> : nextAction && <button disabled={isBusy || (nextAction.status === "active" && !signed)} onClick={() => updateStatus(nextAction.status)} className="flex items-center gap-2 rounded-lg bg-[#0F8C8C] px-4 py-2 text-xs font-bold text-white hover:bg-[#087A6A] disabled:cursor-not-allowed disabled:opacity-50"><Signature size={14} />{isBusy ? "Đang lưu..." : nextAction.label}</button>}</div>
       </div>
     </div>
