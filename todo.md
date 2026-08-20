@@ -2215,3 +2215,9 @@
 - [x] Sửa biểu đồ Biến động chi phí theo tháng để nhãn và cột không bị chồng/cắt trên mobile.
 - [x] Giữ thao tác chọn tháng và danh sách phiếu chi tiết tương ứng.
 - [x] Bổ sung hồi quy, kiểm tra mobile/desktop và build phát hành.
+
+## Current Session — Service Ticket PDF Asset Table
+
+- [x] Bổ sung tên người lập và ngày lập phiếu ở phần đầu PDF.
+- [x] Thay phần thông tin tài sản bằng bảng gồm các trường tài sản chính.
+- [x] Bổ sung hồi quy, kiểm tra PDF và build phát hành.

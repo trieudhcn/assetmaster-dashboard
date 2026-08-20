@@ -22,6 +22,7 @@ type ServiceTicketPdfArgs = {
 const statusLabels: Record<string, string> = { open: "Mới tiếp nhận", pending: "Chờ xử lý", in_progress: "Đang xử lý", resolved: "Đã xử lý", closed: "Đã đóng", cancelled: "Đã hủy" };
 const priorityLabels: Record<string, string> = { low: "Thấp", medium: "Trung bình", high: "Cao", critical: "Khẩn cấp" };
 const issueTypeLabels: Record<string, string> = { maintenance: "Bảo trì định kỳ", incident: "Sự cố", damage: "Báo hỏng" };
+const assetConditionLabels: Record<string, string> = { good: "Tốt", fair: "Đã qua sử dụng", needs_inspection: "Cần kiểm tra", damaged: "Hư hỏng" };
 
 async function loadPdfImage(url: string) {
   const response = await fetch(url);
@@ -83,20 +84,70 @@ export async function previewServiceTicketPdf({ ticket, asset, assigneeName, com
   doc.setFontSize(9.5);
   doc.setTextColor(56, 85, 166);
   doc.text(ticket.ticketCode, 105, y, { align: "center" });
-  y += 11;
+  y += 10;
+
+  const preparedBy = ticket.reporterName || "Chưa cập nhật";
+  const issuedAt = new Date(ticket.createdAt || ticket.openedAt);
+  doc.setDrawColor(207, 226, 248);
+  doc.setFillColor(239, 247, 255);
+  doc.roundedRect(left, y - 4.5, width, 10, 2, 2, "FD");
+  doc.setFont(vietnamesePdfFontFamily, "bold");
+  doc.setFontSize(8.5);
+  doc.setTextColor(38, 102, 168);
+  doc.text("Người lập phiếu", left + 4, y);
+  doc.text("Ngày lập phiếu", 117, y);
+  doc.setFont(vietnamesePdfFontFamily, "normal");
+  doc.setTextColor(25, 59, 87);
+  doc.text(doc.splitTextToSize(preparedBy, 55), left + 31, y);
+  doc.text(issuedAt.toLocaleDateString("vi-VN"), right - 4, y, { align: "right" });
+  y += 16;
+
+  doc.setFont(vietnamesePdfFontFamily, "bold");
+  doc.setFontSize(9);
+  doc.setTextColor(15, 140, 140);
+  doc.text("THÔNG TIN TÀI SẢN", left, y);
+  y += 5;
+  const assetColumns = [
+    { label: "Mã tài sản", value: asset?.assetCode || `Tài sản #${ticket.assetId}`, width: 28 },
+    { label: "Tên tài sản", value: asset?.name || "Không còn trong danh mục", width: 57 },
+    { label: "Tình trạng", value: assetConditionLabels[asset?.condition] || asset?.condition || "Chưa cập nhật", width: 30 },
+    { label: "Ngày mua", value: asset?.purchaseDate ? new Date(asset.purchaseDate).toLocaleDateString("vi-VN") : "Chưa cập nhật", width: 30 },
+    { label: "Hạn bảo hành", value: asset?.warrantyUntil ? new Date(asset.warrantyUntil).toLocaleDateString("vi-VN") : "Chưa cập nhật", width: 33 },
+  ];
+  const assetValueLines = assetColumns.map((column) => doc.splitTextToSize(String(column.value), column.width - 4));
+  const assetValueHeight = Math.max(10, Math.max(...assetValueLines.map((lines) => lines.length)) * 4.2 + 4);
+  let assetColumnX = left;
+  assetColumns.forEach((column) => {
+    doc.setDrawColor(205, 222, 238);
+    doc.setFillColor(234, 243, 251);
+    doc.rect(assetColumnX, y, column.width, 7, "FD");
+    doc.setFont(vietnamesePdfFontFamily, "bold");
+    doc.setFontSize(7.5);
+    doc.setTextColor(82, 112, 137);
+    doc.text(column.label, assetColumnX + 2, y + 4.5);
+    assetColumnX += column.width;
+  });
+  assetColumnX = left;
+  assetColumns.forEach((column, index) => {
+    doc.setDrawColor(221, 231, 240);
+    doc.setFillColor(255, 255, 255);
+    doc.rect(assetColumnX, y + 7, column.width, assetValueHeight, "FD");
+    doc.setFont(vietnamesePdfFontFamily, "normal");
+    doc.setFontSize(8);
+    doc.setTextColor(25, 59, 87);
+    doc.text(assetValueLines[index], assetColumnX + 2, y + 11.5);
+    assetColumnX += column.width;
+  });
+  y += 7 + assetValueHeight + 6;
 
   const estimated = parseVndAmount(String(ticket.estimatedCost || ""));
   const actual = parseVndAmount(String(ticket.actualCost || ""));
   const fields: Array<[string, string]> = [
     ["Kênh xử lý", channelLabel],
-    ["Mã tài sản", asset?.assetCode || `Tài sản #${ticket.assetId}`],
-    ["Tên tài sản", asset?.name || "Không còn trong danh mục"],
     ["Loại yêu cầu", issueTypeLabels[ticket.issueType] || ticket.issueType || "Chưa cập nhật"],
     ["Mức ưu tiên", priorityLabels[ticket.priority] || ticket.priority || "Chưa cập nhật"],
     ["Trạng thái", statusLabels[ticket.status] || ticket.status || "Chưa cập nhật"],
-    ["Ngày lập phiếu", new Date(ticket.openedAt || ticket.createdAt).toLocaleDateString("vi-VN")],
     ["Hạn xử lý", ticket.dueAt ? new Date(ticket.dueAt).toLocaleDateString("vi-VN") : "Chưa thiết lập"],
-    ["Người báo", ticket.reporterName || "Chưa cập nhật"],
     ["Người xử lý", assigneeName || (ticket.assigneeUserId ? `Nhân sự #${ticket.assigneeUserId}` : "Chưa phân công")],
     ["Chi phí dự kiến", estimated ? `${estimated.toLocaleString("vi-VN")} VNĐ` : "Chưa ghi nhận"],
     ["Chi phí thực tế", actual ? `${actual.toLocaleString("vi-VN")} VNĐ` : "Chưa ghi nhận"],

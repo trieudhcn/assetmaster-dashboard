@@ -890,6 +890,11 @@ describe("modal presentation contract", () => {
     expect(quickPreview).toContain("Đang chuẩn bị in...");
     expect(ticketPdf).toContain("PHIẾU BẢO HÀNH TÀI SẢN");
     expect(ticketPdf).toContain("PHIẾU SỬA CHỮA TÀI SẢN");
+    expect(ticketPdf).toContain("Người lập phiếu");
+    expect(ticketPdf).toContain("Ngày lập phiếu");
+    expect(ticketPdf).toContain("THÔNG TIN TÀI SẢN");
+    expect(ticketPdf).toContain("Tình trạng");
+    expect(ticketPdf).toContain("Hạn bảo hành");
     expect(ticketPdf).toContain("openPdfPreview");
     expect(previewHost).toContain("autoPrint");
     expect(previewHost).toContain("contentWindow?.print()");
