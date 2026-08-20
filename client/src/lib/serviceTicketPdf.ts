@@ -103,13 +103,23 @@ export async function previewServiceTicketPdf({ ticket, asset, assigneeName, com
   doc.setTextColor(15, 140, 140);
   doc.text("THÔNG TIN TÀI SẢN", left, y);
   y += 5;
-  const assetColumns = [
-    { label: "Mã tài sản", value: asset?.assetCode || `Tài sản #${ticket.assetId}`, width: 28 },
-    { label: "Tên tài sản", value: asset?.name || "Không còn trong danh mục", width: 43 },
-    { label: "Serial", value: asset?.serialNumber || "Chưa cập nhật", width: 28 },
-    { label: "Tình trạng", value: assetConditionLabels[asset?.condition] || asset?.condition || "Chưa cập nhật", width: 25 },
-    { label: "Ngày mua", value: asset?.purchaseDate ? new Date(asset.purchaseDate).toLocaleDateString("vi-VN") : "Chưa cập nhật", width: 25 },
-    { label: "Hạn bảo hành", value: asset?.warrantyUntil ? new Date(asset.warrantyUntil).toLocaleDateString("vi-VN") : "Chưa cập nhật", width: 29 },
+  const warrantyUntil = asset?.warrantyUntil ? new Date(asset.warrantyUntil) : null;
+  const hasActiveWarranty = Boolean(warrantyUntil && !Number.isNaN(warrantyUntil.getTime()) && warrantyUntil.getTime() >= new Date().setHours(0, 0, 0, 0));
+  const assetColumns = hasActiveWarranty ? [
+    { label: "Mã tài sản", value: asset?.assetCode || `Tài sản #${ticket.assetId}`, width: 22 },
+    { label: "Tên tài sản", value: asset?.name || "Không còn trong danh mục", width: 32 },
+    { label: "Serial", value: asset?.serialNumber || "Chưa cập nhật", width: 24 },
+    { label: "Tình trạng", value: assetConditionLabels[asset?.condition] || asset?.condition || "Chưa cập nhật", width: 20 },
+    { label: "Tình trạng lỗi", value: ticket.description || asset?.maintenanceReason || "Chưa ghi nhận", width: 36 },
+    { label: "Ngày mua", value: asset?.purchaseDate ? new Date(asset.purchaseDate).toLocaleDateString("vi-VN") : "Chưa cập nhật", width: 22 },
+    { label: "Hạn bảo hành", value: warrantyUntil!.toLocaleDateString("vi-VN"), width: 22 },
+  ] : [
+    { label: "Mã tài sản", value: asset?.assetCode || `Tài sản #${ticket.assetId}`, width: 24 },
+    { label: "Tên tài sản", value: asset?.name || "Không còn trong danh mục", width: 36 },
+    { label: "Serial", value: asset?.serialNumber || "Chưa cập nhật", width: 26 },
+    { label: "Tình trạng", value: assetConditionLabels[asset?.condition] || asset?.condition || "Chưa cập nhật", width: 22 },
+    { label: "Tình trạng lỗi", value: ticket.description || asset?.maintenanceReason || "Chưa ghi nhận", width: 46 },
+    { label: "Ngày mua", value: asset?.purchaseDate ? new Date(asset.purchaseDate).toLocaleDateString("vi-VN") : "Chưa cập nhật", width: 24 },
   ];
   const assetValueLines = assetColumns.map((column) => doc.splitTextToSize(String(column.value), column.width - 4));
   const assetValueHeight = Math.max(10, Math.max(...assetValueLines.map((lines) => lines.length)) * 4.2 + 4);

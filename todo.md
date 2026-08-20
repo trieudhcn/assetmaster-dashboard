@@ -2229,3 +2229,10 @@
 - [x] Loại bỏ các khối thông tin xử lý/phụ trong ảnh khỏi PDF.
 - [x] Bảo đảm biểu đồ chi phí theo tháng có thể vuốt ngang trên mobile.
 - [x] Bổ sung hồi quy, kiểm tra PDF/mobile và build phát hành.
+
+## Current Session — PDF Fault Context & Desktop Month Click
+
+- [x] Hiển thị Tình trạng lỗi trong bảng tài sản PDF.
+- [x] Chỉ hiển thị cột Hạn bảo hành cho tài sản còn hiệu lực bảo hành.
+- [x] Khôi phục thao tác nhấn cột tháng để mở danh sách phiếu trên desktop.
+- [x] Bổ sung hồi quy, kiểm tra PDF/desktop và build phát hành.
