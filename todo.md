@@ -2113,3 +2113,8 @@
 - [x] Gỡ bộ lọc thời gian và trạng thái khỏi lịch sử nhận phụ kiện trong hồ sơ nhân viên.
 - [x] Hiển thị số lượng phụ kiện dạng số nguyên gọn khi không có phần lẻ.
 - [x] Bổ sung hồi quy, kiểm tra bản dựng và phát hành.
+
+## Current Session — Compact Value Allocation Reports
+
+- [x] Tinh gọn khu vực Phân bổ giá trị trong tab Báo cáo để tăng khả năng quét thông tin.
+- [x] Bổ sung hồi quy, kiểm tra giao diện và build phát hành.

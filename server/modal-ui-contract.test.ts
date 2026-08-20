@@ -1102,6 +1102,10 @@ describe("modal presentation contract", () => {
     expect(formatter).toContain('mode === "billion"');
     expect(reports).toContain("supplierValueData");
     expect(reports).toContain("Phân bổ giá trị theo Nhà cung cấp");
+    expect(reports).toContain("CompactValueAllocation");
+    expect(reports).toContain("const topItems = data.slice(0, 5)");
+    expect(reports).toContain("nhóm còn lại được gộp trong biểu đồ");
+    expect(reports).toContain("Tổng giá trị");
     expect(reports).toContain('value: "million"');
     expect(reports).toContain('value: "billion"');
     expect(reports).toContain("currencyMode");
