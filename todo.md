@@ -2173,3 +2173,8 @@
 - [x] Gỡ nhãn tổng chi phí trùng lặp và hiển thị năm trong ô Tổng cộng khi có chọn năm.
 - [x] Cho phép nhấn cột tháng để xem danh sách phiếu chi phí chi tiết của tháng đó.
 - [x] Bổ sung hồi quy, kiểm tra giao diện và build phát hành.
+
+## Current Session — Open Monthly Cost Tickets
+
+- [x] Thêm nút mở trực tiếp phiếu Bảo hành/Sửa chữa gốc từ danh sách chi phí theo tháng.
+- [x] Bổ sung hồi quy, kiểm tra giao diện và build phát hành.

@@ -866,6 +866,9 @@ describe("modal presentation contract", () => {
     expect(reports).toContain("selectedMonthlyServiceTickets");
     expect(reports).toContain("Phiếu chi phí tháng T");
     expect(reports).toContain("Nhấn cột để xem phiếu");
+    expect(reports).toContain("openMonthlyServiceTicket");
+    expect(reports).toContain("assetmaster-open-maintenance-ticket-id");
+    expect(reports).toContain("Mở phiếu");
   });
 
   it("supports partial handover accessory returns and previews service costs in Excel", () => {
