@@ -892,6 +892,7 @@ describe("modal presentation contract", () => {
     const ticketPdf = readProjectFile("client/src/lib/serviceTicketPdf.ts");
     const previewHost = readProjectFile("client/src/components/ExportPreviewHost.tsx");
     const operations = readProjectFile("client/src/pages/OperationsModules.tsx");
+    const styles = readProjectFile("client/src/index.css");
 
     expect(reports).toContain("previewServiceTicketPdf");
     expect(reports).toContain("openQuickPreviewPdf");
@@ -927,6 +928,9 @@ describe("modal presentation contract", () => {
     expect(reports).toContain("quickPreviewReporterDepartment");
     expect(previewHost).toContain("autoPrint");
     expect(previewHost).toContain("contentWindow?.print()");
+    expect(styles).toContain('[role="dialog"] button[aria-label^="Đóng"]');
+    expect(styles).toContain('[role="dialog"][aria-label="Biên bản bàn giao"] > div > div:first-child');
+    expect(styles).toContain("min-height: 7.6rem");
   });
 
   it("keeps the PDF preview above quick-ticket overlays and provides mobile ticket cards", () => {

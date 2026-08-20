@@ -2272,3 +2272,10 @@
 - [x] Thêm dấu “:” cho nhãn Người lập phiếu và Ngày lập phiếu trong PDF.
 - [x] Hiển thị mã BG dự kiến trước khi xác nhận tạo phiếu bàn giao.
 - [x] Bổ sung hồi quy, kiểm tra giao diện/PDF và build phát hành.
+
+## Current Session — PDF Preview Modal Layout
+
+- [x] Sửa chồng lấn thông tin công ty và đường viền trong đầu xem trước PDF.
+- [x] Sửa bố cục/nút đóng xem trước PDF.
+- [x] Rà soát và đồng bộ các modal xem trước PDF có cùng cấu trúc.
+- [x] Bổ sung hồi quy, kiểm tra desktop/mobile và build phát hành.
