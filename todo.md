@@ -2149,3 +2149,9 @@
 - [x] Tinh gọn khu vực chi phí, gỡ các khối Theo tài sản và Theo Phòng Ban.
 - [x] Chuyển xuất Excel chi phí thành luồng xem trước danh sách phiếu có chi phí.
 - [x] Bổ sung hồi quy, kiểm tra giao diện và build phát hành.
+
+## Current Session — Service Cost Channel Filter
+
+- [x] Thêm bộ lọc kênh Bảo hành/Sửa chữa cho báo cáo chi phí theo năm.
+- [x] Đồng bộ bộ lọc kênh với bản xem trước Excel chi phí.
+- [x] Bổ sung hồi quy, kiểm tra giao diện và build phát hành.

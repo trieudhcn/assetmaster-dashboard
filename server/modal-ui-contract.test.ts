@@ -852,6 +852,9 @@ describe("modal presentation contract", () => {
     expect(reports).toContain("serviceCostReport");
     expect(reports).toContain("Tổng chi phí Bảo hành/Sửa chữa");
     expect(reports).toContain("serviceCostYear");
+    expect(reports).toContain("serviceCostChannel");
+    expect(reports).toContain("Chỉ Bảo hành");
+    expect(reports).toContain("Chỉ Sửa chữa");
   });
 
   it("supports partial handover accessory returns and previews service costs in Excel", () => {
@@ -867,6 +870,7 @@ describe("modal presentation contract", () => {
     expect(reports).toContain("exportRepairCostExcel");
     expect(reports).toContain("Xem trước Excel");
     expect(reports).toContain("Chi phí dịch vụ");
+    expect(reports).toContain("Kênh: ${channelLabel}");
   });
 
   it("provides a recovery record PDF with actual accessory quantities and print access", () => {
