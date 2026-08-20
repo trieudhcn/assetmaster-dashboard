@@ -1128,6 +1128,13 @@ describe("modal presentation contract", () => {
     expect(interactiveAssetDetails).toContain("Bảo hành/Sửa chữa ({assetTickets.length})");
     expect(interactiveAssetDetails).toContain("Chưa có lịch sử bàn giao cho tài sản này.");
     expect(interactiveAssetDetails).toContain("Chưa có lịch sử Bảo hành/Sửa chữa cho tài sản này.");
+    expect(interactiveAssetDetails).toContain("Mở phiếu bàn giao");
+    expect(interactiveAssetDetails).toContain("assetmaster-open-handover-id");
+    expect(interactiveAssetDetails).toContain("Mở phiếu {item.serviceChannel === \"warranty\" ? \"Bảo hành\" : \"Sửa chữa\"}");
+    expect(interactiveAssetDetails).toContain("assetmaster-open-maintenance-ticket-id");
+    const operations = readProjectFile("client/src/pages/OperationsModules.tsx");
+    expect(operations).toContain("assetmaster-open-maintenance-ticket-id");
+    expect(operations).toContain("setHistoryTicket(directTicket)");
   });
 
 describe("currency input and scrollbar contract", () => {

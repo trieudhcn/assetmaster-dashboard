@@ -2135,3 +2135,9 @@
 - [x] Thêm tab lịch sử bàn giao và Bảo hành/Sửa chữa trong popup chi tiết tài sản.
 - [x] Đổi nhãn KPI thành Yêu cầu Bảo hành/Sửa chữa.
 - [x] Bổ sung hồi quy, kiểm tra giao diện và build phát hành.
+
+## Current Session — Open Original Asset Tickets
+
+- [x] Thêm nút mở trực tiếp phiếu Bàn giao gốc từ lịch sử tài sản.
+- [x] Thêm nút mở trực tiếp phiếu Bảo hành/Sửa chữa gốc từ lịch sử tài sản.
+- [x] Bổ sung hồi quy, kiểm tra giao diện và build phát hành.

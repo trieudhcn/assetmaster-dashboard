@@ -307,6 +307,16 @@ export function MaintenancePage() {
     setMaintenancePage(1);
   }, [maintenanceYear, serviceChannelTab, ticketCodeLookup, ticketStatusFilter]);
   useEffect(() => {
+    const ticketId = Number(sessionStorage.getItem("assetmaster-open-maintenance-ticket-id"));
+    if (ticketId && !assetsQuery.isLoading && !ticketsQuery.isLoading) {
+      const directTicket = tickets.find((ticket) => ticket.id === ticketId);
+      sessionStorage.removeItem("assetmaster-open-maintenance-ticket-id");
+      if (!directTicket) { toast.error("Không tìm thấy phiếu Bảo hành/Sửa chữa cần mở."); return; }
+      setMaintenanceYear(String(directTicket.ticketYear || new Date(directTicket.openedAt).getFullYear()));
+      setServiceChannelTab((directTicket.serviceChannel || "repair") as "warranty" | "repair");
+      setHistoryTicket(directTicket);
+      return;
+    }
     const assetCode = sessionStorage.getItem("assetmaster-open-maintenance-asset-code");
     if (!assetCode || assetsQuery.isLoading || ticketsQuery.isLoading) return;
     const asset = assets.find((item) => item.assetCode === assetCode);
