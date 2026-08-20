@@ -784,6 +784,21 @@ describe("modal presentation contract", () => {
     expect(reports).toContain("Theo Phòng Ban");
   });
 
+  it("supports partial handover accessory returns and exports repair costs to Excel", () => {
+    const home = readProjectFile("client/src/pages/Home.tsx");
+    const reports = readProjectFile("client/src/pages/ReportsManagementView.tsx");
+    const routers = readProjectFile("server/routers.ts");
+
+    expect(home).toContain("Số lượng phụ kiện thực tế hoàn về kho");
+    expect(home).toContain("Cảnh báo: còn");
+    expect(home).toContain("returnedSupplyItems");
+    expect(routers).toContain("handoverReturnSupplyItems");
+    expect(routers).toContain("outstandingAccessoryCount");
+    expect(reports).toContain("exportRepairCostExcel");
+    expect(reports).toContain("Xuất Excel chi phí Sửa chữa");
+    expect(reports).toContain("Theo Phòng Ban");
+  });
+
   it("offers preview, download, and print flows for each repair ticket PDF", () => {
     const operations = readProjectFile("client/src/pages/OperationsModules.tsx");
     const previewHost = readProjectFile("client/src/components/ExportPreviewHost.tsx");

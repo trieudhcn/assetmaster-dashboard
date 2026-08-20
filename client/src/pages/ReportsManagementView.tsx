@@ -45,7 +45,7 @@ export function ReportsManagementView() {
   const [activityQuery, setActivityQuery] = useState("");
   const [activityType, setActivityType] = useState("all");
   const [currencyMode, setCurrencyMode] = useState<CurrencyDisplayMode>("full");
-  const [exporting, setExporting] = useState<"inventory" | "returned" | "retired" | "retiredPdf" | null>(null);
+  const [exporting, setExporting] = useState<"inventory" | "returned" | "retired" | "retiredPdf" | "repairCosts" | null>(null);
   const [retirementYear, setRetirementYear] = useState("all");
   const [selectedRetirementIds, setSelectedRetirementIds] = useState<Set<number>>(() => new Set());
   const assetsQuery = trpc.assets.list.useQuery();
@@ -206,6 +206,37 @@ export function ReportsManagementView() {
     })(); }, 180);
   };
 
+  const exportRepairCostExcel = () => {
+    if (!repairCostReport.byAsset.length || exporting) return;
+    setExporting("repairCosts");
+    const loadingToast = toast.loading("Đang tạo báo cáo chi phí Sửa chữa...");
+    window.setTimeout(() => { void (async () => {
+      try {
+        const assetRows = repairCostReport.byAsset.map((item) => ({ "Mã tài sản": item.assetCode, "Tên tài sản": item.assetName, "Phòng Ban": item.departmentName, "Số phiếu Sửa chữa": item.ticketCount, "Tổng chi phí thực tế (VNĐ)": item.cost }));
+        const departmentRows = repairCostReport.byDepartment.map((item) => ({ "Phòng Ban": item.departmentName, "Số tài sản phát sinh": item.assetCount, "Số phiếu Sửa chữa": item.ticketCount, "Tổng chi phí thực tế (VNĐ)": item.cost }));
+        const summaryRows = [{ "Phạm vi Phòng Ban": selectedDepartment?.name || "Tất cả Phòng Ban", "Phạm vi Bộ Phận": selectedDivision?.name || "Tất cả Bộ Phận", "Tổng tài sản phát sinh chi phí": repairCostReport.byAsset.length, "Tổng chi phí Sửa chữa (VNĐ)": repairCostReport.totalCost, "Ngày xuất": new Date().toLocaleString("vi-VN") }];
+        const workbook = XLSX.utils.book_new();
+        const assetSheet = XLSX.utils.json_to_sheet(assetRows);
+        assetSheet["!cols"] = [{ wch: 16 }, { wch: 34 }, { wch: 26 }, { wch: 18 }, { wch: 26 }];
+        const departmentSheet = XLSX.utils.json_to_sheet(departmentRows);
+        departmentSheet["!cols"] = [{ wch: 28 }, { wch: 22 }, { wch: 20 }, { wch: 26 }];
+        const summarySheet = XLSX.utils.json_to_sheet(summaryRows);
+        summarySheet["!cols"] = [{ wch: 32 }, { wch: 28 }, { wch: 28 }, { wch: 30 }, { wch: 24 }];
+        XLSX.utils.book_append_sheet(workbook, summarySheet, "Tổng hợp");
+        XLSX.utils.book_append_sheet(workbook, assetSheet, "Theo tài sản");
+        XLSX.utils.book_append_sheet(workbook, departmentSheet, "Theo Phòng Ban");
+        const scope = (selectedDivision?.name || selectedDepartment?.name || "tat-ca").replace(/[^a-zA-Z0-9]/g, "-");
+        await writeBrandedWorkbook(workbook, { documentTitle: "BÁO CÁO CHI PHÍ SỬA CHỮA", fileName: `assetmaster-chi-phi-sua-chua-${scope}-${new Date().toISOString().slice(0, 10)}.xlsx`, description: "Tổng hợp chi phí thực tế Sửa chữa theo tài sản và Phòng Ban trong phạm vi lọc hiện tại." });
+        toast.success(`Đã xuất báo cáo ${assetRows.length} tài sản phát sinh chi phí.`, { id: loadingToast });
+      } catch (error) {
+        console.error(error);
+        toast.error("Không thể xuất báo cáo chi phí Sửa chữa.", { id: loadingToast });
+      } finally {
+        setExporting(null);
+      }
+    })(); }, 180);
+  };
+
   const exportRetirementExcel = () => {
     if (!retiredAssets.length || exporting) return;
     setExporting("retired");
@@ -328,6 +359,7 @@ export function ReportsManagementView() {
       <section className={`${card} p-5`}><div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between"><div className="min-w-0 max-w-xl"><div className="flex items-center gap-2 text-sm font-extrabold text-[#193B57]"><SlidersHorizontal size={16} className="text-[#2666A8]" />Phạm vi thống kê</div><p className="mt-1 text-xs text-[#71869A]">Bộ Phận được lọc theo nhân sự đang giữ tài sản và luôn thuộc Phòng Ban đã chọn.</p></div><div className="grid w-full gap-2 sm:grid-cols-2 xl:w-[680px] xl:grid-cols-4"><SearchableSelect value={currencyMode} onChange={(value) => setCurrencyMode(value as CurrencyDisplayMode)} className="min-w-0" placeholder="Đơn vị tiền" searchPlaceholder="Tìm đơn vị tiền..." options={[{ value: "full", label: "Đầy đủ (VNĐ)" }, { value: "million", label: "Triệu đồng" }, { value: "billion", label: "Tỷ đồng" }]} /><SearchableSelect value={departmentId} onChange={(value) => { setDepartmentId(value); setDivisionId("all"); }} disabled={!isAdmin || departmentsQuery.isLoading} className="min-w-0" placeholder="Tất cả Phòng Ban" searchPlaceholder="Tìm Phòng Ban..." options={[{ value: "all", label: "Tất cả Phòng Ban" }, ...departments.filter((item) => item.isActive).map((department) => ({ value: String(department.id), label: department.name }))]} /><SearchableSelect value={divisionId} onChange={setDivisionId} disabled={!isAdmin || divisionsQuery.isLoading} className="min-w-0" placeholder="Tất cả Bộ Phận" searchPlaceholder="Tìm Bộ Phận..." options={[{ value: "all", label: "Tất cả Bộ Phận" }, ...availableDivisions.map((division) => ({ value: String(division.id), label: division.name }))]} /><button onClick={() => { setDepartmentId("all"); setDivisionId("all"); }} className="inline-flex min-h-10 w-full shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-lg border border-[#DDE7F0] bg-white px-4 text-xs font-bold text-[#60758A] hover:bg-[#F7FAFC]"><SlidersHorizontal size={14} />Đặt lại</button></div></div></section>
       <div className="mt-5 grid gap-4 sm:grid-cols-2 xl:grid-cols-4"><Metric label="Tài sản trong phạm vi" value={String(inventoryAssets.length)} /><Metric label="Giá trị tài sản" value={currency(selectedValue, currencyMode)} /><Metric label="Phiếu bàn giao liên quan" value={String(selectedHandoverCount)} /><Metric label="Yêu cầu bảo trì liên quan" value={String(selectedMaintenanceCount)} /></div>
       <section className={`mt-5 ${card} overflow-hidden`}><div className="flex flex-col gap-3 border-b border-[#E7EEF3] px-5 py-4 sm:flex-row sm:items-start sm:justify-between"><div><div className="flex items-center gap-2 text-sm font-extrabold text-[#193B57]"><FileBarChart size={17} className="text-[#5B5BD6]" />Tổng chi phí Sửa chữa phát sinh</div><p className="mt-1 text-xs text-[#71869A]">Chỉ tổng hợp chi phí thực tế của phiếu Sửa chữa theo phạm vi Phòng Ban/Bộ Phận đang chọn.</p></div><div className="rounded-lg bg-[#EEF0FF] px-3 py-2 text-right"><div className="text-[10px] font-extrabold uppercase tracking-[0.1em] text-[#5B5BD6]">Tổng chi phí</div><div className="mt-1 text-sm font-extrabold text-[#3730A3]">{currency(repairCostReport.totalCost, currencyMode)}</div></div></div>{maintenanceQuery.isLoading ? <div className="grid min-h-40 place-items-center text-sm text-[#71869A]">Đang tổng hợp chi phí Sửa chữa...</div> : repairCostReport.byAsset.length ? <div className="grid gap-5 p-5 xl:grid-cols-2"><div><div className="mb-3 text-[10px] font-extrabold uppercase tracking-[0.12em] text-[#5B5BD6]">Theo tài sản</div><div className="overflow-x-auto rounded-lg border border-[#E0E3FF]"><table className="w-full min-w-[460px] text-left text-xs"><thead className="bg-[#F7F7FF] text-[10px] uppercase tracking-[0.08em] text-[#5B5BD6]"><tr><th className="px-3 py-2.5">Tài sản</th><th className="px-3 py-2.5">Phòng Ban</th><th className="px-3 py-2.5 text-right">Chi phí</th></tr></thead><tbody>{repairCostReport.byAsset.map((item) => <tr key={item.assetCode} className="border-t border-[#EEF0FF]"><td className="px-3 py-2.5"><div className="font-bold text-[#193B57]">{item.assetName}</div><div className="mt-0.5 font-mono text-[10px] text-[#8AA0B6]">{item.assetCode} · {item.ticketCount} phiếu</div></td><td className="px-3 py-2.5 text-[#60758A]">{item.departmentName}</td><td className="px-3 py-2.5 text-right font-extrabold text-[#3730A3]">{currency(item.cost, currencyMode)}</td></tr>)}</tbody></table></div></div><div><div className="mb-3 text-[10px] font-extrabold uppercase tracking-[0.12em] text-[#5B5BD6]">Theo Phòng Ban</div><div className="space-y-2">{repairCostReport.byDepartment.map((item) => <div key={item.departmentName} className="rounded-lg border border-[#E0E3FF] bg-[#F9F9FF] px-3 py-3"><div className="flex items-center justify-between gap-3"><div className="min-w-0"><div className="truncate text-xs font-extrabold text-[#193B57]">{item.departmentName}</div><div className="mt-1 text-[10px] text-[#71869A]">{item.assetCount} tài sản · {item.ticketCount} phiếu Sửa chữa</div></div><div className="shrink-0 text-sm font-extrabold text-[#3730A3]">{currency(item.cost, currencyMode)}</div></div></div>)}</div></div></div> : <div className="px-5 py-10 text-center text-sm text-[#71869A]">Chưa có chi phí thực tế của phiếu Sửa chữa trong phạm vi báo cáo.</div>}</section>
+      <div className="mt-3 flex justify-end"><button onClick={exportRepairCostExcel} disabled={!isAdmin || !repairCostReport.byAsset.length || exporting !== null} className="inline-flex items-center justify-center gap-2 rounded-lg border border-[#C9CCF4] bg-[#F7F7FF] px-4 py-2.5 text-xs font-bold text-[#4A45A5] hover:bg-white disabled:cursor-not-allowed disabled:opacity-60"><Download size={15} className={exporting === "repairCosts" ? "animate-pulse" : ""} />{exporting === "repairCosts" ? "Đang xuất Excel..." : `Xuất Excel chi phí Sửa chữa (${repairCostReport.byAsset.length})`}</button></div>
       <DivisionValueChart data={divisionValueData} totalValue={selectedValue} isLoading={assetsQuery.isLoading || employeesQuery.isLoading || divisionsQuery.isLoading} scope={selectedDivision?.name || selectedDepartment?.name || "Tất cả cơ cấu"} currencyMode={currencyMode} />
       <BrandValueChart data={brandValueData} totalValue={selectedValue} isLoading={assetsQuery.isLoading || brandsQuery.isLoading} currencyMode={currencyMode} />
       <BrandValueChart title="Phân bổ giá trị theo Nhà cung cấp" description="Giá trị nguyên giá được nhóm theo Nhà cung cấp đã gán trong hồ sơ tài sản." data={supplierValueData} totalValue={selectedValue} isLoading={assetsQuery.isLoading} currencyMode={currencyMode} />

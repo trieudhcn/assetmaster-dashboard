@@ -247,7 +247,7 @@ describe("employee administration", () => {
     const caller = appRouter.createCaller(adminContext);
 
     await expect(caller.handovers.resolveReturnRequest({ id: 99, decision: "approved", conditionIn: null, resolution: null })).rejects.toMatchObject({ code: "BAD_REQUEST" });
-    await expect(caller.handovers.resolveReturnRequest({ id: 99, decision: "approved", conditionIn: "Tốt", resolution: null, conditionPhoto: { fileName: "tinh-trang.png", contentType: "image/png", dataUrl: "data:image/png;base64,UE5H" } })).resolves.toEqual({ success: true, returnedAccessoryCount: 0 });
+    await expect(caller.handovers.resolveReturnRequest({ id: 99, decision: "approved", conditionIn: "Tốt", resolution: null, conditionPhoto: { fileName: "tinh-trang.png", contentType: "image/png", dataUrl: "data:image/png;base64,UE5H" } })).resolves.toEqual({ success: true, returnedAccessoryCount: 0, outstandingAccessoryCount: 0 });
     expect(mocks.storagePut).toHaveBeenCalledWith(expect.stringMatching(/^handovers\/99\/return-conditions\//), expect.any(Buffer), "image/png");
     expect(mocks.transitionHandoverStatus).toHaveBeenCalledWith(99, "returned", expect.objectContaining({ returnRequestStatus: "approved", returnRequestResolvedByUserId: 1, conditionIn: "Tốt", returnConditionPhotoUrl: "/manus-storage/handovers/99/return-conditions/tinh-trang.png" }), expect.anything());
   });
@@ -258,10 +258,22 @@ describe("employee administration", () => {
     mocks.getInventorySupplyById.mockResolvedValue({ id: 81, code: "PK-CHUOT", name: "Chuột không dây", unit: "Cái", stockQuantity: "3", isActive: true });
     const caller = appRouter.createCaller(adminContext);
 
-    await expect(caller.handovers.resolveReturnRequest({ id: 99, decision: "approved", conditionIn: "Tốt", resolution: "Đã thu hồi đủ phụ kiện", conditionPhoto: null })).resolves.toEqual({ success: true, returnedAccessoryCount: 1 });
+    await expect(caller.handovers.resolveReturnRequest({ id: 99, decision: "approved", conditionIn: "Tốt", resolution: "Đã thu hồi đủ phụ kiện", conditionPhoto: null })).resolves.toEqual({ success: true, returnedAccessoryCount: 1, outstandingAccessoryCount: 0 });
     expect(mocks.updateInventorySupply).toHaveBeenCalledWith(81, { stockQuantity: "5" }, expect.anything());
     expect(mocks.updateHandoverSupplyItem).toHaveBeenCalledWith(501, { returnedQuantity: "2" }, expect.anything());
     expect(mocks.createInventoryMovement).toHaveBeenCalledWith(expect.objectContaining({ handoverId: 99, movementType: "return", quantity: "2", quantityBefore: "3", quantityAfter: "5" }), expect.anything());
+  });
+
+  it("returns only the confirmed accessory quantity and reports items still outstanding", async () => {
+    mocks.getHandoverById.mockResolvedValue({ id: 99, referenceCode: "BG-2026-001", assetCode: "TS-00099", recipientName: "Nguyễn Văn A", recipientUserId: 8, recipientDepartmentId: 12, status: "active", returnRequestStatus: "pending" });
+    mocks.listHandoverSupplyItems.mockResolvedValue([{ id: 501, handoverId: 99, supplyId: 81, supplyCode: "PK-CHUOT", supplyName: "Chuột không dây", unit: "Cái", issuedQuantity: "3", returnedQuantity: "0" }]);
+    mocks.getInventorySupplyById.mockResolvedValue({ id: 81, code: "PK-CHUOT", name: "Chuột không dây", unit: "Cái", stockQuantity: "4", isActive: true });
+    const caller = appRouter.createCaller(adminContext);
+
+    await expect(caller.handovers.resolveReturnRequest({ id: 99, decision: "approved", conditionIn: "Tốt", resolution: null, conditionPhoto: null, returnedSupplyItems: [{ handoverSupplyItemId: 501, quantity: 1 }] })).resolves.toEqual({ success: true, returnedAccessoryCount: 1, outstandingAccessoryCount: 1 });
+    expect(mocks.updateInventorySupply).toHaveBeenCalledWith(81, { stockQuantity: "5" }, expect.anything());
+    expect(mocks.updateHandoverSupplyItem).toHaveBeenCalledWith(501, { returnedQuantity: "1" }, expect.anything());
+    expect(mocks.createInventoryMovement).toHaveBeenCalledWith(expect.objectContaining({ movementType: "return", quantity: "1", quantityBefore: "4", quantityAfter: "5" }), expect.anything());
   });
 
   it("allows administrators to create suppliers and brands while restricting employees", async () => {
@@ -465,7 +477,7 @@ describe("employee administration", () => {
   it("delegates a returned handover to the database transition helper", async () => {
     const caller = appRouter.createCaller(adminContext);
 
-    await expect(caller.handovers.updateStatus({ id: 99, status: "returned", recipientSignatureUrl: null, handoverSignatureUrl: null })).resolves.toEqual({ success: true, returnedAccessoryCount: 0 });
+    await expect(caller.handovers.updateStatus({ id: 99, status: "returned", recipientSignatureUrl: null, handoverSignatureUrl: null })).resolves.toEqual({ success: true, returnedAccessoryCount: 0, outstandingAccessoryCount: 0 });
     expect(mocks.transitionHandoverStatus).toHaveBeenCalledWith(99, "returned", { recipientSignatureUrl: null, handoverSignatureUrl: null }, expect.anything());
     expect(mocks.recordActivity).toHaveBeenCalledWith(expect.objectContaining({ entityType: "handover", entityId: 99, action: "returned" }));
   });

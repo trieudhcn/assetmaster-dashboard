@@ -2000,3 +2000,10 @@
 - [x] Hiển thị danh sách phụ kiện đã cấp trong trang chi tiết phiếu bàn giao.
 - [x] Thêm báo cáo tổng chi phí Sửa chữa theo từng tài sản và phòng ban.
 - [x] Bổ sung hồi quy, kiểm tra giao diện, build và phát hành cập nhật.
+
+## Current Session — Partial Accessory Return & Repair Cost Export
+
+- [x] Cho phép hoàn trả một phần phụ kiện theo số lượng thực tế khi thu hồi tài sản.
+- [x] Cảnh báo rõ phụ kiện còn thiếu trước khi xác nhận thu hồi.
+- [x] Xuất Excel báo cáo chi phí Sửa chữa theo tài sản và Phòng Ban.
+- [x] Bổ sung hồi quy, kiểm tra giao diện, build và phát hành cập nhật.
