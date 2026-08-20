@@ -1348,9 +1348,13 @@ describe("currency input and scrollbar contract", () => {
     expect(operations).toContain("recentlyCreatedTicketId");
     expect(routers).toContain("getNextHandoverSequence");
     expect(routers).toContain("ER_DUP_ENTRY");
+    expect(routers).toContain("duplicate entry|er_dup_entry");
     expect(routers).toContain("Không thể tạo mã phiếu bàn giao duy nhất");
     expect(routers).toContain("BG-${handoverYear}-${String(handoverSequence).padStart(3, \"0\")}");
     expect(db).toContain("export async function getNextHandoverSequence");
+    expect(db).toContain("match ? Number(match[1]) : 0");
+    expect(home).toContain("handoverCreateErrorMessage");
+    expect(home).toContain("mã phiếu đang được đồng bộ");
     const searchableSelectSource = readProjectFile("client/src/components/SearchableSelect.tsx");
     expect(searchableSelectSource).toContain("menuReady");
     expect(searchableSelectSource).toContain("menuMounted && menuReady");

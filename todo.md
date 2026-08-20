@@ -2260,3 +2260,9 @@
 - [x] Hiển thị riêng “Phòng ban: …” và “Bộ phận: …” trong phần thông tin người lập PDF.
 - [x] Sắp xếp khu ký nhận theo thứ tự Người bàn giao, Xác nhận quản lý, Đại diện nhà cung cấp.
 - [x] Bổ sung hồi quy, kiểm tra PDF và build phát hành.
+
+## Current Session — Handover Creation Failure
+
+- [x] Chẩn đoán và sửa lỗi không tạo được phiếu bàn giao.
+- [x] Thay thông báo SQL kỹ thuật bằng thông báo người dùng dễ hiểu.
+- [x] Bổ sung hồi quy, kiểm tra tạo phiếu và build phát hành.

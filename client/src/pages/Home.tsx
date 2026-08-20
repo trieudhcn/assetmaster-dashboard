@@ -117,6 +117,12 @@ function dateInputValue(value: unknown): string {
   return timestamp === null ? "" : new Date(timestamp).toISOString().slice(0, 10);
 }
 
+function handoverCreateErrorMessage(error: { message?: string }) {
+  const message = error.message || "";
+  if (/failed query|insert into|duplicate entry|er_dup_entry|constraint/i.test(message)) return "Không thể tạo phiếu bàn giao do mã phiếu đang được đồng bộ. Vui lòng thử lại.";
+  return message || "Không thể tạo phiếu bàn giao.";
+}
+
 type WarrantyState = "none" | "active" | "expiring" | "expired";
 function getWarrantyState(value: unknown, now = new Date()): WarrantyState {
   const timestamp = normalizePurchaseDate(value);
@@ -1313,7 +1319,7 @@ function AssetQuickHandoverModal({ assetCode, onClose }: { assetCode: string; on
   useEffect(() => { if (selectedAsset) setForm((current) => ({ ...current, assetCode: selectedAsset.assetCode, assetName: selectedAsset.name })); }, [selectedAsset?.id, selectedAsset?.assetCode, selectedAsset?.name]);
   const createHandover = trpc.handovers.create.useMutation({
     onSuccess: () => { void utils.handovers.list.invalidate(); void utils.assets.list.invalidate(); void utils.supplies.list.invalidate(); void utils.employees.assetHistory.invalidate(); void utils.employees.myAssetHistory.invalidate(); toast.success("Đã tạo phiếu bàn giao cho tài sản đã chọn."); onClose(); },
-    onError: (error) => toast.error(error.message || "Không thể tạo phiếu bàn giao."),
+    onError: (error) => toast.error(handoverCreateErrorMessage(error)),
   });
   const update = (key: keyof Handover, value: string) => setForm((current) => ({ ...current, [key]: value }));
   const chooseRecipient = (userId: number) => {
@@ -1341,7 +1347,7 @@ function AssignmentsPage({ showComingSoon, companyInfo }: { showComingSoon: (lab
   const handoverDepartmentsQuery = trpc.departments.list.useQuery(undefined, { enabled: isAdmin });
   const utils = trpc.useUtils();
   const refreshHandoverData = () => { void utils.handovers.list.invalidate(); void utils.assets.list.invalidate(); void utils.supplies.list.invalidate(); void utils.employees.assetHistory.invalidate(); void utils.employees.myAssetHistory.invalidate(); };
-  const createHandoverMutation = trpc.handovers.create.useMutation({ onSuccess: () => { refreshHandoverData(); toast.success("Đã lưu phiếu bàn giao nháp vào hệ thống."); }, onError: (error) => toast.error(error.message || "Không thể tạo phiếu bàn giao.") });
+  const createHandoverMutation = trpc.handovers.create.useMutation({ onSuccess: () => { refreshHandoverData(); toast.success("Đã lưu phiếu bàn giao nháp vào hệ thống."); }, onError: (error) => toast.error(handoverCreateErrorMessage(error)) });
   const resolveReturnRequest = trpc.handovers.resolveReturnRequest.useMutation({ onSuccess: () => { refreshHandoverData(); toast.success("Đã cập nhật yêu cầu hoàn trả."); }, onError: (error) => toast.error(error.message || "Không thể xử lý yêu cầu hoàn trả.") });
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("Tất cả trạng thái");

@@ -861,7 +861,7 @@ export async function getNextHandoverSequence(handoverYear: number) {
   if (!db) throw new Error("Database unavailable");
   const rows = await db.select({ referenceCode: handovers.referenceCode }).from(handovers).where(like(handovers.referenceCode, `BG-${handoverYear}-%`));
   const maxSequence = rows.reduce((maximum, row) => {
-    const match = row.referenceCode.match(new RegExp(`^BG-${handoverYear}-(\\\\d+)$`));
+    const match = row.referenceCode.match(new RegExp(`^BG-${handoverYear}-(\\d+)$`));
     return Math.max(maximum, match ? Number(match[1]) : 0);
   }, 0);
   return maxSequence + 1;

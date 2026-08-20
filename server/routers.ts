@@ -1064,7 +1064,9 @@ export const appRouter = router({
             return handoverId;
           });
         } catch (error) {
-          const duplicateCode = typeof error === "object" && error !== null && (("code" in error && error.code === "ER_DUP_ENTRY") || ("errno" in error && Number(error.errno) === 1062));
+          const errorDetails = error as { code?: unknown; errno?: unknown; message?: unknown; cause?: { code?: unknown; errno?: unknown; message?: unknown } };
+          const errorMessage = `${String(errorDetails?.message || "")} ${String(errorDetails?.cause?.message || "")}`;
+          const duplicateCode = errorDetails?.code === "ER_DUP_ENTRY" || Number(errorDetails?.errno) === 1062 || errorDetails?.cause?.code === "ER_DUP_ENTRY" || Number(errorDetails?.cause?.errno) === 1062 || /duplicate entry|er_dup_entry/i.test(errorMessage);
           if (!duplicateCode || attempt === 4) throw error;
         }
       }
