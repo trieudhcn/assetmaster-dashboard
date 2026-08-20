@@ -1567,6 +1567,7 @@ function PersistedHandoverCreateModal({ form, assets, employees, departments, su
   const recipients = employees.filter((employee) => employee.isActive);
   const activeSupplies = supplies.filter((supply) => supply.isActive && Number(supply.stockQuantity) > 0);
   const selectedDepartment = departments.find((department) => department.id === form.recipientDepartmentId);
+  const nextReferenceQuery = trpc.handovers.nextReferenceCode.useQuery();
   const [confirmCreate, setConfirmCreate] = useState(false);
   const [selectedSupplyId, setSelectedSupplyId] = useState("");
   const [selectedSupplyQuantity, setSelectedSupplyQuantity] = useState("1");
@@ -1588,6 +1589,22 @@ function PersistedHandoverCreateModal({ form, assets, employees, departments, su
     dismiss();
   };
   useModalDismiss(onClose);
+  useEffect(() => {
+    const dateLabel = Array.from(document.querySelectorAll("label")).find((label) => label.textContent?.trim() === "Ngày lập phiếu");
+    const dateField = dateLabel?.parentElement;
+    if (!dateField) return;
+    let preview = dateField.parentElement?.querySelector<HTMLElement>("[data-handover-reference-preview]");
+    const created = !preview;
+    if (!preview) {
+      preview = document.createElement("div");
+      preview.dataset.handoverReferencePreview = "true";
+      preview.className = "sm:col-span-2 flex items-center justify-between gap-3 rounded-xl border border-[#CDE5E5] bg-[#ECF8F7] px-3.5 py-3";
+      dateField.parentElement?.append(preview);
+    }
+    const code = nextReferenceQuery.data?.referenceCode;
+    preview.innerHTML = `<span class="text-[10px] font-extrabold uppercase tracking-[0.12em] text-[#087A6A]">Mã BG dự kiến</span><span class="font-mono text-sm font-extrabold text-[#0F8C8C]">${code || (nextReferenceQuery.isError ? "Chưa thể lấy mã" : "Đang lấy mã...")}</span>`;
+    return () => { if (created) preview?.remove(); };
+  }, [nextReferenceQuery.data?.referenceCode, nextReferenceQuery.isError]);
   useEffect(() => {
     const recipientLabel = Array.from(document.querySelectorAll("label")).find((label) => label.textContent?.includes("Nhân viên nhận"));
     const container = recipientLabel?.parentElement;

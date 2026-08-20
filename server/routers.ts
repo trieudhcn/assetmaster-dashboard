@@ -973,6 +973,11 @@ export const appRouter = router({
       return listHandoverReturnDecisionHistory(input.id);
     }),
     list: adminProcedure.query(() => listHandovers()),
+    nextReferenceCode: adminProcedure.query(async () => {
+      const handoverYear = new Date().getFullYear();
+      const sequence = await getNextHandoverSequence(handoverYear);
+      return { referenceCode: `BG-${handoverYear}-${String(sequence).padStart(3, "0")}` };
+    }),
     get: adminProcedure.input(z.object({ id: z.number().int().positive() })).query(async ({ input }) => {
       const handover = await getHandoverById(input.id);
       if (!handover) throw new TRPCError({ code: "NOT_FOUND", message: "Không tìm thấy phiếu bàn giao." });

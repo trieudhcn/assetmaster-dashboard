@@ -899,8 +899,8 @@ describe("modal presentation contract", () => {
     expect(quickPreview).toContain("Đang chuẩn bị in...");
     expect(ticketPdf).toContain("PHIẾU BẢO HÀNH TÀI SẢN");
     expect(ticketPdf).toContain("PHIẾU SỬA CHỮA TÀI SẢN");
-    expect(ticketPdf).toContain("Người lập phiếu");
-    expect(ticketPdf).toContain("Ngày lập phiếu");
+    expect(ticketPdf).toContain("Người lập phiếu:");
+    expect(ticketPdf).toContain("Ngày lập phiếu:");
     expect(ticketPdf).toContain('doc.text("Phòng ban:"');
     expect(ticketPdf).toContain('doc.text("Bộ phận:"');
     expect(ticketPdf).toContain("reporterDepartmentName");
@@ -1347,6 +1347,7 @@ describe("currency input and scrollbar contract", () => {
     expect(operations).toContain("Mở phiếu vừa tạo");
     expect(operations).toContain("recentlyCreatedTicketId");
     expect(routers).toContain("getNextHandoverSequence");
+    expect(routers).toContain("nextReferenceCode: adminProcedure.query");
     expect(routers).toContain("ER_DUP_ENTRY");
     expect(routers).toContain("duplicate entry|er_dup_entry");
     expect(routers).toContain("Không thể tạo mã phiếu bàn giao duy nhất");
@@ -1355,6 +1356,8 @@ describe("currency input and scrollbar contract", () => {
     expect(db).toContain("match ? Number(match[1]) : 0");
     expect(home).toContain("handoverCreateErrorMessage");
     expect(home).toContain("mã phiếu đang được đồng bộ");
+    expect(home).toContain("Mã BG dự kiến");
+    expect(home).toContain("nextReferenceQuery");
     const searchableSelectSource = readProjectFile("client/src/components/SearchableSelect.tsx");
     expect(searchableSelectSource).toContain("menuReady");
     expect(searchableSelectSource).toContain("menuMounted && menuReady");

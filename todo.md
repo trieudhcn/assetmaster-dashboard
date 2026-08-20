@@ -2266,3 +2266,9 @@
 - [x] Chẩn đoán và sửa lỗi không tạo được phiếu bàn giao.
 - [x] Thay thông báo SQL kỹ thuật bằng thông báo người dùng dễ hiểu.
 - [x] Bổ sung hồi quy, kiểm tra tạo phiếu và build phát hành.
+
+## Current Session — PDF Label Consistency & BG Preview
+
+- [x] Thêm dấu “:” cho nhãn Người lập phiếu và Ngày lập phiếu trong PDF.
+- [x] Hiển thị mã BG dự kiến trước khi xác nhận tạo phiếu bàn giao.
+- [x] Bổ sung hồi quy, kiểm tra giao diện/PDF và build phát hành.

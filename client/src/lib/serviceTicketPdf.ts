@@ -92,8 +92,8 @@ export async function previewServiceTicketPdf({ ticket, asset, assigneeName, rep
   doc.setFont(vietnamesePdfFontFamily, "bold");
   doc.setFontSize(8.5);
   doc.setTextColor(38, 102, 168);
-  doc.text("Người lập phiếu", left + 4, y);
-  doc.text("Ngày lập phiếu", 117, y);
+  doc.text("Người lập phiếu:", left + 4, y);
+  doc.text("Ngày lập phiếu:", 117, y);
   doc.setFont(vietnamesePdfFontFamily, "normal");
   doc.setTextColor(25, 59, 87);
   doc.text(doc.splitTextToSize(preparedBy, 55), left + 31, y);
