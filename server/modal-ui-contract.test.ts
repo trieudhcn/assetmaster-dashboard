@@ -292,6 +292,8 @@ describe("modal presentation contract", () => {
     expect(supplies).toContain("window.requestAnimationFrame");
     expect(supplies).toContain("Tổng giá trị dự kiến");
     expect(supplies).toContain("data-accessory-value-summary");
+    expect(supplies).toContain("form.openingQuantity, form.unitCost");
+    expect(supplies).toContain("data-accessory-value-amount");
     expect(supplies).toContain("editCurrencyReady");
     expect(supplies).toContain("header.style.paddingBottom = \"1.35rem\"");
     expect(supplies).toContain("const renderCurrency");
@@ -862,6 +864,11 @@ describe("modal presentation contract", () => {
     expect(reports).toContain("Biến động chi phí theo tháng");
     expect(reports).toContain("grid grid-cols-3 gap-2 sm:hidden");
     expect(reports).toContain("Chọn tháng để xem phiếu");
+    expect(reports).toContain("warrantyTicketCount");
+    expect(reports).toContain("repairTicketCount");
+    expect(reports).toContain("totalTicketCount");
+    expect(reports).toContain("BH {item.warrantyTicketCount}");
+    expect(reports).toContain("SC {item.repairTicketCount}");
     expect(reports).toContain("Đang chọn {data[selectedMonth]?.month");
     expect(reports).toContain("onSelectMonth(index)");
     expect(reports).toContain("% tổng cộng");

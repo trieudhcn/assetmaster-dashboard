@@ -2248,3 +2248,9 @@
 - [x] Hiển thị phòng ban và bộ phận của người lập trong biên bản Bảo hành/Sửa chữa.
 - [x] Thay cơ chế biểu đồ chi phí mobile bằng cách chọn tháng dễ dùng và mở danh sách phiếu ổn định.
 - [x] Bổ sung hồi quy, kiểm tra PDF/mobile và build phát hành.
+
+## Current Session — Supply Value & Mobile Ticket Counts
+
+- [x] Sửa tính toán Tổng giá trị dự kiến trong biểu mẫu thêm phụ kiện.
+- [x] Hiển thị số phiếu Bảo hành và Sửa chữa trên từng ô tháng mobile.
+- [x] Bổ sung hồi quy, kiểm tra giao diện và build phát hành.

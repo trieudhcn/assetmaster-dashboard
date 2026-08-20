@@ -207,7 +207,19 @@ export function SuppliesInventoryView() {
       const quantityInput = labels.find((label) => label.textContent?.trim().startsWith("Tồn đầu kỳ"))?.querySelector<HTMLInputElement>("input");
       const costLabel = labels.find((label) => label.textContent?.trim().startsWith("Đơn giá VNĐ"));
       const grid = costLabel?.parentElement;
-      if (!dialog || !quantityInput || !costLabel || !grid || grid.querySelector("[data-accessory-value-summary]")) return;
+      if (!dialog || !quantityInput || !costLabel || !grid) return;
+      const unitCost = parseVndAmount(form.unitCost) || 0;
+      const total = Math.max(0, Number(form.openingQuantity || 0)) * unitCost;
+      const totalText = `${total.toLocaleString("vi-VN", { maximumFractionDigits: 0 })} VNĐ`;
+      const totalWords = total ? numberToVietnameseWords(String(total)) : "Nhập số lượng và đơn giá để xem tổng giá trị.";
+      const existingSummary = grid.querySelector<HTMLElement>("[data-accessory-value-summary]");
+      if (existingSummary) {
+        const amount = existingSummary.querySelector<HTMLElement>("[data-accessory-value-amount]");
+        const words = existingSummary.querySelector<HTMLElement>("[data-accessory-value-words]");
+        if (amount) amount.textContent = totalText;
+        if (words) words.textContent = totalWords;
+        return;
+      }
       const summary = document.createElement("section");
       summary.dataset.accessoryValueSummary = "true";
       summary.className = "sm:col-span-2 rounded-xl border border-[#CDE5E5] bg-[#F4FBFA] px-3 py-2.5";
@@ -215,18 +227,18 @@ export function SuppliesInventoryView() {
       title.className = "text-[10px] font-extrabold uppercase tracking-[.1em] text-[#4B8884]";
       title.textContent = "Tổng giá trị dự kiến";
       const amount = document.createElement("p");
+      amount.dataset.accessoryValueAmount = "true";
       amount.className = "mt-1 text-sm font-extrabold text-[#087A6A]";
       const words = document.createElement("p");
+      words.dataset.accessoryValueWords = "true";
       words.className = "mt-1 text-[10px] font-medium text-[#71869A]";
-      const refresh = () => { const unitCostInput = costLabel.querySelector<HTMLInputElement>("input"); const unitCost = parseVndAmount(unitCostInput?.value || "") || 0; const total = Math.max(0, Number(quantityInput.value || 0)) * unitCost; amount.textContent = `${total.toLocaleString("vi-VN", { maximumFractionDigits: 0 })} VNĐ`; words.textContent = total ? numberToVietnameseWords(String(total)) : "Nhập số lượng và đơn giá để xem tổng giá trị."; };
-      quantityInput.addEventListener("input", refresh);
-      costLabel.querySelector<HTMLInputElement>("input")?.addEventListener("input", () => window.requestAnimationFrame(refresh));
+      amount.textContent = totalText;
+      words.textContent = totalWords;
       summary.append(title, amount, words);
       grid.insertBefore(summary, costLabel.nextSibling);
-      refresh();
     });
     return () => window.cancelAnimationFrame(frame);
-  }, [createModalOpen]);
+  }, [createModalOpen, form.openingQuantity, form.unitCost]);
 
   return <div className="min-h-screen bg-[#F4F7FB] px-4 py-7 sm:px-6 lg:px-9 lg:py-8"><div className="mx-auto max-w-[1500px]">
     <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between"><div><div className="flex items-center gap-2 text-[10px] font-extrabold uppercase tracking-[.16em] text-[#0F8C8C]"><Boxes size={14} />Kho vận hành</div><h1 className="mt-1 font-display text-3xl font-extrabold text-[#102A43]">Phụ kiện</h1><p className="mt-1 text-sm text-[#71869A]">Quản lý phụ kiện không theo Serial/IMEI bằng số lượng nhập, xuất, cấp phát và tồn thực tế.</p></div><div className="flex flex-wrap items-center justify-end gap-2"><button type="button" onClick={() => setSupplyImportHistoryOpen(true)} className="inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-[#CDE5E5] bg-white px-3 text-xs font-bold text-[#087A6A] transition hover:bg-[#F4FBFA]"><History size={15} />Lịch sử import</button><button type="button" onClick={() => { setForm(emptyForm); setCreateModalOpen(true); }} className="primary-action"><Plus size={16} />Thêm phụ kiện</button>{createModalOpen && <SupplyCreateModal form={form} setForm={setForm} categoryOptions={categoryOptions} vendorOptions={vendorOptions} brandOptions={brandOptions} isSubmitting={createSupply.isPending} onClose={() => setCreateModalOpen(false)} onSubmit={submitCreate} />}{supplyImportHistoryOpen && <SupplyImportHistoryDialog onClose={() => setSupplyImportHistoryOpen(false)} />}<div className="grid grid-cols-3 gap-2"><Metric label="Mặt hàng" value={supplies.length} /><Metric label="Tồn kho" value={quantity(totalUnits)} tone="teal" /><Metric label="Sắp hết" value={lowCount} tone={lowCount ? "warning" : "default"} /></div></div></div>
