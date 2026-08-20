@@ -2167,3 +2167,9 @@
 - [x] Thêm biểu đồ cột biến động chi phí theo từng tháng trong năm đã chọn.
 - [x] Hiển thị tỷ trọng phần trăm Bảo hành và Sửa chữa so với Tổng cộng.
 - [x] Bổ sung hồi quy, kiểm tra giao diện và build phát hành.
+
+## Current Session — Monthly Cost Ticket Drill-down
+
+- [x] Gỡ nhãn tổng chi phí trùng lặp và hiển thị năm trong ô Tổng cộng khi có chọn năm.
+- [x] Cho phép nhấn cột tháng để xem danh sách phiếu chi phí chi tiết của tháng đó.
+- [x] Bổ sung hồi quy, kiểm tra giao diện và build phát hành.

@@ -861,6 +861,11 @@ describe("modal presentation contract", () => {
     expect(reports).toContain("monthlyServiceCostTrend");
     expect(reports).toContain("Biến động chi phí theo tháng");
     expect(reports).toContain("% tổng cộng");
+    expect(reports).toContain("Tổng cộng (năm ${serviceCostYear})");
+    expect(reports).toContain("selectedServiceCostMonth");
+    expect(reports).toContain("selectedMonthlyServiceTickets");
+    expect(reports).toContain("Phiếu chi phí tháng T");
+    expect(reports).toContain("Nhấn cột để xem phiếu");
   });
 
   it("supports partial handover accessory returns and previews service costs in Excel", () => {
