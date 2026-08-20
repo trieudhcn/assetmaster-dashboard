@@ -1123,6 +1123,11 @@ describe("modal presentation contract", () => {
     expect(interactiveAssetDetails).toContain("Xem chi tiết tài sản");
     expect(interactiveAssetDetails).toContain("Thông tin tài sản");
     expect(interactiveAssetDetails).toContain("Đóng popup chi tiết tài sản");
+    expect(reports).toContain("Yêu cầu Bảo hành/Sửa chữa");
+    expect(interactiveAssetDetails).toContain("Bàn giao ({assetHandovers.length})");
+    expect(interactiveAssetDetails).toContain("Bảo hành/Sửa chữa ({assetTickets.length})");
+    expect(interactiveAssetDetails).toContain("Chưa có lịch sử bàn giao cho tài sản này.");
+    expect(interactiveAssetDetails).toContain("Chưa có lịch sử Bảo hành/Sửa chữa cho tài sản này.");
   });
 
 describe("currency input and scrollbar contract", () => {

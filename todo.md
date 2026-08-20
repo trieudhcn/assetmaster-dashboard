@@ -2129,3 +2129,9 @@
 
 - [x] Cho phép nhấn từng dòng tài sản trong danh sách drill-down để mở popup chi tiết đầy đủ.
 - [x] Bổ sung hồi quy, kiểm tra giao diện và build phát hành.
+
+## Current Session — Asset Detail History Tabs
+
+- [x] Thêm tab lịch sử bàn giao và Bảo hành/Sửa chữa trong popup chi tiết tài sản.
+- [x] Đổi nhãn KPI thành Yêu cầu Bảo hành/Sửa chữa.
+- [x] Bổ sung hồi quy, kiểm tra giao diện và build phát hành.
