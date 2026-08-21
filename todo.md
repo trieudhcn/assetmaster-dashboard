@@ -2426,3 +2426,9 @@
 - [x] Hiển thị mã TS, tên TS, seri, ngày mua, nguyên giá, giá thanh lý và lý do thanh lý trong bảng PDF.
 - [x] Thêm tìm kiếm theo mã TL hoặc tên tài sản và phân trang cho danh sách biên bản.
 - [x] Bổ sung hồi quy, kiểm tra in ấn/responsive và build phát hành.
+
+## Current Session — Tổng thanh lý và lịch sử sửa chữa tham khảo
+- [x] Hiển thị tổng cộng giá trị thanh lý ở cuối bảng PDF thanh lý gộp.
+- [x] Đổi hàng tiêu đề PDF sang xám nhạt và căn giữa nội dung bảng tài sản.
+- [x] Hiển thị dưới bản nháp các tài sản có lịch sử sửa chữa cùng chi phí, chỉ để tham khảo.
+- [x] Bổ sung hồi quy, kiểm tra PDF/responsive và build phát hành.

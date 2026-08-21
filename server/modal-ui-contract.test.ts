@@ -800,6 +800,19 @@ describe("modal presentation contract", () => {
     expect(manager).toContain('aria-label="Trang sau"');
   });
 
+  it("adds a salvage total, a light-gray centered PDF table, and repair-cost context only below the retirement draft", () => {
+    const retirementPdf = readProjectFile("client/src/lib/retirementPdf.ts");
+    const manager = readProjectFile("client/src/components/RetirementCertificateManager.tsx");
+
+    expect(retirementPdf).toContain("drawSalvageTotal");
+    expect(retirementPdf).toContain("TỔNG CỘNG GIÁ TRỊ THANH LÝ");
+    expect(retirementPdf).toContain("doc.setFillColor(235, 239, 242)");
+    expect(retirementPdf).toContain('{ align: "center" }');
+    expect(manager).toContain("repairInfoByAsset");
+    expect(manager).toContain("Thông tin sửa chữa tham khảo");
+    expect(manager).toContain("không đưa vào biên bản");
+  });
+
   it("brands issue-slip PDFs and protects automatically sourced recipient departments", () => {
     const supplies = readProjectFile("client/src/pages/SuppliesInventoryView.tsx");
     const pdf = readProjectFile("client/src/lib/supplyIssueSlipPdf.ts");

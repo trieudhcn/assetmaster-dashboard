@@ -93,9 +93,9 @@ function drawPageHeading(doc: jsPDF, certificateCode: string, company: Retiremen
 
 function drawTableHeader(doc: jsPDF, y: number) {
   let x = 12;
-  doc.setFillColor(16, 42, 67);
+  doc.setFillColor(235, 239, 242);
   doc.rect(x, y, 273, 11, "F");
-  doc.setTextColor(255, 255, 255);
+  doc.setTextColor(25, 59, 87);
   doc.setFontSize(6.6);
   columns.forEach((column) => {
     doc.rect(x, y, column.width, 11);
@@ -115,10 +115,24 @@ function drawAssetRow(doc: jsPDF, asset: RetirementPdfAsset, y: number) {
   doc.setFontSize(6.4);
   columns.forEach((column, index) => {
     doc.rect(x, y, column.width, rowHeight);
-    doc.text(lines[index], x + 1.5, y + 3.5);
+    doc.text(lines[index], x + column.width / 2, y + 3.5, { align: "center" });
     x += column.width;
   });
   return y + rowHeight;
+}
+
+function drawSalvageTotal(doc: jsPDF, y: number, assets: RetirementPdfAsset[]) {
+  const salvageRows = assets.filter((asset) => asset.salvageValue !== null && asset.salvageValue !== undefined && String(asset.salvageValue).trim() !== "");
+  const total = salvageRows.reduce((sum, asset) => sum + Number(String(asset.salvageValue).replace(/,/g, "")), 0);
+  doc.setFillColor(247, 249, 250);
+  doc.setDrawColor(210, 224, 232);
+  doc.rect(12, y, 273, 10, "FD");
+  doc.setTextColor(25, 59, 87);
+  doc.setFontSize(7.4);
+  doc.text("TỔNG CỘNG GIÁ TRỊ THANH LÝ", 226, y + 6.3, { align: "right" });
+  doc.setFontSize(8);
+  doc.text(salvageRows.length ? `${formatVnd(total)} VNĐ` : "Chưa cập nhật", 282, y + 6.3, { align: "right" });
+  return y + 10;
 }
 
 function drawSignatures(doc: jsPDF, y: number) {
@@ -152,6 +166,12 @@ export async function openRetirementPdf(assets: RetirementPdfAsset[], company: R
     }
     y = drawAssetRow(doc, asset, y);
   });
+  if (y + 15 > 151) {
+    doc.addPage("a4", "landscape");
+    drawPageHeading(doc, certificateCode, company, logoDataUrl);
+    y = drawTableHeader(doc, 51);
+  }
+  y = drawSalvageTotal(doc, y, assets);
   drawSignatures(doc, y);
   applyPdfLogoWatermark(doc, await createPdfLogoWatermark(company.logoUrl).catch(() => null));
   drawPdfCorporateFooter(doc, company, "Biên bản thanh lý gộp");
