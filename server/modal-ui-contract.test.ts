@@ -782,6 +782,24 @@ describe("modal presentation contract", () => {
     expect(css).toContain(".retirement-certificate-search { padding-left: 2.7rem !important; }");
   });
 
+  it("prints one landscape grouped-retirement table and supports certificate search plus pagination", () => {
+    const retirementPdf = readProjectFile("client/src/lib/retirementPdf.ts");
+    const manager = readProjectFile("client/src/components/RetirementCertificateManager.tsx");
+
+    expect(retirementPdf).toContain('orientation: "landscape"');
+    expect(retirementPdf).toContain('label: "Mã TS"');
+    expect(retirementPdf).toContain('label: "Tên tài sản"');
+    expect(retirementPdf).toContain('label: "Seri"');
+    expect(retirementPdf).toContain('label: "Ngày mua"');
+    expect(retirementPdf).toContain('label: "Giá thanh lý"');
+    expect(retirementPdf).toContain('label: "Lý do thanh lý"');
+    expect(manager).toContain('const CERTIFICATE_PAGE_SIZE = 5');
+    expect(manager).toContain('Tìm mã TL hoặc tên tài sản trong biên bản...');
+    expect(manager).toContain('paginatedCertificates');
+    expect(manager).toContain('aria-label="Trang trước"');
+    expect(manager).toContain('aria-label="Trang sau"');
+  });
+
   it("brands issue-slip PDFs and protects automatically sourced recipient departments", () => {
     const supplies = readProjectFile("client/src/pages/SuppliesInventoryView.tsx");
     const pdf = readProjectFile("client/src/lib/supplyIssueSlipPdf.ts");
@@ -1015,7 +1033,7 @@ describe("modal presentation contract", () => {
     expect(reports).toContain("exportSelectedRetirementPdf");
     expect(reports).toContain("Xem trước PDF gộp");
     expect(retirementPdf).toContain("openRetirementPdf");
-    expect(retirementPdf).toContain("doc.addPage()");
+    expect(retirementPdf).toContain('doc.addPage("a4", "landscape")');
     expect(retirementPdf).toContain("drawPdfCorporateFooter");
   });
 

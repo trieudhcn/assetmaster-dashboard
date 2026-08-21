@@ -7,23 +7,31 @@ export type RetirementPdfCompany = { name?: string | null; address?: string | nu
 export type RetirementPdfAsset = {
   code: string;
   name: string;
-  category?: string | null;
   purchaseDate?: Date | string | number | null;
   value: string | number | null | undefined;
+  salvageValue?: string | number | null | undefined;
   serial?: string | null;
-  location?: string | null;
   retiredAt?: Date | string | number | null;
   retirementReason?: string | null;
   retirementCertificateNumber?: string | null;
-  retirementAttachmentName?: string | null;
   note?: string | null;
 };
+
+const columns = [
+  { key: "code", label: "Mã TS", width: 24 },
+  { key: "name", label: "Tên tài sản", width: 55 },
+  { key: "serial", label: "Seri", width: 30 },
+  { key: "purchaseDate", label: "Ngày mua", width: 21 },
+  { key: "value", label: "Nguyên giá\n(chưa gồm SC)", width: 30 },
+  { key: "salvageValue", label: "Giá thanh lý", width: 30 },
+  { key: "retirementReason", label: "Lý do thanh lý", width: 83 },
+] as const;
 
 async function loadImageData(url: string) {
   const response = await fetch(url);
   if (!response.ok) throw new Error("Không thể tải ảnh dùng cho biên bản.");
   const blob = await response.blob();
-  return await new Promise<string>((resolve, reject) => { const reader = new FileReader(); reader.onloadend = () => resolve(String(reader.result)); reader.onerror = reject; reader.readAsDataURL(blob); });
+  return new Promise<string>((resolve, reject) => { const reader = new FileReader(); reader.onloadend = () => resolve(String(reader.result)); reader.onerror = reject; reader.readAsDataURL(blob); });
 }
 
 async function loadPdfFont() {
@@ -34,7 +42,7 @@ async function loadPdfFont() {
 
 function drawBrandMark(doc: jsPDF, x: number, y: number, logoDataUrl?: string) {
   if (logoDataUrl) {
-    try { doc.addImage(logoDataUrl, "PNG", x, y - 12, 18, 18, undefined, "FAST"); return; } catch { /* Use the fallback brand mark. */ }
+    try { doc.addImage(logoDataUrl, "PNG", x, y - 12, 18, 18, undefined, "FAST"); return; } catch { /* fallback below */ }
   }
   doc.setFillColor(15, 140, 140);
   doc.roundedRect(x, y - 12, 18, 18, 3, 3, "F");
@@ -46,77 +54,106 @@ function drawBrandMark(doc: jsPDF, x: number, y: number, logoDataUrl?: string) {
 }
 
 function displayDate(value?: Date | string | number | null) {
-  if (!value) return "Chưa ghi nhận";
+  if (!value) return "";
   const date = new Date(value);
-  return Number.isFinite(date.getTime()) ? date.toLocaleDateString("vi-VN") : "Chưa ghi nhận";
+  return Number.isFinite(date.getTime()) ? date.toLocaleDateString("vi-VN") : "";
 }
 
-function drawRetirementRecord(doc: jsPDF, asset: RetirementPdfAsset, company: RetirementPdfCompany, logoDataUrl: string | undefined, page: number, totalPages: number) {
-  const left = 18;
-  let y = 22;
-  doc.setTextColor(16, 42, 67);
-  drawBrandMark(doc, left, y, logoDataUrl);
+function cellValue(asset: RetirementPdfAsset, key: typeof columns[number]["key"]) {
+  if (key === "purchaseDate") return displayDate(asset.purchaseDate) || "—";
+  if (key === "value") return `${formatVnd(asset.value)} VNĐ`;
+  if (key === "salvageValue") return asset.salvageValue === null || asset.salvageValue === undefined || String(asset.salvageValue).trim() === "" ? "Chưa cập nhật" : `${formatVnd(asset.salvageValue)} VNĐ`;
+  if (key === "serial") return asset.serial || "—";
+  if (key === "retirementReason") return asset.retirementReason || DEFAULT_REASON;
+  return asset[key] || "—";
+}
+
+const DEFAULT_REASON = "Thanh lý theo thời gian quy định";
+
+function drawPageHeading(doc: jsPDF, certificateCode: string, company: RetirementPdfCompany, logoDataUrl: string | undefined) {
+  const left = 12;
+  drawBrandMark(doc, left, 18, logoDataUrl);
   doc.setTextColor(15, 140, 140);
-  doc.setFontSize(10);
-  doc.text(company.name || "AssetMaster", left + 24, y - 4);
-  doc.setFontSize(8);
-  doc.setTextColor(112, 134, 154);
-  doc.text(`Địa chỉ: ${company.address || "Chưa cập nhật"}`, left + 24, y + 2);
-  doc.text(`MST: ${company.taxCode || "Chưa cập nhật"} · Điện thoại: ${company.phone || "Chưa cập nhật"}`, left + 24, y + 8);
-  y += 36;
+  doc.setFontSize(9.5);
+  doc.text(company.name || "AssetMaster", left + 23, 13);
+  doc.setTextColor(96, 117, 138);
+  doc.setFontSize(7);
+  doc.text(`Địa chỉ: ${company.address || "Chưa cập nhật"}`, left + 23, 18);
+  doc.text(`MST: ${company.taxCode || "Chưa cập nhật"} · Điện thoại: ${company.phone || "Chưa cập nhật"}`, left + 23, 22.5);
   doc.setTextColor(16, 42, 67);
-  doc.setFontSize(15);
-  doc.text("BIÊN BẢN KHẤU HAO / THANH LÝ TÀI SẢN", 105, y, { align: "center" });
-  y += 14;
-  doc.setFontSize(10);
-  const rows = [
-    ["Số biên bản thanh lý", asset.retirementCertificateNumber || "Đang cấp số"],
-    ["Mã tài sản", asset.code],
-    ["Tên tài sản", asset.name],
-    ["Phân loại", asset.category || "Chưa phân loại"],
-    ["Ngày mua", displayDate(asset.purchaseDate)],
-    ["Nguyên giá", `${formatVnd(asset.value)} VNĐ`],
-    ["Số serial / IMEI", asset.serial || "Chưa cập nhật"],
-    ["Vị trí lưu trữ", asset.location || "Chưa cập nhật"],
-    ["Ngày thanh lý", displayDate(asset.retiredAt)],
-    ["Lý do thanh lý", asset.retirementReason || "Chưa ghi nhận"],
-    ["Chứng từ đính kèm", asset.retirementAttachmentName || "Không đính kèm"],
-    ["Ghi chú", asset.note || "Không có"],
-  ];
-  rows.forEach(([label, value]) => {
-    const wrapped = doc.splitTextToSize(String(value), 120);
-    doc.setTextColor(112, 134, 154);
-    doc.text(label, left, y);
-    doc.setTextColor(25, 59, 87);
-    doc.text(wrapped, 72, y);
-    y += Math.max(9, wrapped.length * 5 + 3);
+  doc.setFontSize(14);
+  doc.text("BIÊN BẢN KHẤU HAO / THANH LÝ TÀI SẢN", 148.5, 33, { align: "center" });
+  doc.setFontSize(8.5);
+  doc.setTextColor(15, 140, 140);
+  doc.text(`Số biên bản: ${certificateCode}`, 148.5, 39, { align: "center" });
+  doc.setTextColor(96, 117, 138);
+  doc.setFontSize(7.5);
+  doc.text("Danh sách tài sản thanh lý kèm theo biên bản", 148.5, 44.5, { align: "center" });
+}
+
+function drawTableHeader(doc: jsPDF, y: number) {
+  let x = 12;
+  doc.setFillColor(16, 42, 67);
+  doc.rect(x, y, 273, 11, "F");
+  doc.setTextColor(255, 255, 255);
+  doc.setFontSize(6.6);
+  columns.forEach((column) => {
+    doc.rect(x, y, column.width, 11);
+    const label = column.label.split("\n");
+    doc.text(label, x + column.width / 2, y + (label.length > 1 ? 4 : 6.5), { align: "center" });
+    x += column.width;
   });
-  y = Math.min(y + 10, 235);
+  return y + 11;
+}
+
+function drawAssetRow(doc: jsPDF, asset: RetirementPdfAsset, y: number) {
+  const lines = columns.map((column) => doc.splitTextToSize(String(cellValue(asset, column.key)), column.width - 3));
+  const rowHeight = Math.max(11, ...lines.map((line) => line.length * 3.15 + 4));
+  let x = 12;
+  doc.setDrawColor(210, 224, 232);
+  doc.setTextColor(25, 59, 87);
+  doc.setFontSize(6.4);
+  columns.forEach((column, index) => {
+    doc.rect(x, y, column.width, rowHeight);
+    doc.text(lines[index], x + 1.5, y + 3.5);
+    x += column.width;
+  });
+  return y + rowHeight;
+}
+
+function drawSignatures(doc: jsPDF, y: number) {
+  const signatureY = Math.max(y + 9, 158);
   doc.setDrawColor(221, 231, 240);
-  doc.line(left, y, 192, y);
-  y += 16;
+  doc.line(12, signatureY - 5, 285, signatureY - 5);
   doc.setTextColor(16, 42, 67);
-  doc.setFontSize(10);
-  doc.text("XÁC NHẬN CỦA CÁC BÊN", left, y);
-  doc.setFontSize(8);
-  doc.setTextColor(112, 134, 154);
-  doc.text("Người lập biên bản", 42, y + 10, { align: "center" });
-  doc.text("Đại diện bộ phận quản lý", 105, y + 10, { align: "center" });
-  doc.text("Người phê duyệt", 168, y + 10, { align: "center" });
+  doc.setFontSize(8.5);
+  doc.text("XÁC NHẬN CỦA CÁC BÊN", 12, signatureY);
+  doc.setFontSize(7.2);
+  doc.setTextColor(96, 117, 138);
+  doc.text("Người lập biên bản", 58, signatureY + 11, { align: "center" });
+  doc.text("Đại diện bộ phận quản lý", 148.5, signatureY + 11, { align: "center" });
+  doc.text("Đại diện đơn vị xử lý", 239, signatureY + 11, { align: "center" });
 }
 
 export async function openRetirementPdf(assets: RetirementPdfAsset[], company: RetirementPdfCompany, fileName?: string, title?: string) {
   if (!assets.length) throw new Error("Chưa có biên bản thanh lý để xuất.");
-  const doc = new jsPDF({ unit: "mm", format: "a4" });
+  const certificateCode = assets[0].retirementCertificateNumber || "TL-DRAFT";
+  const doc = new jsPDF({ unit: "mm", format: "a4", orientation: "landscape" });
   registerVietnamesePdfFont(doc, await loadPdfFont());
   const logoDataUrl = company.logoUrl ? await loadImageData(company.logoUrl).catch(() => undefined) : undefined;
-  assets.forEach((asset, index) => {
-    if (index) doc.addPage();
-    drawRetirementRecord(doc, asset, company, logoDataUrl, index + 1, assets.length);
+  drawPageHeading(doc, certificateCode, company, logoDataUrl);
+  let y = drawTableHeader(doc, 51);
+  assets.forEach((asset) => {
+    const estimatedHeight = Math.max(11, ...columns.map((column) => doc.splitTextToSize(String(cellValue(asset, column.key)), column.width - 3).length * 3.15 + 4));
+    if (y + estimatedHeight > 151) {
+      doc.addPage("a4", "landscape");
+      drawPageHeading(doc, certificateCode, company, logoDataUrl);
+      y = drawTableHeader(doc, 51);
+    }
+    y = drawAssetRow(doc, asset, y);
   });
+  drawSignatures(doc, y);
   applyPdfLogoWatermark(doc, await createPdfLogoWatermark(company.logoUrl).catch(() => null));
-  drawPdfCorporateFooter(doc, company, assets.length === 1 ? "Biên bản thanh lý tài sản" : "Biên bản thanh lý gộp");
-  const defaultName = assets.length === 1 ? `${assets[0].retirementCertificateNumber || assets[0].code}-bien-ban-thanh-ly.pdf` : "assetmaster-bien-ban-thanh-ly-gop.pdf";
-  const defaultTitle = assets.length === 1 ? `Biên bản thanh lý ${assets[0].retirementCertificateNumber || assets[0].code}` : `Biên bản thanh lý gộp (${assets.length} tài sản)`;
-  openPdfPreview(doc, fileName || defaultName, title || defaultTitle);
+  drawPdfCorporateFooter(doc, company, "Biên bản thanh lý gộp");
+  openPdfPreview(doc, fileName || `${certificateCode}-bien-ban-thanh-ly.pdf`, title || `Biên bản thanh lý ${certificateCode}`);
 }

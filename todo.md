@@ -2420,3 +2420,9 @@
 - [x] Thêm thao tác bỏ chọn tất cả tài sản khi đang tạo nháp.
 - [x] Sửa vị trí biểu tượng tìm kiếm trong vùng chọn tài sản trên desktop và mobile.
 - [x] Bổ sung hồi quy, kiểm tra responsive và build phát hành.
+
+## Current Session — PDF và tra cứu biên bản thanh lý gộp
+- [x] Thiết kế một PDF ngang duy nhất cho biên bản gộp, một tài sản mỗi dòng.
+- [x] Hiển thị mã TS, tên TS, seri, ngày mua, nguyên giá, giá thanh lý và lý do thanh lý trong bảng PDF.
+- [x] Thêm tìm kiếm theo mã TL hoặc tên tài sản và phân trang cho danh sách biên bản.
+- [x] Bổ sung hồi quy, kiểm tra in ấn/responsive và build phát hành.

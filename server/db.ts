@@ -430,6 +430,7 @@ export async function listRetirementCertificates() {
     assetCode: assets.assetCode,
     assetName: assets.name,
     serialNumber: assets.serialNumber,
+    purchaseDate: assets.purchaseDate,
     purchaseValue: assets.purchaseValue,
     assetStatus: assets.status,
   }).from(retirementCertificateAssets).innerJoin(assets, eq(retirementCertificateAssets.assetId, assets.id));
@@ -451,6 +452,7 @@ export async function getRetirementCertificateById(id: number, executor?: any) {
     assetCode: assets.assetCode,
     assetName: assets.name,
     serialNumber: assets.serialNumber,
+    purchaseDate: assets.purchaseDate,
     purchaseValue: assets.purchaseValue,
     assetStatus: assets.status,
   }).from(retirementCertificateAssets).innerJoin(assets, eq(retirementCertificateAssets.assetId, assets.id)).where(eq(retirementCertificateAssets.retirementCertificateId, id));
