@@ -124,8 +124,17 @@ function drawAssetRow(doc: jsPDF, asset: RetirementPdfAsset, y: number) {
 function drawSalvageTotal(doc: jsPDF, y: number, assets: RetirementPdfAsset[]) {
   const salvageRows = assets.filter((asset) => asset.salvageValue !== null && asset.salvageValue !== undefined && String(asset.salvageValue).trim() !== "");
   const total = salvageRows.reduce((sum, asset) => sum + Number(String(asset.salvageValue).replace(/,/g, "")), 0);
+  const originalCost = assets.reduce((sum, asset) => sum + Number(String(asset.value || "0").replace(/,/g, "")), 0);
   doc.setFillColor(247, 249, 250);
   doc.setDrawColor(210, 224, 232);
+  doc.rect(12, y, 273, 10, "FD");
+  doc.setTextColor(25, 59, 87);
+  doc.setFontSize(7.4);
+  doc.text("TỔNG NGUYÊN GIÁ", 226, y + 6.3, { align: "right" });
+  doc.setFontSize(8);
+  doc.text(`${formatVnd(originalCost)} VNĐ`, 282, y + 6.3, { align: "right" });
+  y += 10;
+  doc.setFillColor(247, 249, 250);
   doc.rect(12, y, 273, 10, "FD");
   doc.setTextColor(25, 59, 87);
   doc.setFontSize(7.4);
@@ -166,7 +175,7 @@ export async function openRetirementPdf(assets: RetirementPdfAsset[], company: R
     }
     y = drawAssetRow(doc, asset, y);
   });
-  if (y + 15 > 151) {
+  if (y + 25 > 151) {
     doc.addPage("a4", "landscape");
     drawPageHeading(doc, certificateCode, company, logoDataUrl);
     y = drawTableHeader(doc, 51);

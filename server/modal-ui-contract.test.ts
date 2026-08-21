@@ -805,12 +805,21 @@ describe("modal presentation contract", () => {
     const manager = readProjectFile("client/src/components/RetirementCertificateManager.tsx");
 
     expect(retirementPdf).toContain("drawSalvageTotal");
+    expect(retirementPdf).toContain("TỔNG NGUYÊN GIÁ");
     expect(retirementPdf).toContain("TỔNG CỘNG GIÁ TRỊ THANH LÝ");
     expect(retirementPdf).toContain("doc.setFillColor(235, 239, 242)");
     expect(retirementPdf).toContain('{ align: "center" }');
     expect(manager).toContain("repairInfoByAsset");
     expect(manager).toContain("Thông tin sửa chữa tham khảo");
     expect(manager).toContain("không đưa vào biên bản");
+  });
+
+  it("opens a repair ticket from the retirement draft reference without adding it to the PDF", () => {
+    const manager = readProjectFile("client/src/components/RetirementCertificateManager.tsx");
+
+    expect(manager).toContain("setPreviewRepairTicketId(ticket.id)");
+    expect(manager).toContain("Xem nhanh phiếu sửa chữa");
+    expect(manager).toContain("repairStatusLabel");
   });
 
   it("brands issue-slip PDFs and protects automatically sourced recipient departments", () => {

@@ -2432,3 +2432,8 @@
 - [x] Đổi hàng tiêu đề PDF sang xám nhạt và căn giữa nội dung bảng tài sản.
 - [x] Hiển thị dưới bản nháp các tài sản có lịch sử sửa chữa cùng chi phí, chỉ để tham khảo.
 - [x] Bổ sung hồi quy, kiểm tra PDF/responsive và build phát hành.
+
+## Current Session — Mở phiếu sửa chữa và tổng nguyên giá
+- [x] Cho phép mở nhanh phiếu sửa chữa từ vùng tham khảo dưới bản nháp thanh lý.
+- [x] Hiển thị tổng nguyên giá cùng tổng giá thanh lý ở cuối bảng PDF.
+- [x] Bổ sung hồi quy, kiểm tra PDF/responsive và build phát hành.
