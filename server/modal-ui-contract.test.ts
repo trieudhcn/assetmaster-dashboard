@@ -791,7 +791,7 @@ describe("modal presentation contract", () => {
     expect(reports).toContain("retiredCertificateGroups");
     expect(reports).toContain("onToggleGroup");
     expect(reports).toContain("Mỗi mã TL được gộp thành một dòng");
-    expect(reports).toContain('"Số tài sản": group.assets.length');
+    expect(reports).toContain("buildRetirementDetailWorkbook");
   });
 
   it("filters grouped retirement certificates by lifecycle status and protects the search input plus bulk deselection", () => {
@@ -1138,15 +1138,27 @@ describe("modal presentation contract", () => {
     expect(reports).toContain("Giá trị thanh lý đã ghi nhận");
   });
 
-  it("exports grouped retirement certificates while preserving every asset in each TL code", () => {
+  it("provides year-filtered detailed retirement Excel exports from both retirement areas", () => {
+    const retirement = readProjectFile("client/src/pages/RetirementManagementView.tsx");
+    const reports = readProjectFile("client/src/pages/ReportsManagementView.tsx");
+
+    expect(retirement).toContain("buildRetirementDetailWorkbook");
+    expect(retirement).toContain("serviceCostsByAsset");
+    expect(retirement).toContain("Xuất Excel chi tiết");
+    expect(reports).toContain("buildRetirementDetailWorkbook");
+    expect(reports).toContain("retirementServiceCostByAssetId");
+    expect(reports).toContain("Xuất Excel thanh lý chi tiết");
+    expect(reports).toContain("retirementYearOptions.map");
+  });
+
+  it("exports detailed retirement assets while preserving the filtered year and totals", () => {
     const retirement = readProjectFile("client/src/pages/RetirementManagementView.tsx");
 
     expect(retirement).toContain("const exportExcel");
-    expect(retirement).toContain('"Số biên bản thanh lý": group.referenceCode');
-    expect(retirement).toContain('"Số tài sản": group.assets.length');
-    expect(retirement).toContain('group.assets.map((asset) => asset.assetCode).join');
-    expect(retirement).toContain('XLSX.utils.book_append_sheet(workbook, sheet, "Biên bản thanh lý")');
-    expect(retirement).toContain("assetmaster-danh-sach-thanh-ly-");
+    expect(retirement).toContain("buildRetirementDetailWorkbook");
+    expect(retirement).toContain("serviceCostByAssetId");
+    expect(retirement).toContain("assetmaster-danh-sach-thanh-ly-chi-tiet-");
+    expect(retirement).toContain("Tổng phí BH/SC");
     expect(retirement).toContain("Báo cáo & xuất dữ liệu thanh lý");
   });
 

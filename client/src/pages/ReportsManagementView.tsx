@@ -9,6 +9,7 @@ import { SearchableSelect } from "@/components/SearchableSelect";
 import { formatCompactVnd, type CurrencyDisplayMode } from "@/lib/formatters";
 import { writeBrandedWorkbook } from "@/lib/brandedWorkbook";
 import { openRetirementPdf } from "@/lib/retirementPdf";
+import { buildRetirementDetailWorkbook, serviceCostsByAsset } from "@/lib/retirementExcel";
 import { InteractiveValueAllocation, type AllocationGroup } from "@/components/InteractiveValueAllocation";
 import { InteractiveAllocationAssetDetails } from "@/components/InteractiveAllocationAssetDetails";
 import { QuickServiceTicketPreview } from "@/components/QuickServiceTicketPreview";
@@ -121,6 +122,7 @@ export function ReportsManagementView() {
     (retirementCertificatesQuery.data || []).filter((certificate) => certificate.status !== "draft").forEach((certificate) => certificate.items.forEach((item) => values.set(item.assetId, Number(item.salvageValue || 0))));
     return values;
   }, [retirementCertificatesQuery.data]);
+  const retirementServiceCostByAssetId = useMemo(() => serviceCostsByAsset(maintenanceQuery.data || []), [maintenanceQuery.data]);
   const retirementValueByYear = useMemo(() => {
     const buckets = new Map<string, { year: string; count: number; value: number }>();
     retiredAssets.forEach((asset) => {
@@ -344,29 +346,16 @@ export function ReportsManagementView() {
     const loadingToast = toast.loading("Đang tạo danh sách tài sản thanh lý...");
     window.setTimeout(() => { void (async () => {
       try {
-        const rows = retiredCertificateGroups.map((group) => ({
-          "Số biên bản thanh lý": group.referenceCode,
-          "Số tài sản": group.assets.length,
-          "Mã tài sản": group.assets.map((asset) => asset.assetCode).join("\n"),
-          "Tên tài sản": group.assets.map((asset) => asset.name).join("\n"),
-          "Ngày thanh lý": group.retiredAt ? new Date(group.retiredAt).toLocaleDateString("vi-VN") : "",
-          "Lý do thanh lý": [...new Set(group.assets.map((asset) => asset.retirementReason || "").filter(Boolean))].join("\n"),
-          "Tổng nguyên giá (VNĐ)": group.assets.reduce((total, asset) => total + Number(asset.purchaseValue || 0), 0),
-          "Serial/IMEI": group.assets.map((asset) => asset.serialNumber || "—").join("\n"),
-          "Chứng từ đính kèm": [...new Set(group.assets.map((asset) => asset.retirementAttachmentName || "Không đính kèm"))].join("\n"),
-          "Ghi chú": group.assets.map((asset) => asset.note || "").filter(Boolean).join("\n"),
-        }));
-        const workbook = XLSX.utils.book_new();
-        const sheet = XLSX.utils.json_to_sheet(rows);
-        sheet["!cols"] = [{ wch: 23 }, { wch: 12 }, { wch: 18 }, { wch: 38 }, { wch: 16 }, { wch: 42 }, { wch: 22 }, { wch: 22 }, { wch: 30 }, { wch: 32 }];
-        XLSX.utils.book_append_sheet(workbook, sheet, "Biên bản thanh lý");
+        const { workbook, summary, totalRowNumber } = buildRetirementDetailWorkbook({ assets: retiredAssets, salvageValueByAssetId, serviceCostByAssetId: retirementServiceCostByAssetId });
         const scope = selectedDivision?.name || selectedDepartment?.name || "tat-ca";
         await writeBrandedWorkbook(workbook, {
-          documentTitle: "DANH SÁCH BIÊN BẢN KHẤU HAO / THANH LÝ",
-          fileName: `assetmaster-danh-sach-thanh-ly-${scope.replace(/[^a-zA-Z0-9]/g, "-")}.xlsx`,
-          description: `Danh sách ${rows.length} biên bản thanh lý, gồm đầy đủ tài sản, ngày/lý do thanh lý và chứng từ đính kèm theo phạm vi lọc hiện tại.`,
+          company: companyQuery.data,
+          documentTitle: "DANH SÁCH TÀI SẢN KHẤU HAO / THANH LÝ",
+          fileName: `assetmaster-danh-sach-thanh-ly-chi-tiet-${retirementYear === "all" ? "tat-ca-nam" : retirementYear}-${scope.replace(/[^a-zA-Z0-9]/g, "-")}.xlsx`,
+          description: `Năm ${retirementYear === "all" ? "tất cả" : retirementYear} · ${retiredAssets.length} tài sản · Tổng giá mua ${summary.totalPurchaseValue.toLocaleString("vi-VN")} VNĐ · Tổng phí BH/SC ${(summary.totalWarrantyCost + summary.totalRepairCost).toLocaleString("vi-VN")} VNĐ · Tổng giá thanh lý ${summary.totalSalvageValue.toLocaleString("vi-VN")} VNĐ.`,
+          prepareWorkbook: (brandedWorkbook) => { const sheet = brandedWorkbook.getWorksheet("Danh sách thanh lý"); if (!sheet) return; const totalRow = sheet.getRow(totalRowNumber); totalRow.font = { bold: true, color: { argb: "FF087A6A" } }; totalRow.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFE6F6F2" } }; [6, 7, 8, 9].forEach((column) => { sheet.getColumn(column).numFmt = "#,##0"; }); },
         });
-        toast.success(`Đã xuất ${rows.length} biên bản thanh lý.`, { id: loadingToast });
+        toast.success(`Đã xuất ${retiredAssets.length} tài sản thanh lý.`, { id: loadingToast });
       } catch (error) {
         console.error(error);
         toast.error("Không thể xuất danh sách tài sản thanh lý.", { id: loadingToast });
@@ -492,6 +481,7 @@ export function ReportsManagementView() {
       {allocationSelection && <InteractiveAllocationAssetDetails groupLabel={allocationSelection.type === "division" ? "Bộ Phận" : allocationSelection.type === "brand" ? "Hãng" : "Nhà cung cấp"} groupName={allocationSelection.name} assets={selectedAllocationAssets} handovers={handoversQuery.data || []} maintenanceTickets={maintenanceQuery.data || []} currencyMode={currencyMode} autoOpenAssetId={returnAssetPopupId || undefined} onAssetPopupClose={() => setReturnAssetPopupId(null)} onClose={() => { setAllocationSelection(null); setReturnAssetPopupId(null); }} />}
       <section className={`mt-5 ${card} p-5`}><div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between"><div><div className="flex items-center gap-2 text-sm font-extrabold text-[#193B57]"><Download size={16} className="text-[#087A6A]" />Xuất tài sản theo cơ cấu</div><p className="mt-1 text-xs text-[#71869A]">{selectedDepartment ? `Phòng Ban: ${selectedDepartment.name}` : "Tất cả Phòng Ban"}{selectedDivision ? ` · Bộ Phận: ${selectedDivision.name}` : ""}</p></div><button onClick={exportExcel} disabled={!isAdmin || !inventoryAssets.length || exporting !== null} className="inline-flex items-center justify-center gap-2 rounded-lg bg-[#0F8C8C] px-4 py-2.5 text-xs font-bold text-white hover:bg-[#087A6A] disabled:cursor-not-allowed disabled:opacity-60"><Download size={15} className={exporting === "inventory" ? "animate-pulse" : ""} />{exporting === "inventory" ? "Đang xuất..." : `Xuất Excel (${inventoryAssets.length})`}</button></div></section>
       <section className={`mt-5 ${card} border-[#F3C4C4] p-5`}><div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between"><div><div className="flex items-center gap-2 text-sm font-extrabold text-[#B44545]"><History size={16} />Tài sản đã trả nhà cung cấp</div><p className="mt-1 text-xs text-[#71869A]">Báo cáo riêng gồm ngày trả, lý do, giá trị và thông tin nhận diện của từng tài sản. Hiện có <b className="text-[#B44545]">{supplierReturnedAssets.length}</b> tài sản trong phạm vi lọc.</p></div><button onClick={exportSupplierReturnExcel} disabled={!isAdmin || !supplierReturnedAssets.length || exporting !== null} className="inline-flex items-center justify-center gap-2 rounded-lg border border-[#E7A6A6] bg-[#FFF7F7] px-4 py-2.5 text-xs font-bold text-[#B44545] hover:bg-white disabled:cursor-not-allowed disabled:opacity-60"><Download size={15} className={exporting === "returned" ? "animate-pulse" : ""} />{exporting === "returned" ? "Đang xuất..." : "Xuất báo cáo trả NCC"}</button></div></section>
+      <section className={`mt-5 ${card} border-[#E7D9B9] p-4`}><div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between"><div><div className="flex items-center gap-2 text-sm font-extrabold text-[#8F5A00]"><Download size={16} />Xuất Excel thanh lý chi tiết</div><p className="mt-1 text-xs text-[#71869A]">Một dòng cho mỗi tài sản, gồm phí Bảo hành/Sửa chữa, giá thanh lý và các dòng tổng cộng.</p></div><div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center"><div className="w-full sm:w-44"><SearchableSelect value={retirementYear} onChange={setRetirementYear} options={[{ value: "all", label: "Tất cả năm" }, ...retirementYearOptions.map((year) => ({ value: String(year), label: `Năm ${year}` }))]} placeholder="Tất cả năm" searchPlaceholder="Tìm năm thanh lý..." /></div><button onClick={exportRetirementExcel} disabled={!isAdmin || !retiredAssets.length || exporting !== null} className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg border border-[#E7D9B9] bg-[#FFF7E3] px-4 text-xs font-bold text-[#8F5A00] hover:bg-white disabled:cursor-not-allowed disabled:opacity-60"><Download size={15} className={exporting === "retired" ? "animate-pulse" : ""} />{exporting === "retired" ? "Đang xuất..." : `Xuất Excel (${retiredAssets.length})`}</button></div></div></section>
       <section className={`mt-5 ${card} border-[#E7D9B9] p-5`}><div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between"><div><div className="flex items-center gap-2 text-sm font-extrabold text-[#8F5A00]"><FileBarChart size={16} />Giá trị tài sản Khấu hao/Thanh lý theo năm</div><p className="mt-1 text-xs text-[#71869A]">Tổng hợp giá trị thanh lý đã ghi nhận theo ngày thanh lý và phạm vi lọc hiện tại.</p></div><div className="rounded-lg bg-[#FFF7E3] px-3 py-2 text-right"><div className="text-[10px] font-extrabold uppercase tracking-[0.1em] text-[#A86B00]">Tổng giá trị thanh lý</div><div className="mt-1 text-sm font-extrabold text-[#8F5A00]">{currency(retiredTotalValue, currencyMode)}</div></div></div>{assetsQuery.isLoading || retirementCertificatesQuery.isLoading ? <div className="mt-4 grid min-h-24 place-items-center text-xs text-[#71869A]">Đang tổng hợp giá trị thanh lý...</div> : retirementValueByYear.length ? <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-3"><div className="rounded-lg border border-[#B7D8D4] bg-[#F4FBFA] px-4 py-3"><div className="flex items-center justify-between gap-3"><span className="text-xs font-extrabold text-[#087A6A]">Tổng giá trị thanh lý</span><span className="rounded-full bg-white px-2 py-1 text-[10px] font-bold text-[#087A6A]">Đã ghi nhận</span></div><div className="mt-3 text-lg font-extrabold text-[#087A6A]">{currency(retiredTotalValue, currencyMode)}</div><div className="mt-1 text-[10px] text-[#4C7E76]">Tổng giá trị thu hồi của tài sản thanh lý</div></div>{retirementValueByYear.map((item) => <div key={item.year} className="rounded-lg border border-[#F0DFC0] bg-[#FFFDF7] px-4 py-3"><div className="flex items-center justify-between gap-3"><span className="text-xs font-extrabold text-[#8F5A00]">Năm {item.year}</span><span className="rounded-full bg-white px-2 py-1 text-[10px] font-bold text-[#A86B00]">{item.count} tài sản</span></div><div className="mt-3 text-lg font-extrabold text-[#193B57]">{currency(item.value, currencyMode)}</div><div className="mt-1 text-[10px] text-[#8AA0B6]">Giá trị thanh lý đã ghi nhận</div></div>)}</div> : <div className="mt-4 rounded-lg border border-dashed border-[#E7D9B9] bg-[#FFFDF7] px-4 py-6 text-center text-xs text-[#8A7140]">Chưa có tài sản Khấu hao/Thanh lý trong phạm vi lọc.</div>}</section>
     </>}
     {isAdmin && <ActivityLog data={filteredActivities} loading={activitiesQuery.isLoading} query={activityQuery} type={activityType} onQueryChange={setActivityQuery} onTypeChange={setActivityType} allActivities={activitiesQuery.data || []} />}

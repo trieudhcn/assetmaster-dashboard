@@ -2505,3 +2505,9 @@
 - [x] Thay ô “Đã chọn xuất PDF” bằng tổng giá trị thanh lý đã ghi nhận.
 - [x] Hiển thị tổng giá trị thanh lý tại khu vực báo cáo thanh lý theo năm.
 - [x] Bổ sung hồi quy, kiểm tra giao diện và build phát hành.
+
+## Current Session — Excel thanh lý chi tiết theo năm
+- [x] Xuất Excel danh sách thanh lý theo bộ lọc năm tại menu Khấu hao/Thanh lý.
+- [x] Bao gồm mã/tên/seri, ngày mua, hạn bảo hành, giá mua, phí BH/SC, giá thanh lý, lý do và dòng tổng.
+- [x] Thêm bộ lọc năm cùng nút xuất Excel tương tự trong tab Báo cáo.
+- [x] Bổ sung hồi quy, kiểm tra tệp xuất, desktop/mobile và build phát hành.
