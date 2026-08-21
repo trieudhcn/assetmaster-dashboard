@@ -65,9 +65,16 @@ export async function previewServiceTicketPdf({ ticket, asset, assigneeName, rep
   doc.setFont(vietnamesePdfFontFamily, "normal");
   doc.setFontSize(8.5);
   doc.setTextColor(96, 117, 138);
-  const companyMeta = [company.address, company.taxCode ? `MST: ${company.taxCode}` : "", company.phone ? `ĐT: ${company.phone}` : ""].filter(Boolean).join(" · ");
-  doc.text(doc.splitTextToSize(companyMeta || "Hệ thống Quản lý Tài sản Doanh nghiệp", logoDataUrl ? width - 22 : width), logoDataUrl ? left + 22 : left, y + 5);
-  y += 27;
+  const companyLines = [company.address || "Hệ thống Quản lý Tài sản Doanh nghiệp", company.taxCode ? `MST: ${company.taxCode}` : "", company.phone ? `ĐT: ${company.phone}` : ""].filter(Boolean);
+  const companyTextX = logoDataUrl ? left + 22 : left;
+  const companyTextWidth = logoDataUrl ? width - 22 : width;
+  let companyLineY = y + 5;
+  companyLines.forEach((line) => {
+    const wrappedLine = doc.splitTextToSize(line, companyTextWidth);
+    doc.text(wrappedLine, companyTextX, companyLineY);
+    companyLineY += Math.max(4.3, wrappedLine.length * 4.3);
+  });
+  y = Math.max(y + 27, companyLineY + 9);
   doc.setDrawColor(15, 140, 140);
   doc.setLineWidth(0.7);
   doc.line(left, y, right, y);

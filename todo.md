@@ -2318,3 +2318,9 @@
 - [x] Thêm nút In trong hộp xem trước biên bản từ trang Phụ kiện.
 - [x] Thêm nút Xuất PDF dùng mẫu biên bản bàn giao thống nhất.
 - [x] Bổ sung hồi quy, kiểm tra giao diện và build phát hành.
+
+## Current Session — Service Ticket PDF Polish
+- [x] Tách MST và điện thoại thành các dòng riêng trong PDF Bảo hành/Sửa chữa.
+- [x] Khôi phục biểu tượng xem trước PDF của phiếu Bảo hành trên mobile.
+- [x] Hiển thị trạng thái tạo PDF và vô hiệu hóa thao tác trùng lặp.
+- [x] Bổ sung hồi quy, kiểm tra giao diện mobile/PDF và build phát hành.

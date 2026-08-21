@@ -543,6 +543,22 @@ describe("modal presentation contract", () => {
     expect(handoverPdf).toContain("BIÊN BẢN BÀN GIAO TÀI SẢN");
   });
 
+  it("splits service-ticket company metadata into individual lines and keeps PDF preview available on mobile", () => {
+    const servicePdf = readProjectFile("client/src/lib/serviceTicketPdf.ts");
+    const operations = readProjectFile("client/src/pages/OperationsModules.tsx");
+    const css = readProjectFile("client/src/index.css");
+
+    expect(servicePdf).toContain("const companyLines =");
+    expect(servicePdf).toContain("MST: ${company.taxCode}");
+    expect(servicePdf).toContain("ĐT: ${company.phone}");
+    expect(servicePdf).toContain("companyLines.forEach");
+    expect(operations).toContain('ticket.serviceChannel === "warranty"');
+    expect(operations).toContain("data-warranty-mobile-pdf");
+    expect(operations).toContain("button.disabled = generating");
+    expect(operations).toContain("service-ticket-pdf-loader");
+    expect(css).toContain("@keyframes service-ticket-pdf-spin");
+  });
+
   it("keeps the employee accessory history compact and suppresses unnecessary decimal zeroes", () => {
     const employees = readProjectFile("client/src/pages/EmployeeManagementView.tsx");
 

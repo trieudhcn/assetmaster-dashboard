@@ -521,6 +521,30 @@ export function MaintenancePage() {
     }
   };
 
+  useEffect(() => {
+    const animationFrame = window.requestAnimationFrame(() => {
+      const mobileCards = Array.from(document.querySelectorAll("div.space-y-3.p-3.md\\:hidden > article"));
+      pagedTickets.filter((ticket) => ticket.serviceChannel === "warranty").forEach((ticket) => {
+        const card = mobileCards.find((candidate) => candidate.querySelector(".font-mono")?.textContent?.trim() === ticket.ticketCode);
+        const actionBar = card?.querySelector(":scope > div:last-child") as HTMLElement | null;
+        if (!actionBar) return;
+        actionBar.querySelector("[data-warranty-mobile-pdf]")?.remove();
+        const button = document.createElement("button");
+        const generating = repairPdfTicketId === ticket.id;
+        button.type = "button";
+        button.disabled = generating;
+        button.dataset.warrantyMobilePdf = "true";
+        button.setAttribute("aria-label", `Xem trước PDF phiếu Bảo hành ${ticket.ticketCode}`);
+        button.title = generating ? "Đang tạo PDF..." : "PDF / In";
+        button.className = "inline-flex h-9 items-center justify-center rounded-lg border border-[#C7DDF8] bg-[#EFF7FF] px-3 text-[#2666A8] disabled:cursor-wait disabled:opacity-60";
+        button.innerHTML = generating ? '<svg class="service-ticket-pdf-loader" aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="8" stroke-dasharray="18 10"/></svg>' : '<svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect width="12" height="8" x="6" y="14"/></svg>';
+        button.addEventListener("click", () => { void previewRepairTicketPdf(ticket, assetById.get(ticket.assetId)); });
+        actionBar.insertBefore(button, actionBar.children[1] || null);
+      });
+    });
+    return () => window.cancelAnimationFrame(animationFrame);
+  }, [assetById, pagedTickets, previewRepairTicketPdf, repairPdfTicketId]);
+
   const uploadAttachmentByTicketId = (ticketId: number, file: File | undefined, showProgress = false) => {
     if (!file) return;
     const supportedTypes = ["application/pdf", "image/png", "image/jpeg", "image/webp"] as const;
