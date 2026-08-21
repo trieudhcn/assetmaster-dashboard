@@ -1125,14 +1125,20 @@ describe("modal presentation contract", () => {
   it("summarizes disposed asset values by retirement year", () => {
     const retirement = readProjectFile("client/src/pages/RetirementManagementView.tsx");
     const reports = readProjectFile("client/src/pages/ReportsManagementView.tsx");
+    const overviewStart = retirement.indexOf("Tổng quan thanh lý");
+    const reportStart = retirement.indexOf("Báo cáo & xuất dữ liệu thanh lý");
+    const overview = retirement.slice(overviewStart, reportStart);
 
     expect(retirement).toContain('asset.status !== "retired"');
     expect(retirement).toContain("yearlySummary");
     expect(retirement).toContain("Tổng quan thanh lý");
     expect(retirement).toContain("Khấu hao/Thanh lý");
-    expect(retirement).toContain("totalSalvageValue");
-    expect(retirement).toContain('OverviewMetric label="Tổng giá trị thanh lý"');
+    expect(retirement).toContain("data-retirement-recorded-salvage");
+    expect(retirement).not.toContain("const totalSalvageValue");
+    expect(retirement).not.toContain('OverviewMetric label="Tổng giá trị thanh lý"');
     expect(retirement).not.toContain('OverviewMetric label="Đã chọn xuất PDF"');
+    expect(overview).toContain("onClick={exportExcel}");
+    expect(overview).toContain("Năm thanh lý");
     expect(reports).toContain("salvageValueByAssetId");
     expect(reports).toContain("Tổng giá trị thu hồi của tài sản thanh lý");
     expect(reports).toContain("Giá trị thanh lý đã ghi nhận");

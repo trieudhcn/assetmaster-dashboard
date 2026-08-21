@@ -2517,3 +2517,9 @@
 - [x] Đổi nhãn thành Bảo hành & Sửa chữa, Khấu hao & Thanh lý và Báo Cáo.
 - [x] Thêm Mã phiếu TL vào từng dòng Excel thanh lý chi tiết.
 - [x] Bổ sung hồi quy, kiểm tra desktop/mobile và build phát hành.
+
+## Current Session — Tinh gọn tổng quan thanh lý
+- [x] Đưa xuất Excel thanh lý cạnh bộ lọc Năm thanh lý.
+- [x] Bỏ thẻ Tổng giá trị thanh lý trùng lặp khỏi tổng quan.
+- [x] Đồng bộ Giá trị thanh lý đã ghi nhận theo bộ lọc năm.
+- [x] Bổ sung hồi quy, kiểm tra desktop/mobile và build phát hành.
