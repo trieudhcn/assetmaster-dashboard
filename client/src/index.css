@@ -579,6 +579,26 @@ input[type="date"] {
     z-index: 4;
     background: #FCFDFE;
   }
+  /* The handover list carries a long document code; keep it identifiable but compact on phones. */
+  .mobile-table-scroll > table.min-w-\[940px\] {
+    min-width: 48rem;
+    table-layout: fixed;
+  }
+  .mobile-table-scroll > table.min-w-\[940px\] th:first-child,
+  .mobile-table-scroll > table.min-w-\[940px\] td:first-child {
+    width: 6rem;
+    min-width: 6rem;
+    max-width: 6rem;
+    padding-right: 0.75rem;
+    padding-left: 0.75rem;
+  }
+  .mobile-table-scroll > table.min-w-\[940px\] td:first-child {
+    overflow: hidden;
+    font-size: 0.625rem;
+    line-height: 1.2;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

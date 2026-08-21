@@ -2373,3 +2373,13 @@
 - [x] Thêm phản hồi chạm trực quan cho nút Chi tiết và mã biên bản BG/PK trên mobile.
 - [x] Tôn trọng tùy chọn giảm chuyển động của thiết bị.
 - [x] Bổ sung hồi quy, kiểm tra mobile và build phát hành.
+
+## Proposed Feature — Bản quyền
+- [x] Thiết kế nghiệp vụ quản lý giấy phép/bản quyền phần mềm, nội dung số và quyền sử dụng liên quan đến tài sản.
+- [x] Xác định dữ liệu, quy trình cấp phát–gia hạn–thu hồi, phân quyền và cảnh báo hết hạn.
+- [x] Trình bày lộ trình triển khai để phê duyệt trước khi phát triển.
+
+## Current Session — Mobile Handover Table Priority
+- [x] Rà soát cột Mã phiếu trong danh sách Bàn giao & Cấp phát trên mobile.
+- [x] Tối ưu kích thước/vị trí cột để ưu tiên Người nhận, thời gian và trạng thái.
+- [x] Bổ sung hồi quy, kiểm tra mobile và build phát hành.

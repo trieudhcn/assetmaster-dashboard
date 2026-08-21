@@ -694,6 +694,16 @@ describe("modal presentation contract", () => {
     expect(css).toContain("touch-action: manipulation");
   });
 
+  it("keeps the handover document code compact on mobile so later table columns remain readable", () => {
+    const css = readProjectFile("client/src/index.css");
+
+    expect(css).toContain("The handover list carries a long document code");
+    expect(css).toContain(".mobile-table-scroll > table.min-w-\\[940px\\]");
+    expect(css).toContain("min-width: 48rem");
+    expect(css).toContain("width: 6rem");
+    expect(css).toContain("text-overflow: ellipsis");
+  });
+
   it("brands issue-slip PDFs and protects automatically sourced recipient departments", () => {
     const supplies = readProjectFile("client/src/pages/SuppliesInventoryView.tsx");
     const pdf = readProjectFile("client/src/lib/supplyIssueSlipPdf.ts");
