@@ -342,9 +342,34 @@ input[type="date"] {
   overflow-wrap: anywhere;
   line-height: 1.35;
 }
+
+/* Handover previews opened from accessory cards keep their heading visible while only the body scrolls. */
+[data-slot="dialog-content"].max-h-\[88vh\] {
+  display: flex;
+  max-height: calc(100dvh - 2rem) !important;
+  flex-direction: column;
+  overflow: hidden !important;
+  overscroll-behavior: contain;
+}
+[data-slot="dialog-content"].max-h-\[88vh\] > [data-slot="dialog-header"] {
+  flex: 0 0 auto;
+  padding-right: 2rem;
+}
+[data-slot="dialog-content"].max-h-\[88vh\] > [data-slot="dialog-header"] + div,
+[data-slot="dialog-content"].max-h-\[88vh\] > [data-slot="dialog-header"] + p {
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+}
 @media (max-width: 639px) {
   *::-webkit-scrollbar { width: 6px; height: 6px; }
   .asset-currency-suffix { right: 0.65rem; }
+  [data-slot="dialog-content"].max-h-\[88vh\] {
+    top: 0.5rem !important;
+    max-height: calc(100dvh - 1rem) !important;
+    transform: translateX(-50%) !important;
+  }
 }
 
 /* Mobile data tables: keep the first identifier column visible while the remaining columns scroll horizontally. */

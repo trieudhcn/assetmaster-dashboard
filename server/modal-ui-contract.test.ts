@@ -518,6 +518,16 @@ describe("modal presentation contract", () => {
     expect(supplies).toContain("expanded && <div");
   });
 
+  it("keeps the inline handover preview header visible while its body scrolls on compact screens", () => {
+    const css = readProjectFile("client/src/index.css");
+
+    expect(css).toContain('[data-slot="dialog-content"].max-h-\\[88vh\\]');
+    expect(css).toContain('overflow: hidden !important');
+    expect(css).toContain('[data-slot="dialog-header"] + div');
+    expect(css).toContain('top: 0.5rem !important');
+    expect(css).toContain('transform: translateX(-50%) !important');
+  });
+
   it("keeps the employee accessory history compact and suppresses unnecessary decimal zeroes", () => {
     const employees = readProjectFile("client/src/pages/EmployeeManagementView.tsx");
 

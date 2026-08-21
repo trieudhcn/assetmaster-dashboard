@@ -2308,3 +2308,8 @@
 - [x] Hiển thị tổng số lượng phụ kiện đang giữ trên tiêu đề mỗi thẻ BG/PK.
 - [x] Thêm thao tác thu gọn và mở rộng danh sách phụ kiện của từng thẻ.
 - [x] Bổ sung hồi quy, kiểm tra giao diện và build phát hành.
+
+## Current Session — Inline Handover Preview Layout Fix
+- [x] Sửa bố cục hộp xem trước biên bản bàn giao mở từ trang Phụ kiện.
+- [x] Kiểm tra hiển thị nội dung biên bản trên desktop và mobile.
+- [x] Bổ sung hồi quy, kiểm tra giao diện và build phát hành.
