@@ -403,12 +403,17 @@ input[type="date"] {
   bottom: auto !important;
   left: 50% !important;
   top: 50% !important;
+  width: min(45rem, calc(100vw - 3rem)) !important;
   margin: 0 !important;
-  max-height: calc(100dvh - 2rem) !important;
+  max-width: min(45rem, calc(100vw - 3rem)) !important;
+  max-height: min(46rem, calc(100dvh - 3rem)) !important;
+  padding: 1.5rem !important;
+  border-radius: 1rem !important;
   transform: translate3d(-50%, -50%, 0) !important;
   animation: none !important;
 }
 .handover-inline-preview-dialog > [data-slot="dialog-header"] + div {
+  width: 100%;
   flex: 1 1 auto;
 }
 @media (max-width: 639px) {
@@ -421,7 +426,10 @@ input[type="date"] {
   }
   .handover-inline-preview-dialog {
     top: 0.5rem !important;
+    width: calc(100vw - 1rem) !important;
+    max-width: calc(100vw - 1rem) !important;
     max-height: calc(100dvh - 1rem) !important;
+    padding: 1rem !important;
     transform: translateX(-50%) !important;
   }
 }

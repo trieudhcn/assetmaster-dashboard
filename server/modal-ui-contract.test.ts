@@ -612,6 +612,16 @@ describe("modal presentation contract", () => {
     expect(css).toContain('background: #E6F6F2');
   });
 
+  it("uses a balanced fixed width and viewport-safe size for the inline BG preview dialog", () => {
+    const css = readProjectFile("client/src/index.css");
+
+    expect(css).toContain('width: min(45rem, calc(100vw - 3rem)) !important');
+    expect(css).toContain('max-width: min(45rem, calc(100vw - 3rem)) !important');
+    expect(css).toContain('max-height: min(46rem, calc(100dvh - 3rem)) !important');
+    expect(css).toContain('padding: 1.5rem !important');
+    expect(css).toContain('width: calc(100vw - 1rem) !important');
+  });
+
   it("keeps the employee accessory history compact and suppresses unnecessary decimal zeroes", () => {
     const employees = readProjectFile("client/src/pages/EmployeeManagementView.tsx");
 

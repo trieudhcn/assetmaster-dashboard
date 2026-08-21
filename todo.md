@@ -2343,3 +2343,8 @@
 ## Current Session — PDF Preview Close Button
 - [x] Chuẩn hóa giao diện nút Đóng xem trước PDF đồng bộ với In/Tải PDF.
 - [x] Bổ sung hồi quy, kiểm tra giao diện và build phát hành.
+
+## Current Session — BG Preview Dialog Sizing
+- [x] Sửa kích thước và căn giữa khung biên bản BG trên trang Phụ kiện.
+- [x] Chuẩn hóa vùng cuộn và thanh thao tác của khung BG trên desktop/mobile.
+- [x] Bổ sung hồi quy, kiểm tra giao diện và build phát hành.
