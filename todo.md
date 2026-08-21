@@ -2458,3 +2458,8 @@
 - [x] Chuyển các thẻ biên bản sang chế độ thu gọn, ưu tiên mã TL, trạng thái, số tài sản và số liệu tổng.
 - [x] Cho phép mở rộng từng biên bản để xem mã tài sản, giá trị và các thao tác hiện có.
 - [x] Bổ sung hồi quy, kiểm tra desktop/mobile và build phát hành.
+
+## Current Session — Phân trang biên bản và tìm kiếm nhân sự
+- [x] Bổ sung phân trang chuẩn cho danh sách biên bản thanh lý thu gọn.
+- [x] Đưa nút X xóa tìm kiếm nhân sự về đúng bên trong ô, không chồng lên bộ lọc.
+- [x] Bổ sung hồi quy, kiểm tra desktop/mobile và build phát hành.

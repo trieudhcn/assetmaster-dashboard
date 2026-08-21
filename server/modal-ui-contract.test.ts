@@ -234,6 +234,9 @@ describe("modal presentation contract", () => {
     expect(home).toContain('input.placeholder === "Tìm mã, tên hoặc người giữ..."');
     expect(employees).toContain("EMPLOYEE_PAGE_SIZE = 10");
     expect(employees).toContain('aria-label="Trang nhân sự sau"');
+    expect(employees).toContain('data-search-clear-managed="true"');
+    expect(employees).toContain('aria-label="Xóa từ khóa tìm kiếm nhân sự"');
+    expect(employees).toContain('className="relative min-w-0"');
   });
 
   it("guides completed imports to the history drawer without rendering a floating undo card", () => {
@@ -826,6 +829,9 @@ describe("modal presentation contract", () => {
     expect(manager).toContain('const CERTIFICATE_PAGE_SIZE = 5');
     expect(manager).toContain('Tìm mã TL hoặc tên tài sản trong biên bản...');
     expect(manager).toContain('paginatedCertificates');
+    expect(manager).toContain('const certificateStartRecord');
+    expect(manager).toContain('const certificateEndRecord');
+    expect(manager).toContain('Hiển thị <b className="text-[#60758A]">{certificateStartRecord}–{certificateEndRecord}</b>');
     expect(manager).toContain('aria-label="Trang trước"');
     expect(manager).toContain('aria-label="Trang sau"');
   });
