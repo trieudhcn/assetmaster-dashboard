@@ -2353,3 +2353,8 @@
 - [x] Loại bỏ xung đột định vị khiến khung BG lệch lên trên và sang trái.
 - [x] Xác minh căn giữa thực tế trên desktop và mobile.
 - [x] Bổ sung hồi quy, kiểm tra giao diện và build phát hành.
+
+## Current Session — Viewport-Centered BG Overlay
+- [x] Thay Dialog dùng chung bằng overlay BG căn giữa theo toàn bộ viewport.
+- [x] Giữ vùng cuộn, đóng, In và Xuất PDF hoạt động trong overlay mới.
+- [x] Bổ sung hồi quy, kiểm tra vị trí thực tế và build phát hành.

@@ -627,6 +627,17 @@ describe("modal presentation contract", () => {
     expect(css).toContain('width: calc(100vw - 1rem) !important');
   });
 
+  it("renders the active BG preview through a viewport-centered portal instead of the shared Dialog layout", () => {
+    const supplies = readProjectFile("client/src/components/SupplyIssueSlipManager.tsx");
+
+    expect(supplies).toContain('import { createPortal } from "react-dom"');
+    expect(supplies).toContain('function InlineHandoverPreviewDialog');
+    expect(supplies).toContain('bg-handover-preview-overlay fixed inset-0 z-[320] flex min-h-dvh items-center justify-center');
+    expect(supplies).toContain('bg-handover-preview-panel flex max-h-[calc(100dvh-2rem)]');
+    expect(supplies).toContain('document.body');
+    expect(supplies).toContain('if (event.key === "Escape") onClose()');
+  });
+
   it("keeps the employee accessory history compact and suppresses unnecessary decimal zeroes", () => {
     const employees = readProjectFile("client/src/pages/EmployeeManagementView.tsx");
 
