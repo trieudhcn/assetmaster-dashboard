@@ -14,6 +14,7 @@ import { InteractiveValueAllocation, type AllocationGroup } from "@/components/I
 import { InteractiveAllocationAssetDetails } from "@/components/InteractiveAllocationAssetDetails";
 import { QuickServiceTicketPreview } from "@/components/QuickServiceTicketPreview";
 import { previewServiceTicketPdf } from "@/lib/serviceTicketPdf";
+import { RecordedSalvageMetric } from "@/components/RecordedSalvageMetric";
 
 const card = "rounded-xl border border-[#DFE9F0] bg-white shadow-[0_8px_24px_rgba(16,42,67,0.045)]";
 const divisionColors = ["#0F8C8C", "#2666A8", "#E59B24", "#7666B3", "#CF5C4B", "#3F9C6D", "#5B7FA3"];
@@ -123,18 +124,12 @@ export function ReportsManagementView() {
     return values;
   }, [retirementCertificatesQuery.data]);
   const retirementServiceCostByAssetId = useMemo(() => serviceCostsByAsset(maintenanceQuery.data || []), [maintenanceQuery.data]);
-  const retirementValueByYear = useMemo(() => {
-    const buckets = new Map<string, { year: string; count: number; value: number }>();
-    retiredAssets.forEach((asset) => {
-      const date = asset.retiredAt ? new Date(asset.retiredAt) : null;
-      const year = date && Number.isFinite(date.getTime()) ? String(date.getFullYear()) : "Chưa ghi nhận ngày";
-      const current = buckets.get(year) || { year, count: 0, value: 0 };
-      current.count += 1;
-      current.value += salvageValueByAssetId.get(asset.id) || 0;
-      buckets.set(year, current);
-    });
-    return [...buckets.values()].sort((left, right) => right.year.localeCompare(left.year));
-  }, [retiredAssets, salvageValueByAssetId]);
+  const recordedSalvageSummary = useMemo(() => ({
+    yearLabel: retirementYear === "all" ? "Tất cả năm" : `Năm ${retirementYear}`,
+    assetCount: retiredAssets.length,
+    certificateCount: retiredCertificateGroups.length,
+    salvageValue: retiredAssets.reduce((total, asset) => total + (salvageValueByAssetId.get(asset.id) || 0), 0),
+  }), [retiredAssets, retiredCertificateGroups.length, retirementYear, salvageValueByAssetId]);
   const selectedRetirementAssets = retiredAssets.filter((asset) => selectedRetirementIds.has(asset.id));
   const allRetiredAssetsSelected = retiredAssets.length > 0 && selectedRetirementAssets.length === retiredAssets.length;
   const selectedHandoverCount = (handoversQuery.data || []).filter((item) => selectedAssetIds.has(item.assetId)).length;
@@ -485,7 +480,7 @@ export function ReportsManagementView() {
           <div><div className="flex items-center gap-2 text-sm font-extrabold text-[#8F5A00]"><FileBarChart size={16} />Giá trị tài sản Khấu hao/Thanh lý theo năm</div><p className="mt-1 text-xs text-[#71869A]">Giá trị thanh lý đã ghi nhận thay đổi theo năm và phạm vi lọc hiện tại.</p></div>
           <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-end"><button onClick={exportRetirementExcel} disabled={!isAdmin || !retiredAssets.length || exporting !== null} className="inline-flex min-h-10 shrink-0 items-center justify-center gap-2 rounded-lg border border-[#E7D9B9] bg-[#FFF7E3] px-4 text-xs font-bold text-[#8F5A00] hover:bg-white disabled:cursor-not-allowed disabled:opacity-60"><Download size={15} className={exporting === "retired" ? "animate-pulse" : ""} />{exporting === "retired" ? "Đang xuất..." : `Xuất Excel (${retiredAssets.length})`}</button><div className="w-full sm:w-52"><label className="mb-1 block text-[10px] font-extrabold uppercase tracking-[0.1em] text-[#8A7140]">Năm thanh lý</label><SearchableSelect value={retirementYear} onChange={setRetirementYear} options={[{ value: "all", label: "Tất cả năm" }, ...retirementYearOptions.map((year) => ({ value: String(year), label: `Năm ${year}` }))]} placeholder="Tất cả năm" searchPlaceholder="Tìm năm thanh lý..." /></div></div>
         </div>
-        {assetsQuery.isLoading || retirementCertificatesQuery.isLoading ? <div className="mt-4 grid min-h-24 place-items-center text-xs text-[#71869A]">Đang tổng hợp giá trị thanh lý...</div> : retirementValueByYear.length ? <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-3" data-retirement-recorded-values>{retirementValueByYear.map((item) => <div key={item.year} className="rounded-lg border border-[#F0DFC0] bg-[#FFFDF7] px-4 py-3"><div className="flex items-center justify-between gap-3"><span className="text-xs font-extrabold text-[#8F5A00]">Năm {item.year}</span><span className="rounded-full bg-white px-2 py-1 text-[10px] font-bold text-[#A86B00]">{item.count} tài sản</span></div><div className="mt-3 text-lg font-extrabold text-[#193B57]">{currency(item.value, currencyMode)}</div><div className="mt-1 text-[10px] text-[#8AA0B6]">Giá trị thanh lý đã ghi nhận</div></div>)}</div> : <div className="mt-4 rounded-lg border border-dashed border-[#E7D9B9] bg-[#FFFDF7] px-4 py-6 text-center" data-retirement-no-data><div className="text-sm font-extrabold text-[#8F5A00]">Không có dữ liệu</div><p className="mt-1 text-xs text-[#8A7140]">Chưa có tài sản Khấu hao/Thanh lý trong năm hoặc phạm vi đang chọn.</p></div>}
+        {assetsQuery.isLoading || retirementCertificatesQuery.isLoading ? <div className="mt-4 grid min-h-24 place-items-center text-xs text-[#71869A]">Đang tổng hợp giá trị thanh lý...</div> : <div className="mt-4 max-w-sm" data-retirement-recorded-values><RecordedSalvageMetric summary={recordedSalvageSummary} empty={!retiredAssets.length} /></div>}
       </section>
     </>}
     {isAdmin && <ActivityLog data={filteredActivities} loading={activitiesQuery.isLoading} query={activityQuery} type={activityType} onQueryChange={setActivityQuery} onTypeChange={setActivityType} allActivities={activitiesQuery.data || []} />}

@@ -1125,6 +1125,7 @@ describe("modal presentation contract", () => {
   it("summarizes disposed asset values by retirement year", () => {
     const retirement = readProjectFile("client/src/pages/RetirementManagementView.tsx");
     const reports = readProjectFile("client/src/pages/ReportsManagementView.tsx");
+    const recordedMetric = readProjectFile("client/src/components/RecordedSalvageMetric.tsx");
     const overviewStart = retirement.indexOf("Tổng quan thanh lý");
     const reportStart = retirement.indexOf("Báo cáo & xuất dữ liệu thanh lý");
     const overview = retirement.slice(overviewStart, reportStart);
@@ -1136,26 +1137,28 @@ describe("modal presentation contract", () => {
     expect(retirement).not.toContain("yearlySummary");
     expect(retirement).toContain("Tổng quan thanh lý");
     expect(retirement).toContain("Khấu hao/Thanh lý");
-    expect(retirement).toContain("data-retirement-recorded-salvage");
+    expect(retirement).toContain('import { RecordedSalvageMetric } from "@/components/RecordedSalvageMetric"');
     expect(retirement).toContain("RecordedSalvageMetric summary={recordedSalvageSummary}");
     expect(retirement).toContain("xl:grid-cols-4");
-    expect(retirement).toContain("Chưa có tài sản trong phạm vi năm đang chọn.");
+    expect(recordedMetric).toContain("data-retirement-recorded-salvage");
+    expect(recordedMetric).toContain("Chưa có tài sản trong phạm vi năm đang chọn.");
+    expect(recordedMetric).toContain("Không có dữ liệu");
     expect(retirement).not.toContain("const totalSalvageValue");
     expect(retirement).not.toContain('OverviewMetric label="Tổng giá trị thanh lý"');
     expect(retirement).not.toContain('OverviewMetric label="Đã chọn xuất PDF"');
     expect(overview).toContain("onClick={exportExcel}");
     expect(overview).toContain("Năm thanh lý");
     expect(reports).toContain("salvageValueByAssetId");
-    expect(reports).toContain("retirementValueByYear");
+    expect(reports).toContain("recordedSalvageSummary");
+    expect(reports).not.toContain("retirementValueByYear");
     expect(reports).toContain("data-retirement-recorded-values");
-    expect(reports).toContain("data-retirement-no-data");
-    expect(reports).toContain("Không có dữ liệu");
+    expect(reports).toContain("RecordedSalvageMetric summary={recordedSalvageSummary}");
     expect(reports).toContain('SearchableSelect value={retirementYear} onChange={setRetirementYear}');
     expect(reports).not.toContain("const retiredTotalValue");
     expect(reports).not.toContain("Xuất Excel thanh lý chi tiết");
     expect(reportRetirement).toContain("onClick={exportRetirementExcel}");
     expect(reportRetirement.indexOf("onClick={exportRetirementExcel}")).toBeLessThan(reportRetirement.indexOf('SearchableSelect value={retirementYear} onChange={setRetirementYear}'));
-    expect(reports).toContain("Giá trị thanh lý đã ghi nhận");
+    expect(recordedMetric).toContain("Giá trị thanh lý đã ghi nhận");
   });
 
   it("provides year-filtered detailed retirement Excel exports from both retirement areas", () => {

@@ -8,6 +8,7 @@ import { openRetirementPdf } from "@/lib/retirementPdf";
 import { buildRetirementDetailWorkbook, serviceCostsByAsset } from "@/lib/retirementExcel";
 import { SearchableSelect } from "@/components/SearchableSelect";
 import { RetirementCertificateManager } from "@/components/RetirementCertificateManager";
+import { RecordedSalvageMetric } from "@/components/RecordedSalvageMetric";
 
 type ExportAction = "excel" | "pdf" | null;
 
@@ -151,8 +152,4 @@ function StatusMetric({ label, value, tone }: { label: string; value: number; to
 function OverviewMetric({ label, value, icon: Icon, tone }: { label: string; value: string | number; icon: typeof Landmark; tone: "amber" | "blue" | "navy" | "teal" }) {
   const tones = { amber: "bg-[#FFF7E3] text-[#A86B00]", blue: "bg-[#EAF3FF] text-[#2666A8]", navy: "bg-[#EAF0F7] text-[#193B57]", teal: "bg-[#E6F6F2] text-[#087A6A]" };
   return <div className="rounded-lg border border-[#E7EEF3] bg-[#FBFCFD] p-3"><div className={`grid h-8 w-8 place-items-center rounded-lg ${tones[tone]}`}><Icon size={16} /></div><div className="mt-3 text-[10px] font-extrabold uppercase tracking-[.08em] text-[#71869A]">{label}</div><div className="mt-1 text-sm font-extrabold text-[#193B57]">{value}</div></div>;
-}
-
-function RecordedSalvageMetric({ summary, empty }: { summary: { yearLabel: string; assetCount: number; certificateCount: number; salvageValue: number }; empty: boolean }) {
-  return <div className="rounded-lg border border-[#B7D8D4] bg-[#F4FBFA] p-3" data-retirement-recorded-salvage><div className="flex items-start justify-between gap-2"><div className="grid h-8 w-8 place-items-center rounded-lg bg-[#E6F6F2] text-[#087A6A]"><Landmark size={16} /></div><span className="rounded-full bg-white px-2 py-1 text-[9px] font-extrabold text-[#087A6A]">{empty ? "Không có dữ liệu" : summary.yearLabel}</span></div><div className="mt-3 text-[10px] font-extrabold uppercase tracking-[.08em] text-[#4C7E76]">Giá trị thanh lý đã ghi nhận</div><div className="mt-1 text-sm font-extrabold text-[#087A6A]">{empty ? "—" : `${formatVnd(summary.salvageValue)} VNĐ`}</div><div className="mt-1 text-[10px] text-[#4C7E76]">{empty ? "Chưa có tài sản trong phạm vi năm đang chọn." : `${summary.certificateCount} biên bản · ${summary.assetCount} tài sản`}</div></div>;
 }

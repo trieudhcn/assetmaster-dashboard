@@ -2542,3 +2542,8 @@
 ## Current Session — Đổi vị trí menu thanh lý
 - [x] Đưa Khấu hao & Thanh lý lên trước Kiểm kê trong menu trái.
 - [x] Bổ sung hồi quy, kiểm tra desktop/mobile và build phát hành.
+
+## Current Session — Đồng bộ khối giá trị thanh lý
+- [x] Dùng khối Giá trị thanh lý đã ghi nhận của menu Khấu hao & Thanh lý trong tab Báo Cáo.
+- [x] Đồng bộ giá trị, số biên bản, số tài sản và trạng thái rỗng theo bộ lọc hiện có.
+- [x] Bổ sung hồi quy, kiểm tra desktop/mobile và build phát hành.
