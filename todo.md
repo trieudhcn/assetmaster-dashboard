@@ -2453,3 +2453,8 @@
 - [x] Cảnh báo rõ ràng khi tổng giá trị thu hồi vượt tổng nguyên giá của biên bản.
 - [x] Gộp các dòng cùng mã TL trong danh sách xuất và tra cứu, vẫn hiển thị đầy đủ số tài sản.
 - [x] Bổ sung hồi quy, kiểm tra desktop/mobile và build phát hành.
+
+## Current Session — Tinh gọn danh sách biên bản thanh lý
+- [x] Chuyển các thẻ biên bản sang chế độ thu gọn, ưu tiên mã TL, trạng thái, số tài sản và số liệu tổng.
+- [x] Cho phép mở rộng từng biên bản để xem mã tài sản, giá trị và các thao tác hiện có.
+- [x] Bổ sung hồi quy, kiểm tra desktop/mobile và build phát hành.

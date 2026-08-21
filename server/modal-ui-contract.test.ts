@@ -801,6 +801,17 @@ describe("modal presentation contract", () => {
     expect(css).toContain(".retirement-certificate-search { padding-left: 2.7rem !important; }");
   });
 
+  it("keeps retirement certificate lists compact while exposing full details only when expanded", () => {
+    const manager = readProjectFile("client/src/components/RetirementCertificateManager.tsx");
+
+    expect(manager).toContain("const [showDetails, setShowDetails] = useState(false)");
+    expect(manager).toContain('aria-expanded={showDetails}');
+    expect(manager).toContain('retirement-certificate-details-${certificate.id}');
+    expect(manager).toContain('showDetails ? "Thu gọn" : "Chi tiết"');
+    expect(manager).toContain("{showDetails && <div id={detailId}");
+    expect(manager).toContain("certificate.items.map((item) => <span");
+  });
+
   it("prints one landscape grouped-retirement table and supports certificate search plus pagination", () => {
     const retirementPdf = readProjectFile("client/src/lib/retirementPdf.ts");
     const manager = readProjectFile("client/src/components/RetirementCertificateManager.tsx");
