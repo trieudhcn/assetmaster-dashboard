@@ -737,6 +737,23 @@ describe("modal presentation contract", () => {
     expect(searchClear).toContain('button.style.display = input.value.length === 0 ? "none" : "grid"');
   });
 
+  it("supports grouped retirement drafts with item-level reasons, signed copies, and a close-only-after-upload flow", () => {
+    const schema = readProjectFile("drizzle/schema.ts");
+    const router = readProjectFile("server/routers.ts");
+    const manager = readProjectFile("client/src/components/RetirementCertificateManager.tsx");
+
+    expect(schema).toContain("retirementCertificates");
+    expect(schema).toContain("retirementCertificateAssets");
+    expect(schema).toContain('"draft", "awaiting_signed_copy", "closed"');
+    expect(router).toContain("retirementCertificates: router");
+    expect(router).toContain("createDraft");
+    expect(router).toContain("uploadSignedCopy");
+    expect(router).toContain("Hãy tải biên bản đã ký tay trước khi xác nhận đóng.");
+    expect(manager).toContain("Thanh lý theo thời gian quy định");
+    expect(manager).toContain("Tải bản ký tay");
+    expect(manager).toContain("Xác nhận đóng");
+  });
+
   it("brands issue-slip PDFs and protects automatically sourced recipient departments", () => {
     const supplies = readProjectFile("client/src/pages/SuppliesInventoryView.tsx");
     const pdf = readProjectFile("client/src/lib/supplyIssueSlipPdf.ts");

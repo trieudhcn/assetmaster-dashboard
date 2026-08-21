@@ -31,6 +31,8 @@ import {
   createSupplyIssueSlip,
   createSupplyIssueSlipItem,
   createMaintenanceTicket,
+  createRetirementCertificate,
+  createRetirementCertificateAssets,
   createVendor,
   createVendorDocument,
   countAssetsByCategoryId,
@@ -69,11 +71,14 @@ import {
   getMaintenanceTicket,
   getNextAssetCodeForPrefix,
   getNextRetirementCertificateSequence,
+  getRetirementCertificateById,
   getUserNotificationPreferences,
   saveUiLabel,
   listMaintenanceTickets,
   listMaintenanceMonthlyBudgets,
   listMaintenanceTicketsByAsset,
+  listRetirementCertificateAssetAssignments,
+  listRetirementCertificates,
   getNextRepairTicketSequence,
   getNextWarrantyRequestSequence,
   listActivityLogsByEntity,
@@ -120,6 +125,7 @@ import {
   recordActivity,
   runAssetImportTransaction,
   runInventoryTransaction,
+  runRetirementCertificateTransaction,
   saveCompany,
   saveMaintenanceMonthlyBudget,
   saveHelpGuide,
@@ -138,6 +144,7 @@ import {
   updateSupplyIssueSlip,
   updateSupplyIssueSlipItem,
   updateMaintenanceTicket,
+  updateRetirementCertificate,
   updateUserRole,
   updateUserActiveStatus,
   updateUserDepartment,
@@ -967,6 +974,69 @@ export const appRouter = router({
       await recordActivity({ entityType: "asset", entityId: input.id, action: "archived", actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: "Lưu trữ tài sản" });
       return { success: true };
     }),
+  }),
+  retirementCertificates: router({
+    list: adminProcedure.query(() => listRetirementCertificates()),
+    get: adminProcedure.input(z.object({ id: z.number().int().positive() })).query(async ({ input }) => {
+      const certificate = await getRetirementCertificateById(input.id);
+      if (!certificate) throw new TRPCError({ code: "NOT_FOUND", message: "Không tìm thấy biên bản thanh lý." });
+      return certificate;
+    }),
+    createDraft: adminProcedure.input(z.object({
+      retiredAt: z.number().int().positive().transform((value) => new Date(value)),
+      note: nullableText,
+      items: z.array(z.object({ assetId: z.number().int().positive(), retirementReason: z.string().trim().min(3).max(1000).default("Thanh lý theo thời gian quy định"), salvageValue: z.string().regex(/^\d+(\.\d{1,2})?$/).optional().nullable(), note: nullableText })).min(1).max(50),
+    })).mutation(async ({ input, ctx }) => {
+      const uniqueIds = [...new Set(input.items.map((item) => item.assetId))];
+      if (uniqueIds.length !== input.items.length) throw new TRPCError({ code: "BAD_REQUEST", message: "Một tài sản chỉ được chọn một lần trong cùng biên bản." });
+      return runRetirementCertificateTransaction(async (transaction) => {
+        const selectedAssets = await Promise.all(uniqueIds.map((assetId) => getAssetById(assetId, transaction)));
+        if (selectedAssets.some((asset) => !asset || asset.isArchived || (asset.status !== "available" && asset.status !== "maintenance"))) throw new TRPCError({ code: "BAD_REQUEST", message: "Chỉ có thể đưa tài sản đang Sẵn có hoặc Bảo hành/Sửa chữa vào biên bản thanh lý nháp." });
+        const assignments = await listRetirementCertificateAssetAssignments(uniqueIds, transaction);
+        if (assignments.length) throw new TRPCError({ code: "CONFLICT", message: "Có tài sản đã thuộc một biên bản thanh lý khác." });
+        const year = input.retiredAt.getFullYear();
+        const sequence = await getNextRetirementCertificateSequence(year, transaction);
+        const referenceCode = `TL-${year}-${String(sequence).padStart(3, "0")}`;
+        const id = await createRetirementCertificate({ referenceCode, retirementYear: year, sequence, status: "draft", retiredAt: input.retiredAt, note: input.note?.trim() || null, createdByUserId: ctx.user!.id, createdByName: ctx.user!.name || null }, transaction);
+        await createRetirementCertificateAssets(input.items.map((item) => ({ retirementCertificateId: id, assetId: item.assetId, retirementReason: item.retirementReason.trim() || "Thanh lý theo thời gian quy định", salvageValue: item.salvageValue || null, note: item.note?.trim() || null })), transaction);
+        await recordActivity({ entityType: "retirementCertificate", entityId: id, action: "draft_created", actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: `Tạo nháp biên bản thanh lý ${referenceCode} gồm ${input.items.length} tài sản.` }, transaction);
+        return { id, referenceCode };
+      });
+    }),
+    uploadSignedCopy: adminProcedure.input(z.object({
+      id: z.number().int().positive(),
+      fileName: z.string().trim().min(1).max(255),
+      contentType: z.enum(["application/pdf", "image/png", "image/jpeg", "image/webp"]),
+      dataUrl: z.string().max(7_000_000).regex(/^data:(application\/pdf|image\/(png|jpeg|webp));base64,/),
+    })).mutation(async ({ input, ctx }) => {
+      const certificate = await getRetirementCertificateById(input.id);
+      if (!certificate) throw new TRPCError({ code: "NOT_FOUND", message: "Không tìm thấy biên bản thanh lý." });
+      if (certificate.status === "closed") throw new TRPCError({ code: "BAD_REQUEST", message: "Biên bản đã đóng, không thể thay đổi tệp ký tay." });
+      const bytes = Buffer.from(input.dataUrl.split(",", 2)[1], "base64");
+      if (!bytes.length || bytes.length > 5 * 1024 * 1024) throw new TRPCError({ code: "BAD_REQUEST", message: "Tệp biên bản đã ký phải có dung lượng từ 1 byte đến tối đa 5 MB." });
+      const extension = input.contentType === "application/pdf" ? "pdf" : input.contentType.split("/")[1].replace("jpeg", "jpg");
+      const safeBaseName = input.fileName.replace(/[^a-zA-Z0-9._-]/g, "-").replace(/-+/g, "-").slice(0, 120) || "bien-ban-thanh-ly-da-ky";
+      const uploaded = await storagePut(`retirement-certificates/${certificate.id}/signed/${Date.now()}-${safeBaseName}.${extension}`, bytes, input.contentType);
+      await updateRetirementCertificate(certificate.id, { status: "awaiting_signed_copy", signedDocumentKey: uploaded.key, signedDocumentUrl: uploaded.url, signedDocumentName: input.fileName, signedDocumentContentType: input.contentType, signedDocumentUploadedAt: new Date(), signedDocumentUploadedByUserId: ctx.user!.id });
+      await recordActivity({ entityType: "retirementCertificate", entityId: certificate.id, action: "signed_copy_uploaded", actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: `Đã tải biên bản ký tay cho ${certificate.referenceCode}: ${input.fileName}` });
+      return { url: uploaded.url, name: input.fileName, contentType: input.contentType };
+    }),
+    close: adminProcedure.input(z.object({ id: z.number().int().positive() })).mutation(async ({ input, ctx }) => runRetirementCertificateTransaction(async (transaction) => {
+      const certificate = await getRetirementCertificateById(input.id, transaction);
+      if (!certificate) throw new TRPCError({ code: "NOT_FOUND", message: "Không tìm thấy biên bản thanh lý." });
+      if (certificate.status === "closed") throw new TRPCError({ code: "BAD_REQUEST", message: "Biên bản này đã được đóng." });
+      if (!certificate.signedDocumentUrl || !certificate.signedDocumentName || certificate.status !== "awaiting_signed_copy") throw new TRPCError({ code: "BAD_REQUEST", message: "Hãy tải biên bản đã ký tay trước khi xác nhận đóng." });
+      if (!certificate.items.length) throw new TRPCError({ code: "BAD_REQUEST", message: "Biên bản thanh lý phải có ít nhất một tài sản." });
+      for (const item of certificate.items) {
+        const asset = await getAssetById(item.assetId, transaction);
+        if (!asset || asset.isArchived || (asset.status !== "available" && asset.status !== "maintenance")) throw new TRPCError({ code: "CONFLICT", message: `Tài sản ${item.assetCode} không còn đủ điều kiện để đóng biên bản.` });
+        await updateAsset(asset.id, { status: "retired", holderName: "Khấu hao - Thanh lý", retiredAt: certificate.retiredAt, retirementReason: item.retirementReason, retirementCertificateId: certificate.id, retirementCertificateNumber: certificate.referenceCode, retirementCertificateYear: certificate.retirementYear, retirementCertificateSequence: certificate.sequence, retirementAttachmentUrl: certificate.signedDocumentUrl, retirementAttachmentName: certificate.signedDocumentName, retirementAttachmentContentType: certificate.signedDocumentContentType }, transaction);
+        await recordActivity({ entityType: "asset", entityId: asset.id, action: "retired_in_certificate", actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: `Thanh lý theo biên bản ${certificate.referenceCode}: ${item.retirementReason}` }, transaction);
+      }
+      await updateRetirementCertificate(certificate.id, { status: "closed", closedAt: new Date(), closedByUserId: ctx.user!.id }, transaction);
+      await recordActivity({ entityType: "retirementCertificate", entityId: certificate.id, action: "closed", actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: `Đã đóng biên bản thanh lý ${certificate.referenceCode}.` }, transaction);
+      return { success: true, referenceCode: certificate.referenceCode, assetCount: certificate.items.length };
+    })),
   }),
   handovers: router({
     returnDecisionHistory: adminProcedure.input(z.object({ id: z.number().int().positive() })).query(async ({ input }) => {

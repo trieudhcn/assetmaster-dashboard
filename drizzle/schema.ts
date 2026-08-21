@@ -140,6 +140,32 @@ export const brands = mysqlTable("brands", {
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
 
+export const retirementCertificates = mysqlTable("retirementCertificates", {
+  id: int("id").autoincrement().primaryKey(),
+  referenceCode: varchar("referenceCode", { length: 64 }).notNull().unique(),
+  retirementYear: int("retirementYear").notNull(),
+  sequence: int("sequence").notNull(),
+  status: mysqlEnum("status", ["draft", "awaiting_signed_copy", "closed"]).default("draft").notNull(),
+  retiredAt: timestamp("retiredAt").notNull(),
+  signedDocumentKey: text("signedDocumentKey"),
+  signedDocumentUrl: text("signedDocumentUrl"),
+  signedDocumentName: varchar("signedDocumentName", { length: 255 }),
+  signedDocumentContentType: varchar("signedDocumentContentType", { length: 128 }),
+  signedDocumentUploadedAt: timestamp("signedDocumentUploadedAt"),
+  signedDocumentUploadedByUserId: int("signedDocumentUploadedByUserId"),
+  closedAt: timestamp("closedAt"),
+  closedByUserId: int("closedByUserId"),
+  createdByUserId: int("createdByUserId"),
+  createdByName: varchar("createdByName", { length: 160 }),
+  note: text("note"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+}, (table) => [
+  uniqueIndex("retirement_certificates_year_sequence_unique").on(table.retirementYear, table.sequence),
+  index("retirement_certificates_status_idx").on(table.status),
+  index("retirement_certificates_retired_at_idx").on(table.retiredAt),
+]);
+
 export const assets = mysqlTable("assets", {
   id: int("id").autoincrement().primaryKey(),
   assetCode: varchar("assetCode", { length: 64 }).notNull().unique(),
@@ -165,6 +191,7 @@ export const assets = mysqlTable("assets", {
   retirementCertificateNumber: varchar("retirementCertificateNumber", { length: 64 }),
   retirementCertificateYear: int("retirementCertificateYear"),
   retirementCertificateSequence: int("retirementCertificateSequence"),
+  retirementCertificateId: int("retirementCertificateId").references(() => retirementCertificates.id, { onDelete: "set null", onUpdate: "cascade" }),
   retirementAttachmentUrl: text("retirementAttachmentUrl"),
   retirementAttachmentName: varchar("retirementAttachmentName", { length: 255 }),
   retirementAttachmentContentType: varchar("retirementAttachmentContentType", { length: 100 }),
@@ -185,7 +212,22 @@ export const assets = mysqlTable("assets", {
   index("assets_department_idx").on(table.departmentId),
   index("assets_vendor_idx").on(table.vendorId),
   index("assets_brand_idx").on(table.brandId),
-  uniqueIndex("assets_retirement_certificate_number_unique").on(table.retirementCertificateNumber),
+  index("assets_retirement_certificate_idx").on(table.retirementCertificateId),
+]);
+
+export const retirementCertificateAssets = mysqlTable("retirementCertificateAssets", {
+  id: int("id").autoincrement().primaryKey(),
+  retirementCertificateId: int("retirementCertificateId").notNull().references(() => retirementCertificates.id, { onDelete: "cascade", onUpdate: "cascade" }),
+  assetId: int("assetId").notNull().references(() => assets.id, { onDelete: "restrict", onUpdate: "cascade" }),
+  retirementReason: text("retirementReason").notNull(),
+  salvageValue: decimal("salvageValue", { precision: 15, scale: 2 }),
+  note: text("note"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+}, (table) => [
+  uniqueIndex("retirement_certificate_assets_certificate_asset_unique").on(table.retirementCertificateId, table.assetId),
+  uniqueIndex("retirement_certificate_assets_asset_unique").on(table.assetId),
+  index("retirement_certificate_assets_certificate_idx").on(table.retirementCertificateId),
 ]);
 
 export const inventorySupplies = mysqlTable("inventorySupplies", {

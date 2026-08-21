@@ -21,6 +21,8 @@ import {
   inventorySupplies,
   maintenanceMonthlyBudgets,
   maintenanceTickets,
+  retirementCertificateAssets,
+  retirementCertificates,
   supplyImportItems,
   supplyImportSessions,
   supplyIssueSlipItems,
@@ -408,9 +410,76 @@ export async function getNextAssetCodeForPrefix(prefix: string, executor?: any) 
 export async function getNextRetirementCertificateSequence(retirementYear: number, executor?: any) {
   const db = executor ?? await getDb();
   if (!db) throw new Error("Database unavailable");
-  const rows: Array<{ sequence: number | null }> = await db.select({ sequence: assets.retirementCertificateSequence }).from(assets).where(eq(assets.retirementCertificateYear, retirementYear));
-  const maxSequence = rows.reduce((maximum, row) => Math.max(maximum, Number(row.sequence || 0)), 0);
+  const legacyRows: Array<{ sequence: number | null }> = await db.select({ sequence: assets.retirementCertificateSequence }).from(assets).where(eq(assets.retirementCertificateYear, retirementYear));
+  const certificateRows: Array<{ sequence: number | null }> = await db.select({ sequence: retirementCertificates.sequence }).from(retirementCertificates).where(eq(retirementCertificates.retirementYear, retirementYear));
+  const maxSequence = [...legacyRows, ...certificateRows].reduce((maximum, row) => Math.max(maximum, Number(row.sequence || 0)), 0);
   return maxSequence + 1;
+}
+
+export async function listRetirementCertificates() {
+  const db = await getDb();
+  if (!db) return [];
+  const certificates = await db.select().from(retirementCertificates).orderBy(desc(retirementCertificates.updatedAt));
+  const items = await db.select({
+    id: retirementCertificateAssets.id,
+    retirementCertificateId: retirementCertificateAssets.retirementCertificateId,
+    assetId: retirementCertificateAssets.assetId,
+    retirementReason: retirementCertificateAssets.retirementReason,
+    salvageValue: retirementCertificateAssets.salvageValue,
+    note: retirementCertificateAssets.note,
+    assetCode: assets.assetCode,
+    assetName: assets.name,
+    serialNumber: assets.serialNumber,
+    purchaseValue: assets.purchaseValue,
+    assetStatus: assets.status,
+  }).from(retirementCertificateAssets).innerJoin(assets, eq(retirementCertificateAssets.assetId, assets.id));
+  return certificates.map((certificate) => ({ ...certificate, items: items.filter((item) => item.retirementCertificateId === certificate.id) }));
+}
+
+export async function getRetirementCertificateById(id: number, executor?: any) {
+  const db = executor ?? await getDb();
+  if (!db) return null;
+  const certificate = (await db.select().from(retirementCertificates).where(eq(retirementCertificates.id, id)).limit(1))[0];
+  if (!certificate) return null;
+  const items = await db.select({
+    id: retirementCertificateAssets.id,
+    retirementCertificateId: retirementCertificateAssets.retirementCertificateId,
+    assetId: retirementCertificateAssets.assetId,
+    retirementReason: retirementCertificateAssets.retirementReason,
+    salvageValue: retirementCertificateAssets.salvageValue,
+    note: retirementCertificateAssets.note,
+    assetCode: assets.assetCode,
+    assetName: assets.name,
+    serialNumber: assets.serialNumber,
+    purchaseValue: assets.purchaseValue,
+    assetStatus: assets.status,
+  }).from(retirementCertificateAssets).innerJoin(assets, eq(retirementCertificateAssets.assetId, assets.id)).where(eq(retirementCertificateAssets.retirementCertificateId, id));
+  return { ...certificate, items };
+}
+
+export async function createRetirementCertificate(data: typeof retirementCertificates.$inferInsert, executor?: any) {
+  const db = executor ?? await getDb();
+  if (!db) throw new Error("Database unavailable");
+  const result = await db.insert(retirementCertificates).values(data);
+  return Number(result[0].insertId);
+}
+
+export async function createRetirementCertificateAssets(data: Array<typeof retirementCertificateAssets.$inferInsert>, executor?: any) {
+  const db = executor ?? await getDb();
+  if (!db) throw new Error("Database unavailable");
+  if (data.length) await db.insert(retirementCertificateAssets).values(data);
+}
+
+export async function listRetirementCertificateAssetAssignments(assetIds: number[], executor?: any) {
+  const db = executor ?? await getDb();
+  if (!db || !assetIds.length) return [];
+  return db.select({ assetId: retirementCertificateAssets.assetId, retirementCertificateId: retirementCertificateAssets.retirementCertificateId }).from(retirementCertificateAssets).where(inArray(retirementCertificateAssets.assetId, assetIds));
+}
+
+export async function updateRetirementCertificate(id: number, data: Partial<typeof retirementCertificates.$inferInsert>, executor?: any) {
+  const db = executor ?? await getDb();
+  if (!db) throw new Error("Database unavailable");
+  await db.update(retirementCertificates).set(data).where(eq(retirementCertificates.id, id));
 }
 
 export async function listAssets() {
@@ -1148,6 +1217,12 @@ export async function runAssetImportTransaction<T>(callback: (transaction: any) 
 }
 
 export async function runInventoryTransaction<T>(callback: (transaction: any) => Promise<T>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database unavailable");
+  return db.transaction(async (transaction) => callback(transaction));
+}
+
+export async function runRetirementCertificateTransaction<T>(callback: (transaction: any) => Promise<T>) {
   const db = await getDb();
   if (!db) throw new Error("Database unavailable");
   return db.transaction(async (transaction) => callback(transaction));

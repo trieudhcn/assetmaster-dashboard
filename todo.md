@@ -2398,3 +2398,13 @@
 - [x] Sửa nút X của ô tìm kiếm Nhật ký hoạt động để chỉ hiện khi có từ khóa trên mobile.
 - [x] Thêm phím tắt / để tập trung ô tìm kiếm trên desktop mà không can thiệp các trường đang nhập.
 - [x] Bổ sung hồi quy, kiểm tra mobile/desktop và build phát hành.
+
+## Proposed Feature — Biên bản thanh lý gộp
+- [x] Thiết kế mô hình một biên bản thanh lý có nhiều tài sản thành phần.
+- [x] Xác định quy trình tạo, kiểm soát trạng thái, chỉnh sửa và xuất PDF/Excel.
+- [x] Trình bày lộ trình triển khai để phê duyệt trước khi phát triển.
+
+## Confirmed Scope — Biên bản thanh lý gộp có ký tay
+- [x] Thiết kế lý do thanh lý riêng cho từng tài sản, mặc định “Thanh lý theo thời gian quy định”.
+- [x] Thiết kế trạng thái Nháp → chờ tải biên bản ký tay → xác nhận → Đóng, không có bước phê duyệt.
+- [x] Thiết kế yêu cầu tải tệp biên bản đã ký trước khi cho phép đóng biên bản.
