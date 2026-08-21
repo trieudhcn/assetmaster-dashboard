@@ -2339,3 +2339,7 @@
 - [x] Căn giữa đúng hộp xem trước BG trên màn hình desktop và mobile.
 - [x] Lưu/khôi phục tên file PDF theo mã cho BH, SC, KK và TL.
 - [x] Bổ sung hồi quy, kiểm tra các luồng PDF và build phát hành.
+
+## Current Session — PDF Preview Close Button
+- [x] Chuẩn hóa giao diện nút Đóng xem trước PDF đồng bộ với In/Tải PDF.
+- [x] Bổ sung hồi quy, kiểm tra giao diện và build phát hành.

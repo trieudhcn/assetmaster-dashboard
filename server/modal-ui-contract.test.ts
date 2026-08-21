@@ -602,6 +602,16 @@ describe("modal presentation contract", () => {
     expect(pdfExport).toContain("options?.skipFilenamePrompt || rememberedFileName");
   });
 
+  it("styles the PDF preview close action with the same control language as print and download", () => {
+    const css = readProjectFile("client/src/index.css");
+
+    expect(css).toContain('[role="dialog"][aria-label^="Xem trước"] > div > div:last-child > button:first-child');
+    expect(css).toContain('min-height: 2.5rem');
+    expect(css).toContain('border: 1px solid #CDE5E5');
+    expect(css).toContain('content: "×"');
+    expect(css).toContain('background: #E6F6F2');
+  });
+
   it("keeps the employee accessory history compact and suppresses unnecessary decimal zeroes", () => {
     const employees = readProjectFile("client/src/pages/EmployeeManagementView.tsx");
 
