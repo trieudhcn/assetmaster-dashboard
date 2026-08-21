@@ -484,6 +484,12 @@ export async function updateRetirementCertificate(id: number, data: Partial<type
   await db.update(retirementCertificates).set(data).where(eq(retirementCertificates.id, id));
 }
 
+export async function updateRetirementCertificateAssetSalvageValues(certificateId: number, items: Array<{ id: number; salvageValue: string | null }>, executor?: any) {
+  const db = executor ?? await getDb();
+  if (!db) throw new Error("Database unavailable");
+  await Promise.all(items.map((item) => db.update(retirementCertificateAssets).set({ salvageValue: item.salvageValue }).where(and(eq(retirementCertificateAssets.id, item.id), eq(retirementCertificateAssets.retirementCertificateId, certificateId)))));
+}
+
 export async function deleteRetirementCertificate(id: number, executor?: any) {
   const db = executor ?? await getDb();
   if (!db) throw new Error("Database unavailable");

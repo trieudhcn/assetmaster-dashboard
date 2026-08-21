@@ -2447,3 +2447,9 @@
 - [x] Tính và hiển thị riêng phí Bảo hành, phí Sửa chữa và tổng phí theo tài sản.
 - [x] Gắn chỉ dấu rõ ràng cho mã tài sản đã có chi phí trong thẻ biên bản nháp.
 - [x] Bổ sung hồi quy, kiểm tra desktop/mobile và build phát hành.
+
+## Current Session — Hoàn tất giá trị thu hồi và gộp mã TL
+- [x] Cho phép nhập, cập nhật giá trị thu hồi sau khi đã tải bản ký tay.
+- [x] Cảnh báo rõ ràng khi tổng giá trị thu hồi vượt tổng nguyên giá của biên bản.
+- [x] Gộp các dòng cùng mã TL trong danh sách xuất và tra cứu, vẫn hiển thị đầy đủ số tài sản.
+- [x] Bổ sung hồi quy, kiểm tra desktop/mobile và build phát hành.

@@ -146,6 +146,7 @@ import {
   updateSupplyIssueSlipItem,
   updateMaintenanceTicket,
   updateRetirementCertificate,
+  updateRetirementCertificateAssetSalvageValues,
   updateUserRole,
   updateUserActiveStatus,
   updateUserDepartment,
@@ -1022,6 +1023,23 @@ export const appRouter = router({
       await recordActivity({ entityType: "retirementCertificate", entityId: certificate.id, action: "signed_copy_uploaded", actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: `Đã tải biên bản ký tay cho ${certificate.referenceCode}: ${input.fileName}` });
       return { url: uploaded.url, name: input.fileName, contentType: input.contentType };
     }),
+    updateSalvageValues: adminProcedure.input(z.object({
+      id: z.number().int().positive(),
+      items: z.array(z.object({ id: z.number().int().positive(), salvageValue: z.string().regex(/^\d+$/).nullable() })).min(1).max(50),
+    })).mutation(async ({ input, ctx }) => runRetirementCertificateTransaction(async (transaction) => {
+      const certificate = await getRetirementCertificateById(input.id, transaction);
+      if (!certificate) throw new TRPCError({ code: "NOT_FOUND", message: "Không tìm thấy biên bản thanh lý." });
+      if (certificate.status !== "awaiting_signed_copy" || !certificate.signedDocumentUrl) throw new TRPCError({ code: "BAD_REQUEST", message: "Chỉ có thể cập nhật giá trị thu hồi sau khi đã tải bản ký tay và trước khi đóng biên bản." });
+      const certificateItemIds = new Set(certificate.items.map((item: { id: number }) => item.id));
+      const submittedItemIds = new Set(input.items.map((item) => item.id));
+      if (submittedItemIds.size !== input.items.length || submittedItemIds.size !== certificateItemIds.size || [...submittedItemIds].some((itemId) => !certificateItemIds.has(itemId))) throw new TRPCError({ code: "BAD_REQUEST", message: "Dữ liệu giá trị thu hồi không khớp với các tài sản trong biên bản." });
+      await updateRetirementCertificateAssetSalvageValues(certificate.id, input.items, transaction);
+      const purchaseTotal = certificate.items.reduce((total: number, item: { purchaseValue: string | null }) => total + Number(item.purchaseValue || 0), 0);
+      const salvageTotal = input.items.reduce((total, item) => total + Number(item.salvageValue || 0), 0);
+      const exceedsPurchaseValue = salvageTotal > purchaseTotal;
+      await recordActivity({ entityType: "retirementCertificate", entityId: certificate.id, action: "salvage_values_updated", actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: `Cập nhật giá trị thu hồi cho ${certificate.referenceCode}: ${salvageTotal.toLocaleString("vi-VN")} VNĐ${exceedsPurchaseValue ? ", cao hơn tổng nguyên giá; cần rà soát." : ""}` }, transaction);
+      return { success: true, salvageTotal, purchaseTotal, exceedsPurchaseValue };
+    })),
     cancelDraft: adminProcedure.input(z.object({ id: z.number().int().positive() })).mutation(async ({ input, ctx }) => runRetirementCertificateTransaction(async (transaction) => {
       const certificate = await getRetirementCertificateById(input.id, transaction);
       if (!certificate) throw new TRPCError({ code: "NOT_FOUND", message: "Không tìm thấy biên bản thanh lý." });

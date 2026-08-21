@@ -768,6 +768,25 @@ describe("modal presentation contract", () => {
     expect(manager).toContain("Giá trị thu hồi chính thức (cập nhật sau)");
   });
 
+  it("updates salvage values only after a signed copy, warns above purchase total, and groups retirement exports by TL code", () => {
+    const database = readProjectFile("server/db.ts");
+    const router = readProjectFile("server/routers.ts");
+    const manager = readProjectFile("client/src/components/RetirementCertificateManager.tsx");
+    const reports = readProjectFile("client/src/pages/ReportsManagementView.tsx");
+
+    expect(database).toContain("updateRetirementCertificateAssetSalvageValues");
+    expect(router).toContain("updateSalvageValues");
+    expect(router).toContain("Chỉ có thể cập nhật giá trị thu hồi sau khi đã tải bản ký tay");
+    expect(router).toContain("exceedsPurchaseValue");
+    expect(manager).toContain("Cập nhật giá trị thu hồi sau ký tay");
+    expect(manager).toContain("Cảnh báo:");
+    expect(manager).toContain("Nhập giá trị thu hồi");
+    expect(reports).toContain("retiredCertificateGroups");
+    expect(reports).toContain("onToggleGroup");
+    expect(reports).toContain("Mỗi mã TL được gộp thành một dòng");
+    expect(reports).toContain('"Số tài sản": group.assets.length');
+  });
+
   it("filters grouped retirement certificates by lifecycle status and protects the search input plus bulk deselection", () => {
     const manager = readProjectFile("client/src/components/RetirementCertificateManager.tsx");
     const css = readProjectFile("client/src/index.css");
@@ -1050,15 +1069,16 @@ describe("modal presentation contract", () => {
     expect(reports).toContain("Tổng giá trị thanh lý");
   });
 
-  it("exports a detailed retirement asset list with disposal certificate information", () => {
+  it("exports grouped retirement certificates while preserving every asset in each TL code", () => {
     const reports = readProjectFile("client/src/pages/ReportsManagementView.tsx");
 
     expect(reports).toContain("exportRetirementExcel");
-    expect(reports).toContain('"Số biên bản thanh lý": asset.retirementCertificateNumber');
-    expect(reports).toContain('"Chứng từ đính kèm": asset.retirementAttachmentName');
-    expect(reports).toContain('XLSX.utils.book_append_sheet(workbook, sheet, "Tài sản thanh lý")');
+    expect(reports).toContain('"Số biên bản thanh lý": group.referenceCode');
+    expect(reports).toContain('"Số tài sản": group.assets.length');
+    expect(reports).toContain('group.assets.map((asset) => asset.assetCode).join');
+    expect(reports).toContain('XLSX.utils.book_append_sheet(workbook, sheet, "Biên bản thanh lý")');
     expect(reports).toContain("assetmaster-danh-sach-thanh-ly-");
-    expect(reports).toContain("Xuất danh sách tài sản thanh lý");
+    expect(reports).toContain("Xuất danh sách & biên bản thanh lý");
   });
 
   it("filters retired assets by year and exports selected disposal records as one PDF", () => {
