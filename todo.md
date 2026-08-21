@@ -2368,3 +2368,8 @@
 - [x] Khắc phục hiện tượng nút Chi tiết và liên kết BG/PK bị xuống dòng hoặc chồng lấn trên mobile.
 - [x] Bảo đảm vùng chạm, nhãn thao tác và mã biên bản hiển thị rõ ràng ở mọi kích thước màn hình.
 - [x] Bổ sung hồi quy, kiểm tra giao diện mobile và build phát hành.
+
+## Current Session — Mobile Certificate Touch Feedback
+- [x] Thêm phản hồi chạm trực quan cho nút Chi tiết và mã biên bản BG/PK trên mobile.
+- [x] Tôn trọng tùy chọn giảm chuyển động của thiết bị.
+- [x] Bổ sung hồi quy, kiểm tra mobile và build phát hành.

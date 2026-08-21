@@ -224,9 +224,45 @@ button[aria-label="Mở menu người dùng"] + div { animation: popover-in 180m
 .supply-row-action:active { transform: scale(0.94); }
 
 /* Explicit classes keep each mobile certificate action in a stable two-column row. */
+@keyframes holding-source-touch-ripple {
+  from { transform: scale(0.3); opacity: 0.55; }
+  to { transform: scale(1.65); opacity: 0; }
+}
 @media (max-width: 639px) {
   .holding-source-card__actions { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
-  .holding-source-card__action { text-overflow: ellipsis; }
+  .holding-source-card__action {
+    position: relative;
+    isolation: isolate;
+    text-overflow: ellipsis;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+    transition: background-color 140ms var(--ease-out), border-color 140ms var(--ease-out), color 140ms var(--ease-out), box-shadow 140ms var(--ease-out), transform 140ms var(--ease-out);
+  }
+  .holding-source-card__action > * { position: relative; z-index: 1; }
+  .holding-source-card__action::after {
+    position: absolute;
+    z-index: 0;
+    width: 8rem;
+    height: 8rem;
+    border-radius: 999px;
+    background: rgba(15, 140, 140, 0.28);
+    content: "";
+    pointer-events: none;
+    opacity: 0;
+  }
+  .holding-source-card__action:active {
+    transform: scale(0.965);
+    border-color: #6AB9B3;
+    background-color: #DDF3F0;
+    color: #05685E;
+    box-shadow: inset 0 0 0 1px rgba(15, 140, 140, 0.14);
+  }
+  .holding-source-card__action:active::after { animation: holding-source-touch-ripple 380ms var(--ease-out) both; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .holding-source-card__action { transition: none; }
+  .holding-source-card__action:active { transform: none; }
+  .holding-source-card__action:active::after { animation: none; opacity: 0.24; transform: scale(1); }
 }
 
 /* Compact primary actions and recipient tabs keep icon/text pairs on one baseline. */

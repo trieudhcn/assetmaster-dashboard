@@ -684,6 +684,16 @@ describe("modal presentation contract", () => {
     expect(supplies).toContain("whitespace-nowrap");
   });
 
+  it("gives mobile certificate actions a visible press response while respecting reduced motion", () => {
+    const css = readProjectFile("client/src/index.css");
+
+    expect(css).toContain("holding-source-touch-ripple");
+    expect(css).toContain(".holding-source-card__action:active");
+    expect(css).toContain("transform: scale(0.965)");
+    expect(css).toContain("@media (prefers-reduced-motion: reduce)");
+    expect(css).toContain("touch-action: manipulation");
+  });
+
   it("brands issue-slip PDFs and protects automatically sourced recipient departments", () => {
     const supplies = readProjectFile("client/src/pages/SuppliesInventoryView.tsx");
     const pdf = readProjectFile("client/src/lib/supplyIssueSlipPdf.ts");
