@@ -477,6 +477,21 @@ describe("modal presentation contract", () => {
     expect(db).toContain("supplyCode: supplyIssueSlipItems.supplyCode");
   });
 
+  it("shows only outstanding handover accessories with an actionable BG certificate in employee statistics", () => {
+    const supplies = readProjectFile("client/src/components/SupplyIssueSlipManager.tsx");
+    const db = readProjectFile("server/db.ts");
+    const routers = readProjectFile("server/routers.ts");
+
+    expect(routers).toContain("handoverHoldings: adminProcedure");
+    expect(db).toContain("listActiveHandoverSupplyHoldingsByRecipientUserId");
+    expect(db).toContain("handoverSupplyItems.issuedQuantity} - ${handoverSupplyItems.returnedQuantity} > 0");
+    expect(supplies).toContain("trpc.supplies.handoverHoldings.useQuery");
+    expect(supplies).toContain("Phụ kiện còn đang giữ kèm biên bản");
+    expect(supplies).toContain("Chỉ hiển thị phụ kiện còn số lượng giữ");
+    expect(supplies).toContain("openHandover(item.handoverId)");
+    expect(supplies).toContain('window.location.assign("/?view=handovers")');
+  });
+
   it("keeps the employee accessory history compact and suppresses unnecessary decimal zeroes", () => {
     const employees = readProjectFile("client/src/pages/EmployeeManagementView.tsx");
 

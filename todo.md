@@ -2291,3 +2291,9 @@
 - [x] Mở nhanh biên bản bàn giao từ dòng phụ kiện kèm BG.
 - [x] Hiển thị riêng số lượng phụ kiện đang giữ theo từng mã trong thống kê nhân sự.
 - [x] Bổ sung hồi quy, kiểm tra giao diện và build phát hành.
+
+## Current Session — Employee Holding Certificates
+- [x] Bổ sung mã biên bản BG cho từng phụ kiện còn đang giữ trong thống kê Nhân sự.
+- [x] Mở trực tiếp biên bản bàn giao khi nhấn mã BG trong chi tiết phụ kiện.
+- [x] Chỉ hiển thị chi tiết các phụ kiện có số lượng còn giữ lớn hơn 0.
+- [x] Bổ sung hồi quy, kiểm tra giao diện và build phát hành.

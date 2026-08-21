@@ -671,6 +671,23 @@ export async function listSupplyIssueAnalytics() {
   return [...totals.values()].sort((left, right) => right.outstandingQuantity - left.outstandingQuantity);
 }
 
+export async function listActiveHandoverSupplyHoldingsByRecipientUserId(recipientUserId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select({
+    handoverId: handovers.id,
+    referenceCode: handovers.referenceCode,
+    handedOverAt: handovers.handedOverAt,
+    supplyId: handoverSupplyItems.supplyId,
+    supplyCode: handoverSupplyItems.supplyCode,
+    supplyName: handoverSupplyItems.supplyName,
+    unit: handoverSupplyItems.unit,
+    issuedQuantity: handoverSupplyItems.issuedQuantity,
+    returnedQuantity: handoverSupplyItems.returnedQuantity,
+    outstandingQuantity: sql<number>`${handoverSupplyItems.issuedQuantity} - ${handoverSupplyItems.returnedQuantity}`,
+  }).from(handoverSupplyItems).innerJoin(handovers, eq(handoverSupplyItems.handoverId, handovers.id)).where(and(eq(handovers.recipientUserId, recipientUserId), inArray(handovers.status, ["active", "returned"]), sql`${handoverSupplyItems.issuedQuantity} - ${handoverSupplyItems.returnedQuantity} > 0`)).orderBy(desc(handovers.handedOverAt), desc(handoverSupplyItems.id));
+}
+
 export async function createAssetsBulk(data: Array<typeof assets.$inferInsert>) {
   const db = await getDb();
   if (!db) throw new Error("Database unavailable");

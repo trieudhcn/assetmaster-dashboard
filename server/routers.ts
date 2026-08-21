@@ -106,6 +106,7 @@ import {
   listInventoryMovements,
   listInventorySupplies,
   listInventoryMovementReport,
+  listActiveHandoverSupplyHoldingsByRecipientUserId,
   listSupplyIssueHistoryByRecipientUserId,
   listSupplyIssueSlipItems,
   listSupplyIssueSlips,
@@ -588,6 +589,7 @@ export const appRouter = router({
       return { session, items: await listSupplyImportItems(session.id) };
     }),
     issueAnalytics: adminProcedure.query(() => listSupplyIssueAnalytics()),
+    handoverHoldings: adminProcedure.input(z.object({ userId: z.number().int().positive() })).query(({ input }) => listActiveHandoverSupplyHoldingsByRecipientUserId(input.userId)),
     issueSlips: adminProcedure.query(() => listSupplyIssueSlips()),
     issueSlipItems: adminProcedure.input(z.object({ issueSlipId: z.number().int().positive() })).query(({ input }) => listSupplyIssueSlipItems(input.issueSlipId)),
     createIssueSlip: adminProcedure.input(z.object({
