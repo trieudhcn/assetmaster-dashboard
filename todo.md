@@ -2562,3 +2562,8 @@
 - [x] Rà soát mọi trường chọn của form Phụ kiện và template import hiện tại.
 - [x] Đưa danh sách dropdown tương ứng vào template import từ dữ liệu hiện có.
 - [x] Bổ sung hồi quy workbook, kiểm tra giao diện và build phát hành.
+
+## Current Session — Đơn vị tính và danh mục vô hiệu hóa trong import
+- [x] Bổ sung dropdown Đơn vị tính theo danh sách chuẩn vào template import Phụ kiện.
+- [x] Cảnh báo các dòng sử dụng Phân loại, Nhà cung cấp hoặc Hãng đã bị vô hiệu hóa.
+- [x] Bổ sung hồi quy workbook, kiểm tra luồng import và build phát hành.
