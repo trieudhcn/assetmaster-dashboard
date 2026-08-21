@@ -754,6 +754,20 @@ describe("modal presentation contract", () => {
     expect(manager).toContain("Xác nhận đóng");
   });
 
+  it("lets administrators cancel only retirement drafts, print them before signing, and show value totals without forcing salvage input", () => {
+    const router = readProjectFile("server/routers.ts");
+    const manager = readProjectFile("client/src/components/RetirementCertificateManager.tsx");
+
+    expect(router).toContain("cancelDraft");
+    expect(router).toContain("Chỉ có thể hủy biên bản đang ở trạng thái Nháp.");
+    expect(manager).toContain("In nháp");
+    expect(manager).toContain("openRetirementPdf");
+    expect(manager).toContain("Tổng nguyên giá");
+    expect(manager).toContain("Giá trị thu hồi");
+    expect(manager).toContain("Chưa cập nhật");
+    expect(manager).toContain("Giá trị thu hồi chính thức (cập nhật sau)");
+  });
+
   it("brands issue-slip PDFs and protects automatically sourced recipient departments", () => {
     const supplies = readProjectFile("client/src/pages/SuppliesInventoryView.tsx");
     const pdf = readProjectFile("client/src/lib/supplyIssueSlipPdf.ts");

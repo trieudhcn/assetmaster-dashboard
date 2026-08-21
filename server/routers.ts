@@ -36,6 +36,7 @@ import {
   createVendor,
   createVendorDocument,
   countAssetsByCategoryId,
+  deleteRetirementCertificate,
   countUsersByRole,
   deleteAssetCategory,
   deleteVendorDocument,
@@ -1021,6 +1022,14 @@ export const appRouter = router({
       await recordActivity({ entityType: "retirementCertificate", entityId: certificate.id, action: "signed_copy_uploaded", actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: `Đã tải biên bản ký tay cho ${certificate.referenceCode}: ${input.fileName}` });
       return { url: uploaded.url, name: input.fileName, contentType: input.contentType };
     }),
+    cancelDraft: adminProcedure.input(z.object({ id: z.number().int().positive() })).mutation(async ({ input, ctx }) => runRetirementCertificateTransaction(async (transaction) => {
+      const certificate = await getRetirementCertificateById(input.id, transaction);
+      if (!certificate) throw new TRPCError({ code: "NOT_FOUND", message: "Không tìm thấy biên bản thanh lý." });
+      if (certificate.status !== "draft") throw new TRPCError({ code: "BAD_REQUEST", message: "Chỉ có thể hủy biên bản đang ở trạng thái Nháp." });
+      await deleteRetirementCertificate(certificate.id, transaction);
+      await recordActivity({ entityType: "retirementCertificate", entityId: certificate.id, action: "draft_cancelled", actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: `Đã hủy nháp biên bản thanh lý ${certificate.referenceCode}; các tài sản đã được giải phóng.` }, transaction);
+      return { success: true, referenceCode: certificate.referenceCode };
+    })),
     close: adminProcedure.input(z.object({ id: z.number().int().positive() })).mutation(async ({ input, ctx }) => runRetirementCertificateTransaction(async (transaction) => {
       const certificate = await getRetirementCertificateById(input.id, transaction);
       if (!certificate) throw new TRPCError({ code: "NOT_FOUND", message: "Không tìm thấy biên bản thanh lý." });

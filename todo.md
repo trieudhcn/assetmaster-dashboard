@@ -2408,3 +2408,9 @@
 - [x] Thiết kế lý do thanh lý riêng cho từng tài sản, mặc định “Thanh lý theo thời gian quy định”.
 - [x] Thiết kế trạng thái Nháp → chờ tải biên bản ký tay → xác nhận → Đóng, không có bước phê duyệt.
 - [x] Thiết kế yêu cầu tải tệp biên bản đã ký trước khi cho phép đóng biên bản.
+
+## Current Session — Hoàn thiện biên bản thanh lý gộp
+- [x] Cho phép hủy biên bản đang ở trạng thái Nháp để giải phóng tài sản đã chọn.
+- [x] Bổ sung in biên bản nháp trước khi ký tay.
+- [x] Hiển thị tổng nguyên giá và giá trị thu hồi dự kiến; để trống giá trị thu hồi khi chưa có số chính thức.
+- [x] Bổ sung hồi quy, kiểm tra mobile/desktop và build phát hành.
