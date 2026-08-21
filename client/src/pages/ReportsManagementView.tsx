@@ -353,7 +353,7 @@ export function ReportsManagementView() {
           documentTitle: "DANH SÁCH TÀI SẢN KHẤU HAO / THANH LÝ",
           fileName: `assetmaster-danh-sach-thanh-ly-chi-tiet-${retirementYear === "all" ? "tat-ca-nam" : retirementYear}-${scope.replace(/[^a-zA-Z0-9]/g, "-")}.xlsx`,
           description: `Năm ${retirementYear === "all" ? "tất cả" : retirementYear} · ${retiredAssets.length} tài sản · Tổng giá mua ${summary.totalPurchaseValue.toLocaleString("vi-VN")} VNĐ · Tổng phí BH/SC ${(summary.totalWarrantyCost + summary.totalRepairCost).toLocaleString("vi-VN")} VNĐ · Tổng giá thanh lý ${summary.totalSalvageValue.toLocaleString("vi-VN")} VNĐ.`,
-          prepareWorkbook: (brandedWorkbook) => { const sheet = brandedWorkbook.getWorksheet("Danh sách thanh lý"); if (!sheet) return; const totalRow = sheet.getRow(totalRowNumber); totalRow.font = { bold: true, color: { argb: "FF087A6A" } }; totalRow.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFE6F6F2" } }; [6, 7, 8, 9].forEach((column) => { sheet.getColumn(column).numFmt = "#,##0"; }); },
+          prepareWorkbook: (brandedWorkbook) => { const sheet = brandedWorkbook.getWorksheet("Danh sách thanh lý"); if (!sheet) return; const totalRow = sheet.getRow(totalRowNumber); totalRow.font = { bold: true, color: { argb: "FF087A6A" } }; totalRow.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFE6F6F2" } }; [7, 8, 9, 10].forEach((column) => { sheet.getColumn(column).numFmt = "#,##0"; }); },
         });
         toast.success(`Đã xuất ${retiredAssets.length} tài sản thanh lý.`, { id: loadingToast });
       } catch (error) {

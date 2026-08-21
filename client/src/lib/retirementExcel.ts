@@ -2,6 +2,7 @@ import * as XLSX from "xlsx";
 
 export type RetirementExcelAsset = {
   id: number;
+  retirementCertificateNumber?: string | null;
   assetCode: string;
   name: string;
   serialNumber: string | null;
@@ -39,7 +40,7 @@ export function buildRetirementDetailWorkbook({ assets, salvageValueByAssetId, s
   salvageValueByAssetId: Map<number, number>;
   serviceCostByAssetId: Map<number, RetirementServiceCost>;
 }) {
-  const headers = ["Mã TS", "Tên TS", "Số seri", "Ngày mua", "Hạn bảo hành", "Giá mua (VNĐ)", "Phí Bảo hành (VNĐ)", "Phí Sửa chữa (VNĐ)", "Giá thanh lý (VNĐ)", "Lý do thanh lý"];
+  const headers = ["Mã phiếu TL", "Mã TS", "Tên TS", "Số seri", "Ngày mua", "Hạn bảo hành", "Giá mua (VNĐ)", "Phí Bảo hành (VNĐ)", "Phí Sửa chữa (VNĐ)", "Giá thanh lý (VNĐ)", "Lý do thanh lý"];
   let totalPurchaseValue = 0;
   let totalWarrantyCost = 0;
   let totalRepairCost = 0;
@@ -52,11 +53,11 @@ export function buildRetirementDetailWorkbook({ assets, salvageValueByAssetId, s
     totalWarrantyCost += serviceCost.warrantyCost;
     totalRepairCost += serviceCost.repairCost;
     totalSalvageValue += salvageValue;
-    return [asset.assetCode, asset.name, asset.serialNumber || "", dateLabel(asset.purchaseDate), dateLabel(asset.warrantyUntil), purchaseValue, serviceCost.warrantyCost, serviceCost.repairCost, salvageValue, asset.retirementReason || ""];
+    return [asset.retirementCertificateNumber || "Chưa cấp TL", asset.assetCode, asset.name, asset.serialNumber || "", dateLabel(asset.purchaseDate), dateLabel(asset.warrantyUntil), purchaseValue, serviceCost.warrantyCost, serviceCost.repairCost, salvageValue, asset.retirementReason || ""];
   });
-  const totalRow = ["TỔNG CỘNG", "", "", "", "", totalPurchaseValue, totalWarrantyCost, totalRepairCost, totalSalvageValue, ""];
+  const totalRow = ["TỔNG CỘNG", "", "", "", "", "", totalPurchaseValue, totalWarrantyCost, totalRepairCost, totalSalvageValue, ""];
   const sheet = XLSX.utils.aoa_to_sheet([headers, ...detailRows, [], totalRow]);
-  sheet["!cols"] = [{ wch: 16 }, { wch: 36 }, { wch: 18 }, { wch: 15 }, { wch: 16 }, { wch: 19 }, { wch: 21 }, { wch: 21 }, { wch: 20 }, { wch: 42 }];
+  sheet["!cols"] = [{ wch: 18 }, { wch: 16 }, { wch: 36 }, { wch: 18 }, { wch: 15 }, { wch: 16 }, { wch: 19 }, { wch: 21 }, { wch: 21 }, { wch: 20 }, { wch: 42 }];
   const workbook = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(workbook, sheet, "Danh sách thanh lý");
   return { workbook, summary: { totalPurchaseValue, totalWarrantyCost, totalRepairCost, totalSalvageValue }, totalRowNumber: detailRows.length + 3 };

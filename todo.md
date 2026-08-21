@@ -2511,3 +2511,9 @@
 - [x] Bao gồm mã/tên/seri, ngày mua, hạn bảo hành, giá mua, phí BH/SC, giá thanh lý, lý do và dòng tổng.
 - [x] Thêm bộ lọc năm cùng nút xuất Excel tương tự trong tab Báo cáo.
 - [x] Bổ sung hồi quy, kiểm tra tệp xuất, desktop/mobile và build phát hành.
+
+## Current Session — Chuẩn hóa menu và mã TL trên Excel
+- [x] Sắp xếp menu trái theo thứ tự nghiệp vụ được cung cấp.
+- [x] Đổi nhãn thành Bảo hành & Sửa chữa, Khấu hao & Thanh lý và Báo Cáo.
+- [x] Thêm Mã phiếu TL vào từng dòng Excel thanh lý chi tiết.
+- [x] Bổ sung hồi quy, kiểm tra desktop/mobile và build phát hành.

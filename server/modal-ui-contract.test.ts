@@ -1186,18 +1186,36 @@ describe("modal presentation contract", () => {
     expect(previewHost).toContain('payload.kind === "pdf" ? "Tải PDF" : "Tải Excel"');
   });
 
-  it("routes Khấu hao/Thanh lý to a dedicated management page", () => {
+  it("routes Khấu hao & Thanh lý to a dedicated management page", () => {
     const home = readProjectFile("client/src/pages/Home.tsx");
     const reports = readProjectFile("client/src/pages/ReportsManagementView.tsx");
     const retirement = readProjectFile("client/src/pages/RetirementManagementView.tsx");
 
-    expect(home).toContain('{ label: "Khấu hao/Thanh lý", icon: Landmark }');
-    expect(home).toContain('retirement: "Khấu hao/Thanh lý"');
-    expect(home).toContain('"Khấu hao/Thanh lý": "retirement"');
-    expect(home).toContain('{activeNav === "Khấu hao/Thanh lý" ? <RetirementManagementView /> : null}');
+    expect(home).toContain('{ label: "Khấu hao & Thanh lý", icon: Landmark }');
+    expect(home).toContain('retirement: "Khấu hao & Thanh lý"');
+    expect(home).toContain('"Khấu hao & Thanh lý": "retirement"');
+    expect(home).toContain('{activeNav === "Khấu hao & Thanh lý" ? <RetirementManagementView /> : null}');
     expect(reports).not.toContain("<DisposalExportPanel groups=");
     expect(retirement).toContain("<RetirementCertificateManager />");
     expect(retirement).toContain("Báo cáo & xuất dữ liệu thanh lý");
+  });
+
+  it("uses the requested business order and display labels in the sidebar", () => {
+    const home = readProjectFile("client/src/pages/Home.tsx");
+    const navItemsStart = home.indexOf("const navItems = [");
+    const navItemsEnd = home.indexOf("];", navItemsStart);
+    const navItems = home.slice(navItemsStart, navItemsEnd);
+    const labels = ["Tổng quan", "Danh mục tài sản", "Phân loại tài sản", "Nhà cung cấp & Hãng", "Phụ kiện", "Bàn giao & Cấp phát", "Bảo hành & Sửa chữa", "Phòng Ban & Bộ Phận", "Quản lý nhân viên", "Kiểm kê", "Khấu hao & Thanh lý", "Báo Cáo"];
+
+    let previousIndex = -1;
+    labels.forEach((label) => {
+      const currentIndex = navItems.indexOf(`label: "${label}"`);
+      expect(currentIndex).toBeGreaterThan(previousIndex);
+      previousIndex = currentIndex;
+    });
+    expect(home).toContain('maintenance: "Bảo hành & Sửa chữa"');
+    expect(home).toContain('reports: "Báo Cáo"');
+    expect(home).toContain('item.label === "Bảo hành & Sửa chữa" ? maintenanceBadgeCount : 0');
   });
 
   it("keeps the retirement reason textarea mounted while the user types", () => {
@@ -1223,7 +1241,7 @@ describe("modal presentation contract", () => {
     const operations = readProjectFile("client/src/pages/OperationsModules.tsx");
     const routers = readProjectFile("server/routers.ts");
 
-    expect(home).toContain('label: "Bảo hành/Sửa chữa"');
+    expect(home).toContain('label: "Bảo hành & Sửa chữa"');
     expect(operations).toContain('const serviceChannelLabels =');
     expect(operations).toContain('const [serviceChannelTab, setServiceChannelTab]');
     expect(operations).toContain('role="tablist" aria-label="Lọc Kênh xử lý"');
@@ -1283,7 +1301,7 @@ describe("modal presentation contract", () => {
 
     expect(home).toContain('holder: "Bảo hành/Sửa chữa"');
     expect(home).toContain('status: "Bảo hành/Sửa chữa"');
-    expect(home).toContain('label: "Bảo hành/Sửa chữa"');
+    expect(home).toContain('label: "Bảo hành & Sửa chữa"');
     expect(home).toContain('const normalizedStatus = status === "Bảo trì" ? "Bảo hành/Sửa chữa" : status;');
     expect(home).toContain('normalizedStatus === "Bảo hành/Sửa chữa" && asset.statusType === "maintenance"');
     expect(home).toContain('const label = option === "Bảo trì" ? "Bảo hành/Sửa chữa" : option;');

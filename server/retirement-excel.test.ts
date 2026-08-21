@@ -11,7 +11,7 @@ describe("retirement detail workbook", () => {
     ]);
     const { workbook, summary, totalRowNumber } = buildRetirementDetailWorkbook({
       assets: [
-        { id: 10, assetCode: "MOUSE-00001", name: "Chuột", serialNumber: "M-01", purchaseDate: new Date("2025-01-02"), warrantyUntil: new Date("2026-01-02"), purchaseValue: "160000", retirementReason: "Hỏng" },
+        { id: 10, retirementCertificateNumber: "TL-2026-003", assetCode: "MOUSE-00001", name: "Chuột", serialNumber: "M-01", purchaseDate: new Date("2025-01-02"), warrantyUntil: new Date("2026-01-02"), purchaseValue: "160000", retirementReason: "Hỏng" },
         { id: 11, assetCode: "KEY-00001", name: "Bàn phím", serialNumber: null, purchaseDate: null, warrantyUntil: null, purchaseValue: "700000", retirementReason: "Hết hạn sử dụng" },
       ],
       salvageValueByAssetId: new Map([[10, 50000], [11, 100000]]),
@@ -20,9 +20,9 @@ describe("retirement detail workbook", () => {
 
     const sheet = workbook.Sheets["Danh sách thanh lý"];
     const rows = XLSX.utils.sheet_to_json<unknown[]>(sheet, { header: 1, defval: "" });
-    expect(rows[0]).toEqual(["Mã TS", "Tên TS", "Số seri", "Ngày mua", "Hạn bảo hành", "Giá mua (VNĐ)", "Phí Bảo hành (VNĐ)", "Phí Sửa chữa (VNĐ)", "Giá thanh lý (VNĐ)", "Lý do thanh lý"]);
-    expect(rows[1]).toMatchObject(["MOUSE-00001", "Chuột", "M-01", "02/01/2025", "02/01/2026", 160000, 12000, 30000, 50000, "Hỏng"]);
-    expect(rows[totalRowNumber - 1]).toEqual(["TỔNG CỘNG", "", "", "", "", 860000, 12000, 30000, 150000, ""]);
+    expect(rows[0]).toEqual(["Mã phiếu TL", "Mã TS", "Tên TS", "Số seri", "Ngày mua", "Hạn bảo hành", "Giá mua (VNĐ)", "Phí Bảo hành (VNĐ)", "Phí Sửa chữa (VNĐ)", "Giá thanh lý (VNĐ)", "Lý do thanh lý"]);
+    expect(rows[1]).toMatchObject(["TL-2026-003", "MOUSE-00001", "Chuột", "M-01", "02/01/2025", "02/01/2026", 160000, 12000, 30000, 50000, "Hỏng"]);
+    expect(rows[totalRowNumber - 1]).toEqual(["TỔNG CỘNG", "", "", "", "", "", 860000, 12000, 30000, 150000, ""]);
     expect(summary).toEqual({ totalPurchaseValue: 860000, totalWarrantyCost: 12000, totalRepairCost: 30000, totalSalvageValue: 150000 });
   });
 });
