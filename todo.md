@@ -2477,3 +2477,7 @@
 - [x] Tạo trang nghiệp vụ riêng gồm tổng quan, biên bản thanh lý và báo cáo/xuất dữ liệu thanh lý.
 - [x] Chuyển các phần thanh lý ra khỏi Báo cáo chung mà không ảnh hưởng dữ liệu, PDF hoặc Excel.
 - [x] Bổ sung hồi quy, kiểm tra desktop/mobile và build phát hành.
+
+## Current Session — Gỡ xuất thanh lý trùng lặp khỏi Báo cáo
+- [x] Xóa khối “Xuất danh sách & biên bản thanh lý” còn hiển thị trong Báo cáo chung.
+- [x] Cập nhật hồi quy, kiểm tra và build phát hành.

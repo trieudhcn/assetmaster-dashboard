@@ -1128,12 +1128,14 @@ describe("modal presentation contract", () => {
 
   it("routes Khấu hao/Thanh lý to a dedicated management page", () => {
     const home = readProjectFile("client/src/pages/Home.tsx");
+    const reports = readProjectFile("client/src/pages/ReportsManagementView.tsx");
     const retirement = readProjectFile("client/src/pages/RetirementManagementView.tsx");
 
     expect(home).toContain('{ label: "Khấu hao/Thanh lý", icon: Landmark }');
     expect(home).toContain('retirement: "Khấu hao/Thanh lý"');
     expect(home).toContain('"Khấu hao/Thanh lý": "retirement"');
     expect(home).toContain('{activeNav === "Khấu hao/Thanh lý" ? <RetirementManagementView /> : null}');
+    expect(reports).not.toContain("<DisposalExportPanel groups=");
     expect(retirement).toContain("<RetirementCertificateManager />");
     expect(retirement).toContain("Báo cáo & xuất dữ liệu thanh lý");
   });
