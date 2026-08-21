@@ -1085,6 +1085,19 @@ describe("modal presentation contract", () => {
     expect(schema).toContain('retirementAttachmentUrl: text("retirementAttachmentUrl")');
   });
 
+  it("locks retired assets from manual editing and keeps them outside audit scope", () => {
+    const home = readProjectFile("client/src/pages/Home.tsx");
+    const router = readProjectFile("server/routers.ts");
+
+    expect(home).toContain('asset.statusType === "retired"');
+    expect(home).toContain("đã được khóa và không thể chỉnh sửa");
+    expect(home).toContain('target.status === "retired"');
+    expect(router).toContain('current.status === "retired"');
+    expect(router).toContain("Tài sản đã Khấu hao/Thanh lý được khóa và không thể chỉnh sửa.");
+    expect(router).toContain('asset.status !== "returned_to_vendor" && asset.status !== "retired"');
+    expect(router).toContain("không thuộc phạm vi kiểm kê");
+  });
+
   it("summarizes disposed asset values by retirement year", () => {
     const retirement = readProjectFile("client/src/pages/RetirementManagementView.tsx");
 

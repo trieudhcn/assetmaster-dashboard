@@ -866,7 +866,7 @@ export default function Home() {
   };
 
   const openCreateModal = () => { setFormData({ code: "", name: "", category: "", holder: "", status: "Sẵn có", statusType: "available", date: new Date().toISOString().slice(0, 10), value: "", location: "", serial: "", maintenanceReason: "", supplier: "", warrantyUntil: "", supplierReturnedAt: "", supplierReturnReason: "", retiredAt: "", retirementReason: "", note: "" }); setSelectedAsset(null); setAssetModal("create"); };
-  const openEditModal = (asset: Asset) => { setSelectedAsset(asset); setFormData({ ...asset, date: dateInputValue(asset.purchaseDate || asset.date) }); setAssetModal("edit"); };
+  const openEditModal = (asset: Asset) => { if (asset.statusType === "retired") { toast.error("Tài sản đã Khấu hao/Thanh lý đã được khóa và không thể chỉnh sửa."); return; } setSelectedAsset(asset); setFormData({ ...asset, date: dateInputValue(asset.purchaseDate || asset.date) }); setAssetModal("edit"); };
   const openDetailModal = (asset: Asset) => { setSelectedAsset(asset); setAssetModal("detail"); };
   const saveAsset = (attachments?: AssetSaveAttachments) => {
     if (!formData.name.trim() || !formData.value.trim()) { toast.error("Vui lòng nhập tên tài sản và giá trị."); return; }
@@ -899,6 +899,7 @@ export default function Home() {
     if (assetModal === "edit") {
       const target = assetQuery.data?.find((asset) => asset.assetCode === formData.code);
       if (!target) { toast.error("Không tìm thấy tài sản để cập nhật."); return; }
+      if (target.status === "retired") { toast.error("Tài sản đã Khấu hao/Thanh lý đã được khóa và không thể chỉnh sửa."); return; }
       pendingSupplierReturnAttachmentRef.current = attachments?.supplierReturn || null;
       pendingRetirementAttachmentRef.current = attachments?.retirement || null;
       updateAssetMutation.mutate({ id: target.id, ...payload });
@@ -1222,6 +1223,10 @@ function PaginatedAssetCatalogPage({ assets, statusCounts, query, category, stat
     const warrantyTone = { active: "border-[#8BCDC6] bg-[#ECF8F7] text-[#087A6A]", expiring: "border-[#F2D596] bg-[#FFF9EB] text-[#A86B00]", expired: "border-[#F6C7C7] bg-[#FDEDEE] text-[#B44545]" } as const;
     pageAssets.forEach((asset) => {
       const row = Array.from(document.querySelectorAll<HTMLTableRowElement>("tbody tr")).find((candidate) => candidate.textContent?.includes(asset.code));
+      if (asset.statusType === "retired") {
+        const editButton = row?.querySelector<HTMLButtonElement>(`button[aria-label="Chỉnh sửa ${asset.code}"]`);
+        if (editButton) { editButton.disabled = true; editButton.title = "Tài sản đã Khấu hao/Thanh lý được khóa chỉnh sửa"; editButton.classList.add("cursor-not-allowed", "opacity-35"); editButton.setAttribute("aria-label", `Tài sản ${asset.code} đã khóa chỉnh sửa sau thanh lý`); }
+      }
       const nameNode = Array.from(row?.querySelectorAll<HTMLElement>("td:nth-child(2) div") || []).find((candidate) => candidate.textContent?.trim() === asset.name);
       const metadata = nameNode?.nextElementSibling as HTMLElement | null;
       if (!metadata) return;

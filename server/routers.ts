@@ -911,6 +911,7 @@ export const appRouter = router({
       const { id, ...changes } = input;
       const current = await getAssetById(id);
       if (!current) throw new TRPCError({ code: "NOT_FOUND", message: "Không tìm thấy tài sản cần cập nhật." });
+      if (current.status === "retired") throw new TRPCError({ code: "CONFLICT", message: "Tài sản đã Khấu hao/Thanh lý được khóa và không thể chỉnh sửa." });
       if (!hasRequiredMaintenanceReason(changes.status, changes.maintenanceReason)) throw new TRPCError({ code: "BAD_REQUEST", message: "Vui lòng nhập lý do Bảo hành/Sửa chữa khi đưa tài sản vào trạng thái này." });
       if (!hasRequiredRetirementReason(changes.status, changes.retirementReason)) throw new TRPCError({ code: "BAD_REQUEST", message: "Vui lòng nhập lý do thanh lý khi đưa tài sản vào Khấu hao/Thanh lý." });
       if (changes.vendorId && !(await getVendorById(changes.vendorId))?.isActive) throw new TRPCError({ code: "BAD_REQUEST", message: "Nhà cung cấp được chọn không tồn tại hoặc đã ngừng hoạt động." });

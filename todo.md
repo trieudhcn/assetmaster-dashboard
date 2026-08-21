@@ -2485,3 +2485,8 @@
 ## Current Session — Tự ẩn xác nhận đóng biên bản
 - [x] Tự ẩn khung xác nhận đóng biên bản sau khi lưu thành công.
 - [x] Cập nhật hồi quy, kiểm tra và build phát hành.
+
+## Current Session — Khóa tài sản thanh lý
+- [x] Khóa thao tác chỉnh sửa đối với tài sản Khấu hao/Thanh lý ở giao diện và phía máy chủ.
+- [x] Loại tài sản Khấu hao/Thanh lý khỏi phạm vi và danh mục kiểm kê.
+- [x] Cập nhật hồi quy, kiểm tra và build phát hành.
