@@ -2463,3 +2463,7 @@
 - [x] Bổ sung phân trang chuẩn cho danh sách biên bản thanh lý thu gọn.
 - [x] Đưa nút X xóa tìm kiếm nhân sự về đúng bên trong ô, không chồng lên bộ lọc.
 - [x] Bổ sung hồi quy, kiểm tra desktop/mobile và build phát hành.
+
+## Current Session — Điều hướng nhanh phân trang biên bản
+- [x] Thêm nút chuyển nhanh đến trang đầu và trang cuối trong danh sách biên bản thanh lý.
+- [x] Bổ sung hồi quy, kiểm tra và build phát hành.

@@ -832,8 +832,11 @@ describe("modal presentation contract", () => {
     expect(manager).toContain('const certificateStartRecord');
     expect(manager).toContain('const certificateEndRecord');
     expect(manager).toContain('Hiển thị <b className="text-[#60758A]">{certificateStartRecord}–{certificateEndRecord}</b>');
+    expect(manager).toContain('aria-label="Trang đầu"');
     expect(manager).toContain('aria-label="Trang trước"');
     expect(manager).toContain('aria-label="Trang sau"');
+    expect(manager).toContain('aria-label="Trang cuối"');
+    expect(manager).toContain('setCertificatePage(certificatePageCount)');
   });
 
   it("adds a salvage total, a light-gray centered PDF table, and service-cost context only below the retirement draft", () => {
