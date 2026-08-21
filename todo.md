@@ -2495,3 +2495,8 @@
 - [x] Khóa chỉnh sửa tài sản Trả nhà cung cấp ở giao diện và phía máy chủ.
 - [x] Hiển thị phí Bảo hành/Sửa chữa theo từng tài sản trong chi tiết biên bản thanh lý đã tạo.
 - [x] Cập nhật hồi quy, kiểm tra desktop/mobile và build phát hành.
+
+## Current Session — Sửa hồi quy trạng thái thanh lý và cảnh báo bảo hành
+- [x] Khôi phục trạng thái Khấu hao/Thanh lý khi lưu hoặc đóng biểu mẫu, không được chuyển sai sang Sẵn có.
+- [x] Hiển thị cảnh báo khi chọn tài sản vẫn còn hạn bảo hành vào biên bản thanh lý.
+- [x] Bổ sung hồi quy nghiêm ngặt, kiểm tra desktop/mobile và build phát hành.

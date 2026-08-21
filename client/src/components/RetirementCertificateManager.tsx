@@ -20,6 +20,15 @@ type ServiceCostInfo = { warrantyTickets: ServiceCostTicket[]; repairTickets: Se
 
 const normalize = (value: string) => value.normalize("NFD").replace(/\p{Diacritic}/gu, "").replace(/đ/g, "d").toLowerCase();
 const numeric = (value: string | number | null | undefined) => Number(String(value ?? "").replace(/,/g, "")) || 0;
+const activeWarrantyUntil = (value: Date | string | null | undefined) => {
+  if (!value) return null;
+  const warrantyUntil = new Date(value);
+  if (Number.isNaN(warrantyUntil.getTime())) return null;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  warrantyUntil.setHours(0, 0, 0, 0);
+  return warrantyUntil >= today ? warrantyUntil : null;
+};
 const repairStatusLabel = (status: string) => ({ open: "Mới tạo", in_progress: "Đang xử lý", resolved: "Đã xử lý", closed: "Đã đóng" }[status] || status || "—");
 function ServiceCostIndicator({ info }: { info?: ServiceCostInfo }) {
   if (!info?.hasActualCost) return null;
@@ -188,7 +197,12 @@ export function RetirementCertificateManager() {
   const closeCertificate = trpc.retirementCertificates.close.useMutation({ onSuccess: async ({ referenceCode, assetCount }) => { toast.success(`Đã đóng ${referenceCode}.`, { description: `${assetCount} tài sản đã được chuyển sang Khấu hao/Thanh lý.` }); await invalidate(); }, onError: (error) => toast.error(error.message || "Không thể đóng biên bản.") });
   const cancelDraft = trpc.retirementCertificates.cancelDraft.useMutation({ onSuccess: async ({ referenceCode }) => { toast.success(`Đã hủy nháp ${referenceCode}.`, { description: "Các tài sản đã được giải phóng để chọn lại." }); await invalidate(); }, onError: (error) => toast.error(error.message || "Không thể hủy nháp biên bản.") });
 
-  const toggleAsset = (assetId: number) => setSelected((current) => { if (current[assetId]) { const next = { ...current }; delete next[assetId]; return next; } return { ...current, [assetId]: { reason: DEFAULT_RETIREMENT_REASON, salvageValue: "", note: "" } }; });
+  const toggleAsset = (assetId: number) => {
+    const candidate = candidates.find((asset) => asset.id === assetId);
+    const warrantyUntil = activeWarrantyUntil(candidate?.warrantyUntil);
+    if (!selected[assetId] && candidate && warrantyUntil) toast.warning(`Cảnh báo: ${candidate.assetCode} còn thời hạn bảo hành đến ${warrantyUntil.toLocaleDateString("vi-VN")}.`, { description: "Hãy xác nhận lý do thanh lý để tránh chọn nhầm tài sản còn bảo hành." });
+    setSelected((current) => { if (current[assetId]) { const next = { ...current }; delete next[assetId]; return next; } return { ...current, [assetId]: { reason: DEFAULT_RETIREMENT_REASON, salvageValue: "", note: "" } }; });
+  };
   const updateItem = (assetId: number, key: keyof DraftItem, value: string) => setSelected((current) => ({ ...current, [assetId]: { ...current[assetId], [key]: value } }));
   const createDraftFromSelection = () => { if (!selectedIds.length) return toast.error("Chọn ít nhất một tài sản để lập biên bản nháp."); const date = new Date(`${retiredAt}T12:00:00`); if (Number.isNaN(date.getTime())) return toast.error("Vui lòng chọn ngày thanh lý hợp lệ."); createDraft.mutate({ retiredAt: date.getTime(), note: note.trim() || null, items: selectedIds.map((assetId) => ({ assetId, retirementReason: selected[assetId]?.reason.trim() || DEFAULT_RETIREMENT_REASON, salvageValue: selected[assetId]?.salvageValue || null, note: selected[assetId]?.note.trim() || null })) }); };
   const exportFilteredCertificates = async () => {

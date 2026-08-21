@@ -1100,6 +1100,17 @@ describe("modal presentation contract", () => {
     expect(router).toContain("không thuộc phạm vi kiểm kê");
   });
 
+  it("preserves retired status in the asset catalog and warns before selecting an asset still under warranty", () => {
+    const home = readProjectFile("client/src/pages/Home.tsx");
+    const manager = readProjectFile("client/src/components/RetirementCertificateManager.tsx");
+
+    expect(home).toContain('asset.status === "retired" ? "Khấu hao/Thanh lý" : "Sẵn có"');
+    expect(home).toContain('asset.status === "retired" ? "retired" : "available"');
+    expect(manager).toContain("const activeWarrantyUntil");
+    expect(manager).toContain("toast.warning(`Cảnh báo:");
+    expect(manager).toContain("còn thời hạn bảo hành đến");
+  });
+
   it("shows warranty and repair cost references for assets in expanded retirement certificates", () => {
     const manager = readProjectFile("client/src/components/RetirementCertificateManager.tsx");
 
