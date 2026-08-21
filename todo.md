@@ -2533,3 +2533,8 @@
 ## Current Session — Gọn hàng chỉ số thanh lý
 - [x] Đưa Giá trị thanh lý đã ghi nhận vào cùng hàng với ba chỉ số tổng quan.
 - [x] Bổ sung hồi quy, kiểm tra desktop/mobile và build phát hành.
+
+## Current Session — Gọn xuất Excel thanh lý trong Báo Cáo
+- [x] Đưa nút Xuất Excel thanh lý cạnh bộ lọc Năm thanh lý.
+- [x] Bỏ khu vực Xuất Excel thanh lý chi tiết riêng bên dưới tổng hợp.
+- [x] Bổ sung hồi quy, kiểm tra desktop/mobile và build phát hành.

@@ -1128,6 +1128,8 @@ describe("modal presentation contract", () => {
     const overviewStart = retirement.indexOf("Tổng quan thanh lý");
     const reportStart = retirement.indexOf("Báo cáo & xuất dữ liệu thanh lý");
     const overview = retirement.slice(overviewStart, reportStart);
+    const reportRetirementStart = reports.indexOf("Giá trị tài sản Khấu hao/Thanh lý theo năm");
+    const reportRetirement = reports.slice(reportRetirementStart);
 
     expect(retirement).toContain('asset.status !== "retired"');
     expect(retirement).toContain("recordedSalvageSummary");
@@ -1150,6 +1152,9 @@ describe("modal presentation contract", () => {
     expect(reports).toContain("Không có dữ liệu");
     expect(reports).toContain('SearchableSelect value={retirementYear} onChange={setRetirementYear}');
     expect(reports).not.toContain("const retiredTotalValue");
+    expect(reports).not.toContain("Xuất Excel thanh lý chi tiết");
+    expect(reportRetirement).toContain("onClick={exportRetirementExcel}");
+    expect(reportRetirement.indexOf("onClick={exportRetirementExcel}")).toBeLessThan(reportRetirement.indexOf('SearchableSelect value={retirementYear} onChange={setRetirementYear}'));
     expect(reports).toContain("Giá trị thanh lý đã ghi nhận");
   });
 
@@ -1162,7 +1167,8 @@ describe("modal presentation contract", () => {
     expect(retirement).toContain("Xuất Excel chi tiết");
     expect(reports).toContain("buildRetirementDetailWorkbook");
     expect(reports).toContain("retirementServiceCostByAssetId");
-    expect(reports).toContain("Xuất Excel thanh lý chi tiết");
+    expect(reports).toContain("onClick={exportRetirementExcel}");
+    expect(reports).not.toContain("Xuất Excel thanh lý chi tiết");
     expect(reports).toContain("retirementYearOptions.map");
   });
 
