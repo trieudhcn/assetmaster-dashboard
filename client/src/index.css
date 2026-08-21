@@ -626,6 +626,7 @@ input[type="date"] {
   }
   .organization-management-page section.mt-5.overflow-hidden > div.grid > article > div:nth-child(3) > div { padding: 0.625rem; }
   .organization-management-page section.mt-5.overflow-hidden > div.grid > article > div:nth-child(3) > div > div:first-child { align-items: flex-start; }
+  .organization-management-page[data-organization-search="empty"] section.mt-5.overflow-hidden > div.p-10 { display: none; }
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -2388,3 +2388,8 @@
 - [x] Tái tạo và xác định lỗi giao diện trang Phòng Ban & Bộ Phận trên mobile.
 - [x] Điều chỉnh danh sách, bộ lọc và thao tác để không tràn hoặc chồng lấn.
 - [x] Bổ sung hồi quy, kiểm tra mobile và build phát hành.
+
+## Current Session — Organization Quick Search
+- [x] Thêm tìm kiếm nhanh theo tên hoặc mã Phòng Ban và Bộ Phận.
+- [x] Chuẩn hóa ô tìm kiếm với biểu tượng, xóa nhanh, trạng thái rỗng và bố cục mobile.
+- [x] Bổ sung hồi quy, kiểm tra mobile và build phát hành.

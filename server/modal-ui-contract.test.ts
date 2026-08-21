@@ -715,6 +715,16 @@ describe("modal presentation contract", () => {
     expect(css).toContain("white-space: nowrap");
   });
 
+  it("adds a normalized quick search for organization names and codes with a clear affordance", () => {
+    const organization = readProjectFile("client/src/pages/OrganizationManagementPage.tsx");
+
+    expect(organization).toContain("normalizeOrganizationSearch");
+    expect(organization).toContain("Tìm tên hoặc mã Phòng Ban, Bộ Phận...");
+    expect(organization).toContain("Xóa từ khóa tìm kiếm");
+    expect(organization).toContain("Không tìm thấy đơn vị phù hợp");
+    expect(organization).toContain("divisionMatches");
+  });
+
   it("brands issue-slip PDFs and protects automatically sourced recipient departments", () => {
     const supplies = readProjectFile("client/src/pages/SuppliesInventoryView.tsx");
     const pdf = readProjectFile("client/src/lib/supplyIssueSlipPdf.ts");

@@ -1,5 +1,5 @@
 import { type FormEvent, useEffect, useMemo, useState } from "react";
-import { AlertTriangle, Building2, FolderTree, Layers3, Pencil, Plus, Power, RefreshCw, Save, ShieldCheck, X } from "lucide-react";
+import { AlertTriangle, Building2, FolderTree, Layers3, Pencil, Plus, Power, RefreshCw, Save, Search, ShieldCheck, X } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { trpc } from "@/lib/trpc";
@@ -13,6 +13,8 @@ type Editor = { kind: "department" | "division"; id: number; name: string; code:
 const emptyDepartment: DepartmentDraft = { name: "", code: "" };
 const emptyDivision: DivisionDraft = { name: "", code: "", departmentId: "" };
 
+const normalizeOrganizationSearch = (value: string) => value.normalize("NFD").replace(/\p{Diacritic}/gu, "").replace(/đ/g, "d").toLowerCase().trim();
+
 export function OrganizationManagementPage() {
   const { user, loading: authLoading } = useAuth();
   const isAdmin = user?.role === "admin";
@@ -22,9 +24,19 @@ export function OrganizationManagementPage() {
   const [departmentDraft, setDepartmentDraft] = useState<DepartmentDraft>(emptyDepartment);
   const [divisionDraft, setDivisionDraft] = useState<DivisionDraft>(emptyDivision);
   const [editor, setEditor] = useState<Editor>(null);
-  const departments = departmentsQuery.data || [];
+  const [organizationQuery, setOrganizationQuery] = useState("");
+  const allDepartments = departmentsQuery.data || [];
   const divisions = divisionsQuery.data || [];
-  const activeDepartments = departments.filter((item) => item.isActive);
+  const normalizedOrganizationQuery = normalizeOrganizationSearch(organizationQuery);
+  const departments = useMemo(() => {
+    if (!normalizedOrganizationQuery) return allDepartments;
+    return allDepartments.filter((department) => {
+      const departmentMatches = [department.name, department.code].some((value) => normalizeOrganizationSearch(value).includes(normalizedOrganizationQuery));
+      const divisionMatches = divisions.some((division) => division.departmentId === department.id && [division.name, division.code].some((value) => normalizeOrganizationSearch(value).includes(normalizedOrganizationQuery)));
+      return departmentMatches || divisionMatches;
+    });
+  }, [allDepartments, divisions, normalizedOrganizationQuery]);
+  const activeDepartments = allDepartments.filter((item) => item.isActive);
 
   const refreshOrganization = () => {
     void utils.departments.list.invalidate();
@@ -62,7 +74,10 @@ export function OrganizationManagementPage() {
   const beginEditDepartment = (department: (typeof departments)[number]) => setEditor({ kind: "department", id: department.id, name: department.name, code: department.code, departmentId: "" });
   const beginEditDivision = (division: (typeof divisions)[number]) => setEditor({ kind: "division", id: division.id, name: division.name, code: division.code, departmentId: String(division.departmentId) });
 
-  return <div className="organization-management-page min-h-screen bg-[#F4F7FB] px-4 py-7 sm:px-6 lg:px-9 lg:py-8"><div className="mx-auto max-w-[1500px]">
+  const hasNoOrganizationSearchResult = Boolean(normalizedOrganizationQuery) && !departmentsQuery.isLoading && !divisionsQuery.isLoading && !departments.length;
+
+  return <div className="organization-management-page min-h-screen bg-[#F4F7FB] px-4 py-7 sm:px-6 lg:px-9 lg:py-8" data-organization-search={hasNoOrganizationSearchResult ? "empty" : "idle"}><div className="mx-auto max-w-[1500px]">
+    <div className="organization-quick-search mb-5 rounded-xl border border-[#DFE9F0] bg-white p-3 shadow-[0_8px_24px_rgba(16,42,67,0.045)]"><div className="relative w-full sm:max-w-md"><Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[#8AA0B6]" size={16} /><input value={organizationQuery} onChange={(event) => setOrganizationQuery(event.target.value)} placeholder="Tìm tên hoặc mã Phòng Ban, Bộ Phận..." aria-label="Tìm tên hoặc mã Phòng Ban, Bộ Phận" className="field-input h-10 w-full pl-9 pr-10 text-xs" />{organizationQuery && <button type="button" onClick={() => setOrganizationQuery("")} className="absolute right-1.5 top-1/2 grid h-7 w-7 -translate-y-1/2 place-items-center rounded-md text-[#71869A] transition hover:bg-[#EEF5F7] hover:text-[#193B57] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0F8C8C]" aria-label="Xóa từ khóa tìm kiếm"><X size={14} /></button>}</div>{hasNoOrganizationSearchResult && <div className="organization-search-empty mt-3 rounded-lg border border-dashed border-[#CDE5E5] bg-[#F6FCFB] px-4 py-3 text-center"><div className="text-sm font-bold text-[#193B57]">Không tìm thấy đơn vị phù hợp</div><p className="mt-1 text-xs text-[#71869A]">Thử tìm theo tên hoặc mã Phòng Ban/Bộ Phận khác.</p></div>}</div>
     <div className="mb-7 flex flex-col justify-between gap-4 sm:flex-row sm:items-end"><div><div className="mb-2 flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.16em] text-[#0F8C8C]"><span className="h-1.5 w-1.5 rounded-full bg-[#F0A516]" /><EditableSectionLabel labelKey="organization-structure" fallback="Organization structure" canEdit={isAdmin} /></div><h1 className="font-display text-[28px] font-extrabold tracking-[-0.045em] text-[#102A43] sm:text-[34px]">Phòng Ban & Bộ Phận</h1><p className="mt-1.5 max-w-2xl text-sm text-[#71869A]">Quản lý cơ cấu tổ chức, trạng thái hoạt động và quan hệ một–nhiều.</p></div><div className="flex gap-3"><Stat label="Phòng Ban" value={activeDepartments.length} tone="navy" /><Stat label="Bộ Phận" value={divisions.filter((item) => item.isActive).length} tone="teal" /></div></div>
     <div className="grid gap-5 xl:grid-cols-2"><section className="rounded-xl border border-[#DFE9F0] bg-white p-5 shadow-[0_8px_24px_rgba(16,42,67,0.045)] sm:p-6"><SectionHeading icon={<Building2 size={19} />} title="Thêm Phòng Ban" detail="Phòng Ban là đơn vị cấp trên để phân nhóm các Bộ Phận." tone="blue" /><form className="mt-5 grid gap-3 sm:grid-cols-[minmax(0,1fr)_160px]" onSubmit={submitDepartment}><input value={departmentDraft.name} onChange={(event) => setDepartmentDraft((current) => ({ ...current, name: event.target.value }))} className="field-input min-w-0" placeholder="Ví dụ: Ban Kế Toán" /><input value={departmentDraft.code} onChange={(event) => setDepartmentDraft((current) => ({ ...current, code: event.target.value.toUpperCase() }))} className="field-input min-w-0" placeholder="Mã tự sinh" /><button disabled={createDepartment.isPending} className="sm:col-span-2 flex h-10 items-center justify-center gap-2 rounded-lg bg-[#2666A8] px-4 text-xs font-extrabold text-white disabled:opacity-60"><Plus size={15} />{createDepartment.isPending ? "Đang thêm..." : "Thêm Phòng Ban"}</button></form></section>
       <section className="rounded-xl border border-[#CDE5E5] bg-white p-5 shadow-[0_8px_24px_rgba(16,42,67,0.045)] sm:p-6"><SectionHeading icon={<FolderTree size={19} />} title="Thêm Bộ Phận" detail="Mỗi Bộ Phận bắt buộc thuộc đúng một Phòng Ban đang hoạt động." tone="teal" /><form className="mt-5 grid gap-3 sm:grid-cols-2" onSubmit={submitDivision}><div className="sm:col-span-2"><label className="field-label">Phòng Ban <span className="text-[#B44545]">*</span></label><SearchableSelect value={divisionDraft.departmentId} onChange={(value) => setDivisionDraft((current) => ({ ...current, departmentId: value }))} disabled={!activeDepartments.length} placeholder="Chọn Phòng Ban" searchPlaceholder="Tìm Phòng Ban..." options={[{ value: "", label: "Chọn Phòng Ban" }, ...activeDepartments.map((department) => ({ value: String(department.id), label: `${department.name} · ${department.code}` }))]} /></div><input value={divisionDraft.name} onChange={(event) => setDivisionDraft((current) => ({ ...current, name: event.target.value }))} className="field-input" placeholder="Ví dụ: Bộ Phận Kế Toán Thanh Toán" disabled={!activeDepartments.length} /><input value={divisionDraft.code} onChange={(event) => setDivisionDraft((current) => ({ ...current, code: event.target.value.toUpperCase() }))} className="field-input" placeholder="Mã tự sinh" disabled={!activeDepartments.length} /><button disabled={createDivision.isPending || !activeDepartments.length} className="sm:col-span-2 flex h-10 items-center justify-center gap-2 rounded-lg bg-[#0F8C8C] px-4 text-xs font-extrabold text-white disabled:opacity-60"><Plus size={15} />{createDivision.isPending ? "Đang thêm..." : "Thêm Bộ Phận"}</button></form></section></div>
