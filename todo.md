@@ -2414,3 +2414,9 @@
 - [x] Bổ sung in biên bản nháp trước khi ký tay.
 - [x] Hiển thị tổng nguyên giá và giá trị thu hồi dự kiến; để trống giá trị thu hồi khi chưa có số chính thức.
 - [x] Bổ sung hồi quy, kiểm tra mobile/desktop và build phát hành.
+
+## Current Session — Bộ lọc và chọn tài sản thanh lý
+- [x] Thêm bộ lọc Nháp, Đã ký và Đã đóng cho danh sách biên bản thanh lý.
+- [x] Thêm thao tác bỏ chọn tất cả tài sản khi đang tạo nháp.
+- [x] Sửa vị trí biểu tượng tìm kiếm trong vùng chọn tài sản trên desktop và mobile.
+- [x] Bổ sung hồi quy, kiểm tra responsive và build phát hành.

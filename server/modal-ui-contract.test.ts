@@ -768,6 +768,20 @@ describe("modal presentation contract", () => {
     expect(manager).toContain("Giá trị thu hồi chính thức (cập nhật sau)");
   });
 
+  it("filters grouped retirement certificates by lifecycle status and protects the search input plus bulk deselection", () => {
+    const manager = readProjectFile("client/src/components/RetirementCertificateManager.tsx");
+    const css = readProjectFile("client/src/index.css");
+
+    expect(manager).toContain('type StatusFilter = "all" | "draft" | "signed" | "closed"');
+    expect(manager).toContain('label: "Nháp"');
+    expect(manager).toContain('label: "Đã ký"');
+    expect(manager).toContain('label: "Đã đóng"');
+    expect(manager).toContain("Bỏ chọn tất cả");
+    expect(manager).toContain('setSelected({})');
+    expect(manager).toContain("retirement-certificate-search");
+    expect(css).toContain(".retirement-certificate-search { padding-left: 2.7rem !important; }");
+  });
+
   it("brands issue-slip PDFs and protects automatically sourced recipient departments", () => {
     const supplies = readProjectFile("client/src/pages/SuppliesInventoryView.tsx");
     const pdf = readProjectFile("client/src/lib/supplyIssueSlipPdf.ts");
