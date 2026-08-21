@@ -2348,3 +2348,8 @@
 - [x] Sửa kích thước và căn giữa khung biên bản BG trên trang Phụ kiện.
 - [x] Chuẩn hóa vùng cuộn và thanh thao tác của khung BG trên desktop/mobile.
 - [x] Bổ sung hồi quy, kiểm tra giao diện và build phát hành.
+
+## Current Session — BG Preview Positioning Regression
+- [x] Loại bỏ xung đột định vị khiến khung BG lệch lên trên và sang trái.
+- [x] Xác minh căn giữa thực tế trên desktop và mobile.
+- [x] Bổ sung hồi quy, kiểm tra giao diện và build phát hành.

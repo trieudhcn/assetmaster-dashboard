@@ -568,7 +568,9 @@ describe("modal presentation contract", () => {
     expect(supplies).toContain('aria-label="Tên file PDF"');
     expect(supplies).toContain("fileName: fileBaseName");
     expect(css).toContain(".handover-inline-preview-dialog");
-    expect(css).toContain("transform: translate3d(-50%, -50%, 0) !important");
+    expect(css).toContain("height: fit-content !important");
+    expect(css).toContain("margin: auto !important");
+    expect(css).toContain("transform: none !important");
     expect(handoverPdf).toContain("options?: { autoPrint?: boolean; fileName?: string }");
     expect(handoverPdf).toContain("sanitizedBaseName");
     expect(handoverPdf).toContain("replace(/[\\\\/:*?\"<>|]+/g, \"-\")");
@@ -593,7 +595,10 @@ describe("modal presentation contract", () => {
     const pdfExport = readProjectFile("client/src/lib/pdfExport.ts");
 
     expect(css).toContain("position: fixed !important");
-    expect(css).toContain("transform: translate3d(-50%, -50%, 0) !important");
+    expect(css).toContain("top: 0 !important");
+    expect(css).toContain("right: 0 !important");
+    expect(css).toContain("bottom: 0 !important");
+    expect(css).toContain("left: 0 !important");
     expect(css).toContain("animation: none !important");
     expect(pdfExport).toContain("assetmaster-pdf-filename");
     expect(pdfExport).toContain("(?:BG|BH|SC|KK|TL)-\\d{4}-[A-Z0-9-]+");
