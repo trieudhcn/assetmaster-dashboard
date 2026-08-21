@@ -568,7 +568,7 @@ describe("modal presentation contract", () => {
     expect(supplies).toContain('aria-label="Tên file PDF"');
     expect(supplies).toContain("fileName: fileBaseName");
     expect(css).toContain(".handover-inline-preview-dialog");
-    expect(css).toContain("transform: translate(-50%, -50%) !important");
+    expect(css).toContain("transform: translate3d(-50%, -50%, 0) !important");
     expect(handoverPdf).toContain("options?: { autoPrint?: boolean; fileName?: string }");
     expect(handoverPdf).toContain("sanitizedBaseName");
     expect(handoverPdf).toContain("replace(/[\\\\/:*?\"<>|]+/g, \"-\")");
@@ -586,6 +586,20 @@ describe("modal presentation contract", () => {
     expect(supplies).toContain("window.localStorage.getItem");
     expect(supplies).toContain("window.localStorage.setItem");
     expect(supplies).toContain("handoverPdfFileNameStorageKey(handover.referenceCode)");
+  });
+
+  it("keeps the BG dialog centered and persists PDF filenames for all document-code families", () => {
+    const css = readProjectFile("client/src/index.css");
+    const pdfExport = readProjectFile("client/src/lib/pdfExport.ts");
+
+    expect(css).toContain("position: fixed !important");
+    expect(css).toContain("transform: translate3d(-50%, -50%, 0) !important");
+    expect(css).toContain("animation: none !important");
+    expect(pdfExport).toContain("assetmaster-pdf-filename");
+    expect(pdfExport).toContain("(?:BG|BH|SC|KK|TL)-\\d{4}-[A-Z0-9-]+");
+    expect(pdfExport).toContain("window.localStorage.getItem(memoryKey)");
+    expect(pdfExport).toContain("window.localStorage.setItem(memoryKey, resolvedFileName)");
+    expect(pdfExport).toContain("options?.skipFilenamePrompt || rememberedFileName");
   });
 
   it("keeps the employee accessory history compact and suppresses unnecessary decimal zeroes", () => {

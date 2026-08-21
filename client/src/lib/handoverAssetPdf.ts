@@ -39,5 +39,5 @@ export async function openHandoverAssetPdf(input: HandoverPdfInput, company: Han
   const watermark = await createPdfLogoWatermark(company.logoUrl).catch(() => null); applyPdfLogoWatermark(doc, watermark); drawPdfCorporateFooter(doc, company, "Biên bản bàn giao tài sản");
   const fallbackFileName = `${input.referenceCode}-phieu-cap-phat-tai-san`;
   const sanitizedBaseName = (options?.fileName || fallbackFileName).trim().replace(/\.pdf$/i, "").replace(/[\\/:*?"<>|]+/g, "-").replace(/\s+/g, " ").trim() || fallbackFileName;
-  openPdfPreview(doc, `${sanitizedBaseName}.pdf`, `Biên bản bàn giao ${input.referenceCode}`, { autoPrint: options?.autoPrint });
+  openPdfPreview(doc, `${sanitizedBaseName}.pdf`, `Biên bản bàn giao ${input.referenceCode}`, { autoPrint: options?.autoPrint, skipFilenamePrompt: Boolean(options?.fileName) });
 }

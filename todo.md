@@ -2334,3 +2334,8 @@
 - [x] Bỏ ngày tạo và ngày lập khỏi chân trang các PDF nghiệp vụ.
 - [x] Tự động lưu tên file PDF theo mã từng loại biên bản.
 - [x] Bổ sung hồi quy, kiểm tra PDF và build phát hành.
+
+## Current Session — Centered BG Preview & Cross-Document Filenames
+- [x] Căn giữa đúng hộp xem trước BG trên màn hình desktop và mobile.
+- [x] Lưu/khôi phục tên file PDF theo mã cho BH, SC, KK và TL.
+- [x] Bổ sung hồi quy, kiểm tra các luồng PDF và build phát hành.

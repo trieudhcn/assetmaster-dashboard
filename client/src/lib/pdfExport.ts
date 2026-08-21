@@ -9,6 +9,18 @@ type PdfDocument = {
 };
 
 const watermarkPreferenceKey = "assetmaster-pdf-watermark";
+const pdfFilenameMemoryPrefix = "assetmaster-pdf-filename";
+
+function sanitizePdfFilename(value: string, fallback: string) {
+  const baseName = value.trim().replace(/\.pdf$/i, "").replace(/[\\/:*?"<>|]+/g, "-").replace(/\s+/g, " ").trim() || fallback;
+  return `${baseName}.pdf`;
+}
+
+function pdfFilenameMemoryKey(fileName: string, title: string) {
+  const referenceCode = `${fileName} ${title}`.match(/(?:BG|BH|SC|KK|TL)-\d{4}-[A-Z0-9-]+/i)?.[0]?.toUpperCase();
+  const fallbackKey = fileName.replace(/\.pdf$/i, "").toLowerCase().replace(/[^a-z0-9]+/g, "-");
+  return `${pdfFilenameMemoryPrefix}:${referenceCode || fallbackKey}`;
+}
 
 export function isPdfWatermarkEnabled() {
   return typeof window === "undefined" || window.localStorage.getItem(watermarkPreferenceKey) !== "off";
@@ -54,6 +66,18 @@ export function applyPdfLogoWatermark(doc: PdfDocument, watermarkDataUrl: string
   }
 }
 
-export function openPdfPreview(doc: PdfDocument, fileName: string, title: string, options?: { autoPrint?: boolean }) {
-  openExportPreview({ blob: doc.output("blob"), fileName, title, kind: "pdf", autoPrint: options?.autoPrint });
+export function openPdfPreview(doc: PdfDocument, fileName: string, title: string, options?: { autoPrint?: boolean; skipFilenamePrompt?: boolean }) {
+  let resolvedFileName = sanitizePdfFilename(fileName, "assetmaster-export");
+  if (typeof window !== "undefined") {
+    const memoryKey = pdfFilenameMemoryKey(resolvedFileName, title);
+    const rememberedFileName = window.localStorage.getItem(memoryKey);
+    if (options?.skipFilenamePrompt || rememberedFileName) {
+      resolvedFileName = sanitizePdfFilename(rememberedFileName || resolvedFileName, "assetmaster-export");
+    } else {
+      const requestedName = window.prompt("Tên file PDF", resolvedFileName.replace(/\.pdf$/i, ""));
+      if (requestedName !== null) resolvedFileName = sanitizePdfFilename(requestedName, "assetmaster-export");
+    }
+    window.localStorage.setItem(memoryKey, resolvedFileName);
+  }
+  openExportPreview({ blob: doc.output("blob"), fileName: resolvedFileName, title, kind: "pdf", autoPrint: options?.autoPrint });
 }

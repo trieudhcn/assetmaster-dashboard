@@ -368,9 +368,15 @@ input[type="date"] {
   scrollbar-gutter: stable;
 }
 .handover-inline-preview-dialog {
+  position: fixed !important;
+  right: auto !important;
+  bottom: auto !important;
+  left: 50% !important;
   top: 50% !important;
+  margin: 0 !important;
   max-height: calc(100dvh - 2rem) !important;
-  transform: translate(-50%, -50%) !important;
+  transform: translate3d(-50%, -50%, 0) !important;
+  animation: none !important;
 }
 .handover-inline-preview-dialog > [data-slot="dialog-header"] + div {
   flex: 1 1 auto;
