@@ -1082,48 +1082,60 @@ describe("modal presentation contract", () => {
   });
 
   it("summarizes disposed asset values by retirement year", () => {
-    const reports = readProjectFile("client/src/pages/ReportsManagementView.tsx");
+    const retirement = readProjectFile("client/src/pages/RetirementManagementView.tsx");
 
-    expect(reports).toContain('const retirementCandidates = useMemo(() => selectedAssets.filter((asset) => asset.status === "retired")');
-    expect(reports).toContain("retirementValueByYear");
-    expect(reports).toContain("Giá trị tài sản Khấu hao/Thanh lý theo năm");
-    expect(reports).toContain("Tổng giá trị thanh lý");
+    expect(retirement).toContain('asset.status !== "retired"');
+    expect(retirement).toContain("yearlySummary");
+    expect(retirement).toContain("Tổng quan thanh lý");
+    expect(retirement).toContain("Khấu hao/Thanh lý");
   });
 
   it("exports grouped retirement certificates while preserving every asset in each TL code", () => {
-    const reports = readProjectFile("client/src/pages/ReportsManagementView.tsx");
+    const retirement = readProjectFile("client/src/pages/RetirementManagementView.tsx");
 
-    expect(reports).toContain("exportRetirementExcel");
-    expect(reports).toContain('"Số biên bản thanh lý": group.referenceCode');
-    expect(reports).toContain('"Số tài sản": group.assets.length');
-    expect(reports).toContain('group.assets.map((asset) => asset.assetCode).join');
-    expect(reports).toContain('XLSX.utils.book_append_sheet(workbook, sheet, "Biên bản thanh lý")');
-    expect(reports).toContain("assetmaster-danh-sach-thanh-ly-");
-    expect(reports).toContain("Xuất danh sách & biên bản thanh lý");
+    expect(retirement).toContain("const exportExcel");
+    expect(retirement).toContain('"Số biên bản thanh lý": group.referenceCode');
+    expect(retirement).toContain('"Số tài sản": group.assets.length');
+    expect(retirement).toContain('group.assets.map((asset) => asset.assetCode).join');
+    expect(retirement).toContain('XLSX.utils.book_append_sheet(workbook, sheet, "Biên bản thanh lý")');
+    expect(retirement).toContain("assetmaster-danh-sach-thanh-ly-");
+    expect(retirement).toContain("Báo cáo & xuất dữ liệu thanh lý");
   });
 
   it("filters retired assets by year and exports selected disposal records as one PDF", () => {
-    const reports = readProjectFile("client/src/pages/ReportsManagementView.tsx");
+    const retirement = readProjectFile("client/src/pages/RetirementManagementView.tsx");
     const retirementPdf = readProjectFile("client/src/lib/retirementPdf.ts");
 
-    expect(reports).toContain("retirementYearOptions");
-    expect(reports).toContain("retirementYear === \"all\"");
-    expect(reports).toContain("selectedRetirementIds");
-    expect(reports).toContain("exportSelectedRetirementPdf");
-    expect(reports).toContain("Xem trước PDF gộp");
+    expect(retirement).toContain("yearOptions");
+    expect(retirement).toContain("year === \"all\"");
+    expect(retirement).toContain("selectedAssetIds");
+    expect(retirement).toContain("previewCombinedPdf");
+    expect(retirement).toContain("Xem trước PDF gộp");
     expect(retirementPdf).toContain("openRetirementPdf");
     expect(retirementPdf).toContain('doc.addPage("a4", "landscape")');
     expect(retirementPdf).toContain("drawPdfCorporateFooter");
   });
 
   it("opens the combined disposal PDF in an in-app preview before download", () => {
-    const reports = readProjectFile("client/src/pages/ReportsManagementView.tsx");
+    const retirement = readProjectFile("client/src/pages/RetirementManagementView.tsx");
     const previewHost = readProjectFile("client/src/components/ExportPreviewHost.tsx");
 
-    expect(reports).toContain("Xem trước PDF gộp");
+    expect(retirement).toContain("Xem trước PDF gộp");
     expect(previewHost).toContain("Bản xem trước PDF gộp");
     expect(previewHost).toContain("Kiểm tra nội dung trực tiếp trên web trước khi tải PDF.");
     expect(previewHost).toContain('payload.kind === "pdf" ? "Tải PDF" : "Tải Excel"');
+  });
+
+  it("routes Khấu hao/Thanh lý to a dedicated management page", () => {
+    const home = readProjectFile("client/src/pages/Home.tsx");
+    const retirement = readProjectFile("client/src/pages/RetirementManagementView.tsx");
+
+    expect(home).toContain('{ label: "Khấu hao/Thanh lý", icon: Landmark }');
+    expect(home).toContain('retirement: "Khấu hao/Thanh lý"');
+    expect(home).toContain('"Khấu hao/Thanh lý": "retirement"');
+    expect(home).toContain('{activeNav === "Khấu hao/Thanh lý" ? <RetirementManagementView /> : null}');
+    expect(retirement).toContain("<RetirementCertificateManager />");
+    expect(retirement).toContain("Báo cáo & xuất dữ liệu thanh lý");
   });
 
   it("keeps the retirement reason textarea mounted while the user types", () => {

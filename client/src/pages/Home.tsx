@@ -28,6 +28,7 @@ import {
 import { AuditPage, MaintenancePage, ReportsPage } from "./OperationsModules";
 import { EmployeeManagementView } from "./EmployeeManagementView";
 import { ReportsManagementView } from "./ReportsManagementView";
+import { RetirementManagementView } from "./RetirementManagementView";
 import { OrganizationManagementPage } from "./OrganizationManagementPage";
 import { VendorBrandManagementPage } from "./VendorBrandManagementPage";
 import { AssetCategoryManagementPage } from "./AssetCategoryManagementPage";
@@ -97,6 +98,7 @@ import {
   UsersRound,
   LockKeyhole,
   Loader2,
+  Landmark,
   Unlock,
   X,
 } from "lucide-react";
@@ -139,6 +141,7 @@ const navItems = [
   { label: "Bàn giao & Cấp phát", icon: PackageCheck },
   { label: "Bảo hành/Sửa chữa", icon: Wrench },
   { label: "Kiểm kê", icon: ClipboardCheck },
+  { label: "Khấu hao/Thanh lý", icon: Landmark },
   { label: "Báo cáo", icon: FileBarChart },
   { label: "Quản lý nhân viên", icon: UserRound },
   { label: "Phòng Ban & Bộ Phận", icon: Building2 },
@@ -325,7 +328,7 @@ export default function Home() {
 
   const [activeNav, setActiveNav] = useState(() => {
     const view = new URLSearchParams(window.location.search).get("view");
-    const deepLinks: Record<string, string> = { assets: "Danh mục tài sản", supplies: "Phụ kiện", categories: "Phân loại tài sản", maintenance: "Bảo hành/Sửa chữa", audit: "Kiểm kê", reports: "Báo cáo", employees: "Quản lý nhân viên", organization: "Phòng Ban & Bộ Phận", vendors: "Nhà cung cấp & Hãng", handovers: "Bàn giao & Cấp phát", help: "Trợ giúp & hướng dẫn" };
+    const deepLinks: Record<string, string> = { assets: "Danh mục tài sản", supplies: "Phụ kiện", categories: "Phân loại tài sản", maintenance: "Bảo hành/Sửa chữa", audit: "Kiểm kê", retirement: "Khấu hao/Thanh lý", reports: "Báo cáo", employees: "Quản lý nhân viên", organization: "Phòng Ban & Bộ Phận", vendors: "Nhà cung cấp & Hãng", handovers: "Bàn giao & Cấp phát", help: "Trợ giúp & hướng dẫn" };
     return view ? deepLinks[view] || "Tổng quan" : "Tổng quan";
   });
   const [assetRows, setAssetRows] = useState<Asset[]>([]);
@@ -906,7 +909,7 @@ export default function Home() {
   };
   const showComingSoon = (label: string) => toast.info(`${label} sẽ được mở trong phiên bản tiếp theo.`, { description: "Bản xem trước hiện đang dùng dữ liệu mẫu để minh họa giao diện." });
   const navigateTo = (label: string) => {
-    const viewByNav: Record<string, string> = { "Danh mục tài sản": "assets", "Phân loại tài sản": "categories", "Bàn giao & Cấp phát": "handovers", "Bảo hành/Sửa chữa": "maintenance", "Kiểm kê": "audit", "Báo cáo": "reports", "Quản lý nhân viên": "employees", "Phòng Ban & Bộ Phận": "organization", "Nhà cung cấp & Hãng": "vendors", "Trợ giúp & hướng dẫn": "help" };
+    const viewByNav: Record<string, string> = { "Danh mục tài sản": "assets", "Phân loại tài sản": "categories", "Bàn giao & Cấp phát": "handovers", "Bảo hành/Sửa chữa": "maintenance", "Kiểm kê": "audit", "Khấu hao/Thanh lý": "retirement", "Báo cáo": "reports", "Quản lý nhân viên": "employees", "Phòng Ban & Bộ Phận": "organization", "Nhà cung cấp & Hãng": "vendors", "Trợ giúp & hướng dẫn": "help" };
     const url = new URL(window.location.href);
     const view = viewByNav[label];
     if (view) url.searchParams.set("view", view); else url.searchParams.delete("view");
@@ -996,6 +999,7 @@ export default function Home() {
         {activeNav === "Cài đặt" ? <><CompanyBrandSettings companyInfo={companyInfo} onSave={(next) => { setCompanyInfo(next); localStorage.setItem("assetmaster-company-info", JSON.stringify(next)); document.title = next.websiteTitle; saveCompanyMutation.mutate({ name: next.name, address: next.address || null, taxCode: next.taxCode || null, phone: next.phone || null, logoUrl: next.logoUrl || null, websiteTitle: next.websiteTitle || null, brandColor: next.brandColor || "#0F8C8C", faviconUrl: next.faviconUrl || null, loginBackgroundUrl: next.loginBackgroundUrl || null, loginGreeting: next.loginGreeting || null, loginBackgroundOverlay: next.loginBackgroundOverlay }, { onSuccess: () => { void companyQuery.refetch(); toast.success("Đã lưu cài đặt thương hiệu."); }, onError: (error) => toast.error(error.message || "Không thể lưu cài đặt thương hiệu.") }); }} /><BrandEnhancementsPanel info={companyInfo} onSave={(next) => { setCompanyInfo(next); localStorage.setItem("assetmaster-company-info", JSON.stringify(next)); document.documentElement.style.setProperty("--assetmaster-brand", next.brandColor); const favicon = document.querySelector<HTMLLinkElement>('link[rel="icon"]') || Object.assign(document.createElement("link"), { rel: "icon" }); if (next.faviconUrl) { favicon.href = next.faviconUrl; if (!favicon.parentNode) document.head.appendChild(favicon); } saveCompanyMutation.mutate({ name: next.name, address: next.address || null, taxCode: next.taxCode || null, phone: next.phone || null, logoUrl: next.logoUrl || null, websiteTitle: next.websiteTitle || null, brandColor: next.brandColor || "#0F8C8C", faviconUrl: next.faviconUrl || null, loginBackgroundUrl: next.loginBackgroundUrl || null, loginGreeting: next.loginGreeting || null, loginBackgroundOverlay: next.loginBackgroundOverlay }, { onSuccess: () => { void companyQuery.refetch(); } }); }} /></> : null}
         {activeNav === "Bảo hành/Sửa chữa" ? <MaintenancePage /> : null}
         {activeNav === "Kiểm kê" ? <AuditPage /> : null}
+        {activeNav === "Khấu hao/Thanh lý" ? <RetirementManagementView /> : null}
         {activeNav === "Báo cáo" ? <ReportsManagementView /> : null}
         {activeNav === "Quản lý nhân viên" ? <EmployeeManagementView /> : null}
         {activeNav === "Phòng Ban & Bộ Phận" ? <OrganizationManagementPage /> : null}

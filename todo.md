@@ -2471,3 +2471,9 @@
 ## Current Session — Luôn hiển thị phân trang biên bản
 - [x] Hiển thị thanh phân trang ngay cả khi danh sách chỉ có một trang.
 - [x] Bổ sung hồi quy, kiểm tra và build phát hành.
+
+## Current Session — Menu Khấu hao/Thanh lý
+- [x] Thêm điều hướng Khấu hao/Thanh lý trong thanh bên trái, theo đúng phân quyền hiện có.
+- [x] Tạo trang nghiệp vụ riêng gồm tổng quan, biên bản thanh lý và báo cáo/xuất dữ liệu thanh lý.
+- [x] Chuyển các phần thanh lý ra khỏi Báo cáo chung mà không ảnh hưởng dữ liệu, PDF hoặc Excel.
+- [x] Bổ sung hồi quy, kiểm tra desktop/mobile và build phát hành.
