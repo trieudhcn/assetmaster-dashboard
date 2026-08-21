@@ -2552,3 +2552,8 @@
 - [x] Hiển thị tổng chi phí bảo trì/sửa chữa theo phạm vi lọc cạnh Giá trị thanh lý đã ghi nhận.
 - [x] Đồng bộ chỉ số này giữa menu Khấu hao & Thanh lý và tab Báo Cáo.
 - [x] Bổ sung hồi quy, kiểm tra desktop/mobile và build phát hành.
+
+## Current Session — Tổng hợp chi phí Bảo hành & Sửa chữa
+- [x] Bổ sung khu vực tổng chi phí theo bộ lọc năm và kênh Bảo hành/Sửa chữa trong menu dịch vụ.
+- [x] Xuất Excel theo bộ lọc gồm mã BH/SC, thông tin tài sản, thời gian gửi/trả, chi phí và tổng chi phí.
+- [x] Bổ sung hồi quy dữ liệu Excel, kiểm tra desktop/mobile và build phát hành.

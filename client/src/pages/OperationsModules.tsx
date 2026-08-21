@@ -32,11 +32,12 @@ import { SearchableSelect } from "@/components/SearchableSelect";
 import { CurrencyInput } from "@/components/CurrencyInput";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { matchesVietnameseSearch } from "@/lib/catalogUi";
-import { numberToVietnameseWords, parseVndAmount } from "@/lib/formatters";
+import { formatVnd } from "@/lib/formatters";
 import { drawPdfCorporateFooter, handoverPdfFontUrl, registerVietnamesePdfFont, vietnamesePdfFontFamily } from "@/lib/handoverPdf";
 import { writeBrandedWorkbook } from "@/lib/brandedWorkbook";
 import { applyPdfLogoWatermark, createPdfLogoWatermark, openPdfPreview } from "@/lib/pdfExport";
 import { previewServiceTicketPdf } from "@/lib/serviceTicketPdf";
+import { buildServiceCostWorkbook } from "@/lib/serviceCostExcel";
 import { ModuleEmptyState } from "@/components/ModuleEmptyState";
 import { EditableSectionLabel } from "@/components/EditableSectionLabel";
 import { ModalTableSkeleton } from "@/components/ModalTableSkeleton";
@@ -165,6 +166,8 @@ export function MaintenancePage() {
   const currentYear = new Date().getFullYear();
   const [maintenanceYear, setMaintenanceYear] = useState(String(currentYear));
   const [serviceChannelTab, setServiceChannelTab] = useState<"all" | "warranty" | "repair">("all");
+  const [costSummaryYear, setCostSummaryYear] = useState(String(currentYear));
+  const [costSummaryChannel, setCostSummaryChannel] = useState<"all" | "warranty" | "repair">("all");
   const [ticketCodeLookup, setTicketCodeLookup] = useState("");
   const [ticketStatusFilter, setTicketStatusFilter] = useState<"all" | "open" | "in_progress" | "resolved" | "closed">("all");
   const [maintenancePage, setMaintenancePage] = useState(1);
@@ -253,6 +256,14 @@ export function MaintenancePage() {
   const maintenanceYears = Array.from(new Set([currentYear, ...tickets.map((ticket) => ticket.ticketYear || new Date(ticket.openedAt).getFullYear())])).sort((left, right) => right - left);
   const yearTickets = tickets.filter((ticket) => maintenanceYear === "all" || (ticket.ticketYear || new Date(ticket.openedAt).getFullYear()) === Number(maintenanceYear));
   const filteredTickets = yearTickets.filter((ticket) => (serviceChannelTab === "all" || ticket.serviceChannel === serviceChannelTab) && (ticketStatusFilter === "all" || ticket.status === ticketStatusFilter) && (!ticketCodeLookup.trim() || `${ticket.ticketCode} ${ticket.warrantyRequestCode || ""}`.toLocaleLowerCase("vi").includes(ticketCodeLookup.trim().toLocaleLowerCase("vi"))));
+  const costSummaryTickets = useMemo(() => tickets.filter((ticket) => (costSummaryYear === "all" || (ticket.ticketYear || new Date(ticket.openedAt).getFullYear()) === Number(costSummaryYear)) && (costSummaryChannel === "all" || ticket.serviceChannel === costSummaryChannel)), [costSummaryChannel, costSummaryYear, tickets]);
+  const costSummary = useMemo(() => costSummaryTickets.reduce((summary, ticket) => {
+    const actualCost = Number(ticket.actualCost || 0) || 0;
+    if (ticket.serviceChannel === "warranty") summary.warrantyCost += actualCost;
+    else summary.repairCost += actualCost;
+    return summary;
+  }, { warrantyCost: 0, repairCost: 0 }), [costSummaryTickets]);
+  const totalServiceCost = costSummary.warrantyCost + costSummary.repairCost;
   const maintenanceTotalPages = Math.max(1, Math.ceil(filteredTickets.length / maintenancePageSize));
   const pagedTickets = filteredTickets.slice((maintenancePage - 1) * maintenancePageSize, maintenancePage * maintenancePageSize);
   const employees = employeesQuery.data || [];
@@ -451,7 +462,7 @@ export function MaintenancePage() {
   };
 
   const exportMaintenanceCosts = () => {
-    if (filteredTickets.length === 0) {
+    if (costSummaryTickets.length === 0) {
       toast.info("Chưa có phiếu Bảo hành/Sửa chữa trong phạm vi đang lọc để xuất.");
       return;
     }
@@ -459,42 +470,17 @@ export function MaintenancePage() {
     const toastId = toast.loading("Đang chuẩn bị file Excel chi phí bảo trì...");
     window.setTimeout(() => { void (async () => {
       try {
-        const rows = filteredTickets.map((ticket) => {
-      const estimated = parseVndAmount(String(ticket.estimatedCost ?? ""));
-      const actual = parseVndAmount(String(ticket.actualCost ?? ""));
-      const asset = assetById.get(ticket.assetId);
-      return {
-        "Mã phiếu": ticket.ticketCode,
-        "Mã tài sản": asset?.assetCode || "",
-        "Tên tài sản": asset?.name || "",
-        "Kênh xử lý": serviceChannelLabels[(ticket.serviceChannel || "repair") as keyof typeof serviceChannelLabels],
-        "Hãng bảo hành": ticket.warrantyBrand || "",
-        "Nhà cung cấp / trung tâm bảo hành": ticket.warrantyVendor || "",
-        "Mã yêu cầu bảo hành": ticket.warrantyRequestCode || "",
-        "Loại yêu cầu": issueTypeLabels[ticket.issueType as keyof typeof issueTypeLabels] || ticket.issueType,
-        "Mức ưu tiên": priorityLabels[ticket.priority as keyof typeof priorityLabels] || ticket.priority,
-        "Trạng thái": maintenanceStatusLabels[ticket.status as keyof typeof maintenanceStatusLabels] || ticket.status,
-        "Chi phí dự kiến (VNĐ)": estimated || null,
-        "Chi phí dự kiến bằng chữ": estimated ? numberToVietnameseWords(estimated) : "Chưa ghi nhận",
-        "Chi phí thực tế (VNĐ)": actual || null,
-        "Chi phí thực tế bằng chữ": actual ? numberToVietnameseWords(actual) : "Chưa ghi nhận",
-        "Ngày tạo": ticket.createdAt ? new Date(ticket.createdAt).toLocaleDateString("vi-VN") : "",
-        "Hạn bảo trì": ticket.dueAt ? new Date(ticket.dueAt).toLocaleDateString("vi-VN") : "",
-        "Người xử lý": ticket.assigneeUserId ? employeeById.get(ticket.assigneeUserId)?.name || "" : "Chưa phân công",
-        "Mô tả": ticket.description,
-        "Kết quả xử lý": ticket.resolution || "",
-      };
-    });
-        const worksheet = XLSX.utils.json_to_sheet(rows);
-        worksheet["!cols"] = [{ wch: 14 }, { wch: 16 }, { wch: 24 }, { wch: 18 }, { wch: 18 }, { wch: 30 }, { wch: 20 }, { wch: 14 }, { wch: 16 }, { wch: 20 }, { wch: 32 }, { wch: 20 }, { wch: 32 }, { wch: 14 }, { wch: 14 }, { wch: 22 }, { wch: 42 }, { wch: 42 }];
-        const workbook = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(workbook, worksheet, "Bảo hành-Sửa chữa");
+        const { workbook, summary, totalRowNumber } = buildServiceCostWorkbook(costSummaryTickets.map((ticket) => {
+          const asset = assetById.get(ticket.assetId);
+          return { ticketCode: ticket.ticketCode, warrantyRequestCode: ticket.warrantyRequestCode, serviceChannel: ticket.serviceChannel || "repair", assetCode: asset?.assetCode || "", assetName: asset?.name || "", serialNumber: asset?.serialNumber || null, purchaseDate: asset?.purchaseDate || null, warrantyUntil: asset?.warrantyUntil || null, openedAt: ticket.openedAt, resolvedAt: ticket.resolvedAt, actualCost: ticket.actualCost };
+        }));
         await writeBrandedWorkbook(workbook, {
           documentTitle: "BÁO CÁO CHI PHÍ BẢO HÀNH/SỬA CHỮA",
-          fileName: `assetmaster-bao-hanh-sua-chua-${new Date().toISOString().slice(0, 10)}.xlsx`,
-          description: `Tổng hợp ${rows.length} phiếu Bảo hành/Sửa chữa trong phạm vi đang lọc.`,
+          fileName: `assetmaster-chi-phi-bh-sc-${costSummaryYear === "all" ? "tat-ca-nam" : costSummaryYear}-${costSummaryChannel === "all" ? "tat-ca" : costSummaryChannel}.xlsx`,
+          description: `Tổng hợp ${summary.ticketCount} phiếu Bảo hành/Sửa chữa · Bảo hành ${formatVnd(summary.warrantyCost)} VNĐ · Sửa chữa ${formatVnd(summary.repairCost)} VNĐ · Tổng chi phí ${formatVnd(summary.totalCost)} VNĐ.`,
+          prepareWorkbook: (brandedWorkbook) => { const sheet = brandedWorkbook.getWorksheet("Chi phí BH-SC"); if (!sheet) return; const totalRow = sheet.getRow(totalRowNumber); totalRow.font = { bold: true, color: { argb: "FF8F5A00" } }; totalRow.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFFFF2D3" } }; sheet.getColumn(10).numFmt = "#,##0"; },
         });
-        toast.success(`Đã xuất ${rows.length} phiếu Bảo hành/Sửa chữa.`, { id: toastId });
+        toast.success(`Đã xuất ${summary.ticketCount} phiếu Bảo hành/Sửa chữa.`, { id: toastId });
       } catch (error) {
         console.error(error);
         toast.error("Không thể tạo file Excel Bảo hành/Sửa chữa.", { id: toastId });
@@ -620,6 +606,11 @@ export function MaintenancePage() {
 
         <OperationalReminderPanel />
 
+        <section className={`mt-5 ${card} border-[#E7D9B9] p-4 sm:p-5`} data-maintenance-cost-summary>
+          <div className="flex flex-col gap-3 xl:flex-row xl:items-end xl:justify-between"><div><div className="flex items-center gap-2 text-sm font-extrabold text-[#8F5A00]"><FileBarChart size={16} />Tổng chi phí Bảo hành & Sửa chữa</div><p className="mt-1 text-xs text-[#71869A]">Tổng chi phí thực tế của các phiếu theo năm và kênh xử lý đã chọn.</p></div><div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-end"><div className="w-full sm:w-44"><label className="mb-1 block text-[10px] font-extrabold uppercase tracking-[.1em] text-[#8A7140]">Năm chi phí</label><SearchableSelect value={costSummaryYear} onChange={setCostSummaryYear} placeholder="Tất cả năm" searchPlaceholder="Tìm năm..." options={[{ value: "all", label: "Tất cả năm" }, ...maintenanceYears.map((year) => ({ value: String(year), label: `Năm ${year}` }))]} /></div><div className="w-full sm:w-44"><label className="mb-1 block text-[10px] font-extrabold uppercase tracking-[.1em] text-[#8A7140]">Kênh xử lý</label><SearchableSelect value={costSummaryChannel} onChange={(value) => setCostSummaryChannel(value as typeof costSummaryChannel)} placeholder="Tất cả kênh" searchPlaceholder="Tìm kênh..." options={[{ value: "all", label: "Tất cả kênh" }, ...Object.entries(serviceChannelLabels).map(([value, label]) => ({ value, label }))]} /></div><button type="button" onClick={exportMaintenanceCosts} disabled={ticketsQuery.isLoading || costSummaryTickets.length === 0 || isExportingCosts} className="inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-lg border border-[#E7D9B9] bg-[#FFF7E3] px-4 text-xs font-bold text-[#8F5A00] transition hover:bg-white disabled:cursor-not-allowed disabled:opacity-50"><Download size={15} className={isExportingCosts ? "animate-pulse" : ""} />{isExportingCosts ? "Đang xuất..." : `Xuất Excel (${costSummaryTickets.length})`}</button></div></div>
+          {ticketsQuery.isLoading ? <div className="mt-4 grid min-h-24 place-items-center text-xs text-[#71869A]">Đang tổng hợp chi phí...</div> : <div className="mt-4 grid gap-3 sm:grid-cols-3"><div className="rounded-lg border border-[#E7D9B9] bg-[#FFFDF7] p-3"><div className="text-[10px] font-extrabold uppercase tracking-[.08em] text-[#8A7140]">Tổng chi phí</div><div className="mt-1 text-lg font-extrabold text-[#8F5A00]">{costSummaryTickets.length ? `${formatVnd(totalServiceCost)} VNĐ` : "—"}</div><div className="mt-1 text-[10px] text-[#8A7140]">{costSummaryTickets.length ? `${costSummaryTickets.length} phiếu trong phạm vi lọc` : "Không có dữ liệu trong phạm vi lọc."}</div></div><div className="rounded-lg border border-[#CDE5E5] bg-[#F4FBFA] p-3"><div className="text-[10px] font-extrabold uppercase tracking-[.08em] text-[#4C7E76]">Chi phí Bảo hành</div><div className="mt-1 text-lg font-extrabold text-[#087A6A]">{costSummaryTickets.length ? `${formatVnd(costSummary.warrantyCost)} VNĐ` : "—"}</div><div className="mt-1 text-[10px] text-[#4C7E76]">Kênh Bảo hành</div></div><div className="rounded-lg border border-[#C7DDF8] bg-[#F7FBFF] p-3"><div className="text-[10px] font-extrabold uppercase tracking-[.08em] text-[#526D92]">Chi phí Sửa chữa</div><div className="mt-1 text-lg font-extrabold text-[#2666A8]">{costSummaryTickets.length ? `${formatVnd(costSummary.repairCost)} VNĐ` : "—"}</div><div className="mt-1 text-[10px] text-[#526D92]">Kênh Sửa chữa</div></div></div>}
+        </section>
+
         <AlertDialog open={Boolean(repairWarrantyWarning)} onOpenChange={(open) => { if (!open) setRepairWarrantyWarning(null); }}>
           <AlertDialogContent className="overflow-hidden border-2 border-[#E8743B] bg-[#FFFDF8] p-0 shadow-[0_24px_70px_rgba(184,69,69,0.26)]">
             <div className="border-b border-[#F2B18B] bg-[#FDEDE4] px-6 py-5">
@@ -674,7 +665,7 @@ export function MaintenancePage() {
               <h2 className="text-sm font-extrabold text-[#193B57]">Quản lý phiếu Bảo hành/Sửa chữa</h2>
               <p className="mt-1 text-xs text-[#8AA0B6]">Phân công, tiến độ, chi phí và Kênh xử lý được lưu tập trung.</p>
             </div>
-            <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:flex-wrap sm:items-center"><div className="flex h-9 w-full items-center rounded-lg border border-[#DDE7F0] bg-white px-3 focus-within:border-[#0F8C8C] sm:min-w-[205px] sm:w-auto"><input value={ticketCodeLookup} onChange={(event) => setTicketCodeLookup(event.target.value)} placeholder="Tra cứu mã phiếu BH / SC..." aria-label="Tra cứu mã phiếu Bảo hành hoặc Sửa chữa" className="min-w-0 flex-1 bg-transparent text-xs font-semibold text-[#193B57] outline-none placeholder:text-[#9BAEC0]" /></div><SearchableSelect value={ticketStatusFilter} onChange={(value) => setTicketStatusFilter(value as typeof ticketStatusFilter)} className="w-full sm:min-w-[172px] sm:w-auto" placeholder="Tất cả trạng thái" searchPlaceholder="Tìm trạng thái xử lý..." options={[{ value: "all", label: "Tất cả trạng thái" }, ...Object.entries(maintenanceStatusLabels).map(([value, label]) => ({ value, label }))]} /><label className="flex w-full items-center gap-2 text-xs font-bold text-[#60758A] sm:min-w-[180px] sm:w-auto"><span className="shrink-0">Năm</span><SearchableSelect value={maintenanceYear} onChange={setMaintenanceYear} className="min-w-0 flex-1" placeholder="Tất cả năm" searchPlaceholder="Tìm năm..." options={[{ value: "all", label: "Tất cả năm" }, ...maintenanceYears.map((year) => ({ value: String(year), label: String(year) }))]} /></label><button type="button" onClick={exportMaintenanceCosts} disabled={ticketsQuery.isLoading || filteredTickets.length === 0 || isExportingCosts} className="inline-flex h-9 w-full items-center justify-center gap-2 rounded-lg border border-[#CDE5E5] bg-white px-3 text-xs font-bold text-[#087A6A] transition hover:bg-[#ECF8F7] disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"><Download size={14} className={isExportingCosts ? "animate-pulse" : ""} />{isExportingCosts ? "Đang xuất..." : "Xuất Excel theo tab"}</button><span className="text-xs font-bold text-[#60758A]">{filteredTickets.length} phiếu</span></div>
+            <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:flex-wrap sm:items-center"><div className="flex h-9 w-full items-center rounded-lg border border-[#DDE7F0] bg-white px-3 focus-within:border-[#0F8C8C] sm:min-w-[205px] sm:w-auto"><input value={ticketCodeLookup} onChange={(event) => setTicketCodeLookup(event.target.value)} placeholder="Tra cứu mã phiếu BH / SC..." aria-label="Tra cứu mã phiếu Bảo hành hoặc Sửa chữa" className="min-w-0 flex-1 bg-transparent text-xs font-semibold text-[#193B57] outline-none placeholder:text-[#9BAEC0]" /></div><SearchableSelect value={ticketStatusFilter} onChange={(value) => setTicketStatusFilter(value as typeof ticketStatusFilter)} className="w-full sm:min-w-[172px] sm:w-auto" placeholder="Tất cả trạng thái" searchPlaceholder="Tìm trạng thái xử lý..." options={[{ value: "all", label: "Tất cả trạng thái" }, ...Object.entries(maintenanceStatusLabels).map(([value, label]) => ({ value, label }))]} /><label className="flex w-full items-center gap-2 text-xs font-bold text-[#60758A] sm:min-w-[180px] sm:w-auto"><span className="shrink-0">Năm</span><SearchableSelect value={maintenanceYear} onChange={setMaintenanceYear} className="min-w-0 flex-1" placeholder="Tất cả năm" searchPlaceholder="Tìm năm..." options={[{ value: "all", label: "Tất cả năm" }, ...maintenanceYears.map((year) => ({ value: String(year), label: String(year) }))]} /></label><span className="text-xs font-bold text-[#60758A]">{filteredTickets.length} phiếu</span></div>
           </div>
 
           <div className="flex flex-wrap gap-2 border-b border-[#E7EEF3] px-5 py-3" role="tablist" aria-label="Lọc Kênh xử lý">

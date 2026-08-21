@@ -1937,15 +1937,20 @@ describe("currency input and scrollbar contract", () => {
     expect(vendorBrand).toContain("    </div>\n    {selectedVendor ?");
   });
 
-  it("exports maintenance costs with numeric and Vietnamese words columns", () => {
+  it("summarizes and exports maintenance costs by year and service channel", () => {
     const operations = readProjectFile("client/src/pages/OperationsModules.tsx");
     expect(operations).toContain("exportMaintenanceCosts");
-    expect(operations).toContain('"Chi phí dự kiến bằng chữ"');
-    expect(operations).toContain('"Chi phí thực tế bằng chữ"');
-    expect(operations).toContain("assetmaster-bao-hanh-sua-chua-");
+    expect(operations).toContain("buildServiceCostWorkbook");
+    expect(operations).toContain("data-maintenance-cost-summary");
+    expect(operations).toContain("costSummaryYear");
+    expect(operations).toContain("costSummaryChannel");
+    expect(operations).toContain("costSummaryTickets");
+    expect(operations).toContain("Tổng chi phí Bảo hành & Sửa chữa");
+    expect(operations).toContain("assetmaster-chi-phi-bh-sc-");
     expect(operations).toContain("isExportingCosts");
     expect(operations).toContain("toast.loading");
-    expect(operations).toContain("Đang xuất...");
+    expect(operations).toContain("Xuất Excel (");
+    expect(operations).not.toContain("Xuất Excel theo tab");
   });
 });
 
