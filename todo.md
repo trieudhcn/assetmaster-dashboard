@@ -2557,3 +2557,8 @@
 - [x] Bổ sung khu vực tổng chi phí theo bộ lọc năm và kênh Bảo hành/Sửa chữa trong menu dịch vụ.
 - [x] Xuất Excel theo bộ lọc gồm mã BH/SC, thông tin tài sản, thời gian gửi/trả, chi phí và tổng chi phí.
 - [x] Bổ sung hồi quy dữ liệu Excel, kiểm tra desktop/mobile và build phát hành.
+
+## Current Session — Template import Phụ kiện đồng bộ dropdown
+- [x] Rà soát mọi trường chọn của form Phụ kiện và template import hiện tại.
+- [x] Đưa danh sách dropdown tương ứng vào template import từ dữ liệu hiện có.
+- [x] Bổ sung hồi quy workbook, kiểm tra giao diện và build phát hành.
