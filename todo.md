@@ -2529,3 +2529,7 @@
 - [x] Bỏ các ô Tổng giá trị thanh lý trùng lặp trong tab Báo Cáo.
 - [x] Đồng bộ Giá trị thanh lý đã ghi nhận theo bộ lọc năm và bổ sung trạng thái Không có dữ liệu.
 - [x] Bổ sung hồi quy, kiểm tra desktop/mobile và build phát hành.
+
+## Current Session — Gọn hàng chỉ số thanh lý
+- [x] Đưa Giá trị thanh lý đã ghi nhận vào cùng hàng với ba chỉ số tổng quan.
+- [x] Bổ sung hồi quy, kiểm tra desktop/mobile và build phát hành.

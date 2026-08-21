@@ -1130,10 +1130,14 @@ describe("modal presentation contract", () => {
     const overview = retirement.slice(overviewStart, reportStart);
 
     expect(retirement).toContain('asset.status !== "retired"');
-    expect(retirement).toContain("yearlySummary");
+    expect(retirement).toContain("recordedSalvageSummary");
+    expect(retirement).not.toContain("yearlySummary");
     expect(retirement).toContain("Tổng quan thanh lý");
     expect(retirement).toContain("Khấu hao/Thanh lý");
     expect(retirement).toContain("data-retirement-recorded-salvage");
+    expect(retirement).toContain("RecordedSalvageMetric summary={recordedSalvageSummary}");
+    expect(retirement).toContain("xl:grid-cols-4");
+    expect(retirement).toContain("Chưa có tài sản trong phạm vi năm đang chọn.");
     expect(retirement).not.toContain("const totalSalvageValue");
     expect(retirement).not.toContain('OverviewMetric label="Tổng giá trị thanh lý"');
     expect(retirement).not.toContain('OverviewMetric label="Đã chọn xuất PDF"');
