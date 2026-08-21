@@ -506,6 +506,18 @@ describe("modal presentation contract", () => {
     expect(supplies).toContain("openSupplyIssueSlipPdf");
   });
 
+  it("summarizes outstanding quantities and supports collapsing each BG or PK holding card", () => {
+    const supplies = readProjectFile("client/src/components/SupplyIssueSlipManager.tsx");
+
+    expect(supplies).toContain("const [expandedSources, setExpandedSources]");
+    expect(supplies).toContain("const quantityTotal = source.items.reduce");
+    expect(supplies).toContain("Tổng đang giữ:");
+    expect(supplies).toContain('aria-expanded={expanded}');
+    expect(supplies).toContain('expanded ? "Thu gọn"');
+    expect(supplies).toContain('`Chi tiết (${source.items.length})`');
+    expect(supplies).toContain("expanded && <div");
+  });
+
   it("keeps the employee accessory history compact and suppresses unnecessary decimal zeroes", () => {
     const employees = readProjectFile("client/src/pages/EmployeeManagementView.tsx");
 

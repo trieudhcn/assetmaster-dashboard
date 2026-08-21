@@ -2303,3 +2303,8 @@
 - [x] Liệt kê cả phụ kiện còn giữ từ phiếu cấp phát riêng PK.
 - [x] Mở xem trước biên bản BG trực tiếp trong trang Phụ kiện.
 - [x] Bổ sung hồi quy, kiểm tra dữ liệu/giao diện và build phát hành.
+
+## Current Session — Holding Source Card Summary
+- [x] Hiển thị tổng số lượng phụ kiện đang giữ trên tiêu đề mỗi thẻ BG/PK.
+- [x] Thêm thao tác thu gọn và mở rộng danh sách phụ kiện của từng thẻ.
+- [x] Bổ sung hồi quy, kiểm tra giao diện và build phát hành.
