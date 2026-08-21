@@ -17,7 +17,7 @@ function drawBrandMark(doc: jsPDF, x: number, y: number, logoDataUrl?: string) {
   doc.setFillColor(15, 140, 140); doc.roundedRect(x, y - 12, 18, 18, 3, 3, "F"); doc.setFillColor(16, 42, 67); doc.roundedRect(x + 3, y - 9, 12, 12, 2, 2, "F"); doc.setTextColor(255, 255, 255); doc.setFontSize(7.5); doc.text("AM", x + 9, y - 1, { align: "center" });
 }
 
-export async function openHandoverAssetPdf(input: HandoverPdfInput, company: HandoverPdfCompany, options?: { autoPrint?: boolean }) {
+export async function openHandoverAssetPdf(input: HandoverPdfInput, company: HandoverPdfCompany, options?: { autoPrint?: boolean; fileName?: string }) {
   const doc = new jsPDF({ unit: "mm", format: "a4" });
   const fontResponse = await fetch(handoverPdfFontUrl);
   if (!fontResponse.ok) throw new Error("Không thể tải phông chữ tiếng Việt cho biên bản.");
@@ -37,5 +37,7 @@ export async function openHandoverAssetPdf(input: HandoverPdfInput, company: Han
   if (outstandingItems.length) { y += 4; doc.setDrawColor(221, 231, 240); doc.line(left, y, 192, y); y += 9; doc.setFontSize(10); doc.setTextColor(16, 42, 67); doc.text("PHỤ KIỆN CÒN ĐANG GIỮ", left, y); y += 7; outstandingItems.forEach((item) => { doc.setFontSize(8.5); doc.setTextColor(25, 59, 87); doc.text(`${item.supplyName} (${item.supplyCode})`, left, y); doc.setTextColor(8, 122, 106); doc.text(`Còn ${Number(item.issuedQuantity) - Number(item.returnedQuantity || 0)} ${item.unit}`, 192, y, { align: "right" }); y += 6; }); }
   y = Math.min(y + 16, 250); doc.setDrawColor(221, 231, 240); doc.line(left, y, 192, y); y += 13; doc.setTextColor(16, 42, 67); doc.setFontSize(10); doc.text("NGƯỜI BÀN GIAO", 53, y, { align: "center" }); doc.text("NGƯỜI NHẬN", 157, y, { align: "center" }); doc.setFontSize(8); doc.setTextColor(112, 134, 154); doc.text("(Ký, ghi rõ họ tên)", 53, y + 5, { align: "center" }); doc.text("(Ký, ghi rõ họ tên)", 157, y + 5, { align: "center" });
   const watermark = await createPdfLogoWatermark(company.logoUrl).catch(() => null); applyPdfLogoWatermark(doc, watermark); drawPdfCorporateFooter(doc, company, "Biên bản bàn giao tài sản");
-  openPdfPreview(doc, `${input.referenceCode}-phieu-cap-phat-tai-san.pdf`, `Biên bản bàn giao ${input.referenceCode}`, { autoPrint: options?.autoPrint });
+  const fallbackFileName = `${input.referenceCode}-phieu-cap-phat-tai-san`;
+  const sanitizedBaseName = (options?.fileName || fallbackFileName).trim().replace(/\.pdf$/i, "").replace(/[\\/:*?"<>|]+/g, "-").replace(/\s+/g, " ").trim() || fallbackFileName;
+  openPdfPreview(doc, `${sanitizedBaseName}.pdf`, `Biên bản bàn giao ${input.referenceCode}`, { autoPrint: options?.autoPrint });
 }

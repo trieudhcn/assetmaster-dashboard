@@ -2324,3 +2324,8 @@
 - [x] Khôi phục biểu tượng xem trước PDF của phiếu Bảo hành trên mobile.
 - [x] Hiển thị trạng thái tạo PDF và vô hiệu hóa thao tác trùng lặp.
 - [x] Bổ sung hồi quy, kiểm tra giao diện mobile/PDF và build phát hành.
+
+## Current Session — Handover Preview Alignment & PDF Filename
+- [x] Sửa căn chỉnh hộp xem trước BG trên trang Phụ kiện ở màn hình rộng.
+- [x] Cho phép nhập tên file PDF trước khi xuất hoặc in biên bản BG.
+- [x] Bổ sung hồi quy, kiểm tra giao diện và build phát hành.

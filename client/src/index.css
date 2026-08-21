@@ -367,10 +367,23 @@ input[type="date"] {
   overscroll-behavior: contain;
   scrollbar-gutter: stable;
 }
+.handover-inline-preview-dialog {
+  top: 50% !important;
+  max-height: calc(100dvh - 2rem) !important;
+  transform: translate(-50%, -50%) !important;
+}
+.handover-inline-preview-dialog > [data-slot="dialog-header"] + div {
+  flex: 1 1 auto;
+}
 @media (max-width: 639px) {
   *::-webkit-scrollbar { width: 6px; height: 6px; }
   .asset-currency-suffix { right: 0.65rem; }
   [data-slot="dialog-content"].max-h-\[88vh\] {
+    top: 0.5rem !important;
+    max-height: calc(100dvh - 1rem) !important;
+    transform: translateX(-50%) !important;
+  }
+  .handover-inline-preview-dialog {
     top: 0.5rem !important;
     max-height: calc(100dvh - 1rem) !important;
     transform: translateX(-50%) !important;

@@ -559,6 +559,21 @@ describe("modal presentation contract", () => {
     expect(css).toContain("@keyframes service-ticket-pdf-spin");
   });
 
+  it("centers the inline BG preview and uses a user-defined, safe PDF filename", () => {
+    const supplies = readProjectFile("client/src/components/SupplyIssueSlipManager.tsx");
+    const css = readProjectFile("client/src/index.css");
+    const handoverPdf = readProjectFile("client/src/lib/handoverAssetPdf.ts");
+
+    expect(supplies).toContain("handover-inline-preview-dialog");
+    expect(supplies).toContain('aria-label="Tên file PDF"');
+    expect(supplies).toContain("fileName: fileBaseName");
+    expect(css).toContain(".handover-inline-preview-dialog");
+    expect(css).toContain("transform: translate(-50%, -50%) !important");
+    expect(handoverPdf).toContain("options?: { autoPrint?: boolean; fileName?: string }");
+    expect(handoverPdf).toContain("sanitizedBaseName");
+    expect(handoverPdf).toContain("replace(/[\\\\/:*?\"<>|]+/g, \"-\")");
+  });
+
   it("keeps the employee accessory history compact and suppresses unnecessary decimal zeroes", () => {
     const employees = readProjectFile("client/src/pages/EmployeeManagementView.tsx");
 
