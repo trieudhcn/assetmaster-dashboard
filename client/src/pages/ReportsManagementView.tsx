@@ -14,7 +14,7 @@ import { InteractiveValueAllocation, type AllocationGroup } from "@/components/I
 import { InteractiveAllocationAssetDetails } from "@/components/InteractiveAllocationAssetDetails";
 import { QuickServiceTicketPreview } from "@/components/QuickServiceTicketPreview";
 import { previewServiceTicketPdf } from "@/lib/serviceTicketPdf";
-import { RecordedSalvageMetric } from "@/components/RecordedSalvageMetric";
+import { RecordedSalvageMetric, RetirementServiceCostMetric } from "@/components/RecordedSalvageMetric";
 
 const card = "rounded-xl border border-[#DFE9F0] bg-white shadow-[0_8px_24px_rgba(16,42,67,0.045)]";
 const divisionColors = ["#0F8C8C", "#2666A8", "#E59B24", "#7666B3", "#CF5C4B", "#3F9C6D", "#5B7FA3"];
@@ -130,6 +130,12 @@ export function ReportsManagementView() {
     certificateCount: retiredCertificateGroups.length,
     salvageValue: retiredAssets.reduce((total, asset) => total + (salvageValueByAssetId.get(asset.id) || 0), 0),
   }), [retiredAssets, retiredCertificateGroups.length, retirementYear, salvageValueByAssetId]);
+  const retirementServiceCostSummary = useMemo(() => retiredAssets.reduce((summary, asset) => {
+    const serviceCost = retirementServiceCostByAssetId.get(asset.id) || { warrantyCost: 0, repairCost: 0 };
+    summary.warrantyCost += serviceCost.warrantyCost;
+    summary.repairCost += serviceCost.repairCost;
+    return summary;
+  }, { yearLabel: retirementYear === "all" ? "Tất cả năm" : `Năm ${retirementYear}`, warrantyCost: 0, repairCost: 0 }), [retiredAssets, retirementServiceCostByAssetId, retirementYear]);
   const selectedRetirementAssets = retiredAssets.filter((asset) => selectedRetirementIds.has(asset.id));
   const allRetiredAssetsSelected = retiredAssets.length > 0 && selectedRetirementAssets.length === retiredAssets.length;
   const selectedHandoverCount = (handoversQuery.data || []).filter((item) => selectedAssetIds.has(item.assetId)).length;
@@ -480,7 +486,7 @@ export function ReportsManagementView() {
           <div><div className="flex items-center gap-2 text-sm font-extrabold text-[#8F5A00]"><FileBarChart size={16} />Giá trị tài sản Khấu hao/Thanh lý theo năm</div><p className="mt-1 text-xs text-[#71869A]">Giá trị thanh lý đã ghi nhận thay đổi theo năm và phạm vi lọc hiện tại.</p></div>
           <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-end"><button onClick={exportRetirementExcel} disabled={!isAdmin || !retiredAssets.length || exporting !== null} className="inline-flex min-h-10 shrink-0 items-center justify-center gap-2 rounded-lg border border-[#E7D9B9] bg-[#FFF7E3] px-4 text-xs font-bold text-[#8F5A00] hover:bg-white disabled:cursor-not-allowed disabled:opacity-60"><Download size={15} className={exporting === "retired" ? "animate-pulse" : ""} />{exporting === "retired" ? "Đang xuất..." : `Xuất Excel (${retiredAssets.length})`}</button><div className="w-full sm:w-52"><label className="mb-1 block text-[10px] font-extrabold uppercase tracking-[0.1em] text-[#8A7140]">Năm thanh lý</label><SearchableSelect value={retirementYear} onChange={setRetirementYear} options={[{ value: "all", label: "Tất cả năm" }, ...retirementYearOptions.map((year) => ({ value: String(year), label: `Năm ${year}` }))]} placeholder="Tất cả năm" searchPlaceholder="Tìm năm thanh lý..." /></div></div>
         </div>
-        {assetsQuery.isLoading || retirementCertificatesQuery.isLoading ? <div className="mt-4 grid min-h-24 place-items-center text-xs text-[#71869A]">Đang tổng hợp giá trị thanh lý...</div> : <div className="mt-4 max-w-sm" data-retirement-recorded-values><RecordedSalvageMetric summary={recordedSalvageSummary} empty={!retiredAssets.length} /></div>}
+        {assetsQuery.isLoading || retirementCertificatesQuery.isLoading ? <div className="mt-4 grid min-h-24 place-items-center text-xs text-[#71869A]">Đang tổng hợp giá trị thanh lý...</div> : <div className="mt-4 grid max-w-[680px] gap-3 sm:grid-cols-2" data-retirement-recorded-values><RecordedSalvageMetric summary={recordedSalvageSummary} empty={!retiredAssets.length} /><RetirementServiceCostMetric summary={retirementServiceCostSummary} empty={!retiredAssets.length} /></div>}
       </section>
     </>}
     {isAdmin && <ActivityLog data={filteredActivities} loading={activitiesQuery.isLoading} query={activityQuery} type={activityType} onQueryChange={setActivityQuery} onTypeChange={setActivityType} allActivities={activitiesQuery.data || []} />}

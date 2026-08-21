@@ -2547,3 +2547,8 @@
 - [x] Dùng khối Giá trị thanh lý đã ghi nhận của menu Khấu hao & Thanh lý trong tab Báo Cáo.
 - [x] Đồng bộ giá trị, số biên bản, số tài sản và trạng thái rỗng theo bộ lọc hiện có.
 - [x] Bổ sung hồi quy, kiểm tra desktop/mobile và build phát hành.
+
+## Current Session — Chi phí dịch vụ bên cạnh giá trị thanh lý
+- [x] Hiển thị tổng chi phí bảo trì/sửa chữa theo phạm vi lọc cạnh Giá trị thanh lý đã ghi nhận.
+- [x] Đồng bộ chỉ số này giữa menu Khấu hao & Thanh lý và tab Báo Cáo.
+- [x] Bổ sung hồi quy, kiểm tra desktop/mobile và build phát hành.

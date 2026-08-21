@@ -1137,10 +1137,13 @@ describe("modal presentation contract", () => {
     expect(retirement).not.toContain("yearlySummary");
     expect(retirement).toContain("Tổng quan thanh lý");
     expect(retirement).toContain("Khấu hao/Thanh lý");
-    expect(retirement).toContain('import { RecordedSalvageMetric } from "@/components/RecordedSalvageMetric"');
+    expect(retirement).toContain('import { RecordedSalvageMetric, RetirementServiceCostMetric } from "@/components/RecordedSalvageMetric"');
     expect(retirement).toContain("RecordedSalvageMetric summary={recordedSalvageSummary}");
-    expect(retirement).toContain("xl:grid-cols-4");
+    expect(retirement).toContain("RetirementServiceCostMetric summary={retirementServiceCostSummary}");
+    expect(retirement).toContain("xl:grid-cols-5");
     expect(recordedMetric).toContain("data-retirement-recorded-salvage");
+    expect(recordedMetric).toContain("data-retirement-service-cost");
+    expect(recordedMetric).toContain("Tổng chi phí Bảo hành & Sửa chữa");
     expect(recordedMetric).toContain("Chưa có tài sản trong phạm vi năm đang chọn.");
     expect(recordedMetric).toContain("Không có dữ liệu");
     expect(retirement).not.toContain("const totalSalvageValue");
@@ -1150,9 +1153,11 @@ describe("modal presentation contract", () => {
     expect(overview).toContain("Năm thanh lý");
     expect(reports).toContain("salvageValueByAssetId");
     expect(reports).toContain("recordedSalvageSummary");
+    expect(reports).toContain("retirementServiceCostSummary");
     expect(reports).not.toContain("retirementValueByYear");
     expect(reports).toContain("data-retirement-recorded-values");
     expect(reports).toContain("RecordedSalvageMetric summary={recordedSalvageSummary}");
+    expect(reports).toContain("RetirementServiceCostMetric summary={retirementServiceCostSummary}");
     expect(reports).toContain('SearchableSelect value={retirementYear} onChange={setRetirementYear}');
     expect(reports).not.toContain("const retiredTotalValue");
     expect(reports).not.toContain("Xuất Excel thanh lý chi tiết");
