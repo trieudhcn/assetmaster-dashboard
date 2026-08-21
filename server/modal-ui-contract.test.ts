@@ -492,6 +492,20 @@ describe("modal presentation contract", () => {
     expect(supplies).toContain('window.location.assign("/?view=handovers")');
   });
 
+  it("groups held accessories by BG or PK source and previews the selected source without leaving supplies", () => {
+    const supplies = readProjectFile("client/src/components/SupplyIssueSlipManager.tsx");
+
+    expect(supplies).toContain("trpc.employees.supplyHistory.useQuery");
+    expect(supplies).toContain('const key = `${source}-${entry.issueSlipId}`');
+    expect(supplies).toContain("Gộp mỗi biên bản BG hoặc phiếu cấp phát PK thành một nhóm");
+    expect(supplies).toContain("Phiếu cấp phát phụ kiện riêng");
+    expect(supplies).toContain("setPreviewHandoverId(source.sourceId)");
+    expect(supplies).toContain("trpc.handovers.get.useQuery");
+    expect(supplies).toContain("<Dialog open={previewHandoverId !== null}");
+    expect(supplies).toContain("Biên bản bàn giao ${previewHandover.referenceCode}");
+    expect(supplies).toContain("openSupplyIssueSlipPdf");
+  });
+
   it("keeps the employee accessory history compact and suppresses unnecessary decimal zeroes", () => {
     const employees = readProjectFile("client/src/pages/EmployeeManagementView.tsx");
 

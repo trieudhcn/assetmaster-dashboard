@@ -2297,3 +2297,9 @@
 - [x] Mở trực tiếp biên bản bàn giao khi nhấn mã BG trong chi tiết phụ kiện.
 - [x] Chỉ hiển thị chi tiết các phụ kiện có số lượng còn giữ lớn hơn 0.
 - [x] Bổ sung hồi quy, kiểm tra giao diện và build phát hành.
+
+## Current Session — Grouped Employee Holding Sources
+- [x] Gộp phụ kiện cùng biên bản bàn giao thành một nhóm có một liên kết xem trước.
+- [x] Liệt kê cả phụ kiện còn giữ từ phiếu cấp phát riêng PK.
+- [x] Mở xem trước biên bản BG trực tiếp trong trang Phụ kiện.
+- [x] Bổ sung hồi quy, kiểm tra dữ liệu/giao diện và build phát hành.
