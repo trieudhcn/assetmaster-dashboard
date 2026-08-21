@@ -837,6 +837,7 @@ describe("modal presentation contract", () => {
     expect(manager).toContain('aria-label="Trang sau"');
     expect(manager).toContain('aria-label="Trang cuối"');
     expect(manager).toContain('setCertificatePage(certificatePageCount)');
+    expect(manager).not.toContain('filteredCertificates.length > CERTIFICATE_PAGE_SIZE && <div className="mt-4 flex flex-col gap-3 border-t');
   });
 
   it("adds a salvage total, a light-gray centered PDF table, and service-cost context only below the retirement draft", () => {

@@ -2467,3 +2467,7 @@
 ## Current Session — Điều hướng nhanh phân trang biên bản
 - [x] Thêm nút chuyển nhanh đến trang đầu và trang cuối trong danh sách biên bản thanh lý.
 - [x] Bổ sung hồi quy, kiểm tra và build phát hành.
+
+## Current Session — Luôn hiển thị phân trang biên bản
+- [x] Hiển thị thanh phân trang ngay cả khi danh sách chỉ có một trang.
+- [x] Bổ sung hồi quy, kiểm tra và build phát hành.
