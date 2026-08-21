@@ -2285,3 +2285,9 @@
 - [x] Giữ mã BG dự kiến/ghi nhận tiếp theo theo chuỗi số tuần tự.
 - [x] Đồng bộ phụ kiện đi kèm bàn giao vào trạng thái nhân sự đang giữ.
 - [x] Bổ sung hồi quy, kiểm tra dữ liệu/giao diện và build phát hành.
+
+## Current Session — Integer Returns & Handover Supply Details
+- [x] Giới hạn số lượng hoàn kho theo đơn vị số nguyên khi thao tác tăng/giảm.
+- [x] Mở nhanh biên bản bàn giao từ dòng phụ kiện kèm BG.
+- [x] Hiển thị riêng số lượng phụ kiện đang giữ theo từng mã trong thống kê nhân sự.
+- [x] Bổ sung hồi quy, kiểm tra giao diện và build phát hành.

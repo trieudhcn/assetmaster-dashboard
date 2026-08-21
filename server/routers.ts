@@ -148,7 +148,7 @@ import {
 import { storagePut } from "./storage";
 
 const nullableText = z.string().trim().max(1000).optional().nullable();
-const handoverReturnSupplyItems = z.array(z.object({ handoverSupplyItemId: z.number().int().positive(), quantity: z.number().finite().min(0).max(1_000_000) })).max(20).optional();
+const handoverReturnSupplyItems = z.array(z.object({ handoverSupplyItemId: z.number().int().positive(), quantity: z.number().int().min(0).max(1_000_000) })).max(20).optional();
 
 async function restoreHandoverAccessories(
   handover: Awaited<ReturnType<typeof getHandoverById>> & {},

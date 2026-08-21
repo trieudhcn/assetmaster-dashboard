@@ -457,6 +457,26 @@ describe("modal presentation contract", () => {
     expect(employees).toContain("không tạo thêm phiếu cấp phát PK");
   });
 
+  it("keeps handover returns whole-numbered and makes BG-linked accessory holdings traceable", () => {
+    const employees = readProjectFile("client/src/pages/EmployeeManagementView.tsx");
+    const supplies = readProjectFile("client/src/components/SupplyIssueSlipManager.tsx");
+    const home = readProjectFile("client/src/pages/Home.tsx");
+    const db = readProjectFile("server/db.ts");
+    const routers = readProjectFile("server/routers.ts");
+
+    expect(home).toContain('inputMode="numeric"');
+    expect(home).toContain('step="1"');
+    expect(home).toContain('event.target.value.replace(/\\D/g, "")');
+    expect(routers).toContain("quantity: z.number().int().min(0)");
+    expect(employees).toContain('window.location.assign("/?view=handovers")');
+    expect(employees).toContain("Mở biên bản bàn giao gốc");
+    expect(employees).toContain("Kèm BG");
+    expect(supplies).toContain("Chi tiết phụ kiện đang giữ");
+    expect(supplies).toContain("Phân tách theo từng mã phụ kiện");
+    expect(db).toContain("supplyCode: handoverSupplyItems.supplyCode");
+    expect(db).toContain("supplyCode: supplyIssueSlipItems.supplyCode");
+  });
+
   it("keeps the employee accessory history compact and suppresses unnecessary decimal zeroes", () => {
     const employees = readProjectFile("client/src/pages/EmployeeManagementView.tsx");
 

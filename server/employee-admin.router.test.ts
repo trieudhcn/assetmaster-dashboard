@@ -279,6 +279,12 @@ describe("employee administration", () => {
     expect(mocks.createInventoryMovement).toHaveBeenCalledWith(expect.objectContaining({ movementType: "return", quantity: "1", quantityBefore: "4", quantityAfter: "5" }), expect.anything());
   });
 
+  it("rejects fractional quantities when an administrator records returned handover accessories", async () => {
+    const caller = appRouter.createCaller(adminContext);
+
+    await expect(caller.handovers.resolveReturnRequest({ id: 99, decision: "approved", conditionIn: "Tốt", resolution: null, conditionPhoto: null, returnedSupplyItems: [{ handoverSupplyItemId: 501, quantity: 0.99 }] })).rejects.toMatchObject({ code: "BAD_REQUEST" });
+  });
+
   it("issues and persists a unique recovery certificate number by year and month", async () => {
     mocks.getHandoverById.mockResolvedValue({ id: 99, referenceCode: "BG-2026-001", assetCode: "TS-00099", recipientName: "Nguyễn Văn A", recipientUserId: 8, recipientDepartmentId: 12, status: "active", returnRequestStatus: "pending", returnedAt: new Date("2026-08-14T03:00:00.000Z") });
     mocks.getNextRecoveryCertificateSequence.mockResolvedValue(7);

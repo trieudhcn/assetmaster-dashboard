@@ -639,22 +639,30 @@ export async function listSupplyIssueAnalytics() {
     recipientUserId: supplyIssueSlips.recipientUserId,
     recipientName: supplyIssueSlips.recipientName,
     departmentName: departments.name,
+    supplyId: supplyIssueSlipItems.supplyId,
+    supplyCode: supplyIssueSlipItems.supplyCode,
+    supplyName: supplyIssueSlipItems.supplyName,
+    unit: supplyIssueSlipItems.unit,
     issuedQuantity: sql<number>`sum(${supplyIssueSlipItems.issuedQuantity})`,
     returnedQuantity: sql<number>`sum(${supplyIssueSlipItems.returnedQuantity})`,
     outstandingQuantity: sql<number>`sum(${supplyIssueSlipItems.issuedQuantity} - ${supplyIssueSlipItems.returnedQuantity})`,
-  }).from(supplyIssueSlipItems).innerJoin(supplyIssueSlips, eq(supplyIssueSlipItems.issueSlipId, supplyIssueSlips.id)).leftJoin(departments, eq(supplyIssueSlips.recipientDepartmentId, departments.id)).groupBy(supplyIssueSlips.recipientUserId, supplyIssueSlips.recipientName, departments.name);
+  }).from(supplyIssueSlipItems).innerJoin(supplyIssueSlips, eq(supplyIssueSlipItems.issueSlipId, supplyIssueSlips.id)).leftJoin(departments, eq(supplyIssueSlips.recipientDepartmentId, departments.id)).groupBy(supplyIssueSlips.recipientUserId, supplyIssueSlips.recipientName, departments.name, supplyIssueSlipItems.supplyId, supplyIssueSlipItems.supplyCode, supplyIssueSlipItems.supplyName, supplyIssueSlipItems.unit);
   const handoverRows = await db.select({
     recipientUserId: handovers.recipientUserId,
     recipientName: handovers.recipientName,
     departmentName: handovers.recipientDepartmentName,
+    supplyId: handoverSupplyItems.supplyId,
+    supplyCode: handoverSupplyItems.supplyCode,
+    supplyName: handoverSupplyItems.supplyName,
+    unit: handoverSupplyItems.unit,
     issuedQuantity: sql<number>`sum(${handoverSupplyItems.issuedQuantity})`,
     returnedQuantity: sql<number>`sum(${handoverSupplyItems.returnedQuantity})`,
     outstandingQuantity: sql<number>`sum(${handoverSupplyItems.issuedQuantity} - ${handoverSupplyItems.returnedQuantity})`,
-  }).from(handoverSupplyItems).innerJoin(handovers, eq(handoverSupplyItems.handoverId, handovers.id)).where(inArray(handovers.status, ["active", "returned"])).groupBy(handovers.recipientUserId, handovers.recipientName, handovers.recipientDepartmentName);
-  const totals = new Map<string, { recipientUserId: number | null; recipientName: string; departmentName: string | null; issuedQuantity: number; returnedQuantity: number; outstandingQuantity: number }>();
+  }).from(handoverSupplyItems).innerJoin(handovers, eq(handoverSupplyItems.handoverId, handovers.id)).where(inArray(handovers.status, ["active", "returned"])).groupBy(handovers.recipientUserId, handovers.recipientName, handovers.recipientDepartmentName, handoverSupplyItems.supplyId, handoverSupplyItems.supplyCode, handoverSupplyItems.supplyName, handoverSupplyItems.unit);
+  const totals = new Map<string, { recipientUserId: number | null; recipientName: string; departmentName: string | null; supplyId: number; supplyCode: string; supplyName: string; unit: string; issuedQuantity: number; returnedQuantity: number; outstandingQuantity: number }>();
   [...issueSlipRows, ...handoverRows].forEach((row) => {
-    const key = `${row.recipientUserId ?? "external"}:${row.recipientName}:${row.departmentName ?? "unassigned"}`;
-    const previous = totals.get(key) ?? { recipientUserId: row.recipientUserId, recipientName: row.recipientName, departmentName: row.departmentName, issuedQuantity: 0, returnedQuantity: 0, outstandingQuantity: 0 };
+    const key = `${row.recipientUserId ?? "external"}:${row.recipientName}:${row.departmentName ?? "unassigned"}:${row.supplyId}`;
+    const previous = totals.get(key) ?? { recipientUserId: row.recipientUserId, recipientName: row.recipientName, departmentName: row.departmentName, supplyId: row.supplyId, supplyCode: row.supplyCode, supplyName: row.supplyName, unit: row.unit, issuedQuantity: 0, returnedQuantity: 0, outstandingQuantity: 0 };
     previous.issuedQuantity += Number(row.issuedQuantity || 0);
     previous.returnedQuantity += Number(row.returnedQuantity || 0);
     previous.outstandingQuantity += Number(row.outstandingQuantity || 0);
