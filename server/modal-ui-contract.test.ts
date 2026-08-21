@@ -1085,17 +1085,30 @@ describe("modal presentation contract", () => {
     expect(schema).toContain('retirementAttachmentUrl: text("retirementAttachmentUrl")');
   });
 
-  it("locks retired assets from manual editing and keeps them outside audit scope", () => {
+  it("locks returned-vendor and retired assets from manual editing and keeps them outside audit scope", () => {
     const home = readProjectFile("client/src/pages/Home.tsx");
     const router = readProjectFile("server/routers.ts");
 
     expect(home).toContain('asset.statusType === "retired"');
+    expect(home).toContain('asset.statusType === "returned"');
     expect(home).toContain("đã được khóa và không thể chỉnh sửa");
-    expect(home).toContain('target.status === "retired"');
+    expect(home).toContain('target.status === "retired" || target.status === "returned_to_vendor"');
     expect(router).toContain('current.status === "retired"');
-    expect(router).toContain("Tài sản đã Khấu hao/Thanh lý được khóa và không thể chỉnh sửa.");
+    expect(router).toContain('current.status === "retired" || current.status === "returned_to_vendor"');
+    expect(router).toContain("Tài sản đã Trả nhà cung cấp hoặc Khấu hao/Thanh lý được khóa và không thể chỉnh sửa.");
     expect(router).toContain('asset.status !== "returned_to_vendor" && asset.status !== "retired"');
     expect(router).toContain("không thuộc phạm vi kiểm kê");
+  });
+
+  it("shows warranty and repair cost references for assets in expanded retirement certificates", () => {
+    const manager = readProjectFile("client/src/components/RetirementCertificateManager.tsx");
+
+    expect(manager).toContain("Tham khảo phí Bảo hành/Sửa chữa theo tài sản");
+    expect(manager).toContain("Thông tin tham khảo, không đưa vào biên bản/PDF.");
+    expect(manager).toContain("info.totalWarrantyCost");
+    expect(manager).toContain("info.totalRepairCost");
+    expect(manager).toContain("[data-retirement-service-cost-reference]");
+    expect(manager).toContain('(assetsQuery.data || []).find((asset) => asset.id === previewRepairTicket.assetId)');
   });
 
   it("summarizes disposed asset values by retirement year", () => {

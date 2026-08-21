@@ -2490,3 +2490,8 @@
 - [x] Khóa thao tác chỉnh sửa đối với tài sản Khấu hao/Thanh lý ở giao diện và phía máy chủ.
 - [x] Loại tài sản Khấu hao/Thanh lý khỏi phạm vi và danh mục kiểm kê.
 - [x] Cập nhật hồi quy, kiểm tra và build phát hành.
+
+## Current Session — Khóa tài sản trả NCC và phí dịch vụ biên bản
+- [x] Khóa chỉnh sửa tài sản Trả nhà cung cấp ở giao diện và phía máy chủ.
+- [x] Hiển thị phí Bảo hành/Sửa chữa theo từng tài sản trong chi tiết biên bản thanh lý đã tạo.
+- [x] Cập nhật hồi quy, kiểm tra desktop/mobile và build phát hành.

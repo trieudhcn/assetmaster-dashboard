@@ -131,13 +131,56 @@ export function RetirementCertificateManager() {
     return result;
   }, [maintenanceQuery.data]);
   const previewRepairTicket = (maintenanceQuery.data || []).find((ticket) => ticket.id === previewRepairTicketId) || null;
-  const previewRepairAsset = previewRepairTicket ? candidates.find((asset) => asset.id === previewRepairTicket.assetId) : null;
+  const previewRepairAsset = previewRepairTicket ? (assetsQuery.data || []).find((asset) => asset.id === previewRepairTicket.assetId) : null;
   const filteredCertificates = useMemo(() => { const query = normalize(certificateSearch.trim()); return (certificatesQuery.data || []).filter((certificate) => { const statusMatches = statusFilter === "all" || (statusFilter === "signed" ? certificate.status === "awaiting_signed_copy" : certificate.status === statusFilter); const searchMatches = !query || [certificate.referenceCode, ...certificate.items.flatMap((item) => [item.assetCode, item.assetName])].some((value) => normalize(value || "").includes(query)); return statusMatches && searchMatches; }); }, [certificateSearch, certificatesQuery.data, statusFilter]);
   const certificatePageCount = Math.max(1, Math.ceil(filteredCertificates.length / CERTIFICATE_PAGE_SIZE));
   const currentCertificatePage = Math.min(certificatePage, certificatePageCount);
   const paginatedCertificates = filteredCertificates.slice((currentCertificatePage - 1) * CERTIFICATE_PAGE_SIZE, currentCertificatePage * CERTIFICATE_PAGE_SIZE);
   const certificateStartRecord = filteredCertificates.length ? (currentCertificatePage - 1) * CERTIFICATE_PAGE_SIZE + 1 : 0;
   const certificateEndRecord = Math.min(currentCertificatePage * CERTIFICATE_PAGE_SIZE, filteredCertificates.length);
+
+  useEffect(() => {
+    const renderServiceCostReferences = () => {
+      const certificatesById = new Map(paginatedCertificates.map((certificate) => [certificate.id, certificate]));
+      document.querySelectorAll<HTMLElement>("[id^='retirement-certificate-details-']").forEach((detail) => {
+        if (detail.querySelector("[data-retirement-service-cost-reference]")) return;
+        const certificateId = Number(detail.id.replace("retirement-certificate-details-", ""));
+        const certificate = certificatesById.get(certificateId);
+        if (!certificate) return;
+        const itemsWithService = certificate.items.map((item) => ({ item, info: serviceCostByAsset.get(item.assetId) })).filter(({ info }) => info && (info.warrantyTickets.length > 0 || info.repairTickets.length > 0));
+        if (!itemsWithService.length) return;
+
+        const reference = document.createElement("section");
+        reference.dataset.retirementServiceCostReference = "true";
+        reference.className = "mt-3 rounded-lg border border-[#F2D596] bg-[#FFF9EB] px-3 py-2.5";
+        const heading = document.createElement("div");
+        heading.className = "text-[10px] font-extrabold text-[#8F5A00]";
+        heading.textContent = "Tham khảo phí Bảo hành/Sửa chữa theo tài sản";
+        const note = document.createElement("div");
+        note.className = "mt-0.5 text-[9px] text-[#A48548]";
+        note.textContent = "Thông tin tham khảo, không đưa vào biên bản/PDF.";
+        const rows = document.createElement("div");
+        rows.className = "mt-2 space-y-1.5";
+        itemsWithService.forEach(({ item, info }) => {
+          if (!info) return;
+          const channels = [
+            info.warrantyTickets.length > 0 && `Bảo hành: ${info.hasWarrantyActualCost ? `${formatVnd(info.totalWarrantyCost)} VNĐ` : "chưa cập nhật phí thực tế"}`,
+            info.repairTickets.length > 0 && `Sửa chữa: ${info.hasRepairActualCost ? `${formatVnd(info.totalRepairCost)} VNĐ` : "chưa cập nhật phí thực tế"}`,
+          ].filter(Boolean).join(" · ");
+          const row = document.createElement("div");
+          row.className = "rounded-md border border-[#F1DFB5] bg-white/70 px-2.5 py-2 text-[10px] leading-4 text-[#735314]";
+          row.textContent = `${item.assetCode} · ${item.assetName}: ${channels}${info.hasActualCost ? ` · Tổng: ${formatVnd(info.totalActualCost)} VNĐ` : ""}`;
+          rows.append(row);
+        });
+        reference.append(heading, note, rows);
+        detail.append(reference);
+      });
+    };
+    renderServiceCostReferences();
+    const observer = new MutationObserver(renderServiceCostReferences);
+    observer.observe(document.body, { childList: true, subtree: true });
+    return () => observer.disconnect();
+  }, [paginatedCertificates, serviceCostByAsset]);
 
   const invalidate = async () => { await Promise.all([utils.retirementCertificates.list.invalidate(), utils.assets.list.invalidate()]); };
   const createDraft = trpc.retirementCertificates.createDraft.useMutation({ onSuccess: async ({ referenceCode }) => { toast.success(`Đã tạo nháp ${referenceCode}.`, { description: "In nháp, ký tay rồi tải tệp lên trước khi đóng." }); setSelected({}); setNote(""); await invalidate(); }, onError: (error) => toast.error(error.message || "Không thể tạo nháp biên bản thanh lý.") });
