@@ -2393,3 +2393,8 @@
 - [x] Thêm tìm kiếm nhanh theo tên hoặc mã Phòng Ban và Bộ Phận.
 - [x] Chuẩn hóa ô tìm kiếm với biểu tượng, xóa nhanh, trạng thái rỗng và bố cục mobile.
 - [x] Bổ sung hồi quy, kiểm tra mobile và build phát hành.
+
+## Current Session — Activity Log Search Controls
+- [x] Sửa nút X của ô tìm kiếm Nhật ký hoạt động để chỉ hiện khi có từ khóa trên mobile.
+- [x] Thêm phím tắt / để tập trung ô tìm kiếm trên desktop mà không can thiệp các trường đang nhập.
+- [x] Bổ sung hồi quy, kiểm tra mobile/desktop và build phát hành.

@@ -28,6 +28,7 @@ export function SearchClearAffordance() {
       return (
         input.type !== "hidden" &&
         SEARCH_PLACEHOLDER_PATTERN.test(placeholder) &&
+        input.dataset.searchClearManaged !== "true" &&
         !input.closest('[role="listbox"]')
       );
     };
@@ -58,6 +59,7 @@ export function SearchClearAffordance() {
 
       const sync = () => {
         button.hidden = input.value.length === 0;
+        button.style.display = input.value.length === 0 ? "none" : "grid";
       };
       button.addEventListener("click", () => {
         if (!input.value) return;

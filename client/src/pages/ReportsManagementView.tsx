@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState } from "react";
-import { Download, FileBarChart, History, PieChart as PieChartIcon, Search, SlidersHorizontal } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Download, FileBarChart, History, PieChart as PieChartIcon, Search, SlidersHorizontal, X } from "lucide-react";
 import * as XLSX from "xlsx";
 import { toast } from "sonner";
 import { useAuth } from "@/_core/hooks/useAuth";
@@ -530,6 +530,7 @@ function CompactValueAllocation({ title, context, data, totalValue, isLoading, c
 function ActivityLog({ data, loading, query, type, onQueryChange, onTypeChange, allActivities }: { data: Array<{ id: number; createdAt: Date | number | string; actorName: string | null; entityType: string; entityId: number; action: string; summary: string | null }>; loading: boolean; query: string; type: string; onQueryChange: (value: string) => void; onTypeChange: (value: string) => void; allActivities: Array<{ entityType: string }> }) {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
+  const activitySearchInputRef = useRef<HTMLInputElement>(null);
   const totalPages = Math.max(1, Math.ceil(data.length / pageSize));
   const currentPage = Math.min(page, totalPages);
   const startIndex = (currentPage - 1) * pageSize;
@@ -539,6 +540,17 @@ function ActivityLog({ data, loading, query, type, onQueryChange, onTypeChange, 
   const entityTypeOptions = [...new Set(allActivities.map((item) => item.entityType))].map((entityType) => ({ value: entityType, label: activityEntityLabel(entityType) }));
 
   useEffect(() => { setPage((current) => Math.min(current, totalPages)); }, [totalPages]);
+  useEffect(() => {
+    const focusActivitySearch = (event: KeyboardEvent) => {
+      if (event.key !== "/" || event.defaultPrevented || event.ctrlKey || event.metaKey || event.altKey || !window.matchMedia("(min-width: 640px)").matches) return;
+      const target = event.target as HTMLElement | null;
+      if (target?.isContentEditable || ["INPUT", "TEXTAREA", "SELECT"].includes(target?.tagName || "")) return;
+      event.preventDefault();
+      activitySearchInputRef.current?.focus();
+    };
+    document.addEventListener("keydown", focusActivitySearch);
+    return () => document.removeEventListener("keydown", focusActivitySearch);
+  }, []);
 
   const updateQuery = (value: string) => { setPage(1); onQueryChange(value); };
   const updateType = (value: string) => { setPage(1); onTypeChange(value); };
@@ -549,9 +561,10 @@ function ActivityLog({ data, loading, query, type, onQueryChange, onTypeChange, 
       <div className="flex items-center gap-2 text-sm font-extrabold text-[#193B57]"><History size={16} className="text-[#2666A8]" />Nhật ký hoạt động</div>
       <p className="mt-1 text-xs text-[#71869A]">Theo dõi các thay đổi tài sản, bàn giao, bảo trì, kiểm kê và quản trị tài khoản.</p>
       <div className="mt-4 grid gap-2 sm:grid-cols-[minmax(0,1fr)_210px]">
-        <label className="flex h-10 min-w-0 items-center gap-2 rounded-lg border border-[#DDE7F0] bg-white px-3 text-[#8AA0B6] transition focus-within:border-[#0F8C8C] focus-within:ring-2 focus-within:ring-[#0F8C8C]/10">
+        <label className="relative flex h-10 min-w-0 items-center gap-2 rounded-lg border border-[#DDE7F0] bg-white px-3 text-[#8AA0B6] transition focus-within:border-[#0F8C8C] focus-within:ring-2 focus-within:ring-[#0F8C8C]/10">
           <Search size={16} className="shrink-0" aria-hidden="true" />
-          <input value={query} onChange={(event) => updateQuery(event.target.value)} placeholder="Tìm người thực hiện hoặc thao tác..." className="min-w-0 flex-1 border-0 bg-transparent p-0 text-xs text-[#193B57] outline-none placeholder:text-[#9BAEC0]" aria-label="Tìm kiếm nhật ký hoạt động" />
+          <input ref={activitySearchInputRef} value={query} onChange={(event) => updateQuery(event.target.value)} placeholder="Tìm người thực hiện hoặc thao tác..." className="min-w-0 flex-1 border-0 bg-transparent p-0 pr-7 text-xs text-[#193B57] outline-none placeholder:text-[#9BAEC0]" aria-label="Tìm kiếm nhật ký hoạt động" data-search-clear-managed="true" />
+          {query && <button type="button" onClick={() => { updateQuery(""); activitySearchInputRef.current?.focus(); }} className="absolute right-1.5 top-1/2 grid h-7 w-7 -translate-y-1/2 place-items-center rounded-md text-[#71869A] transition hover:bg-[#EEF5F7] hover:text-[#193B57] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0F8C8C]" aria-label="Xóa từ khóa tìm kiếm" title="Xóa từ khóa"><X size={14} /></button>}
         </label>
         <SearchableSelect value={type} onChange={updateType} placeholder="Tất cả loại hoạt động" searchPlaceholder="Tìm loại hoạt động..." options={[{ value: "all", label: "Tất cả loại hoạt động" }, ...entityTypeOptions]} />
       </div>

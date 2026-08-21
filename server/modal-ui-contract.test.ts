@@ -725,6 +725,18 @@ describe("modal presentation contract", () => {
     expect(organization).toContain("divisionMatches");
   });
 
+  it("keeps the activity log clear control hidden when empty and supports the desktop slash shortcut", () => {
+    const reports = readProjectFile("client/src/pages/ReportsManagementView.tsx");
+    const searchClear = readProjectFile("client/src/components/SearchClearAffordance.tsx");
+
+    expect(reports).toContain('data-search-clear-managed="true"');
+    expect(reports).toContain('event.key !== "/"');
+    expect(reports).toContain('window.matchMedia("(min-width: 640px)")');
+    expect(reports).toContain("activitySearchInputRef.current?.focus()");
+    expect(searchClear).toContain('input.dataset.searchClearManaged !== "true"');
+    expect(searchClear).toContain('button.style.display = input.value.length === 0 ? "none" : "grid"');
+  });
+
   it("brands issue-slip PDFs and protects automatically sourced recipient departments", () => {
     const supplies = readProjectFile("client/src/pages/SuppliesInventoryView.tsx");
     const pdf = readProjectFile("client/src/lib/supplyIssueSlipPdf.ts");
