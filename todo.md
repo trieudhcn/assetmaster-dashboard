@@ -2442,3 +2442,8 @@
 - [x] Xuất danh sách biên bản thanh lý theo bộ lọc trạng thái và từ khóa hiện tại.
 - [x] Bao gồm dữ liệu biên bản, từng tài sản, nguyên giá, giá thanh lý và lý do thanh lý.
 - [x] Bổ sung hồi quy, kiểm tra file xuất và build phát hành.
+
+## Current Session — Phí Bảo hành/Sửa chữa trong nháp thanh lý
+- [x] Tính và hiển thị riêng phí Bảo hành, phí Sửa chữa và tổng phí theo tài sản.
+- [x] Gắn chỉ dấu rõ ràng cho mã tài sản đã có chi phí trong thẻ biên bản nháp.
+- [x] Bổ sung hồi quy, kiểm tra desktop/mobile và build phát hành.

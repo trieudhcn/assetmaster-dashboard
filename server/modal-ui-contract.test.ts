@@ -800,7 +800,7 @@ describe("modal presentation contract", () => {
     expect(manager).toContain('aria-label="Trang sau"');
   });
 
-  it("adds a salvage total, a light-gray centered PDF table, and repair-cost context only below the retirement draft", () => {
+  it("adds a salvage total, a light-gray centered PDF table, and service-cost context only below the retirement draft", () => {
     const retirementPdf = readProjectFile("client/src/lib/retirementPdf.ts");
     const manager = readProjectFile("client/src/components/RetirementCertificateManager.tsx");
 
@@ -809,16 +809,22 @@ describe("modal presentation contract", () => {
     expect(retirementPdf).toContain("TỔNG CỘNG GIÁ TRỊ THANH LÝ");
     expect(retirementPdf).toContain("doc.setFillColor(235, 239, 242)");
     expect(retirementPdf).toContain('{ align: "center" }');
-    expect(manager).toContain("repairInfoByAsset");
-    expect(manager).toContain("Thông tin sửa chữa tham khảo");
+    expect(manager).toContain("serviceCostByAsset");
+    expect(manager).toContain('ticket.serviceChannel === "warranty"');
+    expect(manager).toContain("Tham khảo phí Bảo hành/Sửa chữa");
+    expect(manager).toContain("Tổng phí đã ghi nhận");
+    expect(manager).toContain("ServiceCostIndicator");
+    expect(manager).toContain("Đã có phí");
     expect(manager).toContain("không đưa vào biên bản");
   });
 
-  it("opens a repair ticket from the retirement draft reference without adding it to the PDF", () => {
+  it("opens a warranty or repair ticket from the retirement draft reference without adding it to the PDF", () => {
     const manager = readProjectFile("client/src/components/RetirementCertificateManager.tsx");
 
-    expect(manager).toContain("setPreviewRepairTicketId(ticket.id)");
-    expect(manager).toContain("Xem nhanh phiếu sửa chữa");
+    expect(manager).toContain("setPreviewRepairTicketId(ticketId)");
+    expect(manager).toContain("warrantyTickets");
+    expect(manager).toContain("repairTickets");
+    expect(manager).toContain("Xem nhanh phiếu Bảo hành/Sửa chữa");
     expect(manager).toContain("repairStatusLabel");
   });
 
