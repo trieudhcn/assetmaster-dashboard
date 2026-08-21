@@ -528,6 +528,21 @@ describe("modal presentation contract", () => {
     expect(css).toContain('transform: translateX(-50%) !important');
   });
 
+  it("offers print and PDF export from the inline handover preview using the shared document template", () => {
+    const supplies = readProjectFile("client/src/components/SupplyIssueSlipManager.tsx");
+    const handoverPdf = readProjectFile("client/src/lib/handoverAssetPdf.ts");
+
+    expect(supplies).toContain("openHandoverAssetPdf");
+    expect(supplies).toContain("await openHandoverAssetPdf");
+    expect(supplies).toContain('createPdf(true)');
+    expect(supplies).toContain('createPdf(false)');
+    expect(supplies).toContain('preparingPdf === "print" ? "Đang chuẩn bị..." : "In"');
+    expect(supplies).toContain('preparingPdf === "export" ? "Đang tạo..." : "Xuất PDF"');
+    expect(handoverPdf).toContain("openPdfPreview");
+    expect(handoverPdf).toContain("autoPrint: options?.autoPrint");
+    expect(handoverPdf).toContain("BIÊN BẢN BÀN GIAO TÀI SẢN");
+  });
+
   it("keeps the employee accessory history compact and suppresses unnecessary decimal zeroes", () => {
     const employees = readProjectFile("client/src/pages/EmployeeManagementView.tsx");
 

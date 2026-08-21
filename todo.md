@@ -2313,3 +2313,8 @@
 - [x] Sửa bố cục hộp xem trước biên bản bàn giao mở từ trang Phụ kiện.
 - [x] Kiểm tra hiển thị nội dung biên bản trên desktop và mobile.
 - [x] Bổ sung hồi quy, kiểm tra giao diện và build phát hành.
+
+## Current Session — Inline Handover Print & PDF
+- [x] Thêm nút In trong hộp xem trước biên bản từ trang Phụ kiện.
+- [x] Thêm nút Xuất PDF dùng mẫu biên bản bàn giao thống nhất.
+- [x] Bổ sung hồi quy, kiểm tra giao diện và build phát hành.
