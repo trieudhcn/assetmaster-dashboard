@@ -822,6 +822,16 @@ describe("modal presentation contract", () => {
     expect(manager).toContain("repairStatusLabel");
   });
 
+  it("exports retirement certificates to Excel using the current status and search filters", () => {
+    const manager = readProjectFile("client/src/components/RetirementCertificateManager.tsx");
+
+    expect(manager).toContain("exportFilteredCertificates");
+    expect(manager).toContain("writeBrandedWorkbook");
+    expect(manager).toContain("DANH SÁCH BIÊN BẢN THANH LÝ");
+    expect(manager).toContain("filteredCertificates.flatMap");
+    expect(manager).toContain("Xuất Excel");
+  });
+
   it("brands issue-slip PDFs and protects automatically sourced recipient departments", () => {
     const supplies = readProjectFile("client/src/pages/SuppliesInventoryView.tsx");
     const pdf = readProjectFile("client/src/lib/supplyIssueSlipPdf.ts");

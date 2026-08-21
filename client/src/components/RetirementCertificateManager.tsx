@@ -1,9 +1,11 @@
 import { useMemo, useRef, useState } from "react";
-import { Archive, CheckCircle2, FileCheck2, FileUp, LoaderCircle, Printer, Search, Trash2, X } from "lucide-react";
+import * as XLSX from "xlsx";
+import { Archive, CheckCircle2, Download, FileCheck2, FileUp, LoaderCircle, Printer, Search, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
 import { trpc } from "@/lib/trpc";
 import { formatVnd } from "@/lib/formatters";
 import { openRetirementPdf } from "@/lib/retirementPdf";
+import { writeBrandedWorkbook } from "@/lib/brandedWorkbook";
 
 const DEFAULT_RETIREMENT_REASON = "Thanh lý theo thời gian quy định";
 const CERTIFICATE_PAGE_SIZE = 5;
@@ -59,6 +61,7 @@ export function RetirementCertificateManager() {
   const [note, setNote] = useState("");
   const [selected, setSelected] = useState<Record<number, DraftItem>>({});
   const [previewRepairTicketId, setPreviewRepairTicketId] = useState<number | null>(null);
+  const [isExportingCertificates, setIsExportingCertificates] = useState(false);
 
   const reservedAssetIds = useMemo(() => new Set((certificatesQuery.data || []).filter((certificate) => certificate.status !== "closed").flatMap((certificate) => certificate.items.map((item) => item.assetId))), [certificatesQuery.data]);
   const candidates = useMemo(() => (assetsQuery.data || []).filter((asset) => !asset.isArchived && !reservedAssetIds.has(asset.id) && (asset.status === "available" || asset.status === "maintenance")), [assetsQuery.data, reservedAssetIds]);
@@ -91,6 +94,44 @@ export function RetirementCertificateManager() {
   const toggleAsset = (assetId: number) => setSelected((current) => { if (current[assetId]) { const next = { ...current }; delete next[assetId]; return next; } return { ...current, [assetId]: { reason: DEFAULT_RETIREMENT_REASON, salvageValue: "", note: "" } }; });
   const updateItem = (assetId: number, key: keyof DraftItem, value: string) => setSelected((current) => ({ ...current, [assetId]: { ...current[assetId], [key]: value } }));
   const createDraftFromSelection = () => { if (!selectedIds.length) return toast.error("Chọn ít nhất một tài sản để lập biên bản nháp."); const date = new Date(`${retiredAt}T12:00:00`); if (Number.isNaN(date.getTime())) return toast.error("Vui lòng chọn ngày thanh lý hợp lệ."); createDraft.mutate({ retiredAt: date.getTime(), note: note.trim() || null, items: selectedIds.map((assetId) => ({ assetId, retirementReason: selected[assetId]?.reason.trim() || DEFAULT_RETIREMENT_REASON, salvageValue: selected[assetId]?.salvageValue || null, note: selected[assetId]?.note.trim() || null })) }); };
+  const exportFilteredCertificates = async () => {
+    if (!filteredCertificates.length) return toast.error("Không có biên bản phù hợp để xuất Excel.");
+    setIsExportingCertificates(true);
+    const loadingToast = toast.loading("Đang tạo tệp Excel biên bản thanh lý...");
+    try {
+      const statusLabel = (status: string) => ({ draft: "Nháp", awaiting_signed_copy: "Đã ký", closed: "Đã đóng" }[status] || status);
+      const rows = filteredCertificates.flatMap((certificate) => certificate.items.map((item) => ({
+        "Mã biên bản": certificate.referenceCode,
+        "Trạng thái": statusLabel(certificate.status),
+        "Ngày thanh lý": new Date(certificate.retiredAt).toLocaleDateString("vi-VN"),
+        "Mã TS": item.assetCode,
+        "Tên tài sản": item.assetName,
+        "Seri": item.serialNumber || "",
+        "Ngày mua": item.purchaseDate ? new Date(item.purchaseDate).toLocaleDateString("vi-VN") : "",
+        "Nguyên giá": numeric(item.purchaseValue),
+        "Giá thanh lý": item.salvageValue === null || item.salvageValue === "" ? "" : numeric(item.salvageValue),
+        "Lý do thanh lý": item.retirementReason,
+        "Ghi chú": item.note || "",
+      })));
+      const workbook = XLSX.utils.book_new();
+      const sheet = XLSX.utils.json_to_sheet(rows);
+      sheet["!cols"] = [18, 14, 16, 16, 32, 20, 16, 18, 18, 36, 30].map((wch) => ({ wch }));
+      XLSX.utils.book_append_sheet(workbook, sheet, "Biên bản thanh lý");
+      const filterSummary = `${statusFilter === "all" ? "Tất cả trạng thái" : filterOptions.find((option) => option.key === statusFilter)?.label || statusFilter}${certificateSearch.trim() ? ` · Từ khóa: ${certificateSearch.trim()}` : ""}`;
+      await writeBrandedWorkbook(workbook, { company: companyQuery.data || undefined, documentTitle: "DANH SÁCH BIÊN BẢN THANH LÝ", fileName: `AssetMaster-BienBanThanhLy-${new Date().toISOString().slice(0, 10)}.xlsx`, description: `Dữ liệu theo bộ lọc hiện tại: ${filterSummary}. ${filteredCertificates.length} biên bản, ${rows.length} dòng tài sản.`, prepareWorkbook: (brandedWorkbook) => {
+        const outputSheet = brandedWorkbook.getWorksheet("Biên bản thanh lý");
+        if (!outputSheet) return;
+        outputSheet.views = [{ state: "frozen", ySplit: 1 }];
+        outputSheet.getRow(1).font = { bold: true, color: { argb: "FF193B57" } };
+        outputSheet.getRow(1).fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFEAEFF2" } };
+        outputSheet.getRow(1).alignment = { vertical: "middle", horizontal: "center", wrapText: true };
+        [8, 9].forEach((column) => outputSheet.getColumn(column).numFmt = '#,##0 "VNĐ"');
+      } });
+      toast.success(`Đã tạo Excel ${rows.length} dòng tài sản.`, { id: loadingToast });
+    } catch (error) {
+      console.error(error); toast.error("Không thể xuất Excel biên bản thanh lý.", { id: loadingToast });
+    } finally { setIsExportingCertificates(false); }
+  };
   const uploadSignedFile = async (certificateId: number, file?: File) => { if (!file) return; if (!["application/pdf", "image/png", "image/jpeg", "image/webp"].includes(file.type) || file.size > 5 * 1024 * 1024) return toast.error("Chỉ hỗ trợ PDF, PNG, JPG, WebP và tối đa 5 MB."); try { uploadSigned.mutate({ id: certificateId, fileName: file.name, contentType: file.type as "application/pdf" | "image/png" | "image/jpeg" | "image/webp", dataUrl: await readFileAsDataUrl(file) }); } catch { toast.error("Không thể đọc tệp biên bản ký tay."); } };
   const printDraft = async (certificate: Certificate) => { try { await openRetirementPdf(certificate.items.map((item) => ({ code: item.assetCode, name: item.assetName, purchaseDate: item.purchaseDate, value: item.purchaseValue, salvageValue: item.salvageValue, serial: item.serialNumber, retiredAt: certificate.retiredAt, retirementReason: item.retirementReason, retirementCertificateNumber: certificate.referenceCode, note: item.note })), companyQuery.data || {}, `${certificate.referenceCode}-ban-nhap.pdf`, `Bản nháp biên bản thanh lý ${certificate.referenceCode}`); } catch (error) { toast.error(error instanceof Error ? error.message : "Không thể tạo bản in nháp."); } };
 
@@ -135,7 +176,7 @@ export function RetirementCertificateManager() {
       </div>
 
       <div className="border-t border-[#E7EEF3] bg-[#FBFCFD] p-5">
-        <div className="flex flex-col gap-3"><div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"><div><h3 className="text-sm font-extrabold text-[#193B57]">Biên bản đã tạo</h3><p className="mt-1 text-[11px] text-[#71869A]">Tìm theo mã TL hoặc tên tài sản; lọc theo trạng thái để theo dõi từng bước xử lý.</p></div><div className="flex flex-wrap gap-1.5" aria-label="Lọc trạng thái biên bản thanh lý">{filterOptions.map((option) => <button key={option.key} type="button" onClick={() => { setStatusFilter(option.key); setCertificatePage(1); }} className={`h-8 rounded-md border px-3 text-[10px] font-extrabold transition ${statusFilter === option.key ? "border-[#0F8C8C] bg-[#0F8C8C] text-white" : "border-[#DDE7F0] bg-white text-[#60758A] hover:border-[#8BCDC6]"}`}>{option.label}</button>)}</div></div><div className="relative"><Search size={15} className="pointer-events-none absolute left-3 top-1/2 z-10 -translate-y-1/2 text-[#6F8598]" /><input value={certificateSearch} onChange={(event) => { setCertificateSearch(event.target.value); setCertificatePage(1); }} placeholder="Tìm mã TL hoặc tên tài sản trong biên bản..." className="retirement-certificate-search field-input h-10 w-full pr-9 text-xs" />{certificateSearch && <button type="button" onClick={() => { setCertificateSearch(""); setCertificatePage(1); }} className="absolute right-1.5 top-1/2 z-10 grid h-7 w-7 -translate-y-1/2 place-items-center rounded-md text-[#71869A] hover:bg-[#EEF5F7]" aria-label="Xóa tìm kiếm biên bản"><X size={14} /></button>}</div></div>
+        <div className="flex flex-col gap-3"><div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"><div><h3 className="text-sm font-extrabold text-[#193B57]">Biên bản đã tạo</h3><p className="mt-1 text-[11px] text-[#71869A]">Tìm theo mã TL hoặc tên tài sản; lọc theo trạng thái để theo dõi từng bước xử lý.</p></div><div className="flex flex-wrap items-center gap-1.5"><button type="button" disabled={!filteredCertificates.length || isExportingCertificates} onClick={() => void exportFilteredCertificates()} className="inline-flex h-8 items-center gap-1.5 rounded-md border border-[#8BCDC6] bg-white px-3 text-[10px] font-extrabold text-[#087A6A] hover:bg-[#E6F6F2] disabled:cursor-not-allowed disabled:opacity-50"><Download size={13} />{isExportingCertificates ? "Đang xuất..." : "Xuất Excel"}</button><div className="flex flex-wrap gap-1.5" aria-label="Lọc trạng thái biên bản thanh lý">{filterOptions.map((option) => <button key={option.key} type="button" onClick={() => { setStatusFilter(option.key); setCertificatePage(1); }} className={`h-8 rounded-md border px-3 text-[10px] font-extrabold transition ${statusFilter === option.key ? "border-[#0F8C8C] bg-[#0F8C8C] text-white" : "border-[#DDE7F0] bg-white text-[#60758A] hover:border-[#8BCDC6]"}`}>{option.label}</button>)}</div></div></div><div className="relative"><Search size={15} className="pointer-events-none absolute left-3 top-1/2 z-10 -translate-y-1/2 text-[#6F8598]" /><input value={certificateSearch} onChange={(event) => { setCertificateSearch(event.target.value); setCertificatePage(1); }} placeholder="Tìm mã TL hoặc tên tài sản trong biên bản..." className="retirement-certificate-search field-input h-10 w-full pr-9 text-xs" />{certificateSearch && <button type="button" onClick={() => { setCertificateSearch(""); setCertificatePage(1); }} className="absolute right-1.5 top-1/2 z-10 grid h-7 w-7 -translate-y-1/2 place-items-center rounded-md text-[#71869A] hover:bg-[#EEF5F7]" aria-label="Xóa tìm kiếm biên bản"><X size={14} /></button>}</div></div>
         <div className="mt-3 space-y-3">{certificatesQuery.isLoading ? <div className="py-5 text-center text-xs text-[#71869A]">Đang tải biên bản...</div> : paginatedCertificates.length ? paginatedCertificates.map((certificate) => <CertificateCard key={certificate.id} certificate={certificate as Certificate} company={(companyQuery.data || {}) as Company} uploading={uploadSigned.isPending} closing={closeCertificate.isPending} cancelling={cancelDraft.isPending} onUpload={(file) => { void uploadSignedFile(certificate.id, file); }} onPrint={() => void printDraft(certificate as Certificate)} onClose={() => closeCertificate.mutate({ id: certificate.id })} onCancel={() => cancelDraft.mutate({ id: certificate.id })} />) : <div className="rounded-lg border border-dashed border-[#D7E8E5] bg-white px-4 py-6 text-center text-xs text-[#71869A]">Không có biên bản phù hợp với bộ lọc hoặc từ khóa đã chọn.</div>}</div>
         {filteredCertificates.length > CERTIFICATE_PAGE_SIZE && <div className="mt-4 flex items-center justify-between gap-3 border-t border-[#E7EEF3] pt-3"><span className="text-[11px] font-bold text-[#71869A]">Trang {currentCertificatePage}/{certificatePageCount} · {filteredCertificates.length} biên bản</span><div className="flex gap-2"><button type="button" disabled={currentCertificatePage === 1} onClick={() => setCertificatePage((page) => Math.max(1, page - 1))} className="grid h-8 w-8 place-items-center rounded-md border border-[#DDE7F0] bg-white text-[#526779] disabled:opacity-40" aria-label="Trang trước">‹</button><button type="button" disabled={currentCertificatePage === certificatePageCount} onClick={() => setCertificatePage((page) => Math.min(certificatePageCount, page + 1))} className="grid h-8 w-8 place-items-center rounded-md border border-[#DDE7F0] bg-white text-[#526779] disabled:opacity-40" aria-label="Trang sau">›</button></div></div>}
       </div>

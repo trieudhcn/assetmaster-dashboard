@@ -2437,3 +2437,8 @@
 - [x] Cho phép mở nhanh phiếu sửa chữa từ vùng tham khảo dưới bản nháp thanh lý.
 - [x] Hiển thị tổng nguyên giá cùng tổng giá thanh lý ở cuối bảng PDF.
 - [x] Bổ sung hồi quy, kiểm tra PDF/responsive và build phát hành.
+
+## Current Session — Xuất Excel biên bản thanh lý
+- [x] Xuất danh sách biên bản thanh lý theo bộ lọc trạng thái và từ khóa hiện tại.
+- [x] Bao gồm dữ liệu biên bản, từng tài sản, nguyên giá, giá thanh lý và lý do thanh lý.
+- [x] Bổ sung hồi quy, kiểm tra file xuất và build phát hành.
