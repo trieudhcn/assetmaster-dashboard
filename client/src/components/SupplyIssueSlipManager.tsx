@@ -158,7 +158,56 @@ type HoldingSource = { source: "handover" | "issue-slip"; sourceId: number; refe
 function HoldingSourceCard({ source, onPreview }: { source: HoldingSource; onPreview: (source: HoldingSource) => void }) {
   const [expanded, setExpanded] = useState(false);
   const total = source.items.reduce((sum, item) => sum + item.outstandingQuantity, 0);
-  return <div className="px-3 py-3"><div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between"><div><div className="text-[10px] font-extrabold uppercase tracking-[.1em] text-[#71869A]">{source.source === "handover" ? "Cấp kèm bàn giao tài sản" : "Phiếu cấp phát phụ kiện riêng"}</div><div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs font-bold text-[#193B57]"><span>{new Date(source.issuedAt).toLocaleDateString("vi-VN")}</span><span className="text-[#8AA0B6]">·</span><span>Tổng đang giữ: <strong className="text-[#087A6A]">{numberText(total)}</strong></span><span className="text-[#71869A]">/ {source.items.length} loại</span></div></div><div className="flex items-center gap-2 self-start sm:self-auto"><button type="button" onClick={() => setExpanded((current) => !current)} className="inline-flex h-8 items-center gap-1 rounded-md border border-[#D8E8E5] bg-white px-2.5 text-[10px] font-extrabold text-[#526779] hover:bg-[#F4FBFA]" aria-expanded={expanded}><ChevronDown size={13} className={`transition-transform ${expanded ? "rotate-180" : ""}`} />{expanded ? "Thu gọn" : `Chi tiết (${source.items.length})`}</button><button type="button" onClick={() => onPreview(source)} className="inline-flex h-8 items-center gap-1 rounded-md border border-[#CDE5E5] bg-[#ECF8F7] px-2.5 text-[10px] font-extrabold text-[#087A6A] hover:bg-[#DDF3F0]" title={source.source === "handover" ? "Xem trước biên bản bàn giao" : "Xem trước phiếu cấp phát phụ kiện"}><FileText size={13} />{source.referenceCode}</button></div></div>{expanded && <div className="mt-3 grid gap-2 border-t border-[#EDF4F2] pt-3 sm:grid-cols-2">{source.items.map((item) => <div key={`${source.sourceId}-${item.supplyCode}`} className="flex items-center justify-between gap-3 rounded-lg border border-[#EDF4F2] bg-[#FBFEFE] px-2.5 py-2"><div className="min-w-0"><div className="truncate text-xs font-bold text-[#193B57]">{item.supplyName}</div><div className="mt-0.5 font-mono text-[10px] text-[#8AA0B6]">{item.supplyCode}</div></div><div className="shrink-0 text-right text-xs font-extrabold text-[#087A6A]">Còn {numberText(item.outstandingQuantity)} {item.unit}</div></div>)}</div>}</div>;
+  return (
+    <div className="holding-source-card px-3 py-3">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <div className="text-[10px] font-extrabold uppercase tracking-[.1em] text-[#71869A]">
+            {source.source === "handover" ? "Cấp kèm bàn giao tài sản" : "Phiếu cấp phát phụ kiện riêng"}
+          </div>
+          <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs font-bold text-[#193B57]">
+            <span>{new Date(source.issuedAt).toLocaleDateString("vi-VN")}</span>
+            <span className="text-[#8AA0B6]">·</span>
+            <span>Tổng đang giữ: <strong className="text-[#087A6A]">{numberText(total)}</strong></span>
+            <span className="text-[#71869A]">/ {source.items.length} loại</span>
+          </div>
+        </div>
+        <div className="holding-source-card__actions grid w-full grid-cols-2 gap-2 self-stretch sm:flex sm:w-auto sm:items-center sm:self-auto">
+          <button
+            type="button"
+            onClick={() => setExpanded((current) => !current)}
+            className="holding-source-card__action inline-flex h-10 min-w-0 items-center justify-center gap-1 overflow-hidden rounded-md border border-[#D8E8E5] bg-white px-2.5 text-xs font-extrabold leading-none text-[#526779] whitespace-nowrap hover:bg-[#F4FBFA] sm:h-8 sm:w-auto sm:text-[10px]"
+            aria-expanded={expanded}
+          >
+            <ChevronDown size={13} className={`shrink-0 transition-transform ${expanded ? "rotate-180" : ""}`} />
+            <span className="truncate">{expanded ? "Thu gọn" : `Chi tiết (${source.items.length})`}</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => onPreview(source)}
+            className="holding-source-card__action inline-flex h-10 min-w-0 items-center justify-center gap-1 overflow-hidden rounded-md border border-[#CDE5E5] bg-[#ECF8F7] px-2.5 text-xs font-extrabold leading-none text-[#087A6A] whitespace-nowrap hover:bg-[#DDF3F0] sm:h-8 sm:w-auto sm:text-[10px]"
+            title={source.source === "handover" ? "Xem trước biên bản bàn giao" : "Xem trước phiếu cấp phát phụ kiện"}
+          >
+            <FileText size={13} className="shrink-0" />
+            <span className="truncate">{source.referenceCode}</span>
+          </button>
+        </div>
+      </div>
+      {expanded && (
+        <div className="mt-3 grid gap-2 border-t border-[#EDF4F2] pt-3 sm:grid-cols-2">
+          {source.items.map((item) => (
+            <div key={`${source.sourceId}-${item.supplyCode}`} className="flex items-center justify-between gap-3 rounded-lg border border-[#EDF4F2] bg-[#FBFEFE] px-2.5 py-2">
+              <div className="min-w-0">
+                <div className="truncate text-xs font-bold text-[#193B57]">{item.supplyName}</div>
+                <div className="mt-0.5 font-mono text-[10px] text-[#8AA0B6]">{item.supplyCode}</div>
+              </div>
+              <div className="shrink-0 text-right text-xs font-extrabold text-[#087A6A]">Còn {numberText(item.outstandingQuantity)} {item.unit}</div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
 }
 
 function LegacyInlineHandoverPreviewDialog({ handoverId, onClose }: { handoverId: number | null; onClose: () => void }) {

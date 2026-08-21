@@ -672,6 +672,18 @@ describe("modal presentation contract", () => {
     expect(issueSlips).toContain("totalOutstanding");
   });
 
+  it("keeps accessory certificate card actions side by side without wrapping on mobile", () => {
+    const css = readProjectFile("client/src/index.css");
+    const supplies = readProjectFile("client/src/components/SupplyIssueSlipManager.tsx");
+
+    expect(css).toContain("Explicit classes keep each mobile certificate action");
+    expect(css).toContain('@media (max-width: 639px)');
+    expect(css).toContain(".holding-source-card__actions");
+    expect(supplies).toContain("holding-source-card__actions grid w-full grid-cols-2");
+    expect(supplies).toContain("holding-source-card__action inline-flex h-10 min-w-0");
+    expect(supplies).toContain("whitespace-nowrap");
+  });
+
   it("brands issue-slip PDFs and protects automatically sourced recipient departments", () => {
     const supplies = readProjectFile("client/src/pages/SuppliesInventoryView.tsx");
     const pdf = readProjectFile("client/src/lib/supplyIssueSlipPdf.ts");

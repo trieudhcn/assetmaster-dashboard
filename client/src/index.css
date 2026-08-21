@@ -223,6 +223,12 @@ button[aria-label="Mở menu người dùng"] + div { animation: popover-in 180m
 .supply-row-action:hover { background: #E6F6F2; color: #087A6A; box-shadow: 0 3px 10px rgba(15, 140, 140, 0.14); transform: translateY(-1px); }
 .supply-row-action:active { transform: scale(0.94); }
 
+/* Explicit classes keep each mobile certificate action in a stable two-column row. */
+@media (max-width: 639px) {
+  .holding-source-card__actions { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+  .holding-source-card__action { text-overflow: ellipsis; }
+}
+
 /* Compact primary actions and recipient tabs keep icon/text pairs on one baseline. */
 .primary-action { display: inline-flex; min-height: 2.55rem; align-items: center; justify-content: center; gap: 0.5rem; border-radius: 0.6rem; background: #0F8C8C; padding: 0.65rem 1rem; color: #FFFFFF; font-size: 0.78rem; font-weight: 800; line-height: 1; transition: background-color 160ms ease-out, box-shadow 160ms ease-out, transform 160ms ease-out; }
 .primary-action:hover:not(:disabled) { background: #087A6A; box-shadow: 0 5px 14px rgba(15, 140, 140, 0.22); }

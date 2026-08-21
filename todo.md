@@ -2363,3 +2363,8 @@
 - [x] Áp dụng overlay BG căn giữa viewport cho thao tác mở từ hồ sơ nhân viên.
 - [x] Giữ đầy đủ thông tin phụ kiện, đóng, In và Xuất PDF trong overlay mới.
 - [x] Bổ sung hồi quy, kiểm tra giao diện hồ sơ và build phát hành.
+
+## Current Session — Mobile Accessory Certificate Cards
+- [x] Khắc phục hiện tượng nút Chi tiết và liên kết BG/PK bị xuống dòng hoặc chồng lấn trên mobile.
+- [x] Bảo đảm vùng chạm, nhãn thao tác và mã biên bản hiển thị rõ ràng ở mọi kích thước màn hình.
+- [x] Bổ sung hồi quy, kiểm tra giao diện mobile và build phát hành.
