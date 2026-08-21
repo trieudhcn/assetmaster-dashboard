@@ -1946,6 +1946,7 @@ describe("currency input and scrollbar contract", () => {
     expect(operations).toContain("costSummaryYear");
     expect(operations).toContain("costSummaryChannel");
     expect(operations).toContain("costSummaryTickets");
+    expect(operations).toContain("ticket.ticketYear || new Date(ticket.openedAt).getFullYear()");
     expect(operations).toContain("Tổng chi phí Bảo hành & Sửa chữa");
     expect(operations).toContain("assetmaster-chi-phi-bh-sc-");
     expect(operations).toContain("isExportingCosts");

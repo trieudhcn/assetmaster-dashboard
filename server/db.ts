@@ -25,6 +25,7 @@ import {
   retirementCertificates,
   supplyImportItems,
   supplyImportSessions,
+  supplyUnits,
   supplyIssueSlipItems,
   supplyIssueSlips,
   uiLabels,
@@ -389,6 +390,43 @@ export async function deleteAssetCategory(id: number) {
   const db = await getDb();
   if (!db) throw new Error("Database unavailable");
   await db.delete(assetCategories).where(eq(assetCategories.id, id));
+}
+
+export async function listSupplyUnits() {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(supplyUnits).orderBy(supplyUnits.name);
+}
+
+export async function getSupplyUnitById(id: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+  return (await db.select().from(supplyUnits).where(eq(supplyUnits.id, id)).limit(1))[0];
+}
+
+export async function getSupplyUnitByName(name: string) {
+  const db = await getDb();
+  if (!db) return undefined;
+  return (await db.select().from(supplyUnits).where(eq(supplyUnits.name, name)).limit(1))[0];
+}
+
+export async function createSupplyUnit(data: typeof supplyUnits.$inferInsert) {
+  const db = await getDb();
+  if (!db) throw new Error("Database unavailable");
+  const result = await db.insert(supplyUnits).values(data);
+  return Number(result[0].insertId);
+}
+
+export async function updateSupplyUnit(id: number, data: Partial<typeof supplyUnits.$inferInsert>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database unavailable");
+  await db.update(supplyUnits).set(data).where(eq(supplyUnits.id, id));
+}
+
+export async function deleteSupplyUnit(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database unavailable");
+  await db.delete(supplyUnits).where(eq(supplyUnits.id, id));
 }
 
 export async function countAssetsByCategoryId(categoryId: number) {

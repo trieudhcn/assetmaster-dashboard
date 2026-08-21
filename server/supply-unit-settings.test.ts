@@ -1,0 +1,23 @@
+import { describe, expect, it } from "vitest";
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
+
+const root = resolve(import.meta.dirname, "..");
+const readProjectFile = (relativePath: string) => readFileSync(resolve(root, relativePath), "utf8");
+
+describe("standard supply unit settings", () => {
+  it("provides admin CRUD and links active units to the import template", () => {
+    const settings = readProjectFile("client/src/components/SupplyUnitSettings.tsx");
+    const supplies = readProjectFile("client/src/pages/SuppliesInventoryView.tsx");
+    const routers = readProjectFile("server/routers.ts");
+
+    expect(settings).toContain("Đơn vị tính chuẩn");
+    expect(settings).toContain("supplyUnits.create");
+    expect(settings).toContain("supplyUnits.update");
+    expect(settings).toContain("supplyUnits.remove");
+    expect(supplies).toContain("activeSupplyUnits");
+    expect(supplies).toContain("availableSupplyUnits");
+    expect(routers).toContain("supplyUnits: router");
+    expect(routers).toContain("deleteSupplyUnit");
+  });
+});

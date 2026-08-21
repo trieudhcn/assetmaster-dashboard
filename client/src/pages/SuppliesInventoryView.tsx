@@ -391,9 +391,12 @@ function SupplyCreateModal({ form, setForm, categoryOptions, vendorOptions, bran
   const invalidRows = rowIssues.filter((item) => item.issues.length > 0);
   const existingCount = rows.filter((row) => existingCodes.has(row.code.trim().toUpperCase())).length;
   const canSavePreview = rows.length > 0 && !invalidRows.length && !(existingCount > 0 && !updateExisting);
+  const supplyUnitsQuery = trpc.supplyUnits.list.useQuery();
+  const activeSupplyUnits = (supplyUnitsQuery.data || []).filter((unit) => unit.isActive).map((unit) => unit.name);
+  const availableSupplyUnits = activeSupplyUnits.length ? activeSupplyUnits : standardSupplyUnits;
   const downloadTemplate = async () => {
     try {
-      const workbook = await buildSupplyImportTemplate({ units: standardSupplyUnits, categories: categoryOptions.filter((option) => option.value && option.isActive !== false).map((option) => option.label), vendors: vendorOptions.filter((option) => option.value && option.isActive !== false).map((option) => option.label), brands: brandOptions.filter((option) => option.value && option.isActive !== false).map((option) => option.label) });
+      const workbook = await buildSupplyImportTemplate({ units: availableSupplyUnits, categories: categoryOptions.filter((option) => option.value && option.isActive !== false).map((option) => option.label), vendors: vendorOptions.filter((option) => option.value && option.isActive !== false).map((option) => option.label), brands: brandOptions.filter((option) => option.value && option.isActive !== false).map((option) => option.label) });
       const bytes = await workbook.xlsx.writeBuffer();
       const url = URL.createObjectURL(new Blob([bytes as ArrayBuffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }));
       const anchor = document.createElement("a");
@@ -426,7 +429,7 @@ function SupplyCreateModal({ form, setForm, categoryOptions, vendorOptions, bran
       const parsedRows = rawRows.slice(0, 200).map((raw, index) => {
         const rowNumber = index + 2;
         const unit = read(raw, "Đơn vị tính") || "Cái";
-        if (!standardSupplyUnits.some((option) => option.localeCompare(unit, "vi", { sensitivity: "accent" }) === 0)) validation.push(`Dòng ${rowNumber}: Đơn vị tính “${unit}” không nằm trong danh sách chuẩn.`);
+        if (!availableSupplyUnits.some((option) => option.localeCompare(unit, "vi", { sensitivity: "accent" }) === 0)) validation.push(`Dòng ${rowNumber}: Đơn vị tính “${unit}” không nằm trong danh sách chuẩn đang hoạt động.`);
         return {
           code: read(raw, "Mã phụ kiện", "Mã vật tư").toUpperCase(),
           name: read(raw, "Tên phụ kiện", "Tên vật tư"),

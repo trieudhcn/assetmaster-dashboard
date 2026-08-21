@@ -249,6 +249,14 @@ export const inventorySupplies = mysqlTable("inventorySupplies", {
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 }, (table) => [index("inventory_supplies_category_idx").on(table.categoryId), index("inventory_supplies_active_idx").on(table.isActive)]);
 
+export const supplyUnits = mysqlTable("supplyUnits", {
+  id: int("id").autoincrement().primaryKey(),
+  name: varchar("name", { length: 32 }).notNull().unique(),
+  isActive: boolean("isActive").default(true).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+}, (table) => [index("supply_units_active_idx").on(table.isActive)]);
+
 export const supplyIssueSlips = mysqlTable("supplyIssueSlips", {
   id: int("id").autoincrement().primaryKey(),
   referenceCode: varchar("referenceCode", { length: 64 }).notNull().unique(),

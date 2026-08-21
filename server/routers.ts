@@ -28,6 +28,7 @@ import {
   createInventorySupply,
   createSupplyImportItem,
   createSupplyImportSession,
+  createSupplyUnit,
   createSupplyIssueSlip,
   createSupplyIssueSlipItem,
   createMaintenanceTicket,
@@ -63,6 +64,8 @@ import {
   getNextSupplyIssueSequence,
   getSupplyIssueSlipById,
   getSupplyIssueSlipItemById,
+  getSupplyUnitById,
+  getSupplyUnitByName,
   getSupplyImportSessionById,
   listHelpGuides,
   listUiLabels,
@@ -118,6 +121,7 @@ import {
   listSupplyIssueSlips,
   listSupplyImportItems,
   listSupplyImportSessions,
+  listSupplyUnits,
   listSupplyIssueAnalytics,
   listHelpGuideVersions,
   listVendors,
@@ -144,6 +148,7 @@ import {
   updateSupplyImportSession,
   updateSupplyIssueSlip,
   updateSupplyIssueSlipItem,
+  updateSupplyUnit,
   updateMaintenanceTicket,
   updateRetirementCertificate,
   updateRetirementCertificateAssetSalvageValues,
@@ -154,6 +159,7 @@ import {
   updateAuditItem,
   updateAuditSession,
   transitionHandoverStatus,
+  deleteSupplyUnit,
 } from "./db";
 import { storagePut } from "./storage";
 
@@ -532,6 +538,32 @@ export const appRouter = router({
       await updateBrand(id, changes);
       const action = input.isActive === false ? "deactivated" : input.isActive === true ? "activated" : "updated";
       await recordActivity({ entityType: "brand", entityId: id, action, actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: `${input.isActive === false ? "Vô hiệu hóa" : input.isActive === true ? "Kích hoạt" : "Cập nhật"} Hãng: ${input.name || existing.name}` });
+      return { success: true };
+    }),
+  }),
+  supplyUnits: router({
+    list: protectedProcedure.query(() => listSupplyUnits()),
+    create: adminProcedure.input(z.object({ name: z.string().trim().min(1).max(32) })).mutation(async ({ input, ctx }) => {
+      if (await getSupplyUnitByName(input.name)) throw new TRPCError({ code: "BAD_REQUEST", message: "Đơn vị tính này đã tồn tại." });
+      const id = await createSupplyUnit({ name: input.name, isActive: true });
+      await recordActivity({ entityType: "supplyUnit", entityId: id, action: "created", actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: `Tạo đơn vị tính chuẩn: ${input.name}` });
+      return { id };
+    }),
+    update: adminProcedure.input(z.object({ id: z.number().int().positive(), name: z.string().trim().min(1).max(32).optional(), isActive: z.boolean().optional() })).mutation(async ({ input, ctx }) => {
+      const existing = await getSupplyUnitById(input.id);
+      if (!existing) throw new TRPCError({ code: "NOT_FOUND", message: "Không tìm thấy đơn vị tính." });
+      if (input.name && input.name !== existing.name && await getSupplyUnitByName(input.name)) throw new TRPCError({ code: "BAD_REQUEST", message: "Đơn vị tính này đã tồn tại." });
+      const { id, ...changes } = input;
+      await updateSupplyUnit(id, changes);
+      const action = input.isActive === false ? "deactivated" : input.isActive === true ? "activated" : "updated";
+      await recordActivity({ entityType: "supplyUnit", entityId: id, action, actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: `${input.isActive === false ? "Vô hiệu hóa" : input.isActive === true ? "Kích hoạt" : "Cập nhật"} đơn vị tính chuẩn: ${input.name || existing.name}` });
+      return { success: true };
+    }),
+    remove: adminProcedure.input(z.object({ id: z.number().int().positive() })).mutation(async ({ input, ctx }) => {
+      const existing = await getSupplyUnitById(input.id);
+      if (!existing) throw new TRPCError({ code: "NOT_FOUND", message: "Không tìm thấy đơn vị tính." });
+      await deleteSupplyUnit(input.id);
+      await recordActivity({ entityType: "supplyUnit", entityId: input.id, action: "deleted", actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: `Xóa đơn vị tính chuẩn: ${existing.name}` });
       return { success: true };
     }),
   }),

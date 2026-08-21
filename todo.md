@@ -2567,3 +2567,9 @@
 - [x] Bổ sung dropdown Đơn vị tính theo danh sách chuẩn vào template import Phụ kiện.
 - [x] Cảnh báo các dòng sử dụng Phân loại, Nhà cung cấp hoặc Hãng đã bị vô hiệu hóa.
 - [x] Bổ sung hồi quy workbook, kiểm tra luồng import và build phát hành.
+
+## Current Session — Chi phí theo năm và đơn vị tính chuẩn
+- [x] Đồng bộ ba thẻ chi phí Bảo hành & Sửa chữa theo bộ lọc năm.
+- [x] Thêm quản trị viên thêm, sửa, xóa đơn vị tính chuẩn tại Cài đặt hệ thống.
+- [x] Dùng danh sách đơn vị quản trị được trong template import Phụ kiện.
+- [x] Bổ sung migration, hồi quy, kiểm tra desktop/mobile và build phát hành.

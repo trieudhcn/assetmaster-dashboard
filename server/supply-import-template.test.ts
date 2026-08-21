@@ -23,4 +23,11 @@ describe("supply import template", () => {
     const result = resolveActiveSupplyImportCatalog("Nhà cung cấp cũ", [{ value: "6", label: "Nhà cung cấp cũ", isActive: false }], "Nhà cung cấp");
     expect(result).toEqual({ id: null, error: "Nhà cung cấp “Nhà cung cấp cũ” đã bị vô hiệu hóa" });
   });
+
+  it("uses the configured unit list when provided", async () => {
+    const workbook = await buildSupplyImportTemplate({ units: ["Tấm", "Túi"], categories: [], vendors: [], brands: [] });
+    const lists = workbook.getWorksheet("Danh sách chọn");
+    expect(lists?.getCell("A2").value).toBe("Tấm");
+    expect(lists?.getCell("A3").value).toBe("Túi");
+  });
 });
