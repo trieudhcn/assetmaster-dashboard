@@ -1140,7 +1140,12 @@ describe("modal presentation contract", () => {
     expect(overview).toContain("onClick={exportExcel}");
     expect(overview).toContain("Năm thanh lý");
     expect(reports).toContain("salvageValueByAssetId");
-    expect(reports).toContain("Tổng giá trị thu hồi của tài sản thanh lý");
+    expect(reports).toContain("retirementValueByYear");
+    expect(reports).toContain("data-retirement-recorded-values");
+    expect(reports).toContain("data-retirement-no-data");
+    expect(reports).toContain("Không có dữ liệu");
+    expect(reports).toContain('SearchableSelect value={retirementYear} onChange={setRetirementYear}');
+    expect(reports).not.toContain("const retiredTotalValue");
     expect(reports).toContain("Giá trị thanh lý đã ghi nhận");
   });
 

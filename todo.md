@@ -2523,3 +2523,9 @@
 - [x] Bỏ thẻ Tổng giá trị thanh lý trùng lặp khỏi tổng quan.
 - [x] Đồng bộ Giá trị thanh lý đã ghi nhận theo bộ lọc năm.
 - [x] Bổ sung hồi quy, kiểm tra desktop/mobile và build phát hành.
+
+## Current Session — Báo Cáo thanh lý theo năm
+- [x] Đưa bộ lọc năm vào khu vực tổng hợp thanh lý trong tab Báo Cáo.
+- [x] Bỏ các ô Tổng giá trị thanh lý trùng lặp trong tab Báo Cáo.
+- [x] Đồng bộ Giá trị thanh lý đã ghi nhận theo bộ lọc năm và bổ sung trạng thái Không có dữ liệu.
+- [x] Bổ sung hồi quy, kiểm tra desktop/mobile và build phát hành.
