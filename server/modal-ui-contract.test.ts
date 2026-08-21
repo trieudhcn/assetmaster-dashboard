@@ -1124,11 +1124,18 @@ describe("modal presentation contract", () => {
 
   it("summarizes disposed asset values by retirement year", () => {
     const retirement = readProjectFile("client/src/pages/RetirementManagementView.tsx");
+    const reports = readProjectFile("client/src/pages/ReportsManagementView.tsx");
 
     expect(retirement).toContain('asset.status !== "retired"');
     expect(retirement).toContain("yearlySummary");
     expect(retirement).toContain("Tổng quan thanh lý");
     expect(retirement).toContain("Khấu hao/Thanh lý");
+    expect(retirement).toContain("totalSalvageValue");
+    expect(retirement).toContain('OverviewMetric label="Tổng giá trị thanh lý"');
+    expect(retirement).not.toContain('OverviewMetric label="Đã chọn xuất PDF"');
+    expect(reports).toContain("salvageValueByAssetId");
+    expect(reports).toContain("Tổng giá trị thu hồi của tài sản thanh lý");
+    expect(reports).toContain("Giá trị thanh lý đã ghi nhận");
   });
 
   it("exports grouped retirement certificates while preserving every asset in each TL code", () => {

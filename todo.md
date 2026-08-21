@@ -2500,3 +2500,8 @@
 - [x] Khôi phục trạng thái Khấu hao/Thanh lý khi lưu hoặc đóng biểu mẫu, không được chuyển sai sang Sẵn có.
 - [x] Hiển thị cảnh báo khi chọn tài sản vẫn còn hạn bảo hành vào biên bản thanh lý.
 - [x] Bổ sung hồi quy nghiêm ngặt, kiểm tra desktop/mobile và build phát hành.
+
+## Current Session — Tổng giá trị thanh lý
+- [x] Thay ô “Đã chọn xuất PDF” bằng tổng giá trị thanh lý đã ghi nhận.
+- [x] Hiển thị tổng giá trị thanh lý tại khu vực báo cáo thanh lý theo năm.
+- [x] Bổ sung hồi quy, kiểm tra giao diện và build phát hành.
