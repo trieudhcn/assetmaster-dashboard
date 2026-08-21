@@ -599,6 +599,33 @@ input[type="date"] {
     text-overflow: ellipsis;
     white-space: nowrap;
   }
+  /* Organization cards stack their controls on phones so unit names and counts stay fully readable. */
+  .organization-management-page section.mt-5.overflow-hidden > div.grid > article { padding: 0.875rem; }
+  .organization-management-page section.mt-5.overflow-hidden > div.grid > article > div:first-child {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.5rem;
+  }
+  .organization-management-page section.mt-5.overflow-hidden > div.grid > article > div:first-child > div:last-child {
+    justify-content: flex-end;
+    border-top: 1px solid #E7EEF3;
+    padding-top: 0.45rem;
+  }
+  .organization-management-page section.mt-5.overflow-hidden > div.grid > article > div:nth-child(2) {
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.45rem;
+  }
+  .organization-management-page section.mt-5.overflow-hidden > div.grid > article > div:nth-child(2) > span:last-child {
+    margin-left: auto;
+    white-space: nowrap;
+  }
+  .organization-management-page section.mt-5.overflow-hidden > div.grid > article > div:nth-child(3) {
+    margin-top: 0.75rem;
+    padding-left: 0.75rem;
+  }
+  .organization-management-page section.mt-5.overflow-hidden > div.grid > article > div:nth-child(3) > div { padding: 0.625rem; }
+  .organization-management-page section.mt-5.overflow-hidden > div.grid > article > div:nth-child(3) > div > div:first-child { align-items: flex-start; }
 }
 
 @media (prefers-reduced-motion: reduce) {

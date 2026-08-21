@@ -2383,3 +2383,8 @@
 - [x] Rà soát cột Mã phiếu trong danh sách Bàn giao & Cấp phát trên mobile.
 - [x] Tối ưu kích thước/vị trí cột để ưu tiên Người nhận, thời gian và trạng thái.
 - [x] Bổ sung hồi quy, kiểm tra mobile và build phát hành.
+
+## Current Session — Organization Management Mobile Layout
+- [x] Tái tạo và xác định lỗi giao diện trang Phòng Ban & Bộ Phận trên mobile.
+- [x] Điều chỉnh danh sách, bộ lọc và thao tác để không tràn hoặc chồng lấn.
+- [x] Bổ sung hồi quy, kiểm tra mobile và build phát hành.

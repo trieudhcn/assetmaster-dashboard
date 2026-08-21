@@ -704,6 +704,17 @@ describe("modal presentation contract", () => {
     expect(css).toContain("text-overflow: ellipsis");
   });
 
+  it("stacks organization chart controls on mobile so department names and counts remain readable", () => {
+    const css = readProjectFile("client/src/index.css");
+    const organization = readProjectFile("client/src/pages/OrganizationManagementPage.tsx");
+
+    expect(organization).toContain("organization-management-page min-h-screen");
+    expect(css).toContain("Organization cards stack their controls on phones");
+    expect(css).toContain(".organization-management-page section.mt-5.overflow-hidden");
+    expect(css).toContain("flex-direction: column");
+    expect(css).toContain("white-space: nowrap");
+  });
+
   it("brands issue-slip PDFs and protects automatically sourced recipient departments", () => {
     const supplies = readProjectFile("client/src/pages/SuppliesInventoryView.tsx");
     const pdf = readProjectFile("client/src/lib/supplyIssueSlipPdf.ts");
