@@ -177,7 +177,6 @@ export async function previewServiceTicketPdf({ ticket, asset, assigneeName, rep
   doc.text("Xác nhận quản lý", 105, y, { align: "center" });
   doc.text("Đại diện nhà cung cấp", right - 22, y, { align: "center" });
   doc.setFontSize(7.5);
-  doc.text(`Tạo ngày ${new Date().toLocaleDateString("vi-VN")}`, left, 286);
   applyPdfLogoWatermark(doc, await createPdfLogoWatermark(company.logoUrl).catch(() => null));
   drawPdfCorporateFooter(doc, company, documentLabel);
   openPdfPreview(doc, fileName, `${warranty ? "Phiếu Bảo hành" : "Phiếu Sửa chữa"} ${ticket.ticketCode}`, { autoPrint });

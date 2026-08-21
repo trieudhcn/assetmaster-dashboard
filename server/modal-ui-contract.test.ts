@@ -574,6 +574,20 @@ describe("modal presentation contract", () => {
     expect(handoverPdf).toContain("replace(/[\\\\/:*?\"<>|]+/g, \"-\")");
   });
 
+  it("removes creation dates from PDF footers and remembers a custom BG filename by reference code", () => {
+    const footer = readProjectFile("client/src/lib/handoverPdf.ts");
+    const servicePdf = readProjectFile("client/src/lib/serviceTicketPdf.ts");
+    const supplies = readProjectFile("client/src/components/SupplyIssueSlipManager.tsx");
+
+    expect(footer).not.toContain("Lập ngày");
+    expect(footer).toContain("Trang ${page}/${pageCount}");
+    expect(servicePdf).not.toContain("Tạo ngày");
+    expect(supplies).toContain("assetmaster-pdf-filename:bg:");
+    expect(supplies).toContain("window.localStorage.getItem");
+    expect(supplies).toContain("window.localStorage.setItem");
+    expect(supplies).toContain("handoverPdfFileNameStorageKey(handover.referenceCode)");
+  });
+
   it("keeps the employee accessory history compact and suppresses unnecessary decimal zeroes", () => {
     const employees = readProjectFile("client/src/pages/EmployeeManagementView.tsx");
 

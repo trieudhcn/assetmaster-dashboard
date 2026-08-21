@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import * as XLSX from "xlsx";
 import { BarChart3, Building2, ChevronDown, ChevronLeft, ChevronRight, Download, FileText, Printer, RotateCcw, UsersRound, X } from "lucide-react";
 import { toast } from "sonner";
@@ -10,6 +10,7 @@ import { SearchableSelect } from "@/components/SearchableSelect";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 const numberText = (value: string | number | null | undefined) => Number(value || 0).toLocaleString("vi-VN", { maximumFractionDigits: 2 });
+const handoverPdfFileNameStorageKey = (referenceCode: string) => `assetmaster-pdf-filename:bg:${referenceCode}`;
 
 export function SupplyIssueSlipManager() {
   const utils = trpc.useUtils();
@@ -188,11 +189,17 @@ function InlineHandoverPreviewDialog({ handoverId, onClose }: { handoverId: numb
   const supplyItems = (handover?.supplyItems || []) as Array<{ id: number; supplyCode: string; supplyName: string; unit: string; issuedQuantity: string; returnedQuantity: string | null }>;
   const defaultFileBaseName = handover ? `${handover.referenceCode}-phieu-cap-phat-tai-san` : "bien-ban-ban-giao";
   const fileBaseName = handover ? fileNames[handover.id] ?? defaultFileBaseName : defaultFileBaseName;
+  useEffect(() => {
+    if (!handover || typeof window === "undefined") return;
+    const rememberedName = window.localStorage.getItem(handoverPdfFileNameStorageKey(handover.referenceCode));
+    if (rememberedName) setFileNames((current) => current[handover.id] ? current : { ...current, [handover.id]: rememberedName });
+  }, [handover?.id, handover?.referenceCode]);
   const createPdf = async (autoPrint: boolean) => {
     if (!handover) return;
     setPreparingPdf(autoPrint ? "print" : "export");
     try {
       const company = companyQuery.data;
+      if (typeof window !== "undefined") window.localStorage.setItem(handoverPdfFileNameStorageKey(handover.referenceCode), fileBaseName);
       await openHandoverAssetPdf({ referenceCode: handover.referenceCode, assetCode: handover.assetCode, assetName: handover.assetName, recipientName: handover.recipientName, recipientDepartmentName: handover.recipientDepartmentName, handoverByName: handover.handoverByName, handedOverAt: handover.handedOverAt, conditionOut: handover.conditionOut, accessories: handover.accessories, note: handover.note, status: handover.status, supplyItems }, { name: company?.name, address: company?.address, taxCode: company?.taxCode, phone: company?.phone, logoUrl: company?.logoUrl }, { autoPrint, fileName: fileBaseName });
       toast.success(autoPrint ? "Đã mở bản in biên bản." : "Đã mở bản xem trước PDF.");
     } catch { toast.error("Không thể tạo PDF biên bản. Vui lòng thử lại."); } finally { setPreparingPdf(null); }

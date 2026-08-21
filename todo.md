@@ -2329,3 +2329,8 @@
 - [x] Sửa căn chỉnh hộp xem trước BG trên trang Phụ kiện ở màn hình rộng.
 - [x] Cho phép nhập tên file PDF trước khi xuất hoặc in biên bản BG.
 - [x] Bổ sung hồi quy, kiểm tra giao diện và build phát hành.
+
+## Current Session — PDF Footer & Filename Memory
+- [x] Bỏ ngày tạo và ngày lập khỏi chân trang các PDF nghiệp vụ.
+- [x] Tự động lưu tên file PDF theo mã từng loại biên bản.
+- [x] Bổ sung hồi quy, kiểm tra PDF và build phát hành.

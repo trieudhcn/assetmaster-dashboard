@@ -37,6 +37,6 @@ export function drawPdfCorporateFooter(doc: jsPDF, company: PdfCorporateIdentity
     doc.setTextColor(112, 134, 154);
     doc.setFontSize(7.5);
     doc.text(`${company.name || "Đơn vị quản lý tài sản"} · ${documentLabel}`, left, pageHeight - 8);
-    doc.text(`Lập ngày ${new Date().toLocaleDateString("vi-VN")} · Trang ${page}/${pageCount}`, right, pageHeight - 8, { align: "right" });
+    doc.text(`Trang ${page}/${pageCount}`, right, pageHeight - 8, { align: "right" });
   }
 }
