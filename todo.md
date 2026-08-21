@@ -2538,3 +2538,7 @@
 - [x] Đưa nút Xuất Excel thanh lý cạnh bộ lọc Năm thanh lý.
 - [x] Bỏ khu vực Xuất Excel thanh lý chi tiết riêng bên dưới tổng hợp.
 - [x] Bổ sung hồi quy, kiểm tra desktop/mobile và build phát hành.
+
+## Current Session — Đổi vị trí menu thanh lý
+- [x] Đưa Khấu hao & Thanh lý lên trước Kiểm kê trong menu trái.
+- [x] Bổ sung hồi quy, kiểm tra desktop/mobile và build phát hành.

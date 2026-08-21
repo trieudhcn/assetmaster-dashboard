@@ -1226,7 +1226,7 @@ describe("modal presentation contract", () => {
     const navItemsStart = home.indexOf("const navItems = [");
     const navItemsEnd = home.indexOf("];", navItemsStart);
     const navItems = home.slice(navItemsStart, navItemsEnd);
-    const labels = ["Tổng quan", "Danh mục tài sản", "Phân loại tài sản", "Nhà cung cấp & Hãng", "Phụ kiện", "Bàn giao & Cấp phát", "Bảo hành & Sửa chữa", "Phòng Ban & Bộ Phận", "Quản lý nhân viên", "Kiểm kê", "Khấu hao & Thanh lý", "Báo Cáo"];
+    const labels = ["Tổng quan", "Danh mục tài sản", "Phân loại tài sản", "Nhà cung cấp & Hãng", "Phụ kiện", "Bàn giao & Cấp phát", "Bảo hành & Sửa chữa", "Phòng Ban & Bộ Phận", "Quản lý nhân viên", "Khấu hao & Thanh lý", "Kiểm kê", "Báo Cáo"];
 
     let previousIndex = -1;
     labels.forEach((label) => {

@@ -143,8 +143,8 @@ const navItems = [
   { label: "Bảo hành & Sửa chữa", icon: Wrench },
   { label: "Phòng Ban & Bộ Phận", icon: Building2 },
   { label: "Quản lý nhân viên", icon: UserRound },
-  { label: "Kiểm kê", icon: ClipboardCheck },
   { label: "Khấu hao & Thanh lý", icon: Landmark },
+  { label: "Kiểm kê", icon: ClipboardCheck },
   { label: "Báo Cáo", icon: FileBarChart },
 ];
 
