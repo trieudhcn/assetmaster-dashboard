@@ -755,6 +755,10 @@ describe("modal presentation contract", () => {
     expect(manager).toContain("Thanh lý theo thời gian quy định");
     expect(manager).toContain("Tải bản ký tay");
     expect(manager).toContain("Xác nhận đóng");
+    expect(manager).toContain("const confirmClose = async () =>");
+    expect(manager).toContain("await onClose();");
+    expect(manager).toContain("setShowCloseConfirm(false);");
+    expect(manager).toContain("onClose={() => closeCertificate.mutateAsync({ id: certificate.id })}");
   });
 
   it("lets administrators cancel only retirement drafts, print them before signing, and show value totals without forcing salvage input", () => {

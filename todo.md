@@ -2481,3 +2481,7 @@
 ## Current Session — Gỡ xuất thanh lý trùng lặp khỏi Báo cáo
 - [x] Xóa khối “Xuất danh sách & biên bản thanh lý” còn hiển thị trong Báo cáo chung.
 - [x] Cập nhật hồi quy, kiểm tra và build phát hành.
+
+## Current Session — Tự ẩn xác nhận đóng biên bản
+- [x] Tự ẩn khung xác nhận đóng biên bản sau khi lưu thành công.
+- [x] Cập nhật hồi quy, kiểm tra và build phát hành.
