@@ -468,7 +468,8 @@ describe("modal presentation contract", () => {
     expect(home).toContain('step="1"');
     expect(home).toContain('event.target.value.replace(/\\D/g, "")');
     expect(routers).toContain("quantity: z.number().int().min(0)");
-    expect(employees).toContain('window.location.assign("/?view=handovers")');
+    expect(employees).toContain("setPreviewHandoverId(Number(slip.issueSlipId))");
+    expect(employees).toContain("InlineHandoverPreviewDialog");
     expect(employees).toContain("Mở biên bản bàn giao gốc");
     expect(employees).toContain("Kèm BG");
     expect(supplies).toContain("Chi tiết phụ kiện đang giữ");
@@ -636,6 +637,18 @@ describe("modal presentation contract", () => {
     expect(supplies).toContain('bg-handover-preview-panel flex max-h-[calc(100dvh-2rem)]');
     expect(supplies).toContain('document.body');
     expect(supplies).toContain('if (event.key === "Escape") onClose()');
+  });
+
+  it("opens handover accessories from the employee profile in the shared viewport overlay", () => {
+    const employeeView = readProjectFile("client/src/pages/EmployeeManagementView.tsx");
+    const supplies = readProjectFile("client/src/components/SupplyIssueSlipManager.tsx");
+
+    expect(supplies).toContain("export function InlineHandoverPreviewDialog");
+    expect(employeeView).toContain('import { InlineHandoverPreviewDialog } from "@/components/SupplyIssueSlipManager"');
+    expect(employeeView).toContain('const [previewHandoverId, setPreviewHandoverId] = useState<number | null>(null)');
+    expect(employeeView).toContain('setPreviewHandoverId(Number(slip.issueSlipId))');
+    expect(employeeView).toContain('<InlineHandoverPreviewDialog handoverId={previewHandoverId} onClose={() => setPreviewHandoverId(null)} />');
+    expect(employeeView).not.toContain('window.location.assign("/?view=handovers")');
   });
 
   it("keeps the employee accessory history compact and suppresses unnecessary decimal zeroes", () => {

@@ -2358,3 +2358,8 @@
 - [x] Thay Dialog dùng chung bằng overlay BG căn giữa theo toàn bộ viewport.
 - [x] Giữ vùng cuộn, đóng, In và Xuất PDF hoạt động trong overlay mới.
 - [x] Bổ sung hồi quy, kiểm tra vị trí thực tế và build phát hành.
+
+## Current Session — Employee Profile BG Overlay
+- [x] Áp dụng overlay BG căn giữa viewport cho thao tác mở từ hồ sơ nhân viên.
+- [x] Giữ đầy đủ thông tin phụ kiện, đóng, In và Xuất PDF trong overlay mới.
+- [x] Bổ sung hồi quy, kiểm tra giao diện hồ sơ và build phát hành.
