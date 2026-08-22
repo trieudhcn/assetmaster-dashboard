@@ -82,6 +82,13 @@
 - [x] Xác minh desktop: Trạng thái nằm cạnh Chi nhánh trong form Tài sản và biểu đồ Chi nhánh hiển thị các thẻ có thể tương tác.
 - [x] Xác minh mobile: form giữ thứ tự Chi nhánh rồi Trạng thái; Tổng quan tiếp tục đáp ứng khi có biểu đồ tương tác.
 
+## Current Session — Chi nhánh nhân viên trong Chi tiết tài sản
+
+- [x] Lấy Chi nhánh từ hồ sơ của Nhân sự đang giữ tài sản.
+- [x] Hiển thị thẻ Chi nhánh ngay sau Người/Phòng giữ trong Chi tiết tài sản.
+- [x] Bổ sung hồi quy, xác minh desktop/mobile, TypeScript và production build.
+- [x] Xác minh desktop: Chi nhánh nhân sự xuất hiện ngay sau Người/Phòng giữ và hiển thị trạng thái chưa gán khi hồ sơ chưa có Chi nhánh.
+
 - [x] Mở rộng mô hình dữ liệu tài sản với thông tin chi tiết và trạng thái thao tác.
 - [x] Thêm modal tạo tài sản mới với validation cơ bản.
 - [x] Thêm modal chỉnh sửa tài sản và cập nhật dữ liệu trong bảng.

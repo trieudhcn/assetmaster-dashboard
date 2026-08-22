@@ -44,6 +44,10 @@ describe("branch settings", () => {
     expect(home).toContain('role="tooltip"');
     expect(home).toContain("Tỷ trọng: {percentage.toFixed(1)}%");
     expect(home.indexOf('key="asset-branch"')).toBeLessThan(home.indexOf('key="asset-status"'));
+    expect(home).toContain("const employeeBranchForAsset = useMemo");
+    expect(home).toContain("trpc.employees.list.useQuery");
+    expect(home).toContain('["Chi nhánh nhân sự", employeeBranchForAsset]');
+    expect(home).toContain("Không tìm thấy trong hồ sơ Nhân sự");
     expect(home).not.toContain('document.querySelector<HTMLElement>("[data-asset-modal]")');
     expect(employees).toContain("employees.updateBranch");
     expect(employees).toContain("data-employee-branch");
