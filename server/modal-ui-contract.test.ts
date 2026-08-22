@@ -641,8 +641,9 @@ describe("modal presentation contract", () => {
     expect(supplies).toContain('bg-handover-preview-panel flex max-h-[calc(100dvh-2rem)]');
     expect(supplies).toContain('document.body');
     expect(supplies).toContain('if (event.key === "Escape") onClose()');
-    expect(supplies).toContain('title="Đóng xem nhanh"');
-    expect(supplies).toContain("Đóng xem nhanh");
+    expect(supplies).toContain('title="Đóng"');
+    expect(supplies).toContain("Cập nhật lần cuối:");
+    expect(supplies).toContain("handover.updatedAt");
     expect(supplies).toContain('role="status" aria-live="polite"');
     expect(supplies).toContain("Đang mở biên bản...");
     expect(supplies).toContain("Đang tải thông tin phiếu bàn giao.");
@@ -1758,7 +1759,7 @@ describe("modal presentation contract", () => {
     const interactiveAllocation = readProjectFile("client/src/components/InteractiveValueAllocation.tsx");
     expect(interactiveAllocation).toContain("Biểu đồ phân bổ có thể chọn nhóm");
     expect(interactiveAllocation).toContain("Xem tài sản nhóm");
-    expect(interactiveAllocation).toContain("Đóng danh sách");
+    expect(interactiveAllocation).toContain('className="modal-close-action">Đóng</button>');
     const interactiveAssetDetails = readProjectFile("client/src/components/InteractiveAllocationAssetDetails.tsx");
     expect(reports).toContain("InteractiveAllocationAssetDetails");
     expect(interactiveAssetDetails).toContain("Nhấn vào từng dòng để xem đầy đủ thông tin");

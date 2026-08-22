@@ -1018,6 +1018,7 @@ export async function getHandoverById(id: number) {
     handoverByUserId: handovers.handoverByUserId,
     handoverByName: handovers.handoverByName,
     handedOverAt: handovers.handedOverAt,
+    updatedAt: handovers.updatedAt,
     dueBackAt: handovers.dueBackAt,
     returnedAt: handovers.returnedAt,
     recoveryCertificateNumber: handovers.recoveryCertificateNumber,

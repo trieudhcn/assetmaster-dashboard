@@ -2608,3 +2608,8 @@
 - [x] Thêm tùy chọn ẩn phòng ban không có phiếu bàn giao trong danh sách lọc.
 - [x] Thêm trạng thái tải rõ ràng khi mở xem nhanh biên bản BG từ Phụ kiện.
 - [x] Bổ sung hồi quy, kiểm tra desktop/mobile và build phát hành.
+
+## Current Session — Chuẩn hóa đóng modal và thời gian cập nhật BG
+- [x] Chuẩn hóa nút đóng modal về nhãn Đóng và màu sắc nhất quán.
+- [x] Hiển thị thời gian cập nhật cuối trong xem nhanh phiếu bàn giao.
+- [x] Bổ sung hồi quy, kiểm tra desktop/mobile và build phát hành.
