@@ -740,6 +740,9 @@ describe("modal presentation contract", () => {
     expect(organization).toContain("Xóa từ khóa tìm kiếm");
     expect(organization).toContain("Không tìm thấy đơn vị phù hợp");
     expect(organization).toContain("divisionMatches");
+    expect(organization).toContain('border-b border-[#E7EEF3] bg-[#FBFCFD] px-5 py-3');
+    expect(organization).toContain('organization-quick-search rounded-xl');
+    expect(organization).toContain('className="relative w-full sm:max-w-lg"');
   });
 
   it("keeps the activity log clear control hidden when empty and supports the desktop slash shortcut", () => {

@@ -2631,3 +2631,7 @@
 - [x] Cho phép chỉnh sửa Danh mục tài sản bằng nhấp đúp.
 - [x] Cho phép chỉnh sửa Phân bổ nhân sự bằng nhấp đúp.
 - [x] Bổ sung hồi quy, kiểm tra desktop/mobile và build phát hành.
+
+## Current Session — Di chuyển tìm kiếm vào Sơ đồ cơ cấu
+- [x] Đưa ô tìm kiếm Phòng Ban, Bộ Phận vào khu vực Sơ đồ cơ cấu.
+- [x] Bổ sung hồi quy, kiểm tra desktop/mobile và build phát hành.
