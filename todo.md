@@ -2603,3 +2603,8 @@
 - [x] Gắn nhãn Ngừng hoạt động cho phòng ban đã vô hiệu hóa.
 - [x] Bổ sung nút đóng rõ ràng, hoạt động ổn định cho xem nhanh biên bản BG từ Phụ kiện.
 - [x] Bổ sung hồi quy, kiểm tra desktop/mobile và build phát hành.
+
+## Current Session — Thu gọn lọc phòng ban và tải xem nhanh BG
+- [x] Thêm tùy chọn ẩn phòng ban không có phiếu bàn giao trong danh sách lọc.
+- [x] Thêm trạng thái tải rõ ràng khi mở xem nhanh biên bản BG từ Phụ kiện.
+- [x] Bổ sung hồi quy, kiểm tra desktop/mobile và build phát hành.

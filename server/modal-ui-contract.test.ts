@@ -643,6 +643,9 @@ describe("modal presentation contract", () => {
     expect(supplies).toContain('if (event.key === "Escape") onClose()');
     expect(supplies).toContain('title="Đóng xem nhanh"');
     expect(supplies).toContain("Đóng xem nhanh");
+    expect(supplies).toContain('role="status" aria-live="polite"');
+    expect(supplies).toContain("Đang mở biên bản...");
+    expect(supplies).toContain("Đang tải thông tin phiếu bàn giao.");
   });
 
   it("opens handover accessories from the employee profile in the shared viewport overlay", () => {
@@ -1879,6 +1882,10 @@ describe("currency input and scrollbar contract", () => {
     expect(home).toContain("handoverDepartmentOptionLabels");
     expect(home).toContain("Ngừng hoạt động");
     expect(home).toContain("counts={handoverDepartmentCounts}");
+    expect(home).toContain("hideDepartmentsWithoutHandovers");
+    expect(home).toContain("visibleHandoverDepartments");
+    expect(home).toContain("Ẩn phòng ban 0 phiếu");
+    expect(home).toContain("Đang ẩn 0 phiếu");
     expect(home).toContain("handoverRecipientFilter");
     expect(home).toContain("const resetHandoverFilters");
     expect(home).toContain("hasActiveHandoverFilters");
