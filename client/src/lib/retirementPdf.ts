@@ -4,7 +4,7 @@ import { drawPdfCorporateFooter, handoverPdfFontUrl, registerVietnamesePdfFont }
 import { applyPdfLogoWatermark, createPdfLogoWatermark, openPdfPreview } from "@/lib/pdfExport";
 
 export type RetirementPdfCompany = { name?: string | null; address?: string | null; taxCode?: string | null; phone?: string | null;
-  email?: string | null; logoUrl?: string | null };
+  email?: string | null; websiteUrl?: string | null; logoUrl?: string | null };
 export type RetirementPdfAsset = {
   code: string;
   name: string;
@@ -80,7 +80,7 @@ function drawPageHeading(doc: jsPDF, certificateCode: string, company: Retiremen
   doc.setTextColor(96, 117, 138);
   doc.setFontSize(7);
   doc.text(`Địa chỉ: ${company.address || "Chưa cập nhật"}`, left + 23, 18);
-  doc.text(`MST: ${company.taxCode || "Chưa cập nhật"} · Điện thoại: ${company.phone || "Chưa cập nhật"} · Email: ${company.email || "Chưa cập nhật"}`, left + 23, 22.5);
+  doc.text(`MST: ${company.taxCode || "Chưa cập nhật"} · Điện thoại: ${company.phone || "Chưa cập nhật"} · Email: ${company.email || "Chưa cập nhật"}${company.websiteUrl ? ` · Website: ${company.websiteUrl}` : ""}`, left + 23, 22.5);
   doc.setTextColor(16, 42, 67);
   doc.setFontSize(14);
   doc.text("BIÊN BẢN KHẤU HAO / THANH LÝ TÀI SẢN", 148.5, 33, { align: "center" });

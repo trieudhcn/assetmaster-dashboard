@@ -3,7 +3,7 @@ import { applyPdfLogoWatermark, createPdfLogoWatermark, openPdfPreview } from "@
 import { drawPdfCorporateFooter, handoverPdfFontUrl, registerVietnamesePdfFont } from "@/lib/handoverPdf";
 
 export type HandoverPdfCompany = { name?: string | null; address?: string | null; taxCode?: string | null; phone?: string | null;
-  email?: string | null; logoUrl?: string | null };
+  email?: string | null; websiteUrl?: string | null; logoUrl?: string | null };
 export type HandoverPdfInput = { referenceCode: string; assetCode: string; assetName: string; branchName?: string | null; recipientName: string; recipientDepartmentName?: string | null; handoverByName?: string | null; handedOverAt: Date; conditionOut?: string | null; accessories?: string | null; note?: string | null; status?: string | null; supplyItems: Array<{ supplyCode: string; supplyName: string; unit: string; issuedQuantity: string; returnedQuantity?: string | null }> };
 
 async function loadImageData(url: string) {
@@ -28,7 +28,7 @@ export async function openHandoverAssetPdf(input: HandoverPdfInput, company: Han
   let y = 22;
   drawBrandMark(doc, left, y, logoDataUrl);
   doc.setTextColor(15, 140, 140); doc.setFontSize(10); doc.text(company.name || "ĐƠN VỊ QUẢN LÝ TÀI SẢN", left + 24, y - 4);
-  doc.setFontSize(8); doc.setTextColor(112, 134, 154); doc.text(`Địa chỉ: ${company.address || ""}`, left + 24, y + 2); doc.text(`MST: ${company.taxCode || ""} · Điện thoại: ${company.phone || ""} · Email: ${company.email || ""}`, left + 24, y + 8);
+  doc.setFontSize(8); doc.setTextColor(112, 134, 154); doc.text(`Địa chỉ: ${company.address || ""}`, left + 24, y + 2); doc.text(`MST: ${company.taxCode || ""} · Điện thoại: ${company.phone || ""} · Email: ${company.email || ""}${company.websiteUrl ? ` · Website: ${company.websiteUrl}` : ""}`, left + 24, y + 8);
   doc.setDrawColor(15, 140, 140); doc.line(left, y + 18, 192, y + 18); y += 36;
   doc.setTextColor(16, 42, 67); doc.setFontSize(15); doc.text("BIÊN BẢN BÀN GIAO TÀI SẢN", 105, y, { align: "center" }); y += 12;
   doc.setFontSize(13); doc.text(`Số phiếu: ${input.referenceCode}`, left, y); y += 12;

@@ -12,8 +12,13 @@ describe("company brand contact actions", () => {
     expect(settings).toContain('document.execCommand("copy")');
     expect(settings).toContain('aria-label="Sao chép Số điện thoại"');
     expect(settings).toContain('aria-label="Sao chép Email công ty"');
+    expect(settings).toContain('aria-label="Sao chép Mã số thuế"');
+    expect(settings).toContain('aria-label="Sao chép Địa chỉ"');
     expect(settings).toContain("disabled={!draft.phone.trim()}");
     expect(settings).toContain("disabled={!draft.email.trim()}");
+    expect(settings).toContain("websiteUrl: string");
+    expect(settings).toContain("Website công ty");
+    expect(settings).toContain("Hiển thị cạnh Email trong các tài liệu xuất.");
     expect(settings).toContain("Đã sao chép ${label}.");
   });
 });

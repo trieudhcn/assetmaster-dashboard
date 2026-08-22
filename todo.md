@@ -112,6 +112,14 @@
 - [x] Thêm nút sao chép nhanh cho Số điện thoại và Email công ty.
 - [x] Bổ sung hồi quy, xác minh desktop/mobile, TypeScript và production build.
 
+## Current Session — Liên hệ công ty và Chi nhánh mở rộng
+
+- [x] Hiển thị Website công ty cạnh Email trong các tài liệu PDF và Excel xuất.
+- [x] Kiểm tra email Chi nhánh thuộc tên miền email nội bộ của công ty khi lưu.
+- [x] Thêm, lưu và dùng Email liên hệ riêng cho từng Chi nhánh.
+- [x] Thêm sao chép nhanh Mã số thuế và Địa chỉ công ty trong Cài đặt thương hiệu.
+- [x] Bổ sung hồi quy, xác minh desktop/mobile, TypeScript và production build.
+
 - [x] Mở rộng mô hình dữ liệu tài sản với thông tin chi tiết và trạng thái thao tác.
 - [x] Thêm modal tạo tài sản mới với validation cơ bản.
 - [x] Thêm modal chỉnh sửa tài sản và cập nhật dữ liệu trong bảng.

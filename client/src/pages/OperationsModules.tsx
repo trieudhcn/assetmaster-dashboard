@@ -92,6 +92,7 @@ type AuditCompanySettings = {
   taxCode?: string | null;
   phone?: string | null;
   email?: string | null;
+  websiteUrl?: string | null;
   websiteTitle?: string | null;
   logoUrl?: string | null;
   brandColor?: string | null;
@@ -1470,7 +1471,7 @@ export function AuditPage() {
       doc.setTextColor(96, 117, 138);
       doc.setFontSize(7);
       doc.text(`Địa chỉ: ${company.address || "Chưa cập nhật"} · MST: ${company.taxCode || "Chưa cập nhật"}`, left + 24, 22);
-      doc.text(`Điện thoại: ${company.phone || "Chưa cập nhật"}${company.email ? ` · Email: ${company.email}` : ""}`, left + 24, 27);
+      doc.text(`Điện thoại: ${company.phone || "Chưa cập nhật"}${company.email ? ` · Email: ${company.email}` : ""}${company.websiteUrl ? ` · Website: ${company.websiteUrl}` : ""}`, left + 24, 27);
       doc.setDrawColor(15, 140, 140);
       doc.line(left, 37, 194, 37);
       let y = 48;
@@ -1555,7 +1556,7 @@ export function AuditPage() {
       doc.setFontSize(7.5);
       const companyLine = `Địa chỉ: ${company.address || "Chưa cập nhật"} · MST: ${company.taxCode || "Chưa cập nhật"}`;
       doc.text(doc.splitTextToSize(companyLine, contentWidth - 24), left + 24, y + 5);
-      doc.text(`Điện thoại: ${company.phone || "Chưa cập nhật"}${company.email ? ` · Email: ${company.email}` : ""}`, left + 24, y + 10);
+      doc.text(`Điện thoại: ${company.phone || "Chưa cập nhật"}${company.email ? ` · Email: ${company.email}` : ""}${company.websiteUrl ? ` · Website: ${company.websiteUrl}` : ""}`, left + 24, y + 10);
       doc.setDrawColor(15, 140, 140);
       doc.line(left, y + 22, right, y + 22);
       y += 35;

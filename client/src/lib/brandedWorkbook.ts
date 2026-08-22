@@ -7,6 +7,7 @@ export type ExportCompanyInfo = {
   taxCode?: string | null;
   phone?: string | null;
   email?: string | null;
+  websiteUrl?: string | null;
   websiteTitle?: string | null;
   logoUrl?: string | null;
   brandColor?: string | null;
@@ -86,7 +87,7 @@ async function addCompanyInfoSheet(workbook: any, options: BrandedWorkbookOption
     ["Địa chỉ", company.address || "Chưa cập nhật"],
     ["Mã số thuế", company.taxCode || "Chưa cập nhật"],
     ["Điện thoại", company.phone || "Chưa cập nhật"],
-    ["Email", company.email || "Chưa cập nhật"],
+    ["Email", company.email || "Chưa cập nhật", "Website", company.websiteUrl || "Chưa cập nhật"],
     ["Thời điểm xuất", new Date().toLocaleString("vi-VN")],
     ...(options.description ? [["Phạm vi / ghi chú", options.description]] : []),
   ];
@@ -95,7 +96,9 @@ async function addCompanyInfoSheet(workbook: any, options: BrandedWorkbookOption
   infoSheet.mergeCells("A2:B2");
   infoSheet.mergeCells("A3:B3");
   infoSheet.getColumn(1).width = 24;
-  infoSheet.getColumn(2).width = 82;
+  infoSheet.getColumn(2).width = 42;
+  infoSheet.getColumn(3).width = 18;
+  infoSheet.getColumn(4).width = 42;
   infoSheet.getRow(1).height = 30;
   infoSheet.getCell("A1").font = { bold: true, size: 18, color: { argb: "FFFFFFFF" } };
   infoSheet.getCell("A1").fill = { type: "pattern", pattern: "solid", fgColor: { argb: `FF${brandColor}` } };
@@ -108,6 +111,7 @@ async function addCompanyInfoSheet(workbook: any, options: BrandedWorkbookOption
     label.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFF4F7FB" } };
     label.alignment = { vertical: "top", wrapText: true };
     infoSheet.getCell(row, 2).alignment = { vertical: "top", wrapText: true };
+    if (infoSheet.getCell(row, 3).value) { infoSheet.getCell(row, 3).font = { bold: true, color: { argb: "FF193B57" } }; infoSheet.getCell(row, 3).fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFF4F7FB" } }; infoSheet.getCell(row, 3).alignment = { vertical: "top", wrapText: true }; infoSheet.getCell(row, 4).alignment = { vertical: "top", wrapText: true }; }
   }
   if (company.logoUrl) {
     try {

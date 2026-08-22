@@ -175,6 +175,15 @@ import {
 import { storagePut } from "./storage";
 
 const nullableText = z.string().trim().max(1000).optional().nullable();
+const nullableEmail = z.string().trim().email().max(320).optional().nullable();
+const nullableWebsiteUrl = z.string().trim().max(320).url("Website công ty phải là URL hợp lệ, ví dụ https://congty.vn").optional().nullable();
+const emailDomain = (email?: string | null) => email?.trim().split("@")[1]?.toLocaleLowerCase("en-US") || null;
+async function ensureInternalBranchEmail(email?: string | null) {
+  if (!email) return;
+  const companyDomain = emailDomain((await getCompany())?.email);
+  if (!companyDomain) throw new TRPCError({ code: "BAD_REQUEST", message: "Hãy lưu Email công ty trước khi dùng Email liên hệ Chi nhánh." });
+  if (emailDomain(email) !== companyDomain) throw new TRPCError({ code: "BAD_REQUEST", message: `Email Chi nhánh phải dùng tên miền nội bộ @${companyDomain}.` });
+}
 const handoverReturnSupplyItems = z.array(z.object({ handoverSupplyItemId: z.number().int().positive(), quantity: z.number().int().min(0).max(1_000_000) })).max(20).optional();
 
 async function restoreHandoverAccessories(
@@ -335,7 +344,7 @@ export const appRouter = router({
         loginBackgroundOverlay: company.loginBackgroundOverlay,
       };
     }),
-    save: adminProcedure.input(z.object({ name: z.string().trim().min(2).max(255), address: nullableText, taxCode: nullableText, phone: nullableText, email: z.string().email().optional().nullable(), logoUrl: nullableText, websiteTitle: z.string().trim().min(2).max(120).optional().nullable(), brandColor: z.string().regex(/^#[0-9a-fA-F]{6}$/).optional().nullable(), faviconUrl: nullableText, loginBackgroundUrl: nullableText, loginGreeting: z.string().trim().max(300).optional().nullable(), loginBackgroundOverlay: z.enum(["light", "dark"]).optional().nullable() })).mutation(async ({ input, ctx }) => {
+    save: adminProcedure.input(z.object({ name: z.string().trim().min(2).max(255), address: nullableText, taxCode: nullableText, phone: nullableText, email: nullableEmail, websiteUrl: nullableWebsiteUrl, logoUrl: nullableText, websiteTitle: z.string().trim().min(2).max(120).optional().nullable(), brandColor: z.string().regex(/^#[0-9a-fA-F]{6}$/).optional().nullable(), faviconUrl: nullableText, loginBackgroundUrl: nullableText, loginGreeting: z.string().trim().max(300).optional().nullable(), loginBackgroundOverlay: z.enum(["light", "dark"]).optional().nullable() })).mutation(async ({ input, ctx }) => {
       const id = await saveCompany(input);
       await recordActivity({ entityType: "company", entityId: id, action: "updated", actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: "Cập nhật thông tin công ty" });
       return { id };
@@ -599,16 +608,18 @@ export const appRouter = router({
       const usageById = new Map(usageRows.map((item) => [item.id, item]));
       return items.map((branch) => ({ ...branch, ...(usageById.get(branch.id) || { userCount: 0, assetCount: 0 }) }));
     }),
-    create: adminProcedure.input(z.object({ code: z.string().trim().min(1).max(40), name: z.string().trim().min(1).max(160), address: z.string().trim().max(1000).nullable().optional(), phone: z.string().trim().max(32).nullable().optional() })).mutation(async ({ input, ctx }) => {
+    create: adminProcedure.input(z.object({ code: z.string().trim().min(1).max(40), name: z.string().trim().min(1).max(160), address: z.string().trim().max(1000).nullable().optional(), phone: z.string().trim().max(32).nullable().optional(), email: nullableEmail })).mutation(async ({ input, ctx }) => {
+      await ensureInternalBranchEmail(input.email);
       if (await getBranchByCode(input.code)) throw new TRPCError({ code: "BAD_REQUEST", message: "Mã Chi nhánh đã tồn tại." });
       if (await getBranchByName(input.name)) throw new TRPCError({ code: "BAD_REQUEST", message: "Tên Chi nhánh đã tồn tại." });
       const id = await createBranch({ ...input, isActive: true });
       await recordActivity({ entityType: "branch", entityId: id, action: "created", actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: `Tạo Chi nhánh: ${input.name} (${input.code})` });
       return { id };
     }),
-    update: adminProcedure.input(z.object({ id: z.number().int().positive(), code: z.string().trim().min(1).max(40).optional(), name: z.string().trim().min(1).max(160).optional(), address: z.string().trim().max(1000).nullable().optional(), phone: z.string().trim().max(32).nullable().optional(), isActive: z.boolean().optional() })).mutation(async ({ input, ctx }) => {
+    update: adminProcedure.input(z.object({ id: z.number().int().positive(), code: z.string().trim().min(1).max(40).optional(), name: z.string().trim().min(1).max(160).optional(), address: z.string().trim().max(1000).nullable().optional(), phone: z.string().trim().max(32).nullable().optional(), email: nullableEmail, isActive: z.boolean().optional() })).mutation(async ({ input, ctx }) => {
       const existing = await getBranchById(input.id);
       if (!existing) throw new TRPCError({ code: "NOT_FOUND", message: "Không tìm thấy Chi nhánh." });
+      if (input.email !== undefined) await ensureInternalBranchEmail(input.email);
       if (input.code && input.code !== existing.code && await getBranchByCode(input.code)) throw new TRPCError({ code: "BAD_REQUEST", message: "Mã Chi nhánh đã tồn tại." });
       if (input.name && input.name !== existing.name && await getBranchByName(input.name)) throw new TRPCError({ code: "BAD_REQUEST", message: "Tên Chi nhánh đã tồn tại." });
       const { id, ...changes } = input;

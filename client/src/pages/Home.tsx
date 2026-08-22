@@ -198,6 +198,7 @@ type CompanyInfo = {
   taxCode: string;
   phone: string;
   email: string;
+  websiteUrl: string;
   websiteTitle: string;
   logoUrl: string;
   brandColor: string;
@@ -234,6 +235,7 @@ const defaultCompanyInfo: CompanyInfo = {
   taxCode: "0101234567",
   phone: "024 3789 2468",
   email: "",
+  websiteUrl: "",
   websiteTitle: "AssetMaster – Hệ thống Quản lý Tài sản",
   logoUrl: "",
   brandColor: "#0F8C8C",
@@ -618,7 +620,7 @@ export default function Home() {
 
   useEffect(() => {
     if (!companyQuery.data) return;
-    const next: CompanyInfo = { name: companyQuery.data.name, address: companyQuery.data.address || "", taxCode: companyQuery.data.taxCode || "", phone: companyQuery.data.phone || "", email: companyQuery.data.email || "", websiteTitle: companyQuery.data.websiteTitle || "AssetMaster – Hệ thống Quản lý Tài sản", logoUrl: companyQuery.data.logoUrl || "", brandColor: companyQuery.data.brandColor || "#0F8C8C", faviconUrl: companyQuery.data.faviconUrl || "", loginBackgroundUrl: companyQuery.data.loginBackgroundUrl || "", loginGreeting: companyQuery.data.loginGreeting || "", loginBackgroundOverlay: companyQuery.data.loginBackgroundOverlay === "dark" ? "dark" : "light" };
+    const next: CompanyInfo = { name: companyQuery.data.name, address: companyQuery.data.address || "", taxCode: companyQuery.data.taxCode || "", phone: companyQuery.data.phone || "", email: companyQuery.data.email || "", websiteUrl: companyQuery.data.websiteUrl || "", websiteTitle: companyQuery.data.websiteTitle || "AssetMaster – Hệ thống Quản lý Tài sản", logoUrl: companyQuery.data.logoUrl || "", brandColor: companyQuery.data.brandColor || "#0F8C8C", faviconUrl: companyQuery.data.faviconUrl || "", loginBackgroundUrl: companyQuery.data.loginBackgroundUrl || "", loginGreeting: companyQuery.data.loginGreeting || "", loginBackgroundOverlay: companyQuery.data.loginBackgroundOverlay === "dark" ? "dark" : "light" };
     setCompanyInfo(next);
     document.title = next.websiteTitle;
     const favicon = document.querySelector<HTMLLinkElement>('link[rel="icon"]') || Object.assign(document.createElement("link"), { rel: "icon", type: "image/png" });
@@ -1041,7 +1043,7 @@ export default function Home() {
         {activeNav === "Bàn giao & Cấp phát" ? <AssignmentsPage showComingSoon={showComingSoon} companyInfo={companyInfo} /> : null}
         {activeNav === "Phân loại tài sản" ? <AssetCategoryManagementPage /> : null}
         {activeNav === "Phụ kiện" ? <SuppliesInventoryView canEditSectionLabels={isAdmin} /> : null}
-        {activeNav === "Cài đặt" ? <><CompanyBrandSettings companyInfo={companyInfo} onSave={(next) => { setCompanyInfo(next); localStorage.setItem("assetmaster-company-info", JSON.stringify(next)); document.title = next.websiteTitle; saveCompanyMutation.mutate({ name: next.name, address: next.address || null, taxCode: next.taxCode || null, phone: next.phone || null, email: next.email || null, logoUrl: next.logoUrl || null, websiteTitle: next.websiteTitle || null, brandColor: next.brandColor || "#0F8C8C", faviconUrl: next.faviconUrl || null, loginBackgroundUrl: next.loginBackgroundUrl || null, loginGreeting: next.loginGreeting || null, loginBackgroundOverlay: next.loginBackgroundOverlay }, { onSuccess: () => { void companyQuery.refetch(); toast.success("Đã lưu cài đặt thương hiệu."); }, onError: (error) => toast.error(error.message || "Không thể lưu cài đặt thương hiệu.") }); }} /><BrandEnhancementsPanel info={companyInfo} onSave={(next) => { setCompanyInfo(next); localStorage.setItem("assetmaster-company-info", JSON.stringify(next)); document.documentElement.style.setProperty("--assetmaster-brand", next.brandColor); const favicon = document.querySelector<HTMLLinkElement>('link[rel="icon"]') || Object.assign(document.createElement("link"), { rel: "icon" }); if (next.faviconUrl) { favicon.href = next.faviconUrl; if (!favicon.parentNode) document.head.appendChild(favicon); } saveCompanyMutation.mutate({ name: next.name, address: next.address || null, taxCode: next.taxCode || null, phone: next.phone || null, email: next.email || null, logoUrl: next.logoUrl || null, websiteTitle: next.websiteTitle || null, brandColor: next.brandColor || "#0F8C8C", faviconUrl: next.faviconUrl || null, loginBackgroundUrl: next.loginBackgroundUrl || null, loginGreeting: next.loginGreeting || null, loginBackgroundOverlay: next.loginBackgroundOverlay }, { onSuccess: () => { void companyQuery.refetch(); } }); }} /></> : null}
+        {activeNav === "Cài đặt" ? <><CompanyBrandSettings companyInfo={companyInfo} onSave={(next) => { setCompanyInfo(next); localStorage.setItem("assetmaster-company-info", JSON.stringify(next)); document.title = next.websiteTitle; saveCompanyMutation.mutate({ name: next.name, address: next.address || null, taxCode: next.taxCode || null, phone: next.phone || null, email: next.email || null, websiteUrl: next.websiteUrl || null, logoUrl: next.logoUrl || null, websiteTitle: next.websiteTitle || null, brandColor: next.brandColor || "#0F8C8C", faviconUrl: next.faviconUrl || null, loginBackgroundUrl: next.loginBackgroundUrl || null, loginGreeting: next.loginGreeting || null, loginBackgroundOverlay: next.loginBackgroundOverlay }, { onSuccess: () => { void companyQuery.refetch(); toast.success("Đã lưu cài đặt thương hiệu."); }, onError: (error) => toast.error(error.message || "Không thể lưu cài đặt thương hiệu.") }); }} /><BrandEnhancementsPanel info={companyInfo} onSave={(next) => { setCompanyInfo(next); localStorage.setItem("assetmaster-company-info", JSON.stringify(next)); document.documentElement.style.setProperty("--assetmaster-brand", next.brandColor); const favicon = document.querySelector<HTMLLinkElement>('link[rel="icon"]') || Object.assign(document.createElement("link"), { rel: "icon" }); if (next.faviconUrl) { favicon.href = next.faviconUrl; if (!favicon.parentNode) document.head.appendChild(favicon); } saveCompanyMutation.mutate({ name: next.name, address: next.address || null, taxCode: next.taxCode || null, phone: next.phone || null, email: next.email || null, websiteUrl: next.websiteUrl || null, logoUrl: next.logoUrl || null, websiteTitle: next.websiteTitle || null, brandColor: next.brandColor || "#0F8C8C", faviconUrl: next.faviconUrl || null, loginBackgroundUrl: next.loginBackgroundUrl || null, loginGreeting: next.loginGreeting || null, loginBackgroundOverlay: next.loginBackgroundOverlay }, { onSuccess: () => { void companyQuery.refetch(); } }); }} /></> : null}
         {activeNav === "Cài đặt" ? <><BranchSettings /><SupplyUnitSettings /></> : null}
         {activeNav === "Bảo hành & Sửa chữa" ? <MaintenancePage /> : null}
         {activeNav === "Kiểm kê" ? <AuditPage /> : null}
@@ -1863,7 +1865,7 @@ async function downloadHandoverPdf(item: Handover, signature: string | undefined
   doc.setFontSize(8);
   doc.setTextColor(112, 134, 154);
   doc.text(`Địa chỉ: ${companyInfo.address}`, left + 24, y + 2);
-  doc.text(`MST: ${companyInfo.taxCode || "Chưa cập nhật"} · Điện thoại: ${companyInfo.phone || "Chưa cập nhật"} · Email: ${companyInfo.email || "Chưa cập nhật"}`, left + 24, y + 8);
+  doc.text(`MST: ${companyInfo.taxCode || "Chưa cập nhật"} · Điện thoại: ${companyInfo.phone || "Chưa cập nhật"} · Email: ${companyInfo.email || "Chưa cập nhật"}${companyInfo.websiteUrl ? ` · Website: ${companyInfo.websiteUrl}` : ""}`, left + 24, y + 8);
   doc.setTextColor(16, 42, 67);
   doc.setDrawColor(15, 140, 140);
   doc.line(left, y + 18, 192, y + 18);
@@ -1942,7 +1944,7 @@ async function downloadAssetRecoveryPdf(item: Handover, companyInfo: CompanyInfo
   doc.setFontSize(8);
   doc.setTextColor(112, 134, 154);
   doc.text(`Địa chỉ: ${companyInfo.address || "Chưa cập nhật"}`, left + 24, y + 2);
-  doc.text(`MST: ${companyInfo.taxCode || "Chưa cập nhật"} · Điện thoại: ${companyInfo.phone || "Chưa cập nhật"} · Email: ${companyInfo.email || "Chưa cập nhật"}`, left + 24, y + 8);
+  doc.text(`MST: ${companyInfo.taxCode || "Chưa cập nhật"} · Điện thoại: ${companyInfo.phone || "Chưa cập nhật"} · Email: ${companyInfo.email || "Chưa cập nhật"}${companyInfo.websiteUrl ? ` · Website: ${companyInfo.websiteUrl}` : ""}`, left + 24, y + 8);
   doc.setDrawColor(15, 140, 140);
   doc.line(left, y + 18, right, y + 18);
   y += 36;
@@ -2056,7 +2058,7 @@ async function downloadAssetRetirementPdf(asset: Asset, companyInfo: CompanyInfo
   doc.setFontSize(8);
   doc.setTextColor(112, 134, 154);
   doc.text(`Địa chỉ: ${companyInfo.address || "Chưa cập nhật"}`, left + 24, y + 2);
-  doc.text(`MST: ${companyInfo.taxCode || "Chưa cập nhật"} · Điện thoại: ${companyInfo.phone || "Chưa cập nhật"} · Email: ${companyInfo.email || "Chưa cập nhật"}`, left + 24, y + 8);
+  doc.text(`MST: ${companyInfo.taxCode || "Chưa cập nhật"} · Điện thoại: ${companyInfo.phone || "Chưa cập nhật"} · Email: ${companyInfo.email || "Chưa cập nhật"}${companyInfo.websiteUrl ? ` · Website: ${companyInfo.websiteUrl}` : ""}`, left + 24, y + 8);
   y += 36;
   doc.setTextColor(16, 42, 67);
   doc.setFontSize(15);
@@ -2341,7 +2343,7 @@ function AssetModal({ mode, asset, formData, setFormData, isSaving, onClose: dis
     button.setAttribute("aria-label", "Xuất biên bản thanh lý PDF");
     const handleExport = () => {
       const company = retirementCompanyQuery.data;
-      const companyInfo: CompanyInfo = { name: company?.name || "AssetMaster", address: company?.address || "", taxCode: company?.taxCode || "", phone: company?.phone || "", email: company?.email || "", websiteTitle: company?.websiteTitle || "AssetMaster", logoUrl: company?.logoUrl || "", brandColor: company?.brandColor || "#0F8C8C", faviconUrl: "", loginBackgroundUrl: "", loginGreeting: "", loginBackgroundOverlay: "light" };
+      const companyInfo: CompanyInfo = { name: company?.name || "AssetMaster", address: company?.address || "", taxCode: company?.taxCode || "", phone: company?.phone || "", email: company?.email || "", websiteUrl: company?.websiteUrl || "", websiteTitle: company?.websiteTitle || "AssetMaster", logoUrl: company?.logoUrl || "", brandColor: company?.brandColor || "#0F8C8C", faviconUrl: "", loginBackgroundUrl: "", loginGreeting: "", loginBackgroundOverlay: "light" };
       void downloadAssetRetirementPdf(asset, companyInfo).then(() => toast.success("Đã mở xem trước biên bản thanh lý PDF.")).catch(() => toast.error("Không thể tạo biên bản thanh lý PDF."));
     };
     button.addEventListener("click", handleExport);
