@@ -2583,3 +2583,7 @@
 - [x] Tinh gọn danh sách đơn vị tính chuẩn và vùng thao tác.
 - [x] Giữ rõ trạng thái/số lượng sử dụng cùng cảnh báo xóa khi cần thiết.
 - [x] Bổ sung hồi quy, kiểm tra desktop/mobile và build phát hành.
+
+## Current Session — Sửa chồng lấp bộ lọc phiếu bàn giao
+- [x] Khắc phục bộ lọc bàn giao chồng lên khu vực khác khi cuộn.
+- [x] Bổ sung hồi quy và kiểm tra desktop/mobile, build phát hành.

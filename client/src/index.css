@@ -85,6 +85,9 @@ button, input, select { font: inherit; }
 button:not(:disabled), [role="button"]:not([aria-disabled="true"]), select:not(:disabled), a[href] { @apply cursor-pointer; }
 .font-display { font-family: "Manrope", ui-sans-serif, system-ui, sans-serif; }
 
+/* The fixed application bar must stay above scrolling data toolbars, including handover filters. */
+header.sticky.top-0.z-20 { z-index: 30; }
+
 @keyframes kpi-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
 .animate-kpi { animation: kpi-in 420ms cubic-bezier(.23,1,.32,1) both; }
 

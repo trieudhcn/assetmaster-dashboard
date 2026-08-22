@@ -1816,6 +1816,7 @@ describe("currency input and scrollbar contract", () => {
   it("keeps handover filters and exports responsive", () => {
     const home = readProjectFile("client/src/pages/Home.tsx");
     const searchableSelect = readProjectFile("client/src/components/SearchableSelect.tsx");
+    const stylesheet = readProjectFile("client/src/index.css");
     const reports = readProjectFile("client/src/pages/ReportsManagementView.tsx");
     const alertDialog = readProjectFile("client/src/components/ui/alert-dialog.tsx");
     const dialog = readProjectFile("client/src/components/ui/dialog.tsx");
@@ -1830,6 +1831,9 @@ describe("currency input and scrollbar contract", () => {
     expect(alertDialog).toContain("fixed left-1/2 top-1/2 z-[101] grid h-fit");
     expect(alertDialog).toContain("max-w-[calc(100%-2rem)]");
     expect(home).toContain("onPointerDownOutside={() => setSupplierReturnConfirmOpen(false)}");
+    expect(home).toContain('className="relative z-20 flex flex-col gap-4 border-b');
+    expect(stylesheet).toContain("The fixed application bar must stay above scrolling data toolbars");
+    expect(stylesheet).toContain("header.sticky.top-0.z-20 { z-index: 30; }");
     expect(home).toContain("onEscapeKeyDown={() => setSupplierReturnConfirmOpen(false)}");
     expect(home).toContain("isSaving={createAssetMutation.isPending || updateAssetMutation.isPending}");
     expect(home).toContain("Đang lưu...");
