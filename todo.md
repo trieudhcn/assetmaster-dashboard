@@ -106,6 +106,12 @@
 - [x] Bổ sung hồi quy, xác minh desktop/mobile, TypeScript và production build.
 - [x] Xác minh desktop/mobile: phần xem trước trang web đã bỏ, Email công ty nằm cạnh Số điện thoại trên desktop và giữ bố cục rõ ràng trên mobile.
 
+## Current Session — Khóa Chi nhánh tự điền và sao chép liên hệ
+
+- [x] Khóa trường Chi nhánh khi giá trị được tự điền từ Nhân sự đã chọn.
+- [x] Thêm nút sao chép nhanh cho Số điện thoại và Email công ty.
+- [x] Bổ sung hồi quy, xác minh desktop/mobile, TypeScript và production build.
+
 - [x] Mở rộng mô hình dữ liệu tài sản với thông tin chi tiết và trạng thái thao tác.
 - [x] Thêm modal tạo tài sản mới với validation cơ bản.
 - [x] Thêm modal chỉnh sửa tài sản và cập nhật dữ liệu trong bảng.

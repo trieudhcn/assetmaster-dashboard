@@ -44,6 +44,13 @@ describe("branch settings", () => {
     expect(home).toContain('role="tooltip"');
     expect(home).toContain("Tỷ trọng: {percentage.toFixed(1)}%");
     expect(home.indexOf('key="asset-branch"')).toBeLessThan(home.indexOf('key="asset-status"'));
+    expect(home).toContain("const inheritedEmployeeBranchId = useMemo");
+    expect(home).toContain("const assetEmployeesQuery = trpc.employees.list.useQuery()");
+    expect(home).toContain("setFormData((current) => ({ ...current, branchId: inheritedEmployeeBranchId }))");
+    expect(home).toContain("isLocked={Boolean(inheritedEmployeeBranchId)}");
+    expect(home).toContain("disabled={isLocked}");
+    expect(home).toContain("Theo Nhân sự");
+    expect(home).toContain("Chi nhánh được lấy từ hồ sơ Nhân sự đã chọn.");
     expect(home).toContain("const employeeBranchForAsset = useMemo");
     expect(home).toContain("trpc.employees.list.useQuery");
     expect(home).toContain('["Chi nhánh nhân sự", employeeBranchForAsset]');
