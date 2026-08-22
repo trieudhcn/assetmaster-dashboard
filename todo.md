@@ -73,6 +73,15 @@
 - [x] Xác minh desktop: dropdown Chi nhánh Tài sản cùng kích thước các trường khác và biểu đồ giá trị theo Chi nhánh hiển thị số liệu thực.
 - [x] Xác minh mobile: dropdown Chi nhánh gọn như các trường khác và Tổng quan giữ bố cục đáp ứng khi bổ sung biểu đồ.
 
+## Current Session — Tương tác biểu đồ Chi nhánh và thứ tự form Tài sản
+
+- [x] Cho phép nhấp Chi nhánh trên biểu đồ Tổng quan để mở Danh mục tài sản đã lọc theo Chi nhánh đó.
+- [x] Thêm tooltip hover/focus trên biểu đồ hiển thị tổng giá trị, tỷ trọng và số tài sản của Chi nhánh.
+- [x] Đặt Trạng thái ngay sau dropdown Chi nhánh trong form tạo và chỉnh sửa Tài sản.
+- [x] Bổ sung hồi quy, xác minh desktop/mobile, TypeScript và production build.
+- [x] Xác minh desktop: Trạng thái nằm cạnh Chi nhánh trong form Tài sản và biểu đồ Chi nhánh hiển thị các thẻ có thể tương tác.
+- [x] Xác minh mobile: form giữ thứ tự Chi nhánh rồi Trạng thái; Tổng quan tiếp tục đáp ứng khi có biểu đồ tương tác.
+
 - [x] Mở rộng mô hình dữ liệu tài sản với thông tin chi tiết và trạng thái thao tác.
 - [x] Thêm modal tạo tài sản mới với validation cơ bản.
 - [x] Thêm modal chỉnh sửa tài sản và cập nhật dữ liệu trong bảng.

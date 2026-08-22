@@ -40,6 +40,10 @@ describe("branch settings", () => {
     expect(home).toContain("branchCounts={branchFilterCounts}");
     expect(home).toContain("data-branch-asset-value-chart");
     expect(home).toContain("branchAssetValueSummary");
+    expect(home).toContain('setBranchFilter(item.name); navigateTo("Danh mục tài sản")');
+    expect(home).toContain('role="tooltip"');
+    expect(home).toContain("Tỷ trọng: {percentage.toFixed(1)}%");
+    expect(home.indexOf('key="asset-branch"')).toBeLessThan(home.indexOf('key="asset-status"'));
     expect(home).not.toContain('document.querySelector<HTMLElement>("[data-asset-modal]")');
     expect(employees).toContain("employees.updateBranch");
     expect(employees).toContain("data-employee-branch");
