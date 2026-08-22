@@ -2622,3 +2622,7 @@
 - [x] Cho phép chỉnh sửa Kho vận hành bằng nhấp đúp trong menu Phụ kiện.
 - [x] Cho phép chỉnh sửa Vòng đời kết thúc bằng nhấp đúp trong menu Khấu hao Thanh lý.
 - [x] Bổ sung hồi quy, kiểm tra desktop/mobile và build phát hành.
+
+## Current Session — Sửa ô tìm kiếm Phòng Ban và Bộ Phận
+- [x] Căn chỉnh lại biểu tượng và placeholder của ô tìm kiếm Phòng Ban, Bộ Phận.
+- [x] Bổ sung hồi quy, kiểm tra desktop/mobile và build phát hành.

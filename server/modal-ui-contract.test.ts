@@ -729,9 +729,14 @@ describe("modal presentation contract", () => {
 
   it("adds a normalized quick search for organization names and codes with a clear affordance", () => {
     const organization = readProjectFile("client/src/pages/OrganizationManagementPage.tsx");
+    const css = readProjectFile("client/src/index.css");
 
     expect(organization).toContain("normalizeOrganizationSearch");
     expect(organization).toContain("Tìm tên hoặc mã Phòng Ban, Bộ Phận...");
+    expect(organization).toContain('className="organization-search-input field-input h-10 w-full text-xs"');
+    expect(organization).toContain('className="organization-search-icon pointer-events-none absolute left-3 top-1/2 z-10');
+    expect(css).toContain(".organization-quick-search .organization-search-input");
+    expect(css).toContain("padding-left: 2.5rem;");
     expect(organization).toContain("Xóa từ khóa tìm kiếm");
     expect(organization).toContain("Không tìm thấy đơn vị phù hợp");
     expect(organization).toContain("divisionMatches");

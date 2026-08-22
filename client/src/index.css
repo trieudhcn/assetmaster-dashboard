@@ -661,3 +661,10 @@ input[type="date"] {
     transition-duration: 0.01ms !important;
   }
 }
+
+/* Organization search input must reserve space for its leading search icon. */
+.organization-quick-search .organization-search-input {
+  padding-left: 2.5rem;
+  padding-right: 2.75rem;
+}
+.organization-quick-search .organization-search-icon { margin-top: 0; }
