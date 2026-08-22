@@ -1900,10 +1900,11 @@ describe("currency input and scrollbar contract", () => {
     expect(home).toContain("handoverDepartmentOptionLabels");
     expect(home).toContain("Ngừng hoạt động");
     expect(home).toContain("counts={handoverDepartmentCounts}");
-    expect(home).toContain("hideDepartmentsWithoutHandovers");
+    expect(home).not.toContain("hideDepartmentsWithoutHandovers");
     expect(home).toContain("visibleHandoverDepartments");
-    expect(home).toContain("Ẩn phòng ban 0 phiếu");
-    expect(home).toContain("Đang ẩn 0 phiếu");
+    expect(home).toContain("const visibleHandoverDepartments = handoverDepartments");
+    expect(home).not.toContain("Ẩn phòng ban 0 phiếu");
+    expect(home).not.toContain("Đang ẩn 0 phiếu");
     expect(home).toContain("handoverRecipientFilter");
     expect(home).toContain("const resetHandoverFilters");
     expect(home).toContain("hasActiveHandoverFilters");

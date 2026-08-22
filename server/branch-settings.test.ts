@@ -47,7 +47,13 @@ describe("branch settings", () => {
     expect(home).toContain("const employeeBranchForAsset = useMemo");
     expect(home).toContain("trpc.employees.list.useQuery");
     expect(home).toContain('["Chi nhánh nhân sự", employeeBranchForAsset]');
+    expect(home).toContain("const employeeDepartmentForAsset = useMemo");
+    expect(home).toContain('["Phòng ban người giữ", employeeDepartmentForAsset]');
     expect(home).toContain("Không tìm thấy trong hồ sơ Nhân sự");
+    expect(home).toContain("AssetAllocationHistory");
+    expect(home).toContain("data-asset-allocation-history");
+    expect(home).toContain('["holder", "branchId", "branch_id"]');
+    expect(home).not.toContain("hideDepartmentsWithoutHandovers");
     expect(home).not.toContain('document.querySelector<HTMLElement>("[data-asset-modal]")');
     expect(employees).toContain("employees.updateBranch");
     expect(employees).toContain("data-employee-branch");

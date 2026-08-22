@@ -89,6 +89,15 @@
 - [x] Bổ sung hồi quy, xác minh desktop/mobile, TypeScript và production build.
 - [x] Xác minh desktop: Chi nhánh nhân sự xuất hiện ngay sau Người/Phòng giữ và hiển thị trạng thái chưa gán khi hồ sơ chưa có Chi nhánh.
 
+## Current Session — Phòng ban và lịch sử phân bổ trong Chi tiết tài sản
+
+- [x] Loại bỏ tùy chọn Ẩn phòng ban 0 phiếu khỏi bộ lọc danh sách Bàn giao.
+- [x] Hiển thị Phòng ban của người giữ ngay cạnh thẻ Chi nhánh nhân sự trong Chi tiết tài sản.
+- [x] Hiển thị lịch sử thay đổi người giữ và Chi nhánh của tài sản trong Chi tiết tài sản.
+- [x] Bổ sung hồi quy, xác minh desktop/mobile, TypeScript và production build.
+- [x] Xác minh desktop: Phòng ban nằm cạnh Chi nhánh trong Chi tiết tài sản và bộ lọc Bàn giao không còn tùy chọn Ẩn phòng ban 0 phiếu.
+- [x] Xác minh mobile: Phòng ban người giữ giữ cùng định dạng thẻ và Bàn giao không còn hiển thị tùy chọn ẩn Phòng ban 0 phiếu.
+
 - [x] Mở rộng mô hình dữ liệu tài sản với thông tin chi tiết và trạng thái thao tác.
 - [x] Thêm modal tạo tài sản mới với validation cơ bản.
 - [x] Thêm modal chỉnh sửa tài sản và cập nhật dữ liệu trong bảng.
