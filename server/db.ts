@@ -113,6 +113,12 @@ export async function updateUserDepartment(id: number, departmentId: number | nu
   await db.update(users).set({ departmentId, divisionId: null }).where(eq(users.id, id));
 }
 
+export async function updateUserBranch(id: number, branchId: number | null) {
+  const db = await getDb();
+  if (!db) throw new Error("Database unavailable");
+  await db.update(users).set({ branchId }).where(eq(users.id, id));
+}
+
 export async function updateUserDivision(id: number, departmentId: number, divisionId: number) {
   const db = await getDb();
   if (!db) throw new Error("Database unavailable");

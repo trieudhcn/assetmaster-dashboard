@@ -6,6 +6,17 @@
 - [x] Đặt giao diện thêm, sửa, vô hiệu hóa và xóa Chi nhánh trong Cài đặt hệ thống.
 - [x] Bổ sung hồi quy, xác minh desktop/mobile, TypeScript và production build; khu vực Chi nhánh hiển thị đúng ở desktop và mobile, không làm thay đổi Phòng Ban/Bộ Phận hiện có.
 
+## Current Session — Phân bổ Chi nhánh cho Nhân sự và Tài sản
+
+- [x] Gán và hiển thị Chi nhánh trong danh sách/hồ sơ Nhân sự; nhãn Chi nhánh hiển thị rõ và bố cục danh sách ổn định ở desktop/mobile.
+- [x] Thêm chọn Chi nhánh vào biểu mẫu Tài sản, mặc định HO-Head Office khi tạo mới.
+- [x] Bổ sung hồi quy, xác minh desktop/mobile, TypeScript và production build.
+- [x] Chuyển hiển thị/chọn Chi nhánh trong Nhân sự và biểu mẫu Tài sản sang JSX React chuẩn.
+- [x] Bổ sung trạng thái tải, lỗi và rỗng cho dữ liệu Chi nhánh trong hai luồng.
+- [x] Xác minh mặc định HO-Head Office bằng hợp đồng client/server, kiểm thử hồi quy, production build và ảnh runtime desktop/mobile.
+- [x] Bổ sung trạng thái tải/lỗi riêng cho chọn Chi nhánh trong drawer Nhân sự.
+- [x] Hỗ trợ mở trực tiếp biểu mẫu tạo Tài sản để xác minh bộ chọn Chi nhánh trên desktop/mobile.
+
 - [x] Mở rộng mô hình dữ liệu tài sản với thông tin chi tiết và trạng thái thao tác.
 - [x] Thêm modal tạo tài sản mới với validation cơ bản.
 - [x] Thêm modal chỉnh sửa tài sản và cập nhật dữ liệu trong bảng.

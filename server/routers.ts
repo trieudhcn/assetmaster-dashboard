@@ -164,6 +164,7 @@ import {
   updateRetirementCertificateAssetSalvageValues,
   updateUserRole,
   updateUserActiveStatus,
+  updateUserBranch,
   updateUserDepartment,
   updateUserDivision,
   updateAuditItem,
@@ -249,7 +250,7 @@ export function hasRequiredRetirementReason(status: string | undefined, retireme
 }
 
 const assetInput = z.object({
-  assetCode: z.string().trim().min(2).max(64), name: z.string().trim().min(2).max(255), categoryId: z.number().int().positive().optional().nullable(), departmentId: z.number().int().positive().optional().nullable(), holderName: nullableText,
+  assetCode: z.string().trim().min(2).max(64), name: z.string().trim().min(2).max(255), categoryId: z.number().int().positive().optional().nullable(), branchId: z.number().int().positive().optional().nullable(), departmentId: z.number().int().positive().optional().nullable(), holderName: nullableText,
   status: z.enum(["available", "assigned", "maintenance", "retired", "lost", "returned_to_vendor"]).default("available"), condition: z.enum(["good", "fair", "needs_inspection", "damaged"]).default("good"),
   purchaseDate: dateFromMs, purchaseValue: z.string().regex(/^\d+(\.\d{1,2})?$/).optional().nullable(), supplierReturnedAt: dateFromMs, supplierReturnReason: nullableText, retiredAt: dateFromMs, retirementReason: nullableText, vendor: nullableText, vendorId: z.number().int().positive().optional().nullable(), brandId: z.number().int().positive().optional().nullable(), serialNumber: nullableText, location: nullableText, warrantyUntil: dateFromMs, note: nullableText, maintenanceReason: nullableText,
 });
@@ -398,6 +399,12 @@ export const appRouter = router({
       }
       await updateUserDepartment(input.id, input.departmentId);
       await recordActivity({ entityType: "user", entityId: input.id, action: "department_updated", actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: input.departmentId ? "Cập nhật phòng ban nhân viên" : "Xóa gán phòng ban nhân viên" });
+      return { success: true };
+    }),
+    updateBranch: adminProcedure.input(z.object({ id: z.number().int().positive(), branchId: z.number().int().positive().nullable() })).mutation(async ({ input, ctx }) => {
+      if (input.branchId && !(await getBranchById(input.branchId))?.isActive) throw new TRPCError({ code: "BAD_REQUEST", message: "Chi nhánh được chọn không tồn tại hoặc đã ngừng hoạt động." });
+      await updateUserBranch(input.id, input.branchId);
+      await recordActivity({ entityType: "user", entityId: input.id, action: "branch_updated", actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: input.branchId ? "Cập nhật Chi nhánh nhân viên" : "Xóa gán Chi nhánh nhân viên" });
       return { success: true };
     }),
     updateDivision: adminProcedure.input(z.object({ id: z.number().int().positive(), divisionId: z.number().int().positive().nullable() })).mutation(async ({ input, ctx }) => {
@@ -982,6 +989,8 @@ export const appRouter = router({
       if (!hasRequiredRetirementReason(input.status, input.retirementReason)) throw new TRPCError({ code: "BAD_REQUEST", message: "Vui lòng nhập lý do thanh lý khi đưa tài sản vào Khấu hao/Thanh lý." });
       if (input.vendorId && !(await getVendorById(input.vendorId))?.isActive) throw new TRPCError({ code: "BAD_REQUEST", message: "Nhà cung cấp được chọn không tồn tại hoặc đã ngừng hoạt động." });
       if (input.brandId && !(await getBrandById(input.brandId))?.isActive) throw new TRPCError({ code: "BAD_REQUEST", message: "Hãng được chọn không tồn tại hoặc đã ngừng hoạt động." });
+      const branch = input.branchId ? await getBranchById(input.branchId) : (await getBranchByCode("HO")) || (await getBranchByCode("HO-HEAD OFFICE"));
+      if (!branch?.isActive) throw new TRPCError({ code: "BAD_REQUEST", message: "Không tìm thấy Chi nhánh HO-Head Office đang hoạt động để gán mặc định cho tài sản mới." });
       const retirementAt = input.status === "retired" ? input.retiredAt ?? new Date() : null;
       const retirementCertificate = retirementAt ? (() => {
         const year = retirementAt.getUTCFullYear();
@@ -989,7 +998,7 @@ export const appRouter = router({
       })() : null;
       const retirementSequence = retirementCertificate ? await getNextRetirementCertificateSequence(retirementCertificate.year) : null;
       const retirementCertificateNumber = retirementCertificate && retirementSequence ? `TL-${retirementCertificate.year}-${String(retirementSequence).padStart(3, "0")}` : null;
-      const id = await createAsset({ ...input, holderName: input.status === "retired" ? "Khấu hao - Thanh lý" : input.holderName, maintenanceReason: input.status === "maintenance" ? input.maintenanceReason?.trim() || null : null, retiredAt: retirementAt, retirementReason: input.status === "retired" ? input.retirementReason?.trim() || null : null, retirementCertificateNumber, retirementCertificateYear: retirementCertificate?.year ?? null, retirementCertificateSequence: retirementSequence, qrToken: crypto.randomUUID().replaceAll("-", ""), createdByUserId: ctx.user!.id });
+      const id = await createAsset({ ...input, branchId: branch.id, holderName: input.status === "retired" ? "Khấu hao - Thanh lý" : input.holderName, maintenanceReason: input.status === "maintenance" ? input.maintenanceReason?.trim() || null : null, retiredAt: retirementAt, retirementReason: input.status === "retired" ? input.retirementReason?.trim() || null : null, retirementCertificateNumber, retirementCertificateYear: retirementCertificate?.year ?? null, retirementCertificateSequence: retirementSequence, qrToken: crypto.randomUUID().replaceAll("-", ""), createdByUserId: ctx.user!.id });
       await recordActivity({ entityType: "asset", entityId: id, action: "created", actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: `Tạo tài sản ${input.assetCode}` });
       return { id };
     }),
@@ -1002,6 +1011,7 @@ export const appRouter = router({
       if (!hasRequiredRetirementReason(changes.status, changes.retirementReason)) throw new TRPCError({ code: "BAD_REQUEST", message: "Vui lòng nhập lý do thanh lý khi đưa tài sản vào Khấu hao/Thanh lý." });
       if (changes.vendorId && !(await getVendorById(changes.vendorId))?.isActive) throw new TRPCError({ code: "BAD_REQUEST", message: "Nhà cung cấp được chọn không tồn tại hoặc đã ngừng hoạt động." });
       if (changes.brandId && !(await getBrandById(changes.brandId))?.isActive) throw new TRPCError({ code: "BAD_REQUEST", message: "Hãng được chọn không tồn tại hoặc đã ngừng hoạt động." });
+      if (changes.branchId && !(await getBranchById(changes.branchId))?.isActive) throw new TRPCError({ code: "BAD_REQUEST", message: "Chi nhánh được chọn không tồn tại hoặc đã ngừng hoạt động." });
       const persistedChanges = changes.status && changes.status !== "maintenance" ? { ...changes, maintenanceReason: null } : changes;
       const supplierReturnChanges = changes.status === "returned_to_vendor"
         ? { supplierReturnedAt: changes.supplierReturnedAt ?? current.supplierReturnedAt ?? new Date(), supplierReturnReason: changes.supplierReturnReason?.trim() || current.supplierReturnReason || null }

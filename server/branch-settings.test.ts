@@ -12,6 +12,7 @@ describe("branch settings", () => {
     const routers = readProjectFile("server/routers.ts");
     const settings = readProjectFile("client/src/components/BranchSettings.tsx");
     const home = readProjectFile("client/src/pages/Home.tsx");
+    const employees = readProjectFile("client/src/pages/EmployeeManagementView.tsx");
 
     expect(schema).toContain('mysqlTable("branches"');
     expect(schema).toContain('branchId: int("branchId")');
@@ -26,5 +27,14 @@ describe("branch settings", () => {
     expect(settings).toContain("branches.remove");
     expect(settings).toContain("chưa thay đổi dữ liệu vận hành hiện hữu");
     expect(home).toContain("<BranchSettings />");
+    expect(routers).toContain('getBranchByCode("HO-HEAD OFFICE")');
+    expect(home).toContain("branchId: formData.branchId ?? null");
+    expect(home).toContain("data-asset-branch");
+    expect(home).toContain("AssetBranchSelector");
+    expect(home).not.toContain('document.querySelector<HTMLElement>("[data-asset-modal]")');
+    expect(employees).toContain("employees.updateBranch");
+    expect(employees).toContain("data-employee-branch");
+    expect(employees).toContain("EmployeeBranchAllocation");
+    expect(employees).not.toContain("document.createElement");
   });
 });
