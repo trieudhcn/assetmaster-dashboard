@@ -264,7 +264,7 @@ describe("modal presentation contract", () => {
     const supplies = readProjectFile("client/src/pages/SuppliesInventoryView.tsx");
     const routers = readProjectFile("server/routers.ts");
     expect(home).toContain('label: "Phụ kiện"');
-    expect(home).toContain('<SuppliesInventoryView />');
+    expect(home).toContain('<SuppliesInventoryView canEditSectionLabels={isAdmin} />');
     expect(supplies).toContain("Phụ kiện");
     expect(supplies).toContain("Nhập danh sách từ Excel");
     expect(supplies).toContain("Tải mẫu");
@@ -1234,7 +1234,7 @@ describe("modal presentation contract", () => {
     expect(home).toContain('{ label: "Khấu hao & Thanh lý", icon: Landmark }');
     expect(home).toContain('retirement: "Khấu hao & Thanh lý"');
     expect(home).toContain('"Khấu hao & Thanh lý": "retirement"');
-    expect(home).toContain('{activeNav === "Khấu hao & Thanh lý" ? <RetirementManagementView /> : null}');
+    expect(home).toContain('{activeNav === "Khấu hao & Thanh lý" ? <RetirementManagementView canEditSectionLabels={isAdmin} /> : null}');
     expect(reports).not.toContain("<DisposalExportPanel groups=");
     expect(retirement).toContain("<RetirementCertificateManager />");
     expect(retirement).toContain("Báo cáo & xuất dữ liệu thanh lý");

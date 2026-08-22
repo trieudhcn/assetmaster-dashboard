@@ -9,10 +9,11 @@ import { buildRetirementDetailWorkbook, serviceCostsByAsset } from "@/lib/retire
 import { SearchableSelect } from "@/components/SearchableSelect";
 import { RetirementCertificateManager } from "@/components/RetirementCertificateManager";
 import { RecordedSalvageMetric, RetirementServiceCostMetric } from "@/components/RecordedSalvageMetric";
+import { EditableSectionLabel } from "@/components/EditableSectionLabel";
 
 type ExportAction = "excel" | "pdf" | null;
 
-export function RetirementManagementView() {
+export function RetirementManagementView({ canEditSectionLabels = false }: { canEditSectionLabels?: boolean }) {
   const [year, setYear] = useState("all");
   const [selectedAssetIds, setSelectedAssetIds] = useState<Set<number>>(() => new Set());
   const [exporting, setExporting] = useState<ExportAction>(null);
@@ -131,7 +132,7 @@ export function RetirementManagementView() {
   };
 
   return <main className="min-h-screen bg-[#F4F7FB] px-4 py-7 sm:px-6 lg:px-9 lg:py-8"><div className="mx-auto max-w-[1500px]">
-    <header className="mb-7 flex flex-col justify-between gap-4 lg:flex-row lg:items-end"><div><div className="mb-2 flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.16em] text-[#A86B00]"><span className="h-1.5 w-1.5 rounded-full bg-[#E59B24]" />Vòng đời kết thúc</div><h1 className="font-display text-[30px] font-extrabold tracking-[-0.04em] text-[#102A43]">Khấu hao/Thanh lý</h1><p className="mt-1 text-sm text-[#71869A]">Lập biên bản, cập nhật giá trị thu hồi, lưu chứng từ ký tay và theo dõi báo cáo thanh lý tập trung.</p></div><div className="grid grid-cols-3 gap-2"><StatusMetric label="Nháp" value={certificatesByStatus.draft} tone="amber" /><StatusMetric label="Đã ký" value={certificatesByStatus.signed} tone="blue" /><StatusMetric label="Đã đóng" value={certificatesByStatus.closed} tone="teal" /></div></header>
+    <header className="mb-7 flex flex-col justify-between gap-4 lg:flex-row lg:items-end"><div><div className="mb-2 flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.16em] text-[#A86B00]"><span className="h-1.5 w-1.5 rounded-full bg-[#E59B24]" /><EditableSectionLabel labelKey="retirement-end-of-life" fallback="Vòng đời kết thúc" canEdit={canEditSectionLabels} /></div><h1 className="font-display text-[30px] font-extrabold tracking-[-0.04em] text-[#102A43]">Khấu hao/Thanh lý</h1><p className="mt-1 text-sm text-[#71869A]">Lập biên bản, cập nhật giá trị thu hồi, lưu chứng từ ký tay và theo dõi báo cáo thanh lý tập trung.</p></div><div className="grid grid-cols-3 gap-2"><StatusMetric label="Nháp" value={certificatesByStatus.draft} tone="amber" /><StatusMetric label="Đã ký" value={certificatesByStatus.signed} tone="blue" /><StatusMetric label="Đã đóng" value={certificatesByStatus.closed} tone="teal" /></div></header>
 
     <section className="rounded-xl border border-[#E7D9B9] bg-white p-4 shadow-[0_8px_24px_rgba(16,42,67,0.045)] sm:p-5">
       <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">

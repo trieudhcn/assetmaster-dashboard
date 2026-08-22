@@ -8,6 +8,8 @@ describe("safe inline UI labels", () => {
     const enhancer = readFileSync(new URL("../client/src/components/LegacySectionLabelEnhancer.tsx", import.meta.url), "utf8");
     const home = readFileSync(new URL("../client/src/pages/Home.tsx", import.meta.url), "utf8");
     const operations = readFileSync(new URL("../client/src/pages/OperationsModules.tsx", import.meta.url), "utf8");
+    const supplies = readFileSync(new URL("../client/src/pages/SuppliesInventoryView.tsx", import.meta.url), "utf8");
+    const retirement = readFileSync(new URL("../client/src/pages/RetirementManagementView.tsx", import.meta.url), "utf8");
 
     expect(router).toContain("uiLabels: router");
     expect(router).toContain("list: protectedProcedure");
@@ -21,6 +23,10 @@ describe("safe inline UI labels", () => {
     expect(home).toContain('labelKey="dashboard-operations"');
     expect(operations).toContain('labelKey="audit-reconciliation"');
     expect(operations).toContain('fallback="Đối chiếu kiểm kê"');
+    expect(supplies).toContain('labelKey="supplies-operations" fallback="Kho vận hành" canEdit={canEditSectionLabels}');
+    expect(retirement).toContain('labelKey="retirement-end-of-life" fallback="Vòng đời kết thúc" canEdit={canEditSectionLabels}');
+    expect(home).toContain('<SuppliesInventoryView canEditSectionLabels={isAdmin} />');
+    expect(home).toContain('<RetirementManagementView canEditSectionLabels={isAdmin} />');
     expect(enhancer).toContain('fallback: "Danh mục tài sản"');
     expect(enhancer).toContain('fallback: "Quản lý bàn giao"');
     expect(enhancer).toContain('fallback: "Vận hành bảo trì"');

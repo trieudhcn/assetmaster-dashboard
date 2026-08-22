@@ -2617,3 +2617,8 @@
 ## Current Session — Sửa biểu tượng nút Đóng bị trùng
 - [x] Loại bỏ dấu nhân trùng trên nút Đóng của xem nhanh biên bản BG.
 - [x] Bổ sung hồi quy, kiểm tra hiển thị và build phát hành.
+
+## Current Session — Chỉnh sửa tiêu đề khu vực theo nhấp đúp
+- [x] Cho phép chỉnh sửa Kho vận hành bằng nhấp đúp trong menu Phụ kiện.
+- [x] Cho phép chỉnh sửa Vòng đời kết thúc bằng nhấp đúp trong menu Khấu hao Thanh lý.
+- [x] Bổ sung hồi quy, kiểm tra desktop/mobile và build phát hành.
