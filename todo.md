@@ -2643,3 +2643,7 @@
 ## Current Session — Đưa tìm kiếm vào tiêu đề Sơ đồ cơ cấu
 - [x] Đặt ô tìm kiếm Phòng Ban, Bộ Phận trong hàng tiêu đề Sơ đồ cơ cấu.
 - [x] Bổ sung hồi quy, kiểm tra desktop/mobile và build phát hành.
+
+## Current Session — Thu gọn mặc định Sơ đồ cơ cấu
+- [x] Đặt danh sách Bộ Phận của mọi Phòng Ban ở trạng thái thu gọn mặc định.
+- [x] Bổ sung hồi quy, kiểm tra desktop/mobile và build phát hành.

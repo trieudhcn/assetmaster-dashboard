@@ -743,8 +743,9 @@ describe("modal presentation contract", () => {
     expect(organization).toContain('organization-quick-search w-full min-w-0 lg:max-w-md');
     expect(organization).toContain('flex flex-col gap-3 border-b border-[#E7EEF3] px-5 py-5 lg:flex-row');
     expect(organization).toContain('className="relative w-full"');
-    expect(organization).toContain("collapsedDepartmentIds");
+    expect(organization).toContain("expandedDepartmentIds");
     expect(organization).toContain("toggleDepartmentCollapse");
+    expect(organization).toContain("const isCollapsed = !expandedDepartmentIds.has(department.id)");
     expect(organization).toContain("aria-expanded={!isCollapsed}");
     expect(organization).toContain("organization-department-${department.id}");
   });
