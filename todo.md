@@ -2626,3 +2626,8 @@
 ## Current Session — Sửa ô tìm kiếm Phòng Ban và Bộ Phận
 - [x] Căn chỉnh lại biểu tượng và placeholder của ô tìm kiếm Phòng Ban, Bộ Phận.
 - [x] Bổ sung hồi quy, kiểm tra desktop/mobile và build phát hành.
+
+## Current Session — Chỉnh sửa nhãn Danh mục và Nhân sự
+- [x] Cho phép chỉnh sửa Danh mục tài sản bằng nhấp đúp.
+- [x] Cho phép chỉnh sửa Phân bổ nhân sự bằng nhấp đúp.
+- [x] Bổ sung hồi quy, kiểm tra desktop/mobile và build phát hành.
