@@ -1500,7 +1500,7 @@ describe("modal presentation contract", () => {
     const previewHost = readProjectFile("client/src/components/ExportPreviewHost.tsx");
     const operations = readProjectFile("client/src/pages/OperationsModules.tsx");
 
-    expect(previewHost).toContain("z-[260]");
+    expect(previewHost).toContain("z-[1000]");
     expect(quickPreview).toContain("h-[100dvh]");
     expect(quickPreview).toContain("grid-rows-[auto_minmax(0,1fr)_auto]");
     expect(operations).toContain("md:hidden");

@@ -53,6 +53,16 @@
 - [x] Xác minh lại bộ lọc Chi nhánh render khai báo trong Bàn giao và Kiểm kê, giữ thứ tự hợp lý trên desktop.
 - [x] Xác minh bộ lọc Chi nhánh khai báo không làm vỡ bố cục Bàn giao và Kiểm kê trên mobile.
 
+## Current Session — Khắc phục PDF, lọc và báo cáo theo Chi nhánh
+
+- [x] Đưa hộp xem PDF Bàn giao từ Phụ kiện lên đúng lớp hiển thị, không bị che sau bảng xem nhanh.
+- [x] Sửa bộ lọc Chi nhánh Danh mục tài sản để đối chiếu đúng ID và hiển thị tài sản thuộc Chi nhánh Hà Nội.
+- [x] Thêm cột Chi nhánh trực tiếp vào bảng danh sách Bàn giao và bảng chi tiết Kiểm kê.
+- [x] Xuất Excel Bàn giao và Kiểm kê theo đúng tập dữ liệu đã lọc Chi nhánh.
+- [x] Bổ sung hồi quy, xác minh desktop/mobile, TypeScript và production build.
+- [x] Xác minh desktop: danh sách Bàn giao hiển thị cột Chi nhánh và khu vực Kiểm kê giữ nút Xuất Excel cùng phạm vi Chi nhánh.
+- [x] Xác minh mobile: phần danh sách Bàn giao và Kiểm kê vẫn giữ bố cục đáp ứng sau khi thêm cột Chi nhánh.
+
 - [x] Mở rộng mô hình dữ liệu tài sản với thông tin chi tiết và trạng thái thao tác.
 - [x] Thêm modal tạo tài sản mới với validation cơ bản.
 - [x] Thêm modal chỉnh sửa tài sản và cập nhật dữ liệu trong bảng.

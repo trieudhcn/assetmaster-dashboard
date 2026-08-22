@@ -44,8 +44,12 @@ describe("branch settings", () => {
     expect(employees).not.toContain("document.createElement");
     expect(home).toContain("const [branchFilter, setBranchFilter]");
     expect(home).toContain("matchesBranch");
+    expect(home).toContain("branchId: asset.branchId ?? null");
+    expect(home).toContain("asset.branchId === selectedBranchId");
     expect(home).toContain("branchOptions");
     expect(home).toContain("onBranchChange");
+    expect(home).toContain('"Chi nhánh": item.branch || "Chưa gán"');
+    expect(home).toContain('<th className="px-4 py-3.5">Chi nhánh</th>');
     expect(home).toContain('["Chi nhánh", item.branch || "Chưa gán"]');
     const operations = readProjectFile("client/src/pages/OperationsModules.tsx");
     expect(operations).toContain("branchNameForAsset");
@@ -68,7 +72,13 @@ describe("branch settings", () => {
     expect(operations).toContain('get("auditSession")');
     expect(operations).toContain("auditBranchFilter");
     expect(operations).toContain("setAuditBranchFilter");
+    expect(operations).toContain("filteredAuditExportRows");
+    expect(operations).toContain("exportFilteredAuditExcel");
+    expect(operations).toContain("auditBranchOptions.find");
+    expect(operations).toContain('<th className="px-4 py-3">Chi nhánh</th>');
     expect(operations).toContain('searchPlaceholder="Tìm tên hoặc mã Chi nhánh..."');
     expect(operations).not.toContain("createRoot(host)");
+    const previewHost = readProjectFile("client/src/components/ExportPreviewHost.tsx");
+    expect(previewHost).toContain("z-[1000]");
   });
 });
