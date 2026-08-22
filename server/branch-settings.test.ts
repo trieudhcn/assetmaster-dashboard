@@ -52,5 +52,7 @@ describe("branch settings", () => {
     expect(supplyIssues).toContain("const branchName = handoverAsset?.branchId");
     expect(supplyIssues).toContain("branchName, recipientName");
     expect(supplyIssues).toContain("Chi nhánh tài sản:");
+    expect(home).toContain('get("handoverId")');
+    expect(operations).toContain('get("auditSession")');
   });
 });

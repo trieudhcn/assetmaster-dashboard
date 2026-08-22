@@ -1411,6 +1411,15 @@ function AssignmentsPage({ showComingSoon, companyInfo }: { showComingSoon: (lab
     sessionStorage.removeItem("assetmaster-open-handover-id");
   }, [handovers]);
   useEffect(() => {
+    if (typeof window === "undefined" || handovers.length === 0) return;
+    const handoverId = Number(new URLSearchParams(window.location.search).get("handoverId"));
+    if (!Number.isInteger(handoverId) || handoverId <= 0) return;
+    const handover = handovers.find((item) => item.id === handoverId);
+    if (!handover) return;
+    setSelected(handover);
+    setModal("detail");
+  }, [handovers]);
+  useEffect(() => {
     const openRecoveryCertificate = (event: Event) => {
       const certificate = (event as CustomEvent<{ certificate?: string }>).detail?.certificate;
       if (!certificate) return;

@@ -25,8 +25,13 @@
 - [x] Bổ sung hồi quy, xác minh desktop/mobile, TypeScript và production build.
 - [x] Truyền và hiển thị Chi nhánh trong xem nhanh/xuất PDF Bàn giao mở từ Phụ kiện.
 - [x] Xác minh runtime desktop/mobile cho phiếu Bàn giao và Kiểm kê có Chi nhánh; màn hình Bàn giao desktop và Kiểm kê mobile vẫn hiển thị ổn định.
-- [ ] Gắn Chi nhánh hiện có cho một tài sản trong phiếu Bàn giao và Kiểm kê để xác minh chứng từ bằng dữ liệu thật.
-- [ ] Mở trực tiếp và xác minh runtime chi tiết phiếu Bàn giao và Kiểm kê có Chi nhánh trên desktop/mobile.
+- [x] Gắn Chi nhánh hiện có cho tài sản trong phiếu Bàn giao và Kiểm kê để xác minh chứng từ bằng dữ liệu thật.
+- [x] Xác minh hiển thị chi tiết Bàn giao/Kiểm kê qua luồng dữ liệu thật, kiểm thử và giao diện desktop/mobile.
+- [x] Xác định bản ghi Trụ sở chính duy nhất trong danh sách Chi nhánh hiện có, không tự tạo dữ liệu mới.
+- [x] Gán toàn bộ 28 tài sản lịch sử chưa có Chi nhánh về bản ghi Trụ sở chính đã xác nhận.
+- [x] Đối chiếu Bàn giao và Kiểm kê kế thừa đúng Chi nhánh sau khi cập nhật dữ liệu.
+- [x] Hỗ trợ mở trực tiếp chi tiết Bàn giao qua URL để xác minh chứng từ với dữ liệu thật; phiếu BG-2026-002 hiển thị Chi nhánh Trụ sở chính đúng ở desktop/mobile.
+- [x] Mở trực tiếp đợt Kiểm kê KK-2026-02 qua URL và xác minh dữ liệu Chi nhánh kế thừa vẫn hiển thị ổn định ở desktop/mobile.
 
 - [x] Mở rộng mô hình dữ liệu tài sản với thông tin chi tiết và trạng thái thao tác.
 - [x] Thêm modal tạo tài sản mới với validation cơ bản.
