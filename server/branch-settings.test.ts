@@ -13,6 +13,8 @@ describe("branch settings", () => {
     const settings = readProjectFile("client/src/components/BranchSettings.tsx");
     const home = readProjectFile("client/src/pages/Home.tsx");
     const employees = readProjectFile("client/src/pages/EmployeeManagementView.tsx");
+    const supplyPreview = readProjectFile("client/src/components/SupplyIssueSlipManager.tsx");
+    const supplyPdf = readProjectFile("client/src/lib/supplyIssueSlipPdf.ts");
 
     expect(schema).toContain('mysqlTable("branches"');
     expect(schema).toContain('branchId: int("branchId")');
@@ -47,6 +49,9 @@ describe("branch settings", () => {
     expect(home).toContain("branchCounts={branchFilterCounts}");
     expect(home).toContain("branchLabel: asset.branchId ?");
     expect(home).toContain("data-asset-branch-badge");
+    expect(home).toContain("data-asset-column-picker");
+    expect(home).toContain("assetmaster-asset-catalog-visible-columns");
+    expect(home).toContain("Khôi phục mặc định");
     expect(home).toContain('<th className="px-4 py-3.5">Chi nhánh</th>');
     expect(home).toContain("data-handover-reference");
     expect(home).toContain("w-[112px] max-w-[112px]");
@@ -93,6 +98,11 @@ describe("branch settings", () => {
     expect(home).toContain("branchOptions");
     expect(home).toContain("onBranchChange");
     expect(home).toContain('"Chi nhánh": item.branch || "Chưa gán"');
+    expect(supplyPreview).toContain("data-handover-recipient-branch");
+    expect(supplyPreview).toContain("const recipientEmployee = handover");
+    expect(supplyPreview).not.toContain("Chi nhánh tài sản:");
+    expect(supplyPdf).toContain("const dividerY = Math.max(39, 25 + companyLines.length * 5 + 3)");
+    expect(supplyPdf).toContain("const titleY = dividerY + 12");
     expect(home).toContain('<th className="px-4 py-3.5">Chi nhánh</th>');
     expect(home).toContain('["Chi nhánh", item.branch || "Chưa gán"]');
     const operations = readProjectFile("client/src/pages/OperationsModules.tsx");
@@ -103,12 +113,11 @@ describe("branch settings", () => {
     const supplyIssues = readProjectFile("client/src/components/SupplyIssueSlipManager.tsx");
     expect(handoverPdf).toContain("branchName?: string | null");
     expect(handoverPdf).toContain('["Chi nhánh", input.branchName || "Chưa gán"]');
-    expect(supplyIssues).toContain("const branch = handoverAsset?.branchId");
+    expect(supplyIssues).toContain("const branch = recipientEmployee?.branchId");
     expect(supplyIssues).toContain("const branchEmail = branch?.email || undefined");
     expect(supplyIssues).toContain("email: branchEmail || company?.email");
-    expect(supplyIssues).toContain("Email liên hệ:");
     expect(supplyIssues).toContain("branchName, recipientName");
-    expect(supplyIssues).toContain("Chi nhánh tài sản:");
+    expect(supplyIssues).not.toContain("Chi nhánh tài sản:");
     expect(home).toContain('get("handoverId")');
     expect(home).toContain("handoverBranchFilter");
     expect(home).toContain("HandoverBranchAutoField");

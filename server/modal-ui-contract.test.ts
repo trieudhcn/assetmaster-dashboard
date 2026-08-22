@@ -230,9 +230,9 @@ describe("modal presentation contract", () => {
     expect(importHistory).toContain("assetmaster:open-import-history");
     expect(home).toContain('className="relative z-[120]"');
     expect(home).toContain("z-[130]");
-    expect(home).toContain('data-asset-import-history');
-    expect(home).toContain('title = "Lịch sử import thành công"');
-    expect(home).toContain('input.placeholder === "Tìm mã, tên hoặc người giữ..."');
+    expect(home).toContain('aria-label="Mở lịch sử import"');
+    expect(home).toContain('title="Lịch sử import thành công"');
+    expect(home).toContain("onOpenImportHistory");
     expect(employees).toContain("EMPLOYEE_PAGE_SIZE = 10");
     expect(employees).toContain('aria-label="Trang nhân sự sau"');
     expect(employees).toContain('data-search-clear-managed="true"');
@@ -1384,8 +1384,9 @@ describe("modal presentation contract", () => {
     expect(operations).toContain('Tra cứu mã phiếu BH / SC...');
     expect(operations).toContain('ticketStatusFilter');
     expect(home).toContain('BH: ${warrantyUntil.toLocaleDateString("vi-VN")}');
-    expect(home).toContain('actionBar.append(filteredExportButton, importButton, resetButton);');
-    expect(home).not.toContain('actionBar.append(filteredExportButton, maintenanceButton, exportButton, importButton, resetButton);');
+    expect(home).toContain('onExportFilteredAssets');
+    expect(home).toContain('onOpenImport');
+    expect(home).not.toContain('actionBar.append(filteredExportButton');
   });
 
   it("shows repair spending by asset and supports handover accessories from inventory or manual entry", () => {
@@ -1922,12 +1923,13 @@ describe("currency input and scrollbar contract", () => {
     expect(home).toContain("Đã trả NCC");
     expect(home).toContain("Xuất Excel");
     expect(home).toContain("exportFilteredAssetsExcel");
-    expect(home).toContain("filteredAssetExcelExport");
+    expect(home).toContain("onExportFilteredAssets");
     expect(home).toContain("DANH SÁCH TÀI SẢN THEO BỘ LỌC");
     expect(home).toContain("assetmaster-danh-sach-tai-san-da-loc-");
     expect(home).toContain("Xuất danh sách");
-    expect(home).toContain("assetCatalogToolbar");
-    expect(home).toContain("min-[1320px]:flex-nowrap");
+    expect(home).toContain("data-asset-column-picker");
+    expect(home).toContain("assetmaster-asset-catalog-visible-columns");
+    expect(home).toContain("onOpenImportHistory");
     expect(home).toContain("whitespace-nowrap");
     expect(home).toContain("danh-sach-phieu-ban-giao-");
     const operations = readProjectFile("client/src/pages/OperationsModules.tsx");

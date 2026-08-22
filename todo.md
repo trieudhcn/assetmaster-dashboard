@@ -132,6 +132,13 @@
 - [x] Thu gọn cột Mã phiếu trong danh sách Bàn giao, tránh vỡ bảng ở desktop và mobile.
 - [x] Bổ sung hồi quy, xác minh desktop/mobile, TypeScript và production build.
 
+## Current Session — Xem nhanh Bàn giao và cột Danh mục tài sản
+
+- [x] Hiển thị tên Chi nhánh Nhân sự ngay dưới Người nhận trong xem nhanh Bàn giao từ Phụ kiện; bỏ vị trí cuối hộp thoại.
+- [x] Sửa chồng chữ ở mẫu/xem trước phiếu cấp phát Phụ kiện.
+- [x] Thêm bộ chọn ẩn/hiện cột có lưu lựa chọn cho bảng Danh mục tài sản.
+- [x] Bổ sung hồi quy, xác minh desktop/mobile, TypeScript và production build.
+
 - [x] Mở rộng mô hình dữ liệu tài sản với thông tin chi tiết và trạng thái thao tác.
 - [x] Thêm modal tạo tài sản mới với validation cơ bản.
 - [x] Thêm modal chỉnh sửa tài sản và cập nhật dữ liệu trong bảng.
