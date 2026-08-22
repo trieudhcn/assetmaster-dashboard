@@ -17,6 +17,17 @@
 - [x] Bổ sung trạng thái tải/lỗi riêng cho chọn Chi nhánh trong drawer Nhân sự.
 - [x] Hỗ trợ mở trực tiếp biểu mẫu tạo Tài sản để xác minh bộ chọn Chi nhánh trên desktop/mobile.
 
+## Current Session — Chi nhánh trong chứng từ và danh mục tài sản
+
+- [x] Hiển thị Chi nhánh của tài sản trong phiếu Bàn giao và các bản xem trước/xuất chứng từ liên quan.
+- [x] Hiển thị Chi nhánh của tài sản trong phiếu Kiểm kê và các bản xem trước/xuất chứng từ liên quan.
+- [x] Thêm bộ lọc Chi nhánh vào Danh mục tài sản, gồm trạng thái không có kết quả và xóa bộ lọc; bố cục bộ lọc hiển thị rõ ở desktop/mobile.
+- [x] Bổ sung hồi quy, xác minh desktop/mobile, TypeScript và production build.
+- [x] Truyền và hiển thị Chi nhánh trong xem nhanh/xuất PDF Bàn giao mở từ Phụ kiện.
+- [x] Xác minh runtime desktop/mobile cho phiếu Bàn giao và Kiểm kê có Chi nhánh; màn hình Bàn giao desktop và Kiểm kê mobile vẫn hiển thị ổn định.
+- [ ] Gắn Chi nhánh hiện có cho một tài sản trong phiếu Bàn giao và Kiểm kê để xác minh chứng từ bằng dữ liệu thật.
+- [ ] Mở trực tiếp và xác minh runtime chi tiết phiếu Bàn giao và Kiểm kê có Chi nhánh trên desktop/mobile.
+
 - [x] Mở rộng mô hình dữ liệu tài sản với thông tin chi tiết và trạng thái thao tác.
 - [x] Thêm modal tạo tài sản mới với validation cơ bản.
 - [x] Thêm modal chỉnh sửa tài sản và cập nhật dữ liệu trong bảng.

@@ -904,6 +904,7 @@ export function AuditPage() {
 
   const auditsQuery = trpc.audits.list.useQuery();
   const assetsQuery = trpc.assets.list.useQuery();
+  const branchesQuery = trpc.branches.list.useQuery();
   const departmentsQuery = trpc.departments.list.useQuery();
   const assetCategoriesQuery = trpc.assetCategories.list.useQuery();
   const companySettingsQuery = trpc.company.get.useQuery(undefined, { enabled: isAdmin });
@@ -980,6 +981,10 @@ export function AuditPage() {
   const selectedAudit = auditSessions.find((audit) => audit.id === selectedSessionId);
   const isAuditLocked = selectedAudit?.status === "completed" || selectedAudit?.status === "cancelled";
   const assetById = new Map(assets.map((asset) => [asset.id, asset]));
+  const branchNameForAsset = (asset: (typeof assets)[number] | undefined) => {
+    if (!asset?.branchId) return "Chưa gán";
+    return branchesQuery.data?.find((branch) => branch.id === asset.branchId)?.name || "Chưa gán";
+  };
   const auditableAssets = assets.filter((asset) => asset.status !== "returned_to_vendor" && asset.status !== "retired");
   const auditableAssetIds = new Set(auditableAssets.map((asset) => asset.id));
   // Đợt đã chốt là hồ sơ lịch sử, còn đợt mở chỉ hiển thị tài sản vẫn thuộc công ty.
@@ -1096,6 +1101,7 @@ export function AuditPage() {
     return {
       assetCode: asset?.assetCode || `#${item.assetId}`,
       assetName: asset?.name || "Tài sản đã bị lưu trữ",
+      branchName: branchNameForAsset(asset),
       expectedStatus: auditAssetStatusLabel(item.expectedStatus),
       actualStatus: auditAssetStatusLabel(item.actualStatus),
       result: auditResultLabels[item.result],
@@ -1145,6 +1151,7 @@ export function AuditPage() {
     return {
       "Mã tài sản": asset?.assetCode || `#${item.assetId}`,
       "Tên tài sản": asset?.name || "Tài sản đã bị lưu trữ",
+      "Chi nhánh": branchNameForAsset(asset),
       "Trạng thái dự kiến": auditAssetStatusLabel(item.expectedStatus),
       "Trạng thái thực tế": auditAssetStatusLabel(item.actualStatus),
       "Kết quả": auditResultLabels[item.result],
@@ -1439,6 +1446,7 @@ export function AuditPage() {
       discrepancyRows.forEach((row, index) => {
         const lines = [
           `${index + 1}. ${row["Tên tài sản"]} (${row["Mã tài sản"]})`,
+          `Chi nhánh: ${row["Chi nhánh"]}`,
           `Dự kiến: ${row["Trạng thái dự kiến"]} · Thực tế: ${row["Trạng thái thực tế"]} · Kết quả: ${row["Kết quả"]}`,
           `Ghi chú: ${row["Ghi chú"] || "Không có"}`,
         ].flatMap((line) => doc.splitTextToSize(line, 178));
@@ -1540,6 +1548,7 @@ export function AuditPage() {
         finalizedDiscrepancyRows.forEach((row, index) => {
           const lines = [
             `${index + 1}. ${row.assetName} (${row.assetCode})`,
+            `Chi nhánh: ${row.branchName}`,
             `Dự kiến: ${row.expectedStatus} · Thực tế: ${row.actualStatus} · Kết quả: ${row.result}`,
             `Ghi chú: ${row.note}`,
           ].flatMap((line) => doc.splitTextToSize(line, contentWidth - 8));
