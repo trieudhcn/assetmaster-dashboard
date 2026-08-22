@@ -122,11 +122,13 @@ import {
   listSupplyImportItems,
   listSupplyImportSessions,
   listSupplyUnits,
+  listSupplyUnitUsageCounts,
   listSupplyIssueAnalytics,
   listHelpGuideVersions,
   listVendors,
   listVendorDocuments,
   listUsers,
+  countInventorySuppliesByUnit,
   recordActivity,
   runAssetImportTransaction,
   runInventoryTransaction,
@@ -542,7 +544,11 @@ export const appRouter = router({
     }),
   }),
   supplyUnits: router({
-    list: protectedProcedure.query(() => listSupplyUnits()),
+    list: protectedProcedure.query(async () => {
+      const [units, usageRows] = await Promise.all([listSupplyUnits(), listSupplyUnitUsageCounts()]);
+      const usageByUnit = new Map(usageRows.map((row) => [row.unit, Number(row.usageCount || 0)]));
+      return units.map((unit) => ({ ...unit, usageCount: usageByUnit.get(unit.name) || 0 }));
+    }),
     create: adminProcedure.input(z.object({ name: z.string().trim().min(1).max(32) })).mutation(async ({ input, ctx }) => {
       if (await getSupplyUnitByName(input.name)) throw new TRPCError({ code: "BAD_REQUEST", message: "Đơn vị tính này đã tồn tại." });
       const id = await createSupplyUnit({ name: input.name, isActive: true });
@@ -559,12 +565,14 @@ export const appRouter = router({
       await recordActivity({ entityType: "supplyUnit", entityId: id, action, actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: `${input.isActive === false ? "Vô hiệu hóa" : input.isActive === true ? "Kích hoạt" : "Cập nhật"} đơn vị tính chuẩn: ${input.name || existing.name}` });
       return { success: true };
     }),
-    remove: adminProcedure.input(z.object({ id: z.number().int().positive() })).mutation(async ({ input, ctx }) => {
+    remove: adminProcedure.input(z.object({ id: z.number().int().positive(), confirmUsage: z.boolean().optional().default(false) })).mutation(async ({ input, ctx }) => {
       const existing = await getSupplyUnitById(input.id);
       if (!existing) throw new TRPCError({ code: "NOT_FOUND", message: "Không tìm thấy đơn vị tính." });
+      const usageCount = await countInventorySuppliesByUnit(existing.name);
+      if (usageCount > 0 && !input.confirmUsage) throw new TRPCError({ code: "BAD_REQUEST", message: `Đơn vị tính “${existing.name}” đang được ${usageCount} phụ kiện sử dụng. Hãy xác nhận trước khi xóa.` });
       await deleteSupplyUnit(input.id);
-      await recordActivity({ entityType: "supplyUnit", entityId: input.id, action: "deleted", actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: `Xóa đơn vị tính chuẩn: ${existing.name}` });
-      return { success: true };
+      await recordActivity({ entityType: "supplyUnit", entityId: input.id, action: "deleted", actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: `Xóa đơn vị tính chuẩn: ${existing.name}${usageCount ? ` (${usageCount} phụ kiện đang sử dụng)` : ""}` });
+      return { success: true, usageCount };
     }),
   }),
   assetCategories: router({

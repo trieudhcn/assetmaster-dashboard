@@ -398,6 +398,19 @@ export async function listSupplyUnits() {
   return db.select().from(supplyUnits).orderBy(supplyUnits.name);
 }
 
+export async function listSupplyUnitUsageCounts() {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select({ unit: inventorySupplies.unit, usageCount: sql<number>`count(*)` }).from(inventorySupplies).groupBy(inventorySupplies.unit);
+}
+
+export async function countInventorySuppliesByUnit(unit: string) {
+  const db = await getDb();
+  if (!db) return 0;
+  const [{ usageCount }] = await db.select({ usageCount: sql<number>`count(*)` }).from(inventorySupplies).where(eq(inventorySupplies.unit, unit));
+  return Number(usageCount || 0);
+}
+
 export async function getSupplyUnitById(id: number) {
   const db = await getDb();
   if (!db) return undefined;

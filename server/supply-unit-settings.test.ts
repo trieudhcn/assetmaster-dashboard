@@ -15,9 +15,13 @@ describe("standard supply unit settings", () => {
     expect(settings).toContain("supplyUnits.create");
     expect(settings).toContain("supplyUnits.update");
     expect(settings).toContain("supplyUnits.remove");
+    expect(settings).toContain("Đang được ${usageCount} phụ kiện sử dụng");
+    expect(settings).toContain("confirmUsage: usageCount > 0");
     expect(supplies).toContain("activeSupplyUnits");
     expect(supplies).toContain("availableSupplyUnits");
     expect(routers).toContain("supplyUnits: router");
     expect(routers).toContain("deleteSupplyUnit");
+    expect(routers).toContain("countInventorySuppliesByUnit");
+    expect(routers).toContain("confirmUsage");
   });
 });

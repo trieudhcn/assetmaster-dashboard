@@ -2573,3 +2573,8 @@
 - [x] Thêm quản trị viên thêm, sửa, xóa đơn vị tính chuẩn tại Cài đặt hệ thống.
 - [x] Dùng danh sách đơn vị quản trị được trong template import Phụ kiện.
 - [x] Bổ sung migration, hồi quy, kiểm tra desktop/mobile và build phát hành.
+
+## Current Session — Cảnh báo xóa đơn vị tính đang sử dụng
+- [x] Hiển thị số lượng phụ kiện đang dùng từng đơn vị tính chuẩn.
+- [x] Cảnh báo và yêu cầu xác nhận trước khi xóa đơn vị đang được sử dụng.
+- [x] Bổ sung hồi quy, kiểm tra desktop/mobile và build phát hành.
