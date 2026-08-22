@@ -33,6 +33,26 @@
 - [x] Hỗ trợ mở trực tiếp chi tiết Bàn giao qua URL để xác minh chứng từ với dữ liệu thật; phiếu BG-2026-002 hiển thị Chi nhánh Trụ sở chính đúng ở desktop/mobile.
 - [x] Mở trực tiếp đợt Kiểm kê KK-2026-02 qua URL và xác minh dữ liệu Chi nhánh kế thừa vẫn hiển thị ổn định ở desktop/mobile.
 
+## Current Session — Tối ưu Chi nhánh trong biểu mẫu và chứng từ
+
+- [x] Đặt chọn Chi nhánh cạnh Người/Phòng giữ trong form tạo và chỉnh sửa Tài sản.
+- [x] Áp dụng dropdown Chi nhánh có tìm kiếm theo chuẩn lựa chọn toàn hệ thống.
+- [x] Giữ nhãn, thông tin mặc định và bộ chọn viền xanh ngọc theo bố cục tham chiếu đã xác nhận.
+- [x] Tự điền và hiển thị Chi nhánh theo Nhân sự cạnh trường Phòng ban trong phiếu Bàn giao.
+- [x] Thêm bộ lọc Chi nhánh vào danh sách phiếu Bàn giao và đợt/danh sách Kiểm kê.
+- [x] Bổ sung hồi quy, xác minh desktop/mobile, TypeScript và production build.
+- [x] Bảo vệ bằng hồi quy giao diện Chi nhánh Tài sản: nhãn, hướng dẫn mặc định HO-Head Office, badge và viền xanh ngọc.
+- [x] Xác minh bộ lọc Chi nhánh hiển thị cùng các bộ lọc Danh mục tài sản ở desktop và bố cục trang vẫn ổn định trên mobile.
+- [x] Xác minh Chi nhánh nằm ngay sau Người/Phòng giữ, có mặc định HO-Head Office và hiển thị ổn định trên desktop/mobile.
+- [x] Xác minh trang Bàn giao và đợt Kiểm kê giữ bố cục bộ lọc/phạm vi ổn định khi bổ sung Chi nhánh trên desktop.
+- [x] Xác minh bộ lọc Chi nhánh trong phạm vi Kiểm kê hiển thị đúng ở desktop và mobile.
+- [x] Xác minh bộ lọc Chi nhánh có tìm kiếm trong danh sách Bàn giao hiển thị ổn định trên desktop và mobile.
+- [x] Xác minh dropdown Chi nhánh chuẩn trong phạm vi Kiểm kê và form Tài sản hiển thị rõ trên desktop.
+- [x] Xác minh Chi nhánh tự điền nằm cạnh Phòng ban trong form Bàn giao trên desktop và mobile.
+- [x] Xác minh lại form Tài sản và Bàn giao sau refactor khai báo: nhãn, mặc định HO-Head Office và vị trí Chi nhánh giữ đúng thiết kế trên desktop.
+- [x] Xác minh lại bộ lọc Chi nhánh render khai báo trong Bàn giao và Kiểm kê, giữ thứ tự hợp lý trên desktop.
+- [x] Xác minh bộ lọc Chi nhánh khai báo không làm vỡ bố cục Bàn giao và Kiểm kê trên mobile.
+
 - [x] Mở rộng mô hình dữ liệu tài sản với thông tin chi tiết và trạng thái thao tác.
 - [x] Thêm modal tạo tài sản mới với validation cơ bản.
 - [x] Thêm modal chỉnh sửa tài sản và cập nhật dữ liệu trong bảng.
