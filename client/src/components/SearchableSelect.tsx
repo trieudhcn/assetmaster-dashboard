@@ -23,6 +23,7 @@ type SearchableSelectProps = {
   searchPlaceholder?: string;
   disabled?: boolean;
   className?: string;
+  optionLabels?: Record<string, string>;
   emptyText?: string;
   emptyActionLabel?: string;
   onEmptyAction?: (query: string) => void;
@@ -30,7 +31,7 @@ type SearchableSelectProps = {
   menuPortal?: boolean;
 };
 
-export function SearchableSelect({ value, onChange, options, placeholder = "Chọn một giá trị", searchPlaceholder = "Tìm trong danh sách...", disabled = false, className = "", emptyText = "Không tìm thấy kết quả", emptyActionLabel, onEmptyAction, menuPortal = true }: SearchableSelectProps) {
+export function SearchableSelect({ value, onChange, options, placeholder = "Chọn một giá trị", searchPlaceholder = "Tìm trong danh sách...", disabled = false, className = "", optionLabels, emptyText = "Không tìm thấy kết quả", emptyActionLabel, onEmptyAction, menuPortal = true }: SearchableSelectProps) {
   const rootRef = useRef<HTMLDivElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
   const [open, setOpen] = useState(false);

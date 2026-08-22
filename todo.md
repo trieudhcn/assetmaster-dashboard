@@ -2597,3 +2597,9 @@
 ## Current Session — Đồng bộ bộ lọc phòng ban bàn giao
 - [x] Dùng toàn bộ danh mục phòng ban hệ thống cho bộ lọc danh sách phiếu bàn giao.
 - [x] Bổ sung hồi quy, kiểm tra desktop/mobile và build phát hành.
+
+## Current Session — Hoàn thiện lọc phòng ban và xem nhanh BG
+- [x] Hiển thị số lượng phiếu bàn giao cạnh từng phòng ban trong bộ lọc.
+- [x] Gắn nhãn Ngừng hoạt động cho phòng ban đã vô hiệu hóa.
+- [x] Bổ sung nút đóng rõ ràng, hoạt động ổn định cho xem nhanh biên bản BG từ Phụ kiện.
+- [x] Bổ sung hồi quy, kiểm tra desktop/mobile và build phát hành.

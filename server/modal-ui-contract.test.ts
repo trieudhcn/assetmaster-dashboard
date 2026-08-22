@@ -641,6 +641,8 @@ describe("modal presentation contract", () => {
     expect(supplies).toContain('bg-handover-preview-panel flex max-h-[calc(100dvh-2rem)]');
     expect(supplies).toContain('document.body');
     expect(supplies).toContain('if (event.key === "Escape") onClose()');
+    expect(supplies).toContain('title="Đóng xem nhanh"');
+    expect(supplies).toContain("Đóng xem nhanh");
   });
 
   it("opens handover accessories from the employee profile in the shared viewport overlay", () => {
@@ -1336,7 +1338,7 @@ describe("modal presentation contract", () => {
     expect(home).toContain('label: "Bảo hành & Sửa chữa"');
     expect(home).toContain('const normalizedStatus = status === "Bảo trì" ? "Bảo hành/Sửa chữa" : status;');
     expect(home).toContain('normalizedStatus === "Bảo hành/Sửa chữa" && asset.statusType === "maintenance"');
-    expect(home).toContain('const label = option === "Bảo trì" ? "Bảo hành/Sửa chữa" : option;');
+    expect(home).toContain('const label = optionLabels?.[option] || (option === "Bảo trì" ? "Bảo hành/Sửa chữa" : option);');
     expect(home).toContain('counts?.[option]');
     expect(home).toContain("getAssetStatusFilterCounts");
     expect(home).toContain("assetmaster-open-maintenance-asset-code");
@@ -1873,6 +1875,10 @@ describe("currency input and scrollbar contract", () => {
     expect(home).toContain("handoverDepartmentFilter");
     expect(home).toContain("handoverFilterDepartmentsQuery = trpc.departments.listAll.useQuery");
     expect(home).toContain("handoverFilterDepartmentsQuery.data || []");
+    expect(home).toContain("handoverDepartmentCounts");
+    expect(home).toContain("handoverDepartmentOptionLabels");
+    expect(home).toContain("Ngừng hoạt động");
+    expect(home).toContain("counts={handoverDepartmentCounts}");
     expect(home).toContain("handoverRecipientFilter");
     expect(home).toContain("const resetHandoverFilters");
     expect(home).toContain("hasActiveHandoverFilters");
