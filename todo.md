@@ -2647,3 +2647,8 @@
 ## Current Session — Thu gọn mặc định Sơ đồ cơ cấu
 - [x] Đặt danh sách Bộ Phận của mọi Phòng Ban ở trạng thái thu gọn mặc định.
 - [x] Bổ sung hồi quy, kiểm tra desktop/mobile và build phát hành.
+
+## Current Session — Tìm kiếm cơ cấu và mô hình Chi nhánh
+- [x] Tự động mở rộng các Phòng Ban có tên, mã hoặc Bộ Phận trực thuộc khớp từ khóa tìm kiếm.
+- [x] Bổ sung hồi quy, kiểm tra desktop/mobile và build phát hành; Sơ đồ cơ cấu vẫn gọn, hiển thị tốt ở desktop và mobile khi chưa có từ khóa.
+- [x] Đánh giá mô hình quản lý Chi nhánh và lộ trình tích hợp không làm gián đoạn dữ liệu hiện có.

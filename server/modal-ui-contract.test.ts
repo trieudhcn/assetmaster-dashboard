@@ -745,7 +745,8 @@ describe("modal presentation contract", () => {
     expect(organization).toContain('className="relative w-full"');
     expect(organization).toContain("expandedDepartmentIds");
     expect(organization).toContain("toggleDepartmentCollapse");
-    expect(organization).toContain("const isCollapsed = !expandedDepartmentIds.has(department.id)");
+    expect(organization).toContain("hasOrganizationSearchQuery");
+    expect(organization).toContain("const isCollapsed = !hasOrganizationSearchQuery && !expandedDepartmentIds.has(department.id)");
     expect(organization).toContain("aria-expanded={!isCollapsed}");
     expect(organization).toContain("organization-department-${department.id}");
   });
