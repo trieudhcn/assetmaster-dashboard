@@ -2635,3 +2635,7 @@
 ## Current Session — Di chuyển tìm kiếm vào Sơ đồ cơ cấu
 - [x] Đưa ô tìm kiếm Phòng Ban, Bộ Phận vào khu vực Sơ đồ cơ cấu.
 - [x] Bổ sung hồi quy, kiểm tra desktop/mobile và build phát hành.
+
+## Current Session — Thu gọn Sơ đồ cơ cấu
+- [x] Thêm thao tác thu gọn/mở rộng cho từng Phòng Ban và danh sách Bộ Phận trực thuộc.
+- [x] Bổ sung hồi quy, kiểm tra desktop/mobile và build phát hành.

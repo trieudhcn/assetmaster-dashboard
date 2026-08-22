@@ -743,6 +743,10 @@ describe("modal presentation contract", () => {
     expect(organization).toContain('border-b border-[#E7EEF3] bg-[#FBFCFD] px-5 py-3');
     expect(organization).toContain('organization-quick-search rounded-xl');
     expect(organization).toContain('className="relative w-full sm:max-w-lg"');
+    expect(organization).toContain("collapsedDepartmentIds");
+    expect(organization).toContain("toggleDepartmentCollapse");
+    expect(organization).toContain("aria-expanded={!isCollapsed}");
+    expect(organization).toContain("organization-department-${department.id}");
   });
 
   it("keeps the activity log clear control hidden when empty and supports the desktop slash shortcut", () => {
