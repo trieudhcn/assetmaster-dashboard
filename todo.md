@@ -2578,3 +2578,8 @@
 - [x] Hiển thị số lượng phụ kiện đang dùng từng đơn vị tính chuẩn.
 - [x] Cảnh báo và yêu cầu xác nhận trước khi xóa đơn vị đang được sử dụng.
 - [x] Bổ sung hồi quy, kiểm tra desktop/mobile và build phát hành.
+
+## Current Session — Tinh gọn quản trị đơn vị tính
+- [x] Tinh gọn danh sách đơn vị tính chuẩn và vùng thao tác.
+- [x] Giữ rõ trạng thái/số lượng sử dụng cùng cảnh báo xóa khi cần thiết.
+- [x] Bổ sung hồi quy, kiểm tra desktop/mobile và build phát hành.

@@ -15,7 +15,9 @@ describe("standard supply unit settings", () => {
     expect(settings).toContain("supplyUnits.create");
     expect(settings).toContain("supplyUnits.update");
     expect(settings).toContain("supplyUnits.remove");
-    expect(settings).toContain("Đang được ${usageCount} phụ kiện sử dụng");
+    expect(settings).toContain("{usageCount} phụ kiện");
+    expect(settings).toContain("Đang dùng");
+    expect(settings).toContain("title=\"Sửa đơn vị\"");
     expect(settings).toContain("confirmUsage: usageCount > 0");
     expect(supplies).toContain("activeSupplyUnits");
     expect(supplies).toContain("availableSupplyUnits");
