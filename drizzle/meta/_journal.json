@@ -281,6 +281,13 @@
       "when": 1787308117463,
       "tag": "0039_loud_kronos",
       "breakpoints": true
+    },
+    {
+      "idx": 40,
+      "version": "5",
+      "when": 1787373770022,
+      "tag": "0040_wild_grandmaster",
+      "breakpoints": true
     }
   ]
 }

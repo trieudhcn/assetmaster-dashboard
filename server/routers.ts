@@ -20,6 +20,7 @@ import {
   deleteAuditItemsBySession,
   deleteAuditSession,
   createAuditItem,
+  createBranch,
   createDepartment,
   createDivision,
   createHandover,
@@ -37,6 +38,7 @@ import {
   createVendor,
   createVendorDocument,
   countAssetsByCategoryId,
+  deleteBranch,
   deleteRetirementCertificate,
   countUsersByRole,
   deleteAssetCategory,
@@ -52,6 +54,10 @@ import {
   getLatestAssetImportSession,
   getBrandById,
   getBrandByName,
+  getBranchByCode,
+  getBranchById,
+  getBranchByName,
+  getBranchUsageCounts,
   getActiveDepartmentById,
   getDepartmentById,
   getDepartmentByCode,
@@ -97,6 +103,7 @@ import {
   listAssetsByCodes,
   listAssetCodesByCodes,
   listBrands,
+  listBranches,
   listAllBrands,
   listAllVendors,
   listAuditItems,
@@ -141,6 +148,7 @@ import {
   updateAssetCategory,
   updateAssetImportSession,
   updateBrand,
+  updateBranch,
   updateDepartment,
   updateDivision,
   updateVendor,
@@ -573,6 +581,44 @@ export const appRouter = router({
       await deleteSupplyUnit(input.id);
       await recordActivity({ entityType: "supplyUnit", entityId: input.id, action: "deleted", actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: `Xóa đơn vị tính chuẩn: ${existing.name}${usageCount ? ` (${usageCount} phụ kiện đang sử dụng)` : ""}` });
       return { success: true, usageCount };
+    }),
+  }),
+  branches: router({
+    list: adminProcedure.query(async () => {
+      const [items, usageRows] = await Promise.all([
+        listBranches(),
+        listBranches().then((branches) => Promise.all(branches.map(async (branch) => ({ id: branch.id, ...(await getBranchUsageCounts(branch.id)) })))),
+      ]);
+      const usageById = new Map(usageRows.map((item) => [item.id, item]));
+      return items.map((branch) => ({ ...branch, ...(usageById.get(branch.id) || { userCount: 0, assetCount: 0 }) }));
+    }),
+    create: adminProcedure.input(z.object({ code: z.string().trim().min(1).max(40), name: z.string().trim().min(1).max(160), address: z.string().trim().max(1000).nullable().optional(), phone: z.string().trim().max(32).nullable().optional() })).mutation(async ({ input, ctx }) => {
+      if (await getBranchByCode(input.code)) throw new TRPCError({ code: "BAD_REQUEST", message: "Mã Chi nhánh đã tồn tại." });
+      if (await getBranchByName(input.name)) throw new TRPCError({ code: "BAD_REQUEST", message: "Tên Chi nhánh đã tồn tại." });
+      const id = await createBranch({ ...input, isActive: true });
+      await recordActivity({ entityType: "branch", entityId: id, action: "created", actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: `Tạo Chi nhánh: ${input.name} (${input.code})` });
+      return { id };
+    }),
+    update: adminProcedure.input(z.object({ id: z.number().int().positive(), code: z.string().trim().min(1).max(40).optional(), name: z.string().trim().min(1).max(160).optional(), address: z.string().trim().max(1000).nullable().optional(), phone: z.string().trim().max(32).nullable().optional(), isActive: z.boolean().optional() })).mutation(async ({ input, ctx }) => {
+      const existing = await getBranchById(input.id);
+      if (!existing) throw new TRPCError({ code: "NOT_FOUND", message: "Không tìm thấy Chi nhánh." });
+      if (input.code && input.code !== existing.code && await getBranchByCode(input.code)) throw new TRPCError({ code: "BAD_REQUEST", message: "Mã Chi nhánh đã tồn tại." });
+      if (input.name && input.name !== existing.name && await getBranchByName(input.name)) throw new TRPCError({ code: "BAD_REQUEST", message: "Tên Chi nhánh đã tồn tại." });
+      const { id, ...changes } = input;
+      await updateBranch(id, changes);
+      const action = input.isActive === false ? "deactivated" : input.isActive === true ? "activated" : "updated";
+      await recordActivity({ entityType: "branch", entityId: id, action, actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: `${input.isActive === false ? "Vô hiệu hóa" : input.isActive === true ? "Kích hoạt" : "Cập nhật"} Chi nhánh: ${input.name || existing.name}` });
+      return { success: true };
+    }),
+    remove: adminProcedure.input(z.object({ id: z.number().int().positive(), confirmUsage: z.boolean().optional().default(false) })).mutation(async ({ input, ctx }) => {
+      const existing = await getBranchById(input.id);
+      if (!existing) throw new TRPCError({ code: "NOT_FOUND", message: "Không tìm thấy Chi nhánh." });
+      const usage = await getBranchUsageCounts(input.id);
+      const totalUsage = usage.userCount + usage.assetCount;
+      if (totalUsage > 0 && !input.confirmUsage) throw new TRPCError({ code: "BAD_REQUEST", message: `Chi nhánh “${existing.name}” đang được ${usage.userCount} nhân sự và ${usage.assetCount} tài sản sử dụng. Hãy xác nhận trước khi xóa.` });
+      await deleteBranch(input.id);
+      await recordActivity({ entityType: "branch", entityId: input.id, action: "deleted", actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: `Xóa Chi nhánh: ${existing.name}` });
+      return { success: true, ...usage };
     }),
   }),
   assetCategories: router({

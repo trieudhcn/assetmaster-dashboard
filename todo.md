@@ -1,5 +1,11 @@
 # AssetMaster — Asset Catalog Expansion
 
+## Current Session — Giai đoạn đầu quản lý Chi nhánh
+
+- [x] Hoàn thiện schema và API CRUD Chi nhánh tương thích ngược.
+- [x] Đặt giao diện thêm, sửa, vô hiệu hóa và xóa Chi nhánh trong Cài đặt hệ thống.
+- [x] Bổ sung hồi quy, xác minh desktop/mobile, TypeScript và production build; khu vực Chi nhánh hiển thị đúng ở desktop và mobile, không làm thay đổi Phòng Ban/Bộ Phận hiện có.
+
 - [x] Mở rộng mô hình dữ liệu tài sản với thông tin chi tiết và trạng thái thao tác.
 - [x] Thêm modal tạo tài sản mới với validation cơ bản.
 - [x] Thêm modal chỉnh sửa tài sản và cập nhật dữ liệu trong bảng.

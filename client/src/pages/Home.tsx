@@ -46,6 +46,7 @@ import { ModuleEmptyState } from "@/components/ModuleEmptyState";
 import { ModalTableSkeleton } from "@/components/ModalTableSkeleton";
 import { BrandEnhancementsPanel } from "@/components/BrandEnhancementsPanel";
 import { SupplyUnitSettings } from "@/components/SupplyUnitSettings";
+import { BranchSettings } from "@/components/BranchSettings";
 import { DatePickerField } from "@/components/DatePickerField";
 import { CurrencyInput } from "@/components/CurrencyInput";
 import { SearchableSelect } from "@/components/SearchableSelect";
@@ -999,7 +1000,7 @@ export default function Home() {
         {activeNav === "Phân loại tài sản" ? <AssetCategoryManagementPage /> : null}
         {activeNav === "Phụ kiện" ? <SuppliesInventoryView canEditSectionLabels={isAdmin} /> : null}
         {activeNav === "Cài đặt" ? <><CompanyBrandSettings companyInfo={companyInfo} onSave={(next) => { setCompanyInfo(next); localStorage.setItem("assetmaster-company-info", JSON.stringify(next)); document.title = next.websiteTitle; saveCompanyMutation.mutate({ name: next.name, address: next.address || null, taxCode: next.taxCode || null, phone: next.phone || null, logoUrl: next.logoUrl || null, websiteTitle: next.websiteTitle || null, brandColor: next.brandColor || "#0F8C8C", faviconUrl: next.faviconUrl || null, loginBackgroundUrl: next.loginBackgroundUrl || null, loginGreeting: next.loginGreeting || null, loginBackgroundOverlay: next.loginBackgroundOverlay }, { onSuccess: () => { void companyQuery.refetch(); toast.success("Đã lưu cài đặt thương hiệu."); }, onError: (error) => toast.error(error.message || "Không thể lưu cài đặt thương hiệu.") }); }} /><BrandEnhancementsPanel info={companyInfo} onSave={(next) => { setCompanyInfo(next); localStorage.setItem("assetmaster-company-info", JSON.stringify(next)); document.documentElement.style.setProperty("--assetmaster-brand", next.brandColor); const favicon = document.querySelector<HTMLLinkElement>('link[rel="icon"]') || Object.assign(document.createElement("link"), { rel: "icon" }); if (next.faviconUrl) { favicon.href = next.faviconUrl; if (!favicon.parentNode) document.head.appendChild(favicon); } saveCompanyMutation.mutate({ name: next.name, address: next.address || null, taxCode: next.taxCode || null, phone: next.phone || null, logoUrl: next.logoUrl || null, websiteTitle: next.websiteTitle || null, brandColor: next.brandColor || "#0F8C8C", faviconUrl: next.faviconUrl || null, loginBackgroundUrl: next.loginBackgroundUrl || null, loginGreeting: next.loginGreeting || null, loginBackgroundOverlay: next.loginBackgroundOverlay }, { onSuccess: () => { void companyQuery.refetch(); } }); }} /></> : null}
-        {activeNav === "Cài đặt" ? <SupplyUnitSettings /> : null}
+        {activeNav === "Cài đặt" ? <><BranchSettings /><SupplyUnitSettings /></> : null}
         {activeNav === "Bảo hành & Sửa chữa" ? <MaintenancePage /> : null}
         {activeNav === "Kiểm kê" ? <AuditPage /> : null}
         {activeNav === "Khấu hao & Thanh lý" ? <RetirementManagementView canEditSectionLabels={isAdmin} /> : null}

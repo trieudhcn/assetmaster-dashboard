@@ -10,6 +10,7 @@ import {
   auditItems,
   auditSessions,
   brands,
+  branches,
   companies,
   departments,
   divisions,
@@ -440,6 +441,62 @@ export async function deleteSupplyUnit(id: number) {
   const db = await getDb();
   if (!db) throw new Error("Database unavailable");
   await db.delete(supplyUnits).where(eq(supplyUnits.id, id));
+}
+
+export async function listBranches() {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(branches).orderBy(branches.name);
+}
+
+export async function getBranchById(id: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+  return (await db.select().from(branches).where(eq(branches.id, id)).limit(1))[0];
+}
+
+export async function getBranchByCode(code: string) {
+  const db = await getDb();
+  if (!db) return undefined;
+  return (await db.select().from(branches).where(eq(branches.code, code)).limit(1))[0];
+}
+
+export async function getBranchByName(name: string) {
+  const db = await getDb();
+  if (!db) return undefined;
+  return (await db.select().from(branches).where(eq(branches.name, name)).limit(1))[0];
+}
+
+export async function createBranch(data: typeof branches.$inferInsert) {
+  const db = await getDb();
+  if (!db) throw new Error("Database unavailable");
+  const result = await db.insert(branches).values(data);
+  return Number(result[0].insertId);
+}
+
+export async function updateBranch(id: number, data: Partial<typeof branches.$inferInsert>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database unavailable");
+  await db.update(branches).set(data).where(eq(branches.id, id));
+}
+
+export async function deleteBranch(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database unavailable");
+  await db.delete(branches).where(eq(branches.id, id));
+}
+
+export async function getBranchUsageCounts(id: number) {
+  const db = await getDb();
+  if (!db) return { userCount: 0, assetCount: 0 };
+  const [userRows, assetRows] = await Promise.all([
+    db.select({ usageCount: sql<number>`count(*)` }).from(users).where(eq(users.branchId, id)),
+    db.select({ usageCount: sql<number>`count(*)` }).from(assets).where(eq(assets.branchId, id)),
+  ]);
+  return {
+    userCount: Number(userRows[0]?.usageCount || 0),
+    assetCount: Number(assetRows[0]?.usageCount || 0),
+  };
 }
 
 export async function countAssetsByCategoryId(categoryId: number) {

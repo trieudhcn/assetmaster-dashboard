@@ -1,5 +1,16 @@
 import { boolean, decimal, index, int, json, mysqlEnum, mysqlTable, text, timestamp, uniqueIndex, varchar } from "drizzle-orm/mysql-core";
 
+export const branches = mysqlTable("branches", {
+  id: int("id").autoincrement().primaryKey(),
+  code: varchar("code", { length: 40 }).notNull().unique(),
+  name: varchar("name", { length: 160 }).notNull().unique(),
+  address: text("address"),
+  phone: varchar("phone", { length: 32 }),
+  isActive: boolean("isActive").default(true).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+}, (table) => [index("branches_active_idx").on(table.isActive)]);
+
 export const users = mysqlTable("users", {
   id: int("id").autoincrement().primaryKey(),
   openId: varchar("openId", { length: 64 }).notNull().unique(),
@@ -7,13 +18,14 @@ export const users = mysqlTable("users", {
   email: varchar("email", { length: 320 }),
   loginMethod: varchar("loginMethod", { length: 64 }),
   role: mysqlEnum("role", ["user", "admin"]).default("user").notNull(),
+  branchId: int("branchId").references(() => branches.id, { onDelete: "set null", onUpdate: "cascade" }),
   departmentId: int("departmentId"),
   divisionId: int("divisionId").references(() => divisions.id, { onDelete: "set null", onUpdate: "cascade" }),
   isActive: boolean("isActive").default(true).notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
   lastSignedIn: timestamp("lastSignedIn").defaultNow().notNull(),
-}, (table) => [index("users_division_idx").on(table.divisionId)]);
+}, (table) => [index("users_branch_idx").on(table.branchId), index("users_division_idx").on(table.divisionId)]);
 
 export const userNotificationPreferences = mysqlTable("userNotificationPreferences", {
   userId: int("userId").primaryKey(),
@@ -171,6 +183,7 @@ export const assets = mysqlTable("assets", {
   assetCode: varchar("assetCode", { length: 64 }).notNull().unique(),
   name: varchar("name", { length: 255 }).notNull(),
   categoryId: int("categoryId"),
+  branchId: int("branchId").references(() => branches.id, { onDelete: "set null", onUpdate: "cascade" }),
   departmentId: int("departmentId"),
   holderUserId: int("holderUserId"),
   holderName: varchar("holderName", { length: 160 }),
@@ -209,6 +222,7 @@ export const assets = mysqlTable("assets", {
 }, (table) => [
   index("assets_status_idx").on(table.status),
   index("assets_category_idx").on(table.categoryId),
+  index("assets_branch_idx").on(table.branchId),
   index("assets_department_idx").on(table.departmentId),
   index("assets_vendor_idx").on(table.vendorId),
   index("assets_brand_idx").on(table.brandId),
