@@ -642,6 +642,8 @@ describe("modal presentation contract", () => {
     expect(supplies).toContain('document.body');
     expect(supplies).toContain('if (event.key === "Escape") onClose()');
     expect(supplies).toContain('title="Đóng"');
+    expect(supplies).toContain('className="modal-close-action">Đóng</button>');
+    expect(supplies).not.toContain('className="modal-close-action"><X size={13} />Đóng</button>');
     expect(supplies).toContain("Cập nhật lần cuối:");
     expect(supplies).toContain("handover.updatedAt");
     expect(supplies).toContain('role="status" aria-live="polite"');

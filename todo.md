@@ -2613,3 +2613,7 @@
 - [x] Chuẩn hóa nút đóng modal về nhãn Đóng và màu sắc nhất quán.
 - [x] Hiển thị thời gian cập nhật cuối trong xem nhanh phiếu bàn giao.
 - [x] Bổ sung hồi quy, kiểm tra desktop/mobile và build phát hành.
+
+## Current Session — Sửa biểu tượng nút Đóng bị trùng
+- [x] Loại bỏ dấu nhân trùng trên nút Đóng của xem nhanh biên bản BG.
+- [x] Bổ sung hồi quy, kiểm tra hiển thị và build phát hành.
