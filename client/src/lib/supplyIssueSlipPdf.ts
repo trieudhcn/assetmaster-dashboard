@@ -2,7 +2,7 @@ import { jsPDF } from "jspdf";
 import { createPdfLogoWatermark, applyPdfLogoWatermark, openPdfPreview } from "@/lib/pdfExport";
 import { drawPdfCorporateFooter, handoverPdfFontUrl, registerVietnamesePdfFont } from "@/lib/handoverPdf";
 
-type CompanyInfo = { name?: string | null; address?: string | null; taxCode?: string | null; phone?: string | null; logoUrl?: string | null };
+type CompanyInfo = { name?: string | null; address?: string | null; taxCode?: string | null; phone?: string | null; email?: string | null; logoUrl?: string | null };
 type SupplyIssueSlipPdf = { referenceCode: string; recipientName: string; issuedByName: string | null; issuedAt: Date; note: string | null };
 type SupplyIssueItemPdf = { supplyCode: string; supplyName: string; unit: string; issuedQuantity: string; returnedQuantity: string };
 
@@ -42,7 +42,7 @@ export async function openSupplyIssueSlipPdf(slip: SupplyIssueSlipPdf, items: Su
   doc.setFontSize(15);
   doc.text(company.name || "THÔNG TIN DOANH NGHIỆP", companyTextX, 19);
   doc.setFontSize(9);
-  const companyLines = [company.address && `Địa chỉ: ${company.address}`, company.taxCode && `MST: ${company.taxCode}`, company.phone && `Điện thoại: ${company.phone}`].filter(Boolean) as string[];
+  const companyLines = [company.address && `Địa chỉ: ${company.address}`, company.taxCode && `MST: ${company.taxCode}`, company.phone && `Điện thoại: ${company.phone}`, company.email && `Email: ${company.email}`].filter(Boolean) as string[];
   companyLines.forEach((line, index) => doc.text(line, companyTextX, 25 + index * 5));
   doc.setDrawColor(15, 140, 140);
   doc.line(margin, 39, pageWidth - margin, 39);

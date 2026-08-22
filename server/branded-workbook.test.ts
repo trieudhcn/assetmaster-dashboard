@@ -21,7 +21,7 @@ describe("branded workbook", () => {
     await writeBrandedWorkbook(source, {
       documentTitle: "DANH SÁCH KIỂM KÊ THỰC ĐỊA",
       fileName: "kiem-ke.xlsx",
-      company: { name: "Công ty Kiểm thử", brandColor: "#0F8C8C" },
+      company: { name: "Công ty Kiểm thử", email: "contact@example.vn", brandColor: "#0F8C8C" },
       prepareWorkbook: (workbook) => {
         const sheet = workbook.getWorksheet("Danh sách kiểm kê");
         sheet.getCell("B2").dataValidation = { type: "list", allowBlank: true, formulae: ['"Chưa ghi nhận,Sẵn có"'] };
@@ -36,6 +36,7 @@ describe("branded workbook", () => {
     expect(reopened.worksheets.map((sheet) => sheet.name)).toEqual(["Thông tin doanh nghiệp", "Danh sách kiểm kê"]);
     expect(reopened.getWorksheet("Danh sách kiểm kê")?.getCell("A2").value).toBe("LT-0001");
     expect(reopened.getWorksheet("Danh sách kiểm kê")?.getCell("B2").dataValidation.type).toBe("list");
+    expect(reopened.getWorksheet("Thông tin doanh nghiệp")?.getCell("B7").value).toBe("contact@example.vn");
   });
 
   it("localizes technical preview and import labels in the generated workbook", async () => {

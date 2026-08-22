@@ -952,7 +952,7 @@ describe("modal presentation contract", () => {
     const home = readProjectFile("client/src/pages/Home.tsx");
     expect(home).toContain("doc.text(companyInfo.name, left + 24, y - 4)");
     expect(home).toContain("doc.text(`Địa chỉ: ${companyInfo.address}`, left + 24, y + 2)");
-    expect(home).toContain("doc.text(`MST: ${companyInfo.taxCode} · Điện thoại: ${companyInfo.phone}`, left + 24, y + 8)");
+    expect(home).toContain('doc.text(`MST: ${companyInfo.taxCode || "Chưa cập nhật"} · Điện thoại: ${companyInfo.phone || "Chưa cập nhật"} · Email: ${companyInfo.email || "Chưa cập nhật"}`, left + 24, y + 8)');
   });
 
   it("opens asset-assignment PDFs in the shared preview before users print or download", () => {

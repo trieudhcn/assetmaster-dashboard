@@ -98,6 +98,14 @@
 - [x] Xác minh desktop: Phòng ban nằm cạnh Chi nhánh trong Chi tiết tài sản và bộ lọc Bàn giao không còn tùy chọn Ẩn phòng ban 0 phiếu.
 - [x] Xác minh mobile: Phòng ban người giữ giữ cùng định dạng thẻ và Bàn giao không còn hiển thị tùy chọn ẩn Phòng ban 0 phiếu.
 
+## Current Session — Email công ty và chuẩn hóa tài liệu xuất
+
+- [x] Loại bỏ phần Xem trước trang web khỏi Thông tin công ty.
+- [x] Bổ sung trường Email công ty cạnh Số điện thoại và tinh gọn bố cục cấu hình.
+- [x] Hiển thị Email công ty trên mọi file PDF và Excel xuất dữ liệu.
+- [x] Bổ sung hồi quy, xác minh desktop/mobile, TypeScript và production build.
+- [x] Xác minh desktop/mobile: phần xem trước trang web đã bỏ, Email công ty nằm cạnh Số điện thoại trên desktop và giữ bố cục rõ ràng trên mobile.
+
 - [x] Mở rộng mô hình dữ liệu tài sản với thông tin chi tiết và trạng thái thao tác.
 - [x] Thêm modal tạo tài sản mới với validation cơ bản.
 - [x] Thêm modal chỉnh sửa tài sản và cập nhật dữ liệu trong bảng.

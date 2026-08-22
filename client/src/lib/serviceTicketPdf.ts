@@ -7,6 +7,7 @@ export type ServiceTicketPdfCompany = {
   address?: string | null;
   taxCode?: string | null;
   phone?: string | null;
+  email?: string | null;
   logoUrl?: string | null;
 };
 
@@ -65,7 +66,7 @@ export async function previewServiceTicketPdf({ ticket, asset, assigneeName, rep
   doc.setFont(vietnamesePdfFontFamily, "normal");
   doc.setFontSize(8.5);
   doc.setTextColor(96, 117, 138);
-  const companyLines = [company.address || "Hệ thống Quản lý Tài sản Doanh nghiệp", company.taxCode ? `MST: ${company.taxCode}` : "", company.phone ? `ĐT: ${company.phone}` : ""].filter(Boolean);
+  const companyLines = [company.address || "Hệ thống Quản lý Tài sản Doanh nghiệp", company.taxCode ? `MST: ${company.taxCode}` : "", company.phone ? `ĐT: ${company.phone}` : "", company.email ? `Email: ${company.email}` : ""].filter(Boolean);
   const companyTextX = logoDataUrl ? left + 22 : left;
   const companyTextWidth = logoDataUrl ? width - 22 : width;
   let companyLineY = y + 5;
