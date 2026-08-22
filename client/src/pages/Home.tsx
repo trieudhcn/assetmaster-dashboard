@@ -1356,6 +1356,7 @@ function AssignmentsPage({ showComingSoon, companyInfo }: { showComingSoon: (lab
   const handoverSuppliesQuery = trpc.supplies.list.useQuery(undefined, { enabled: isAdmin });
   const recipientsQuery = trpc.employees.list.useQuery(undefined, { enabled: isAdmin });
   const handoverDepartmentsQuery = trpc.departments.list.useQuery(undefined, { enabled: isAdmin });
+  const handoverFilterDepartmentsQuery = trpc.departments.listAll.useQuery(undefined, { enabled: isAdmin });
   const utils = trpc.useUtils();
   const refreshHandoverData = () => { void utils.handovers.list.invalidate(); void utils.assets.list.invalidate(); void utils.supplies.list.invalidate(); void utils.employees.assetHistory.invalidate(); void utils.employees.myAssetHistory.invalidate(); };
   const createHandoverMutation = trpc.handovers.create.useMutation({ onSuccess: () => { refreshHandoverData(); toast.success("Đã lưu phiếu bàn giao nháp vào hệ thống."); }, onError: (error) => toast.error(handoverCreateErrorMessage(error)) });
@@ -1429,7 +1430,7 @@ function AssignmentsPage({ showComingSoon, companyInfo }: { showComingSoon: (lab
     return () => window.removeEventListener("assetmaster-open-recovery-certificate", openRecoveryCertificate);
   }, [handovers, utils, companyInfo]);
   const handoverYears = Array.from(new Set(handovers.map((item) => item.referenceCode.match(/^BG-(\\d{4})-/)?.[1] || item.date.split("/").at(-1)).filter((year): year is string => Boolean(year)))).sort((left, right) => Number(right) - Number(left));
-  const handoverDepartments = Array.from(new Set(handovers.map((item) => item.department).filter(Boolean))).sort((left, right) => left.localeCompare(right, "vi"));
+  const handoverDepartments = Array.from(new Set([...(handoverFilterDepartmentsQuery.data || []).map((department) => department.name), ...handovers.filter((item) => item.department === "Chưa xác định").map((item) => item.department)])).sort((left, right) => left.localeCompare(right, "vi"));
   const handoverRecipients = Array.from(new Set(handovers.map((item) => item.recipient).filter(Boolean))).sort((left, right) => left.localeCompare(right, "vi"));
   const filtered = handovers.filter((item) => {
     const itemYear = item.referenceCode.match(/^BG-(\d{4})-/)?.[1] || item.date.split("/").at(-1);

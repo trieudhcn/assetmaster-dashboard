@@ -1871,6 +1871,8 @@ describe("currency input and scrollbar contract", () => {
     expect(home).toContain("Tất cả các năm");
     expect(home).toContain("handoverPageSize = 10");
     expect(home).toContain("handoverDepartmentFilter");
+    expect(home).toContain("handoverFilterDepartmentsQuery = trpc.departments.listAll.useQuery");
+    expect(home).toContain("handoverFilterDepartmentsQuery.data || []");
     expect(home).toContain("handoverRecipientFilter");
     expect(home).toContain("const resetHandoverFilters");
     expect(home).toContain("hasActiveHandoverFilters");

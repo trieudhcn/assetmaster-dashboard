@@ -2593,3 +2593,7 @@
 - [x] Thêm nút Xóa bộ lọc cho danh sách phiếu bàn giao.
 - [x] Thêm cơ chế thu gọn/mở rộng KPI phiếu bàn giao trên điện thoại.
 - [x] Bổ sung hồi quy, kiểm tra desktop/mobile và build phát hành.
+
+## Current Session — Đồng bộ bộ lọc phòng ban bàn giao
+- [x] Dùng toàn bộ danh mục phòng ban hệ thống cho bộ lọc danh sách phiếu bàn giao.
+- [x] Bổ sung hồi quy, kiểm tra desktop/mobile và build phát hành.
