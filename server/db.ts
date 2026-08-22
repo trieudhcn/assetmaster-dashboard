@@ -1181,6 +1181,9 @@ export async function transitionHandoverStatus(
   const transition = async (tx: any) => {
     const existing = (await tx.select().from(handovers).where(eq(handovers.id, id)).limit(1))[0];
     if (!existing) throw new Error("Handover not found");
+    const recipient = existing.recipientUserId
+      ? (await tx.select({ branchId: users.branchId }).from(users).where(eq(users.id, existing.recipientUserId)).limit(1))[0]
+      : undefined;
 
     const handoverChanges: Partial<typeof handovers.$inferInsert> = { ...changes, status };
     if (status === "active") handoverChanges.signedAt = changes.signedAt ?? new Date();
@@ -1193,6 +1196,7 @@ export async function transitionHandoverStatus(
         holderUserId: existing.recipientUserId,
         holderName: existing.recipientName,
         departmentId: existing.recipientDepartmentId,
+        ...(recipient?.branchId ? { branchId: recipient.branchId } : {}),
       }).where(eq(assets.id, existing.assetId));
     }
 

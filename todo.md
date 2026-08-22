@@ -120,6 +120,12 @@
 - [x] Thêm sao chép nhanh Mã số thuế và Địa chỉ công ty trong Cài đặt thương hiệu.
 - [x] Bổ sung hồi quy, xác minh desktop/mobile, TypeScript và production build.
 
+## Current Session — Sửa đồng bộ Chi nhánh theo Nhân sự
+
+- [x] Khắc phục form Tài sản lấy sai Chi nhánh của Nhân sự Quốc Thịnh và các hồ sơ tương tự.
+- [x] Bảo đảm Chi nhánh tự điền theo Nhân sự luôn bị khóa, không ghi đè bởi Chi nhánh tài sản cũ.
+- [x] Bổ sung hồi quy bằng dữ liệu Quốc Thịnh · Chi nhánh Hà Nội và xác minh type/build.
+
 - [x] Mở rộng mô hình dữ liệu tài sản với thông tin chi tiết và trạng thái thao tác.
 - [x] Thêm modal tạo tài sản mới với validation cơ bản.
 - [x] Thêm modal chỉnh sửa tài sản và cập nhật dữ liệu trong bảng.

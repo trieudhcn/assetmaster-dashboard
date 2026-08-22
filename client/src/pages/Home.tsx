@@ -153,6 +153,7 @@ const navItems = [
 type Asset = {
   code: string;
   branchId?: number | null;
+  holderUserId?: number | null;
   qrToken?: string;
   name: string;
   category: string;
@@ -603,7 +604,7 @@ export default function Home() {
   useEffect(() => {
     if (!assetQuery.data) return;
     setAssetRows(assetQuery.data.map((asset) => ({
-      code: asset.assetCode, qrToken: asset.qrToken, branchId: asset.branchId ?? null, name: asset.name, category: asset.categoryId ? assetCategoriesQuery.data?.find((category) => category.id === asset.categoryId)?.name || "Chưa phân loại" : typeof (asset.metadata as { category?: unknown } | null)?.category === "string" ? String((asset.metadata as { category?: unknown }).category) : "Chưa phân loại", categoryId: asset.categoryId || undefined, holder: asset.holderName || (asset.status === "retired" ? "Khấu hao - Thanh lý" : asset.status === "maintenance" ? "Bảo hành/Sửa chữa" : asset.status === "available" ? "Chưa bàn giao" : "Chưa cấp phát"), status: asset.status === "assigned" ? "Đang cấp phát" : asset.status === "maintenance" ? "Bảo hành/Sửa chữa" : asset.status === "returned_to_vendor" ? "Trả nhà cung cấp" : asset.status === "retired" ? "Khấu hao/Thanh lý" : "Sẵn có", statusType: asset.status === "assigned" ? "active" : asset.status === "maintenance" ? "maintenance" : asset.status === "returned_to_vendor" ? "returned" : asset.status === "retired" ? "retired" : "available", date: asset.purchaseDate ? new Date(asset.purchaseDate).toLocaleDateString("vi-VN") : "—", purchaseDate: asset.purchaseDate ? dateInputValue(asset.purchaseDate) : "", value: asset.purchaseValue ? String(asset.purchaseValue) : "0", repairCost: repairCostByAssetId.get(asset.id) || 0, location: asset.location || "", serial: asset.serialNumber || "", maintenanceReason: asset.maintenanceReason || "", supplier: asset.vendor || vendorsQuery.data?.find((vendor) => vendor.id === asset.vendorId)?.name || "", vendorId: asset.vendorId || undefined, brand: brandsQuery.data?.find((brand) => brand.id === asset.brandId)?.name || "", brandId: asset.brandId || undefined, note: asset.note || "", warrantyUntil: asset.warrantyUntil ? new Date(asset.warrantyUntil).toISOString().slice(0, 10) : "", supplierReturnedAt: asset.supplierReturnedAt ? new Date(asset.supplierReturnedAt).toISOString().slice(0, 10) : "", supplierReturnReason: asset.supplierReturnReason || "", retirementCertificateNumber: asset.retirementCertificateNumber || null, retirementCertificateYear: asset.retirementCertificateYear || null, retirementCertificateSequence: asset.retirementCertificateSequence || null, retirementAttachmentUrl: asset.retirementAttachmentUrl || null, retirementAttachmentName: asset.retirementAttachmentName || null, retirementAttachmentContentType: asset.retirementAttachmentContentType || null, supplierReturnAttachmentUrl: asset.supplierReturnAttachmentUrl || null, supplierReturnAttachmentName: asset.supplierReturnAttachmentName || null, supplierReturnAttachmentContentType: asset.supplierReturnAttachmentContentType || null,
+      code: asset.assetCode, qrToken: asset.qrToken, branchId: asset.branchId ?? null, holderUserId: asset.holderUserId ?? null, name: asset.name, category: asset.categoryId ? assetCategoriesQuery.data?.find((category) => category.id === asset.categoryId)?.name || "Chưa phân loại" : typeof (asset.metadata as { category?: unknown } | null)?.category === "string" ? String((asset.metadata as { category?: unknown }).category) : "Chưa phân loại", categoryId: asset.categoryId || undefined, holder: asset.holderName || (asset.status === "retired" ? "Khấu hao - Thanh lý" : asset.status === "maintenance" ? "Bảo hành/Sửa chữa" : asset.status === "available" ? "Chưa bàn giao" : "Chưa cấp phát"), status: asset.status === "assigned" ? "Đang cấp phát" : asset.status === "maintenance" ? "Bảo hành/Sửa chữa" : asset.status === "returned_to_vendor" ? "Trả nhà cung cấp" : asset.status === "retired" ? "Khấu hao/Thanh lý" : "Sẵn có", statusType: asset.status === "assigned" ? "active" : asset.status === "maintenance" ? "maintenance" : asset.status === "returned_to_vendor" ? "returned" : asset.status === "retired" ? "retired" : "available", date: asset.purchaseDate ? new Date(asset.purchaseDate).toLocaleDateString("vi-VN") : "—", purchaseDate: asset.purchaseDate ? dateInputValue(asset.purchaseDate) : "", value: asset.purchaseValue ? String(asset.purchaseValue) : "0", repairCost: repairCostByAssetId.get(asset.id) || 0, location: asset.location || "", serial: asset.serialNumber || "", maintenanceReason: asset.maintenanceReason || "", supplier: asset.vendor || vendorsQuery.data?.find((vendor) => vendor.id === asset.vendorId)?.name || "", vendorId: asset.vendorId || undefined, brand: brandsQuery.data?.find((brand) => brand.id === asset.brandId)?.name || "", brandId: asset.brandId || undefined, note: asset.note || "", warrantyUntil: asset.warrantyUntil ? new Date(asset.warrantyUntil).toISOString().slice(0, 10) : "", supplierReturnedAt: asset.supplierReturnedAt ? new Date(asset.supplierReturnedAt).toISOString().slice(0, 10) : "", supplierReturnReason: asset.supplierReturnReason || "", retirementCertificateNumber: asset.retirementCertificateNumber || null, retirementCertificateYear: asset.retirementCertificateYear || null, retirementCertificateSequence: asset.retirementCertificateSequence || null, retirementAttachmentUrl: asset.retirementAttachmentUrl || null, retirementAttachmentName: asset.retirementAttachmentName || null, retirementAttachmentContentType: asset.retirementAttachmentContentType || null, supplierReturnAttachmentUrl: asset.supplierReturnAttachmentUrl || null, supplierReturnAttachmentName: asset.supplierReturnAttachmentName || null, supplierReturnAttachmentContentType: asset.supplierReturnAttachmentContentType || null,
     })));
   }, [assetQuery.data, vendorsQuery.data, brandsQuery.data, assetCategoriesQuery.data, repairCostByAssetId]);
 
@@ -2243,12 +2244,17 @@ function AssetModal({ mode, asset, formData, setFormData, isSaving, onClose: dis
   const assetsQuery = trpc.assets.list.useQuery(undefined, { enabled: Boolean(asset) });
   const branchesQuery = trpc.branches.list.useQuery();
   const assetEmployeesQuery = trpc.employees.list.useQuery();
-  const inheritedEmployeeBranchId = useMemo(() => {
-    const holder = formData.holder?.trim();
-    if (!holder) return null;
-    const employee = (assetEmployeesQuery.data || []).find((item) => item.name?.trim().toLocaleLowerCase("vi-VN") === holder.toLocaleLowerCase("vi-VN"));
-    return employee?.branchId || null;
-  }, [formData.holder, assetEmployeesQuery.data]);
+  const inheritedEmployee = useMemo(() => {
+    const employees = assetEmployeesQuery.data || [];
+    if (formData.holderUserId) {
+      const linkedEmployee = employees.find((item) => item.id === formData.holderUserId);
+      if (linkedEmployee) return linkedEmployee;
+    }
+    const normalizeEmployeeName = (value: string | null | undefined) => value?.normalize("NFC").replace(/\s+/g, " ").trim().toLocaleLowerCase("vi-VN") || "";
+    const holder = normalizeEmployeeName(formData.holder);
+    return holder ? employees.find((item) => normalizeEmployeeName(item.name) === holder) || null : null;
+  }, [formData.holder, formData.holderUserId, assetEmployeesQuery.data]);
+  const inheritedEmployeeBranchId = inheritedEmployee?.branchId || null;
   useEffect(() => {
     if (!inheritedEmployeeBranchId || formData.branchId === inheritedEmployeeBranchId) return;
     setFormData((current) => ({ ...current, branchId: inheritedEmployeeBranchId }));

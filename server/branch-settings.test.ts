@@ -18,6 +18,8 @@ describe("branch settings", () => {
     expect(schema).toContain('branchId: int("branchId")');
     expect(database).toContain("getBranchUsageCounts");
     expect(database).toContain("deleteBranch");
+    expect(database).toContain("const recipient = existing.recipientUserId");
+    expect(database).toContain("branchId: recipient.branchId");
     expect(routers).toContain("branches: router");
     expect(routers).toContain("ensureInternalBranchEmail");
     expect(routers).toContain("Email Chi nhánh phải dùng tên miền nội bộ");
@@ -49,8 +51,13 @@ describe("branch settings", () => {
     expect(home).toContain('role="tooltip"');
     expect(home).toContain("Tỷ trọng: {percentage.toFixed(1)}%");
     expect(home.indexOf('key="asset-branch"')).toBeLessThan(home.indexOf('key="asset-status"'));
-    expect(home).toContain("const inheritedEmployeeBranchId = useMemo");
+    expect(home).toContain("const inheritedEmployee = useMemo");
+    expect(home).toContain("const inheritedEmployeeBranchId = inheritedEmployee?.branchId || null");
     expect(home).toContain("const assetEmployeesQuery = trpc.employees.list.useQuery()");
+    expect(home).toContain("holderUserId: asset.holderUserId ?? null");
+    expect(home).toContain("if (formData.holderUserId)");
+    expect(home).toContain("item.id === formData.holderUserId");
+    expect(home).toContain('normalize("NFC")');
     expect(home).toContain("setFormData((current) => ({ ...current, branchId: inheritedEmployeeBranchId }))");
     expect(home).toContain("isLocked={Boolean(inheritedEmployeeBranchId)}");
     expect(home).toContain("disabled={isLocked}");
