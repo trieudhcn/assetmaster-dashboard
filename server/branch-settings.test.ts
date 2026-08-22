@@ -45,6 +45,12 @@ describe("branch settings", () => {
     expect(home).not.toContain("Chi nhánh quản lý");
     expect(home).toContain("branchFilterCounts");
     expect(home).toContain("branchCounts={branchFilterCounts}");
+    expect(home).toContain("branchLabel: asset.branchId ?");
+    expect(home).toContain("data-asset-branch-badge");
+    expect(home).toContain('<th className="px-4 py-3.5">Chi nhánh</th>');
+    expect(home).toContain("data-handover-reference");
+    expect(home).toContain("w-[112px] max-w-[112px]");
+    expect(home).toContain('min-w-[1000px]');
     expect(home).toContain("data-branch-asset-value-chart");
     expect(home).toContain("branchAssetValueSummary");
     expect(home).toContain('setBranchFilter(item.name); navigateTo("Danh mục tài sản")');

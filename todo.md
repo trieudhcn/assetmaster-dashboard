@@ -126,6 +126,12 @@
 - [x] Bảo đảm Chi nhánh tự điền theo Nhân sự luôn bị khóa, không ghi đè bởi Chi nhánh tài sản cũ.
 - [x] Bổ sung hồi quy bằng dữ liệu Quốc Thịnh · Chi nhánh Hà Nội và xác minh type/build.
 
+## Current Session — Nhãn Chi nhánh và bảng Bàn giao gọn hơn
+
+- [x] Hiển thị nhãn Chi nhánh rõ ràng trên từng dòng bảng Danh mục tài sản.
+- [x] Thu gọn cột Mã phiếu trong danh sách Bàn giao, tránh vỡ bảng ở desktop và mobile.
+- [x] Bổ sung hồi quy, xác minh desktop/mobile, TypeScript và production build.
+
 - [x] Mở rộng mô hình dữ liệu tài sản với thông tin chi tiết và trạng thái thao tác.
 - [x] Thêm modal tạo tài sản mới với validation cơ bản.
 - [x] Thêm modal chỉnh sửa tài sản và cập nhật dữ liệu trong bảng.
