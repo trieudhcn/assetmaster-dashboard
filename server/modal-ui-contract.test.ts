@@ -740,9 +740,9 @@ describe("modal presentation contract", () => {
     expect(organization).toContain("Xóa từ khóa tìm kiếm");
     expect(organization).toContain("Không tìm thấy đơn vị phù hợp");
     expect(organization).toContain("divisionMatches");
-    expect(organization).toContain('border-b border-[#E7EEF3] bg-[#FBFCFD] px-5 py-3');
-    expect(organization).toContain('organization-quick-search rounded-xl');
-    expect(organization).toContain('className="relative w-full sm:max-w-lg"');
+    expect(organization).toContain('organization-quick-search w-full min-w-0 lg:max-w-md');
+    expect(organization).toContain('flex flex-col gap-3 border-b border-[#E7EEF3] px-5 py-5 lg:flex-row');
+    expect(organization).toContain('className="relative w-full"');
     expect(organization).toContain("collapsedDepartmentIds");
     expect(organization).toContain("toggleDepartmentCollapse");
     expect(organization).toContain("aria-expanded={!isCollapsed}");
