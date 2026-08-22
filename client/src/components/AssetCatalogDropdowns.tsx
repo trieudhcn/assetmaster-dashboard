@@ -61,7 +61,7 @@ export function AssetCatalogDropdowns({
   );
 
   return (
-    <div className="form-helper-grid sm:col-span-2 grid gap-3 rounded-xl border border-[#DDE7F0] bg-[#FBFCFD] p-4 sm:grid-cols-2">
+    <>
       <div className="min-w-0">
         <label className="field-label">Nhà cung cấp</label>
         <SearchableSelect
@@ -88,6 +88,6 @@ export function AssetCatalogDropdowns({
         />
         {renderQuickEntry("brand")}
       </div>
-    </div>
+    </>
   );
 }

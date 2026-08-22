@@ -63,6 +63,16 @@
 - [x] Xác minh desktop: danh sách Bàn giao hiển thị cột Chi nhánh và khu vực Kiểm kê giữ nút Xuất Excel cùng phạm vi Chi nhánh.
 - [x] Xác minh mobile: phần danh sách Bàn giao và Kiểm kê vẫn giữ bố cục đáp ứng sau khi thêm cột Chi nhánh.
 
+## Current Session — Tinh gọn giao diện và thống kê theo Chi nhánh
+
+- [x] Thu gọn chọn Chi nhánh trong form Tài sản về kích thước dropdown chuẩn và kéo các trường sau lên liền mạch.
+- [x] Hiển thị số lượng tài sản bên cạnh từng Chi nhánh trong danh sách lọc Danh mục tài sản.
+- [x] Thêm biểu đồ tổng giá trị tài sản theo từng Chi nhánh trên trang Tổng quan.
+- [x] Đưa Chi nhánh trong form Nhân sự xuống sau Bộ phận, dùng cùng kiểu khối giao diện với Bộ phận.
+- [x] Bổ sung hồi quy, xác minh desktop/mobile, TypeScript và production build.
+- [x] Xác minh desktop: dropdown Chi nhánh Tài sản cùng kích thước các trường khác và biểu đồ giá trị theo Chi nhánh hiển thị số liệu thực.
+- [x] Xác minh mobile: dropdown Chi nhánh gọn như các trường khác và Tổng quan giữ bố cục đáp ứng khi bổ sung biểu đồ.
+
 - [x] Mở rộng mô hình dữ liệu tài sản với thông tin chi tiết và trạng thái thao tác.
 - [x] Thêm modal tạo tài sản mới với validation cơ bản.
 - [x] Thêm modal chỉnh sửa tài sản và cập nhật dữ liệu trong bảng.

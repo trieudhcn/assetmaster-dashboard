@@ -104,7 +104,8 @@ describe("modal presentation contract", () => {
     expect(currencyInput).toContain('className="currency-input-with-helper w-full"');
     expect(stylesheet).toContain('.grid:has(.currency-input-with-helper) { align-items: start; }');
     expect(stylesheet).toContain('.form-helper-grid > * { align-self: start; }');
-    expect(catalogDropdowns).toContain('className="form-helper-grid sm:col-span-2 grid');
+    expect(catalogDropdowns).toContain('return (\n    <>');
+    expect(catalogDropdowns).toContain('className="min-w-0"');
     expect(supplies).toContain('formGrid?.classList.add("form-helper-grid")');
   });
 
