@@ -1575,7 +1575,8 @@ describe("modal presentation contract", () => {
     expect(home).toContain('status: "Bảo hành/Sửa chữa"');
     expect(home).toContain('"Nội dung Bảo hành/Sửa chữa"');
     expect(home).toContain('"Thông tin này sẽ được lưu cùng tài sản để theo dõi và hiển thị trong thông báo Bảo hành/Sửa chữa."');
-    expect(home).toContain('`${item.referenceCode} · ${item.recoveryCertificateNumber}`');
+    expect(home).toContain('setRecoveryPdfRequest(String(item.recoveryCertificateNumber))');
+    expect(home).toContain('Mở biên bản thu hồi ${item.recoveryCertificateNumber}');
   });
 
   it("opens the existing recovery PDF preview when a TH certificate is selected from the handover list", () => {

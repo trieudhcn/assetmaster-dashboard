@@ -139,6 +139,12 @@
 - [x] Thêm bộ chọn ẩn/hiện cột có lưu lựa chọn cho bảng Danh mục tài sản.
 - [x] Bổ sung hồi quy, xác minh desktop/mobile, TypeScript và production build.
 
+## Current Session — Sửa cột Mã phiếu Bàn giao
+
+- [x] Ngăn mã BG và mã thu hồi xuống dòng trong cột Mã phiếu khi hiển thị trên màn hình hẹp.
+- [x] Giữ liên kết xem trước mã thu hồi, tooltip và khả năng đọc mã đầy đủ.
+- [x] Bổ sung hồi quy, xác minh desktop/mobile, TypeScript và production build.
+
 - [x] Mở rộng mô hình dữ liệu tài sản với thông tin chi tiết và trạng thái thao tác.
 - [x] Thêm modal tạo tài sản mới với validation cơ bản.
 - [x] Thêm modal chỉnh sửa tài sản và cập nhật dữ liệu trong bảng.

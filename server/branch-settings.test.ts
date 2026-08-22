@@ -54,7 +54,11 @@ describe("branch settings", () => {
     expect(home).toContain("Khôi phục mặc định");
     expect(home).toContain('<th className="px-4 py-3.5">Chi nhánh</th>');
     expect(home).toContain("data-handover-reference");
-    expect(home).toContain("w-[112px] max-w-[112px]");
+    expect(home).toContain('w-[168px] px-3 py-3.5');
+    expect(home).toContain('w-[144px] space-y-1');
+    expect(home).toContain('overflow-hidden text-ellipsis whitespace-nowrap');
+    expect(home).toContain('setRecoveryPdfRequest(String(item.recoveryCertificateNumber))');
+    expect(home).not.toContain('`${item.referenceCode} · ${item.recoveryCertificateNumber}`');
     expect(home).toContain('min-w-[1000px]');
     expect(home).toContain("data-branch-asset-value-chart");
     expect(home).toContain("branchAssetValueSummary");
