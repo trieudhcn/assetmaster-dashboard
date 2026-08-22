@@ -2587,3 +2587,9 @@
 ## Current Session — Sửa chồng lấp bộ lọc phiếu bàn giao
 - [x] Khắc phục bộ lọc bàn giao chồng lên khu vực khác khi cuộn.
 - [x] Bổ sung hồi quy và kiểm tra desktop/mobile, build phát hành.
+
+## Current Session — Tinh gọn thanh lý và bàn giao
+- [x] Bỏ hai thẻ Biên bản trong phạm vi và Tài sản đã thanh lý khỏi tổng quan thanh lý.
+- [x] Thêm nút Xóa bộ lọc cho danh sách phiếu bàn giao.
+- [x] Thêm cơ chế thu gọn/mở rộng KPI phiếu bàn giao trên điện thoại.
+- [x] Bổ sung hồi quy, kiểm tra desktop/mobile và build phát hành.

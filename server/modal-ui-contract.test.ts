@@ -1141,7 +1141,9 @@ describe("modal presentation contract", () => {
     expect(retirement).toContain('import { RecordedSalvageMetric, RetirementServiceCostMetric } from "@/components/RecordedSalvageMetric"');
     expect(retirement).toContain("RecordedSalvageMetric summary={recordedSalvageSummary}");
     expect(retirement).toContain("RetirementServiceCostMetric summary={retirementServiceCostSummary}");
-    expect(retirement).toContain("xl:grid-cols-5");
+    expect(retirement).toContain("xl:grid-cols-3");
+    expect(overview).not.toContain('OverviewMetric label="Biên bản trong phạm vi"');
+    expect(overview).not.toContain('OverviewMetric label="Tài sản đã thanh lý"');
     expect(recordedMetric).toContain("data-retirement-recorded-salvage");
     expect(recordedMetric).toContain("data-retirement-service-cost");
     expect(recordedMetric).toContain("Tổng chi phí Bảo hành & Sửa chữa");
@@ -1870,6 +1872,13 @@ describe("currency input and scrollbar contract", () => {
     expect(home).toContain("handoverPageSize = 10");
     expect(home).toContain("handoverDepartmentFilter");
     expect(home).toContain("handoverRecipientFilter");
+    expect(home).toContain("const resetHandoverFilters");
+    expect(home).toContain("hasActiveHandoverFilters");
+    expect(home).toContain("Xóa bộ lọc");
+    expect(home).toContain("handoverKpisCollapsed");
+    expect(home).toContain('aria-controls="handover-kpis"');
+    expect(home).toContain("Hiển thị KPI");
+    expect(home).toContain("Thu gọn KPI");
     expect(home).toContain("Tất cả phòng ban");
     expect(home).toContain("Tất cả người nhận");
     expect(home).toContain("Phiếu theo phòng ban");
