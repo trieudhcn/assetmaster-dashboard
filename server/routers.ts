@@ -882,6 +882,38 @@ export const appRouter = router({
       await recordActivity({ entityType: "purchaseInvoiceSupplyReceipt", entityId: receiptId, action: "received", actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: `Nhập ${input.receivedQuantity} ${supply.unit} ${supply.name} từ Hóa đơn ${invoice.invoiceKey}` }, transaction);
       return { id: receiptId, inventoryMovementId: movementId, quantityAfter };
     })),
+    createSupplyAndReceive: adminProcedure.input(z.object({
+      purchaseInvoiceLineId: z.number().int().positive(),
+      code: z.string().trim().min(2).max(64).regex(/^[A-Za-z0-9-]+$/).transform((value) => value.toUpperCase()),
+      name: z.string().trim().min(2).max(255),
+      unit: z.string().trim().min(1).max(32),
+      receivedQuantity: z.string().regex(/^\d+(\.\d{1,2})?$/).refine((value) => Number(value) > 0, "Số lượng nhập phải lớn hơn 0."),
+      minimumQuantity: z.number().finite().min(0).default(0),
+      categoryId: z.number().int().positive().nullable().optional(),
+      brandId: z.number().int().positive().nullable().optional(),
+      location: nullableText,
+      note: nullableText,
+    })).mutation(async ({ input, ctx }) => runInventoryTransaction(async (transaction) => {
+      const line = await getPurchaseInvoiceLineById(input.purchaseInvoiceLineId, transaction);
+      if (!line) throw new TRPCError({ code: "NOT_FOUND", message: "Không tìm thấy dòng Hóa đơn." });
+      if (line.itemType !== "supply") throw new TRPCError({ code: "BAD_REQUEST", message: "Chỉ dòng loại Phụ kiện mới có thể tạo và tiếp nhận Phụ kiện." });
+      const invoice = await getPurchaseInvoiceById(line.purchaseInvoiceId, transaction);
+      if (!invoice) throw new TRPCError({ code: "NOT_FOUND", message: "Không tìm thấy Hóa đơn mua bán." });
+      if (invoice.status === "cancelled") throw new TRPCError({ code: "BAD_REQUEST", message: "Không thể tiếp nhận từ Hóa đơn đã hủy." });
+      if (await getInventorySupplyByCode(input.code, transaction)) throw new TRPCError({ code: "BAD_REQUEST", message: "Mã Phụ kiện này đã tồn tại. Hãy chọn Phụ kiện có sẵn để tiếp nhận." });
+      const receipts = await listPurchaseInvoiceSupplyReceipts(line.id, transaction);
+      const receivedBefore = receipts.reduce((total: number, receipt: { status: string; receivedQuantity: string }) => receipt.status === "received" ? total + Number(receipt.receivedQuantity) : total, 0);
+      const receivedQuantity = Number(input.receivedQuantity);
+      if (receivedBefore + receivedQuantity > Number(line.quantity)) throw new TRPCError({ code: "BAD_REQUEST", message: `Số lượng nhập vượt số lượng trên dòng Hóa đơn (${line.quantity} ${line.unit || ""}).` });
+      const taxAmount = Math.round(receivedQuantity * Number(line.unitPrice) * Number(line.taxRate) / 100 * 100) / 100;
+      const totalAmount = Math.round(receivedQuantity * Number(line.unitPrice) * (1 + Number(line.taxRate) / 100) * 100) / 100;
+      const supplyId = await createInventorySupply({ code: input.code, name: input.name, categoryId: input.categoryId ?? null, vendorId: invoice.vendorId, brandId: input.brandId ?? null, purchaseContractId: null, unit: input.unit, stockQuantity: String(receivedQuantity), minimumQuantity: String(input.minimumQuantity), unitCost: line.unitPrice, location: input.location ?? null, note: input.note ?? null, isActive: true, createdByUserId: ctx.user!.id }, transaction);
+      const movementId = await createInventoryMovement({ supplyId, movementType: "receipt", quantity: input.receivedQuantity, quantityBefore: "0", quantityAfter: String(receivedQuantity), handoverId: null, issueSlipId: null, issueSlipItemId: null, recipientUserId: null, recipientName: null, recipientDepartmentId: null, note: `Tạo và nhập từ Hóa đơn ${invoice.invoiceKey} · Dòng ${line.lineNumber}: ${line.itemName}`, createdByUserId: ctx.user!.id, createdByName: ctx.user!.name ?? "Quản trị viên" }, transaction);
+      const receiptId = await createPurchaseInvoiceSupplyReceipt({ purchaseInvoiceLineId: line.id, supplyId, receivedQuantity: input.receivedQuantity, unitCost: line.unitPrice, taxRate: line.taxRate, taxAmount: String(taxAmount), totalAmount: String(totalAmount), inventoryMovementId: movementId, status: "received", receivedAt: new Date(), note: input.note ?? null, createdByUserId: ctx.user!.id, createdByName: ctx.user!.name ?? "Quản trị viên" }, transaction);
+      await recordActivity({ entityType: "supply", entityId: supplyId, action: "created_from_purchase_invoice", actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: `Tạo Phụ kiện ${input.name} (${input.code}) và nhập ${input.receivedQuantity} ${input.unit} từ Hóa đơn ${invoice.invoiceKey}` }, transaction);
+      await recordActivity({ entityType: "purchaseInvoiceSupplyReceipt", entityId: receiptId, action: "created_and_received", actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: `Tạo mới và tiếp nhận ${input.receivedQuantity} ${input.unit} ${input.name} từ Hóa đơn ${invoice.invoiceKey}` }, transaction);
+      return { supplyId, receiptId, inventoryMovementId: movementId, quantityAfter: receivedQuantity };
+    })),
     updateLine: adminProcedure.input(z.object({
       id: z.number().int().positive(),
       lineNumber: z.number().int().positive().optional(),

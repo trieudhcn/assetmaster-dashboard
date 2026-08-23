@@ -7,6 +7,7 @@ import { trpc } from "@/lib/trpc";
 import { SearchableSelect } from "@/components/SearchableSelect";
 import { CurrencyInput } from "@/components/CurrencyInput";
 import { DatePickerField } from "@/components/DatePickerField";
+import { InvoiceLineOperationsPanel } from "@/components/InvoiceLineOperationsPanel";
 
 type InvoiceStatus = "draft" | "issued" | "adjusted" | "replaced" | "cancelled";
 type InvoiceType = "vat" | "electronic" | "retail" | "adjustment" | "replacement" | "other";
@@ -72,6 +73,7 @@ export function PurchaseInvoiceManagementView() {
   const attachAsset = trpc.purchaseInvoices.attachAsset.useMutation({ onSuccess: () => { toast.success("Đã gán Tài sản vào dòng Hóa đơn."); invalidate(); void utils.assets.list.invalidate(); }, onError: (error) => toast.error(error.message || "Không thể gán Tài sản.") });
   const detachAsset = trpc.purchaseInvoices.detachAsset.useMutation({ onSuccess: () => { toast.success("Đã gỡ Tài sản khỏi Hóa đơn."); invalidate(); void utils.assets.list.invalidate(); }, onError: (error) => toast.error(error.message || "Không thể gỡ Tài sản.") });
   const receiveSupply = trpc.purchaseInvoices.receiveSupply.useMutation({ onSuccess: () => { toast.success("Đã tiếp nhận Phụ kiện và cập nhật tồn kho."); invalidate(); void utils.supplies.list.invalidate(); }, onError: (error) => toast.error(error.message || "Không thể tiếp nhận Phụ kiện.") });
+  const createSupplyAndReceive = trpc.purchaseInvoices.createSupplyAndReceive.useMutation({ onSuccess: () => { toast.success("Đã tạo Phụ kiện và tiếp nhận vào kho theo Hóa đơn."); invalidate(); void utils.supplies.list.invalidate(); }, onError: (error) => toast.error(error.message || "Không thể tạo Phụ kiện từ Hóa đơn.") });
 
   const lineSubtotal = (line: InvoiceLineForm) => Number(line.quantity || 0) * Number(line.unitPrice || 0);
   const lineTax = (line: InvoiceLineForm) => lineSubtotal(line) * Number(line.taxRate || 0) / 100;
@@ -200,9 +202,9 @@ export function PurchaseInvoiceManagementView() {
     host.className = "mt-4";
     lineSection.append(host);
     const root = createRoot(host);
-    root.render(<InvoiceLineOperationsPanel invoiceId={selectedInvoice.id} invoiceKey={selectedInvoice.invoiceKey} lines={detail.lines} linkedAssets={detail.linkedAssets} supplyReceipts={detail.supplyReceipts} assets={assetsQuery.data || []} supplies={suppliesQuery.data || []} onAttach={(assetId, lineId) => attachAsset.mutate({ purchaseInvoiceId: selectedInvoice.id, purchaseInvoiceLineId: lineId, assetId })} onDetach={(assetId) => detachAsset.mutate({ assetId })} onReceive={(input) => receiveSupply.mutate(input)} isWorking={attachAsset.isPending || detachAsset.isPending || receiveSupply.isPending} />);
+    root.render(<InvoiceLineOperationsPanel invoiceId={selectedInvoice.id} invoiceKey={selectedInvoice.invoiceKey} lines={detail.lines} linkedAssets={detail.linkedAssets} supplyReceipts={detail.supplyReceipts} assets={assetsQuery.data || []} supplies={suppliesQuery.data || []} onAttach={(assetId, lineId) => attachAsset.mutate({ purchaseInvoiceId: selectedInvoice.id, purchaseInvoiceLineId: lineId, assetId })} onDetach={(assetId) => detachAsset.mutate({ assetId })} onReceive={(input) => receiveSupply.mutate(input)} onCreateAndReceive={(input) => createSupplyAndReceive.mutate(input)} isWorking={attachAsset.isPending || detachAsset.isPending || receiveSupply.isPending || createSupplyAndReceive.isPending} />);
     return () => { root.unmount(); host.remove(); };
-  }, [selectedInvoice?.id, selectedInvoice?.invoiceKey, detail?.lines, detail?.linkedAssets, detail?.supplyReceipts, assetsQuery.data, suppliesQuery.data, attachAsset.isPending, detachAsset.isPending, receiveSupply.isPending]);
+  }, [selectedInvoice?.id, selectedInvoice?.invoiceKey, detail?.lines, detail?.linkedAssets, detail?.supplyReceipts, assetsQuery.data, suppliesQuery.data, attachAsset.isPending, detachAsset.isPending, receiveSupply.isPending, createSupplyAndReceive.isPending]);
 
   return <div className="min-h-screen bg-[#F4F7FB] px-4 py-7 sm:px-6 lg:px-9 lg:py-8"><div className="mx-auto max-w-[1500px]">
     <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between"><div><div className="flex items-center gap-2 text-[10px] font-extrabold uppercase tracking-[.16em] text-[#0F8C8C]"><ReceiptText size={14} />Mua sắm & chứng từ</div><h1 className="mt-1 font-display text-3xl font-extrabold text-[#102A43]">Hóa đơn mua bán</h1><p className="mt-1 max-w-2xl text-sm text-[#71869A]">Theo dõi hóa đơn là nguồn mua trực tiếp của Tài sản và Phụ kiện; Hợp đồng chỉ là liên kết tùy chọn.</p></div><button type="button" onClick={openCreate} className="primary-action"><Plus size={16} />Tạo hóa đơn</button></div>
@@ -222,7 +224,7 @@ type InvoiceOperationAsset = { id: number; assetCode: string; name: string; seri
 type InvoiceOperationSupply = { id: number; code: string; name: string; unit: string; stockQuantity: string; isActive: boolean };
 type InvoiceOperationReceipt = { id: number; purchaseInvoiceLineId: number; supplyId: number; receivedQuantity: string; status: "received" | "void"; supply: InvoiceOperationSupply | null };
 type ReceiveSupplyInput = { purchaseInvoiceLineId: number; supplyId: number; receivedQuantity: string; unitCost: string | null; taxRate: string; taxAmount: string; totalAmount: string; receivedAt: number; note: string | null };
-function InvoiceLineOperationsPanel({ invoiceId, invoiceKey, lines, linkedAssets, supplyReceipts, assets, supplies, onAttach, onDetach, onReceive, isWorking }: { invoiceId: number; invoiceKey: string; lines: InvoiceOperationLine[]; linkedAssets: InvoiceOperationAsset[]; supplyReceipts: InvoiceOperationReceipt[]; assets: InvoiceOperationAsset[]; supplies: InvoiceOperationSupply[]; onAttach: (assetId: number, lineId: number | null) => void; onDetach: (assetId: number) => void; onReceive: (input: ReceiveSupplyInput) => void; isWorking: boolean }) {
+function LegacyInvoiceLineOperationsPanel({ invoiceId, invoiceKey, lines, linkedAssets, supplyReceipts, assets, supplies, onAttach, onDetach, onReceive, isWorking }: { invoiceId: number; invoiceKey: string; lines: InvoiceOperationLine[]; linkedAssets: InvoiceOperationAsset[]; supplyReceipts: InvoiceOperationReceipt[]; assets: InvoiceOperationAsset[]; supplies: InvoiceOperationSupply[]; onAttach: (assetId: number, lineId: number | null) => void; onDetach: (assetId: number) => void; onReceive: (input: ReceiveSupplyInput) => void; isWorking: boolean }) {
   const [assetDrafts, setAssetDrafts] = useState<Record<number, string>>({});
   const [supplyDrafts, setSupplyDrafts] = useState<Record<number, { supplyId: string; quantity: string }>>({});
   const activeAssets = assets.filter((asset) => asset.status !== "retired" && asset.status !== "returned_to_vendor");

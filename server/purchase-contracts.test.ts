@@ -10,6 +10,7 @@ describe("purchase contract management", () => {
   const supplies = readFileSync(resolve(import.meta.dirname, "../client/src/pages/SuppliesInventoryView.tsx"), "utf8");
   const contractsView = readFileSync(resolve(import.meta.dirname, "../client/src/pages/PurchaseContractManagementView.tsx"), "utf8");
   const invoicesView = readFileSync(resolve(import.meta.dirname, "../client/src/pages/PurchaseInvoiceManagementView.tsx"), "utf8");
+  const invoiceOperations = readFileSync(resolve(import.meta.dirname, "../client/src/components/InvoiceLineOperationsPanel.tsx"), "utf8");
   const vendorsView = readFileSync(resolve(import.meta.dirname, "../client/src/pages/VendorBrandManagementPage.tsx"), "utf8");
 
   it("models one contract with reusable documents and links to assets or supplies", () => {
@@ -147,5 +148,17 @@ describe("purchase contract management", () => {
     expect(invoicesView).toContain("Phân bổ nguồn mua theo dòng");
     expect(invoicesView).toContain("Xuất đối soát Excel");
     expect(invoicesView).toContain("XLSX.writeFile");
+  });
+
+  it("creates a new supply atomically from a supply invoice line and keeps contracts value-free in the form", () => {
+    expect(router).toContain("createSupplyAndReceive: adminProcedure");
+    expect(router).toContain("Tạo và nhập từ Hóa đơn");
+    expect(router).toContain("Mã Phụ kiện này đã tồn tại. Hãy chọn Phụ kiện có sẵn để tiếp nhận.");
+    expect(invoicesView).toContain("trpc.purchaseInvoices.createSupplyAndReceive.useMutation");
+    expect(invoiceOperations).toContain("Tạo Phụ kiện mới");
+    expect(invoiceOperations).toContain("Tạo & tiếp nhận");
+    expect(invoiceOperations).toContain("Đơn giá");
+    expect(contractsView).toContain('label === "Tổng giá trị" ? "hidden"');
+    expect(contractsView).not.toContain("totalValue: form.totalValue");
   });
 });

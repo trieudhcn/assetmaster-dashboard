@@ -105,13 +105,13 @@ export function PurchaseContractManagementView() {
     if (!contract) return;
     setEditingId(contract.id);
     setPaperContractFile(null);
-    setForm({ referenceCode: contract.referenceCode, title: contract.title, vendorId: contract.vendorId ? String(contract.vendorId) : "", signedAt: toDateInput(contract.signedAt), effectiveFrom: toDateInput(contract.effectiveFrom), effectiveTo: toDateInput(contract.effectiveTo), totalValue: contract.totalValue ? String(contract.totalValue).replace(/\D/g, "") : "", status: contract.status, note: contract.note || "" });
+    setForm({ referenceCode: contract.referenceCode, title: contract.title, vendorId: contract.vendorId ? String(contract.vendorId) : "", signedAt: toDateInput(contract.signedAt), effectiveFrom: toDateInput(contract.effectiveFrom), effectiveTo: toDateInput(contract.effectiveTo), totalValue: "", status: contract.status, note: contract.note || "" });
     setFormOpen(true);
   };
   const save = async () => {
     if (!form.referenceCode.trim() || !form.title.trim()) { toast.error("Vui lòng nhập số và tên hợp đồng."); return; }
     if (form.effectiveFrom && form.effectiveTo && form.effectiveTo < form.effectiveFrom) { toast.error("Ngày kết thúc hiệu lực phải sau ngày bắt đầu."); return; }
-    const payload = { referenceCode: form.referenceCode.trim(), title: form.title.trim(), vendorId: form.vendorId ? Number(form.vendorId) : null, signedAt: toTimestamp(form.signedAt), effectiveFrom: toTimestamp(form.effectiveFrom), effectiveTo: toTimestamp(form.effectiveTo), totalValue: form.totalValue || null, status: form.status, note: form.note.trim() || null };
+    const payload = { referenceCode: form.referenceCode.trim(), title: form.title.trim(), vendorId: form.vendorId ? Number(form.vendorId) : null, signedAt: toTimestamp(form.signedAt), effectiveFrom: toTimestamp(form.effectiveFrom), effectiveTo: toTimestamp(form.effectiveTo), status: form.status, note: form.note.trim() || null };
     if (editingId) { updateContract.mutate({ id: editingId, ...payload }); return; }
     let created: { id: number };
     try { created = await createContract.mutateAsync(payload); } catch { return; }
@@ -164,7 +164,7 @@ export function PurchaseContractManagementView() {
   </div>;
 }
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) { return <label className="block space-y-1.5"><span className="text-xs font-extrabold text-[#526779]">{label}</span>{children}</label>; }
+function Field({ label, children }: { label: string; children: React.ReactNode }) { return <label className={label === "Tổng giá trị" ? "hidden" : "block space-y-1.5"}><span className="text-xs font-extrabold text-[#526779]">{label}</span>{children}</label>; }
 function SelectField({ label, children }: { label: string; children: React.ReactNode }) { return <div className="space-y-1.5"><span className="block text-xs font-extrabold text-[#526779]">{label}</span>{children}</div>; }
 function Info({ label, value }: { label: string; value: string }) { return <div><dt className="text-[10px] font-extrabold uppercase tracking-[.08em] text-[#8AA0B6]">{label}</dt><dd className="mt-1 font-bold text-[#193B57]">{value}</dd></div>; }
 function Metric({ label, value, icon, tone = "default" }: { label: string; value: number; icon: React.ReactNode; tone?: "default" | "teal" | "blue" }) { const colors = tone === "teal" ? "bg-[#E6F6F2] text-[#087A6A]" : tone === "blue" ? "bg-[#EAF3FF] text-[#2666A8]" : "bg-[#EAF0F7] text-[#193B57]"; return <div className="rounded-xl border border-[#DFE9F0] bg-white p-4 shadow-[0_8px_24px_rgba(16,42,67,.045)]"><span className={`grid h-9 w-9 place-items-center rounded-xl ${colors}`}>{icon}</span><div className="mt-4 text-[11px] font-semibold text-[#7890A5]">{label}</div><div className="mt-1 font-display text-2xl font-extrabold text-[#102A43]">{value}</div></div>; }

@@ -272,6 +272,13 @@
 - [x] Thêm xuất Excel đối soát Hóa đơn–Tài sản với dòng Hóa đơn, Tài sản và Phụ kiện đã tiếp nhận.
 - [x] Bổ sung hồi quy, xác minh desktop/mobile, TypeScript và production build trước khi phát hành.
 
+## Current Session — Phụ kiện tạo nhanh từ Hóa đơn và tinh gọn Hợp đồng
+
+- [x] Rà soát luồng tạo Phụ kiện hiện tại và xác định dữ liệu kế thừa an toàn từ dòng Hóa đơn.
+- [x] Cho phép tạo mới Phụ kiện trực tiếp tại dòng loại Phụ kiện của Hóa đơn, sau đó tiếp nhận vào kho theo dòng đó.
+- [x] Loại bỏ trường tổng giá trị khỏi biểu mẫu tạo/chỉnh sửa Hợp đồng, giữ nguyên dữ liệu lịch sử và API tương thích.
+- [x] Bổ sung hồi quy, xác minh desktop/mobile, TypeScript và production build trước khi phát hành.
+
 - [x] Mở rộng mô hình dữ liệu tài sản với thông tin chi tiết và trạng thái thao tác.
 - [x] Thêm modal tạo tài sản mới với validation cơ bản.
 - [x] Thêm modal chỉnh sửa tài sản và cập nhật dữ liệu trong bảng.
