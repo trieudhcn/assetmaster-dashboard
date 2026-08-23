@@ -1985,7 +1985,8 @@ describe("currency input and scrollbar contract", () => {
     expect(vendorBrand).toContain('aria-label="Tìm Hãng"');
     expect(vendorBrand).toContain("Danh sách Nhà cung cấp");
     expect(vendorBrand).toContain("Danh sách Hãng");
-    expect(vendorBrand).toContain("selectedVendor ? <VendorDocuments");
+    expect(vendorBrand).toContain("selectedVendor ? <VendorContracts");
+    expect(vendorBrand).toContain("Tạo và lưu chứng từ tại menu Hợp đồng mua bán");
     expect(vendorBrand).toContain("    </div>\n    {selectedVendor ?");
   });
 

@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { FileCheck2, FileText, Link2, Loader2, Package, Paperclip, Pencil, Plus, Search, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
 import { trpc } from "@/lib/trpc";
@@ -38,6 +38,7 @@ export function PurchaseContractManagementView() {
   const [form, setForm] = useState<ContractForm>(emptyForm);
   const [documentType, setDocumentType] = useState<"signed_contract" | "appendix" | "quotation" | "other">("signed_contract");
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const routeIntentHandled = useRef(false);
   const detailsQuery = trpc.purchaseContracts.get.useQuery({ id: selectedId || 0 }, { enabled: selectedId !== null });
 
   const vendorsById = useMemo(() => new Map((vendorsQuery.data || []).map((vendor) => [vendor.id, vendor])), [vendorsQuery.data]);
@@ -49,6 +50,27 @@ export function PurchaseContractManagementView() {
     const matchesQuery = `${contract.referenceCode} ${contract.title} ${vendor}`.toLocaleLowerCase("vi-VN").includes(query.trim().toLocaleLowerCase("vi-VN"));
     return matchesQuery && (statusFilter === "all" || contract.status === statusFilter);
   }), [contracts, query, statusFilter, vendorsById]);
+
+  useEffect(() => {
+    if (routeIntentHandled.current) return;
+    const params = new URLSearchParams(window.location.search);
+    const contractId = Number(params.get("contractId") || 0);
+    if (Number.isInteger(contractId) && contractId > 0) {
+      routeIntentHandled.current = true;
+      setSelectedId(contractId);
+      return;
+    }
+    const vendorId = Number(params.get("vendorId") || 0);
+    if (params.get("create") !== "1" || !Number.isInteger(vendorId) || vendorId <= 0 || vendorsQuery.isLoading) return;
+    routeIntentHandled.current = true;
+    if (!(vendorsQuery.data || []).some((vendor) => vendor.id === vendorId)) {
+      toast.error("Không tìm thấy Nhà cung cấp để tạo Hợp đồng.");
+      return;
+    }
+    setEditingId(null);
+    setForm({ ...emptyForm, vendorId: String(vendorId) });
+    setFormOpen(true);
+  }, [vendorsQuery.data, vendorsQuery.isLoading]);
 
   const invalidateContracts = () => { void utils.purchaseContracts.list.invalidate(); if (selectedId) void utils.purchaseContracts.get.invalidate({ id: selectedId }); };
   const createContract = trpc.purchaseContracts.create.useMutation({ onSuccess: (result) => { toast.success("Đã tạo Hợp đồng mua bán."); setFormOpen(false); setSelectedId(result.id); invalidateContracts(); }, onError: (error) => toast.error(error.message || "Không thể tạo Hợp đồng.") });

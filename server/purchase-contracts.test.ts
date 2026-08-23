@@ -9,6 +9,7 @@ describe("purchase contract management", () => {
   const home = readFileSync(resolve(import.meta.dirname, "../client/src/pages/Home.tsx"), "utf8");
   const supplies = readFileSync(resolve(import.meta.dirname, "../client/src/pages/SuppliesInventoryView.tsx"), "utf8");
   const contractsView = readFileSync(resolve(import.meta.dirname, "../client/src/pages/PurchaseContractManagementView.tsx"), "utf8");
+  const vendorsView = readFileSync(resolve(import.meta.dirname, "../client/src/pages/VendorBrandManagementPage.tsx"), "utf8");
 
   it("models one contract with reusable documents and links to assets or supplies", () => {
     expect(schema).toContain("export const purchaseContracts");
@@ -45,5 +46,17 @@ describe("purchase contract management", () => {
     expect(contractsView).toContain("Hợp đồng mua bán");
     expect(contractsView).toContain("Tài sản & phụ kiện thuộc hợp đồng");
     expect(contractsView).toContain("Tải chứng từ");
+  });
+
+  it("uses the vendor profile as a contract index instead of a second contract upload flow", () => {
+    expect(vendorsView).toContain("Hợp đồng mua bán · {vendor.name}");
+    expect(vendorsView).toContain("Tạo và lưu chứng từ tại menu Hợp đồng mua bán");
+    expect(vendorsView).toContain('url.searchParams.set("view", "contracts")');
+    expect(vendorsView).toContain('url.searchParams.set("vendorId", String(vendor.id))');
+    expect(vendorsView).toContain('url.searchParams.set("create", "1")');
+    expect(vendorsView).not.toContain("<VendorDocuments documentsRef=");
+    expect(contractsView).toContain('const routeIntentHandled = useRef(false)');
+    expect(contractsView).toContain('params.get("create") !== "1"');
+    expect(contractsView).toContain('setForm({ ...emptyForm, vendorId: String(vendorId) })');
   });
 });

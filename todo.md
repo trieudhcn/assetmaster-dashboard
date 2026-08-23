@@ -220,6 +220,12 @@
 - [x] Liên kết chọn/tạo nhanh hợp đồng từ biểu mẫu Tài sản và Phụ kiện; hiển thị liên kết hợp đồng ở chi tiết.
 - [x] Bổ sung kiểm thử dữ liệu/quyền hạn, xác minh desktop/mobile, TypeScript và production build trước khi phát hành.
 
+## Current Session — Hợp nhất luồng Hợp đồng và Nhà cung cấp
+
+- [x] Rà soát chứng từ đang lưu riêng tại Nhà cung cấp và liên kết với Hợp đồng mua bán để loại bỏ vai trò trùng lặp.
+- [x] Chuyển khu vực Nhà cung cấp thành danh sách hợp đồng liên quan, có thao tác mở nhanh hồ sơ hợp đồng thay vì tạo/tải Hợp đồng riêng.
+- [x] Kiểm thử luồng liên kết, xác minh desktop/mobile, TypeScript và production build trước khi phát hành.
+
 - [x] Mở rộng mô hình dữ liệu tài sản với thông tin chi tiết và trạng thái thao tác.
 - [x] Thêm modal tạo tài sản mới với validation cơ bản.
 - [x] Thêm modal chỉnh sửa tài sản và cập nhật dữ liệu trong bảng.
