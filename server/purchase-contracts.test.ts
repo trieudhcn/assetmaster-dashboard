@@ -53,6 +53,13 @@ describe("purchase contract management", () => {
     expect(contractsView).toContain("<DatePickerField");
     expect(contractsView).toContain("<CurrencyInput");
     expect(contractsView).toContain("showWords");
+    expect(contractsView).toContain("Bản Hợp đồng giấy đã ký");
+    expect(contractsView).toContain("paperContractFile");
+    expect(contractsView).toContain('documentType: "signed_contract"');
+    expect(contractsView).toContain("Đã tạo Hợp đồng và lưu bản giấy đã ký.");
+    expect(home).toContain('input[placeholder="Nhập số serial"]');
+    expect(home).toContain("serialField.after(field)");
+    expect(home).toContain('field.dataset.assetPurchaseContract = "true"');
   });
 
   it("uses the vendor profile as a contract index instead of a second contract upload flow", () => {

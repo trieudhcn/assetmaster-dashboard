@@ -2468,11 +2468,13 @@ function AssetModal({ mode, asset, formData, setFormData, isSaving, onClose: dis
   useEffect(() => {
     if (isDetail) return;
     const dialog = document.querySelector<HTMLElement>(`[role="dialog"][aria-label="${mode === "create" ? "Thêm tài sản mới" : "Chỉnh sửa tài sản"}"]`);
-    const formGrid = dialog?.querySelector<HTMLElement>(".mb-5.grid");
-    if (!formGrid || formGrid.querySelector("[data-asset-purchase-contract]")) return;
+    const serialInput = dialog?.querySelector<HTMLInputElement>('input[placeholder="Nhập số serial"]');
+    const serialField = serialInput?.parentElement;
+    const grid = serialField?.parentElement;
+    if (!serialField || !grid || grid.querySelector("[data-asset-purchase-contract]")) return;
     const field = document.createElement("div");
     field.dataset.assetPurchaseContract = "true";
-    field.className = "sm:col-span-2 rounded-xl border border-[#CDE5E5] bg-[#F4FBFA] p-3";
+    field.className = "min-w-0";
     const label = document.createElement("label");
     label.className = "field-label";
     label.textContent = "Hợp đồng mua bán";
@@ -2487,20 +2489,16 @@ function AssetModal({ mode, asset, formData, setFormData, isSaving, onClose: dis
       const option = document.createElement("option");
       option.value = String(contract.id);
       option.textContent = `${contract.referenceCode} · ${contract.title}`;
-      option.selected = contract.id === formData.purchaseContractId;
       select.append(option);
     });
     select.value = formData.purchaseContractId ? String(formData.purchaseContractId) : "";
     select.disabled = purchaseContractsQuery.isLoading;
-    const hint = document.createElement("p");
-    hint.className = "mt-1 text-[10px] text-[#4B8884]";
-    hint.textContent = selectedPurchaseContract ? `Nhà cung cấp được lấy theo ${selectedPurchaseContract.referenceCode}${selectedPurchaseContract.vendorId ? "." : "; hợp đồng chưa gán Nhà cung cấp."}` : "Chọn để liên kết tài sản và dùng chung chứng từ hợp đồng.";
     const onChange = () => selectPurchaseContract(select.value);
     select.addEventListener("change", onChange);
-    field.append(label, select, hint);
-    formGrid.append(field);
+    field.append(label, select);
+    serialField.after(field);
     return () => { select.removeEventListener("change", onChange); field.remove(); };
-  }, [isDetail, mode, formData.purchaseContractId, purchaseContractsQuery.data, purchaseContractsQuery.isLoading, selectedPurchaseContract?.referenceCode, selectedPurchaseContract?.vendorId]);
+  }, [isDetail, mode, formData.purchaseContractId, purchaseContractsQuery.data, purchaseContractsQuery.isLoading]);
   useEffect(() => {
     if (!isDetail || !asset) return;
     const dialog = document.querySelector<HTMLElement>('[role="dialog"][aria-label="Chi tiết tài sản"]');

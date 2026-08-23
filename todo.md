@@ -238,6 +238,12 @@
 - [x] Làm sạch `vendorId`, `create` và `contractId` sau khi xử lý deep-link để form không tự mở khi đổi menu.
 - [x] Bổ sung hồi quy luồng URL, kiểm thử TypeScript, build và phát hành bản sửa lỗi.
 
+## Current Session — Tải hợp đồng giấy và bố cục form Tài sản
+
+- [x] Cho phép chọn và tải bản Hợp đồng mua bán giấy khi tạo hợp đồng mới, lưu thành chứng từ ký trong hồ sơ vừa tạo.
+- [x] Đưa bộ chọn Hợp đồng vào bên cạnh Số serial/IMEI trong form Tài sản, theo kích thước dropdown chuẩn.
+- [x] Bổ sung hồi quy, xác minh desktop/mobile, TypeScript và production build trước khi phát hành.
+
 - [x] Mở rộng mô hình dữ liệu tài sản với thông tin chi tiết và trạng thái thao tác.
 - [x] Thêm modal tạo tài sản mới với validation cơ bản.
 - [x] Thêm modal chỉnh sửa tài sản và cập nhật dữ liệu trong bảng.
