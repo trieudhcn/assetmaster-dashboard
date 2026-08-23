@@ -10,6 +10,7 @@ describe("purchase contract management", () => {
   const supplies = readFileSync(resolve(import.meta.dirname, "../client/src/pages/SuppliesInventoryView.tsx"), "utf8");
   const contractsView = readFileSync(resolve(import.meta.dirname, "../client/src/pages/PurchaseContractManagementView.tsx"), "utf8");
   const invoicesView = readFileSync(resolve(import.meta.dirname, "../client/src/pages/PurchaseInvoiceManagementView.tsx"), "utf8");
+  const procurementView = readFileSync(resolve(import.meta.dirname, "../client/src/pages/ProcurementManagementView.tsx"), "utf8");
   const invoiceOperations = readFileSync(resolve(import.meta.dirname, "../client/src/components/InvoiceLineOperationsPanel.tsx"), "utf8");
   const globalStyles = readFileSync(resolve(import.meta.dirname, "../client/src/index.css"), "utf8");
   const vendorsView = readFileSync(resolve(import.meta.dirname, "../client/src/pages/VendorBrandManagementPage.tsx"), "utf8");
@@ -38,9 +39,13 @@ describe("purchase contract management", () => {
   });
 
   it("provides navigation and contract selectors across the purchase, asset and supply workflows", () => {
-    expect(home).toContain('label: "Hợp đồng mua bán"');
-    expect(home).toContain('contracts: "Hợp đồng mua bán"');
-    expect(home).toContain("PurchaseContractManagementView");
+    expect(home).toContain('label: "Hợp đồng & Hóa đơn"');
+    expect(home).toContain('contracts: "Hợp đồng & Hóa đơn"');
+    expect(home).toContain('invoices: "Hợp đồng & Hóa đơn"');
+    expect(home).toContain("ProcurementManagementView");
+    expect(procurementView).toContain("PurchaseContractManagementView");
+    expect(procurementView).toContain("PurchaseInvoiceManagementView");
+    expect(procurementView).toContain('selectSection("invoices")');
     expect(home).toContain("purchaseContractId: formData.purchaseContractId ?? null");
     expect(home).toContain("data-asset-purchase-invoice");
     expect(supplies).toContain("purchaseContractId: form.purchaseContractId ? Number(form.purchaseContractId) : null");
@@ -122,9 +127,9 @@ describe("purchase contract management", () => {
   });
 
   it("provides invoice management, document preview and invoice-first asset selection", () => {
-    expect(home).toContain('label: "Hóa đơn mua bán"');
-    expect(home).toContain('invoices: "Hóa đơn mua bán"');
-    expect(home).toContain("PurchaseInvoiceManagementView");
+    expect(home).toContain('invoices: "Hợp đồng & Hóa đơn"');
+    expect(home).toContain("ProcurementManagementView");
+    expect(procurementView).toContain("PurchaseInvoiceManagementView");
     expect(home).toContain("purchaseInvoiceId: formData.purchaseInvoiceId ?? null");
     expect(home).toContain("purchaseInvoiceLineId: formData.purchaseInvoiceLineId ?? null");
     expect(home).toContain('label.textContent = "Hóa đơn mua bán"');

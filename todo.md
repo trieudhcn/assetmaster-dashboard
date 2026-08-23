@@ -299,6 +299,12 @@
 - [x] Loại bỏ khu vực Tài sản & phụ kiện thuộc hợp đồng khỏi giao diện Hợp đồng mua bán; gồm tiêu đề, chỉ báo số mục và hai danh sách Tài sản/Phụ kiện trong ảnh tham chiếu.
 - [x] Bổ sung hồi quy, xác minh giao diện, TypeScript và production build trước khi phát hành.
 
+## Current Session — Menu Hợp đồng & Hóa đơn
+
+- [x] Rà soát menu, deep-link và điều hướng hiện có của Hợp đồng/Hóa đơn.
+- [x] Gộp hai menu thành Hợp đồng & Hóa đơn, cung cấp điểm vào rõ ràng cho từng nghiệp vụ; đã xác minh cả contracts và invoices.
+- [x] Bổ sung hồi quy, xác minh giao diện desktop/mobile, TypeScript và production build trước khi phát hành.
+
 - [x] Mở rộng mô hình dữ liệu tài sản với thông tin chi tiết và trạng thái thao tác.
 - [x] Thêm modal tạo tài sản mới với validation cơ bản.
 - [x] Thêm modal chỉnh sửa tài sản và cập nhật dữ liệu trong bảng.

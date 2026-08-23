@@ -31,8 +31,7 @@ import { ReportsManagementView } from "./ReportsManagementView";
 import { RetirementManagementView } from "./RetirementManagementView";
 import { OrganizationManagementPage } from "./OrganizationManagementPage";
 import { VendorBrandManagementPage } from "./VendorBrandManagementPage";
-import { PurchaseContractManagementView } from "./PurchaseContractManagementView";
-import { PurchaseInvoiceManagementView } from "./PurchaseInvoiceManagementView";
+import { ProcurementManagementView } from "./ProcurementManagementView";
 import { AssetCategoryManagementPage } from "./AssetCategoryManagementPage";
 import { SuppliesInventoryView } from "./SuppliesInventoryView";
 import { LoginGateway } from "./LoginGateway";
@@ -144,8 +143,7 @@ const navItems = [
   { label: "Danh mục tài sản", icon: Archive },
   { label: "Phân loại tài sản", icon: Tags },
   { label: "Nhà cung cấp & Hãng", icon: Tags },
-  { label: "Hợp đồng mua bán", icon: FileText },
-  { label: "Hóa đơn mua bán", icon: ReceiptText },
+  { label: "Hợp đồng & Hóa đơn", icon: FileText },
   { label: "Phụ kiện", icon: Box },
   { label: "Bàn giao & Cấp phát", icon: PackageCheck },
   { label: "Bảo hành & Sửa chữa", icon: Wrench },
@@ -348,7 +346,7 @@ export default function Home() {
 
   const [activeNav, setActiveNav] = useState(() => {
     const view = new URLSearchParams(window.location.search).get("view");
-    const deepLinks: Record<string, string> = { assets: "Danh mục tài sản", supplies: "Phụ kiện", categories: "Phân loại tài sản", maintenance: "Bảo hành & Sửa chữa", audit: "Kiểm kê", retirement: "Khấu hao & Thanh lý", reports: "Báo Cáo", employees: "Quản lý nhân viên", organization: "Phòng Ban & Bộ Phận", vendors: "Nhà cung cấp & Hãng", contracts: "Hợp đồng mua bán", invoices: "Hóa đơn mua bán", handovers: "Bàn giao & Cấp phát", settings: "Cài đặt", help: "Trợ giúp & hướng dẫn" };
+    const deepLinks: Record<string, string> = { assets: "Danh mục tài sản", supplies: "Phụ kiện", categories: "Phân loại tài sản", maintenance: "Bảo hành & Sửa chữa", audit: "Kiểm kê", retirement: "Khấu hao & Thanh lý", reports: "Báo Cáo", employees: "Quản lý nhân viên", organization: "Phòng Ban & Bộ Phận", vendors: "Nhà cung cấp & Hãng", contracts: "Hợp đồng & Hóa đơn", invoices: "Hợp đồng & Hóa đơn", handovers: "Bàn giao & Cấp phát", settings: "Cài đặt", help: "Trợ giúp & hướng dẫn" };
     return view ? deepLinks[view] || "Tổng quan" : "Tổng quan";
   });
   const [assetRows, setAssetRows] = useState<Asset[]>([]);
@@ -989,7 +987,7 @@ export default function Home() {
   };
   const showComingSoon = (label: string) => toast.info(`${label} sẽ được mở trong phiên bản tiếp theo.`, { description: "Bản xem trước hiện đang dùng dữ liệu mẫu để minh họa giao diện." });
   const navigateTo = (label: string) => {
-    const viewByNav: Record<string, string> = { "Danh mục tài sản": "assets", "Phân loại tài sản": "categories", "Bàn giao & Cấp phát": "handovers", "Bảo hành & Sửa chữa": "maintenance", "Kiểm kê": "audit", "Khấu hao & Thanh lý": "retirement", "Báo Cáo": "reports", "Quản lý nhân viên": "employees", "Phòng Ban & Bộ Phận": "organization", "Nhà cung cấp & Hãng": "vendors", "Hợp đồng mua bán": "contracts", "Hóa đơn mua bán": "invoices", "Cài đặt": "settings", "Trợ giúp & hướng dẫn": "help" };
+    const viewByNav: Record<string, string> = { "Danh mục tài sản": "assets", "Phân loại tài sản": "categories", "Bàn giao & Cấp phát": "handovers", "Bảo hành & Sửa chữa": "maintenance", "Kiểm kê": "audit", "Khấu hao & Thanh lý": "retirement", "Báo Cáo": "reports", "Quản lý nhân viên": "employees", "Phòng Ban & Bộ Phận": "organization", "Nhà cung cấp & Hãng": "vendors", "Hợp đồng & Hóa đơn": "contracts", "Cài đặt": "settings", "Trợ giúp & hướng dẫn": "help" };
     const url = new URL(window.location.href);
     const view = viewByNav[label];
     url.searchParams.delete("vendorId");
@@ -1088,8 +1086,7 @@ export default function Home() {
         {activeNav === "Quản lý nhân viên" ? <EmployeeManagementView /> : null}
         {activeNav === "Phòng Ban & Bộ Phận" ? <OrganizationManagementPage /> : null}
         {activeNav === "Nhà cung cấp & Hãng" ? <VendorBrandManagementPage /> : null}
-        {activeNav === "Hợp đồng mua bán" ? <PurchaseContractManagementView /> : null}
-        {activeNav === "Hóa đơn mua bán" ? <PurchaseInvoiceManagementView /> : null}
+        {activeNav === "Hợp đồng & Hóa đơn" ? <ProcurementManagementView /> : null}
         {activeNav === "Trợ giúp & hướng dẫn" ? <HelpCenter /> : null}
         {activeNav === "Danh mục tài sản" ? assetQuery.isLoading && !assetQuery.data ? <AssetCatalogLoadingPanel /> : assetQuery.isError && !assetQuery.data ? <AssetCatalogUnavailablePanel onRetry={() => void assetQuery.refetch()} /> : <PaginatedAssetCatalogPage assets={filteredAssets} statusCounts={assetStatusFilterCounts} query={query} category={category} status={status} department={department} vendor={vendorFilter} brand={brandFilter} warranty={warrantyFilter} branch={branchFilter} vendorOptions={["Tất cả nhà cung cấp", ...(vendorsQuery.data || []).map((item) => item.name)]} brandOptions={["Tất cả hãng", ...(brandsQuery.data || []).map((item) => item.name)]} branchOptions={["Tất cả chi nhánh", ...(branchesQuery.data || []).map((item) => item.name)]} branchCounts={branchFilterCounts} onQueryChange={setQuery} onCategoryChange={setCategory} onStatusChange={setStatus} onDepartmentChange={setDepartment} onVendorChange={setVendorFilter} onBrandChange={setBrandFilter} onWarrantyChange={setWarrantyFilter} onBranchChange={setBranchFilter} onReset={() => { setQuery(""); setCategory("Tất cả loại tài sản"); setStatus("Tất cả trạng thái"); setDepartment("Tất cả phòng ban"); setVendorFilter("Tất cả nhà cung cấp"); setBrandFilter("Tất cả hãng"); setWarrantyFilter("Tất cả bảo hành"); setBranchFilter("Tất cả chi nhánh"); }} onCreate={openCreateModal} onEdit={openEditModal} onOpenDetail={openDetailModal} onOpenQr={setQrAsset} onOpenMaintenance={(asset) => { sessionStorage.setItem("assetmaster-open-maintenance-asset-code", asset.code); navigateTo("Bảo hành & Sửa chữa"); }} onAssign={(asset) => { if (asset.statusType !== "available") { toast.error("Chỉ có thể bàn giao tài sản đang sẵn có."); return; } setHandoverAssetCode(asset.code); }} canEditSectionLabels={isAdmin} /> : null}
         <div className={`px-4 py-7 sm:px-6 lg:px-9 lg:py-8 ${activeNav === "Tổng quan" ? "" : "hidden"}`}>
