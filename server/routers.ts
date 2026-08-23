@@ -36,6 +36,10 @@ import {
   createPurchaseContract,
   createPurchaseContractDocument,
   createPurchaseContractItem,
+  createPurchaseInvoice,
+  createPurchaseInvoiceDocument,
+  createPurchaseInvoiceLine,
+  createPurchaseInvoiceSupplyReceipt,
   createRetirementCertificate,
   createRetirementCertificateAssets,
   createVendor,
@@ -49,6 +53,8 @@ import {
   deletePurchaseContractDocument,
   deletePurchaseContractItemsByAssetId,
   deletePurchaseContractItemsBySupplyId,
+  deletePurchaseInvoiceDocument,
+  deletePurchaseInvoiceLine,
   deleteVendorDocument,
   getAssetById,
   getAssetImportSessionById,
@@ -91,6 +97,10 @@ import {
   getPurchaseContractById,
   getPurchaseContractByReferenceCode,
   getPurchaseContractDocumentById,
+  getPurchaseInvoiceById,
+  getPurchaseInvoiceByKey,
+  getPurchaseInvoiceDocumentById,
+  getPurchaseInvoiceLineById,
   getRetirementCertificateById,
   getUserNotificationPreferences,
   saveUiLabel,
@@ -102,6 +112,11 @@ import {
   listPurchaseContractDocuments,
   listPurchaseContractItems,
   listPurchaseContracts,
+  listPurchaseInvoiceDocuments,
+  listPurchaseInvoiceLines,
+  listPurchaseInvoices,
+  listAssetsByPurchaseInvoiceId,
+  listPurchaseInvoiceSupplyReceipts,
   listRetirementCertificateAssetAssignments,
   listRetirementCertificates,
   getNextRepairTicketSequence,
@@ -156,6 +171,7 @@ import {
   runInventoryTransaction,
   runRetirementCertificateTransaction,
   runPurchaseContractTransaction,
+  runPurchaseInvoiceTransaction,
   saveCompany,
   saveMaintenanceMonthlyBudget,
   saveHelpGuide,
@@ -177,6 +193,10 @@ import {
   updateSupplyUnit,
   updateMaintenanceTicket,
   updatePurchaseContract,
+  updatePurchaseInvoice,
+  updatePurchaseInvoiceLine,
+  updatePurchaseInvoiceSupplyReceipt,
+  updateAssetPurchaseInvoiceReference,
   updateRetirementCertificate,
   updateRetirementCertificateAssetSalvageValues,
   updateUserRole,
@@ -672,6 +692,225 @@ export const appRouter = router({
       if (!document) throw new TRPCError({ code: "NOT_FOUND", message: "Không tìm thấy chứng từ Hợp đồng." });
       await deletePurchaseContractDocument(document.id);
       await recordActivity({ entityType: "purchaseContractDocument", entityId: document.id, action: "removed", actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: `Gỡ chứng từ ${document.fileName}` });
+      return { success: true };
+    }),
+  }),
+  purchaseInvoices: router({
+    list: adminProcedure.query(() => listPurchaseInvoices()),
+    get: adminProcedure.input(z.object({ id: z.number().int().positive() })).query(async ({ input }) => {
+      const invoice = await getPurchaseInvoiceById(input.id);
+      if (!invoice) throw new TRPCError({ code: "NOT_FOUND", message: "Không tìm thấy Hóa đơn mua bán." });
+      const [documents, lines, linkedAssets] = await Promise.all([
+        listPurchaseInvoiceDocuments(invoice.id),
+        listPurchaseInvoiceLines(invoice.id),
+        listAssetsByPurchaseInvoiceId(invoice.id),
+      ]);
+      return { invoice, documents, lines, linkedAssets };
+    }),
+    create: adminProcedure.input(z.object({
+      invoiceNumber: z.string().trim().min(1).max(64),
+      invoiceSeries: z.string().trim().max(64).nullable().optional(),
+      invoiceTemplate: z.string().trim().max(64).nullable().optional(),
+      invoiceType: z.enum(["vat", "electronic", "retail", "adjustment", "replacement", "other"]).default("vat"),
+      status: z.enum(["draft", "issued", "adjusted", "replaced", "cancelled"]).default("draft"),
+      vendorId: z.number().int().positive(),
+      purchaseContractId: z.number().int().positive().nullable().optional(),
+      issuedAt: z.number().int().positive().transform((value) => new Date(value)),
+      receivedAt: dateFromMs,
+      currencyCode: z.string().trim().length(3).transform((value) => value.toUpperCase()).default("VND"),
+      exchangeRate: z.string().regex(/^\d+(\.\d{1,6})?$/).nullable().optional(),
+      subtotalAmount: z.string().regex(/^\d+(\.\d{1,2})?$/).default("0"),
+      taxAmount: z.string().regex(/^\d+(\.\d{1,2})?$/).default("0"),
+      totalAmount: z.string().regex(/^\d+(\.\d{1,2})?$/),
+      sourceInvoiceId: z.number().int().positive().nullable().optional(),
+      note: nullableText,
+    })).mutation(async ({ input, ctx }) => {
+      const vendor = await getVendorById(input.vendorId);
+      if (!vendor) throw new TRPCError({ code: "NOT_FOUND", message: "Không tìm thấy Nhà cung cấp trên Hóa đơn." });
+      const contract = input.purchaseContractId ? await getPurchaseContractById(input.purchaseContractId) : null;
+      if (input.purchaseContractId && !contract) throw new TRPCError({ code: "NOT_FOUND", message: "Không tìm thấy Hợp đồng được chọn." });
+      if (contract?.status === "cancelled") throw new TRPCError({ code: "BAD_REQUEST", message: "Không thể liên kết Hóa đơn với Hợp đồng đã hủy." });
+      if (contract?.vendorId && contract.vendorId !== input.vendorId) throw new TRPCError({ code: "BAD_REQUEST", message: "Nhà cung cấp Hóa đơn phải khớp với Nhà cung cấp của Hợp đồng được chọn." });
+      if (input.sourceInvoiceId && !(await getPurchaseInvoiceById(input.sourceInvoiceId))) throw new TRPCError({ code: "NOT_FOUND", message: "Không tìm thấy Hóa đơn gốc để điều chỉnh/thay thế." });
+      const invoiceKey = [input.invoiceTemplate, input.invoiceSeries, input.invoiceNumber].filter(Boolean).join(" · ").toUpperCase();
+      if (await getPurchaseInvoiceByKey(invoiceKey)) throw new TRPCError({ code: "BAD_REQUEST", message: "Mẫu số, ký hiệu và số Hóa đơn này đã tồn tại." });
+      const id = await createPurchaseInvoice({ ...input, invoiceKey, purchaseContractId: input.purchaseContractId ?? null, receivedAt: input.receivedAt ?? null, exchangeRate: input.exchangeRate ?? null, sourceInvoiceId: input.sourceInvoiceId ?? null, note: input.note ?? null, createdByUserId: ctx.user!.id, createdByName: ctx.user!.name ?? "Quản trị viên" });
+      await recordActivity({ entityType: "purchaseInvoice", entityId: id, action: "created", actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: `Tạo Hóa đơn mua bán ${invoiceKey}${input.purchaseContractId ? ` thuộc Hợp đồng ${contract?.referenceCode}` : " không gán Hợp đồng"}` });
+      return { id, invoiceKey };
+    }),
+    update: adminProcedure.input(z.object({
+      id: z.number().int().positive(),
+      invoiceNumber: z.string().trim().min(1).max(64).optional(),
+      invoiceSeries: z.string().trim().max(64).nullable().optional(),
+      invoiceTemplate: z.string().trim().max(64).nullable().optional(),
+      invoiceType: z.enum(["vat", "electronic", "retail", "adjustment", "replacement", "other"]).optional(),
+      status: z.enum(["draft", "issued", "adjusted", "replaced", "cancelled"]).optional(),
+      vendorId: z.number().int().positive().optional(),
+      purchaseContractId: z.number().int().positive().nullable().optional(),
+      issuedAt: z.number().int().positive().transform((value) => new Date(value)).optional(),
+      receivedAt: dateFromMs.optional(),
+      currencyCode: z.string().trim().length(3).transform((value) => value.toUpperCase()).optional(),
+      exchangeRate: z.string().regex(/^\d+(\.\d{1,6})?$/).nullable().optional(),
+      subtotalAmount: z.string().regex(/^\d+(\.\d{1,2})?$/).optional(),
+      taxAmount: z.string().regex(/^\d+(\.\d{1,2})?$/).optional(),
+      totalAmount: z.string().regex(/^\d+(\.\d{1,2})?$/).optional(),
+      sourceInvoiceId: z.number().int().positive().nullable().optional(),
+      note: nullableText,
+    })).mutation(async ({ input, ctx }) => {
+      const current = await getPurchaseInvoiceById(input.id);
+      if (!current) throw new TRPCError({ code: "NOT_FOUND", message: "Không tìm thấy Hóa đơn mua bán." });
+      const vendorId = input.vendorId ?? current.vendorId;
+      if (input.vendorId && !(await getVendorById(input.vendorId))) throw new TRPCError({ code: "NOT_FOUND", message: "Không tìm thấy Nhà cung cấp trên Hóa đơn." });
+      const contractId = input.purchaseContractId === undefined ? current.purchaseContractId : input.purchaseContractId;
+      const contract = contractId ? await getPurchaseContractById(contractId) : null;
+      if (contractId && !contract) throw new TRPCError({ code: "NOT_FOUND", message: "Không tìm thấy Hợp đồng được chọn." });
+      if (contract?.status === "cancelled") throw new TRPCError({ code: "BAD_REQUEST", message: "Không thể liên kết Hóa đơn với Hợp đồng đã hủy." });
+      if (contract?.vendorId && contract.vendorId !== vendorId) throw new TRPCError({ code: "BAD_REQUEST", message: "Nhà cung cấp Hóa đơn phải khớp với Nhà cung cấp của Hợp đồng được chọn." });
+      const invoiceNumber = input.invoiceNumber ?? current.invoiceNumber;
+      const invoiceSeries = input.invoiceSeries === undefined ? current.invoiceSeries : input.invoiceSeries;
+      const invoiceTemplate = input.invoiceTemplate === undefined ? current.invoiceTemplate : input.invoiceTemplate;
+      const invoiceKey = [invoiceTemplate, invoiceSeries, invoiceNumber].filter(Boolean).join(" · ").toUpperCase();
+      const duplicate = await getPurchaseInvoiceByKey(invoiceKey);
+      if (duplicate && duplicate.id !== current.id) throw new TRPCError({ code: "BAD_REQUEST", message: "Mẫu số, ký hiệu và số Hóa đơn này đã tồn tại." });
+      const { id, purchaseContractId: _purchaseContractId, ...changes } = input;
+      await updatePurchaseInvoice(id, { ...changes, invoiceKey, vendorId, purchaseContractId: contractId ?? null });
+      await recordActivity({ entityType: "purchaseInvoice", entityId: id, action: "updated", actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: `Cập nhật Hóa đơn mua bán ${invoiceKey}` });
+      return { success: true };
+    }),
+    createLine: adminProcedure.input(z.object({
+      purchaseInvoiceId: z.number().int().positive(),
+      lineNumber: z.number().int().positive(),
+      itemType: z.enum(["asset", "supply", "service", "other"]),
+      itemCode: z.string().trim().max(64).nullable().optional(),
+      itemName: z.string().trim().min(1).max(255),
+      description: nullableText,
+      quantity: z.string().regex(/^\d+(\.\d{1,2})?$/),
+      unit: z.string().trim().max(32).nullable().optional(),
+      unitPrice: z.string().regex(/^\d+(\.\d{1,2})?$/),
+      discountAmount: z.string().regex(/^\d+(\.\d{1,2})?$/).default("0"),
+      taxRate: z.string().regex(/^\d+(\.\d{1,2})?$/).default("0"),
+      taxAmount: z.string().regex(/^\d+(\.\d{1,2})?$/).default("0"),
+      lineTotal: z.string().regex(/^\d+(\.\d{1,2})?$/),
+      note: nullableText,
+    })).mutation(async ({ input, ctx }) => {
+      const invoice = await getPurchaseInvoiceById(input.purchaseInvoiceId);
+      if (!invoice) throw new TRPCError({ code: "NOT_FOUND", message: "Không tìm thấy Hóa đơn mua bán." });
+      if (invoice.status === "cancelled") throw new TRPCError({ code: "BAD_REQUEST", message: "Hóa đơn đã hủy không thể thêm dòng." });
+      const id = await createPurchaseInvoiceLine({ ...input, itemCode: input.itemCode ?? null, description: input.description ?? null, unit: input.unit ?? null, note: input.note ?? null });
+      await recordActivity({ entityType: "purchaseInvoiceLine", entityId: id, action: "created", actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: `Thêm dòng ${input.lineNumber}: ${input.itemName} vào Hóa đơn ${invoice.invoiceKey}` });
+      return { id };
+    }),
+    receiveSupply: adminProcedure.input(z.object({
+      purchaseInvoiceLineId: z.number().int().positive(),
+      supplyId: z.number().int().positive(),
+      receivedQuantity: z.string().regex(/^\d+(\.\d{1,2})?$/).refine((value) => Number(value) > 0, "Số lượng nhập phải lớn hơn 0."),
+      unitCost: z.string().regex(/^\d+(\.\d{1,2})?$/).nullable().optional(),
+      taxRate: z.string().regex(/^\d+(\.\d{1,2})?$/).default("0"),
+      taxAmount: z.string().regex(/^\d+(\.\d{1,2})?$/).default("0"),
+      totalAmount: z.string().regex(/^\d+(\.\d{1,2})?$/),
+      receivedAt: dateFromMs,
+      note: nullableText,
+    })).mutation(async ({ input, ctx }) => runInventoryTransaction(async (transaction) => {
+      const line = await getPurchaseInvoiceLineById(input.purchaseInvoiceLineId, transaction);
+      if (!line) throw new TRPCError({ code: "NOT_FOUND", message: "Không tìm thấy dòng Hóa đơn." });
+      if (line.itemType !== "supply") throw new TRPCError({ code: "BAD_REQUEST", message: "Chỉ dòng loại Phụ kiện mới được nhập kho." });
+      const invoice = await getPurchaseInvoiceById(line.purchaseInvoiceId, transaction);
+      if (!invoice) throw new TRPCError({ code: "NOT_FOUND", message: "Không tìm thấy Hóa đơn mua bán." });
+      if (invoice.status === "cancelled") throw new TRPCError({ code: "BAD_REQUEST", message: "Không thể nhập kho từ Hóa đơn đã hủy." });
+      const supply = await getInventorySupplyById(input.supplyId, transaction);
+      if (!supply) throw new TRPCError({ code: "NOT_FOUND", message: "Không tìm thấy Phụ kiện cần nhập kho." });
+      const receipts = await listPurchaseInvoiceSupplyReceipts(line.id, transaction);
+      const receivedBefore = receipts.reduce((total: number, receipt: { status: string; receivedQuantity: string }) => receipt.status === "received" ? total + Number(receipt.receivedQuantity) : total, 0);
+      const receivedQuantity = Number(input.receivedQuantity);
+      if (receivedBefore + receivedQuantity > Number(line.quantity)) throw new TRPCError({ code: "BAD_REQUEST", message: `Số lượng nhập vượt số lượng trên dòng Hóa đơn (${line.quantity} ${line.unit || ""}).` });
+      const quantityBefore = Number(supply.stockQuantity);
+      const quantityAfter = quantityBefore + receivedQuantity;
+      const receivedAt = input.receivedAt ?? new Date();
+      const movementId = await createInventoryMovement({ supplyId: supply.id, movementType: "receipt", quantity: input.receivedQuantity, quantityBefore: String(quantityBefore), quantityAfter: String(quantityAfter), handoverId: null, issueSlipId: null, issueSlipItemId: null, recipientUserId: null, recipientName: null, recipientDepartmentId: null, note: `Nhập từ Hóa đơn ${invoice.invoiceKey} · Dòng ${line.lineNumber}: ${line.itemName}`, createdByUserId: ctx.user!.id, createdByName: ctx.user!.name ?? "Quản trị viên" }, transaction);
+      const receiptId = await createPurchaseInvoiceSupplyReceipt({ purchaseInvoiceLineId: line.id, supplyId: supply.id, receivedQuantity: input.receivedQuantity, unitCost: input.unitCost ?? line.unitPrice, taxRate: input.taxRate, taxAmount: input.taxAmount, totalAmount: input.totalAmount, inventoryMovementId: movementId, status: "received", receivedAt, note: input.note ?? null, createdByUserId: ctx.user!.id, createdByName: ctx.user!.name ?? "Quản trị viên" }, transaction);
+      await updateInventorySupply(supply.id, { stockQuantity: String(quantityAfter) }, transaction);
+      await recordActivity({ entityType: "purchaseInvoiceSupplyReceipt", entityId: receiptId, action: "received", actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: `Nhập ${input.receivedQuantity} ${supply.unit} ${supply.name} từ Hóa đơn ${invoice.invoiceKey}` }, transaction);
+      return { id: receiptId, inventoryMovementId: movementId, quantityAfter };
+    })),
+    updateLine: adminProcedure.input(z.object({
+      id: z.number().int().positive(),
+      lineNumber: z.number().int().positive().optional(),
+      itemType: z.enum(["asset", "supply", "service", "other"]).optional(),
+      itemCode: z.string().trim().max(64).nullable().optional(),
+      itemName: z.string().trim().min(1).max(255).optional(),
+      description: nullableText,
+      quantity: z.string().regex(/^\d+(\.\d{1,2})?$/).optional(),
+      unit: z.string().trim().max(32).nullable().optional(),
+      unitPrice: z.string().regex(/^\d+(\.\d{1,2})?$/).optional(),
+      discountAmount: z.string().regex(/^\d+(\.\d{1,2})?$/).optional(),
+      taxRate: z.string().regex(/^\d+(\.\d{1,2})?$/).optional(),
+      taxAmount: z.string().regex(/^\d+(\.\d{1,2})?$/).optional(),
+      lineTotal: z.string().regex(/^\d+(\.\d{1,2})?$/).optional(),
+      note: nullableText,
+    })).mutation(async ({ input, ctx }) => {
+      const line = await getPurchaseInvoiceLineById(input.id);
+      if (!line) throw new TRPCError({ code: "NOT_FOUND", message: "Không tìm thấy dòng Hóa đơn." });
+      const { id, ...changes } = input;
+      await updatePurchaseInvoiceLine(id, changes);
+      await recordActivity({ entityType: "purchaseInvoiceLine", entityId: id, action: "updated", actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: `Cập nhật dòng ${changes.lineNumber ?? line.lineNumber} của Hóa đơn` });
+      return { success: true };
+    }),
+    removeLine: adminProcedure.input(z.object({ id: z.number().int().positive() })).mutation(async ({ input, ctx }) => {
+      const line = await getPurchaseInvoiceLineById(input.id);
+      if (!line) throw new TRPCError({ code: "NOT_FOUND", message: "Không tìm thấy dòng Hóa đơn." });
+      const linkedAssets = (await listAssetsByPurchaseInvoiceId(line.purchaseInvoiceId)).filter((asset) => asset.purchaseInvoiceLineId === line.id);
+      if (linkedAssets.length) throw new TRPCError({ code: "CONFLICT", message: `Không thể xóa dòng đang liên kết ${linkedAssets.length} Tài sản.` });
+      await deletePurchaseInvoiceLine(line.id);
+      await recordActivity({ entityType: "purchaseInvoiceLine", entityId: line.id, action: "removed", actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: `Xóa dòng ${line.lineNumber} của Hóa đơn` });
+      return { success: true };
+    }),
+    attachAsset: adminProcedure.input(z.object({ purchaseInvoiceId: z.number().int().positive(), purchaseInvoiceLineId: z.number().int().positive().nullable().optional(), assetId: z.number().int().positive() })).mutation(async ({ input, ctx }) => runPurchaseInvoiceTransaction(async (transaction) => {
+      const [invoice, asset] = await Promise.all([getPurchaseInvoiceById(input.purchaseInvoiceId, transaction), getAssetById(input.assetId)]);
+      if (!invoice) throw new TRPCError({ code: "NOT_FOUND", message: "Không tìm thấy Hóa đơn mua bán." });
+      if (!asset) throw new TRPCError({ code: "NOT_FOUND", message: "Không tìm thấy Tài sản." });
+      if (invoice.status === "cancelled") throw new TRPCError({ code: "BAD_REQUEST", message: "Không thể gán Tài sản vào Hóa đơn đã hủy." });
+      let line = null;
+      if (input.purchaseInvoiceLineId) {
+        line = await getPurchaseInvoiceLineById(input.purchaseInvoiceLineId, transaction);
+        if (!line || line.purchaseInvoiceId !== invoice.id) throw new TRPCError({ code: "BAD_REQUEST", message: "Dòng Hóa đơn không thuộc Hóa đơn được chọn." });
+        if (line.itemType !== "asset") throw new TRPCError({ code: "BAD_REQUEST", message: "Chỉ dòng loại Tài sản mới được dùng để gán Tài sản." });
+      }
+      const vendor = await getVendorById(invoice.vendorId);
+      await updateAssetPurchaseInvoiceReference(asset.id, { purchaseInvoiceId: invoice.id, purchaseInvoiceLineId: line?.id ?? null, vendorId: invoice.vendorId, vendor: vendor?.name ?? asset.vendor ?? null }, transaction);
+      await recordActivity({ entityType: "asset", entityId: asset.id, action: "purchase_invoice_attached", actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: `Liên kết Tài sản ${asset.assetCode} với Hóa đơn ${invoice.invoiceKey}` }, transaction);
+      return { success: true };
+    })),
+    detachAsset: adminProcedure.input(z.object({ assetId: z.number().int().positive() })).mutation(async ({ input, ctx }) => {
+      const asset = await getAssetById(input.assetId);
+      if (!asset) throw new TRPCError({ code: "NOT_FOUND", message: "Không tìm thấy Tài sản." });
+      await updateAssetPurchaseInvoiceReference(asset.id, { purchaseInvoiceId: null, purchaseInvoiceLineId: null });
+      await recordActivity({ entityType: "asset", entityId: asset.id, action: "purchase_invoice_detached", actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: `Gỡ liên kết Hóa đơn khỏi Tài sản ${asset.assetCode}` });
+      return { success: true };
+    }),
+    uploadDocument: adminProcedure.input(z.object({
+      purchaseInvoiceId: z.number().int().positive(),
+      documentType: z.enum(["invoice_pdf", "invoice_xml", "scan", "delivery_note", "adjustment", "other"]),
+      fileName: z.string().trim().min(1).max(255),
+      contentType: z.enum(["application/pdf", "application/xml", "image/png", "image/jpeg"]),
+      dataUrl: z.string().max(7_500_000).regex(/^data:(application\/pdf|application\/xml|image\/(png|jpeg));base64,/),
+    })).mutation(async ({ input, ctx }) => {
+      const invoice = await getPurchaseInvoiceById(input.purchaseInvoiceId);
+      if (!invoice) throw new TRPCError({ code: "NOT_FOUND", message: "Không tìm thấy Hóa đơn mua bán." });
+      const buffer = Buffer.from(input.dataUrl.split(",", 2)[1], "base64");
+      if (!buffer.length || buffer.length > 5 * 1024 * 1024) throw new TRPCError({ code: "BAD_REQUEST", message: "Tài liệu phải có dung lượng từ 1 byte đến 5 MB." });
+      const extensionByContentType: Record<string, string> = { "application/pdf": "pdf", "application/xml": "xml", "image/png": "png", "image/jpeg": "jpg" };
+      const safeBaseName = input.fileName.replace(/[^a-zA-Z0-9._-]/g, "-").replace(/-+/g, "-").slice(0, 120) || "hoa-don-mua-ban";
+      const storageKey = `purchase-invoices/${invoice.id}/documents/${Date.now()}-${safeBaseName}.${extensionByContentType[input.contentType]}`;
+      const { url } = await storagePut(storageKey, buffer, input.contentType);
+      const id = await createPurchaseInvoiceDocument({ purchaseInvoiceId: invoice.id, documentType: input.documentType, fileName: input.fileName, contentType: input.contentType, fileSize: buffer.length, storageKey, url, uploadedByUserId: ctx.user!.id, uploadedByName: ctx.user!.name ?? "Quản trị viên" });
+      await recordActivity({ entityType: "purchaseInvoiceDocument", entityId: id, action: "uploaded", actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: `Tải chứng từ ${input.fileName} cho Hóa đơn ${invoice.invoiceKey}` });
+      return { id, url, fileName: input.fileName, contentType: input.contentType, fileSize: buffer.length };
+    }),
+    removeDocument: adminProcedure.input(z.object({ id: z.number().int().positive() })).mutation(async ({ input, ctx }) => {
+      const document = await getPurchaseInvoiceDocumentById(input.id);
+      if (!document) throw new TRPCError({ code: "NOT_FOUND", message: "Không tìm thấy chứng từ Hóa đơn." });
+      await deletePurchaseInvoiceDocument(document.id);
+      await recordActivity({ entityType: "purchaseInvoiceDocument", entityId: document.id, action: "removed", actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: `Gỡ chứng từ ${document.fileName}` });
       return { success: true };
     }),
   }),

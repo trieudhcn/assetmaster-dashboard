@@ -25,6 +25,10 @@ import {
   purchaseContractDocuments,
   purchaseContractItems,
   purchaseContracts,
+  purchaseInvoiceDocuments,
+  purchaseInvoiceLines,
+  purchaseInvoiceSupplyReceipts,
+  purchaseInvoices,
   retirementCertificateAssets,
   retirementCertificates,
   supplyImportItems,
@@ -336,6 +340,124 @@ export async function deletePurchaseContractItemsBySupplyId(supplyId: number, ex
   const db = executor ?? await getDb();
   if (!db) throw new Error("Database unavailable");
   await db.delete(purchaseContractItems).where(eq(purchaseContractItems.supplyId, supplyId));
+}
+
+export async function listPurchaseInvoices() {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(purchaseInvoices).orderBy(desc(purchaseInvoices.issuedAt), desc(purchaseInvoices.updatedAt));
+}
+
+export async function getPurchaseInvoiceById(id: number, executor?: any) {
+  const db = executor ?? await getDb();
+  if (!db) return undefined;
+  return (await db.select().from(purchaseInvoices).where(eq(purchaseInvoices.id, id)).limit(1))[0];
+}
+
+export async function getPurchaseInvoiceByKey(invoiceKey: string, executor?: any) {
+  const db = executor ?? await getDb();
+  if (!db) return undefined;
+  return (await db.select().from(purchaseInvoices).where(eq(purchaseInvoices.invoiceKey, invoiceKey)).limit(1))[0];
+}
+
+export async function createPurchaseInvoice(data: typeof purchaseInvoices.$inferInsert, executor?: any) {
+  const db = executor ?? await getDb();
+  if (!db) throw new Error("Database unavailable");
+  const result = await db.insert(purchaseInvoices).values(data);
+  return Number(result[0].insertId);
+}
+
+export async function updatePurchaseInvoice(id: number, data: Partial<typeof purchaseInvoices.$inferInsert>, executor?: any) {
+  const db = executor ?? await getDb();
+  if (!db) throw new Error("Database unavailable");
+  await db.update(purchaseInvoices).set(data).where(eq(purchaseInvoices.id, id));
+}
+
+export async function listPurchaseInvoiceLines(purchaseInvoiceId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(purchaseInvoiceLines).where(eq(purchaseInvoiceLines.purchaseInvoiceId, purchaseInvoiceId)).orderBy(purchaseInvoiceLines.lineNumber);
+}
+
+export async function getPurchaseInvoiceLineById(id: number, executor?: any) {
+  const db = executor ?? await getDb();
+  if (!db) return undefined;
+  return (await db.select().from(purchaseInvoiceLines).where(eq(purchaseInvoiceLines.id, id)).limit(1))[0];
+}
+
+export async function createPurchaseInvoiceLine(data: typeof purchaseInvoiceLines.$inferInsert, executor?: any) {
+  const db = executor ?? await getDb();
+  if (!db) throw new Error("Database unavailable");
+  const result = await db.insert(purchaseInvoiceLines).values(data);
+  return Number(result[0].insertId);
+}
+
+export async function updatePurchaseInvoiceLine(id: number, data: Partial<typeof purchaseInvoiceLines.$inferInsert>, executor?: any) {
+  const db = executor ?? await getDb();
+  if (!db) throw new Error("Database unavailable");
+  await db.update(purchaseInvoiceLines).set(data).where(eq(purchaseInvoiceLines.id, id));
+}
+
+export async function deletePurchaseInvoiceLine(id: number, executor?: any) {
+  const db = executor ?? await getDb();
+  if (!db) throw new Error("Database unavailable");
+  await db.delete(purchaseInvoiceLines).where(eq(purchaseInvoiceLines.id, id));
+}
+
+export async function listPurchaseInvoiceDocuments(purchaseInvoiceId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(purchaseInvoiceDocuments).where(eq(purchaseInvoiceDocuments.purchaseInvoiceId, purchaseInvoiceId)).orderBy(desc(purchaseInvoiceDocuments.createdAt));
+}
+
+export async function getPurchaseInvoiceDocumentById(id: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+  return (await db.select().from(purchaseInvoiceDocuments).where(eq(purchaseInvoiceDocuments.id, id)).limit(1))[0];
+}
+
+export async function createPurchaseInvoiceDocument(data: typeof purchaseInvoiceDocuments.$inferInsert) {
+  const db = await getDb();
+  if (!db) throw new Error("Database unavailable");
+  const result = await db.insert(purchaseInvoiceDocuments).values(data);
+  return Number(result[0].insertId);
+}
+
+export async function deletePurchaseInvoiceDocument(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database unavailable");
+  await db.delete(purchaseInvoiceDocuments).where(eq(purchaseInvoiceDocuments.id, id));
+}
+
+export async function listAssetsByPurchaseInvoiceId(purchaseInvoiceId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(assets).where(eq(assets.purchaseInvoiceId, purchaseInvoiceId)).orderBy(desc(assets.updatedAt));
+}
+
+export async function updateAssetPurchaseInvoiceReference(assetId: number, values: { purchaseInvoiceId: number | null; purchaseInvoiceLineId: number | null; vendorId?: number | null; vendor?: string | null }, executor?: any) {
+  const db = executor ?? await getDb();
+  if (!db) throw new Error("Database unavailable");
+  await db.update(assets).set(values).where(eq(assets.id, assetId));
+}
+
+export async function listPurchaseInvoiceSupplyReceipts(purchaseInvoiceLineId: number, executor?: any) {
+  const db = executor ?? await getDb();
+  if (!db) return [];
+  return db.select().from(purchaseInvoiceSupplyReceipts).where(eq(purchaseInvoiceSupplyReceipts.purchaseInvoiceLineId, purchaseInvoiceLineId)).orderBy(desc(purchaseInvoiceSupplyReceipts.createdAt));
+}
+
+export async function createPurchaseInvoiceSupplyReceipt(data: typeof purchaseInvoiceSupplyReceipts.$inferInsert, executor?: any) {
+  const db = executor ?? await getDb();
+  if (!db) throw new Error("Database unavailable");
+  const result = await db.insert(purchaseInvoiceSupplyReceipts).values(data);
+  return Number(result[0].insertId);
+}
+
+export async function updatePurchaseInvoiceSupplyReceipt(id: number, data: Partial<typeof purchaseInvoiceSupplyReceipts.$inferInsert>, executor?: any) {
+  const db = executor ?? await getDb();
+  if (!db) throw new Error("Database unavailable");
+  await db.update(purchaseInvoiceSupplyReceipts).set(data).where(eq(purchaseInvoiceSupplyReceipts.id, id));
 }
 
 export async function listBrands() {
@@ -1464,6 +1586,12 @@ export async function runRetirementCertificateTransaction<T>(callback: (transact
 }
 
 export async function runPurchaseContractTransaction<T>(callback: (transaction: any) => Promise<T>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database unavailable");
+  return db.transaction(async (transaction) => callback(transaction));
+}
+
+export async function runPurchaseInvoiceTransaction<T>(callback: (transaction: any) => Promise<T>) {
   const db = await getDb();
   if (!db) throw new Error("Database unavailable");
   return db.transaction(async (transaction) => callback(transaction));

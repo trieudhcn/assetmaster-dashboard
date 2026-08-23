@@ -85,4 +85,36 @@ describe("purchase contract management", () => {
     expect(home).toContain('url.searchParams.delete("create")');
     expect(home).toContain('url.searchParams.delete("contractId")');
   });
+
+  it("models invoices as the direct purchase source while keeping contracts optional", () => {
+    expect(schema).toContain("export const purchaseInvoices");
+    expect(schema).toContain("export const purchaseInvoiceLines");
+    expect(schema).toContain("export const purchaseInvoiceDocuments");
+    expect(schema).toContain("export const purchaseInvoiceSupplyReceipts");
+    expect(schema).toContain('purchaseInvoiceId: int("purchaseInvoiceId")');
+    expect(schema).toContain('purchaseInvoiceLineId: int("purchaseInvoiceLineId")');
+    expect(schema).toContain('purchaseContractId: int("purchaseContractId").references(() => purchaseContracts.id, { onDelete: "set null"');
+    expect(schema).toContain('uniqueIndex("purchase_invoice_lines_invoice_number_unique")');
+    expect(database).toContain("createPurchaseInvoice");
+    expect(database).toContain("createPurchaseInvoiceLine");
+    expect(database).toContain("createPurchaseInvoiceDocument");
+    expect(database).toContain("updateAssetPurchaseInvoiceReference");
+    expect(database).toContain("createPurchaseInvoiceSupplyReceipt");
+    expect(database).toContain("runPurchaseInvoiceTransaction");
+  });
+
+  it("exposes controlled invoice APIs, direct asset links and S3 invoice documents", () => {
+    expect(router).toContain("purchaseInvoices: router({");
+    expect(router).toContain('purchaseContractId: z.number().int().positive().nullable().optional()');
+    expect(router).toContain(' : " không gán Hợp đồng"');
+    expect(router).toContain("createLine: adminProcedure");
+    expect(router).toContain("attachAsset: adminProcedure");
+    expect(router).toContain("detachAsset: adminProcedure");
+    expect(router).toContain("receiveSupply: adminProcedure");
+    expect(router).toContain("Nhập từ Hóa đơn ${invoice.invoiceKey}");
+    expect(router).toContain("Số lượng nhập vượt số lượng trên dòng Hóa đơn");
+    expect(router).toContain("Chỉ dòng loại Tài sản mới được dùng để gán Tài sản.");
+    expect(router).toContain("purchase-invoices/${invoice.id}/documents/");
+    expect(router).toContain('documentType: z.enum(["invoice_pdf", "invoice_xml", "scan", "delivery_note", "adjustment", "other"])');
+  });
 });

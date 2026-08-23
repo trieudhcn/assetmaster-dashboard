@@ -178,6 +178,74 @@ export const purchaseContractDocuments = mysqlTable("purchaseContractDocuments",
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 }, (table) => [index("purchase_contract_documents_contract_idx").on(table.purchaseContractId)]);
 
+export const purchaseInvoices = mysqlTable("purchaseInvoices", {
+  id: int("id").autoincrement().primaryKey(),
+  invoiceKey: varchar("invoiceKey", { length: 160 }).notNull().unique(),
+  invoiceNumber: varchar("invoiceNumber", { length: 64 }).notNull(),
+  invoiceSeries: varchar("invoiceSeries", { length: 64 }),
+  invoiceTemplate: varchar("invoiceTemplate", { length: 64 }),
+  invoiceType: mysqlEnum("invoiceType", ["vat", "electronic", "retail", "adjustment", "replacement", "other"]).default("vat").notNull(),
+  status: mysqlEnum("status", ["draft", "issued", "adjusted", "replaced", "cancelled"]).default("draft").notNull(),
+  vendorId: int("vendorId").notNull().references(() => vendors.id, { onDelete: "restrict", onUpdate: "cascade" }),
+  purchaseContractId: int("purchaseContractId").references(() => purchaseContracts.id, { onDelete: "set null", onUpdate: "cascade" }),
+  issuedAt: timestamp("issuedAt").notNull(),
+  receivedAt: timestamp("receivedAt"),
+  currencyCode: varchar("currencyCode", { length: 3 }).default("VND").notNull(),
+  exchangeRate: decimal("exchangeRate", { precision: 18, scale: 6 }),
+  subtotalAmount: decimal("subtotalAmount", { precision: 15, scale: 2 }).default("0").notNull(),
+  taxAmount: decimal("taxAmount", { precision: 15, scale: 2 }).default("0").notNull(),
+  totalAmount: decimal("totalAmount", { precision: 15, scale: 2 }).notNull(),
+  sourceInvoiceId: int("sourceInvoiceId"),
+  note: text("note"),
+  createdByUserId: int("createdByUserId"),
+  createdByName: varchar("createdByName", { length: 160 }),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+}, (table) => [
+  index("purchase_invoices_vendor_issued_idx").on(table.vendorId, table.issuedAt),
+  index("purchase_invoices_contract_idx").on(table.purchaseContractId),
+  index("purchase_invoices_status_issued_idx").on(table.status, table.issuedAt),
+  index("purchase_invoices_source_idx").on(table.sourceInvoiceId),
+]);
+
+export const purchaseInvoiceLines = mysqlTable("purchaseInvoiceLines", {
+  id: int("id").autoincrement().primaryKey(),
+  purchaseInvoiceId: int("purchaseInvoiceId").notNull().references(() => purchaseInvoices.id, { onDelete: "cascade", onUpdate: "cascade" }),
+  lineNumber: int("lineNumber").notNull(),
+  itemType: mysqlEnum("itemType", ["asset", "supply", "service", "other"]).notNull(),
+  itemCode: varchar("itemCode", { length: 64 }),
+  itemName: varchar("itemName", { length: 255 }).notNull(),
+  description: text("description"),
+  quantity: decimal("quantity", { precision: 15, scale: 2 }).notNull(),
+  unit: varchar("unit", { length: 32 }),
+  unitPrice: decimal("unitPrice", { precision: 15, scale: 2 }).notNull(),
+  discountAmount: decimal("discountAmount", { precision: 15, scale: 2 }).default("0").notNull(),
+  taxRate: decimal("taxRate", { precision: 5, scale: 2 }).default("0").notNull(),
+  taxAmount: decimal("taxAmount", { precision: 15, scale: 2 }).default("0").notNull(),
+  lineTotal: decimal("lineTotal", { precision: 15, scale: 2 }).notNull(),
+  note: text("note"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+}, (table) => [
+  uniqueIndex("purchase_invoice_lines_invoice_number_unique").on(table.purchaseInvoiceId, table.lineNumber),
+  index("purchase_invoice_lines_invoice_idx").on(table.purchaseInvoiceId),
+  index("purchase_invoice_lines_type_idx").on(table.itemType),
+]);
+
+export const purchaseInvoiceDocuments = mysqlTable("purchaseInvoiceDocuments", {
+  id: int("id").autoincrement().primaryKey(),
+  purchaseInvoiceId: int("purchaseInvoiceId").notNull().references(() => purchaseInvoices.id, { onDelete: "cascade", onUpdate: "cascade" }),
+  documentType: mysqlEnum("documentType", ["invoice_pdf", "invoice_xml", "scan", "delivery_note", "adjustment", "other"]).default("invoice_pdf").notNull(),
+  fileName: varchar("fileName", { length: 255 }).notNull(),
+  contentType: varchar("contentType", { length: 128 }).notNull(),
+  fileSize: int("fileSize").notNull(),
+  storageKey: text("storageKey").notNull(),
+  url: text("url").notNull(),
+  uploadedByUserId: int("uploadedByUserId"),
+  uploadedByName: varchar("uploadedByName", { length: 160 }),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+}, (table) => [index("purchase_invoice_documents_invoice_type_idx").on(table.purchaseInvoiceId, table.documentType)]);
+
 export const brands = mysqlTable("brands", {
   id: int("id").autoincrement().primaryKey(),
   name: varchar("name", { length: 160 }).notNull().unique(),
@@ -226,6 +294,8 @@ export const assets = mysqlTable("assets", {
   purchaseDate: timestamp("purchaseDate"),
   purchaseValue: decimal("purchaseValue", { precision: 15, scale: 2 }),
   purchaseContractId: int("purchaseContractId").references(() => purchaseContracts.id, { onDelete: "restrict", onUpdate: "cascade" }),
+  purchaseInvoiceId: int("purchaseInvoiceId").references(() => purchaseInvoices.id, { onDelete: "restrict", onUpdate: "cascade" }),
+  purchaseInvoiceLineId: int("purchaseInvoiceLineId").references(() => purchaseInvoiceLines.id, { onDelete: "restrict", onUpdate: "cascade" }),
   vendor: varchar("vendor", { length: 255 }),
   vendorId: int("vendorId").references(() => vendors.id, { onDelete: "set null", onUpdate: "cascade" }),
   brandId: int("brandId").references(() => brands.id, { onDelete: "set null", onUpdate: "cascade" }),
@@ -261,6 +331,8 @@ export const assets = mysqlTable("assets", {
   index("assets_department_idx").on(table.departmentId),
   index("assets_vendor_idx").on(table.vendorId),
   index("assets_purchase_contract_idx").on(table.purchaseContractId),
+  index("assets_purchase_invoice_idx").on(table.purchaseInvoiceId),
+  index("assets_purchase_invoice_line_idx").on(table.purchaseInvoiceLineId),
   index("assets_brand_idx").on(table.brandId),
   index("assets_retirement_certificate_idx").on(table.retirementCertificateId),
 ]);
@@ -372,6 +444,29 @@ export const inventoryMovements = mysqlTable("inventoryMovements", {
   createdByName: varchar("createdByName", { length: 160 }),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 }, (table) => [index("inventory_movements_supply_idx").on(table.supplyId), index("inventory_movements_created_idx").on(table.createdAt), index("inventory_movements_slip_idx").on(table.issueSlipId), index("inventory_movements_handover_idx").on(table.handoverId)]);
+
+export const purchaseInvoiceSupplyReceipts = mysqlTable("purchaseInvoiceSupplyReceipts", {
+  id: int("id").autoincrement().primaryKey(),
+  purchaseInvoiceLineId: int("purchaseInvoiceLineId").notNull().references(() => purchaseInvoiceLines.id, { onDelete: "restrict", onUpdate: "cascade" }),
+  supplyId: int("supplyId").notNull().references(() => inventorySupplies.id, { onDelete: "restrict", onUpdate: "cascade" }),
+  receivedQuantity: decimal("receivedQuantity", { precision: 15, scale: 2 }).notNull(),
+  unitCost: decimal("unitCost", { precision: 15, scale: 2 }),
+  taxRate: decimal("taxRate", { precision: 5, scale: 2 }).default("0").notNull(),
+  taxAmount: decimal("taxAmount", { precision: 15, scale: 2 }).default("0").notNull(),
+  totalAmount: decimal("totalAmount", { precision: 15, scale: 2 }).notNull(),
+  inventoryMovementId: int("inventoryMovementId"),
+  status: mysqlEnum("status", ["draft", "received", "reversed"]).default("draft").notNull(),
+  receivedAt: timestamp("receivedAt"),
+  note: text("note"),
+  createdByUserId: int("createdByUserId"),
+  createdByName: varchar("createdByName", { length: 160 }),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+}, (table) => [
+  index("purchase_invoice_supply_receipts_line_idx").on(table.purchaseInvoiceLineId),
+  index("purchase_invoice_supply_receipts_supply_received_idx").on(table.supplyId, table.receivedAt),
+  uniqueIndex("purchase_invoice_supply_receipts_movement_unique").on(table.inventoryMovementId),
+]);
 
 export const supplyImportSessions = mysqlTable("supplyImportSessions", {
   id: int("id").autoincrement().primaryKey(),

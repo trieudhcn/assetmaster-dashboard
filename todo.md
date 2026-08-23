@@ -244,6 +244,19 @@
 - [x] Đưa bộ chọn Hợp đồng vào bên cạnh Số serial/IMEI trong form Tài sản, theo kích thước dropdown chuẩn.
 - [x] Bổ sung hồi quy, xác minh desktop/mobile, TypeScript và production build trước khi phát hành.
 
+## Current Session — Thiết kế Hợp đồng và Hóa đơn mua bán
+
+- [x] Rà soát mô hình Hợp đồng, Tài sản, Phụ kiện và chứng từ hiện tại để xác định dữ liệu cần bảo toàn.
+- [x] Thiết kế schema Hợp đồng–Hóa đơn–dòng chứng từ–Tài sản/Phụ kiện, chỉ rõ khóa, chỉ mục và quy tắc nghiệp vụ.
+- [x] Lập kế hoạch migration/refactor theo giai đoạn, gồm backfill, tương thích tạm thời, chuyển UI/API và tiêu chí nghiệm thu.
+
+## Current Session — Migration và backend Hóa đơn mua bán
+
+- [x] Thêm schema Hóa đơn, dòng Hóa đơn, chứng từ Hóa đơn, receipt Phụ kiện và liên kết Hóa đơn vào Tài sản; Hợp đồng là tùy chọn.
+- [x] Tạo migration cộng dồn, kiểm tra SQL và áp dụng schema an toàn.
+- [x] Bổ sung helper database và API backend cho CRUD Hóa đơn, dòng, chứng từ S3 và liên kết Tài sản.
+- [x] Bổ sung kiểm thử migration/API/tương thích, TypeScript và production build trước khi phát hành.
+
 - [x] Mở rộng mô hình dữ liệu tài sản với thông tin chi tiết và trạng thái thao tác.
 - [x] Thêm modal tạo tài sản mới với validation cơ bản.
 - [x] Thêm modal chỉnh sửa tài sản và cập nhật dữ liệu trong bảng.
