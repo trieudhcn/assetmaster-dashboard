@@ -345,6 +345,12 @@
 - [x] Bổ sung hồi quy, xác minh giao diện, TypeScript và production build trước khi phát hành.
 - [x] Chuẩn bị khuyến nghị bổ sung Mã nhân viên và Chức vụ để sẵn sàng đồng bộ Active Directory.
 
+## Current Session — Xem trước đồng bộ Active Directory
+
+- [x] Rà soát dữ liệu Nhân sự và vị trí điều hướng phù hợp cho xem trước Active Directory.
+- [x] Tạo màn hình tải dữ liệu CSV/JSON, đối chiếu Mã nhân viên/UPN và xem trước trạng thái đồng bộ.
+- [x] Bảo đảm màn hình xem trước không ghi dữ liệu; bổ sung hồi quy, xác minh giao diện, TypeScript và production build.
+
 - [x] Mở rộng mô hình dữ liệu tài sản với thông tin chi tiết và trạng thái thao tác.
 - [x] Thêm modal tạo tài sản mới với validation cơ bản.
 - [x] Thêm modal chỉnh sửa tài sản và cập nhật dữ liệu trong bảng.

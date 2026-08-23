@@ -14,6 +14,8 @@ describe("purchase contract management", () => {
   const invoiceOperations = readFileSync(resolve(import.meta.dirname, "../client/src/components/InvoiceLineOperationsPanel.tsx"), "utf8");
   const globalStyles = readFileSync(resolve(import.meta.dirname, "../client/src/index.css"), "utf8");
   const vendorsView = readFileSync(resolve(import.meta.dirname, "../client/src/pages/VendorBrandManagementPage.tsx"), "utf8");
+  const employeeView = readFileSync(resolve(import.meta.dirname, "../client/src/pages/EmployeeManagementView.tsx"), "utf8");
+  const activeDirectoryPreview = readFileSync(resolve(import.meta.dirname, "../client/src/components/ActiveDirectoryPreviewDialog.tsx"), "utf8");
 
   it("models one contract with reusable documents and links to assets or supplies", () => {
     expect(schema).toContain("export const purchaseContracts");
@@ -197,6 +199,16 @@ describe("purchase contract management", () => {
     expect(contractsView).toContain("remainingDays >= 0 && remainingDays <= 30");
     expect(contractsView).toContain("Sắp hết hiệu lực");
     expect(contractsView).toContain("Hết hạn hôm nay");
+  });
+
+  it("offers a read-only Active Directory preview before any employee sync is applied", () => {
+    expect(employeeView).toContain("ActiveDirectoryPreviewDialog");
+    expect(employeeView).toContain("Xem trước Active Directory");
+    expect(activeDirectoryPreview).toContain("Xem trước đồng bộ Active Directory");
+    expect(activeDirectoryPreview).toContain("CSV/JSON");
+    expect(activeDirectoryPreview).toContain("Màn hình này chỉ đọc và không ghi bất kỳ dữ liệu Nhân sự nào");
+    expect(activeDirectoryPreview).toContain("Khớp email");
+    expect(activeDirectoryPreview).toContain("Cần đối chiếu");
   });
 
   it("warns before discarding changed contract or invoice forms and defaults invoice lines to supplies", () => {
