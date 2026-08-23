@@ -29,11 +29,12 @@ function money(value: string | number | null | undefined) { return value === nul
 function dateLabel(value: Date | string | number | null | undefined) { return value ? new Intl.DateTimeFormat("vi-VN", { dateStyle: "medium" }).format(new Date(value)) : "—"; }
 function readFileAsDataUrl(file: File) { return new Promise<string>((resolve, reject) => { const reader = new FileReader(); reader.onload = () => typeof reader.result === "string" ? resolve(reader.result) : reject(new Error("Không thể đọc tệp.")); reader.onerror = () => reject(new Error("Không thể đọc tệp.")); reader.readAsDataURL(file); }); }
 
-export function PurchaseContractManagementView() {
+export function PurchaseContractManagementView({ sharedQuery = "" }: { sharedQuery?: string }) {
   const utils = trpc.useUtils();
   const contractsQuery = trpc.purchaseContracts.list.useQuery();
   const vendorsQuery = trpc.vendors.listAll.useQuery();
-  const [query, setQuery] = useState("");
+  const [query, setQuery] = useState(sharedQuery);
+  useEffect(() => { setQuery(sharedQuery); }, [sharedQuery]);
   const [statusFilter, setStatusFilter] = useState<"all" | ContractStatus>("all");
   const [vendorFilter, setVendorFilter] = useState("all");
   const [selectedId, setSelectedId] = useState<number | null>(null);

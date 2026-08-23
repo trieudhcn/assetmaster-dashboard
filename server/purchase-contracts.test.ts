@@ -46,6 +46,11 @@ describe("purchase contract management", () => {
     expect(procurementView).toContain("PurchaseContractManagementView");
     expect(procurementView).toContain("PurchaseInvoiceManagementView");
     expect(procurementView).toContain('selectSection("invoices")');
+    expect(procurementView).toContain("Tìm kiếm chung Hợp đồng và Hóa đơn");
+    expect(procurementView).toContain("purchaseContracts.list.useQuery()");
+    expect(procurementView).toContain("purchaseInvoices.list.useQuery()");
+    expect(procurementView).toContain("counts.contracts");
+    expect(procurementView).toContain("counts.invoices");
     expect(home).toContain("purchaseContractId: formData.purchaseContractId ?? null");
     expect(home).toContain("data-asset-purchase-invoice");
     expect(supplies).toContain("purchaseContractId: form.purchaseContractId ? Number(form.purchaseContractId) : null");

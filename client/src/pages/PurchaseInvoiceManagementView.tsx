@@ -29,7 +29,7 @@ function readFileAsDataUrl(file: File) { return new Promise<string>((resolve, re
 function normalizedContentType(file: File) { return file.type === "text/xml" || (!file.type && file.name.toLowerCase().endsWith(".xml")) ? "application/xml" : file.type; }
 function newLine(): InvoiceLineForm { return { id: crypto.randomUUID(), itemType: "asset", itemCode: "", itemName: "", quantity: "1", unit: "cái", unitPrice: "", taxRate: "0", note: "" }; }
 
-export function PurchaseInvoiceManagementView() {
+export function PurchaseInvoiceManagementView({ sharedQuery = "" }: { sharedQuery?: string }) {
   const utils = trpc.useUtils();
   const invoicesQuery = trpc.purchaseInvoices.list.useQuery();
   const vendorsQuery = trpc.vendors.listAll.useQuery();
@@ -37,7 +37,8 @@ export function PurchaseInvoiceManagementView() {
   const assetsQuery = trpc.assets.list.useQuery();
   const suppliesQuery = trpc.supplies.list.useQuery();
   const reconciliationQuery = trpc.purchaseInvoices.reconciliation.useQuery(undefined, { enabled: false });
-  const [query, setQuery] = useState("");
+  const [query, setQuery] = useState(sharedQuery);
+  useEffect(() => { setQuery(sharedQuery); }, [sharedQuery]);
   const [vendorFilter, setVendorFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState<"all" | InvoiceStatus>("all");
   const [selectedId, setSelectedId] = useState<number | null>(null);

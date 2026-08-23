@@ -305,6 +305,13 @@
 - [x] Gộp hai menu thành Hợp đồng & Hóa đơn, cung cấp điểm vào rõ ràng cho từng nghiệp vụ; đã xác minh cả contracts và invoices.
 - [x] Bổ sung hồi quy, xác minh giao diện desktop/mobile, TypeScript và production build trước khi phát hành.
 
+## Current Session — Tìm kiếm chung Hợp đồng & Hóa đơn
+
+- [x] Rà soát shell menu hợp nhất, API danh sách và cơ chế tìm kiếm của từng nghiệp vụ.
+- [x] Thêm thanh tìm kiếm chung áp dụng cho tab Hợp đồng và Hóa đơn đang chọn; đã xác minh placeholder thay đổi theo tab.
+- [x] Hiển thị số lượng Hợp đồng/Hóa đơn trực tiếp trên từng tab; đã xác minh số lượng 1 trên cả hai tab.
+- [x] Bổ sung hồi quy, xác minh giao diện, TypeScript và production build trước khi phát hành.
+
 - [x] Mở rộng mô hình dữ liệu tài sản với thông tin chi tiết và trạng thái thao tác.
 - [x] Thêm modal tạo tài sản mới với validation cơ bản.
 - [x] Thêm modal chỉnh sửa tài sản và cập nhật dữ liệu trong bảng.
