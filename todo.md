@@ -293,6 +293,12 @@
 - [x] Sửa xuất Excel Danh mục tài sản để bao gồm mọi Tài sản thỏa bộ lọc, không chỉ trang hiện tại; ảnh tham chiếu cho thấy nút đang hiển thị 10 trong khi phạm vi là 29.
 - [x] Bổ sung hồi quy, xác minh desktop/mobile, TypeScript và production build trước khi phát hành.
 
+## Current Session — Tinh gọn hồ sơ Hợp đồng
+
+- [x] Rà soát khu vực liên kết Tài sản/Phụ kiện trong hồ sơ Hợp đồng và các hồi quy liên quan.
+- [x] Loại bỏ khu vực Tài sản & phụ kiện thuộc hợp đồng khỏi giao diện Hợp đồng mua bán; gồm tiêu đề, chỉ báo số mục và hai danh sách Tài sản/Phụ kiện trong ảnh tham chiếu.
+- [x] Bổ sung hồi quy, xác minh giao diện, TypeScript và production build trước khi phát hành.
+
 - [x] Mở rộng mô hình dữ liệu tài sản với thông tin chi tiết và trạng thái thao tác.
 - [x] Thêm modal tạo tài sản mới với validation cơ bản.
 - [x] Thêm modal chỉnh sửa tài sản và cập nhật dữ liệu trong bảng.

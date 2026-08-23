@@ -47,7 +47,7 @@ describe("purchase contract management", () => {
     expect(supplies).toContain("data-supply-purchase-contract");
     expect(supplies).toContain("data-edit-supply-contract");
     expect(contractsView).toContain("Hợp đồng mua bán");
-    expect(contractsView).toContain("Tài sản & phụ kiện thuộc hợp đồng");
+    expect(contractsView).not.toContain("Tài sản & phụ kiện thuộc hợp đồng");
     expect(contractsView).toContain("Tải chứng từ");
     expect(contractsView).toContain("vendorFilterOptions");
     expect(contractsView).toContain('value={vendorFilter}');
@@ -180,5 +180,12 @@ describe("purchase contract management", () => {
     expect(invoiceOperations).toContain("trpc.brands.list.useQuery()");
     expect(invoiceOperations).toContain("categoryId: categoryId ? Number(categoryId) : null");
     expect(invoiceOperations).toContain("brandId: brandId ? Number(brandId) : null");
+  });
+
+  it("keeps contracts focused on agreements and hides direct asset or supply linkage from the contract profile", () => {
+    expect(contractsView).not.toContain("Tài sản & phụ kiện thuộc hợp đồng");
+    expect(contractsView).not.toContain("Chưa có tài sản liên kết.");
+    expect(contractsView).not.toContain("Chưa có phụ kiện liên kết.");
+    expect(contractsView).toContain("Tài sản và Phụ kiện được đối soát trực tiếp theo Hóa đơn mua bán.");
   });
 });
