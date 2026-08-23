@@ -2314,6 +2314,12 @@ describe("maintenance history and filter layout contract", () => {
     expect(home).toContain("ModalTableSkeleton rows={5} columns={7}");
     expect(home).toContain("Không thể tải phiếu bàn giao");
   });
+
+  it("places the handover branch inside the recipient detail card", () => {
+    const home = readProjectFile("client/src/pages/Home.tsx");
+    expect(home).toContain('{item.department}</div><div className="mt-2 border-t border-[#E7EEF3] pt-2 text-xs font-semibold text-[#526779]">Chi nhánh: <span className="font-bold text-[#193B57]">{item.branch || "Chưa gán"}</span>');
+    expect(home).not.toContain('{item.assetCode}</div><div className="mt-2 text-xs font-semibold text-[#D4F5F1]">Chi nhánh: {item.branch');
+  });
 });
 
 
