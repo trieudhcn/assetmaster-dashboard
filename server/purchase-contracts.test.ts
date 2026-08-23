@@ -46,6 +46,13 @@ describe("purchase contract management", () => {
     expect(contractsView).toContain("Hợp đồng mua bán");
     expect(contractsView).toContain("Tài sản & phụ kiện thuộc hợp đồng");
     expect(contractsView).toContain("Tải chứng từ");
+    expect(contractsView).toContain("vendorFilterOptions");
+    expect(contractsView).toContain('value={vendorFilter}');
+    expect(contractsView).toContain('setVendorFilter("all")');
+    expect(contractsView).toContain("disabled={!hasActiveFilters}");
+    expect(contractsView).toContain("<DatePickerField");
+    expect(contractsView).toContain("<CurrencyInput");
+    expect(contractsView).toContain("showWords");
   });
 
   it("uses the vendor profile as a contract index instead of a second contract upload flow", () => {

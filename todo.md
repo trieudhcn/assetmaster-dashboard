@@ -226,6 +226,13 @@
 - [x] Chuyển khu vực Nhà cung cấp thành danh sách hợp đồng liên quan, có thao tác mở nhanh hồ sơ hợp đồng thay vì tạo/tải Hợp đồng riêng.
 - [x] Kiểm thử luồng liên kết, xác minh desktop/mobile, TypeScript và production build trước khi phát hành.
 
+## Current Session — Bộ lọc và biểu mẫu Hợp đồng
+
+- [x] Thêm bộ lọc theo Nhà cung cấp và giữ bộ lọc trạng thái Hợp đồng trong danh sách.
+- [x] Chuẩn hóa nút Xóa bộ lọc theo kiểu thao tác lọc dùng chung.
+- [x] Thêm biểu tượng lịch cho các trường ngày và hiển thị số tiền bằng chữ trong form Hợp đồng.
+- [x] Bổ sung hồi quy, xác minh desktop/mobile, TypeScript và production build trước khi phát hành.
+
 - [x] Mở rộng mô hình dữ liệu tài sản với thông tin chi tiết và trạng thái thao tác.
 - [x] Thêm modal tạo tài sản mới với validation cơ bản.
 - [x] Thêm modal chỉnh sửa tài sản và cập nhật dữ liệu trong bảng.
