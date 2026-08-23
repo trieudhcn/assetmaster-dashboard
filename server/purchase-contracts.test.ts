@@ -209,6 +209,13 @@ describe("purchase contract management", () => {
     expect(activeDirectoryPreview).toContain("Màn hình này chỉ đọc và không ghi bất kỳ dữ liệu Nhân sự nào");
     expect(activeDirectoryPreview).toContain("Khớp email");
     expect(activeDirectoryPreview).toContain("Cần đối chiếu");
+    expect(activeDirectoryPreview).toContain("Tải mẫu CSV");
+    expect(activeDirectoryPreview).toContain("Tải mẫu JSON");
+    expect(activeDirectoryPreview).toContain("activeDirectoryCsvTemplate");
+    expect(activeDirectoryPreview).toContain("activeDirectoryJsonTemplate");
+    expect(employeeView).toContain("employeeCode");
+    expect(employeeView).toContain("jobTitle");
+    expect(employeeView).toContain("EmployeeAssetHistorySection");
   });
 
   it("warns before discarding changed contract or invoice forms and defaults invoice lines to supplies", () => {

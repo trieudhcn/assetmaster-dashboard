@@ -17,6 +17,8 @@ export const users = mysqlTable("users", {
   openId: varchar("openId", { length: 64 }).notNull().unique(),
   name: text("name"),
   email: varchar("email", { length: 320 }),
+  employeeCode: varchar("employeeCode", { length: 64 }).unique(),
+  jobTitle: varchar("jobTitle", { length: 160 }),
   loginMethod: varchar("loginMethod", { length: 64 }),
   role: mysqlEnum("role", ["user", "admin"]).default("user").notNull(),
   branchId: int("branchId").references(() => branches.id, { onDelete: "set null", onUpdate: "cascade" }),

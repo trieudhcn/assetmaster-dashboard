@@ -83,6 +83,18 @@ export async function listUsers() {
   return db.select().from(users).orderBy(desc(users.lastSignedIn));
 }
 
+export async function getUserByEmployeeCode(employeeCode: string) {
+  const db = await getDb();
+  if (!db) return undefined;
+  return (await db.select().from(users).where(eq(users.employeeCode, employeeCode)).limit(1))[0];
+}
+
+export async function updateUserDirectoryProfile(id: number, profile: { employeeCode: string | null; jobTitle: string | null }) {
+  const db = await getDb();
+  if (!db) throw new Error("Database unavailable");
+  await db.update(users).set(profile).where(eq(users.id, id));
+}
+
 export async function countUsersByRole(role: "admin" | "user") {
   const db = await getDb();
   if (!db) return 0;

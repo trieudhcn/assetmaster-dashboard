@@ -351,6 +351,13 @@
 - [x] Tạo màn hình tải dữ liệu CSV/JSON, đối chiếu Mã nhân viên/UPN và xem trước trạng thái đồng bộ.
 - [x] Bảo đảm màn hình xem trước không ghi dữ liệu; bổ sung hồi quy, xác minh giao diện, TypeScript và production build.
 
+## Current Session — Nhân sự Active Directory và Tài sản hồ sơ
+
+- [x] Rà soát schema/API Nhân sự, màn hình Active Directory và dữ liệu Tài sản bàn giao trong hồ sơ Nhân sự.
+- [x] Thêm Mã nhân viên và Chức vụ vào hồ sơ/danh sách Nhân sự, có migration và kiểm tra trùng Mã nhân viên.
+- [x] Thêm tải mẫu CSV/JSON Active Directory và danh sách Tài sản liên kết có STT, liên kết mở nhanh, bố cục 2 cột khi trên 10 Tài sản.
+- [x] Bổ sung hồi quy, xác minh giao diện desktop/mobile, TypeScript và production build trước khi phát hành.
+
 - [x] Mở rộng mô hình dữ liệu tài sản với thông tin chi tiết và trạng thái thao tác.
 - [x] Thêm modal tạo tài sản mới với validation cơ bản.
 - [x] Thêm modal chỉnh sửa tài sản và cập nhật dữ liệu trong bảng.

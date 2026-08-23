@@ -165,6 +165,7 @@ import {
   listVendors,
   listVendorDocuments,
   listUsers,
+  getUserByEmployeeCode,
   countInventorySuppliesByUnit,
   recordActivity,
   runAssetImportTransaction,
@@ -200,6 +201,7 @@ import {
   updateRetirementCertificate,
   updateRetirementCertificateAssetSalvageValues,
   updateUserRole,
+  updateUserDirectoryProfile,
   updateUserActiveStatus,
   updateUserBranch,
   updateUserDepartment,
@@ -471,6 +473,16 @@ export const appRouter = router({
       }
       await updateUserActiveStatus(input.id, input.isActive);
       await recordActivity({ entityType: "user", entityId: input.id, action: input.isActive ? "activated" : "deactivated", actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: input.isActive ? "Mở khóa tài khoản" : "Khóa tài khoản" });
+      return { success: true };
+    }),
+    updateDirectoryProfile: adminProcedure.input(z.object({ id: z.number().int().positive(), employeeCode: z.string().trim().max(64).nullable(), jobTitle: z.string().trim().max(160).nullable() })).mutation(async ({ input, ctx }) => {
+      const employeeCode = input.employeeCode?.toUpperCase() || null;
+      if (employeeCode) {
+        const existing = await getUserByEmployeeCode(employeeCode);
+        if (existing && existing.id !== input.id) throw new TRPCError({ code: "CONFLICT", message: "Mã nhân viên đã được sử dụng bởi một nhân sự khác." });
+      }
+      await updateUserDirectoryProfile(input.id, { employeeCode, jobTitle: input.jobTitle?.trim() || null });
+      await recordActivity({ entityType: "user", entityId: input.id, action: "directory_profile_updated", actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: "Cập nhật Mã nhân viên và Chức vụ" });
       return { success: true };
     }),
     updateDepartment: adminProcedure.input(z.object({ id: z.number().int().positive(), departmentId: z.number().int().positive().nullable() })).mutation(async ({ input, ctx }) => {
@@ -1341,6 +1353,11 @@ export const appRouter = router({
   }),
   assets: router({
     list: adminProcedure.query(() => listAssets()),
+    get: adminProcedure.input(z.object({ assetId: z.number().int().positive() })).query(async ({ input }) => {
+      const asset = await getAssetById(input.assetId);
+      if (!asset) throw new TRPCError({ code: "NOT_FOUND", message: "Không tìm thấy Tài sản." });
+      return asset;
+    }),
     import: adminProcedure.input(z.object({ rows: z.array(assetImportRow).min(1).max(100), updateExisting: z.boolean().default(false) })).mutation(async ({ input, ctx }) => {
       const rowsToImport: Array<{ row: typeof assetImportRow._output; category: NonNullable<Awaited<ReturnType<typeof getAssetCategoryByName>>>; vendorId: number | null; brandId: number | null; existingAsset: Awaited<ReturnType<typeof listActiveAssetsBySerialNumber>>[number] | null }> = [];
       const errors: Array<{ rowNumber: number; message: string }> = [];

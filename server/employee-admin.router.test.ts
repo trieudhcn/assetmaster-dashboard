@@ -30,6 +30,7 @@ const mocks = vi.hoisted(() => ({
   getHandoverById: vi.fn(),
   getNextHandoverSequence: vi.fn(),
   getNextRecoveryCertificateSequence: vi.fn(),
+  getUserByEmployeeCode: vi.fn(),
   getUserNotificationPreferences: vi.fn(),
   listDepartments: vi.fn(),
   listAllDepartments: vi.fn(),
@@ -49,6 +50,7 @@ const mocks = vi.hoisted(() => ({
   storagePut: vi.fn(),
   transitionHandoverStatus: vi.fn(),
   updateUserActiveStatus: vi.fn(),
+  updateUserDirectoryProfile: vi.fn(),
   updateUserRole: vi.fn(),
   updateUserDepartment: vi.fn(),
   updateUserDivision: vi.fn(),
@@ -96,6 +98,7 @@ vi.mock("./db", () => ({
   getNextHandoverSequence: mocks.getNextHandoverSequence,
   getNextRecoveryCertificateSequence: mocks.getNextRecoveryCertificateSequence,
   getNextRetirementCertificateSequence: vi.fn().mockResolvedValue(1),
+  getUserByEmployeeCode: mocks.getUserByEmployeeCode,
   getUserNotificationPreferences: mocks.getUserNotificationPreferences,
   getMaintenanceTicket: vi.fn(),
   listAssets: vi.fn(),
@@ -130,6 +133,7 @@ vi.mock("./db", () => ({
   updateMaintenanceTicket: vi.fn(),
   transitionHandoverStatus: mocks.transitionHandoverStatus,
   updateUserActiveStatus: mocks.updateUserActiveStatus,
+  updateUserDirectoryProfile: mocks.updateUserDirectoryProfile,
   updateUserRole: mocks.updateUserRole,
   updateUserDepartment: mocks.updateUserDepartment,
   updateUserDivision: mocks.updateUserDivision,
@@ -198,7 +202,9 @@ describe("employee administration", () => {
     mocks.updateBrand.mockResolvedValue(undefined);
     mocks.listDivisions.mockResolvedValue([]);
     mocks.updateUserActiveStatus.mockResolvedValue(undefined);
+    mocks.updateUserDirectoryProfile.mockResolvedValue(undefined);
     mocks.updateUserRole.mockResolvedValue(undefined);
+    mocks.getUserByEmployeeCode.mockResolvedValue(undefined);
     mocks.updateUserDepartment.mockResolvedValue(undefined);
     mocks.updateUserDivision.mockResolvedValue(undefined);
     mocks.clearUserDivision.mockResolvedValue(undefined);
@@ -439,6 +445,23 @@ describe("employee administration", () => {
 
     await expect(caller.employees.updateActiveStatus({ id: 1, isActive: false })).rejects.toMatchObject({ code: "BAD_REQUEST" });
     expect(mocks.updateUserActiveStatus).not.toHaveBeenCalled();
+  });
+
+  it("updates the directory profile with a normalized employee code and job title", async () => {
+    const caller = appRouter.createCaller(adminContext);
+
+    await expect(caller.employees.updateDirectoryProfile({ id: 2, employeeCode: " nv-0002 ", jobTitle: " Chuyên viên CNTT " })).resolves.toEqual({ success: true });
+    expect(mocks.getUserByEmployeeCode).toHaveBeenCalledWith("NV-0002");
+    expect(mocks.updateUserDirectoryProfile).toHaveBeenCalledWith(2, { employeeCode: "NV-0002", jobTitle: "Chuyên viên CNTT" });
+    expect(mocks.recordActivity).toHaveBeenCalledWith(expect.objectContaining({ entityType: "user", entityId: 2, action: "directory_profile_updated" }));
+  });
+
+  it("rejects an employee code that belongs to another employee", async () => {
+    mocks.getUserByEmployeeCode.mockResolvedValue({ id: 7, employeeCode: "NV-0007" });
+    const caller = appRouter.createCaller(adminContext);
+
+    await expect(caller.employees.updateDirectoryProfile({ id: 2, employeeCode: "nv-0007", jobTitle: "Chuyên viên" })).rejects.toMatchObject({ code: "CONFLICT" });
+    expect(mocks.updateUserDirectoryProfile).not.toHaveBeenCalled();
   });
 
   it("validates the department before assigning it to an employee", async () => {
