@@ -161,13 +161,14 @@ describe("purchase contract management", () => {
     expect(invoicesView).toContain("trpc.purchaseInvoices.receiveSupply.useMutation");
     expect(invoicesView).toContain("Phân bổ nguồn mua theo dòng");
     expect(invoicesView).toContain("Xuất đối soát Excel");
-    expect(invoicesView).toContain("XLSX.writeFile");
+    expect(invoicesView).toContain("writeBrandedWorkbook");
     expect(invoicesView).toContain('data-invoice-reconciliation-export="true"');
     expect(invoicesView.indexOf("data-invoice-reconciliation-export")).toBeLessThan(invoicesView.indexOf("Tạo hóa đơn"));
     expect(invoicesView).toContain("sm:grid-cols-[140px_minmax(0,0.8fr)_84px_96px_minmax(180px,1.35fr)]");
-    expect(invoicesView).toContain('inputMode="numeric"');
-    expect(invoicesView).toContain("wholeQuantity(event.target.value)");
-    expect(router).toContain('Số lượng dòng Hóa đơn phải là số nguyên.');
+    expect(invoicesView).toContain('inputMode="decimal"');
+    expect(invoicesView).toContain("quantityInput(event.target.value)");
+    expect(invoicesView).toContain("Đơn vị {line.unit || \"Cái\"} chỉ nhận số lượng nguyên.");
+    expect(router).toContain('Số lượng dòng Hóa đơn không hợp lệ.');
   });
 
   it("creates a new supply atomically from a supply invoice line and keeps contracts value-free in the form", () => {

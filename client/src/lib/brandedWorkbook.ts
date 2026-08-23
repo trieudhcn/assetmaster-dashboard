@@ -1,5 +1,6 @@
 import * as XLSX from "xlsx";
 import { openExportPreview } from "@/components/ExportPreviewHost";
+import { quantityValueForExport } from "@shared/quantity";
 
 export type ExportCompanyInfo = {
   name?: string | null;
@@ -30,6 +31,7 @@ const excelTechnicalLabels: Record<string, string> = {
   "Preview import": "Xem trước nhập liệu",
 };
 const localizeExcelTechnicalText = (value: string) => excelTechnicalLabels[value] || value.replace(/\bpreview\b/gi, "xem trước").replace(/\bimport\b/gi, "nhập liệu");
+const isQuantityColumn = (value: unknown) => /(?:^|\s)(?:số lượng|sl\b|tồn(?:\s|$)|đã cấp|đã trả|còn lại|còn chờ|số tài sản|phụ kiện đã tiếp nhận)/i.test(String(value || "").trim());
 
 function getStoredCompanyInfo(): ExportCompanyInfo {
   try {
@@ -66,7 +68,11 @@ function copySourceSheets(sourceWorkbook: XLSX.WorkBook, targetWorkbook: any, br
     const sourceSheet = sourceWorkbook.Sheets[sheetName];
     const targetSheet = targetWorkbook.addWorksheet(localizeExcelTechnicalText(sheetName));
     const rows = XLSX.utils.sheet_to_json<unknown[]>(sourceSheet, { header: 1, defval: "", raw: true });
-    rows.forEach((row) => targetSheet.addRow(row.map((cell) => typeof cell === "string" ? localizeExcelTechnicalText(cell) : cell)));
+    const quantityColumns = new Set((rows[0] || []).map((header, index) => isQuantityColumn(header) ? index : -1).filter((index) => index >= 0));
+    rows.forEach((row, rowIndex) => targetSheet.addRow(row.map((cell, index) => {
+      const localized = typeof cell === "string" ? localizeExcelTechnicalText(cell) : cell;
+      return rowIndex > 0 && quantityColumns.has(index) ? quantityValueForExport(localized) : localized;
+    })));
     if (!rows.length) targetSheet.addRow([]);
     const sourceColumns = (sourceSheet["!cols"] || []) as Array<{ wch?: number; wpx?: number }>;
     sourceColumns.forEach((column, index) => { targetSheet.getColumn(index + 1).width = column.wch || (column.wpx ? Math.max(8, column.wpx / 7) : 16); });
@@ -75,6 +81,7 @@ function copySourceSheets(sourceWorkbook: XLSX.WorkBook, targetWorkbook: any, br
     targetSheet.getRow(1).font = { bold: true, color: { argb: "FF193B57" } };
     targetSheet.getRow(1).fill = { type: "pattern", pattern: "solid", fgColor: { argb: `FF${brandColor}1A` } };
     targetSheet.getRow(1).alignment = { vertical: "middle", wrapText: true };
+    quantityColumns.forEach((index) => { targetSheet.getColumn(index + 1).numFmt = "0.###"; });
   });
 }
 

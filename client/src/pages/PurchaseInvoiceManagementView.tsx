@@ -8,6 +8,8 @@ import { SearchableSelect } from "@/components/SearchableSelect";
 import { CurrencyInput } from "@/components/CurrencyInput";
 import { DatePickerField } from "@/components/DatePickerField";
 import { InvoiceLineOperationsPanel } from "@/components/InvoiceLineOperationsPanel";
+import { writeBrandedWorkbook } from "@/lib/brandedWorkbook";
+import { isInvalidWholeQuantity } from "@shared/quantity";
 
 type InvoiceStatus = "draft" | "issued" | "adjusted" | "replaced" | "cancelled";
 type InvoiceType = "vat" | "electronic" | "retail" | "adjustment" | "replacement" | "other";
@@ -28,7 +30,7 @@ function dateLabel(value: Date | string | number | null | undefined) { return va
 function readFileAsDataUrl(file: File) { return new Promise<string>((resolve, reject) => { const reader = new FileReader(); reader.onload = () => typeof reader.result === "string" ? resolve(reader.result) : reject(new Error("Không thể đọc tệp.")); reader.onerror = () => reject(new Error("Không thể đọc tệp.")); reader.readAsDataURL(file); }); }
 function normalizedContentType(file: File) { return file.type === "text/xml" || (!file.type && file.name.toLowerCase().endsWith(".xml")) ? "application/xml" : file.type; }
 function newLine(): InvoiceLineForm { return { id: crypto.randomUUID(), itemType: "supply", itemCode: "", itemName: "", quantity: "1", unit: "cái", unitPrice: "", taxRate: "0", note: "" }; }
-function wholeQuantity(value: string) { return value.replace(/\D/g, ""); }
+function quantityInput(value: string) { const normalized = value.replace(",", ".").replace(/[^0-9.]/g, ""); const [whole, ...fraction] = normalized.split("."); return fraction.length ? `${whole}.${fraction.join("").slice(0, 3)}` : whole; }
 
 export function PurchaseInvoiceManagementView({ sharedQuery = "" }: { sharedQuery?: string }) {
   const utils = trpc.useUtils();
@@ -82,6 +84,7 @@ export function PurchaseInvoiceManagementView({ sharedQuery = "" }: { sharedQuer
   const lineTax = (line: InvoiceLineForm) => lineSubtotal(line) * Number(line.taxRate || 0) / 100;
   const calculatedSubtotal = lines.reduce((total, line) => total + lineSubtotal(line), 0);
   const calculatedTax = lines.reduce((total, line) => total + lineTax(line), 0);
+  const invalidWholeQuantityLines = lines.filter((line) => isInvalidWholeQuantity(line.unit, line.quantity));
   const isSaving = createInvoice.isPending || updateInvoice.isPending || createLine.isPending || uploadDocument.isPending;
 
   const openCreate = () => { setEditingId(null); setForm(emptyForm); setLines([]); setQueuedDocuments([]); formSnapshotRef.current = JSON.stringify({ form: emptyForm, lines: [], documents: [] }); setFormOpen(true); };
@@ -90,7 +93,7 @@ export function PurchaseInvoiceManagementView({ sharedQuery = "" }: { sharedQuer
     if (!invoice) return;
     setEditingId(invoice.id);
     setQueuedDocuments([]);
-    const nextLines = (detailsQuery.data?.lines || []).map((line) => ({ id: String(line.id), itemType: line.itemType, itemCode: line.itemCode || "", itemName: line.itemName, quantity: String(Math.max(0, Math.trunc(Number(line.quantity) || 0))), unit: line.unit || "", unitPrice: String(line.unitPrice).replace(/\D/g, ""), taxRate: String(line.taxRate).replace(/\D/g, ""), note: line.note || "" }));
+    const nextLines = (detailsQuery.data?.lines || []).map((line) => ({ id: String(line.id), itemType: line.itemType, itemCode: line.itemCode || "", itemName: line.itemName, quantity: String(Math.max(0, Number(line.quantity) || 0)), unit: line.unit || "", unitPrice: String(line.unitPrice).replace(/\D/g, ""), taxRate: String(line.taxRate).replace(/\D/g, ""), note: line.note || "" }));
     const nextForm = { invoiceNumber: invoice.invoiceNumber, invoiceSeries: invoice.invoiceSeries || "", invoiceTemplate: invoice.invoiceTemplate || "", invoiceType: invoice.invoiceType, status: invoice.status, vendorId: String(invoice.vendorId), purchaseContractId: invoice.purchaseContractId ? String(invoice.purchaseContractId) : "", issuedAt: toDateInput(invoice.issuedAt), receivedAt: toDateInput(invoice.receivedAt), subtotalAmount: String(invoice.subtotalAmount).replace(/\D/g, ""), taxAmount: String(invoice.taxAmount).replace(/\D/g, ""), totalAmount: String(invoice.totalAmount).replace(/\D/g, ""), note: invoice.note || "" };
     setLines(nextLines);
     setForm(nextForm);
@@ -148,6 +151,7 @@ export function PurchaseInvoiceManagementView({ sharedQuery = "" }: { sharedQuer
   };
   const save = async () => {
     if (!form.invoiceNumber.trim() || !form.vendorId || !form.issuedAt || !form.totalAmount) { toast.error("Vui lòng nhập số Hóa đơn, Nhà cung cấp, ngày lập và tổng tiền."); return; }
+    if (invalidWholeQuantityLines.length) { toast.error(`Đơn vị ${invalidWholeQuantityLines[0].unit || "Cái"} chỉ nhận số lượng nguyên.`); return; }
     const payload = { invoiceNumber: form.invoiceNumber.trim(), invoiceSeries: form.invoiceSeries.trim() || null, invoiceTemplate: form.invoiceTemplate.trim() || null, invoiceType: form.invoiceType, status: form.status, vendorId: Number(form.vendorId), purchaseContractId: form.purchaseContractId ? Number(form.purchaseContractId) : null, issuedAt: toTimestamp(form.issuedAt)!, receivedAt: toTimestamp(form.receivedAt), currencyCode: "VND", exchangeRate: null, subtotalAmount: form.subtotalAmount || "0", taxAmount: form.taxAmount || "0", totalAmount: form.totalAmount, note: form.note.trim() || null };
     if (editingId) { updateInvoice.mutate({ id: editingId, ...payload }); return; }
     let created: { id: number };
@@ -200,8 +204,8 @@ export function PurchaseInvoiceManagementView({ sharedQuery = "" }: { sharedQuer
       const sheet = XLSX.utils.json_to_sheet(sheetRows);
       sheet["!cols"] = [{ wch: 24 }, { wch: 25 }, { wch: 14 }, { wch: 18 }, { wch: 8 }, { wch: 14 }, { wch: 15 }, { wch: 32 }, { wch: 16 }, { wch: 12 }, { wch: 16 }, { wch: 18 }, { wch: 42 }, { wch: 18 }, { wch: 20 }, { wch: 20 }];
       XLSX.utils.book_append_sheet(workbook, sheet, "Đối soát Hóa đơn");
-      XLSX.writeFile(workbook, `doi-soat-hoa-don-tai-san-${new Date().toISOString().slice(0, 10)}.xlsx`);
-      toast.success(`Đã xuất ${rows.length} dòng đối soát.`, { id: loading });
+      await writeBrandedWorkbook(workbook, { documentTitle: "ĐỐI SOÁT HÓA ĐƠN VÀ TÀI SẢN", fileName: `doi-soat-hoa-don-tai-san-${new Date().toISOString().slice(0, 10)}.xlsx`, description: `${rows.length} dòng đối soát theo dữ liệu hiện tại.` });
+      toast.success("Đã xuất đối soát Hóa đơn.", { id: loading });
     } catch (error) { toast.error(error instanceof Error ? error.message : "Không thể xuất Excel đối soát.", { id: loading }); }
   };
   useEffect(() => {
@@ -232,7 +236,12 @@ export function PurchaseInvoiceManagementView({ sharedQuery = "" }: { sharedQuer
   </div>;
 }
 
-function InvoiceLineEditor({ line, index, onChange, onRemove }: { line: InvoiceLineForm; index: number; onChange: (changes: Partial<InvoiceLineForm>) => void; onRemove: () => void }) { const subtotal = Number(line.quantity || 0) * Number(line.unitPrice || 0); const total = subtotal * (1 + Number(line.taxRate || 0) / 100); return <div className="rounded-lg border border-[#E1EBF1] bg-white p-3"><div className="mb-2 flex items-center justify-between"><span className="text-[10px] font-extrabold uppercase tracking-[.1em] text-[#4B8884]">Dòng {index + 1}</span><button type="button" onClick={onRemove} className="text-[10px] font-bold text-[#B44545] hover:underline">Xóa dòng</button></div><div className="grid gap-2 sm:grid-cols-[140px_minmax(0,0.8fr)_84px_96px_minmax(180px,1.35fr)]"><SearchableSelect value={line.itemType} onChange={(value) => onChange({ itemType: value as InvoiceLineForm["itemType"] })} options={[{ value: "asset", label: "Tài sản" }, { value: "supply", label: "Phụ kiện" }, { value: "service", label: "Dịch vụ" }, { value: "other", label: "Khác" }]} placeholder="Loại" searchPlaceholder="Tìm loại..." /><input value={line.itemName} onChange={(event) => onChange({ itemName: event.target.value })} className="field-input min-w-0" placeholder="Tên hàng hóa/dịch vụ" /><input value={line.quantity} inputMode="numeric" pattern="[0-9]*" onChange={(event) => onChange({ quantity: wholeQuantity(event.target.value) })} className="field-input" placeholder="SL" aria-label={`Số lượng dòng ${index + 1}, chỉ số nguyên`} /><input value={line.unit} onChange={(event) => onChange({ unit: event.target.value })} className="field-input" placeholder="ĐVT" /><CurrencyInput value={line.unitPrice} onChange={(value) => onChange({ unitPrice: value })} placeholder="Đơn giá" aria-label={`Đơn giá dòng ${index + 1}`} /></div><div className="mt-2 flex items-center justify-between gap-2 text-[10px] text-[#71869A]"><input value={line.taxRate} inputMode="decimal" onChange={(event) => onChange({ taxRate: event.target.value.replace(/[^0-9.]/g, "") })} className="h-7 w-20 rounded border border-[#DDE7F0] px-2 text-xs" placeholder="VAT %" /><span className="font-bold text-[#193B57]">Tạm tính: {money(total)}</span></div></div>; }
+function InvoiceLineEditor({ line, index, onChange, onRemove }: { line: InvoiceLineForm; index: number; onChange: (changes: Partial<InvoiceLineForm>) => void; onRemove: () => void }) {
+  const subtotal = Number(line.quantity || 0) * Number(line.unitPrice || 0);
+  const total = subtotal * (1 + Number(line.taxRate || 0) / 100);
+  const hasWholeQuantityError = isInvalidWholeQuantity(line.unit, line.quantity);
+  return <div className="rounded-lg border border-[#E1EBF1] bg-white p-3"><div className="mb-2 flex items-center justify-between"><span className="text-[10px] font-extrabold uppercase tracking-[.1em] text-[#4B8884]">Dòng {index + 1}</span><button type="button" onClick={onRemove} className="text-[10px] font-bold text-[#B44545] hover:underline">Xóa dòng</button></div><div className="grid gap-2 sm:grid-cols-[140px_minmax(0,0.8fr)_84px_96px_minmax(180px,1.35fr)]"><SearchableSelect value={line.itemType} onChange={(value) => onChange({ itemType: value as InvoiceLineForm["itemType"] })} options={[{ value: "asset", label: "Tài sản" }, { value: "supply", label: "Phụ kiện" }, { value: "service", label: "Dịch vụ" }, { value: "other", label: "Khác" }]} placeholder="Loại" searchPlaceholder="Tìm loại..." /><input value={line.itemName} onChange={(event) => onChange({ itemName: event.target.value })} className="field-input min-w-0" placeholder="Tên hàng hóa/dịch vụ" /><input value={line.quantity} inputMode="decimal" onChange={(event) => onChange({ quantity: quantityInput(event.target.value) })} className={`field-input ${hasWholeQuantityError ? "border-[#E47B48] bg-[#FFF9F5]" : ""}`} placeholder="SL" aria-label={`Số lượng dòng ${index + 1}`} /><input value={line.unit} onChange={(event) => onChange({ unit: event.target.value })} className="field-input" placeholder="ĐVT" /><CurrencyInput value={line.unitPrice} onChange={(value) => onChange({ unitPrice: value })} placeholder="Đơn giá" aria-label={`Đơn giá dòng ${index + 1}`} /></div>{hasWholeQuantityError && <p role="alert" className="mt-1 text-[10px] font-semibold text-[#B44545]">Đơn vị {line.unit || "Cái"} chỉ nhận số lượng nguyên.</p>}<div className="mt-2 flex items-center justify-between gap-2 text-[10px] text-[#71869A]"><input value={line.taxRate} inputMode="decimal" onChange={(event) => onChange({ taxRate: event.target.value.replace(/[^0-9.]/g, "") })} className="h-7 w-20 rounded border border-[#DDE7F0] px-2 text-xs" placeholder="VAT %" /><span className="font-bold text-[#193B57]">Tạm tính: {money(total)}</span></div></div>;
+}
 type InvoiceOperationLine = { id: number; lineNumber: number; itemType: "asset" | "supply" | "service" | "other"; itemName: string; quantity: string; unit: string | null; unitPrice: string; taxRate: string; taxAmount: string };
 type InvoiceOperationAsset = { id: number; assetCode: string; name: string; serialNumber: string | null; purchaseInvoiceId: number | null; purchaseInvoiceLineId: number | null; status: string };
 type InvoiceOperationSupply = { id: number; code: string; name: string; unit: string; stockQuantity: string; isActive: boolean };

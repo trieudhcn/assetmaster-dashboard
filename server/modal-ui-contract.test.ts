@@ -958,7 +958,7 @@ describe("modal presentation contract", () => {
     expect(home).toContain("Phiếu cấp phát tài sản ${item.referenceCode}");
     expect(home).toContain("-phieu-cap-phat-tai-san.pdf");
     expect(home).toContain("Xem trước PDF");
-    expect(home).toContain("Bạn có thể in hoặc tải PDF từ màn hình này.");
+    expect(home).toContain("Đã mở xem trước PDF.");
     expect(home).not.toContain('window.open(doc.output("bloburl"), "_blank")');
   });
 

@@ -364,6 +364,20 @@
 - [x] Hiển thị số lượng tại dòng Tài sản liên kết Hóa đơn dưới dạng số nguyên.
 - [x] Bổ sung hồi quy, kiểm tra TypeScript và production build trước khi phát hành.
 
+## Current Session — Chuẩn hóa số lượng và thông báo
+
+- [x] Rà soát toàn bộ luồng xuất Excel/PDF, các biểu mẫu số lượng và thông báo thành công hiện có.
+- [x] Chuẩn hóa hiển thị số lượng nguyên cho các giá trị nguyên trên file Excel và PDF.
+- [x] Cảnh báo ngay khi nhập số lẻ cho đơn vị tính Cái, không thay đổi các đơn vị cho phép phần lẻ.
+- [x] Rút gọn và thống nhất các thông báo thành công theo ngôn ngữ vận hành ngắn gọn.
+- [x] Bổ sung hồi quy, xác minh giao diện, TypeScript và production build trước khi phát hành.
+
+## Current Session — Chỉ báo phân bổ Chi nhánh
+
+- [x] Đổi chỉ báo Phân bổ Chi nhánh để hiển thị số nhân sự chưa gán Chi nhánh.
+- [x] Làm mới số lượng ngay sau khi gán hoặc gỡ Chi nhánh trong hồ sơ Nhân sự.
+- [x] Bổ sung hồi quy, xác minh giao diện, TypeScript và production build trước khi phát hành.
+
 - [x] Mở rộng mô hình dữ liệu tài sản với thông tin chi tiết và trạng thái thao tác.
 - [x] Thêm modal tạo tài sản mới với validation cơ bản.
 - [x] Thêm modal chỉnh sửa tài sản và cập nhật dữ liệu trong bảng.

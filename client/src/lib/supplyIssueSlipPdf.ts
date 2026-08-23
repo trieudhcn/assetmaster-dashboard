@@ -1,6 +1,7 @@
 import { jsPDF } from "jspdf";
 import { createPdfLogoWatermark, applyPdfLogoWatermark, openPdfPreview } from "@/lib/pdfExport";
 import { drawPdfCorporateFooter, drawPdfCorporateHeader, handoverPdfFontUrl, registerVietnamesePdfFont } from "@/lib/handoverPdf";
+import { formatQuantity } from "@shared/quantity";
 
 type CompanyInfo = { name?: string | null; address?: string | null; taxCode?: string | null; phone?: string | null; email?: string | null; websiteUrl?: string | null; hideWebsiteOnInternalPdf?: boolean | null; logoUrl?: string | null };
 type SupplyIssueSlipPdf = { referenceCode: string; recipientName: string; issuedByName: string | null; issuedAt: Date; note: string | null };
@@ -60,7 +61,7 @@ export async function openSupplyIssueSlipPdf(slip: SupplyIssueSlipPdf, items: Su
   drawRow(headers, 9, true);
   items.forEach((item, index) => {
     if (y > 255) { doc.addPage(); y = 20; drawRow(headers, 9, true); }
-    drawRow([String(index + 1), item.supplyCode, item.supplyName, item.unit, Number(item.issuedQuantity).toLocaleString("vi-VN"), Number(item.returnedQuantity).toLocaleString("vi-VN")]);
+    drawRow([String(index + 1), item.supplyCode, item.supplyName, item.unit, formatQuantity(item.issuedQuantity), formatQuantity(item.returnedQuantity)]);
   });
   const signatureY = Math.min(y + 20, 265);
   doc.setFontSize(10);

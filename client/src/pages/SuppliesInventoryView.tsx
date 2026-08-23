@@ -10,6 +10,7 @@ import { EditableSectionLabel } from "@/components/EditableSectionLabel";
 import { formatVndInput, isInvalidVndInput, normalizeVndIntegerInput, numberToVietnameseWords, parseVndAmount } from "@/lib/formatters";
 import { openSupplyIssueSlipPdf } from "@/lib/supplyIssueSlipPdf";
 import { buildSupplyImportTemplate, resolveActiveSupplyImportCatalog, standardSupplyUnits } from "@/lib/supplyImportTemplate";
+import { isInvalidWholeQuantity } from "@shared/quantity";
 
 const PAGE_SIZE = 10;
 const MOVEMENT_HISTORY_PAGE_SIZE = 5;
@@ -66,25 +67,29 @@ export function SuppliesInventoryView({ canEditSectionLabels = false }: { canEdi
     if (!supply || !Number.isFinite(itemQuantity) || itemQuantity <= 0) return null;
     return { supplyId: supply.id, supplyName: supply.name, unit: supply.unit, quantity: itemQuantity, stockAfterIssue: Number(supply.stockQuantity) - itemQuantity, minimumStock: Number(supply.minimumQuantity) };
   }).filter((item): item is IssuePreviewItem => item !== null), [issueItems, supplies]);
-  const issueItemsHaveInvalidValue = issueItems.length === 0 || issuePreviewItems.length !== issueItems.length || issuePreviewItems.some((item) => item.stockAfterIssue < 0);
+  const issueItemsHaveFractionalWholeUnit = issueItems.some((item) => {
+    const supply = supplies.find((candidate) => candidate.id === Number(item.supplyId));
+    return Boolean(supply && isInvalidWholeQuantity(supply.unit, item.quantity));
+  });
+  const issueItemsHaveInvalidValue = issueItems.length === 0 || issuePreviewItems.length !== issueItems.length || issuePreviewItems.some((item) => item.stockAfterIssue < 0) || issueItemsHaveFractionalWholeUnit;
   const lowStockIssueItems = issuePreviewItems.filter((item) => item.stockAfterIssue < item.minimumStock);
   const issueSupplyOptions = [{ value: "", label: "Chọn phụ kiện để thêm" }, ...supplies.filter((item) => item.isActive && !issueItems.some((draft) => Number(draft.supplyId) === item.id)).map((item) => ({ value: String(item.id), label: `${item.code} · ${item.name} · còn ${quantity(item.stockQuantity)} ${item.unit}`, searchText: `${item.code} ${item.name}` }))];
   const movementHistory = trpc.supplies.history.useQuery({ supplyId: selectedId || 0, page: movementHistoryPage, pageSize: MOVEMENT_HISTORY_PAGE_SIZE }, { enabled: selectedId !== null });
   useEffect(() => { setMovementHistoryPage(1); }, [selectedId]);
 
-  const createSupply = trpc.supplies.create.useMutation({ onSuccess: () => { toast.success("Đã tạo phụ kiện và ghi nhận tồn đầu kỳ."); setForm(emptyForm); setCreateModalOpen(false); void utils.supplies.list.invalidate(); }, onError: (error) => toast.error(error.message || "Không thể tạo phụ kiện.") });
+  const createSupply = trpc.supplies.create.useMutation({ onSuccess: () => { toast.success("Đã tạo phụ kiện."); setForm(emptyForm); setCreateModalOpen(false); void utils.supplies.list.invalidate(); }, onError: (error) => toast.error(error.message || "Không thể tạo phụ kiện.") });
   const createAccessoryGroup = trpc.assetCategories.createAccessoryGroup.useMutation({ onSuccess: (group) => { toast.success(`Đã tạo nhóm phụ kiện ${group.name}.`); setGroupFilter(String(group.id)); setQuickGroupName(null); void utils.assetCategories.list.invalidate(); }, onError: (error) => toast.error(error.message || "Không thể tạo nhóm phụ kiện.") });
   const updateSupply = trpc.supplies.update.useMutation({ onSuccess: () => { toast.success("Đã cập nhật phụ kiện."); setEditingId(null); void utils.supplies.list.invalidate(); }, onError: (error) => toast.error(error.message || "Không thể cập nhật phụ kiện.") });
-  const moveSupply = trpc.supplies.move.useMutation({ onSuccess: (result) => { toast.success(result.isLowStock ? "Đã ghi nhận giao dịch. Phụ kiện đã chạm mức tồn tối thiểu." : "Đã ghi nhận giao dịch tồn kho."); setMovementQuantity(""); setRecipientUserId(""); setRecipientName(""); setRecipientDepartmentId(""); setMovementNote(""); void utils.supplies.list.invalidate(); void utils.supplies.history.invalidate(); }, onError: (error) => toast.error(error.message || "Không thể ghi nhận giao dịch.") });
+  const moveSupply = trpc.supplies.move.useMutation({ onSuccess: (result) => { toast.success(result.isLowStock ? "Đã ghi nhận giao dịch · tồn kho thấp." : "Đã ghi nhận giao dịch."); setMovementQuantity(""); setRecipientUserId(""); setRecipientName(""); setRecipientDepartmentId(""); setMovementNote(""); void utils.supplies.list.invalidate(); void utils.supplies.history.invalidate(); }, onError: (error) => toast.error(error.message || "Không thể ghi nhận giao dịch.") });
   const previewIssueSlipPdf = async (slip: CreatedIssueSlipPdf) => {
     try {
       await openSupplyIssueSlipPdf({ referenceCode: slip.referenceCode, recipientName: slip.recipientName, issuedByName: null, issuedAt: slip.issuedAt, note: slip.note }, slip.items);
-      toast.success(`Đã mở bản xem trước phiếu ${slip.referenceCode}.`);
+      toast.success("Đã mở xem trước PDF.");
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Không thể tạo bản PDF của phiếu cấp phát.");
     }
   };
-  const createIssueSlip = trpc.supplies.createIssueSlip.useMutation({ onSuccess: (result) => { const recipient = recipientMode === "staff" ? selectedRecipient?.name || "Nhân sự được chọn" : recipientName.trim(); const createdSlip: CreatedIssueSlipPdf = { referenceCode: result.referenceCode, recipientName: recipient, issuedAt: new Date(), note: movementNote.trim() || null, items: issuePreviewItems.map((item) => ({ supplyCode: supplies.find((supply) => supply.id === item.supplyId)?.code || "—", supplyName: item.supplyName, unit: item.unit, issuedQuantity: String(item.quantity), returnedQuantity: "0" })) }; toast.success(`Đã tạo phiếu cấp phát ${result.referenceCode} với ${issuePreviewItems.length} loại phụ kiện.`, { action: { label: "Xem & in PDF", onClick: () => { void previewIssueSlipPdf(createdSlip); } } }); setIssueConfirmationOpen(false); setMovementQuantity(""); setIssueItems([]); setIssueSupplyPicker(""); setRecipientUserId(""); setRecipientName(""); setRecipientDepartmentId(""); setMovementNote(""); void utils.supplies.list.invalidate(); void utils.supplies.issueSlips.invalidate(); void utils.supplies.history.invalidate(); }, onError: (error) => toast.error(error.message || "Không thể tạo phiếu cấp phát.") });
+  const createIssueSlip = trpc.supplies.createIssueSlip.useMutation({ onSuccess: (result) => { const recipient = recipientMode === "staff" ? selectedRecipient?.name || "Nhân sự được chọn" : recipientName.trim(); const createdSlip: CreatedIssueSlipPdf = { referenceCode: result.referenceCode, recipientName: recipient, issuedAt: new Date(), note: movementNote.trim() || null, items: issuePreviewItems.map((item) => ({ supplyCode: supplies.find((supply) => supply.id === item.supplyId)?.code || "—", supplyName: item.supplyName, unit: item.unit, issuedQuantity: String(item.quantity), returnedQuantity: "0" })) }; toast.success(`Đã tạo phiếu ${result.referenceCode}.`, { action: { label: "Xem & in PDF", onClick: () => { void previewIssueSlipPdf(createdSlip); } } }); setIssueConfirmationOpen(false); setMovementQuantity(""); setIssueItems([]); setIssueSupplyPicker(""); setRecipientUserId(""); setRecipientName(""); setRecipientDepartmentId(""); setMovementNote(""); void utils.supplies.list.invalidate(); void utils.supplies.issueSlips.invalidate(); void utils.supplies.history.invalidate(); }, onError: (error) => toast.error(error.message || "Không thể tạo phiếu cấp phát.") });
 
   const categoryOptions = [{ value: "", label: "Chưa gán phân loại", isActive: true }, ...(categoriesQuery.data || []).map((item) => ({ value: String(item.id), label: item.name, isActive: item.isActive }))];
   const groupFilterOptions = [{ value: "all", label: "Tất cả nhóm" }, { value: "unassigned", label: "Chưa gán nhóm" }, ...(categoriesQuery.data || []).map((item) => ({ value: String(item.id), label: item.name }))];
@@ -110,6 +115,7 @@ export function SuppliesInventoryView({ canEditSectionLabels = false }: { canEdi
 
   const submitCreate = () => {
     if (!form.code.trim() || !form.name.trim()) return toast.error("Vui lòng nhập mã và tên phụ kiện.");
+    if (isInvalidWholeQuantity(form.unit, form.openingQuantity) || isInvalidWholeQuantity(form.unit, form.minimumQuantity)) return toast.error(`Đơn vị ${form.unit || "Cái"} chỉ nhận số lượng nguyên.`);
     if (isInvalidVndInput(form.unitCost)) return toast.error("Đơn giá không đúng định dạng. Chỉ nhập chữ số nguyên.");
     createSupply.mutate({ code: form.code, name: form.name, unit: form.unit || "Cái", openingQuantity: Number(form.openingQuantity || 0), minimumQuantity: Number(form.minimumQuantity || 0), unitCost: form.unitCost ? Number(form.unitCost) : null, location: form.location || null, categoryId: form.categoryId ? Number(form.categoryId) : null, vendorId: form.vendorId ? Number(form.vendorId) : null, brandId: form.brandId ? Number(form.brandId) : null, purchaseContractId: form.purchaseContractId ? Number(form.purchaseContractId) : null, note: form.note || null });
   };
@@ -124,6 +130,7 @@ export function SuppliesInventoryView({ canEditSectionLabels = false }: { canEdi
       return;
     }
     if (!selectedSupply || !movementQuantity || !movementNote.trim()) return toast.error("Vui lòng nhập số lượng và ghi chú giao dịch.");
+    if (isInvalidWholeQuantity(selectedSupply.unit, movementQuantity)) return toast.error(`Đơn vị ${selectedSupply.unit} chỉ nhận số lượng nguyên.`);
     moveSupply.mutate({ supplyId: selectedSupply.id, movementType, quantity: Number(movementQuantity), recipientUserId: null, recipientName: undefined, recipientDepartmentId: recipientDepartmentId ? Number(recipientDepartmentId) : null, note: movementNote.trim() });
   };
   const confirmIssueSlip = () => {
@@ -408,7 +415,7 @@ function SupplyCreateModal({ form, setForm, categoryOptions, vendorOptions, bran
   const bulkCreate = trpc.supplies.bulkCreate.useMutation({
     onSuccess: (result) => {
       const total = result.created + result.updated;
-      toast.success(`Đã lưu ${total} phụ kiện: tạo mới ${result.created}, cập nhật ${result.updated}.`);
+      toast.success(`Đã lưu ${total} phụ kiện.`);
       void utils.supplies.list.invalidate();
       window.setTimeout(onClose, 700);
     },
@@ -470,6 +477,8 @@ function SupplyCreateModal({ form, setForm, categoryOptions, vendorOptions, bran
       if (row.name.trim().length < 2) issues.push("Tên phụ kiện cần ít nhất 2 ký tự.");
       if (!Number.isFinite(row.openingQuantity) || row.openingQuantity < 0) issues.push("Tồn đầu kỳ phải là số không âm.");
       if (!Number.isFinite(row.minimumQuantity) || row.minimumQuantity < 0) issues.push("Mức tồn tối thiểu phải là số không âm.");
+      if (isInvalidWholeQuantity(row.unit, row.openingQuantity)) issues.push(`Tồn đầu kỳ phải là số nguyên khi đơn vị tính là ${row.unit}.`);
+      if (isInvalidWholeQuantity(row.unit, row.minimumQuantity)) issues.push(`Mức tồn tối thiểu phải là số nguyên khi đơn vị tính là ${row.unit}.`);
       if (row.unitCost !== null && (!Number.isFinite(row.unitCost) || row.unitCost < 0)) issues.push("Đơn giá phải là số không âm.");
       return { index, issues };
     });
@@ -477,6 +486,7 @@ function SupplyCreateModal({ form, setForm, categoryOptions, vendorOptions, bran
   const invalidRows = rowIssues.filter((item) => item.issues.length > 0);
   const existingCount = rows.filter((row) => existingCodes.has(row.code.trim().toUpperCase())).length;
   const canSavePreview = rows.length > 0 && !invalidRows.length && !(existingCount > 0 && !updateExisting);
+  const manualQuantityIssue = isInvalidWholeQuantity(form.unit, form.openingQuantity) || isInvalidWholeQuantity(form.unit, form.minimumQuantity);
   const supplyUnitsQuery = trpc.supplyUnits.list.useQuery();
   const activeSupplyUnits = (supplyUnitsQuery.data || []).filter((unit) => unit.isActive).map((unit) => unit.name);
   const availableSupplyUnits = activeSupplyUnits.length ? activeSupplyUnits : standardSupplyUnits;
@@ -490,7 +500,7 @@ function SupplyCreateModal({ form, setForm, categoryOptions, vendorOptions, bran
       anchor.download = "template-nhap-phu-kien.xlsx";
       anchor.click();
       window.setTimeout(() => URL.revokeObjectURL(url), 0);
-      toast.success("Đã tạo template Phụ kiện có dropdown và danh mục đang hoạt động.");
+      toast.success("Đã tạo mẫu Phụ kiện.");
     } catch {
       toast.error("Không thể tạo template import Phụ kiện. Vui lòng thử lại.");
     }
@@ -537,7 +547,7 @@ function SupplyCreateModal({ form, setForm, categoryOptions, vendorOptions, bran
         return;
       }
       setRows(parsedRows);
-      toast.success("Đã tải dữ liệu. Hãy kiểm tra hoặc sửa trực tiếp trước khi xác nhận.");
+      toast.success("Đã tải dữ liệu. Hãy kiểm tra trước khi lưu.");
     } catch (error) { setFileError(error instanceof Error ? error.message : "Không thể đọc file Excel."); }
     finally { setIsReading(false); if (inputRef.current) inputRef.current.value = ""; }
   };
@@ -549,6 +559,26 @@ function SupplyCreateModal({ form, setForm, categoryOptions, vendorOptions, bran
     return { ...row, [field]: raw || null };
   }));
   const inputClass = (invalid: boolean) => `h-8 w-full min-w-24 rounded-md border px-2 text-[11px] outline-none focus:ring-2 ${invalid ? "border-[#E47B48] bg-[#FFF9F5] text-[#9E3F12] focus:ring-[#F6C5A8]" : "border-[#DDE7F0] bg-white text-[#193B57] focus:ring-[#B8E9DD]"}`;
+  useEffect(() => {
+    if (rows.length) return;
+    const dialog = document.querySelector<HTMLElement>('[aria-labelledby="supply-create-title"]');
+    const labels = Array.from(dialog?.querySelectorAll("label") || []).filter((label) => /^(Tồn đầu kỳ|Mức tồn tối thiểu)/.test(label.textContent?.trim() || ""));
+    labels.forEach((label) => {
+      const input = label.querySelector<HTMLInputElement>("input");
+      const existing = label.querySelector<HTMLElement>("[data-whole-quantity-alert]");
+      if (!input) return;
+      if (!manualQuantityIssue) { existing?.remove(); input.style.borderColor = ""; input.style.backgroundColor = ""; return; }
+      input.style.borderColor = "#E47B48";
+      input.style.backgroundColor = "#FFF9F5";
+      const alert = existing || document.createElement("p");
+      alert.dataset.wholeQuantityAlert = "true";
+      alert.setAttribute("role", "alert");
+      alert.className = "mt-1 text-[10px] font-semibold text-[#B44545]";
+      alert.textContent = `Đơn vị ${form.unit || "Cái"} chỉ nhận số lượng nguyên.`;
+      if (!existing) label.append(alert);
+    });
+    return () => labels.forEach((label) => { label.querySelector<HTMLElement>("[data-whole-quantity-alert]")?.remove(); const input = label.querySelector<HTMLInputElement>("input"); if (input) { input.style.borderColor = ""; input.style.backgroundColor = ""; } });
+  }, [form.minimumQuantity, form.openingQuantity, form.unit, manualQuantityIssue, rows.length]);
   useEffect(() => {
     const label = Array.from(document.querySelectorAll("label")).find((element) => element.firstChild?.textContent?.trim() === "Đơn giá VNĐ");
     const input = label?.querySelector("input");

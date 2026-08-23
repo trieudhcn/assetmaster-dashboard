@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { COOKIE_NAME } from "@shared/const";
+import { isInvalidWholeQuantity } from "@shared/quantity";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { adminProcedure, protectedProcedure, publicProcedure, router } from "./_core/trpc";
@@ -281,6 +282,10 @@ async function restoreHandoverAccessories(
 }
 const dateFromMs = z.number().int().nonnegative().optional().nullable().transform((value) => value ? new Date(value) : null);
 type InvoiceSupplyReceiptData = { id: number; supplyId: number; receivedQuantity: string; unitCost: string | null; taxRate: string; taxAmount: string; totalAmount: string; status: "received" | "void"; receivedAt: Date; note: string | null };
+
+function requireWholeQuantity(unit: string | null | undefined, value: string | number, label = "Số lượng") {
+  if (isInvalidWholeQuantity(unit, value)) throw new TRPCError({ code: "BAD_REQUEST", message: `${label} phải là số nguyên khi đơn vị tính là ${unit}.` });
+}
 
 async function requireEditableAuditSession(sessionId: number) {
   const session = await getAuditSession(sessionId);
@@ -846,7 +851,7 @@ export const appRouter = router({
       itemCode: z.string().trim().max(64).nullable().optional(),
       itemName: z.string().trim().min(1).max(255),
       description: nullableText,
-      quantity: z.string().regex(/^\d+$/, "Số lượng dòng Hóa đơn phải là số nguyên."),
+      quantity: z.string().regex(/^\d+(\.\d{1,3})?$/, "Số lượng dòng Hóa đơn không hợp lệ."),
       unit: z.string().trim().max(32).nullable().optional(),
       unitPrice: z.string().regex(/^\d+(\.\d{1,2})?$/),
       discountAmount: z.string().regex(/^\d+(\.\d{1,2})?$/).default("0"),
@@ -858,6 +863,7 @@ export const appRouter = router({
       const invoice = await getPurchaseInvoiceById(input.purchaseInvoiceId);
       if (!invoice) throw new TRPCError({ code: "NOT_FOUND", message: "Không tìm thấy Hóa đơn mua bán." });
       if (invoice.status === "cancelled") throw new TRPCError({ code: "BAD_REQUEST", message: "Hóa đơn đã hủy không thể thêm dòng." });
+      requireWholeQuantity(input.unit, input.quantity, "Số lượng dòng Hóa đơn");
       const id = await createPurchaseInvoiceLine({ ...input, itemCode: input.itemCode ?? null, description: input.description ?? null, unit: input.unit ?? null, note: input.note ?? null });
       await recordActivity({ entityType: "purchaseInvoiceLine", entityId: id, action: "created", actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: `Thêm dòng ${input.lineNumber}: ${input.itemName} vào Hóa đơn ${invoice.invoiceKey}` });
       return { id };
@@ -881,6 +887,7 @@ export const appRouter = router({
       if (invoice.status === "cancelled") throw new TRPCError({ code: "BAD_REQUEST", message: "Không thể nhập kho từ Hóa đơn đã hủy." });
       const supply = await getInventorySupplyById(input.supplyId, transaction);
       if (!supply) throw new TRPCError({ code: "NOT_FOUND", message: "Không tìm thấy Phụ kiện cần nhập kho." });
+      requireWholeQuantity(supply.unit, input.receivedQuantity, "Số lượng tiếp nhận");
       const receipts = await listPurchaseInvoiceSupplyReceipts(line.id, transaction);
       const receivedBefore = receipts.reduce((total: number, receipt: { status: string; receivedQuantity: string }) => receipt.status === "received" ? total + Number(receipt.receivedQuantity) : total, 0);
       const receivedQuantity = Number(input.receivedQuantity);
@@ -913,6 +920,7 @@ export const appRouter = router({
       if (!invoice) throw new TRPCError({ code: "NOT_FOUND", message: "Không tìm thấy Hóa đơn mua bán." });
       if (invoice.status === "cancelled") throw new TRPCError({ code: "BAD_REQUEST", message: "Không thể tiếp nhận từ Hóa đơn đã hủy." });
       if (await getInventorySupplyByCode(input.code, transaction)) throw new TRPCError({ code: "BAD_REQUEST", message: "Mã Phụ kiện này đã tồn tại. Hãy chọn Phụ kiện có sẵn để tiếp nhận." });
+      requireWholeQuantity(input.unit, input.receivedQuantity, "Số lượng tiếp nhận");
       const receipts = await listPurchaseInvoiceSupplyReceipts(line.id, transaction);
       const receivedBefore = receipts.reduce((total: number, receipt: { status: string; receivedQuantity: string }) => receipt.status === "received" ? total + Number(receipt.receivedQuantity) : total, 0);
       const receivedQuantity = Number(input.receivedQuantity);
@@ -933,7 +941,7 @@ export const appRouter = router({
       itemCode: z.string().trim().max(64).nullable().optional(),
       itemName: z.string().trim().min(1).max(255).optional(),
       description: nullableText,
-      quantity: z.string().regex(/^\d+$/, "Số lượng dòng Hóa đơn phải là số nguyên.").optional(),
+      quantity: z.string().regex(/^\d+(\.\d{1,3})?$/, "Số lượng dòng Hóa đơn không hợp lệ.").optional(),
       unit: z.string().trim().max(32).nullable().optional(),
       unitPrice: z.string().regex(/^\d+(\.\d{1,2})?$/).optional(),
       discountAmount: z.string().regex(/^\d+(\.\d{1,2})?$/).optional(),
@@ -944,6 +952,7 @@ export const appRouter = router({
     })).mutation(async ({ input, ctx }) => {
       const line = await getPurchaseInvoiceLineById(input.id);
       if (!line) throw new TRPCError({ code: "NOT_FOUND", message: "Không tìm thấy dòng Hóa đơn." });
+      requireWholeQuantity(input.unit === undefined ? line.unit : input.unit, input.quantity ?? line.quantity, "Số lượng dòng Hóa đơn");
       const { id, ...changes } = input;
       await updatePurchaseInvoiceLine(id, changes);
       await recordActivity({ entityType: "purchaseInvoiceLine", entityId: id, action: "updated", actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: `Cập nhật dòng ${changes.lineNumber ?? line.lineNumber} của Hóa đơn` });
@@ -1190,6 +1199,7 @@ export const appRouter = router({
             for (const requestItem of input.items) {
               const supply = await getInventorySupplyById(requestItem.supplyId, transaction);
               if (!supply || !supply.isActive) throw new TRPCError({ code: "NOT_FOUND", message: "Không tìm thấy phụ kiện đang hoạt động." });
+              requireWholeQuantity(supply.unit, requestItem.quantity, "Số lượng cấp phát");
               const before = Number(supply.stockQuantity);
               const after = before - requestItem.quantity;
               if (after < 0) throw new TRPCError({ code: "BAD_REQUEST", message: `Tồn kho ${supply.name} không đủ. Hiện còn ${before} ${supply.unit}.` });
@@ -1216,6 +1226,7 @@ export const appRouter = router({
       if (input.quantity > availableToReturn) throw new TRPCError({ code: "BAD_REQUEST", message: `Chỉ có thể hoàn trả tối đa ${availableToReturn} ${item.unit}.` });
       const supply = await getInventorySupplyById(item.supplyId, transaction);
       if (!supply) throw new TRPCError({ code: "NOT_FOUND", message: "Không tìm thấy phụ kiện trong kho." });
+      requireWholeQuantity(item.unit, input.quantity, "Số lượng hoàn trả");
       const before = Number(supply.stockQuantity);
       const after = before + input.quantity;
       await updateInventorySupply(supply.id, { stockQuantity: String(after) }, transaction);
@@ -1243,6 +1254,8 @@ export const appRouter = router({
       note: nullableText,
     })).mutation(async ({ input, ctx }) => {
       if (await getInventorySupplyByCode(input.code)) throw new TRPCError({ code: "BAD_REQUEST", message: "Mã phụ kiện này đã tồn tại." });
+      requireWholeQuantity(input.unit, input.openingQuantity, "Tồn đầu kỳ");
+      requireWholeQuantity(input.unit, input.minimumQuantity, "Mức tồn tối thiểu");
       const linkedContract = await requireUsablePurchaseContract(input.purchaseContractId);
       const contractVendor = linkedContract?.vendorId ? await getVendorById(linkedContract.vendorId) : null;
       const resolvedVendorId = linkedContract?.vendorId ?? input.vendorId ?? null;
@@ -1272,6 +1285,8 @@ export const appRouter = router({
       const fileCodes = new Set<string>();
       for (const item of input.items) {
         if (fileCodes.has(item.code)) throw new TRPCError({ code: "BAD_REQUEST", message: `Mã phụ kiện ${item.code} bị lặp trong file Excel.` });
+        requireWholeQuantity(item.unit, item.openingQuantity, "Tồn đầu kỳ");
+        requireWholeQuantity(item.unit, item.minimumQuantity, "Mức tồn tối thiểu");
         fileCodes.add(item.code);
       }
       return runInventoryTransaction(async (transaction) => {
@@ -1315,6 +1330,7 @@ export const appRouter = router({
     update: adminProcedure.input(z.object({ id: z.number().int().positive(), code: z.string().trim().min(2).max(64).regex(/^[A-Za-z0-9-]+$/).transform((value) => value.toUpperCase()).optional(), name: z.string().trim().min(2).max(255).optional(), categoryId: z.number().int().positive().nullable().optional(), vendorId: z.number().int().positive().nullable().optional(), brandId: z.number().int().positive().nullable().optional(), purchaseContractId: z.number().int().positive().nullable().optional(), unit: z.string().trim().min(1).max(32).optional(), minimumQuantity: z.number().finite().min(0).optional(), unitCost: z.number().finite().min(0).nullable().optional(), location: nullableText, note: nullableText, isActive: z.boolean().optional() })).mutation(async ({ input, ctx }) => {
       const supply = await getInventorySupplyById(input.id);
       if (!supply) throw new TRPCError({ code: "NOT_FOUND", message: "Không tìm thấy phụ kiện." });
+      requireWholeQuantity(input.unit ?? supply.unit, input.minimumQuantity ?? supply.minimumQuantity, "Mức tồn tối thiểu");
       if (input.code !== undefined && input.code !== supply.code) throw new TRPCError({ code: "BAD_REQUEST", message: "Mã phụ kiện đã được khóa sau khi tạo mới." });
       const targetPurchaseContractId = input.purchaseContractId === undefined ? supply.purchaseContractId : input.purchaseContractId;
       const linkedContract = await requireUsablePurchaseContract(targetPurchaseContractId);
@@ -1338,6 +1354,7 @@ export const appRouter = router({
     })).mutation(async ({ input, ctx }) => runInventoryTransaction(async (transaction) => {
       const supply = await getInventorySupplyById(input.supplyId, transaction);
       if (!supply || !supply.isActive) throw new TRPCError({ code: "NOT_FOUND", message: "Không tìm thấy phụ kiện đang hoạt động." });
+      requireWholeQuantity(supply.unit, input.quantity, "Số lượng giao dịch");
       const recipientUser = input.recipientUserId ? (await listUsers()).find((user) => user.id === input.recipientUserId && user.isActive) : null;
       if (input.recipientUserId && !recipientUser) throw new TRPCError({ code: "NOT_FOUND", message: "Không tìm thấy nhân sự đang hoạt động được chọn." });
       const before = Number(supply.stockQuantity);

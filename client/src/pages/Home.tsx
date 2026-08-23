@@ -2138,7 +2138,7 @@ function HandoverDetailModal({ item: listItem, companyInfo, onClose, onDataChang
   const updateHandoverStatus = trpc.handovers.updateStatus.useMutation({
     onSuccess: (result, variables) => {
       onDataChanged();
-      toast.success(variables.status === "returned" ? `Đã ghi nhận hoàn trả${result.returnedAccessoryCount ? ` và hoàn ${result.returnedAccessoryCount} loại phụ kiện vào kho` : ""}${result.outstandingAccessoryCount ? `. Còn ${result.outstandingAccessoryCount} loại phụ kiện chưa hoàn đủ.` : "."}` : "Đã cập nhật trạng thái phiếu bàn giao.");
+      toast.success(variables.status === "returned" ? (result.outstandingAccessoryCount ? "Đã hoàn trả · còn phụ kiện chưa đủ." : "Đã hoàn trả.") : "Đã cập nhật phiếu bàn giao.");
       onClose();
     },
     onError: (error) => toast.error(error.message || "Không thể cập nhật trạng thái phiếu."),
@@ -2155,14 +2155,14 @@ function HandoverDetailModal({ item: listItem, companyInfo, onClose, onDataChang
       return;
     }
     onRecoveryPdfHandled();
-    void downloadAssetRecoveryPdf(item, companyInfo).then(() => { notifyPreparationComplete(true); toast.success("Đã mở biên bản thu hồi. Bạn có thể in hoặc tải PDF từ màn hình xem trước."); }).catch(() => { notifyPreparationComplete(false); toast.error("Không thể mở bản xem trước biên bản thu hồi."); });
+    void downloadAssetRecoveryPdf(item, companyInfo).then(() => { notifyPreparationComplete(true); toast.success("Đã mở xem trước PDF."); }).catch(() => { notifyPreparationComplete(false); toast.error("Không thể mở bản xem trước biên bản thu hồi."); });
   }, [autoOpenRecoveryCertificate, handoverDetailQuery.isLoading, handoverDetailQuery.data, item.id, item.status, item.recoveryCertificateNumber, companyInfo, onRecoveryPdfHandled]);
   useModalDismiss(onClose);
   const preparePdf = (kind: "handover" | "recovery") => {
     if (isPreparingPdf) return;
     setIsPreparingPdf(true);
     const pdf = kind === "recovery" ? downloadAssetRecoveryPdf(item, companyInfo) : downloadHandoverPdf(item, signature, companyInfo);
-    void pdf.then(() => toast.success(kind === "recovery" ? "Đã mở biên bản thu hồi. Bạn có thể in hoặc tải PDF từ màn hình xem trước." : "Đã mở xem trước. Bạn có thể in hoặc tải PDF từ màn hình này.")).catch(() => toast.error("Không thể chuẩn bị bản xem trước PDF.")).finally(() => setIsPreparingPdf(false));
+    void pdf.then(() => toast.success("Đã mở xem trước PDF.")).catch(() => toast.error("Không thể chuẩn bị bản xem trước PDF.")).finally(() => setIsPreparingPdf(false));
   };
   const isBusy = saveRecipientSignature.isPending || updateHandoverStatus.isPending || isPreparingPdf;
   const saveSignature = (dataUrl: string) => saveRecipientSignature.mutate({ id: item.id, dataUrl });

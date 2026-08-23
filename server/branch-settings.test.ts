@@ -101,6 +101,9 @@ describe("branch settings", () => {
     expect(employees).toContain("employees.updateBranch");
     expect(employees).toContain("data-employee-branch");
     expect(employees).toContain("EmployeeBranchAllocation");
+    expect(employees).toContain("const unassignedEmployees = employees.filter");
+    expect(employees).toContain("chưa gán");
+    expect(employees).toContain("unassignedEmployees.map");
     expect(employees).not.toContain("document.createElement");
     expect(employees).toContain('searchPlaceholder="Tìm tên hoặc mã Chi nhánh..."');
     expect(employees.indexOf('className="mt-4 rounded-xl border border-[#E7EEF3] p-4"><div className="flex items-center gap-2"><FolderTree')).toBeLessThan(employees.indexOf('data-employee-branch className="mt-4 rounded-xl border border-[#E7EEF3] p-4"'));
