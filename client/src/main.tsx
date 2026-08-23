@@ -8,7 +8,17 @@ import App from "./App";
 import { startLogin } from "./const";
 import "./index.css";
 
-const queryClient = new QueryClient();
+const TEMPORARY_API_START_MESSAGE = "Dịch vụ đang khởi động lại. Hệ thống sẽ tự thử lại trong giây lát.";
+const isTemporaryApiStartError = (error: unknown) => error instanceof Error && error.message === TEMPORARY_API_START_MESSAGE;
+
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: (failureCount, error) => isTemporaryApiStartError(error) ? failureCount < 5 : failureCount < 3,
+      retryDelay: attempt => Math.min(900 * 2 ** attempt, 6_000),
+    },
+  },
+});
 
 const redirectToLoginIfUnauthorized = (error: unknown) => {
   if (!(error instanceof TRPCClientError)) return;
@@ -62,11 +72,17 @@ const trpcClient = trpc.createClient({
         }
         return {};
       },
-      fetch(input, init) {
-        return globalThis.fetch(input, {
+      async fetch(input, init) {
+        const response = await globalThis.fetch(input, {
           ...(init ?? {}),
           credentials: "include",
         });
+        const contentType = response.headers.get("content-type") || "";
+        if (contentType.includes("text/html")) {
+          const body = await response.clone().text();
+          if (/this site is under maintenance/i.test(body)) throw new Error(TEMPORARY_API_START_MESSAGE);
+        }
+        return response;
       },
     }),
   ],

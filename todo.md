@@ -165,6 +165,24 @@
 - [x] Thêm tùy chọn cấu hình để ẩn Website trên các mẫu PDF dùng nội bộ, được lưu vào cơ sở dữ liệu và giữ Email hiển thị.
 - [x] Áp dụng migration, xác minh trực quan Cài đặt thương hiệu; 21 tệp Vitest/272 kiểm thử, TypeScript và production build đều đạt.
 
+## Current Session — Lỗi truy cập Danh mục tài sản
+
+- [x] Tái hiện lỗi trang bảo trì khi mở Danh mục tài sản/Bàn giao và thu thập dấu vết phản hồi: gián đoạn xảy ra trước khi ứng dụng React khởi tạo trên Autoscale.
+- [x] Khắc phục phía ứng dụng: tự thử lại API, hiển thị trạng thái tải/lỗi rõ ràng và thao tác thử lại tại Danh mục tài sản, không thay đổi chế độ hosting.
+
+## Current Session — API HTML thay vì JSON
+
+- [x] Tái hiện phản hồi HTML cho API Danh mục tài sản và Bàn giao, xác định đây là trang bảo trì tạm thời của Autoscale trước khi ứng dụng sẵn sàng.
+- [x] Chuyển phản hồi HTML bảo trì thành lỗi tạm thời có thể tự thử lại, thêm hồi quy và xác minh trực tiếp hai danh sách sau khi dịch vụ sẵn sàng.
+
+> Ghi nhận tái hiện: phản hồi HTML trang bảo trì xuất hiện trước khi ứng dụng React khởi tạo; khi phản hồi ổn định, API `assets.list` trả 29 tài sản và `handovers.list` trả 5 phiếu. Hai trang hiện render số 0 trong thời gian chờ dữ liệu, cần thay bằng trạng thái tải rõ ràng.
+
+## Current Session — Giữ Autoscale, tăng khả năng chịu lỗi
+
+- [x] Thay trạng thái Danh mục tài sản rỗng tạm thời bằng panel đang tải có skeleton; Bàn giao tiếp tục dùng skeleton bảng trong lúc tải.
+- [x] Cải thiện thông báo phản hồi HTML/bảo trì bằng tự thử lại tối đa năm lần, thông báo tiếng Việt và nút thử lại dữ liệu, không thay đổi chế độ hosting.
+- [x] Bổ sung hồi quy, xác minh Danh mục tài sản/Bàn giao trên desktop, TypeScript, production build và 21 tệp Vitest/273 kiểm thử.
+
 - [x] Mở rộng mô hình dữ liệu tài sản với thông tin chi tiết và trạng thái thao tác.
 - [x] Thêm modal tạo tài sản mới với validation cơ bản.
 - [x] Thêm modal chỉnh sửa tài sản và cập nhật dữ liệu trong bảng.

@@ -2293,6 +2293,25 @@ describe("maintenance history and filter layout contract", () => {
     expect(home).toContain('flex flex-wrap items-center gap-2 border-b border-[#E7EEF3] bg-[#FBFCFD] px-5 py-4');
     expect(home).toContain('relative min-w-0 flex-[2_1_420px]');
   });
+
+  it("tự thử lại API khi gateway Autoscale trả trang bảo trì HTML", () => {
+    const main = readProjectFile("client/src/main.tsx");
+    const home = readProjectFile("client/src/pages/Home.tsx");
+
+    expect(main).toContain("TEMPORARY_API_START_MESSAGE");
+    expect(main).toContain("this site is under maintenance");
+    expect(main).toContain("failureCount < 5");
+    expect(main).toContain('contentType.includes("text/html")');
+    expect(home).toContain("Không thể tải Danh mục tài sản");
+    expect(home).toContain('action: { label: "Thử lại", onClick: () => void assetQuery.refetch() }');
+    expect(home).toContain("AssetCatalogLoadingPanel");
+    expect(home).toContain("Đang tải Danh mục tài sản...");
+    expect(home).toContain("AssetCatalogUnavailablePanel");
+    expect(home).toContain("Thử lại dữ liệu");
+    expect(home).toContain("handoversQuery.isLoading");
+    expect(home).toContain("ModalTableSkeleton rows={5} columns={7}");
+    expect(home).toContain("Không thể tải phiếu bàn giao");
+  });
 });
 
 
