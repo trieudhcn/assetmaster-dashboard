@@ -1573,7 +1573,8 @@ describe("modal presentation contract", () => {
     expect(home).toContain('"Nội dung Bảo hành/Sửa chữa"');
     expect(home).toContain('"Thông tin này sẽ được lưu cùng tài sản để theo dõi và hiển thị trong thông báo Bảo hành/Sửa chữa."');
     expect(home).toContain('new CustomEvent("assetmaster-open-recovery-certificate"');
-    expect(home).toContain('certificate: String(item.recoveryCertificateNumber)');
+    expect(home).toContain('requestRecoveryCertificate(String(item.recoveryCertificateNumber))');
+    expect(home).toContain('Đang chuẩn bị PDF...');
     expect(home).toContain('downloadAssetRecoveryPdf(pdfItem, companyInfo, { skipFilenamePrompt: true })');
     expect(home).toContain('Mở biên bản thu hồi ${item.recoveryCertificateNumber}');
   });
@@ -2431,4 +2432,20 @@ it("hiển thị danh sách phụ kiện chạm mức tồn tối thiểu trên 
   expect(home).toContain("Tồn kho phụ kiện đang an toàn");
   expect(home).toContain("Tạo phiếu nhập kho");
   expect(home).toContain("assetmaster-open-supply-receipt-id");
+});
+
+it("hiển thị trạng thái đang chuẩn bị PDF và khóa thao tác lặp trên các biên bản", () => {
+  const home = readProjectFile("client/src/pages/Home.tsx");
+  const supplies = readProjectFile("client/src/components/SupplyIssueSlipManager.tsx");
+  const servicePreview = readProjectFile("client/src/components/QuickServiceTicketPreview.tsx");
+  const operations = readProjectFile("client/src/pages/OperationsModules.tsx");
+
+  expect(home).toContain("preparingRecoveryCertificate");
+  expect(home).toContain("assetmaster-recovery-pdf-preparation-complete");
+  expect(home).toContain("const [isPreparingPdf, setIsPreparingPdf]");
+  expect(home).toContain("Đang chuẩn bị PDF...");
+  expect(home).toContain("disabled={isBusy}");
+  expect(supplies).toContain('isPreparingPdf ? "Đang chuẩn bị PDF..."');
+  expect(servicePreview).toContain('pdfPreparing === "preview" ? "Đang chuẩn bị PDF..."');
+  expect(operations).toContain('isExportingDiscrepancy === "pdf" ? "Đang chuẩn bị PDF..."');
 });

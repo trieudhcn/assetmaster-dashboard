@@ -101,7 +101,7 @@ export function SupplyIssueSlipManager() {
           </div>
           <button type="button" aria-label="Đóng chi tiết phiếu" onClick={() => setSelectedSlipId(null)} className="drawer-close-action"><X size={18} /></button>
         </div>
-        <div className="mt-5 flex flex-wrap gap-2"><button type="button" onClick={() => void previewSlipPdf()} disabled={isPreparingPdf || itemsQuery.isLoading} className="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-[#0F8C8C] px-3 text-xs font-extrabold text-white transition hover:bg-[#087A6A] disabled:opacity-50"><Printer size={15} />{isPreparingPdf ? "Đang tạo PDF..." : "Xem & in PDF"}</button><span className="self-center text-[11px] text-[#71869A]">PDF có thông tin công ty và vùng ký nhận.</span></div>
+        <div className="mt-5 flex flex-wrap gap-2"><button type="button" onClick={() => void previewSlipPdf()} disabled={isPreparingPdf || itemsQuery.isLoading} className="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-[#0F8C8C] px-3 text-xs font-extrabold text-white transition hover:bg-[#087A6A] disabled:opacity-50"><Printer size={15} />{isPreparingPdf ? "Đang chuẩn bị PDF..." : "Xem & in PDF"}</button><span className="self-center text-[11px] text-[#71869A]">PDF có thông tin công ty và vùng ký nhận.</span></div>
         <div className="mt-5 space-y-3">
           {itemsQuery.isLoading && <p className="text-sm text-[#71869A]">Đang tải phụ kiện đã cấp...</p>}
           {(itemsQuery.data || []).map((item: any) => {

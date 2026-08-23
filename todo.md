@@ -188,6 +188,12 @@
 - [x] Giảm thêm cỡ chữ mã TH trong cột Mã phiếu Bàn giao còn 8px, giữ biểu tượng, tooltip và vùng nhấp dễ dùng trên mobile.
 - [x] Bổ sung hồi quy, xác minh desktop/mobile, TypeScript, build và 21 tệp Vitest/273 kiểm thử trước khi phát hành.
 
+## Current Session — Trạng thái đang chuẩn bị PDF
+
+- [x] Rà soát các nút mở/xem biên bản và điểm tạo bản xem trước PDF: Bàn giao/Thu hồi, Phụ kiện, Bảo hành/Sửa chữa, Kiểm kê và Thanh lý.
+- [x] Hiển thị “Đang chuẩn bị PDF…” cùng trạng thái vô hiệu hóa để ngăn nhấp lặp ở mã TH, modal Bàn giao/Thu hồi và các luồng xem biên bản liên quan.
+- [x] Bổ sung hồi quy, xác minh mở PDF thu hồi desktop, TypeScript, build và 21 tệp Vitest/274 kiểm thử trước khi phát hành.
+
 - [x] Mở rộng mô hình dữ liệu tài sản với thông tin chi tiết và trạng thái thao tác.
 - [x] Thêm modal tạo tài sản mới với validation cơ bản.
 - [x] Thêm modal chỉnh sửa tài sản và cập nhật dữ liệu trong bảng.

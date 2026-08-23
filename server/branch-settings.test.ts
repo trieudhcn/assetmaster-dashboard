@@ -61,7 +61,8 @@ describe("branch settings", () => {
     expect(home).toContain('w-[144px] space-y-1');
     expect(home).toContain('overflow-hidden text-ellipsis whitespace-nowrap');
     expect(home).toContain('window.dispatchEvent(new CustomEvent("assetmaster-open-recovery-certificate"');
-    expect(home).toContain('certificate: String(item.recoveryCertificateNumber)');
+    expect(home).toContain('requestRecoveryCertificate(String(item.recoveryCertificateNumber))');
+    expect(home).toContain("preparingRecoveryCertificate");
     const stylesheet = readProjectFile("client/src/index.css");
     expect(home).toContain('text-[9px] font-extrabold text-[#8F5A00]');
     expect(stylesheet).toContain("[data-handover-reference] > button");
