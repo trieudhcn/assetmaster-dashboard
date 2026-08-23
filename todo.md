@@ -279,6 +279,13 @@
 - [x] Loại bỏ trường tổng giá trị khỏi biểu mẫu tạo/chỉnh sửa Hợp đồng, giữ nguyên dữ liệu lịch sử và API tương thích.
 - [x] Bổ sung hồi quy, xác minh desktop/mobile, TypeScript và production build trước khi phát hành.
 
+## Current Session — Quét mã vạch và hướng dẫn Hóa đơn
+
+- [x] Rà soát thành phần quét camera hiện có và thiết kế quyền truy cập camera phù hợp cho tạo nhanh Phụ kiện.
+- [x] Tích hợp quét mã vạch bằng camera để điền Mã Phụ kiện trong form tạo nhanh từ dòng Hóa đơn.
+- [x] Chỉnh nút Thêm dòng Hóa đơn theo chuẩn hành động ứng dụng và bổ sung hướng dẫn thao tác tại chỗ; ảnh tham chiếu cho thấy icon/nội dung đang bị tách dọc về bên phải.
+- [x] Bổ sung hồi quy, xác minh desktop/mobile, TypeScript và production build trước khi phát hành.
+
 - [x] Mở rộng mô hình dữ liệu tài sản với thông tin chi tiết và trạng thái thao tác.
 - [x] Thêm modal tạo tài sản mới với validation cơ bản.
 - [x] Thêm modal chỉnh sửa tài sản và cập nhật dữ liệu trong bảng.

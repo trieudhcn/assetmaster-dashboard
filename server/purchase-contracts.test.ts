@@ -11,6 +11,7 @@ describe("purchase contract management", () => {
   const contractsView = readFileSync(resolve(import.meta.dirname, "../client/src/pages/PurchaseContractManagementView.tsx"), "utf8");
   const invoicesView = readFileSync(resolve(import.meta.dirname, "../client/src/pages/PurchaseInvoiceManagementView.tsx"), "utf8");
   const invoiceOperations = readFileSync(resolve(import.meta.dirname, "../client/src/components/InvoiceLineOperationsPanel.tsx"), "utf8");
+  const globalStyles = readFileSync(resolve(import.meta.dirname, "../client/src/index.css"), "utf8");
   const vendorsView = readFileSync(resolve(import.meta.dirname, "../client/src/pages/VendorBrandManagementPage.tsx"), "utf8");
 
   it("models one contract with reusable documents and links to assets or supplies", () => {
@@ -160,5 +161,16 @@ describe("purchase contract management", () => {
     expect(invoiceOperations).toContain("Đơn giá");
     expect(contractsView).toContain('label === "Tổng giá trị" ? "hidden"');
     expect(contractsView).not.toContain("totalValue: form.totalValue");
+  });
+
+  it("supports camera barcode scanning and keeps invoice action labels horizontally aligned", () => {
+    expect(invoiceOperations).toContain('import { BrowserMultiFormatReader } from "@zxing/browser"');
+    expect(invoiceOperations).toContain("decodeFromConstraints");
+    expect(invoiceOperations).toContain("facingMode: { ideal: \"environment\" }");
+    expect(invoiceOperations).toContain("Quét mã vạch");
+    expect(invoiceOperations).toContain("Quét mã");
+    expect(invoiceOperations).toContain("Quyền camera đang bị chặn");
+    expect(globalStyles).toContain(".filter-action { display: inline-flex");
+    expect(globalStyles).toContain("white-space: nowrap");
   });
 });
