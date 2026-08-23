@@ -159,6 +159,12 @@
 - [x] Xác minh trực quan PDF thu hồi TH-202608-001: Email và Website nằm ở hai dòng riêng bên dưới MST/Điện thoại; divider giữ khoảng cách hợp lệ.
 - [x] Xác nhận helper được dùng bởi PDF Phụ kiện, Bàn giao, Bảo hành/Sửa chữa, Thanh lý, Kiểm kê và Thu hồi; hồi quy, TypeScript và build đều đạt.
 
+## Current Session — Truy cập phát hành và Website nội bộ
+
+- [x] Chẩn đoán lỗi truy cập: tên miền phát hành hiện tải Dashboard bình thường sau kiểm tra phiên; không còn trang bảo trì ở giao diện người dùng.
+- [x] Thêm tùy chọn cấu hình để ẩn Website trên các mẫu PDF dùng nội bộ, được lưu vào cơ sở dữ liệu và giữ Email hiển thị.
+- [x] Áp dụng migration, xác minh trực quan Cài đặt thương hiệu; 21 tệp Vitest/272 kiểm thử, TypeScript và production build đều đạt.
+
 - [x] Mở rộng mô hình dữ liệu tài sản với thông tin chi tiết và trạng thái thao tác.
 - [x] Thêm modal tạo tài sản mới với validation cơ bản.
 - [x] Thêm modal chỉnh sửa tài sản và cập nhật dữ liệu trong bảng.

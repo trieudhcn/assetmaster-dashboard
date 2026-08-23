@@ -34,10 +34,10 @@ await expect(caller.company.get()).resolves.toBeNull();
     await expect(caller.company.publicBrand()).resolves.toEqual({ name: "Công ty Kiểm thử", websiteTitle: "Cổng tài sản", logoUrl: "/manus-storage/company-brand/logo.png", brandColor: "#0F8C8C", loginBackgroundUrl: "/manus-storage/company-brand/login-bg.png", loginGreeting: "Chào mừng đội ngũ", loginBackgroundOverlay: "dark" });
   });
 
-  it("persists the configured website title and logo URL", async () => {
+  it("persists the configured website title, logo URL and internal-document Website preference", async () => {
     const caller = appRouter.createCaller({ user: { id: 1, openId: "admin", role: "admin", name: "Admin", isActive: true }, req: {}, res: {} } as any);
-    await caller.company.save({ name: "Công ty AssetMaster", address: null, taxCode: null, phone: null, email: null, websiteUrl: "https://assetmaster.vn", logoUrl: "/manus-storage/company-brand/logo.webp", websiteTitle: "Cổng tài sản nội bộ", brandColor: "#175A9E", faviconUrl: "/manus-storage/company-brand/favicon.png" });
-    expect(mocks.saveCompany).toHaveBeenCalledWith(expect.objectContaining({ websiteUrl: "https://assetmaster.vn", logoUrl: "/manus-storage/company-brand/logo.webp", websiteTitle: "Cổng tài sản nội bộ", brandColor: "#175A9E", faviconUrl: "/manus-storage/company-brand/favicon.png" }));
+    await caller.company.save({ name: "Công ty AssetMaster", address: null, taxCode: null, phone: null, email: null, websiteUrl: "https://assetmaster.vn", hideWebsiteOnInternalPdf: true, logoUrl: "/manus-storage/company-brand/logo.webp", websiteTitle: "Cổng tài sản nội bộ", brandColor: "#175A9E", faviconUrl: "/manus-storage/company-brand/favicon.png" });
+    expect(mocks.saveCompany).toHaveBeenCalledWith(expect.objectContaining({ websiteUrl: "https://assetmaster.vn", hideWebsiteOnInternalPdf: true, logoUrl: "/manus-storage/company-brand/logo.webp", websiteTitle: "Cổng tài sản nội bộ", brandColor: "#175A9E", faviconUrl: "/manus-storage/company-brand/favicon.png" }));
   });
 });
 

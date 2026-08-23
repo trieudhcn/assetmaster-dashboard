@@ -2,7 +2,7 @@ import { jsPDF } from "jspdf";
 import { createPdfLogoWatermark, applyPdfLogoWatermark, openPdfPreview } from "@/lib/pdfExport";
 import { drawPdfCorporateFooter, drawPdfCorporateHeader, handoverPdfFontUrl, registerVietnamesePdfFont } from "@/lib/handoverPdf";
 
-type CompanyInfo = { name?: string | null; address?: string | null; taxCode?: string | null; phone?: string | null; email?: string | null; websiteUrl?: string | null; logoUrl?: string | null };
+type CompanyInfo = { name?: string | null; address?: string | null; taxCode?: string | null; phone?: string | null; email?: string | null; websiteUrl?: string | null; hideWebsiteOnInternalPdf?: boolean | null; logoUrl?: string | null };
 type SupplyIssueSlipPdf = { referenceCode: string; recipientName: string; issuedByName: string | null; issuedAt: Date; note: string | null };
 type SupplyIssueItemPdf = { supplyCode: string; supplyName: string; unit: string; issuedQuantity: string; returnedQuantity: string };
 

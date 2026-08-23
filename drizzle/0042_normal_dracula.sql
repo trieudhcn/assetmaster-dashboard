@@ -1,0 +1,1 @@
+ALTER TABLE `companies` ADD `hideWebsiteOnInternalPdf` boolean DEFAULT false NOT NULL;

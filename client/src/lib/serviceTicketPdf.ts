@@ -7,7 +7,7 @@ export type ServiceTicketPdfCompany = {
   address?: string | null;
   taxCode?: string | null;
   phone?: string | null;
-  email?: string | null; websiteUrl?: string | null;
+  email?: string | null; websiteUrl?: string | null; hideWebsiteOnInternalPdf?: boolean | null;
   logoUrl?: string | null;
 };
 

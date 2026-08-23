@@ -44,6 +44,7 @@ export const companies = mysqlTable("companies", {
   phone: varchar("phone", { length: 32 }),
   email: varchar("email", { length: 320 }),
   websiteUrl: varchar("websiteUrl", { length: 320 }),
+  hideWebsiteOnInternalPdf: boolean("hideWebsiteOnInternalPdf").default(false).notNull(),
   logoUrl: text("logoUrl"),
   websiteTitle: varchar("websiteTitle", { length: 120 }),
   brandColor: varchar("brandColor", { length: 9 }),

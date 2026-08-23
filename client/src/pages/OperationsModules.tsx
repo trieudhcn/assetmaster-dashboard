@@ -93,6 +93,7 @@ type AuditCompanySettings = {
   phone?: string | null;
   email?: string | null;
   websiteUrl?: string | null;
+  hideWebsiteOnInternalPdf?: boolean | null;
   websiteTitle?: string | null;
   logoUrl?: string | null;
   brandColor?: string | null;

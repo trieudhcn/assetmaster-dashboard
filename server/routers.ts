@@ -344,7 +344,7 @@ export const appRouter = router({
         loginBackgroundOverlay: company.loginBackgroundOverlay,
       };
     }),
-    save: adminProcedure.input(z.object({ name: z.string().trim().min(2).max(255), address: nullableText, taxCode: nullableText, phone: nullableText, email: nullableEmail, websiteUrl: nullableWebsiteUrl, logoUrl: nullableText, websiteTitle: z.string().trim().min(2).max(120).optional().nullable(), brandColor: z.string().regex(/^#[0-9a-fA-F]{6}$/).optional().nullable(), faviconUrl: nullableText, loginBackgroundUrl: nullableText, loginGreeting: z.string().trim().max(300).optional().nullable(), loginBackgroundOverlay: z.enum(["light", "dark"]).optional().nullable() })).mutation(async ({ input, ctx }) => {
+    save: adminProcedure.input(z.object({ name: z.string().trim().min(2).max(255), address: nullableText, taxCode: nullableText, phone: nullableText, email: nullableEmail, websiteUrl: nullableWebsiteUrl, hideWebsiteOnInternalPdf: z.boolean().optional().default(false), logoUrl: nullableText, websiteTitle: z.string().trim().min(2).max(120).optional().nullable(), brandColor: z.string().regex(/^#[0-9a-fA-F]{6}$/).optional().nullable(), faviconUrl: nullableText, loginBackgroundUrl: nullableText, loginGreeting: z.string().trim().max(300).optional().nullable(), loginBackgroundOverlay: z.enum(["light", "dark"]).optional().nullable() })).mutation(async ({ input, ctx }) => {
       const id = await saveCompany(input);
       await recordActivity({ entityType: "company", entityId: id, action: "updated", actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: "Cập nhật thông tin công ty" });
       return { id };

@@ -3,7 +3,7 @@ import { applyPdfLogoWatermark, createPdfLogoWatermark, openPdfPreview } from "@
 import { drawPdfCorporateFooter, drawPdfCorporateHeader, handoverPdfFontUrl, registerVietnamesePdfFont } from "@/lib/handoverPdf";
 
 export type HandoverPdfCompany = { name?: string | null; address?: string | null; taxCode?: string | null; phone?: string | null;
-  email?: string | null; websiteUrl?: string | null; logoUrl?: string | null };
+  email?: string | null; websiteUrl?: string | null; hideWebsiteOnInternalPdf?: boolean | null; logoUrl?: string | null };
 export type HandoverPdfInput = { referenceCode: string; assetCode: string; assetName: string; branchName?: string | null; recipientName: string; recipientDepartmentName?: string | null; handoverByName?: string | null; handedOverAt: Date; conditionOut?: string | null; accessories?: string | null; note?: string | null; status?: string | null; supplyItems: Array<{ supplyCode: string; supplyName: string; unit: string; issuedQuantity: string; returnedQuantity?: string | null }> };
 
 async function loadImageData(url: string) {

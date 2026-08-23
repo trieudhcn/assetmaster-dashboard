@@ -4,7 +4,7 @@ import { drawPdfCorporateFooter, drawPdfCorporateHeader, handoverPdfFontUrl, reg
 import { applyPdfLogoWatermark, createPdfLogoWatermark, openPdfPreview } from "@/lib/pdfExport";
 
 export type RetirementPdfCompany = { name?: string | null; address?: string | null; taxCode?: string | null; phone?: string | null;
-  email?: string | null; websiteUrl?: string | null; logoUrl?: string | null };
+  email?: string | null; websiteUrl?: string | null; hideWebsiteOnInternalPdf?: boolean | null; logoUrl?: string | null };
 export type RetirementPdfAsset = {
   code: string;
   name: string;

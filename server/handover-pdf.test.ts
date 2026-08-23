@@ -84,7 +84,7 @@ describe("Vietnamese handover PDF", () => {
     const headerSource = readFileSync("client/src/lib/handoverPdf.ts", "utf8");
     expect(headerSource).toContain("const primaryContactLine");
     expect(headerSource).toContain("const emailLine = company.email");
-    expect(headerSource).toContain("const websiteLine = company.websiteUrl");
+    expect(headerSource).toContain("const showWebsite = options.showWebsite ?? !company.hideWebsiteOnInternalPdf");
     expect(headerSource).toContain("doc.text(emailLines, textX, lineY)");
     expect(headerSource).toContain("doc.text(websiteLines, textX, lineY)");
     const directory = mkdtempSync(join(tmpdir(), "assetmaster-pdf-header-"));
@@ -95,6 +95,29 @@ describe("Vietnamese handover PDF", () => {
       expect(extracted).toContain("Công Ty TNHH Vi Tính Thái Thịnh");
       expect(extracted).toContain("MST: 0101010101");
       expect(extracted).toContain("Website: vitinhthaithinh.site");
+    } finally {
+      rmSync(directory, { recursive: true, force: true });
+    }
+  });
+
+  it("hides the Website line when internal-document preference is enabled", () => {
+    const fontBytes = readFileSync("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf");
+    const fontBuffer = fontBytes.buffer.slice(fontBytes.byteOffset, fontBytes.byteOffset + fontBytes.byteLength);
+    const doc = new jsPDF({ unit: "mm", format: "a4" });
+    registerVietnamesePdfFont(doc, fontBuffer);
+    drawPdfCorporateHeader(doc, {
+      name: "Công ty AssetMaster",
+      email: "contact@assetmaster.vn",
+      websiteUrl: "https://assetmaster.vn",
+      hideWebsiteOnInternalPdf: true,
+    });
+    const directory = mkdtempSync(join(tmpdir(), "assetmaster-pdf-internal-header-"));
+    const pdfPath = join(directory, "internal-header.pdf");
+    try {
+      writeFileSync(pdfPath, Buffer.from(doc.output("arraybuffer")));
+      const extracted = execFileSync("pdftotext", [pdfPath, "-"], { encoding: "utf8" });
+      expect(extracted).toContain("Email: contact@assetmaster.vn");
+      expect(extracted).not.toContain("Website: https://assetmaster.vn");
     } finally {
       rmSync(directory, { recursive: true, force: true });
     }

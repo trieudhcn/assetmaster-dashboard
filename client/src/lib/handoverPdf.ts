@@ -10,6 +10,7 @@ export type PdfCorporateIdentity = {
   phone?: string | null;
   email?: string | null;
   websiteUrl?: string | null;
+  hideWebsiteOnInternalPdf?: boolean | null;
 };
 
 function arrayBufferToBase64(buffer: ArrayBuffer) {
@@ -33,7 +34,7 @@ export function registerVietnamesePdfFont(doc: jsPDF, fontBuffer: ArrayBuffer) {
 export function drawPdfCorporateHeader(
   doc: jsPDF,
   company: PdfCorporateIdentity,
-  options: { logoDataUrl?: string | null; left?: number; right?: number; top?: number; fallbackName?: string } = {},
+  options: { logoDataUrl?: string | null; left?: number; right?: number; top?: number; fallbackName?: string; showWebsite?: boolean } = {},
 ) {
   const left = options.left ?? 16;
   const right = options.right ?? (doc.internal.pageSize.getWidth() - 16);
@@ -77,7 +78,8 @@ export function drawPdfCorporateHeader(
     doc.text(emailLines, textX, lineY);
     lineY += Math.max(4.3, emailLines.length * 4.3);
   }
-  const websiteLine = company.websiteUrl ? `Website: ${company.websiteUrl}` : "";
+  const showWebsite = options.showWebsite ?? !company.hideWebsiteOnInternalPdf;
+  const websiteLine = showWebsite && company.websiteUrl ? `Website: ${company.websiteUrl}` : "";
   if (websiteLine) {
     const websiteLines = doc.splitTextToSize(websiteLine, textWidth);
     doc.text(websiteLines, textX, lineY);
