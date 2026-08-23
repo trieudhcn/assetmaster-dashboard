@@ -1232,7 +1232,7 @@ function PaginatedAssetCatalogPage({ assets, statusCounts, branchCounts, query, 
   useEffect(() => {
     const refreshMaintenanceLabels = () => {
       document.querySelectorAll<HTMLElement>("div, p, button, [role=option]").forEach((element) => {
-        const text = element.textContent?.trim();
+          const text = element.textContent?.trim();
         if (text === "Bảo trì / hỏng trong phạm vi") element.textContent = "Bảo hành/Sửa chữa trong phạm vi";
         if (text === "Tài sản bảo trì") element.textContent = "Tài sản Bảo hành/Sửa chữa";
       });

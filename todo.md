@@ -183,6 +183,11 @@
 - [x] Cải thiện thông báo phản hồi HTML/bảo trì bằng tự thử lại tối đa năm lần, thông báo tiếng Việt và nút thử lại dữ liệu, không thay đổi chế độ hosting.
 - [x] Bổ sung hồi quy, xác minh Danh mục tài sản/Bàn giao trên desktop, TypeScript, production build và 21 tệp Vitest/273 kiểm thử.
 
+## Current Session — Thu gọn mã biên bản thu hồi
+
+- [x] Giảm thêm cỡ chữ mã TH trong cột Mã phiếu Bàn giao còn 8px, giữ biểu tượng, tooltip và vùng nhấp dễ dùng trên mobile.
+- [x] Bổ sung hồi quy, xác minh desktop/mobile, TypeScript, build và 21 tệp Vitest/273 kiểm thử trước khi phát hành.
+
 - [x] Mở rộng mô hình dữ liệu tài sản với thông tin chi tiết và trạng thái thao tác.
 - [x] Thêm modal tạo tài sản mới với validation cơ bản.
 - [x] Thêm modal chỉnh sửa tài sản và cập nhật dữ liệu trong bảng.

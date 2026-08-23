@@ -668,3 +668,10 @@ input[type="date"] {
   padding-right: 2.75rem;
 }
 .organization-quick-search .organization-search-icon { margin-top: 0; }
+
+/* Recovery-certificate codes are secondary to the handover reference, so keep them compact without reducing the tap target. */
+[data-handover-reference] > button {
+  font-size: 0.5rem;
+  line-height: 1;
+  letter-spacing: -0.015em;
+}

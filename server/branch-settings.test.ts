@@ -62,7 +62,10 @@ describe("branch settings", () => {
     expect(home).toContain('overflow-hidden text-ellipsis whitespace-nowrap');
     expect(home).toContain('window.dispatchEvent(new CustomEvent("assetmaster-open-recovery-certificate"');
     expect(home).toContain('certificate: String(item.recoveryCertificateNumber)');
+    const stylesheet = readProjectFile("client/src/index.css");
     expect(home).toContain('text-[9px] font-extrabold text-[#8F5A00]');
+    expect(stylesheet).toContain("[data-handover-reference] > button");
+    expect(stylesheet).toContain("font-size: 0.5rem");
     expect(home).not.toContain('`${item.referenceCode} · ${item.recoveryCertificateNumber}`');
     expect(home).toContain('min-w-[1000px]');
     expect(home).toContain("data-branch-asset-value-chart");
