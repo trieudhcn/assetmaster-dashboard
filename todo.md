@@ -319,6 +319,13 @@
 - [x] Chuẩn hóa số lượng dòng Hóa đơn là số nguyên và thu gọn ô tên hàng để tăng diện tích đơn giá; ảnh tham chiếu cho thấy tên hàng quá rộng và số lượng hiển thị 1.00.
 - [x] Bổ sung hồi quy, xác minh giao diện desktop/mobile, TypeScript và production build trước khi phát hành.
 
+## Current Session — Cảnh báo thay đổi chưa lưu và dòng Phụ kiện mặc định
+
+- [x] Rà soát cơ chế cảnh báo thay đổi chưa lưu của form Tài sản và cấu trúc form Hợp đồng/Hóa đơn.
+- [x] Cảnh báo xác nhận khi hủy, bấm nút đóng hoặc bấm nền ngoài form Hợp đồng/Hóa đơn có thay đổi chưa lưu.
+- [x] Đặt loại dòng Hóa đơn mặc định là Phụ kiện, giữ luồng tạo Tài sản riêng.
+- [x] Bổ sung hồi quy, xác minh giao diện, TypeScript và production build trước khi phát hành.
+
 - [x] Mở rộng mô hình dữ liệu tài sản với thông tin chi tiết và trạng thái thao tác.
 - [x] Thêm modal tạo tài sản mới với validation cơ bản.
 - [x] Thêm modal chỉnh sửa tài sản và cập nhật dữ liệu trong bảng.

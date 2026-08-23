@@ -84,7 +84,8 @@ describe("purchase contract management", () => {
     expect(vendorsView).not.toContain("<VendorDocuments documentsRef=");
     expect(contractsView).toContain('const routeIntentHandled = useRef(false)');
     expect(contractsView).toContain('params.get("create") !== "1"');
-    expect(contractsView).toContain('setForm({ ...emptyForm, vendorId: String(vendorId) })');
+    expect(contractsView).toContain('const nextForm = { ...emptyForm, vendorId: String(vendorId) }');
+    expect(contractsView).toContain('formSnapshotRef.current = JSON.stringify({ form: nextForm, paperContractFileName: null })');
   });
 
   it("clears one-time contract deep-link parameters after consumption and during menu navigation", () => {
@@ -177,6 +178,16 @@ describe("purchase contract management", () => {
     expect(invoiceOperations).toContain("Đơn giá");
     expect(contractsView).toContain('label === "Tổng giá trị" ? "hidden"');
     expect(contractsView).not.toContain("totalValue: form.totalValue");
+  });
+
+  it("warns before discarding changed contract or invoice forms and defaults invoice lines to supplies", () => {
+    expect(contractsView).toContain("Đóng form chưa lưu?");
+    expect(contractsView).toContain("Các thay đổi Hợp đồng hiện tại sẽ bị hủy.");
+    expect(contractsView).toContain("requestCloseForm");
+    expect(invoicesView).toContain("Đóng form chưa lưu?");
+    expect(invoicesView).toContain("Các thay đổi Hóa đơn hiện tại sẽ bị hủy.");
+    expect(invoicesView).toContain("guardInvoiceClose");
+    expect(invoicesView).toContain('itemType: "supply"');
   });
 
   it("supports camera barcode scanning and keeps invoice action labels horizontally aligned", () => {

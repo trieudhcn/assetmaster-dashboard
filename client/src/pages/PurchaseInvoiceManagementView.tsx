@@ -27,7 +27,7 @@ function money(value: string | number | null | undefined) { return value === nul
 function dateLabel(value: Date | string | number | null | undefined) { return value ? new Intl.DateTimeFormat("vi-VN", { dateStyle: "medium" }).format(new Date(value)) : "—"; }
 function readFileAsDataUrl(file: File) { return new Promise<string>((resolve, reject) => { const reader = new FileReader(); reader.onload = () => typeof reader.result === "string" ? resolve(reader.result) : reject(new Error("Không thể đọc tệp.")); reader.onerror = () => reject(new Error("Không thể đọc tệp.")); reader.readAsDataURL(file); }); }
 function normalizedContentType(file: File) { return file.type === "text/xml" || (!file.type && file.name.toLowerCase().endsWith(".xml")) ? "application/xml" : file.type; }
-function newLine(): InvoiceLineForm { return { id: crypto.randomUUID(), itemType: "asset", itemCode: "", itemName: "", quantity: "1", unit: "cái", unitPrice: "", taxRate: "0", note: "" }; }
+function newLine(): InvoiceLineForm { return { id: crypto.randomUUID(), itemType: "supply", itemCode: "", itemName: "", quantity: "1", unit: "cái", unitPrice: "", taxRate: "0", note: "" }; }
 function wholeQuantity(value: string) { return value.replace(/\D/g, ""); }
 
 export function PurchaseInvoiceManagementView({ sharedQuery = "" }: { sharedQuery?: string }) {
@@ -52,6 +52,7 @@ export function PurchaseInvoiceManagementView({ sharedQuery = "" }: { sharedQuer
   const [documentType, setDocumentType] = useState<QueuedDocument["documentType"]>("invoice_pdf");
   const createFileRef = useRef<HTMLInputElement>(null);
   const detailFileRef = useRef<HTMLInputElement>(null);
+  const formSnapshotRef = useRef("");
   const detailsQuery = trpc.purchaseInvoices.get.useQuery({ id: selectedId || 0 }, { enabled: selectedId !== null });
   const vendorsById = useMemo(() => new Map((vendorsQuery.data || []).map((vendor) => [vendor.id, vendor])), [vendorsQuery.data]);
   const contractsById = useMemo(() => new Map((contractsQuery.data || []).map((contract) => [contract.id, contract])), [contractsQuery.data]);
@@ -83,14 +84,17 @@ export function PurchaseInvoiceManagementView({ sharedQuery = "" }: { sharedQuer
   const calculatedTax = lines.reduce((total, line) => total + lineTax(line), 0);
   const isSaving = createInvoice.isPending || updateInvoice.isPending || createLine.isPending || uploadDocument.isPending;
 
-  const openCreate = () => { setEditingId(null); setForm(emptyForm); setLines([]); setQueuedDocuments([]); setFormOpen(true); };
+  const openCreate = () => { setEditingId(null); setForm(emptyForm); setLines([]); setQueuedDocuments([]); formSnapshotRef.current = JSON.stringify({ form: emptyForm, lines: [], documents: [] }); setFormOpen(true); };
   const openEdit = () => {
     const invoice = detailsQuery.data?.invoice;
     if (!invoice) return;
     setEditingId(invoice.id);
     setQueuedDocuments([]);
-    setLines((detailsQuery.data?.lines || []).map((line) => ({ id: String(line.id), itemType: line.itemType, itemCode: line.itemCode || "", itemName: line.itemName, quantity: String(Math.max(0, Math.trunc(Number(line.quantity) || 0))), unit: line.unit || "", unitPrice: String(line.unitPrice).replace(/\D/g, ""), taxRate: String(line.taxRate).replace(/\D/g, ""), note: line.note || "" })));
-    setForm({ invoiceNumber: invoice.invoiceNumber, invoiceSeries: invoice.invoiceSeries || "", invoiceTemplate: invoice.invoiceTemplate || "", invoiceType: invoice.invoiceType, status: invoice.status, vendorId: String(invoice.vendorId), purchaseContractId: invoice.purchaseContractId ? String(invoice.purchaseContractId) : "", issuedAt: toDateInput(invoice.issuedAt), receivedAt: toDateInput(invoice.receivedAt), subtotalAmount: String(invoice.subtotalAmount).replace(/\D/g, ""), taxAmount: String(invoice.taxAmount).replace(/\D/g, ""), totalAmount: String(invoice.totalAmount).replace(/\D/g, ""), note: invoice.note || "" });
+    const nextLines = (detailsQuery.data?.lines || []).map((line) => ({ id: String(line.id), itemType: line.itemType, itemCode: line.itemCode || "", itemName: line.itemName, quantity: String(Math.max(0, Math.trunc(Number(line.quantity) || 0))), unit: line.unit || "", unitPrice: String(line.unitPrice).replace(/\D/g, ""), taxRate: String(line.taxRate).replace(/\D/g, ""), note: line.note || "" }));
+    const nextForm = { invoiceNumber: invoice.invoiceNumber, invoiceSeries: invoice.invoiceSeries || "", invoiceTemplate: invoice.invoiceTemplate || "", invoiceType: invoice.invoiceType, status: invoice.status, vendorId: String(invoice.vendorId), purchaseContractId: invoice.purchaseContractId ? String(invoice.purchaseContractId) : "", issuedAt: toDateInput(invoice.issuedAt), receivedAt: toDateInput(invoice.receivedAt), subtotalAmount: String(invoice.subtotalAmount).replace(/\D/g, ""), taxAmount: String(invoice.taxAmount).replace(/\D/g, ""), totalAmount: String(invoice.totalAmount).replace(/\D/g, ""), note: invoice.note || "" };
+    setLines(nextLines);
+    setForm(nextForm);
+    formSnapshotRef.current = JSON.stringify({ form: nextForm, lines: nextLines, documents: [] });
     setFormOpen(true);
   };
   const selectContract = (value: string) => {
@@ -98,6 +102,32 @@ export function PurchaseInvoiceManagementView({ sharedQuery = "" }: { sharedQuer
     const nextVendorId = contract?.vendorId ? String(contract.vendorId) : form.vendorId;
     setForm({ ...form, purchaseContractId: value, vendorId: nextVendorId });
   };
+  const requestCloseForm = () => {
+    if (isSaving) return;
+    const current = JSON.stringify({ form, lines, documents: queuedDocuments.map((item) => ({ name: item.file.name, type: item.documentType, size: item.file.size })) });
+    if (current !== formSnapshotRef.current) {
+      toast.warning("Đóng form chưa lưu?", { description: "Các thay đổi Hóa đơn hiện tại sẽ bị hủy.", action: { label: "Bỏ thay đổi", onClick: () => setFormOpen(false) } });
+      return;
+    }
+    setFormOpen(false);
+  };
+  useEffect(() => {
+    if (!formOpen) return;
+    const guardInvoiceClose = (event: MouseEvent) => {
+      const button = (event.target as HTMLElement | null)?.closest("button");
+      if (!button) return;
+      const isOverlay = button.getAttribute("aria-label") === "Đóng form Hóa đơn";
+      const isInsideForm = Boolean(button.closest('section[role="dialog"]'));
+      const isClose = isInsideForm && button.getAttribute("aria-label") === "Đóng";
+      const isCancel = isInsideForm && button.textContent?.trim() === "Hủy";
+      if (!isOverlay && !isClose && !isCancel) return;
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      requestCloseForm();
+    };
+    document.addEventListener("click", guardInvoiceClose, true);
+    return () => document.removeEventListener("click", guardInvoiceClose, true);
+  }, [formOpen, form, lines, queuedDocuments, isSaving]);
   const addDocuments = (files: FileList | File[]) => {
     const accepted: QueuedDocument[] = [];
     Array.from(files).forEach((file) => {
