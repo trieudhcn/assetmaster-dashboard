@@ -81,6 +81,12 @@ describe("Vietnamese handover PDF", () => {
       websiteUrl: "vitinhthaithinh.site",
     });
     expect(header.contentY).toBeGreaterThan(header.dividerY);
+    const headerSource = readFileSync("client/src/lib/handoverPdf.ts", "utf8");
+    expect(headerSource).toContain("const primaryContactLine");
+    expect(headerSource).toContain("const emailLine = company.email");
+    expect(headerSource).toContain("const websiteLine = company.websiteUrl");
+    expect(headerSource).toContain("doc.text(emailLines, textX, lineY)");
+    expect(headerSource).toContain("doc.text(websiteLines, textX, lineY)");
     const directory = mkdtempSync(join(tmpdir(), "assetmaster-pdf-header-"));
     const pdfPath = join(directory, "header.pdf");
     try {

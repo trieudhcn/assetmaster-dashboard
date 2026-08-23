@@ -62,16 +62,26 @@ export function drawPdfCorporateHeader(
     doc.text(addressLines, textX, lineY);
     lineY += Math.max(4.3, addressLines.length * 4.3);
   }
-  const contactLine = [
+  const primaryContactLine = [
     company.taxCode ? `MST: ${company.taxCode}` : "",
     company.phone ? `Điện thoại: ${company.phone}` : "",
-    company.email ? `Email: ${company.email}` : "",
-    company.websiteUrl ? `Website: ${company.websiteUrl}` : "",
   ].filter(Boolean).join(" · ");
-  if (contactLine) {
-    const contactLines = doc.splitTextToSize(contactLine, textWidth);
+  if (primaryContactLine) {
+    const contactLines = doc.splitTextToSize(primaryContactLine, textWidth);
     doc.text(contactLines, textX, lineY);
     lineY += Math.max(4.3, contactLines.length * 4.3);
+  }
+  const emailLine = company.email ? `Email: ${company.email}` : "";
+  if (emailLine) {
+    const emailLines = doc.splitTextToSize(emailLine, textWidth);
+    doc.text(emailLines, textX, lineY);
+    lineY += Math.max(4.3, emailLines.length * 4.3);
+  }
+  const websiteLine = company.websiteUrl ? `Website: ${company.websiteUrl}` : "";
+  if (websiteLine) {
+    const websiteLines = doc.splitTextToSize(websiteLine, textWidth);
+    doc.text(websiteLines, textX, lineY);
+    lineY += Math.max(4.3, websiteLines.length * 4.3);
   }
 
   const dividerY = Math.max(top + 25, lineY + 5);

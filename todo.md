@@ -153,6 +153,12 @@
 - [x] Xác minh desktop: nhấp TH-202608-001 mở lớp xem trước có Đóng, In PDF và Tải PDF; đã chạy toàn bộ hồi quy, TypeScript và production build.
 - [x] Xác minh mobile: nhấp mã TH mở lớp xem trước PDF thu hồi; header công ty, divider, phần thông tin, phụ kiện và ký nhận hiển thị đúng trong bản xem trước.
 
+## Current Session — Tách Email và Website trong tiêu đề PDF
+
+- [x] Hiển thị Email và Website thành hai dòng độc lập trong helper tiêu đề doanh nghiệp dùng chung.
+- [x] Xác minh trực quan PDF thu hồi TH-202608-001: Email và Website nằm ở hai dòng riêng bên dưới MST/Điện thoại; divider giữ khoảng cách hợp lệ.
+- [x] Xác nhận helper được dùng bởi PDF Phụ kiện, Bàn giao, Bảo hành/Sửa chữa, Thanh lý, Kiểm kê và Thu hồi; hồi quy, TypeScript và build đều đạt.
+
 - [x] Mở rộng mô hình dữ liệu tài sản với thông tin chi tiết và trạng thái thao tác.
 - [x] Thêm modal tạo tài sản mới với validation cơ bản.
 - [x] Thêm modal chỉnh sửa tài sản và cập nhật dữ liệu trong bảng.
