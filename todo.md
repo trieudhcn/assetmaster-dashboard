@@ -286,6 +286,13 @@
 - [x] Chỉnh nút Thêm dòng Hóa đơn theo chuẩn hành động ứng dụng và bổ sung hướng dẫn thao tác tại chỗ; ảnh tham chiếu cho thấy icon/nội dung đang bị tách dọc về bên phải.
 - [x] Bổ sung hồi quy, xác minh desktop/mobile, TypeScript và production build trước khi phát hành.
 
+## Current Session — Phân loại Phụ kiện và Excel Tài sản
+
+- [x] Rà soát form tạo nhanh Phụ kiện, danh mục Nhóm/Hãng và cách tính kết quả lọc Tài sản.
+- [x] Thêm chọn Nhóm Phụ kiện và Hãng sản xuất trực tiếp trong form tạo nhanh từ Hóa đơn.
+- [x] Sửa xuất Excel Danh mục tài sản để bao gồm mọi Tài sản thỏa bộ lọc, không chỉ trang hiện tại; ảnh tham chiếu cho thấy nút đang hiển thị 10 trong khi phạm vi là 29.
+- [x] Bổ sung hồi quy, xác minh desktop/mobile, TypeScript và production build trước khi phát hành.
+
 - [x] Mở rộng mô hình dữ liệu tài sản với thông tin chi tiết và trạng thái thao tác.
 - [x] Thêm modal tạo tài sản mới với validation cơ bản.
 - [x] Thêm modal chỉnh sửa tài sản và cập nhật dữ liệu trong bảng.

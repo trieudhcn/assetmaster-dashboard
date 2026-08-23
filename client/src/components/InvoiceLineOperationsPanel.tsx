@@ -1,6 +1,9 @@
 import { useEffect, useRef, useState } from "react";
+import { createRoot } from "react-dom/client";
 import { BrowserMultiFormatReader } from "@zxing/browser";
 import { Camera, Link2, Loader2, Plus, ScanLine, X } from "lucide-react";
+import { trpc } from "@/lib/trpc";
+import { QuickSupplyClassificationFields } from "@/components/QuickSupplyClassificationFields";
 
 type InvoiceLine = { id: number; lineNumber: number; itemType: "asset" | "supply" | "service" | "other"; itemCode: string | null; itemName: string; quantity: string; unit: string | null; unitPrice: string; taxRate: string };
 type Asset = { id: number; assetCode: string; name: string; serialNumber: string | null; purchaseInvoiceId: number | null; purchaseInvoiceLineId: number | null; status: string };
@@ -66,9 +69,15 @@ export function InvoiceLineOperationsPanel({ invoiceId, invoiceKey, lines, linke
   const [createForLine, setCreateForLine] = useState<InvoiceLine | null>(null);
   const [scannerOpen, setScannerOpen] = useState(false);
   const [newSupply, setNewSupply] = useState<SupplyDraft>({ code: "", name: "", unit: "Cái", quantity: "", minimumQuantity: "0", location: "", note: "" });
+  const [categoryId, setCategoryId] = useState("");
+  const [brandId, setBrandId] = useState("");
+  const categoriesQuery = trpc.assetCategories.list.useQuery();
+  const brandsQuery = trpc.brands.list.useQuery();
   const activeAssets = assets.filter((asset) => asset.status !== "retired" && asset.status !== "returned_to_vendor");
   const openCreate = (line: InvoiceLine, remaining: number) => {
     setCreateForLine(line);
+    setCategoryId("");
+    setBrandId("");
     setNewSupply({ code: toSupplyCode(line), name: line.itemName, unit: line.unit || "Cái", quantity: String(remaining), minimumQuantity: "0", location: "", note: `Tạo từ Hóa đơn ${invoiceKey} · dòng ${line.lineNumber}` });
   };
   const confirmCreate = () => {
@@ -77,8 +86,21 @@ export function InvoiceLineOperationsPanel({ invoiceId, invoiceKey, lines, linke
     const received = Number(newSupply.quantity);
     const alreadyReceived = supplyReceipts.filter((receipt) => receipt.purchaseInvoiceLineId === createForLine.id && receipt.status === "received").reduce((total, receipt) => total + Number(receipt.receivedQuantity), 0);
     if (!Number.isFinite(received) || received <= 0 || received + alreadyReceived > Number(createForLine.quantity)) return;
-    onCreateAndReceive({ purchaseInvoiceLineId: createForLine.id, code: newSupply.code.trim(), name: newSupply.name.trim(), unit: newSupply.unit.trim(), receivedQuantity: newSupply.quantity, minimumQuantity: Math.max(0, Number(newSupply.minimumQuantity || 0)), categoryId: null, brandId: null, location: newSupply.location.trim() || null, note: newSupply.note.trim() || null });
+    onCreateAndReceive({ purchaseInvoiceLineId: createForLine.id, code: newSupply.code.trim(), name: newSupply.name.trim(), unit: newSupply.unit.trim(), receivedQuantity: newSupply.quantity, minimumQuantity: Math.max(0, Number(newSupply.minimumQuantity || 0)), categoryId: categoryId ? Number(categoryId) : null, brandId: brandId ? Number(brandId) : null, location: newSupply.location.trim() || null, note: newSupply.note.trim() || null });
   };
+  useEffect(() => {
+    if (!createForLine) return;
+    const dialog = document.querySelector<HTMLElement>('[role="dialog"][aria-label="Tạo Phụ kiện từ Hóa đơn"]');
+    const grid = dialog?.querySelector<HTMLElement>("div.mt-5.grid");
+    if (!grid) return;
+    const host = document.createElement("div");
+    host.className = "sm:col-span-2";
+    host.dataset.quickSupplyClassification = "true";
+    grid.append(host);
+    const root = createRoot(host);
+    root.render(<QuickSupplyClassificationFields categories={categoriesQuery.data || []} brands={brandsQuery.data || []} categoryId={categoryId} brandId={brandId} onCategoryChange={setCategoryId} onBrandChange={setBrandId} />);
+    return () => { root.unmount(); host.remove(); };
+  }, [createForLine, categoriesQuery.data, brandsQuery.data, categoryId, brandId]);
 
   return <><section className="mt-4 rounded-xl border border-[#CDE5E5] bg-[#F4FBFA] p-3"><div className="flex items-start justify-between gap-3"><div><div className="flex items-center gap-2 text-sm font-extrabold text-[#193B57]"><Link2 size={15} className="text-[#087A6A]" />Phân bổ nguồn mua theo dòng</div><p className="mt-1 text-[11px] text-[#4B8884]">Gán trực tiếp Tài sản vào dòng loại Tài sản, hoặc tiếp nhận và tạo mới Phụ kiện theo dòng loại Phụ kiện.</p></div><span className="rounded-full bg-white px-2 py-1 text-[10px] font-bold text-[#087A6A]">{invoiceKey}</span></div><div className="mt-3 space-y-3">{lines.filter((line) => line.itemType === "asset" || line.itemType === "supply").map((line) => {
     const lineAssets = linkedAssets.filter((asset) => asset.purchaseInvoiceLineId === line.id);

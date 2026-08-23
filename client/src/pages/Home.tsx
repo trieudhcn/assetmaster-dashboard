@@ -1196,7 +1196,8 @@ function PaginatedAssetCatalogPage({ assets, statusCounts, branchCounts, query, 
   const { currentPage, totalPages, startIndex, startRecord, endRecord } = getPaginationWindow(assets.length, page, pageSize);
   const pageAssets = assets.slice(startIndex, startIndex + pageSize);
   const pageNumbers = Array.from({ length: totalPages }, (_, index) => index + 1).filter((pageNumber) => totalPages <= 5 || pageNumber === 1 || pageNumber === totalPages || Math.abs(pageNumber - currentPage) <= 1);
-  const filteredAssetExportRows = useMemo(() => buildFilteredAssetExportRows(assets), [assets]);
+  const allFilteredAssets = assets;
+  const filteredAssetExportRows = useMemo(() => buildFilteredAssetExportRows(allFilteredAssets), [allFilteredAssets]);
   const maintenanceExportRows = useMemo(() => buildMaintenanceExportRows(assets), [assets]);
   const [isExportingFilteredAssets, setIsExportingFilteredAssets] = useState(false);
   const [isExportingMaintenance, setIsExportingMaintenance] = useState(false);
@@ -1226,6 +1227,12 @@ function PaginatedAssetCatalogPage({ assets, statusCounts, branchCounts, query, 
       }
     }, 180);
   };
+  useEffect(() => {
+    const exportButton = Array.from(document.querySelectorAll<HTMLButtonElement>("button")).find((button) => button.title.startsWith("Xuất toàn bộ tài sản đang hiển thị"));
+    if (!exportButton) return;
+    exportButton.textContent = isExportingFilteredAssets ? "Đang xuất..." : `Xuất danh sách (${filteredAssetExportRows.length})`;
+    exportButton.setAttribute("aria-label", `Xuất toàn bộ ${filteredAssetExportRows.length} tài sản theo bộ lọc`);
+  }, [filteredAssetExportRows.length, isExportingFilteredAssets]);
 
   const exportMaintenanceExcel = () => {
     if (!maintenanceExportRows.length) { toast.info("Không có tài sản đang bảo trì trong phạm vi lọc hiện tại."); return; }
