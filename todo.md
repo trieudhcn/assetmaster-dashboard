@@ -312,6 +312,13 @@
 - [x] Hiển thị số lượng Hợp đồng/Hóa đơn trực tiếp trên từng tab; đã xác minh số lượng 1 trên cả hai tab.
 - [x] Bổ sung hồi quy, xác minh giao diện, TypeScript và production build trước khi phát hành.
 
+## Current Session — Chuẩn hóa dòng Hóa đơn
+
+- [x] Rà soát bố cục hành động đầu Hóa đơn và lưới nhập dòng hàng theo ảnh tham chiếu.
+- [x] Đưa Xuất đối soát Excel cạnh Tạo hóa đơn, theo cùng hàng hành động; ảnh tham chiếu cho thấy nút hiện bị tách bên trái tiêu đề.
+- [x] Chuẩn hóa số lượng dòng Hóa đơn là số nguyên và thu gọn ô tên hàng để tăng diện tích đơn giá; ảnh tham chiếu cho thấy tên hàng quá rộng và số lượng hiển thị 1.00.
+- [x] Bổ sung hồi quy, xác minh giao diện desktop/mobile, TypeScript và production build trước khi phát hành.
+
 - [x] Mở rộng mô hình dữ liệu tài sản với thông tin chi tiết và trạng thái thao tác.
 - [x] Thêm modal tạo tài sản mới với validation cơ bản.
 - [x] Thêm modal chỉnh sửa tài sản và cập nhật dữ liệu trong bảng.
