@@ -2395,7 +2395,15 @@ it("đồng bộ nhận diện Cổng nhân viên và hiển thị cập nhật,
   expect(helpCenter).toContain("Lịch sử phiên bản");
   expect(helpCenter).toContain("trpc.help.versions.useQuery");
   expect(router).toContain("createHelpGuideVersion");
-expect(router).toContain("versions: adminProcedure");
+	expect(router).toContain("versions: adminProcedure");
+});
+
+it("hiển thị trực tiếp logo người dùng cập nhật trong sidebar không có khung nền màu", () => {
+  const home = readProjectFile("client/src/pages/Home.tsx");
+
+  expect(home).toContain('className="grid h-12 w-12 shrink-0 place-items-center"');
+  expect(home).toContain('alt="Logo công ty" className="h-12 w-12 object-contain"');
+  expect(home).not.toContain('style={{ backgroundColor: companyInfo.brandColor }} className="grid h-10 w-10');
 });
 
 it("trình bày visual diff rõ ràng trong lịch sử phiên bản hướng dẫn", () => {

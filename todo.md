@@ -200,6 +200,12 @@
 - [x] Thêm phân trang chuẩn năm biến động mỗi trang, tự đặt lại về trang đầu khi đổi Phụ kiện; xác minh Chuột có dây Logitech hiển thị 1–5/7 và chuyển đúng sang 6–7/7.
 - [x] Bổ sung hồi quy, xác minh drawer dữ liệu thật, TypeScript, build và 21 tệp Vitest/275 kiểm thử trước khi phát hành.
 
+## Current Session — Logo sidebar không khung
+
+- [x] Loại bỏ khung màu xanh và bóng phía sau logo sidebar, chỉ hiển thị logo người dùng đã cập nhật.
+- [x] Tăng logo sidebar lên 48px, giữ tỷ lệ ảnh, nhận diện thương hiệu và bố cục sidebar ổn định.
+- [x] Bổ sung hồi quy, xác minh trực quan desktop, TypeScript, build và 21 tệp Vitest/276 kiểm thử trước khi phát hành.
+
 - [x] Mở rộng mô hình dữ liệu tài sản với thông tin chi tiết và trạng thái thao tác.
 - [x] Thêm modal tạo tài sản mới với validation cơ bản.
 - [x] Thêm modal chỉnh sửa tài sản và cập nhật dữ liệu trong bảng.

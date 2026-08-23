@@ -988,8 +988,8 @@ export default function Home() {
       <ExportPreviewHost />
       <aside className={`fixed inset-y-0 left-0 z-40 flex w-[264px] flex-col overflow-hidden border-r border-[#DDE7F0] bg-[#102A43] px-4 py-5 shadow-[8px_0_30px_rgba(16,42,67,0.16)] transition-transform duration-200 lg:translate-x-0 ${mobileNavOpen ? "translate-x-0" : "-translate-x-full"}`}>
         <div className="flex shrink-0 items-center gap-3 px-3 pb-6">
-          <div style={{ backgroundColor: companyInfo.brandColor }} className="grid h-10 w-10 place-items-center rounded-[13px] shadow-[0_8px_18px_rgba(15,140,140,0.24)]">
-            <img src={companyInfo.logoUrl || "/manus-storage/assetmaster-logo_f5d79b06.png"} alt="Logo công ty" className="h-7 w-7 object-contain" />
+          <div className="grid h-12 w-12 shrink-0 place-items-center">
+            <img src={companyInfo.logoUrl || "/manus-storage/assetmaster-logo_f5d79b06.png"} alt="Logo công ty" className="h-12 w-12 object-contain" />
           </div>
           <div>
             <div title={companyInfo.websiteTitle} className="max-w-[158px] truncate font-display text-[16px] font-extrabold tracking-[-0.04em] text-white">{companyInfo.websiteTitle}</div>
