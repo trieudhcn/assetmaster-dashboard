@@ -1,6 +1,6 @@
 import { jsPDF } from "jspdf";
 import { formatVnd } from "@/lib/formatters";
-import { drawPdfCorporateFooter, handoverPdfFontUrl, registerVietnamesePdfFont } from "@/lib/handoverPdf";
+import { drawPdfCorporateFooter, drawPdfCorporateHeader, handoverPdfFontUrl, registerVietnamesePdfFont } from "@/lib/handoverPdf";
 import { applyPdfLogoWatermark, createPdfLogoWatermark, openPdfPreview } from "@/lib/pdfExport";
 
 export type RetirementPdfCompany = { name?: string | null; address?: string | null; taxCode?: string | null; phone?: string | null;
@@ -73,23 +73,18 @@ const DEFAULT_REASON = "Thanh lý theo thời gian quy định";
 
 function drawPageHeading(doc: jsPDF, certificateCode: string, company: RetirementPdfCompany, logoDataUrl: string | undefined) {
   const left = 12;
-  drawBrandMark(doc, left, 18, logoDataUrl);
-  doc.setTextColor(15, 140, 140);
-  doc.setFontSize(9.5);
-  doc.text(company.name || "AssetMaster", left + 23, 13);
-  doc.setTextColor(96, 117, 138);
-  doc.setFontSize(7);
-  doc.text(`Địa chỉ: ${company.address || "Chưa cập nhật"}`, left + 23, 18);
-  doc.text(`MST: ${company.taxCode || "Chưa cập nhật"} · Điện thoại: ${company.phone || "Chưa cập nhật"} · Email: ${company.email || "Chưa cập nhật"}${company.websiteUrl ? ` · Website: ${company.websiteUrl}` : ""}`, left + 23, 22.5);
+  const header = drawPdfCorporateHeader(doc, company, { logoDataUrl, left, right: 285, fallbackName: "AssetMaster" });
+  const titleY = header.contentY + 3;
   doc.setTextColor(16, 42, 67);
   doc.setFontSize(14);
-  doc.text("BIÊN BẢN KHẤU HAO / THANH LÝ TÀI SẢN", 148.5, 33, { align: "center" });
+  doc.text("BIÊN BẢN KHẤU HAO / THANH LÝ TÀI SẢN", 148.5, titleY, { align: "center" });
   doc.setFontSize(8.5);
   doc.setTextColor(15, 140, 140);
-  doc.text(`Số biên bản: ${certificateCode}`, 148.5, 39, { align: "center" });
+  doc.text(`Số biên bản: ${certificateCode}`, 148.5, titleY + 6, { align: "center" });
   doc.setTextColor(96, 117, 138);
   doc.setFontSize(7.5);
-  doc.text("Danh sách tài sản thanh lý kèm theo biên bản", 148.5, 44.5, { align: "center" });
+  doc.text("Danh sách tài sản thanh lý kèm theo biên bản", 148.5, titleY + 11.5, { align: "center" });
+  return titleY + 17;
 }
 
 function drawTableHeader(doc: jsPDF, y: number) {
@@ -165,21 +160,18 @@ export async function openRetirementPdf(assets: RetirementPdfAsset[], company: R
   const doc = new jsPDF({ unit: "mm", format: "a4", orientation: "landscape" });
   registerVietnamesePdfFont(doc, await loadPdfFont());
   const logoDataUrl = company.logoUrl ? await loadImageData(company.logoUrl).catch(() => undefined) : undefined;
-  drawPageHeading(doc, certificateCode, company, logoDataUrl);
-  let y = drawTableHeader(doc, 51);
+  let y = drawTableHeader(doc, drawPageHeading(doc, certificateCode, company, logoDataUrl));
   assets.forEach((asset) => {
     const estimatedHeight = Math.max(11, ...columns.map((column) => doc.splitTextToSize(String(cellValue(asset, column.key)), column.width - 3).length * 3.15 + 4));
     if (y + estimatedHeight > 151) {
       doc.addPage("a4", "landscape");
-      drawPageHeading(doc, certificateCode, company, logoDataUrl);
-      y = drawTableHeader(doc, 51);
+      y = drawTableHeader(doc, drawPageHeading(doc, certificateCode, company, logoDataUrl));
     }
     y = drawAssetRow(doc, asset, y);
   });
   if (y + 25 > 151) {
     doc.addPage("a4", "landscape");
-    drawPageHeading(doc, certificateCode, company, logoDataUrl);
-    y = drawTableHeader(doc, 51);
+    y = drawTableHeader(doc, drawPageHeading(doc, certificateCode, company, logoDataUrl));
   }
   y = drawSalvageTotal(doc, y, assets);
   drawSignatures(doc, y);

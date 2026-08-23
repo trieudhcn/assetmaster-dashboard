@@ -145,6 +145,14 @@
 - [x] Giữ liên kết xem trước mã thu hồi, tooltip và khả năng đọc mã đầy đủ.
 - [x] Bổ sung hồi quy, xác minh desktop/mobile, TypeScript và production build.
 
+## Current Session — Chuẩn hóa PDF, bảng Cột và mã thu hồi
+
+- [x] Chuẩn hóa khối thông tin công ty và đường phân cách ở các biên bản PDF theo mẫu thống nhất.
+- [x] Căn lại bảng chọn Cột trong Danh mục tài sản và đóng khi người dùng bấm ra ngoài.
+- [x] Khôi phục xem trước PDF khi nhấp mã TH, đồng thời giảm nhẹ kích thước chữ mã TH.
+- [x] Xác minh desktop: nhấp TH-202608-001 mở lớp xem trước có Đóng, In PDF và Tải PDF; đã chạy toàn bộ hồi quy, TypeScript và production build.
+- [x] Xác minh mobile: nhấp mã TH mở lớp xem trước PDF thu hồi; header công ty, divider, phần thông tin, phụ kiện và ký nhận hiển thị đúng trong bản xem trước.
+
 - [x] Mở rộng mô hình dữ liệu tài sản với thông tin chi tiết và trạng thái thao tác.
 - [x] Thêm modal tạo tài sản mới với validation cơ bản.
 - [x] Thêm modal chỉnh sửa tài sản và cập nhật dữ liệu trong bảng.

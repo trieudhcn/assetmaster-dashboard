@@ -1,5 +1,5 @@
 import { jsPDF } from "jspdf";
-import { drawPdfCorporateFooter, handoverPdfFontUrl, registerVietnamesePdfFont, vietnamesePdfFontFamily } from "@/lib/handoverPdf";
+import { drawPdfCorporateFooter, drawPdfCorporateHeader, handoverPdfFontUrl, registerVietnamesePdfFont, vietnamesePdfFontFamily } from "@/lib/handoverPdf";
 import { applyPdfLogoWatermark, createPdfLogoWatermark, openPdfPreview } from "@/lib/pdfExport";
 
 export type ServiceTicketPdfCompany = {
@@ -54,32 +54,7 @@ export async function previewServiceTicketPdf({ ticket, asset, assigneeName, rep
   const left = 16;
   const right = 194;
   const width = right - left;
-  let y = 18;
-
-  if (logoDataUrl) {
-    try { doc.addImage(logoDataUrl, pdfImageFormat(logoDataUrl), left, y - 7, 18, 18, undefined, "FAST"); } catch { /* Dùng tiêu đề chữ khi logo không tương thích. */ }
-  }
-  doc.setTextColor(16, 42, 67);
-  doc.setFont(vietnamesePdfFontFamily, "bold");
-  doc.setFontSize(12);
-  doc.text(company.name || "ĐƠN VỊ QUẢN LÝ TÀI SẢN", logoDataUrl ? left + 22 : left, y);
-  doc.setFont(vietnamesePdfFontFamily, "normal");
-  doc.setFontSize(8.5);
-  doc.setTextColor(96, 117, 138);
-  const companyLines = [company.address || "Hệ thống Quản lý Tài sản Doanh nghiệp", company.taxCode ? `MST: ${company.taxCode}` : "", company.phone ? `ĐT: ${company.phone}` : "", company.email ? `Email: ${company.email}${company.websiteUrl ? ` · Website: ${company.websiteUrl}` : ""}` : (company.websiteUrl ? `Website: ${company.websiteUrl}` : "")].filter(Boolean);
-  const companyTextX = logoDataUrl ? left + 22 : left;
-  const companyTextWidth = logoDataUrl ? width - 22 : width;
-  let companyLineY = y + 5;
-  companyLines.forEach((line) => {
-    const wrappedLine = doc.splitTextToSize(line, companyTextWidth);
-    doc.text(wrappedLine, companyTextX, companyLineY);
-    companyLineY += Math.max(4.3, wrappedLine.length * 4.3);
-  });
-  y = Math.max(y + 27, companyLineY + 9);
-  doc.setDrawColor(15, 140, 140);
-  doc.setLineWidth(0.7);
-  doc.line(left, y, right, y);
-  y += 11;
+  let y = drawPdfCorporateHeader(doc, company, { logoDataUrl, left, right, fallbackName: "ĐƠN VỊ QUẢN LÝ TÀI SẢN" }).contentY;
   doc.setTextColor(16, 42, 67);
   doc.setFont(vietnamesePdfFontFamily, "bold");
   doc.setFontSize(17);

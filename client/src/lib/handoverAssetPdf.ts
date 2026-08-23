@@ -1,6 +1,6 @@
 import { jsPDF } from "jspdf";
 import { applyPdfLogoWatermark, createPdfLogoWatermark, openPdfPreview } from "@/lib/pdfExport";
-import { drawPdfCorporateFooter, handoverPdfFontUrl, registerVietnamesePdfFont } from "@/lib/handoverPdf";
+import { drawPdfCorporateFooter, drawPdfCorporateHeader, handoverPdfFontUrl, registerVietnamesePdfFont } from "@/lib/handoverPdf";
 
 export type HandoverPdfCompany = { name?: string | null; address?: string | null; taxCode?: string | null; phone?: string | null;
   email?: string | null; websiteUrl?: string | null; logoUrl?: string | null };
@@ -25,11 +25,8 @@ export async function openHandoverAssetPdf(input: HandoverPdfInput, company: Han
   registerVietnamesePdfFont(doc, await fontResponse.arrayBuffer());
   const logoDataUrl = company.logoUrl ? await loadImageData(company.logoUrl).catch(() => undefined) : undefined;
   const left = 18;
-  let y = 22;
-  drawBrandMark(doc, left, y, logoDataUrl);
-  doc.setTextColor(15, 140, 140); doc.setFontSize(10); doc.text(company.name || "ĐƠN VỊ QUẢN LÝ TÀI SẢN", left + 24, y - 4);
-  doc.setFontSize(8); doc.setTextColor(112, 134, 154); doc.text(`Địa chỉ: ${company.address || ""}`, left + 24, y + 2); doc.text(`MST: ${company.taxCode || ""} · Điện thoại: ${company.phone || ""} · Email: ${company.email || ""}${company.websiteUrl ? ` · Website: ${company.websiteUrl}` : ""}`, left + 24, y + 8);
-  doc.setDrawColor(15, 140, 140); doc.line(left, y + 18, 192, y + 18); y += 36;
+  const header = drawPdfCorporateHeader(doc, company, { logoDataUrl, left, right: 192 });
+  let y = header.contentY + 4;
   doc.setTextColor(16, 42, 67); doc.setFontSize(15); doc.text("BIÊN BẢN BÀN GIAO TÀI SẢN", 105, y, { align: "center" }); y += 12;
   doc.setFontSize(13); doc.text(`Số phiếu: ${input.referenceCode}`, left, y); y += 12;
   const rows = [["Tài sản", `${input.assetName} (${input.assetCode})`], ["Chi nhánh", input.branchName || "Chưa gán"], ["Người nhận", input.recipientName], ["Phòng ban", input.recipientDepartmentName || "Chưa gán"], ["Ngày bàn giao", new Date(input.handedOverAt).toLocaleDateString("vi-VN")], ["Người lập", input.handoverByName || "Quản trị viên"], ["Tình trạng", input.conditionOut || "Không ghi nhận"], ["Phụ kiện", input.accessories || "Không có"], ["Ghi chú", input.note || "Không có"], ["Trạng thái", input.status || "Đã bàn giao"]];

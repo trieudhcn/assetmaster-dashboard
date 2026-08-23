@@ -1,6 +1,6 @@
 import { jsPDF } from "jspdf";
 import { createPdfLogoWatermark, applyPdfLogoWatermark, openPdfPreview } from "@/lib/pdfExport";
-import { drawPdfCorporateFooter, handoverPdfFontUrl, registerVietnamesePdfFont } from "@/lib/handoverPdf";
+import { drawPdfCorporateFooter, drawPdfCorporateHeader, handoverPdfFontUrl, registerVietnamesePdfFont } from "@/lib/handoverPdf";
 
 type CompanyInfo = { name?: string | null; address?: string | null; taxCode?: string | null; phone?: string | null; email?: string | null; websiteUrl?: string | null; logoUrl?: string | null };
 type SupplyIssueSlipPdf = { referenceCode: string; recipientName: string; issuedByName: string | null; issuedAt: Date; note: string | null };
@@ -36,19 +36,9 @@ export async function openSupplyIssueSlipPdf(slip: SupplyIssueSlipPdf, items: Su
   const headerLogo = await loadCompanyLogoForPdf(company.logoUrl);
   const pageWidth = doc.internal.pageSize.getWidth();
   const margin = 16;
-  const companyTextX = headerLogo ? margin + 25 : margin;
-  if (headerLogo) doc.addImage(headerLogo, "PNG", margin, 10, 19, 19, undefined, "FAST");
-  doc.setTextColor(16, 42, 67);
-  doc.setFontSize(15);
-  doc.text(company.name || "THÔNG TIN DOANH NGHIỆP", companyTextX, 19);
-  doc.setFontSize(9);
-  const companyLines = [company.address && `Địa chỉ: ${company.address}`, company.taxCode && `MST: ${company.taxCode}`, company.phone && `Điện thoại: ${company.phone}`, company.email && `Email: ${company.email}${company.websiteUrl ? ` · Website: ${company.websiteUrl}` : ""}`].filter(Boolean) as string[];
-  companyLines.forEach((line, index) => doc.text(line, companyTextX, 25 + index * 5));
-  const dividerY = Math.max(39, 25 + companyLines.length * 5 + 3);
-  const titleY = dividerY + 12;
+  const header = drawPdfCorporateHeader(doc, company, { logoDataUrl: headerLogo, left: margin, right: pageWidth - margin, fallbackName: "THÔNG TIN DOANH NGHIỆP" });
+  const titleY = header.contentY + 3;
   const informationY = titleY + 18;
-  doc.setDrawColor(15, 140, 140);
-  doc.line(margin, dividerY, pageWidth - margin, dividerY);
   doc.setFontSize(17);
   doc.setTextColor(16, 42, 67);
   doc.text("PHIẾU CẤP PHÁT PHỤ KIỆN", pageWidth / 2, titleY, { align: "center" });

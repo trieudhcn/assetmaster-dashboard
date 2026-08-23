@@ -33,7 +33,7 @@ import { CurrencyInput } from "@/components/CurrencyInput";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { matchesVietnameseSearch } from "@/lib/catalogUi";
 import { formatVnd } from "@/lib/formatters";
-import { drawPdfCorporateFooter, handoverPdfFontUrl, registerVietnamesePdfFont, vietnamesePdfFontFamily } from "@/lib/handoverPdf";
+import { drawPdfCorporateFooter, drawPdfCorporateHeader, handoverPdfFontUrl, registerVietnamesePdfFont, vietnamesePdfFontFamily } from "@/lib/handoverPdf";
 import { writeBrandedWorkbook } from "@/lib/brandedWorkbook";
 import { applyPdfLogoWatermark, createPdfLogoWatermark, openPdfPreview } from "@/lib/pdfExport";
 import { previewServiceTicketPdf } from "@/lib/serviceTicketPdf";
@@ -1462,19 +1462,8 @@ export function AuditPage() {
       const company = (companySettingsQuery.data || {}) as AuditCompanySettings;
       const logoDataUrl = company.logoUrl ? await loadAuditPdfImage(company.logoUrl).catch(() => undefined) : undefined;
       const left = 16;
-      if (logoDataUrl) {
-        try { doc.addImage(logoDataUrl, auditPdfImageFormat(logoDataUrl), left, 10, 18, 18, undefined, "FAST"); } catch { /* Dùng phần chữ khi logo không nhúng được. */ }
-      }
-      doc.setTextColor(16, 42, 67);
-      doc.setFontSize(13);
-      doc.text(company.name || "Công ty quản lý tài sản", left + 24, 16);
-      doc.setTextColor(96, 117, 138);
-      doc.setFontSize(7);
-      doc.text(`Địa chỉ: ${company.address || "Chưa cập nhật"} · MST: ${company.taxCode || "Chưa cập nhật"}`, left + 24, 22);
-      doc.text(`Điện thoại: ${company.phone || "Chưa cập nhật"}${company.email ? ` · Email: ${company.email}` : ""}${company.websiteUrl ? ` · Website: ${company.websiteUrl}` : ""}`, left + 24, 27);
-      doc.setDrawColor(15, 140, 140);
-      doc.line(left, 37, 194, 37);
-      let y = 48;
+      const header = drawPdfCorporateHeader(doc, company, { logoDataUrl, left, right: 194, fallbackName: "Công ty quản lý tài sản" });
+      let y = header.contentY + 4;
       doc.setTextColor(16, 42, 67);
       doc.setFontSize(17);
       doc.text("BIÊN BẢN CHÊNH LỆCH KIỂM KÊ", left, y);
@@ -1533,33 +1522,11 @@ export function AuditPage() {
       const left = 16;
       const right = 194;
       const contentWidth = right - left;
-      let y = 18;
+      let y = drawPdfCorporateHeader(doc, company, { logoDataUrl, left, right, fallbackName: "Công ty quản lý tài sản" }).contentY + 4;
       const ensureSpace = (height: number) => { if (y + height <= 276) return; doc.addPage(); y = 18; };
       const sectionTitle = (title: string) => { ensureSpace(12); doc.setTextColor(15, 140, 140); doc.setFontSize(10); doc.text(title, left, y); y += 5; doc.setDrawColor(205, 229, 229); doc.line(left, y, right, y); y += 6; };
       const detailLine = (label: string, value: string) => { const lines = doc.splitTextToSize(`${label}: ${value}`, contentWidth); ensureSpace(lines.length * 5 + 2); doc.setTextColor(25, 59, 87); doc.setFontSize(9); doc.text(lines, left, y); y += lines.length * 5 + 2; };
 
-      if (logoDataUrl) {
-        try { doc.addImage(logoDataUrl, auditPdfImageFormat(logoDataUrl), left, y - 10, 18, 18, undefined, "FAST"); } catch { /* Logo lỗi định dạng sẽ dùng phần chữ thay thế. */ }
-      } else {
-        doc.setFillColor(15, 140, 140);
-        doc.roundedRect(left, y - 10, 18, 18, 3, 3, "F");
-        doc.setFillColor(16, 42, 67);
-        doc.roundedRect(left + 3, y - 7, 12, 12, 2, 2, "F");
-        doc.setTextColor(255, 255, 255);
-        doc.setFontSize(7.5);
-        doc.text("AM", left + 9, y + 1, { align: "center" });
-      }
-      doc.setTextColor(16, 42, 67);
-      doc.setFontSize(15);
-      doc.text(company.name || "Công ty quản lý tài sản", left + 24, y - 2);
-      doc.setTextColor(96, 117, 138);
-      doc.setFontSize(7.5);
-      const companyLine = `Địa chỉ: ${company.address || "Chưa cập nhật"} · MST: ${company.taxCode || "Chưa cập nhật"}`;
-      doc.text(doc.splitTextToSize(companyLine, contentWidth - 24), left + 24, y + 5);
-      doc.text(`Điện thoại: ${company.phone || "Chưa cập nhật"}${company.email ? ` · Email: ${company.email}` : ""}${company.websiteUrl ? ` · Website: ${company.websiteUrl}` : ""}`, left + 24, y + 10);
-      doc.setDrawColor(15, 140, 140);
-      doc.line(left, y + 22, right, y + 22);
-      y += 35;
       doc.setTextColor(16, 42, 67);
       doc.setFontSize(17);
       doc.text("BIÊN BẢN KIỂM KÊ TÀI SẢN", left, y);

@@ -549,15 +549,13 @@ describe("modal presentation contract", () => {
     expect(handoverPdf).toContain("BIÊN BẢN BÀN GIAO TÀI SẢN");
   });
 
-  it("splits service-ticket company metadata into individual lines and keeps PDF preview available on mobile", () => {
+  it("uses the shared company header in service-ticket PDFs and keeps PDF preview available on mobile", () => {
     const servicePdf = readProjectFile("client/src/lib/serviceTicketPdf.ts");
     const operations = readProjectFile("client/src/pages/OperationsModules.tsx");
     const css = readProjectFile("client/src/index.css");
 
-    expect(servicePdf).toContain("const companyLines =");
-    expect(servicePdf).toContain("MST: ${company.taxCode}");
-    expect(servicePdf).toContain("ĐT: ${company.phone}");
-    expect(servicePdf).toContain("companyLines.forEach");
+    expect(servicePdf).toContain("drawPdfCorporateHeader");
+    expect(servicePdf).toContain('fallbackName: "ĐƠN VỊ QUẢN LÝ TÀI SẢN"');
     expect(operations).toContain('ticket.serviceChannel === "warranty"');
     expect(operations).toContain("data-warranty-mobile-pdf");
     expect(operations).toContain("button.disabled = generating");
@@ -911,8 +909,8 @@ describe("modal presentation contract", () => {
     const pdf = readProjectFile("client/src/lib/supplyIssueSlipPdf.ts");
 
     expect(pdf).toContain("loadCompanyLogoForPdf");
-    expect(pdf).toContain('doc.addImage(headerLogo, "PNG", margin, 10, 19, 19');
-    expect(pdf).toContain("companyTextX");
+    expect(pdf).toContain("loadCompanyLogoForPdf");
+    expect(pdf).toContain("drawPdfCorporateHeader");
     expect(supplies).toContain("departmentAutoLocked");
     expect(supplies).toContain("disabled={departmentAutoLocked}");
     expect(supplies).toContain("Phòng ban được khóa theo hồ sơ nhân sự đã chọn.");
@@ -948,11 +946,10 @@ describe("modal presentation contract", () => {
     expect(operations).toContain("Biên bản được lập từ dữ liệu đã chốt của đơn vị.");
   });
 
-  it("vertically centers company information alongside the handover document logo", () => {
+  it("uses the shared company header for handover documents", () => {
     const home = readProjectFile("client/src/pages/Home.tsx");
-    expect(home).toContain("doc.text(companyInfo.name, left + 24, y - 4)");
-    expect(home).toContain("doc.text(`Địa chỉ: ${companyInfo.address}`, left + 24, y + 2)");
-    expect(home).toContain('doc.text(`MST: ${companyInfo.taxCode || "Chưa cập nhật"} · Điện thoại: ${companyInfo.phone || "Chưa cập nhật"} · Email: ${companyInfo.email || "Chưa cập nhật"}${companyInfo.websiteUrl ? ` · Website: ${companyInfo.websiteUrl}` : ""}`, left + 24, y + 8)');
+    expect(home).toContain("drawPdfCorporateHeader(doc, companyInfo");
+    expect(home).toContain("let y = header.contentY + 4");
   });
 
   it("opens asset-assignment PDFs in the shared preview before users print or download", () => {
@@ -1575,7 +1572,9 @@ describe("modal presentation contract", () => {
     expect(home).toContain('status: "Bảo hành/Sửa chữa"');
     expect(home).toContain('"Nội dung Bảo hành/Sửa chữa"');
     expect(home).toContain('"Thông tin này sẽ được lưu cùng tài sản để theo dõi và hiển thị trong thông báo Bảo hành/Sửa chữa."');
-    expect(home).toContain('setRecoveryPdfRequest(String(item.recoveryCertificateNumber))');
+    expect(home).toContain('new CustomEvent("assetmaster-open-recovery-certificate"');
+    expect(home).toContain('certificate: String(item.recoveryCertificateNumber)');
+    expect(home).toContain('downloadAssetRecoveryPdf(pdfItem, companyInfo, { skipFilenamePrompt: true })');
     expect(home).toContain('Mở biên bản thu hồi ${item.recoveryCertificateNumber}');
   });
 
@@ -1596,6 +1595,7 @@ describe("modal presentation contract", () => {
     expect(shortcut).toContain('icon.textContent = "PDF"');
     expect(shortcut).toContain("assetmaster-recovery-pdf-preparation-complete");
     expect(home).toContain("notifyPreparationComplete");
+    expect(home).toContain('new CustomEvent("assetmaster-open-recovery-certificate"');
     expect(operations).toContain('issueType: serviceChannel === "warranty" ? "maintenance" : "damage"');
     expect(operations).not.toContain('<SearchableSelect value={issueType}');
     expect(home).toContain('statusFilter === "Đã có mã biên bản thu hồi" ? hasRecoveryCertificate');
@@ -2172,7 +2172,7 @@ describe("maintenance history and filter layout contract", () => {
     expect(workbookHelper).toContain("Logo doanh nghiệp");
     expect(operations).toContain("writeBrandedWorkbook");
     expect(operations).not.toContain("XLSX.writeFile");
-    expect(operations).toContain("company.phone");
+    expect(operations).toContain("drawPdfCorporateHeader");
     expect(reports).toContain("writeBrandedWorkbook");
     expect(home).toContain("writeBrandedWorkbook");
     expect(categories).toContain("writeBrandedWorkbook");

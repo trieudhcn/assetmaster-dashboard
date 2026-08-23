@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { jsPDF } from "jspdf";
 import { describe, expect, it } from "vitest";
-import { drawPdfCorporateFooter, registerVietnamesePdfFont, vietnamesePdfFontFamily } from "../client/src/lib/handoverPdf";
+import { drawPdfCorporateFooter, drawPdfCorporateHeader, registerVietnamesePdfFont, vietnamesePdfFontFamily } from "../client/src/lib/handoverPdf";
 
 describe("Vietnamese handover PDF", () => {
   it("embeds a complete font so Vietnamese text survives PDF extraction", () => {
@@ -65,5 +65,44 @@ describe("Vietnamese handover PDF", () => {
     } finally {
       rmSync(directory, { recursive: true, force: true });
     }
+  });
+
+  it("draws one compact corporate header with contact details above the divider", () => {
+    const fontBytes = readFileSync("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf");
+    const fontBuffer = fontBytes.buffer.slice(fontBytes.byteOffset, fontBytes.byteOffset + fontBytes.byteLength);
+    const doc = new jsPDF({ unit: "mm", format: "a4" });
+    registerVietnamesePdfFont(doc, fontBuffer);
+    const header = drawPdfCorporateHeader(doc, {
+      name: "Công Ty TNHH Vi Tính Thái Thịnh",
+      address: "83 Hiệp Bình, Phường Hiệp Bình, TPHCM",
+      taxCode: "0101010101",
+      phone: "0987894432",
+      email: "contact@vitinhthaithinh.site",
+      websiteUrl: "vitinhthaithinh.site",
+    });
+    expect(header.contentY).toBeGreaterThan(header.dividerY);
+    const directory = mkdtempSync(join(tmpdir(), "assetmaster-pdf-header-"));
+    const pdfPath = join(directory, "header.pdf");
+    try {
+      writeFileSync(pdfPath, Buffer.from(doc.output("arraybuffer")));
+      const extracted = execFileSync("pdftotext", [pdfPath, "-"], { encoding: "utf8" });
+      expect(extracted).toContain("Công Ty TNHH Vi Tính Thái Thịnh");
+      expect(extracted).toContain("MST: 0101010101");
+      expect(extracted).toContain("Website: vitinhthaithinh.site");
+    } finally {
+      rmSync(directory, { recursive: true, force: true });
+    }
+  });
+
+  it("uses the shared corporate header in core PDF records", () => {
+    const consumers = [
+      "client/src/lib/supplyIssueSlipPdf.ts",
+      "client/src/lib/handoverAssetPdf.ts",
+      "client/src/lib/serviceTicketPdf.ts",
+      "client/src/lib/retirementPdf.ts",
+      "client/src/pages/OperationsModules.tsx",
+      "client/src/pages/Home.tsx",
+    ];
+    consumers.forEach((file) => expect(readFileSync(file, "utf8")).toContain("drawPdfCorporateHeader"));
   });
 });

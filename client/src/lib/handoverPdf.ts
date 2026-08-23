@@ -3,7 +3,14 @@ import type { jsPDF } from "jspdf";
 export const handoverPdfFontUrl = "/manus-storage/DejaVuSans-Vietnamese-full_d828ad5d.ttf";
 export const vietnamesePdfFontFamily = "DejaVuSansVietnamese";
 
-export type PdfCorporateIdentity = { name?: string | null };
+export type PdfCorporateIdentity = {
+  name?: string | null;
+  address?: string | null;
+  taxCode?: string | null;
+  phone?: string | null;
+  email?: string | null;
+  websiteUrl?: string | null;
+};
 
 function arrayBufferToBase64(buffer: ArrayBuffer) {
   let binary = "";
@@ -20,6 +27,58 @@ export function registerVietnamesePdfFont(doc: jsPDF, fontBuffer: ArrayBuffer) {
   // every PDF heading retains Vietnamese diacritics instead of falling back.
   doc.addFont(filename, vietnamesePdfFontFamily, "bold");
   doc.setFont(vietnamesePdfFontFamily, "normal");
+}
+
+/** A consistent corporate header for all printable AssetMaster records. */
+export function drawPdfCorporateHeader(
+  doc: jsPDF,
+  company: PdfCorporateIdentity,
+  options: { logoDataUrl?: string | null; left?: number; right?: number; top?: number; fallbackName?: string } = {},
+) {
+  const left = options.left ?? 16;
+  const right = options.right ?? (doc.internal.pageSize.getWidth() - 16);
+  const top = options.top ?? 10;
+  const logoSize = 18;
+  const hasLogo = Boolean(options.logoDataUrl);
+  const textX = hasLogo ? left + 24 : left;
+  const textWidth = right - textX;
+
+  if (options.logoDataUrl) {
+    try { doc.addImage(options.logoDataUrl, "PNG", left, top, logoSize, logoSize, undefined, "FAST"); } catch { /* Giữ tiêu đề chữ khi logo không khả dụng. */ }
+  }
+
+  doc.setTextColor(15, 140, 140);
+  doc.setFont(vietnamesePdfFontFamily, "bold");
+  doc.setFontSize(12);
+  doc.text(company.name || options.fallbackName || "ĐƠN VỊ QUẢN LÝ TÀI SẢN", textX, top + 6);
+
+  doc.setFont(vietnamesePdfFontFamily, "normal");
+  doc.setFontSize(8.5);
+  doc.setTextColor(96, 117, 138);
+  let lineY = top + 12;
+  const address = company.address ? `Địa chỉ: ${company.address}` : "";
+  if (address) {
+    const addressLines = doc.splitTextToSize(address, textWidth);
+    doc.text(addressLines, textX, lineY);
+    lineY += Math.max(4.3, addressLines.length * 4.3);
+  }
+  const contactLine = [
+    company.taxCode ? `MST: ${company.taxCode}` : "",
+    company.phone ? `Điện thoại: ${company.phone}` : "",
+    company.email ? `Email: ${company.email}` : "",
+    company.websiteUrl ? `Website: ${company.websiteUrl}` : "",
+  ].filter(Boolean).join(" · ");
+  if (contactLine) {
+    const contactLines = doc.splitTextToSize(contactLine, textWidth);
+    doc.text(contactLines, textX, lineY);
+    lineY += Math.max(4.3, contactLines.length * 4.3);
+  }
+
+  const dividerY = Math.max(top + 25, lineY + 5);
+  doc.setDrawColor(15, 140, 140);
+  doc.setLineWidth(0.45);
+  doc.line(left, dividerY, right, dividerY);
+  return { dividerY, contentY: dividerY + 11, left, right };
 }
 
 export function drawPdfCorporateFooter(doc: jsPDF, company: PdfCorporateIdentity, documentLabel: string) {
