@@ -278,6 +278,7 @@ async function restoreHandoverAccessories(
   throw new TRPCError({ code: "CONFLICT", message: "Không thể tạo mã biên bản thu hồi duy nhất. Vui lòng thử lại." });
 }
 const dateFromMs = z.number().int().nonnegative().optional().nullable().transform((value) => value ? new Date(value) : null);
+type InvoiceSupplyReceiptData = { id: number; supplyId: number; receivedQuantity: string; unitCost: string | null; taxRate: string; taxAmount: string; totalAmount: string; status: "received" | "void"; receivedAt: Date; note: string | null };
 
 async function requireEditableAuditSession(sessionId: number) {
   const session = await getAuditSession(sessionId);
@@ -716,12 +717,45 @@ export const appRouter = router({
     get: adminProcedure.input(z.object({ id: z.number().int().positive() })).query(async ({ input }) => {
       const invoice = await getPurchaseInvoiceById(input.id);
       if (!invoice) throw new TRPCError({ code: "NOT_FOUND", message: "Không tìm thấy Hóa đơn mua bán." });
-      const [documents, lines, linkedAssets] = await Promise.all([
+      const [documents, lines, linkedAssets, supplies] = await Promise.all([
         listPurchaseInvoiceDocuments(invoice.id),
         listPurchaseInvoiceLines(invoice.id),
         listAssetsByPurchaseInvoiceId(invoice.id),
+        listInventorySupplies(),
       ]);
-      return { invoice, documents, lines, linkedAssets };
+      const receiptGroups = await Promise.all(lines.filter((line) => line.itemType === "supply").map(async (line) => ({ purchaseInvoiceLineId: line.id, receipts: (await listPurchaseInvoiceSupplyReceipts(line.id)) as InvoiceSupplyReceiptData[] })));
+      const supplyById = new Map(supplies.map((supply) => [supply.id, supply]));
+      const supplyReceipts = receiptGroups.flatMap((group) => group.receipts.map((receipt) => ({ ...receipt, purchaseInvoiceLineId: group.purchaseInvoiceLineId, supply: supplyById.get(receipt.supplyId) || null })));
+      return { invoice, documents, lines, linkedAssets, supplyReceipts };
+    }),
+    reconciliation: adminProcedure.query(async () => {
+      const [invoices, vendors] = await Promise.all([listPurchaseInvoices(), listAllVendors()]);
+      const vendorById = new Map(vendors.map((vendor) => [vendor.id, vendor]));
+      const rows = await Promise.all(invoices.map(async (invoice) => {
+        const [lines, assets] = await Promise.all([listPurchaseInvoiceLines(invoice.id), listAssetsByPurchaseInvoiceId(invoice.id)]);
+        const receiptGroups = await Promise.all(lines.filter((line) => line.itemType === "supply").map(async (line) => ({ lineId: line.id, receipts: (await listPurchaseInvoiceSupplyReceipts(line.id)) as InvoiceSupplyReceiptData[] })));
+        const receivedByLine = new Map(receiptGroups.map((group) => [group.lineId, group.receipts.filter((receipt: InvoiceSupplyReceiptData) => receipt.status === "received").reduce((total: number, receipt: InvoiceSupplyReceiptData) => total + Number(receipt.receivedQuantity), 0)]));
+        return lines.map((line) => ({
+          invoiceId: invoice.id,
+          invoiceKey: invoice.invoiceKey,
+          invoiceStatus: invoice.status,
+          invoiceIssuedAt: invoice.issuedAt,
+          vendorName: vendorById.get(invoice.vendorId)?.name || "Nhà cung cấp đã xóa",
+          purchaseContractId: invoice.purchaseContractId,
+          lineId: line.id,
+          lineNumber: line.lineNumber,
+          itemType: line.itemType,
+          itemCode: line.itemCode,
+          itemName: line.itemName,
+          invoicedQuantity: line.quantity,
+          unit: line.unit,
+          unitPrice: line.unitPrice,
+          lineTotal: line.lineTotal,
+          linkedAssets: assets.filter((asset) => asset.purchaseInvoiceLineId === line.id).map((asset) => ({ id: asset.id, assetCode: asset.assetCode, name: asset.name, serialNumber: asset.serialNumber, purchaseValue: asset.purchaseValue, status: asset.status })),
+          receivedQuantity: receivedByLine.get(line.id) ?? 0,
+        }));
+      }));
+      return rows.flat();
     }),
     create: adminProcedure.input(z.object({
       invoiceNumber: z.string().trim().min(1).max(64),

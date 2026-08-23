@@ -264,6 +264,14 @@
 - [x] Thay dropdown Hợp đồng bằng dropdown Hóa đơn mua bán trong form Tài sản và truyền liên kết Hóa đơn/dòng Hóa đơn khi lưu.
 - [x] Bổ sung hồi quy, xác minh desktop/mobile, TypeScript và production build trước khi phát hành.
 
+## Current Session — Tiếp nhận và đối soát Hóa đơn
+
+- [x] Bổ sung API và dữ liệu đối soát Hóa đơn–Tài sản, có trạng thái liên kết theo từng dòng.
+- [x] Xây dựng giao diện gán trực tiếp Tài sản vào từng dòng loại Tài sản trên hồ sơ Hóa đơn.
+- [x] Xây dựng giao diện tiếp nhận Phụ kiện từ từng dòng Hóa đơn, cập nhật tồn kho bằng receipt/biến động kho.
+- [x] Thêm xuất Excel đối soát Hóa đơn–Tài sản với dòng Hóa đơn, Tài sản và Phụ kiện đã tiếp nhận.
+- [x] Bổ sung hồi quy, xác minh desktop/mobile, TypeScript và production build trước khi phát hành.
+
 - [x] Mở rộng mô hình dữ liệu tài sản với thông tin chi tiết và trạng thái thao tác.
 - [x] Thêm modal tạo tài sản mới với validation cơ bản.
 - [x] Thêm modal chỉnh sửa tài sản và cập nhật dữ liệu trong bảng.

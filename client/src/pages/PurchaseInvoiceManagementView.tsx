@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { createRoot } from "react-dom/client";
+import * as XLSX from "xlsx";
 import { Eye, FileCode2, FileImage, FileText, Link2, Loader2, Paperclip, Pencil, Plus, ReceiptText, Search, X } from "lucide-react";
 import { toast } from "sonner";
 import { trpc } from "@/lib/trpc";
@@ -31,6 +33,9 @@ export function PurchaseInvoiceManagementView() {
   const invoicesQuery = trpc.purchaseInvoices.list.useQuery();
   const vendorsQuery = trpc.vendors.listAll.useQuery();
   const contractsQuery = trpc.purchaseContracts.list.useQuery();
+  const assetsQuery = trpc.assets.list.useQuery();
+  const suppliesQuery = trpc.supplies.list.useQuery();
+  const reconciliationQuery = trpc.purchaseInvoices.reconciliation.useQuery(undefined, { enabled: false });
   const [query, setQuery] = useState("");
   const [vendorFilter, setVendorFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState<"all" | InvoiceStatus>("all");
@@ -64,6 +69,9 @@ export function PurchaseInvoiceManagementView() {
   const createLine = trpc.purchaseInvoices.createLine.useMutation({ onError: (error) => toast.error(error.message || "Không thể lưu dòng Hóa đơn.") });
   const uploadDocument = trpc.purchaseInvoices.uploadDocument.useMutation({ onSuccess: () => { toast.success("Đã lưu chứng từ Hóa đơn."); invalidate(); }, onError: (error) => toast.error(error.message || "Không thể tải chứng từ Hóa đơn.") });
   const removeDocument = trpc.purchaseInvoices.removeDocument.useMutation({ onSuccess: () => { toast.success("Đã gỡ chứng từ Hóa đơn."); invalidate(); }, onError: (error) => toast.error(error.message || "Không thể gỡ chứng từ.") });
+  const attachAsset = trpc.purchaseInvoices.attachAsset.useMutation({ onSuccess: () => { toast.success("Đã gán Tài sản vào dòng Hóa đơn."); invalidate(); void utils.assets.list.invalidate(); }, onError: (error) => toast.error(error.message || "Không thể gán Tài sản.") });
+  const detachAsset = trpc.purchaseInvoices.detachAsset.useMutation({ onSuccess: () => { toast.success("Đã gỡ Tài sản khỏi Hóa đơn."); invalidate(); void utils.assets.list.invalidate(); }, onError: (error) => toast.error(error.message || "Không thể gỡ Tài sản.") });
+  const receiveSupply = trpc.purchaseInvoices.receiveSupply.useMutation({ onSuccess: () => { toast.success("Đã tiếp nhận Phụ kiện và cập nhật tồn kho."); invalidate(); void utils.supplies.list.invalidate(); }, onError: (error) => toast.error(error.message || "Không thể tiếp nhận Phụ kiện.") });
 
   const lineSubtotal = (line: InvoiceLineForm) => Number(line.quantity || 0) * Number(line.unitPrice || 0);
   const lineTax = (line: InvoiceLineForm) => lineSubtotal(line) * Number(line.taxRate || 0) / 100;
@@ -130,6 +138,71 @@ export function PurchaseInvoiceManagementView() {
   };
   const detail = detailsQuery.data;
   const selectedInvoice = detail?.invoice;
+  const exportReconciliation = async () => {
+    const loading = toast.loading("Đang chuẩn bị Excel đối soát Hóa đơn–Tài sản...");
+    try {
+      const result = await reconciliationQuery.refetch();
+      const rows = result.data || [];
+      if (!rows.length) { toast.error("Chưa có dòng Hóa đơn để đối soát.", { id: loading }); return; }
+      const sheetRows = rows.map((row) => ({
+        "Số Hóa đơn": row.invoiceKey,
+        "Nhà cung cấp": row.vendorName,
+        "Ngày lập": dateLabel(row.invoiceIssuedAt),
+        "Trạng thái Hóa đơn": invoiceStatuses[row.invoiceStatus]?.label || row.invoiceStatus,
+        "Dòng": row.lineNumber,
+        "Loại dòng": row.itemType === "asset" ? "Tài sản" : row.itemType === "supply" ? "Phụ kiện" : row.itemType === "service" ? "Dịch vụ" : "Khác",
+        "Mã dòng": row.itemCode || "",
+        "Tên dòng": row.itemName,
+        "SL trên Hóa đơn": Number(row.invoicedQuantity),
+        "Đơn vị": row.unit || "",
+        "Đơn giá": Number(row.unitPrice),
+        "Thành tiền": Number(row.lineTotal),
+        "Tài sản đã gán": row.linkedAssets.map((asset) => `${asset.assetCode}${asset.serialNumber ? ` · ${asset.serialNumber}` : ""}`).join("; "),
+        "Số Tài sản đã gán": row.linkedAssets.length,
+        "Phụ kiện đã tiếp nhận": row.receivedQuantity,
+        "Còn chờ tiếp nhận": row.itemType === "supply" ? Math.max(0, Number(row.invoicedQuantity) - row.receivedQuantity) : "",
+      }));
+      const workbook = XLSX.utils.book_new();
+      const sheet = XLSX.utils.json_to_sheet(sheetRows);
+      sheet["!cols"] = [{ wch: 24 }, { wch: 25 }, { wch: 14 }, { wch: 18 }, { wch: 8 }, { wch: 14 }, { wch: 15 }, { wch: 32 }, { wch: 16 }, { wch: 12 }, { wch: 16 }, { wch: 18 }, { wch: 42 }, { wch: 18 }, { wch: 20 }, { wch: 20 }];
+      XLSX.utils.book_append_sheet(workbook, sheet, "Đối soát Hóa đơn");
+      XLSX.writeFile(workbook, `doi-soat-hoa-don-tai-san-${new Date().toISOString().slice(0, 10)}.xlsx`);
+      toast.success(`Đã xuất ${rows.length} dòng đối soát.`, { id: loading });
+    } catch (error) { toast.error(error instanceof Error ? error.message : "Không thể xuất Excel đối soát.", { id: loading }); }
+  };
+  useEffect(() => {
+    const heading = Array.from(document.querySelectorAll("h1")).find((item) => item.textContent?.trim() === "Hóa đơn mua bán");
+    const header = heading?.parentElement?.parentElement;
+    if (!header) return;
+    let button = header.querySelector<HTMLButtonElement>("[data-invoice-reconciliation-export]");
+    if (!button) {
+      button = document.createElement("button");
+      button.type = "button";
+      button.dataset.invoiceReconciliationExport = "true";
+      button.className = "inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-[#8BCDC6] bg-white px-3 text-xs font-extrabold text-[#087A6A] transition hover:bg-[#ECF8F7]";
+      button.innerHTML = '<span aria-hidden="true">⇩</span> Xuất đối soát Excel';
+      const actions = heading?.parentElement?.parentElement?.querySelector(".primary-action")?.parentElement;
+      actions?.prepend(button);
+    }
+    const onExport = () => void exportReconciliation();
+    button.addEventListener("click", onExport);
+    return () => button?.removeEventListener("click", onExport);
+  }, [reconciliationQuery.refetch]);
+  useEffect(() => {
+    if (!selectedInvoice || !detail) return;
+    const drawerTitle = Array.from(document.querySelectorAll("h2")).find((item) => item.textContent?.trim() === selectedInvoice.invoiceKey);
+    const lineSection = Array.from(drawerTitle?.parentElement?.parentElement?.parentElement?.querySelectorAll("section") || []).find((section) => section.textContent?.includes("Dòng Hóa đơn & Tài sản"));
+    if (!lineSection) return;
+    const existing = lineSection.querySelector<HTMLElement>("[data-invoice-line-operations]");
+    existing?.remove();
+    const host = document.createElement("div");
+    host.dataset.invoiceLineOperations = "true";
+    host.className = "mt-4";
+    lineSection.append(host);
+    const root = createRoot(host);
+    root.render(<InvoiceLineOperationsPanel invoiceId={selectedInvoice.id} invoiceKey={selectedInvoice.invoiceKey} lines={detail.lines} linkedAssets={detail.linkedAssets} supplyReceipts={detail.supplyReceipts} assets={assetsQuery.data || []} supplies={suppliesQuery.data || []} onAttach={(assetId, lineId) => attachAsset.mutate({ purchaseInvoiceId: selectedInvoice.id, purchaseInvoiceLineId: lineId, assetId })} onDetach={(assetId) => detachAsset.mutate({ assetId })} onReceive={(input) => receiveSupply.mutate(input)} isWorking={attachAsset.isPending || detachAsset.isPending || receiveSupply.isPending} />);
+    return () => { root.unmount(); host.remove(); };
+  }, [selectedInvoice?.id, selectedInvoice?.invoiceKey, detail?.lines, detail?.linkedAssets, detail?.supplyReceipts, assetsQuery.data, suppliesQuery.data, attachAsset.isPending, detachAsset.isPending, receiveSupply.isPending]);
 
   return <div className="min-h-screen bg-[#F4F7FB] px-4 py-7 sm:px-6 lg:px-9 lg:py-8"><div className="mx-auto max-w-[1500px]">
     <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between"><div><div className="flex items-center gap-2 text-[10px] font-extrabold uppercase tracking-[.16em] text-[#0F8C8C]"><ReceiptText size={14} />Mua sắm & chứng từ</div><h1 className="mt-1 font-display text-3xl font-extrabold text-[#102A43]">Hóa đơn mua bán</h1><p className="mt-1 max-w-2xl text-sm text-[#71869A]">Theo dõi hóa đơn là nguồn mua trực tiếp của Tài sản và Phụ kiện; Hợp đồng chỉ là liên kết tùy chọn.</p></div><button type="button" onClick={openCreate} className="primary-action"><Plus size={16} />Tạo hóa đơn</button></div>
@@ -144,6 +217,24 @@ export function PurchaseInvoiceManagementView() {
 }
 
 function InvoiceLineEditor({ line, index, onChange, onRemove }: { line: InvoiceLineForm; index: number; onChange: (changes: Partial<InvoiceLineForm>) => void; onRemove: () => void }) { const subtotal = Number(line.quantity || 0) * Number(line.unitPrice || 0); const total = subtotal * (1 + Number(line.taxRate || 0) / 100); return <div className="rounded-lg border border-[#E1EBF1] bg-white p-3"><div className="mb-2 flex items-center justify-between"><span className="text-[10px] font-extrabold uppercase tracking-[.1em] text-[#4B8884]">Dòng {index + 1}</span><button type="button" onClick={onRemove} className="text-[10px] font-bold text-[#B44545] hover:underline">Xóa dòng</button></div><div className="grid gap-2 sm:grid-cols-6"><SearchableSelect value={line.itemType} onChange={(value) => onChange({ itemType: value as InvoiceLineForm["itemType"] })} options={[{ value: "asset", label: "Tài sản" }, { value: "supply", label: "Phụ kiện" }, { value: "service", label: "Dịch vụ" }, { value: "other", label: "Khác" }]} placeholder="Loại" searchPlaceholder="Tìm loại..." /><input value={line.itemName} onChange={(event) => onChange({ itemName: event.target.value })} className="field-input sm:col-span-2" placeholder="Tên hàng hóa/dịch vụ" /><input value={line.quantity} inputMode="decimal" onChange={(event) => onChange({ quantity: event.target.value.replace(/[^0-9.]/g, "") })} className="field-input" placeholder="SL" /><input value={line.unit} onChange={(event) => onChange({ unit: event.target.value })} className="field-input" placeholder="ĐVT" /><CurrencyInput value={line.unitPrice} onChange={(value) => onChange({ unitPrice: value })} placeholder="Đơn giá" aria-label={`Đơn giá dòng ${index + 1}`} /></div><div className="mt-2 flex items-center justify-between gap-2 text-[10px] text-[#71869A]"><input value={line.taxRate} inputMode="decimal" onChange={(event) => onChange({ taxRate: event.target.value.replace(/[^0-9.]/g, "") })} className="h-7 w-20 rounded border border-[#DDE7F0] px-2 text-xs" placeholder="VAT %" /><span className="font-bold text-[#193B57]">Tạm tính: {money(total)}</span></div></div>; }
+type InvoiceOperationLine = { id: number; lineNumber: number; itemType: "asset" | "supply" | "service" | "other"; itemName: string; quantity: string; unit: string | null; unitPrice: string; taxRate: string; taxAmount: string };
+type InvoiceOperationAsset = { id: number; assetCode: string; name: string; serialNumber: string | null; purchaseInvoiceId: number | null; purchaseInvoiceLineId: number | null; status: string };
+type InvoiceOperationSupply = { id: number; code: string; name: string; unit: string; stockQuantity: string; isActive: boolean };
+type InvoiceOperationReceipt = { id: number; purchaseInvoiceLineId: number; supplyId: number; receivedQuantity: string; status: "received" | "void"; supply: InvoiceOperationSupply | null };
+type ReceiveSupplyInput = { purchaseInvoiceLineId: number; supplyId: number; receivedQuantity: string; unitCost: string | null; taxRate: string; taxAmount: string; totalAmount: string; receivedAt: number; note: string | null };
+function InvoiceLineOperationsPanel({ invoiceId, invoiceKey, lines, linkedAssets, supplyReceipts, assets, supplies, onAttach, onDetach, onReceive, isWorking }: { invoiceId: number; invoiceKey: string; lines: InvoiceOperationLine[]; linkedAssets: InvoiceOperationAsset[]; supplyReceipts: InvoiceOperationReceipt[]; assets: InvoiceOperationAsset[]; supplies: InvoiceOperationSupply[]; onAttach: (assetId: number, lineId: number | null) => void; onDetach: (assetId: number) => void; onReceive: (input: ReceiveSupplyInput) => void; isWorking: boolean }) {
+  const [assetDrafts, setAssetDrafts] = useState<Record<number, string>>({});
+  const [supplyDrafts, setSupplyDrafts] = useState<Record<number, { supplyId: string; quantity: string }>>({});
+  const activeAssets = assets.filter((asset) => asset.status !== "retired" && asset.status !== "returned_to_vendor");
+  return <section className="mt-4 rounded-xl border border-[#CDE5E5] bg-[#F4FBFA] p-3"><div className="flex items-start justify-between gap-3"><div><div className="flex items-center gap-2 text-sm font-extrabold text-[#193B57]"><Link2 size={15} className="text-[#087A6A]" />Phân bổ nguồn mua theo dòng</div><p className="mt-1 text-[11px] text-[#4B8884]">Gán trực tiếp Tài sản vào dòng loại Tài sản, hoặc tiếp nhận Phụ kiện vào kho theo dòng loại Phụ kiện.</p></div><span className="rounded-full bg-white px-2 py-1 text-[10px] font-bold text-[#087A6A]">{invoiceKey}</span></div><div className="mt-3 space-y-3">{lines.filter((line) => line.itemType === "asset" || line.itemType === "supply").map((line) => {
+    const lineAssets = linkedAssets.filter((asset) => asset.purchaseInvoiceLineId === line.id);
+    const receipts = supplyReceipts.filter((receipt) => receipt.purchaseInvoiceLineId === line.id && receipt.status === "received");
+    const received = receipts.reduce((total, receipt) => total + Number(receipt.receivedQuantity), 0);
+    const draft = supplyDrafts[line.id] || { supplyId: "", quantity: "" };
+    const remaining = Math.max(0, Number(line.quantity) - received);
+    return <div key={line.id} className="rounded-lg border border-[#CDE5E5] bg-white p-3"><div className="flex flex-wrap items-start justify-between gap-2"><div><div className="text-xs font-extrabold text-[#193B57]">#{line.lineNumber} · {line.itemName}</div><div className="mt-1 text-[10px] text-[#71869A]">{line.itemType === "asset" ? "Tài sản" : "Phụ kiện"} · SL Hóa đơn: {line.quantity} {line.unit || ""} · {money(line.unitPrice)}/đơn vị</div></div><span className={`rounded-full px-2 py-1 text-[10px] font-bold ${line.itemType === "asset" ? "bg-[#EAF3FF] text-[#2666A8]" : "bg-[#FFF5DC] text-[#A86B00]"}`}>{line.itemType === "asset" ? `${lineAssets.length} Tài sản đã gán` : `Đã nhập ${received}/${line.quantity}`}</span></div>{line.itemType === "asset" ? <div className="mt-3"><div className="flex flex-col gap-2 sm:flex-row"><select value={assetDrafts[line.id] || ""} onChange={(event) => setAssetDrafts((current) => ({ ...current, [line.id]: event.target.value }))} className="field-input min-w-0 flex-1" aria-label={`Chọn Tài sản cho dòng ${line.lineNumber}`}><option value="">Chọn Tài sản cần gán</option>{activeAssets.filter((asset) => !asset.purchaseInvoiceId || asset.purchaseInvoiceId === invoiceId).map((asset) => <option key={asset.id} value={asset.id}>{asset.assetCode} · {asset.name}{asset.serialNumber ? ` · ${asset.serialNumber}` : ""}</option>)}</select><button type="button" disabled={!assetDrafts[line.id] || isWorking} onClick={() => onAttach(Number(assetDrafts[line.id]), line.id)} className="filter-action whitespace-nowrap"><Link2 size={14} />Gán Tài sản</button></div><div className="mt-2 flex flex-wrap gap-1.5">{lineAssets.map((asset) => <span key={asset.id} className="inline-flex items-center gap-1 rounded-md border border-[#C9DDF5] bg-[#F2F8FF] px-2 py-1 text-[10px] font-bold text-[#2666A8]">{asset.assetCode}<button type="button" aria-label={`Gỡ ${asset.assetCode}`} disabled={isWorking} onClick={() => onDetach(asset.id)} className="ml-0.5 text-[#6F94C0] hover:text-[#B44545]"><X size={12} /></button></span>)}{!lineAssets.length && <span className="text-[10px] text-[#8AA0B6]">Chưa gán Tài sản nào.</span>}</div></div> : <div className="mt-3"><div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_110px_auto]"><select value={draft.supplyId} onChange={(event) => setSupplyDrafts((current) => ({ ...current, [line.id]: { ...draft, supplyId: event.target.value } }))} className="field-input" aria-label={`Chọn Phụ kiện cho dòng ${line.lineNumber}`}><option value="">Chọn Phụ kiện có sẵn để nhập kho</option>{supplies.filter((supply) => supply.isActive).map((supply) => <option key={supply.id} value={supply.id}>{supply.code} · {supply.name} · tồn {Number(supply.stockQuantity).toLocaleString("vi-VN")} {supply.unit}</option>)}</select><input value={draft.quantity} inputMode="decimal" onChange={(event) => setSupplyDrafts((current) => ({ ...current, [line.id]: { ...draft, quantity: event.target.value.replace(/[^0-9.]/g, "") } }))} className="field-input" placeholder={`Tối đa ${remaining}`} /><button type="button" disabled={!draft.supplyId || !draft.quantity || Number(draft.quantity) <= 0 || Number(draft.quantity) > remaining || isWorking} onClick={() => onReceive({ purchaseInvoiceLineId: line.id, supplyId: Number(draft.supplyId), receivedQuantity: draft.quantity, unitCost: line.unitPrice || null, taxRate: line.taxRate || "0", taxAmount: String(Math.round(Number(draft.quantity) * Number(line.unitPrice || 0) * Number(line.taxRate || 0) / 100 * 100) / 100), totalAmount: String(Math.round(Number(draft.quantity) * Number(line.unitPrice || 0) * (1 + Number(line.taxRate || 0) / 100) * 100) / 100), receivedAt: Date.now(), note: `Tiếp nhận từ Hóa đơn ${invoiceKey} · dòng ${line.lineNumber}` })} className="filter-action whitespace-nowrap"><Plus size={14} />Tiếp nhận</button></div><div className="mt-2 text-[10px] text-[#71869A]">Còn có thể tiếp nhận: <b className="text-[#193B57]">{remaining} {line.unit || ""}</b>. Mỗi lần tiếp nhận sẽ cộng tồn kho và tạo biến động kho.</div><div className="mt-2 flex flex-wrap gap-1.5">{receipts.map((receipt) => <span key={receipt.id} className="rounded-md border border-[#D7E9D6] bg-[#F3FBF2] px-2 py-1 text-[10px] font-bold text-[#4A8A46]">+{receipt.receivedQuantity} {receipt.supply?.unit || line.unit || ""} · {receipt.supply?.code || "Phụ kiện"}</span>)}{!receipts.length && <span className="text-[10px] text-[#8AA0B6]">Chưa có lần tiếp nhận.</span>}</div></div>}</div>;
+  })}</div>{!lines.some((line) => line.itemType === "asset" || line.itemType === "supply") && <p className="mt-3 rounded-lg border border-dashed border-[#B7D9D5] bg-white/70 px-3 py-4 text-center text-xs text-[#71869A]">Thêm dòng loại Tài sản hoặc Phụ kiện để thực hiện phân bổ nguồn mua.</p>}</section>;
+}
 function QueuedDocumentCard({ item, onTypeChange, onPreview, onRemove }: { item: QueuedDocument; onTypeChange: (type: QueuedDocument["documentType"]) => void; onPreview: () => void; onRemove: () => void }) { return <div className="rounded-lg border border-[#CDE5E5] bg-white p-3"><div className="flex items-start gap-2"><DocumentIcon contentType={normalizedContentType(item.file)} /><div className="min-w-0 flex-1"><div className="truncate text-xs font-bold text-[#193B57]">{item.file.name}</div><div className="mt-0.5 text-[10px] text-[#71869A]">{(item.file.size / 1024).toLocaleString("vi-VN", { maximumFractionDigits: 1 })} KB</div></div><button type="button" onClick={onRemove} aria-label={`Bỏ ${item.file.name}`} className="text-[#8AA0B6] hover:text-[#B44545]"><X size={15} /></button></div><div className="mt-2 flex gap-2"><div className="min-w-0 flex-1"><SearchableSelect value={item.documentType} onChange={(value) => onTypeChange(value as QueuedDocument["documentType"])} options={documentTypes} placeholder="Loại tệp" searchPlaceholder="Tìm loại..." /></div><button type="button" onClick={onPreview} className="inline-flex h-9 items-center gap-1 rounded-lg border border-[#DDE7F0] px-2.5 text-[10px] font-bold text-[#2666A8] hover:bg-[#F4F8FC]"><Eye size={13} />Xem</button></div></div>; }
 function DocumentPreview({ item, onClose }: { item: QueuedDocument; onClose: () => void }) { const [xml, setXml] = useState(""); const contentType = normalizedContentType(item.file); const objectUrl = useMemo(() => URL.createObjectURL(item.file), [item.file]); useEffect(() => { if (contentType === "application/xml") void item.file.text().then(setXml); return () => URL.revokeObjectURL(objectUrl); }, [contentType, item.file, objectUrl]); return <><button type="button" aria-label="Đóng xem trước chứng từ" onClick={onClose} className="fixed inset-0 z-[120] bg-[#102A43]/55 backdrop-blur-sm" /><section role="dialog" aria-modal="true" className="fixed left-1/2 top-1/2 z-[121] flex max-h-[90vh] w-[calc(100%-2rem)] max-w-4xl -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-2xl bg-white shadow-2xl"><div className="flex items-center justify-between border-b border-[#E7EEF3] px-5 py-3"><div className="min-w-0"><div className="truncate text-sm font-extrabold text-[#193B57]">Xem trước chứng từ</div><div className="truncate text-[11px] text-[#71869A]">{item.file.name}</div></div><button type="button" onClick={onClose} className="drawer-close-action" aria-label="Đóng"><X size={18} /></button></div><div className="min-h-[420px] flex-1 overflow-auto bg-[#F4F7FB] p-4">{contentType === "application/pdf" ? <iframe title={item.file.name} src={objectUrl} className="h-[68vh] w-full rounded-lg border border-[#DDE7F0] bg-white" /> : contentType === "application/xml" ? <pre className="whitespace-pre-wrap break-words rounded-lg border border-[#DDE7F0] bg-white p-4 text-xs leading-5 text-[#193B57]">{xml || "Đang đọc XML..."}</pre> : <img src={objectUrl} alt={`Xem trước ${item.file.name}`} className="mx-auto max-h-[68vh] rounded-lg border border-[#DDE7F0] bg-white object-contain" />}</div></section></>; }
 function DocumentIcon({ contentType }: { contentType: string }) { return contentType.includes("xml") ? <FileCode2 size={16} className="shrink-0 text-[#7554B8]" /> : contentType.startsWith("image/") ? <FileImage size={16} className="shrink-0 text-[#A86B00]" /> : <FileText size={16} className="shrink-0 text-[#2666A8]" />; }

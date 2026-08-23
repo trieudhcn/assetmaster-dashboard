@@ -136,4 +136,16 @@ describe("purchase contract management", () => {
     expect(invoicesView).toContain("DocumentPreview");
     expect(invoicesView).toContain("Dòng Hóa đơn");
   });
+
+  it("supports line-level reconciliation, asset allocation, supply receiving and Excel export", () => {
+    expect(router).toContain("reconciliation: adminProcedure");
+    expect(router).toContain("supplyReceipts");
+    expect(router).toContain("receivedQuantity");
+    expect(invoicesView).toContain("InvoiceLineOperationsPanel");
+    expect(invoicesView).toContain("trpc.purchaseInvoices.attachAsset.useMutation");
+    expect(invoicesView).toContain("trpc.purchaseInvoices.receiveSupply.useMutation");
+    expect(invoicesView).toContain("Phân bổ nguồn mua theo dòng");
+    expect(invoicesView).toContain("Xuất đối soát Excel");
+    expect(invoicesView).toContain("XLSX.writeFile");
+  });
 });
