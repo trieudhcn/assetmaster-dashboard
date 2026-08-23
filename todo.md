@@ -212,6 +212,14 @@
 - [x] Chuẩn hóa logo tải mới: tự cắt vùng trong suốt, căn giữa trong canvas 512×512 và chừa biên an toàn để ảnh ngang/dọc hiển thị cân đối.
 - [x] Bổ sung hồi quy, xác minh sidebar mobile, TypeScript, build và 21 tệp Vitest/276 kiểm thử trước khi phát hành.
 
+## Current Session — Quản lý Hợp đồng mua bán
+
+- [x] Thiết kế mô hình Hợp đồng mua bán trung tâm, dòng hợp đồng và quan hệ một hợp đồng–nhiều tài sản/phụ kiện.
+- [x] Bổ sung schema, migration, API phân quyền và lưu tệp hợp đồng ký bằng S3.
+- [x] Xây dựng menu quản lý Hợp đồng, danh sách/tìm kiếm, tạo-sửa-xem chi tiết, đính kèm chứng từ và chặn xóa khi còn liên kết.
+- [x] Liên kết chọn/tạo nhanh hợp đồng từ biểu mẫu Tài sản và Phụ kiện; hiển thị liên kết hợp đồng ở chi tiết.
+- [x] Bổ sung kiểm thử dữ liệu/quyền hạn, xác minh desktop/mobile, TypeScript và production build trước khi phát hành.
+
 - [x] Mở rộng mô hình dữ liệu tài sản với thông tin chi tiết và trạng thái thao tác.
 - [x] Thêm modal tạo tài sản mới với validation cơ bản.
 - [x] Thêm modal chỉnh sửa tài sản và cập nhật dữ liệu trong bảng.

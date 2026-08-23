@@ -147,6 +147,37 @@ export const vendorDocuments = mysqlTable("vendorDocuments", {
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 }, (table) => [index("vendor_documents_vendor_idx").on(table.vendorId)]);
 
+export const purchaseContracts = mysqlTable("purchaseContracts", {
+  id: int("id").autoincrement().primaryKey(),
+  referenceCode: varchar("referenceCode", { length: 64 }).notNull().unique(),
+  title: varchar("title", { length: 255 }).notNull(),
+  vendorId: int("vendorId").references(() => vendors.id, { onDelete: "set null", onUpdate: "cascade" }),
+  signedAt: timestamp("signedAt"),
+  effectiveFrom: timestamp("effectiveFrom"),
+  effectiveTo: timestamp("effectiveTo"),
+  totalValue: decimal("totalValue", { precision: 15, scale: 2 }),
+  status: mysqlEnum("status", ["draft", "active", "expired", "cancelled"]).default("draft").notNull(),
+  note: text("note"),
+  createdByUserId: int("createdByUserId"),
+  createdByName: varchar("createdByName", { length: 160 }),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+}, (table) => [index("purchase_contracts_vendor_idx").on(table.vendorId), index("purchase_contracts_status_idx").on(table.status), index("purchase_contracts_signed_at_idx").on(table.signedAt)]);
+
+export const purchaseContractDocuments = mysqlTable("purchaseContractDocuments", {
+  id: int("id").autoincrement().primaryKey(),
+  purchaseContractId: int("purchaseContractId").notNull().references(() => purchaseContracts.id, { onDelete: "cascade", onUpdate: "cascade" }),
+  documentType: mysqlEnum("documentType", ["signed_contract", "appendix", "quotation", "other"]).default("other").notNull(),
+  fileName: varchar("fileName", { length: 255 }).notNull(),
+  contentType: varchar("contentType", { length: 128 }).notNull(),
+  fileSize: int("fileSize").notNull(),
+  storageKey: text("storageKey").notNull(),
+  url: text("url").notNull(),
+  uploadedByUserId: int("uploadedByUserId"),
+  uploadedByName: varchar("uploadedByName", { length: 160 }),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+}, (table) => [index("purchase_contract_documents_contract_idx").on(table.purchaseContractId)]);
+
 export const brands = mysqlTable("brands", {
   id: int("id").autoincrement().primaryKey(),
   name: varchar("name", { length: 160 }).notNull().unique(),
@@ -194,6 +225,7 @@ export const assets = mysqlTable("assets", {
   condition: mysqlEnum("condition", ["good", "fair", "needs_inspection", "damaged"]).default("good").notNull(),
   purchaseDate: timestamp("purchaseDate"),
   purchaseValue: decimal("purchaseValue", { precision: 15, scale: 2 }),
+  purchaseContractId: int("purchaseContractId").references(() => purchaseContracts.id, { onDelete: "restrict", onUpdate: "cascade" }),
   vendor: varchar("vendor", { length: 255 }),
   vendorId: int("vendorId").references(() => vendors.id, { onDelete: "set null", onUpdate: "cascade" }),
   brandId: int("brandId").references(() => brands.id, { onDelete: "set null", onUpdate: "cascade" }),
@@ -228,6 +260,7 @@ export const assets = mysqlTable("assets", {
   index("assets_branch_idx").on(table.branchId),
   index("assets_department_idx").on(table.departmentId),
   index("assets_vendor_idx").on(table.vendorId),
+  index("assets_purchase_contract_idx").on(table.purchaseContractId),
   index("assets_brand_idx").on(table.brandId),
   index("assets_retirement_certificate_idx").on(table.retirementCertificateId),
 ]);
@@ -258,13 +291,14 @@ export const inventorySupplies = mysqlTable("inventorySupplies", {
   stockQuantity: decimal("stockQuantity", { precision: 15, scale: 2 }).default("0").notNull(),
   minimumQuantity: decimal("minimumQuantity", { precision: 15, scale: 2 }).default("0").notNull(),
   unitCost: decimal("unitCost", { precision: 15, scale: 2 }),
+  purchaseContractId: int("purchaseContractId").references(() => purchaseContracts.id, { onDelete: "restrict", onUpdate: "cascade" }),
   location: varchar("location", { length: 255 }),
   note: text("note"),
   isActive: boolean("isActive").default(true).notNull(),
   createdByUserId: int("createdByUserId"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
-}, (table) => [index("inventory_supplies_category_idx").on(table.categoryId), index("inventory_supplies_active_idx").on(table.isActive)]);
+}, (table) => [index("inventory_supplies_category_idx").on(table.categoryId), index("inventory_supplies_purchase_contract_idx").on(table.purchaseContractId), index("inventory_supplies_active_idx").on(table.isActive)]);
 
 export const supplyUnits = mysqlTable("supplyUnits", {
   id: int("id").autoincrement().primaryKey(),
@@ -273,6 +307,23 @@ export const supplyUnits = mysqlTable("supplyUnits", {
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 }, (table) => [index("supply_units_active_idx").on(table.isActive)]);
+
+export const purchaseContractItems = mysqlTable("purchaseContractItems", {
+  id: int("id").autoincrement().primaryKey(),
+  purchaseContractId: int("purchaseContractId").notNull().references(() => purchaseContracts.id, { onDelete: "cascade", onUpdate: "cascade" }),
+  itemType: mysqlEnum("itemType", ["asset", "supply"]).notNull(),
+  assetId: int("assetId").references(() => assets.id, { onDelete: "restrict", onUpdate: "cascade" }),
+  supplyId: int("supplyId").references(() => inventorySupplies.id, { onDelete: "restrict", onUpdate: "cascade" }),
+  itemCode: varchar("itemCode", { length: 64 }).notNull(),
+  itemName: varchar("itemName", { length: 255 }).notNull(),
+  quantity: decimal("quantity", { precision: 15, scale: 2 }).default("1").notNull(),
+  unit: varchar("unit", { length: 32 }),
+  unitPrice: decimal("unitPrice", { precision: 15, scale: 2 }),
+  warrantyUntil: timestamp("warrantyUntil"),
+  note: text("note"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+}, (table) => [index("purchase_contract_items_contract_idx").on(table.purchaseContractId), index("purchase_contract_items_asset_idx").on(table.assetId), index("purchase_contract_items_supply_idx").on(table.supplyId)]);
 
 export const supplyIssueSlips = mysqlTable("supplyIssueSlips", {
   id: int("id").autoincrement().primaryKey(),

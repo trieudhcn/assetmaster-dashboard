@@ -33,6 +33,9 @@ import {
   createSupplyIssueSlip,
   createSupplyIssueSlipItem,
   createMaintenanceTicket,
+  createPurchaseContract,
+  createPurchaseContractDocument,
+  createPurchaseContractItem,
   createRetirementCertificate,
   createRetirementCertificateAssets,
   createVendor,
@@ -42,6 +45,10 @@ import {
   deleteRetirementCertificate,
   countUsersByRole,
   deleteAssetCategory,
+  deletePurchaseContract,
+  deletePurchaseContractDocument,
+  deletePurchaseContractItemsByAssetId,
+  deletePurchaseContractItemsBySupplyId,
   deleteVendorDocument,
   getAssetById,
   getAssetImportSessionById,
@@ -81,12 +88,20 @@ import {
   getMaintenanceTicket,
   getNextAssetCodeForPrefix,
   getNextRetirementCertificateSequence,
+  getPurchaseContractById,
+  getPurchaseContractByReferenceCode,
+  getPurchaseContractDocumentById,
   getRetirementCertificateById,
   getUserNotificationPreferences,
   saveUiLabel,
   listMaintenanceTickets,
   listMaintenanceMonthlyBudgets,
   listMaintenanceTicketsByAsset,
+  listAssetsByPurchaseContractId,
+  listInventorySuppliesByPurchaseContractId,
+  listPurchaseContractDocuments,
+  listPurchaseContractItems,
+  listPurchaseContracts,
   listRetirementCertificateAssetAssignments,
   listRetirementCertificates,
   getNextRepairTicketSequence,
@@ -140,6 +155,7 @@ import {
   runAssetImportTransaction,
   runInventoryTransaction,
   runRetirementCertificateTransaction,
+  runPurchaseContractTransaction,
   saveCompany,
   saveMaintenanceMonthlyBudget,
   saveHelpGuide,
@@ -160,6 +176,7 @@ import {
   updateSupplyIssueSlipItem,
   updateSupplyUnit,
   updateMaintenanceTicket,
+  updatePurchaseContract,
   updateRetirementCertificate,
   updateRetirementCertificateAssetSalvageValues,
   updateUserRole,
@@ -261,8 +278,28 @@ export function hasRequiredRetirementReason(status: string | undefined, retireme
 const assetInput = z.object({
   assetCode: z.string().trim().min(2).max(64), name: z.string().trim().min(2).max(255), categoryId: z.number().int().positive().optional().nullable(), branchId: z.number().int().positive().optional().nullable(), departmentId: z.number().int().positive().optional().nullable(), holderName: nullableText,
   status: z.enum(["available", "assigned", "maintenance", "retired", "lost", "returned_to_vendor"]).default("available"), condition: z.enum(["good", "fair", "needs_inspection", "damaged"]).default("good"),
-  purchaseDate: dateFromMs, purchaseValue: z.string().regex(/^\d+(\.\d{1,2})?$/).optional().nullable(), supplierReturnedAt: dateFromMs, supplierReturnReason: nullableText, retiredAt: dateFromMs, retirementReason: nullableText, vendor: nullableText, vendorId: z.number().int().positive().optional().nullable(), brandId: z.number().int().positive().optional().nullable(), serialNumber: nullableText, location: nullableText, warrantyUntil: dateFromMs, note: nullableText, maintenanceReason: nullableText,
+  purchaseDate: dateFromMs, purchaseValue: z.string().regex(/^\d+(\.\d{1,2})?$/).optional().nullable(), purchaseContractId: z.number().int().positive().optional().nullable(), supplierReturnedAt: dateFromMs, supplierReturnReason: nullableText, retiredAt: dateFromMs, retirementReason: nullableText, vendor: nullableText, vendorId: z.number().int().positive().optional().nullable(), brandId: z.number().int().positive().optional().nullable(), serialNumber: nullableText, location: nullableText, warrantyUntil: dateFromMs, note: nullableText, maintenanceReason: nullableText,
 });
+
+async function requireUsablePurchaseContract(purchaseContractId: number | null | undefined) {
+  if (!purchaseContractId) return null;
+  const contract = await getPurchaseContractById(purchaseContractId);
+  if (!contract) throw new TRPCError({ code: "NOT_FOUND", message: "Không tìm thấy Hợp đồng mua bán được chọn." });
+  if (contract.status === "cancelled") throw new TRPCError({ code: "BAD_REQUEST", message: "Hợp đồng đã hủy không thể dùng để liên kết Tài sản hoặc Phụ kiện." });
+  return contract;
+}
+
+async function syncAssetPurchaseContractItem(asset: { id: number; assetCode: string; name: string; purchaseContractId: number | null; purchaseValue: string | null; warrantyUntil: Date | null }, transaction: any) {
+  await deletePurchaseContractItemsByAssetId(asset.id, transaction);
+  if (!asset.purchaseContractId) return;
+  await createPurchaseContractItem({ purchaseContractId: asset.purchaseContractId, itemType: "asset", assetId: asset.id, supplyId: null, itemCode: asset.assetCode, itemName: asset.name, quantity: "1", unit: "Tài sản", unitPrice: asset.purchaseValue, warrantyUntil: asset.warrantyUntil, note: null }, transaction);
+}
+
+async function syncSupplyPurchaseContractItem(supply: { id: number; code: string; name: string; purchaseContractId: number | null; stockQuantity: string; unit: string; unitCost: string | null }, transaction: any) {
+  await deletePurchaseContractItemsBySupplyId(supply.id, transaction);
+  if (!supply.purchaseContractId) return;
+  await createPurchaseContractItem({ purchaseContractId: supply.purchaseContractId, itemType: "supply", assetId: null, supplyId: supply.id, itemCode: supply.code, itemName: supply.name, quantity: supply.stockQuantity, unit: supply.unit, unitPrice: supply.unitCost, warrantyUntil: null, note: null }, transaction);
+}
 
 const assetImportRow = z.object({
   rowNumber: z.number().int().min(2),
@@ -547,6 +584,97 @@ export const appRouter = router({
       return { success: true };
     }),
   }),
+  purchaseContracts: router({
+    list: adminProcedure.query(() => listPurchaseContracts()),
+    get: adminProcedure.input(z.object({ id: z.number().int().positive() })).query(async ({ input }) => {
+      const contract = await getPurchaseContractById(input.id);
+      if (!contract) throw new TRPCError({ code: "NOT_FOUND", message: "Không tìm thấy Hợp đồng mua bán." });
+      const [documents, linkedAssets, linkedSupplies, items] = await Promise.all([
+        listPurchaseContractDocuments(contract.id),
+        listAssetsByPurchaseContractId(contract.id),
+        listInventorySuppliesByPurchaseContractId(contract.id),
+        listPurchaseContractItems(contract.id),
+      ]);
+      return { contract, documents, linkedAssets, linkedSupplies, items };
+    }),
+    create: adminProcedure.input(z.object({
+      referenceCode: z.string().trim().min(2).max(64).transform((value) => value.toUpperCase()),
+      title: z.string().trim().min(2).max(255),
+      vendorId: z.number().int().positive().nullable().optional(),
+      signedAt: dateFromMs,
+      effectiveFrom: dateFromMs,
+      effectiveTo: dateFromMs,
+      totalValue: z.string().regex(/^\d+(\.\d{1,2})?$/).nullable().optional(),
+      status: z.enum(["draft", "active", "expired", "cancelled"]).default("draft"),
+      note: nullableText,
+    }).superRefine((input, issue) => {
+      if (input.effectiveFrom && input.effectiveTo && input.effectiveTo.getTime() < input.effectiveFrom.getTime()) issue.addIssue({ code: z.ZodIssueCode.custom, path: ["effectiveTo"], message: "Ngày kết thúc hiệu lực phải sau hoặc bằng ngày bắt đầu." });
+    })).mutation(async ({ input, ctx }) => {
+      if (await getPurchaseContractByReferenceCode(input.referenceCode)) throw new TRPCError({ code: "BAD_REQUEST", message: "Số hợp đồng này đã tồn tại." });
+      if (input.vendorId && !(await getVendorById(input.vendorId))) throw new TRPCError({ code: "NOT_FOUND", message: "Không tìm thấy Nhà cung cấp được chọn." });
+      const id = await createPurchaseContract({ ...input, vendorId: input.vendorId ?? null, createdByUserId: ctx.user!.id, createdByName: ctx.user!.name ?? "Quản trị viên" });
+      await recordActivity({ entityType: "purchaseContract", entityId: id, action: "created", actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: `Tạo Hợp đồng mua bán ${input.referenceCode}` });
+      return { id };
+    }),
+    update: adminProcedure.input(z.object({
+      id: z.number().int().positive(),
+      referenceCode: z.string().trim().min(2).max(64).transform((value) => value.toUpperCase()).optional(),
+      title: z.string().trim().min(2).max(255).optional(),
+      vendorId: z.number().int().positive().nullable().optional(),
+      signedAt: dateFromMs,
+      effectiveFrom: dateFromMs,
+      effectiveTo: dateFromMs,
+      totalValue: z.string().regex(/^\d+(\.\d{1,2})?$/).nullable().optional(),
+      status: z.enum(["draft", "active", "expired", "cancelled"]).optional(),
+      note: nullableText,
+    }).superRefine((input, issue) => {
+      if (input.effectiveFrom && input.effectiveTo && input.effectiveTo.getTime() < input.effectiveFrom.getTime()) issue.addIssue({ code: z.ZodIssueCode.custom, path: ["effectiveTo"], message: "Ngày kết thúc hiệu lực phải sau hoặc bằng ngày bắt đầu." });
+    })).mutation(async ({ input, ctx }) => {
+      const contract = await getPurchaseContractById(input.id);
+      if (!contract) throw new TRPCError({ code: "NOT_FOUND", message: "Không tìm thấy Hợp đồng mua bán." });
+      if (input.referenceCode && input.referenceCode !== contract.referenceCode && await getPurchaseContractByReferenceCode(input.referenceCode)) throw new TRPCError({ code: "BAD_REQUEST", message: "Số hợp đồng này đã tồn tại." });
+      if (input.vendorId && !(await getVendorById(input.vendorId))) throw new TRPCError({ code: "NOT_FOUND", message: "Không tìm thấy Nhà cung cấp được chọn." });
+      const { id, ...changes } = input;
+      await updatePurchaseContract(id, changes);
+      await recordActivity({ entityType: "purchaseContract", entityId: id, action: "updated", actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: `Cập nhật Hợp đồng mua bán ${changes.referenceCode || contract.referenceCode}` });
+      return { success: true };
+    }),
+    remove: adminProcedure.input(z.object({ id: z.number().int().positive() })).mutation(async ({ input, ctx }) => runPurchaseContractTransaction(async (transaction) => {
+      const contract = await getPurchaseContractById(input.id, transaction);
+      if (!contract) throw new TRPCError({ code: "NOT_FOUND", message: "Không tìm thấy Hợp đồng mua bán." });
+      const [linkedAssets, linkedSupplies] = await Promise.all([listAssetsByPurchaseContractId(contract.id), listInventorySuppliesByPurchaseContractId(contract.id)]);
+      if (linkedAssets.length || linkedSupplies.length) throw new TRPCError({ code: "CONFLICT", message: `Không thể xóa vì hợp đồng đang liên kết ${linkedAssets.length} tài sản và ${linkedSupplies.length} phụ kiện.` });
+      await deletePurchaseContract(contract.id, transaction);
+      await recordActivity({ entityType: "purchaseContract", entityId: contract.id, action: "removed", actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: `Xóa Hợp đồng mua bán ${contract.referenceCode}` }, transaction);
+      return { success: true };
+    })),
+    uploadDocument: adminProcedure.input(z.object({
+      purchaseContractId: z.number().int().positive(),
+      documentType: z.enum(["signed_contract", "appendix", "quotation", "other"]),
+      fileName: z.string().trim().min(1).max(255),
+      contentType: z.enum(["application/pdf", "image/png", "image/jpeg", "application/vnd.openxmlformats-officedocument.wordprocessingml.document", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"]),
+      dataUrl: z.string().max(7_500_000).regex(/^data:(application\/pdf|image\/(png|jpeg)|application\/vnd\.openxmlformats-officedocument\.(wordprocessingml\.document|spreadsheetml\.sheet));base64,/),
+    })).mutation(async ({ input, ctx }) => {
+      const contract = await getPurchaseContractById(input.purchaseContractId);
+      if (!contract) throw new TRPCError({ code: "NOT_FOUND", message: "Không tìm thấy Hợp đồng mua bán." });
+      const buffer = Buffer.from(input.dataUrl.split(",", 2)[1], "base64");
+      if (!buffer.length || buffer.length > 5 * 1024 * 1024) throw new TRPCError({ code: "BAD_REQUEST", message: "Tài liệu phải có dung lượng từ 1 byte đến 5 MB." });
+      const extensionByContentType: Record<string, string> = { "application/pdf": "pdf", "image/png": "png", "image/jpeg": "jpg", "application/vnd.openxmlformats-officedocument.wordprocessingml.document": "docx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": "xlsx" };
+      const safeBaseName = input.fileName.replace(/[^a-zA-Z0-9._-]/g, "-").replace(/-+/g, "-").slice(0, 120) || "tai-lieu-hop-dong";
+      const storageKey = `purchase-contracts/${contract.id}/documents/${Date.now()}-${safeBaseName}.${extensionByContentType[input.contentType]}`;
+      const { url } = await storagePut(storageKey, buffer, input.contentType);
+      const id = await createPurchaseContractDocument({ purchaseContractId: contract.id, documentType: input.documentType, fileName: input.fileName, contentType: input.contentType, fileSize: buffer.length, storageKey, url, uploadedByUserId: ctx.user!.id, uploadedByName: ctx.user!.name ?? "Quản trị viên" });
+      await recordActivity({ entityType: "purchaseContractDocument", entityId: id, action: "uploaded", actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: `Tải chứng từ ${input.fileName} cho Hợp đồng ${contract.referenceCode}` });
+      return { id, url, fileName: input.fileName, contentType: input.contentType, fileSize: buffer.length };
+    }),
+    removeDocument: adminProcedure.input(z.object({ id: z.number().int().positive() })).mutation(async ({ input, ctx }) => {
+      const document = await getPurchaseContractDocumentById(input.id);
+      if (!document) throw new TRPCError({ code: "NOT_FOUND", message: "Không tìm thấy chứng từ Hợp đồng." });
+      await deletePurchaseContractDocument(document.id);
+      await recordActivity({ entityType: "purchaseContractDocument", entityId: document.id, action: "removed", actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: `Gỡ chứng từ ${document.fileName}` });
+      return { success: true };
+    }),
+  }),
   brands: router({
     list: adminProcedure.query(() => listBrands()),
     listAll: adminProcedure.query(() => listAllBrands()),
@@ -773,6 +901,7 @@ export const appRouter = router({
       categoryId: z.number().int().positive().nullable().optional(),
       vendorId: z.number().int().positive().nullable().optional(),
       brandId: z.number().int().positive().nullable().optional(),
+      purchaseContractId: z.number().int().positive().nullable().optional(),
       unit: z.string().trim().min(1).max(32).default("Cái"),
       openingQuantity: z.number().finite().min(0).default(0),
       minimumQuantity: z.number().finite().min(0).default(0),
@@ -781,10 +910,16 @@ export const appRouter = router({
       note: nullableText,
     })).mutation(async ({ input, ctx }) => {
       if (await getInventorySupplyByCode(input.code)) throw new TRPCError({ code: "BAD_REQUEST", message: "Mã phụ kiện này đã tồn tại." });
+      const linkedContract = await requireUsablePurchaseContract(input.purchaseContractId);
+      const contractVendor = linkedContract?.vendorId ? await getVendorById(linkedContract.vendorId) : null;
+      const resolvedVendorId = linkedContract?.vendorId ?? input.vendorId ?? null;
+      if (resolvedVendorId && !contractVendor && !(await getVendorById(resolvedVendorId))?.isActive) throw new TRPCError({ code: "BAD_REQUEST", message: "Nhà cung cấp được chọn không tồn tại hoặc đã ngừng hoạt động." });
       return runInventoryTransaction(async (transaction) => {
-        const supplyId = await createInventorySupply({ code: input.code, name: input.name, categoryId: input.categoryId ?? null, vendorId: input.vendorId ?? null, brandId: input.brandId ?? null, unit: input.unit, stockQuantity: String(input.openingQuantity), minimumQuantity: String(input.minimumQuantity), unitCost: input.unitCost === null || input.unitCost === undefined ? null : String(input.unitCost), location: input.location ?? null, note: input.note ?? null, isActive: true, createdByUserId: ctx.user!.id }, transaction);
+        const unitCost = input.unitCost === null || input.unitCost === undefined ? null : String(input.unitCost);
+        const supplyId = await createInventorySupply({ code: input.code, name: input.name, categoryId: input.categoryId ?? null, vendorId: resolvedVendorId, brandId: input.brandId ?? null, purchaseContractId: input.purchaseContractId ?? null, unit: input.unit, stockQuantity: String(input.openingQuantity), minimumQuantity: String(input.minimumQuantity), unitCost, location: input.location ?? null, note: input.note ?? null, isActive: true, createdByUserId: ctx.user!.id }, transaction);
+        if (input.purchaseContractId) await syncSupplyPurchaseContractItem({ id: supplyId, code: input.code, name: input.name, purchaseContractId: input.purchaseContractId, stockQuantity: String(input.openingQuantity), unit: input.unit, unitCost }, transaction);
         if (input.openingQuantity > 0) await createInventoryMovement({ supplyId, movementType: "receipt", quantity: String(input.openingQuantity), quantityBefore: "0", quantityAfter: String(input.openingQuantity), note: "Tồn đầu kỳ khi tạo phụ kiện", createdByUserId: ctx.user!.id, createdByName: ctx.user!.name ?? "Quản trị viên" }, transaction);
-        await recordActivity({ entityType: "supply", entityId: supplyId, action: "created", actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: `Tạo phụ kiện ${input.name} (${input.code}), tồn đầu ${input.openingQuantity} ${input.unit}` }, transaction);
+        await recordActivity({ entityType: "supply", entityId: supplyId, action: "created", actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: `Tạo phụ kiện ${input.name} (${input.code}), tồn đầu ${input.openingQuantity} ${input.unit}${linkedContract ? ` theo Hợp đồng ${linkedContract.referenceCode}` : ""}` }, transaction);
         return { id: supplyId };
       });
     }),
@@ -844,14 +979,24 @@ export const appRouter = router({
         return { created, updated, ids, sessionId };
       });
     }),
-    update: adminProcedure.input(z.object({ id: z.number().int().positive(), code: z.string().trim().min(2).max(64).regex(/^[A-Za-z0-9-]+$/).transform((value) => value.toUpperCase()).optional(), name: z.string().trim().min(2).max(255).optional(), categoryId: z.number().int().positive().nullable().optional(), vendorId: z.number().int().positive().nullable().optional(), brandId: z.number().int().positive().nullable().optional(), unit: z.string().trim().min(1).max(32).optional(), minimumQuantity: z.number().finite().min(0).optional(), unitCost: z.number().finite().min(0).nullable().optional(), location: nullableText, note: nullableText, isActive: z.boolean().optional() })).mutation(async ({ input, ctx }) => {
+    update: adminProcedure.input(z.object({ id: z.number().int().positive(), code: z.string().trim().min(2).max(64).regex(/^[A-Za-z0-9-]+$/).transform((value) => value.toUpperCase()).optional(), name: z.string().trim().min(2).max(255).optional(), categoryId: z.number().int().positive().nullable().optional(), vendorId: z.number().int().positive().nullable().optional(), brandId: z.number().int().positive().nullable().optional(), purchaseContractId: z.number().int().positive().nullable().optional(), unit: z.string().trim().min(1).max(32).optional(), minimumQuantity: z.number().finite().min(0).optional(), unitCost: z.number().finite().min(0).nullable().optional(), location: nullableText, note: nullableText, isActive: z.boolean().optional() })).mutation(async ({ input, ctx }) => {
       const supply = await getInventorySupplyById(input.id);
       if (!supply) throw new TRPCError({ code: "NOT_FOUND", message: "Không tìm thấy phụ kiện." });
       if (input.code !== undefined && input.code !== supply.code) throw new TRPCError({ code: "BAD_REQUEST", message: "Mã phụ kiện đã được khóa sau khi tạo mới." });
-      const { id, minimumQuantity, unitCost, code: _lockedCode, ...changes } = input;
-      await updateInventorySupply(id, { ...changes, minimumQuantity: minimumQuantity === undefined ? undefined : String(minimumQuantity), unitCost: unitCost === undefined ? undefined : unitCost === null ? null : String(unitCost) });
-      await recordActivity({ entityType: "supply", entityId: id, action: "updated", actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: `Cập nhật phụ kiện ${changes.name || supply.name}` });
-      return { success: true };
+      const targetPurchaseContractId = input.purchaseContractId === undefined ? supply.purchaseContractId : input.purchaseContractId;
+      const linkedContract = await requireUsablePurchaseContract(targetPurchaseContractId);
+      const contractVendor = linkedContract?.vendorId ? await getVendorById(linkedContract.vendorId) : null;
+      if (linkedContract && input.vendorId !== undefined && input.vendorId !== linkedContract.vendorId) throw new TRPCError({ code: "BAD_REQUEST", message: "Nhà cung cấp của Phụ kiện được lấy theo Hợp đồng đã chọn." });
+      const resolvedVendorId = linkedContract?.vendorId ?? input.vendorId;
+      if (resolvedVendorId && !contractVendor && !(await getVendorById(resolvedVendorId))?.isActive) throw new TRPCError({ code: "BAD_REQUEST", message: "Nhà cung cấp được chọn không tồn tại hoặc đã ngừng hoạt động." });
+      const { id, minimumQuantity, unitCost, code: _lockedCode, purchaseContractId: _purchaseContractId, ...changes } = input;
+      const updateValues = { ...changes, purchaseContractId: targetPurchaseContractId ?? null, ...(linkedContract ? { vendorId: linkedContract.vendorId } : resolvedVendorId !== undefined ? { vendorId: resolvedVendorId } : {}), minimumQuantity: minimumQuantity === undefined ? undefined : String(minimumQuantity), unitCost: unitCost === undefined ? undefined : unitCost === null ? null : String(unitCost) };
+      return runInventoryTransaction(async (transaction) => {
+        await updateInventorySupply(id, updateValues, transaction);
+        await syncSupplyPurchaseContractItem({ id, code: supply.code, name: changes.name ?? supply.name, purchaseContractId: targetPurchaseContractId ?? null, stockQuantity: supply.stockQuantity, unit: changes.unit ?? supply.unit, unitCost: updateValues.unitCost === undefined ? supply.unitCost : updateValues.unitCost }, transaction);
+        await recordActivity({ entityType: "supply", entityId: id, action: "updated", actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: `Cập nhật phụ kiện ${changes.name || supply.name}${linkedContract ? ` theo Hợp đồng ${linkedContract.referenceCode}` : ""}` }, transaction);
+        return { success: true };
+      });
     }),
     move: adminProcedure.input(z.object({ supplyId: z.number().int().positive(), movementType: z.enum(["receipt", "issue", "adjustment"]), quantity: z.number().finite(), recipientUserId: z.number().int().positive().nullable().optional(), recipientName: z.string().trim().max(160).optional(), recipientDepartmentId: z.number().int().positive().nullable().optional(), note: z.string().trim().min(2).max(1000) }).superRefine((input, issue) => {
       if (input.movementType !== "adjustment" && input.quantity <= 0) issue.addIssue({ code: z.ZodIssueCode.custom, path: ["quantity"], message: "Số lượng phải lớn hơn 0." });
@@ -998,7 +1143,10 @@ export const appRouter = router({
     create: adminProcedure.input(assetInput).mutation(async ({ input, ctx }) => {
       if (!hasRequiredMaintenanceReason(input.status, input.maintenanceReason)) throw new TRPCError({ code: "BAD_REQUEST", message: "Vui lòng nhập lý do Bảo hành/Sửa chữa khi đưa tài sản vào trạng thái này." });
       if (!hasRequiredRetirementReason(input.status, input.retirementReason)) throw new TRPCError({ code: "BAD_REQUEST", message: "Vui lòng nhập lý do thanh lý khi đưa tài sản vào Khấu hao/Thanh lý." });
-      if (input.vendorId && !(await getVendorById(input.vendorId))?.isActive) throw new TRPCError({ code: "BAD_REQUEST", message: "Nhà cung cấp được chọn không tồn tại hoặc đã ngừng hoạt động." });
+      const linkedContract = await requireUsablePurchaseContract(input.purchaseContractId);
+      const contractVendor = linkedContract?.vendorId ? await getVendorById(linkedContract.vendorId) : null;
+      const resolvedVendorId = linkedContract?.vendorId ?? input.vendorId ?? null;
+      if (resolvedVendorId && !contractVendor && !(await getVendorById(resolvedVendorId))?.isActive) throw new TRPCError({ code: "BAD_REQUEST", message: "Nhà cung cấp được chọn không tồn tại hoặc đã ngừng hoạt động." });
       if (input.brandId && !(await getBrandById(input.brandId))?.isActive) throw new TRPCError({ code: "BAD_REQUEST", message: "Hãng được chọn không tồn tại hoặc đã ngừng hoạt động." });
       const branch = input.branchId ? await getBranchById(input.branchId) : (await getBranchByCode("HO")) || (await getBranchByCode("HO-HEAD OFFICE"));
       if (!branch?.isActive) throw new TRPCError({ code: "BAD_REQUEST", message: "Không tìm thấy Chi nhánh HO-Head Office đang hoạt động để gán mặc định cho tài sản mới." });
@@ -1009,9 +1157,14 @@ export const appRouter = router({
       })() : null;
       const retirementSequence = retirementCertificate ? await getNextRetirementCertificateSequence(retirementCertificate.year) : null;
       const retirementCertificateNumber = retirementCertificate && retirementSequence ? `TL-${retirementCertificate.year}-${String(retirementSequence).padStart(3, "0")}` : null;
-      const id = await createAsset({ ...input, branchId: branch.id, holderName: input.status === "retired" ? "Khấu hao - Thanh lý" : input.holderName, maintenanceReason: input.status === "maintenance" ? input.maintenanceReason?.trim() || null : null, retiredAt: retirementAt, retirementReason: input.status === "retired" ? input.retirementReason?.trim() || null : null, retirementCertificateNumber, retirementCertificateYear: retirementCertificate?.year ?? null, retirementCertificateSequence: retirementSequence, qrToken: crypto.randomUUID().replaceAll("-", ""), createdByUserId: ctx.user!.id });
-      await recordActivity({ entityType: "asset", entityId: id, action: "created", actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: `Tạo tài sản ${input.assetCode}` });
-      return { id };
+      const createAssetAndRecordActivity = async (transaction?: any) => {
+        const assetValues = { ...input, vendorId: resolvedVendorId, vendor: contractVendor?.name ?? input.vendor, branchId: branch.id, holderName: input.status === "retired" ? "Khấu hao - Thanh lý" : input.holderName, maintenanceReason: input.status === "maintenance" ? input.maintenanceReason?.trim() || null : null, retiredAt: retirementAt, retirementReason: input.status === "retired" ? input.retirementReason?.trim() || null : null, retirementCertificateNumber, retirementCertificateYear: retirementCertificate?.year ?? null, retirementCertificateSequence: retirementSequence, qrToken: crypto.randomUUID().replaceAll("-", ""), createdByUserId: ctx.user!.id };
+        const id = transaction ? await createAsset(assetValues, transaction) : await createAsset(assetValues);
+        if (input.purchaseContractId) await syncAssetPurchaseContractItem({ id, assetCode: input.assetCode, name: input.name, purchaseContractId: input.purchaseContractId, purchaseValue: input.purchaseValue ?? null, warrantyUntil: input.warrantyUntil ?? null }, transaction);
+        await recordActivity({ entityType: "asset", entityId: id, action: "created", actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: `Tạo tài sản ${input.assetCode}${linkedContract ? ` theo Hợp đồng ${linkedContract.referenceCode}` : ""}` }, transaction);
+        return { id };
+      };
+      return input.purchaseContractId ? runPurchaseContractTransaction(createAssetAndRecordActivity) : createAssetAndRecordActivity();
     }),
     update: adminProcedure.input(assetInput.partial().extend({ id: z.number().int().positive() })).mutation(async ({ input, ctx }) => {
       const { id, ...changes } = input;
@@ -1020,7 +1173,12 @@ export const appRouter = router({
       if (current.status === "retired" || current.status === "returned_to_vendor") throw new TRPCError({ code: "CONFLICT", message: "Tài sản đã Trả nhà cung cấp hoặc Khấu hao/Thanh lý được khóa và không thể chỉnh sửa." });
       if (!hasRequiredMaintenanceReason(changes.status, changes.maintenanceReason)) throw new TRPCError({ code: "BAD_REQUEST", message: "Vui lòng nhập lý do Bảo hành/Sửa chữa khi đưa tài sản vào trạng thái này." });
       if (!hasRequiredRetirementReason(changes.status, changes.retirementReason)) throw new TRPCError({ code: "BAD_REQUEST", message: "Vui lòng nhập lý do thanh lý khi đưa tài sản vào Khấu hao/Thanh lý." });
-      if (changes.vendorId && !(await getVendorById(changes.vendorId))?.isActive) throw new TRPCError({ code: "BAD_REQUEST", message: "Nhà cung cấp được chọn không tồn tại hoặc đã ngừng hoạt động." });
+      const targetPurchaseContractId = changes.purchaseContractId === undefined ? current.purchaseContractId : changes.purchaseContractId;
+      const linkedContract = await requireUsablePurchaseContract(targetPurchaseContractId);
+      const contractVendor = linkedContract?.vendorId ? await getVendorById(linkedContract.vendorId) : null;
+      if (linkedContract && changes.vendorId !== undefined && changes.vendorId !== linkedContract.vendorId) throw new TRPCError({ code: "BAD_REQUEST", message: "Nhà cung cấp của Tài sản được lấy theo Hợp đồng đã chọn." });
+      const resolvedVendorId = linkedContract?.vendorId ?? changes.vendorId;
+      if (resolvedVendorId && !contractVendor && !(await getVendorById(resolvedVendorId))?.isActive) throw new TRPCError({ code: "BAD_REQUEST", message: "Nhà cung cấp được chọn không tồn tại hoặc đã ngừng hoạt động." });
       if (changes.brandId && !(await getBrandById(changes.brandId))?.isActive) throw new TRPCError({ code: "BAD_REQUEST", message: "Hãng được chọn không tồn tại hoặc đã ngừng hoạt động." });
       if (changes.branchId && !(await getBranchById(changes.branchId))?.isActive) throw new TRPCError({ code: "BAD_REQUEST", message: "Chi nhánh được chọn không tồn tại hoặc đã ngừng hoạt động." });
       const persistedChanges = changes.status && changes.status !== "maintenance" ? { ...changes, maintenanceReason: null } : changes;
@@ -1040,10 +1198,14 @@ export const appRouter = router({
         : {};
       // Ngày mua là dữ liệu gốc từ lúc nhập kho; không được thay đổi sau khi tài sản đã tạo/import.
       const safeChanges = { ...persistedChanges, ...supplierReturnChanges, ...retirementChanges, purchaseDate: current.purchaseDate };
-      await updateAsset(id, safeChanges);
-      await createAssetFieldChanges(fieldChanges(id, assetSnapshot(current as unknown as Record<string, unknown>), assetSnapshot({ ...(current as unknown as Record<string, unknown>), ...safeChanges }), "manual", ctx.user!.id, ctx.user!.name));
-      await recordActivity({ entityType: "asset", entityId: id, action: "updated", actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: "Cập nhật thông tin tài sản" });
-      return { success: true };
+      const contractAwareChanges = { ...safeChanges, ...(linkedContract ? { vendorId: linkedContract.vendorId, vendor: contractVendor?.name ?? current.vendor } : resolvedVendorId !== undefined ? { vendorId: resolvedVendorId } : {}) };
+      return runPurchaseContractTransaction(async (transaction) => {
+        await updateAsset(id, contractAwareChanges, transaction);
+        await syncAssetPurchaseContractItem({ id, assetCode: contractAwareChanges.assetCode ?? current.assetCode, name: contractAwareChanges.name ?? current.name, purchaseContractId: targetPurchaseContractId ?? null, purchaseValue: contractAwareChanges.purchaseValue === undefined ? current.purchaseValue : contractAwareChanges.purchaseValue ?? null, warrantyUntil: contractAwareChanges.warrantyUntil === undefined ? current.warrantyUntil : contractAwareChanges.warrantyUntil ?? null }, transaction);
+        await createAssetFieldChanges(fieldChanges(id, assetSnapshot(current as unknown as Record<string, unknown>), assetSnapshot({ ...(current as unknown as Record<string, unknown>), ...contractAwareChanges }), "manual", ctx.user!.id, ctx.user!.name), transaction);
+        await recordActivity({ entityType: "asset", entityId: id, action: "updated", actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: `Cập nhật thông tin tài sản${linkedContract ? ` theo Hợp đồng ${linkedContract.referenceCode}` : ""}` }, transaction);
+        return { success: true };
+      });
     }),
     uploadSupplierReturnAttachment: adminProcedure.input(z.object({
       id: z.number().int().positive(),

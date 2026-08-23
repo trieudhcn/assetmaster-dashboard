@@ -13,11 +13,11 @@ import { buildSupplyImportTemplate, resolveActiveSupplyImportCatalog, standardSu
 
 const PAGE_SIZE = 10;
 const MOVEMENT_HISTORY_PAGE_SIZE = 5;
-type SupplyForm = { code: string; name: string; unit: string; openingQuantity: string; minimumQuantity: string; unitCost: string; location: string; categoryId: string; vendorId: string; brandId: string; note: string };
+type SupplyForm = { code: string; name: string; unit: string; openingQuantity: string; minimumQuantity: string; unitCost: string; location: string; categoryId: string; vendorId: string; brandId: string; purchaseContractId: string; note: string };
 type IssueDraftItem = { supplyId: string; quantity: string };
 type IssuePreviewItem = { supplyId: number; supplyName: string; unit: string; quantity: number; stockAfterIssue: number; minimumStock: number };
 type CreatedIssueSlipPdf = { referenceCode: string; recipientName: string; issuedAt: Date; note: string | null; items: Array<{ supplyCode: string; supplyName: string; unit: string; issuedQuantity: string; returnedQuantity: string }> };
-const emptyForm: SupplyForm = { code: "", name: "", unit: "Cái", openingQuantity: "0", minimumQuantity: "0", unitCost: "", location: "", categoryId: "", vendorId: "", brandId: "", note: "" };
+const emptyForm: SupplyForm = { code: "", name: "", unit: "Cái", openingQuantity: "0", minimumQuantity: "0", unitCost: "", location: "", categoryId: "", vendorId: "", brandId: "", purchaseContractId: "", note: "" };
 const quantity = (value: string | number | null | undefined) => Number(value || 0).toLocaleString("vi-VN", { maximumFractionDigits: 2 });
 const money = (value: string | number | null | undefined) => value === null || value === undefined ? "—" : `${Number(value).toLocaleString("vi-VN", { maximumFractionDigits: 0 })} VNĐ`;
 
@@ -27,6 +27,7 @@ export function SuppliesInventoryView({ canEditSectionLabels = false }: { canEdi
   const categoriesQuery = trpc.assetCategories.list.useQuery();
   const vendorsQuery = trpc.vendors.list.useQuery();
   const brandsQuery = trpc.brands.list.useQuery();
+  const purchaseContractsQuery = trpc.purchaseContracts.list.useQuery();
   const departmentsQuery = trpc.departments.list.useQuery();
   const usersQuery = trpc.employees.list.useQuery();
   const [form, setForm] = useState<SupplyForm>(emptyForm);
@@ -40,6 +41,8 @@ export function SuppliesInventoryView({ canEditSectionLabels = false }: { canEdi
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editCode, setEditCode] = useState("");
   const [editName, setEditName] = useState("");
+  const [editPurchaseContractId, setEditPurchaseContractId] = useState("");
+  const editPurchaseContractIdRef = useRef("");
   const [movementType, setMovementType] = useState<"receipt" | "issue" | "adjustment">("receipt");
   const [movementQuantity, setMovementQuantity] = useState("");
   const [recipientMode, setRecipientMode] = useState<"staff" | "other">("staff");
@@ -87,6 +90,7 @@ export function SuppliesInventoryView({ canEditSectionLabels = false }: { canEdi
   const groupFilterOptions = [{ value: "all", label: "Tất cả nhóm" }, { value: "unassigned", label: "Chưa gán nhóm" }, ...(categoriesQuery.data || []).map((item) => ({ value: String(item.id), label: item.name }))];
   const vendorOptions = [{ value: "", label: "Chưa chọn nhà cung cấp", isActive: true }, ...(vendorsQuery.data || []).map((item) => ({ value: String(item.id), label: item.name, isActive: item.isActive }))];
   const brandOptions = [{ value: "", label: "Chưa chọn hãng", isActive: true }, ...(brandsQuery.data || []).map((item) => ({ value: String(item.id), label: item.name, isActive: item.isActive }))];
+  const purchaseContractOptions = [{ value: "", label: "Chưa liên kết hợp đồng", isActive: true }, ...(purchaseContractsQuery.data || []).filter((item) => item.status !== "cancelled").map((item) => ({ value: String(item.id), label: `${item.referenceCode} · ${item.title}`, searchText: `${item.referenceCode} ${item.title}` }))];
   const departmentOptions = [{ value: "", label: "Không gán phòng ban" }, ...(departmentsQuery.data || []).map((item) => ({ value: String(item.id), label: item.name }))];
   const personnelOptions = [{ value: "", label: "Chọn nhân sự" }, ...(usersQuery.data || []).filter((item) => item.isActive).map((item) => ({ value: String(item.id), label: item.name || item.email || `Nhân sự #${item.id}`, searchText: item.email || "" }))];
   const selectedRecipient = (usersQuery.data || []).find((item) => String(item.id) === recipientUserId);
@@ -107,7 +111,7 @@ export function SuppliesInventoryView({ canEditSectionLabels = false }: { canEdi
   const submitCreate = () => {
     if (!form.code.trim() || !form.name.trim()) return toast.error("Vui lòng nhập mã và tên phụ kiện.");
     if (isInvalidVndInput(form.unitCost)) return toast.error("Đơn giá không đúng định dạng. Chỉ nhập chữ số nguyên.");
-    createSupply.mutate({ code: form.code, name: form.name, unit: form.unit || "Cái", openingQuantity: Number(form.openingQuantity || 0), minimumQuantity: Number(form.minimumQuantity || 0), unitCost: form.unitCost ? Number(form.unitCost) : null, location: form.location || null, categoryId: form.categoryId ? Number(form.categoryId) : null, vendorId: form.vendorId ? Number(form.vendorId) : null, brandId: form.brandId ? Number(form.brandId) : null, note: form.note || null });
+    createSupply.mutate({ code: form.code, name: form.name, unit: form.unit || "Cái", openingQuantity: Number(form.openingQuantity || 0), minimumQuantity: Number(form.minimumQuantity || 0), unitCost: form.unitCost ? Number(form.unitCost) : null, location: form.location || null, categoryId: form.categoryId ? Number(form.categoryId) : null, vendorId: form.vendorId ? Number(form.vendorId) : null, brandId: form.brandId ? Number(form.brandId) : null, purchaseContractId: form.purchaseContractId ? Number(form.purchaseContractId) : null, note: form.note || null });
   };
   const submitMovement = () => {
     if (movementType === "issue") {
@@ -153,7 +157,7 @@ export function SuppliesInventoryView({ canEditSectionLabels = false }: { canEdi
     setMovementQuantity("");
     setMovementNote("");
   }, [supplies]);
-  const beginEdit = (id: number) => { const item = supplies.find((supply) => supply.id === id); if (!item) return; setEditingId(id); setEditCode(item.code); setEditName(item.name); };
+  const beginEdit = (id: number) => { const item = supplies.find((supply) => supply.id === id); if (!item) return; const contractId = item.purchaseContractId ? String(item.purchaseContractId) : ""; setEditingId(id); setEditCode(item.code); setEditName(item.name); setEditPurchaseContractId(contractId); editPurchaseContractIdRef.current = contractId; };
   useEffect(() => {
     if (!editingSupply) return;
     const frame = window.requestAnimationFrame(() => {
@@ -196,7 +200,7 @@ export function SuppliesInventoryView({ canEditSectionLabels = false }: { canEdi
       clear.addEventListener("click", handleClear);
       inputWrap.append(input, clear, suffix);
       field.append(caption, inputWrap, words, formatError);
-      const saveHandler = (event: Event) => { event.preventDefault(); event.stopPropagation(); const raw = input.dataset.rawValue || ""; updateSupply.mutate({ id: editingSupply.id, name: nameInput.value, unitCost: raw ? Number(raw) : null }); };
+      const saveHandler = (event: Event) => { event.preventDefault(); event.stopPropagation(); const raw = input.dataset.rawValue || ""; updateSupply.mutate({ id: editingSupply.id, name: nameInput.value, unitCost: raw ? Number(raw) : null, purchaseContractId: editPurchaseContractIdRef.current ? Number(editPurchaseContractIdRef.current) : null }); };
       saveButton.addEventListener("click", saveHandler, true);
       const actions = editor.querySelector(".mt-5.flex");
       if (actions) editor.insertBefore(field, actions); else editor.append(field);
@@ -204,6 +208,44 @@ export function SuppliesInventoryView({ canEditSectionLabels = false }: { canEdi
     });
     return () => window.cancelAnimationFrame(frame);
   }, [editingSupply?.id]);
+  useEffect(() => {
+    if (!editingSupply) return;
+    const frame = window.requestAnimationFrame(() => {
+      const dialog = Array.from(document.querySelectorAll<HTMLElement>('[role="dialog"]')).find((element) => element.textContent?.includes("Định danh phụ kiện"));
+      const editor = dialog?.querySelector<HTMLElement>(".space-y-3");
+      if (!editor || editor.querySelector("[data-edit-supply-contract]")) return;
+      const field = document.createElement("label");
+      field.dataset.editSupplyContract = "true";
+      field.className = "block space-y-2";
+      const caption = document.createElement("span");
+      caption.className = "text-xs font-extrabold text-[#526779]";
+      caption.textContent = "Hợp đồng mua bán";
+      const select = document.createElement("select");
+      select.className = "field-input";
+      select.setAttribute("aria-label", "Hợp đồng mua bán");
+      const blank = document.createElement("option");
+      blank.value = "";
+      blank.textContent = "Chưa liên kết hợp đồng";
+      select.append(blank);
+      (purchaseContractsQuery.data || []).filter((contract) => contract.status !== "cancelled").forEach((contract) => {
+        const option = document.createElement("option");
+        option.value = String(contract.id);
+        option.textContent = `${contract.referenceCode} · ${contract.title}`;
+        select.append(option);
+      });
+      select.value = editPurchaseContractId;
+      const hint = document.createElement("p");
+      hint.className = "text-[10px] leading-4 text-[#4B8884]";
+      hint.textContent = "Nhà cung cấp sẽ được đồng bộ theo Hợp đồng khi lưu.";
+      const onChange = () => { editPurchaseContractIdRef.current = select.value; setEditPurchaseContractId(select.value); };
+      select.addEventListener("change", onChange);
+      field.append(caption, select, hint);
+      const actions = editor.querySelector(".mt-5.flex");
+      if (actions) editor.insertBefore(field, actions); else editor.append(field);
+      return () => { select.removeEventListener("change", onChange); field.remove(); };
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [editingSupply?.id, editPurchaseContractId, purchaseContractsQuery.data]);
   useEffect(() => {
     if (!createModalOpen) return;
     const frame = window.requestAnimationFrame(() => {
@@ -356,6 +398,7 @@ function LegacySupplyCreateModalV2({ form, setForm, categoryOptions, vendorOptio
 function SupplyCreateModal({ form, setForm, categoryOptions, vendorOptions, brandOptions, isSubmitting, onClose, onSubmit }: { form: SupplyForm; setForm: React.Dispatch<React.SetStateAction<SupplyForm>>; categoryOptions: Array<{ value: string; label: string; isActive?: boolean }>; vendorOptions: Array<{ value: string; label: string; isActive?: boolean }>; brandOptions: Array<{ value: string; label: string; isActive?: boolean }>; isSubmitting: boolean; onClose: () => void; onSubmit: () => void }) {
   const utils = trpc.useUtils();
   const suppliesQuery = trpc.supplies.list.useQuery();
+  const purchaseContractsQuery = trpc.purchaseContracts.list.useQuery();
   const inputRef = useRef<HTMLInputElement>(null);
   const [rows, setRows] = useState<SupplyBulkItem[]>([]);
   const [fileError, setFileError] = useState("");
@@ -372,6 +415,45 @@ function SupplyCreateModal({ form, setForm, categoryOptions, vendorOptions, bran
     onError: (error) => toast.error(error.message || "Không thể lưu dữ liệu phụ kiện."),
   });
   const isBusy = isSubmitting || isReading || bulkCreate.isPending;
+  useEffect(() => {
+    if (rows.length) return;
+    const dialog = document.querySelector<HTMLElement>('[aria-labelledby="supply-create-title"]');
+    const formGrid = dialog?.querySelector<HTMLElement>(".mt-5.grid");
+    if (!formGrid || formGrid.querySelector("[data-supply-purchase-contract]")) return;
+    const field = document.createElement("div");
+    field.dataset.supplyPurchaseContract = "true";
+    field.className = "sm:col-span-2 rounded-xl border border-[#CDE5E5] bg-[#F4FBFA] p-3";
+    const label = document.createElement("label");
+    label.className = "block text-xs font-extrabold text-[#526779]";
+    label.textContent = "Hợp đồng mua bán";
+    const select = document.createElement("select");
+    select.className = "field-input mt-1";
+    select.setAttribute("aria-label", "Hợp đồng mua bán");
+    const blank = document.createElement("option");
+    blank.value = "";
+    blank.textContent = purchaseContractsQuery.isLoading ? "Đang tải hợp đồng..." : "Chưa liên kết hợp đồng";
+    select.append(blank);
+    (purchaseContractsQuery.data || []).filter((contract) => contract.status !== "cancelled").forEach((contract) => {
+      const option = document.createElement("option");
+      option.value = String(contract.id);
+      option.textContent = `${contract.referenceCode} · ${contract.title}`;
+      select.append(option);
+    });
+    select.value = form.purchaseContractId;
+    select.disabled = purchaseContractsQuery.isLoading;
+    const hint = document.createElement("p");
+    hint.className = "mt-1 text-[10px] text-[#4B8884]";
+    const selected = (purchaseContractsQuery.data || []).find((contract) => String(contract.id) === form.purchaseContractId);
+    hint.textContent = selected ? `Phụ kiện được liên kết với ${selected.referenceCode}; Nhà cung cấp được đồng bộ khi lưu.` : "Liên kết nhiều phụ kiện với một hồ sơ hợp đồng và chứng từ dùng chung.";
+    const onChange = () => {
+      const contract = (purchaseContractsQuery.data || []).find((item) => String(item.id) === select.value);
+      setForm((current) => ({ ...current, purchaseContractId: select.value, ...(contract?.vendorId ? { vendorId: String(contract.vendorId) } : {}) }));
+    };
+    select.addEventListener("change", onChange);
+    field.append(label, select, hint);
+    formGrid.append(field);
+    return () => { select.removeEventListener("change", onChange); field.remove(); };
+  }, [rows.length, form.purchaseContractId, purchaseContractsQuery.data, purchaseContractsQuery.isLoading, setForm]);
   const numericValue = (raw: string) => {
     const normalized = raw.replace(/(?:VNĐ|VND|₫|\s)/gi, "").replace(/\./g, "").replace(",", ".");
     return normalized ? Number(normalized) : 0;
