@@ -332,6 +332,12 @@
 - [x] Di chuyển Chi nhánh từ thẻ Tài sản cấp phát vào khu vực Người nhận.
 - [x] Bổ sung hồi quy, xác minh giao diện, TypeScript và production build trước khi phát hành.
 
+## Current Session — Thời hạn hiệu lực Hợp đồng
+
+- [x] Rà soát bảng danh sách Hợp đồng và hồi quy cột hiện có.
+- [x] Thay Tổng giá trị bằng Ngày bắt đầu hiệu lực và Ngày hết hiệu lực.
+- [x] Bổ sung hồi quy, xác minh giao diện, TypeScript và production build trước khi phát hành.
+
 - [x] Mở rộng mô hình dữ liệu tài sản với thông tin chi tiết và trạng thái thao tác.
 - [x] Thêm modal tạo tài sản mới với validation cơ bản.
 - [x] Thêm modal chỉnh sửa tài sản và cập nhật dữ liệu trong bảng.

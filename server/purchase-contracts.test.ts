@@ -180,6 +180,18 @@ describe("purchase contract management", () => {
     expect(contractsView).not.toContain("totalValue: form.totalValue");
   });
 
+  it("shows contract validity dates instead of total value in the contract list", () => {
+    const tableStart = contractsView.indexOf('<table className={`w-full text-left text-xs');
+    const tableEnd = contractsView.indexOf('{selectedId !== null', tableStart);
+    const contractTable = contractsView.slice(tableStart, tableEnd);
+
+    expect(contractTable).toContain("Ngày bắt đầu");
+    expect(contractTable).toContain("Ngày hết hiệu lực");
+    expect(contractTable).toContain("dateLabel(contract.effectiveFrom)");
+    expect(contractTable).toContain("dateLabel(contract.effectiveTo)");
+    expect(contractTable).not.toContain("Tổng giá trị");
+  });
+
   it("warns before discarding changed contract or invoice forms and defaults invoice lines to supplies", () => {
     expect(contractsView).toContain("Đóng form chưa lưu?");
     expect(contractsView).toContain("Các thay đổi Hợp đồng hiện tại sẽ bị hủy.");
