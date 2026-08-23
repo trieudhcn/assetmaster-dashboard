@@ -192,6 +192,13 @@ describe("purchase contract management", () => {
     expect(contractTable).not.toContain("Tổng giá trị");
   });
 
+  it("highlights active contracts that will expire within the next 30 days", () => {
+    expect(contractsView).toContain('contract.status === "active"');
+    expect(contractsView).toContain("remainingDays >= 0 && remainingDays <= 30");
+    expect(contractsView).toContain("Sắp hết hiệu lực");
+    expect(contractsView).toContain("Hết hạn hôm nay");
+  });
+
   it("warns before discarding changed contract or invoice forms and defaults invoice lines to supplies", () => {
     expect(contractsView).toContain("Đóng form chưa lưu?");
     expect(contractsView).toContain("Các thay đổi Hợp đồng hiện tại sẽ bị hủy.");

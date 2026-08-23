@@ -338,6 +338,13 @@
 - [x] Thay Tổng giá trị bằng Ngày bắt đầu hiệu lực và Ngày hết hiệu lực.
 - [x] Bổ sung hồi quy, xác minh giao diện, TypeScript và production build trước khi phát hành.
 
+## Current Session — Cảnh báo Hợp đồng và sẵn sàng Active Directory
+
+- [x] Rà soát trường Hợp đồng hiệu lực và dữ liệu Nhân sự hiện có cho khả năng đồng bộ Active Directory.
+- [x] Hiển thị nhãn cảnh báo nổi bật cho Hợp đồng còn hiệu lực từ 0 đến 30 ngày.
+- [x] Bổ sung hồi quy, xác minh giao diện, TypeScript và production build trước khi phát hành.
+- [x] Chuẩn bị khuyến nghị bổ sung Mã nhân viên và Chức vụ để sẵn sàng đồng bộ Active Directory.
+
 - [x] Mở rộng mô hình dữ liệu tài sản với thông tin chi tiết và trạng thái thao tác.
 - [x] Thêm modal tạo tài sản mới với validation cơ bản.
 - [x] Thêm modal chỉnh sửa tài sản và cập nhật dữ liệu trong bảng.
