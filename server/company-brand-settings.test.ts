@@ -21,5 +21,8 @@ describe("company brand contact actions", () => {
     expect(settings).toContain("Ẩn Website trên mẫu phiếu nội bộ");
     expect(settings).toContain("checked={draft.hideWebsiteOnInternalPdf}");
     expect(settings).toContain("Đã sao chép ${label}.");
+    expect(settings).toContain("const normalizeLogo = async (file: File)");
+    expect(settings).toContain('output.toDataURL("image/webp", 0.92)');
+    expect(settings).toContain("Đã căn giữa logo theo tỷ lệ chuẩn");
   });
 });

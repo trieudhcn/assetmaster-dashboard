@@ -206,6 +206,12 @@
 - [x] Tăng logo sidebar lên 48px, giữ tỷ lệ ảnh, nhận diện thương hiệu và bố cục sidebar ổn định.
 - [x] Bổ sung hồi quy, xác minh trực quan desktop, TypeScript, build và 21 tệp Vitest/276 kiểm thử trước khi phát hành.
 
+## Current Session — Đồng bộ logo đăng nhập và căn chỉnh ảnh
+
+- [x] Đồng bộ logo không khung 48px từ sidebar sang màn hình đăng nhập, có fallback logo chuẩn khi chưa tải logo công ty.
+- [x] Chuẩn hóa logo tải mới: tự cắt vùng trong suốt, căn giữa trong canvas 512×512 và chừa biên an toàn để ảnh ngang/dọc hiển thị cân đối.
+- [x] Bổ sung hồi quy, xác minh sidebar mobile, TypeScript, build và 21 tệp Vitest/276 kiểm thử trước khi phát hành.
+
 - [x] Mở rộng mô hình dữ liệu tài sản với thông tin chi tiết và trạng thái thao tác.
 - [x] Thêm modal tạo tài sản mới với validation cơ bản.
 - [x] Thêm modal chỉnh sửa tài sản và cập nhật dữ liệu trong bảng.

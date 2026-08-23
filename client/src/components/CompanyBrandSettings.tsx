@@ -36,13 +36,57 @@ export function CompanyBrandSettings({ companyInfo, onSave }: { companyInfo: Com
     reader.onerror = () => toast.error("Không thể đọc tệp ảnh.");
     reader.readAsDataURL(file);
   };
+  const normalizeLogo = async (file: File) => {
+    const sourceUrl = URL.createObjectURL(file);
+    try {
+      const image = await new Promise<HTMLImageElement>((resolve, reject) => {
+        const nextImage = new Image();
+        nextImage.onload = () => resolve(nextImage);
+        nextImage.onerror = () => reject(new Error("Không thể xử lý logo."));
+        nextImage.src = sourceUrl;
+      });
+      const source = document.createElement("canvas");
+      source.width = image.naturalWidth;
+      source.height = image.naturalHeight;
+      const sourceContext = source.getContext("2d", { willReadFrequently: true });
+      if (!sourceContext) throw new Error("Không thể xử lý logo.");
+      sourceContext.drawImage(image, 0, 0);
+      const pixels = sourceContext.getImageData(0, 0, source.width, source.height).data;
+      let left = source.width;
+      let top = source.height;
+      let right = 0;
+      let bottom = 0;
+      for (let y = 0; y < source.height; y += 1) for (let x = 0; x < source.width; x += 1) {
+        if (pixels[(y * source.width + x) * 4 + 3] > 12) {
+          left = Math.min(left, x); top = Math.min(top, y); right = Math.max(right, x); bottom = Math.max(bottom, y);
+        }
+      }
+      const hasVisiblePixels = right >= left && bottom >= top;
+      const crop = hasVisiblePixels ? { left, top, width: right - left + 1, height: bottom - top + 1 } : { left: 0, top: 0, width: source.width, height: source.height };
+      const output = document.createElement("canvas");
+      output.width = 512;
+      output.height = 512;
+      const outputContext = output.getContext("2d");
+      if (!outputContext) throw new Error("Không thể xử lý logo.");
+      outputContext.imageSmoothingEnabled = true;
+      outputContext.imageSmoothingQuality = "high";
+      const available = 448;
+      const scale = Math.min(available / crop.width, available / crop.height);
+      const width = crop.width * scale;
+      const height = crop.height * scale;
+      outputContext.drawImage(source, crop.left, crop.top, crop.width, crop.height, (512 - width) / 2, (512 - height) / 2, width, height);
+      return output.toDataURL("image/webp", 0.92);
+    } finally {
+      URL.revokeObjectURL(sourceUrl);
+    }
+  };
   const chooseLogo = (file?: File) => {
     if (!file) return;
     if (!['image/png', 'image/jpeg', 'image/webp'].includes(file.type) || file.size > 2 * 1024 * 1024) {
       toast.error("Logo chỉ hỗ trợ PNG, JPG, WebP và tối đa 2 MB.");
       return;
     }
-    readUpload(file, (dataUrl) => uploadLogo.mutate({ fileName: file.name, contentType: file.type as "image/png" | "image/jpeg" | "image/webp", dataUrl }, { onSuccess: ({ url }) => { update("logoUrl", url); toast.success("Đã tải logo. Hãy lưu cài đặt để áp dụng."); } }));
+    void normalizeLogo(file).then((dataUrl) => uploadLogo.mutate({ fileName: `${file.name.replace(/\.[^.]+$/, "") || "logo"}.webp`, contentType: "image/webp", dataUrl }, { onSuccess: ({ url }) => { update("logoUrl", url); toast.success("Đã căn giữa logo theo tỷ lệ chuẩn. Hãy lưu cài đặt để áp dụng."); } })).catch(() => toast.error("Không thể căn chỉnh logo. Vui lòng chọn ảnh khác."));
   };
   const chooseBackground = (file?: File) => {
     if (!file) return;
@@ -99,8 +143,8 @@ export function CompanyBrandSettings({ companyInfo, onSave }: { companyInfo: Com
           <div>
             <label className="field-label">Logo công ty</label>
             <div className="flex flex-col gap-3 rounded-xl border border-dashed border-[#9ADBD3] bg-[#F8FCFB] p-4 sm:flex-row sm:items-center">
-              <div className="grid h-16 w-16 shrink-0 place-items-center overflow-hidden rounded-xl bg-[#102A43] text-white">{draft.logoUrl ? <img src={draft.logoUrl} alt="Logo công ty" className="h-full w-full object-contain" /> : <ImageUp size={22} />}</div>
-              <div className="min-w-0 flex-1"><div className="text-xs font-extrabold text-[#193B57]">PNG, JPG hoặc WebP · tối đa 2 MB</div><p className="mt-1 text-[11px] leading-5 text-[#71869A]">Logo xuất hiện trong các khu vực nhận diện AssetMaster.</p><button disabled={uploadLogo.isPending} onClick={() => logoInputRef.current?.click()} className="mt-2 inline-flex items-center gap-2 rounded-lg border border-[#8BCDC6] bg-white px-3 py-2 text-xs font-bold text-[#087A6A] disabled:opacity-50">{uploadLogo.isPending ? <LoaderCircle size={14} className="animate-spin" /> : <Upload size={14} />}{uploadLogo.isPending ? "Đang tải..." : "Chọn logo"}</button><input ref={logoInputRef} type="file" accept="image/png,image/jpeg,image/webp" className="sr-only" onChange={(event) => { chooseLogo(event.target.files?.[0]); event.currentTarget.value = ""; }} /></div>
+              <div className="grid h-16 w-16 shrink-0 place-items-center">{draft.logoUrl ? <img src={draft.logoUrl} alt="Logo công ty" className="h-16 w-16 object-contain" /> : <ImageUp size={22} className="text-[#60758A]" />}</div>
+              <div className="min-w-0 flex-1"><div className="text-xs font-extrabold text-[#193B57]">PNG, JPG hoặc WebP · tối đa 2 MB</div><p className="mt-1 text-[11px] leading-5 text-[#71869A]">Logo được tự cắt vùng trong suốt, căn giữa và đặt vào tỷ lệ chuẩn trước khi dùng tại sidebar và đăng nhập.</p><button disabled={uploadLogo.isPending} onClick={() => logoInputRef.current?.click()} className="mt-2 inline-flex items-center gap-2 rounded-lg border border-[#8BCDC6] bg-white px-3 py-2 text-xs font-bold text-[#087A6A] disabled:opacity-50">{uploadLogo.isPending ? <LoaderCircle size={14} className="animate-spin" /> : <Upload size={14} />}{uploadLogo.isPending ? "Đang căn chỉnh..." : "Chọn logo"}</button><input ref={logoInputRef} type="file" accept="image/png,image/jpeg,image/webp" className="sr-only" onChange={(event) => { chooseLogo(event.target.files?.[0]); event.currentTarget.value = ""; }} /></div>
             </div>
           </div>
           <div><label className="field-label">Mã số thuế</label><div className="relative"><input value={draft.taxCode} onChange={(event) => update("taxCode", event.target.value)} className="field-input pr-10" />{copyButton(draft.taxCode, "Mã số thuế")}</div></div>

@@ -14,6 +14,10 @@ describe("login brand synchronization", () => {
     expect(loginGateway).toContain("{loginGreeting}");
     expect(loginGateway).toContain("loginBackgroundUrl");
     expect(loginGateway).toContain("loginBackgroundOverlay");
+    expect(loginGateway).toContain('const logoUrl = brand?.logoUrl || "/manus-storage/assetmaster-logo_f5d79b06.png"');
+    expect(loginGateway).toContain('className="grid h-12 w-12 shrink-0 place-items-center"');
+    expect(loginGateway).toContain('className="h-12 w-12 object-contain"');
+    expect(loginGateway).not.toContain("backgroundColor: brandColor");
     expect(loginGateway).not.toContain("truncate font-display text-2xl");
     expect(router).toContain("publicBrand: publicProcedure.query");
     expect(router).toContain("websiteTitle: company.websiteTitle");
