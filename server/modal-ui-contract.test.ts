@@ -2449,3 +2449,15 @@ it("hiển thị trạng thái đang chuẩn bị PDF và khóa thao tác lặp 
   expect(servicePreview).toContain('pdfPreparing === "preview" ? "Đang chuẩn bị PDF..."');
   expect(operations).toContain('isExportingDiscrepancy === "pdf" ? "Đang chuẩn bị PDF..."');
 });
+
+it("phân trang lịch sử biến động Phụ kiện để drawer không kéo dài khi nhiều giao dịch", () => {
+  const supplies = readProjectFile("client/src/pages/SuppliesInventoryView.tsx");
+
+  expect(supplies).toContain("const MOVEMENT_HISTORY_PAGE_SIZE = 5");
+  expect(supplies).toContain("const [movementHistoryPage, setMovementHistoryPage] = useState(1)");
+  expect(supplies).toContain("page: movementHistoryPage, pageSize: MOVEMENT_HISTORY_PAGE_SIZE");
+  expect(supplies).toContain("useEffect(() => { setMovementHistoryPage(1); }, [selectedId])");
+  expect(supplies).toContain("Hiển thị {from}–{to} / {total} biến động");
+  expect(supplies).toContain('aria-label="Trang lịch sử trước"');
+  expect(supplies).toContain('aria-label="Trang lịch sử sau"');
+});

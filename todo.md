@@ -194,6 +194,12 @@
 - [x] Hiển thị “Đang chuẩn bị PDF…” cùng trạng thái vô hiệu hóa để ngăn nhấp lặp ở mã TH, modal Bàn giao/Thu hồi và các luồng xem biên bản liên quan.
 - [x] Bổ sung hồi quy, xác minh mở PDF thu hồi desktop, TypeScript, build và 21 tệp Vitest/274 kiểm thử trước khi phát hành.
 
+## Current Session — Phân trang lịch sử biến động Phụ kiện
+
+- [x] Rà soát nguồn dữ liệu và bố cục lịch sử biến động trong chi tiết Phụ kiện; API đã hỗ trợ phân trang theo trang và kích thước trang.
+- [x] Thêm phân trang chuẩn năm biến động mỗi trang, tự đặt lại về trang đầu khi đổi Phụ kiện; xác minh Chuột có dây Logitech hiển thị 1–5/7 và chuyển đúng sang 6–7/7.
+- [x] Bổ sung hồi quy, xác minh drawer dữ liệu thật, TypeScript, build và 21 tệp Vitest/275 kiểm thử trước khi phát hành.
+
 - [x] Mở rộng mô hình dữ liệu tài sản với thông tin chi tiết và trạng thái thao tác.
 - [x] Thêm modal tạo tài sản mới với validation cơ bản.
 - [x] Thêm modal chỉnh sửa tài sản và cập nhật dữ liệu trong bảng.
