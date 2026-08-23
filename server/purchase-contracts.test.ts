@@ -218,6 +218,13 @@ describe("purchase contract management", () => {
     expect(employeeView).toContain("EmployeeAssetHistorySection");
   });
 
+  it("uses a concise success toast for asset updates and hides unnecessary decimal zeroes in invoice quantities", () => {
+    expect(home).toContain("Đã cập nhật tài sản thành công!");
+    expect(invoiceOperations).toContain("lines = lines.map((line) =>");
+    expect(invoiceOperations).toContain("Number.isInteger(quantity)");
+    expect(invoiceOperations).toContain("quantity: String(quantity)");
+  });
+
   it("warns before discarding changed contract or invoice forms and defaults invoice lines to supplies", () => {
     expect(contractsView).toContain("Đóng form chưa lưu?");
     expect(contractsView).toContain("Các thay đổi Hợp đồng hiện tại sẽ bị hủy.");

@@ -358,6 +358,12 @@
 - [x] Thêm tải mẫu CSV/JSON Active Directory và danh sách Tài sản liên kết có STT, liên kết mở nhanh, bố cục 2 cột khi trên 10 Tài sản.
 - [x] Bổ sung hồi quy, xác minh giao diện desktop/mobile, TypeScript và production build trước khi phát hành.
 
+## Current Session — Chuẩn hóa cập nhật Tài sản
+
+- [x] Đổi thông báo cập nhật Tài sản thành “Đã cập nhật tài sản thành công!”.
+- [x] Hiển thị số lượng tại dòng Tài sản liên kết Hóa đơn dưới dạng số nguyên.
+- [x] Bổ sung hồi quy, kiểm tra TypeScript và production build trước khi phát hành.
+
 - [x] Mở rộng mô hình dữ liệu tài sản với thông tin chi tiết và trạng thái thao tác.
 - [x] Thêm modal tạo tài sản mới với validation cơ bản.
 - [x] Thêm modal chỉnh sửa tài sản và cập nhật dữ liệu trong bảng.

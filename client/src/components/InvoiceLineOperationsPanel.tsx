@@ -74,6 +74,10 @@ export function InvoiceLineOperationsPanel({ invoiceId, invoiceKey, lines, linke
   const categoriesQuery = trpc.assetCategories.list.useQuery();
   const brandsQuery = trpc.brands.list.useQuery();
   const activeAssets = assets.filter((asset) => asset.status !== "retired" && asset.status !== "returned_to_vendor");
+  lines = lines.map((line) => {
+    const quantity = Number(line.quantity);
+    return Number.isInteger(quantity) ? { ...line, quantity: String(quantity) } : line;
+  });
   const openCreate = (line: InvoiceLine, remaining: number) => {
     setCreateForLine(line);
     setCategoryId("");
