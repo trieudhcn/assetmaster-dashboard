@@ -66,4 +66,16 @@ describe("purchase contract management", () => {
     expect(contractsView).toContain('params.get("create") !== "1"');
     expect(contractsView).toContain('setForm({ ...emptyForm, vendorId: String(vendorId) })');
   });
+
+  it("clears one-time contract deep-link parameters after consumption and during menu navigation", () => {
+    expect(contractsView).toContain("const clearContractRouteIntent");
+    expect(contractsView).toContain('url.searchParams.delete("vendorId")');
+    expect(contractsView).toContain('url.searchParams.delete("create")');
+    expect(contractsView).toContain('url.searchParams.delete("contractId")');
+    expect(contractsView).toContain("clearContractRouteIntent();");
+    expect(contractsView).toContain("setFormOpen(true)");
+    expect(home).toContain('url.searchParams.delete("vendorId")');
+    expect(home).toContain('url.searchParams.delete("create")');
+    expect(home).toContain('url.searchParams.delete("contractId")');
+  });
 });

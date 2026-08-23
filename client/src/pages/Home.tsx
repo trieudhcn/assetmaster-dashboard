@@ -976,6 +976,9 @@ export default function Home() {
     const viewByNav: Record<string, string> = { "Danh mục tài sản": "assets", "Phân loại tài sản": "categories", "Bàn giao & Cấp phát": "handovers", "Bảo hành & Sửa chữa": "maintenance", "Kiểm kê": "audit", "Khấu hao & Thanh lý": "retirement", "Báo Cáo": "reports", "Quản lý nhân viên": "employees", "Phòng Ban & Bộ Phận": "organization", "Nhà cung cấp & Hãng": "vendors", "Hợp đồng mua bán": "contracts", "Cài đặt": "settings", "Trợ giúp & hướng dẫn": "help" };
     const url = new URL(window.location.href);
     const view = viewByNav[label];
+    url.searchParams.delete("vendorId");
+    url.searchParams.delete("create");
+    url.searchParams.delete("contractId");
     if (view) url.searchParams.set("view", view); else url.searchParams.delete("view");
     window.history.replaceState({}, "", url);
     setActiveNav(label);

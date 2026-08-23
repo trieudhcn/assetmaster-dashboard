@@ -233,6 +233,11 @@
 - [x] Thêm biểu tượng lịch cho các trường ngày và hiển thị số tiền bằng chữ trong form Hợp đồng.
 - [x] Bổ sung hồi quy, xác minh desktop/mobile, TypeScript và production build trước khi phát hành.
 
+## Current Session — Sửa deep-link tạo Hợp đồng
+
+- [x] Làm sạch `vendorId`, `create` và `contractId` sau khi xử lý deep-link để form không tự mở khi đổi menu.
+- [x] Bổ sung hồi quy luồng URL, kiểm thử TypeScript, build và phát hành bản sửa lỗi.
+
 - [x] Mở rộng mô hình dữ liệu tài sản với thông tin chi tiết và trạng thái thao tác.
 - [x] Thêm modal tạo tài sản mới với validation cơ bản.
 - [x] Thêm modal chỉnh sửa tài sản và cập nhật dữ liệu trong bảng.

@@ -56,18 +56,28 @@ export function PurchaseContractManagementView() {
   }), [contracts, query, statusFilter, vendorFilter, vendorsById]);
   const hasActiveFilters = Boolean(query.trim()) || statusFilter !== "all" || vendorFilter !== "all";
 
+  const clearContractRouteIntent = () => {
+    const url = new URL(window.location.href);
+    url.searchParams.delete("vendorId");
+    url.searchParams.delete("create");
+    url.searchParams.delete("contractId");
+    window.history.replaceState({}, "", `${url.pathname}${url.search}${url.hash}`);
+  };
+
   useEffect(() => {
     if (routeIntentHandled.current) return;
     const params = new URLSearchParams(window.location.search);
     const contractId = Number(params.get("contractId") || 0);
     if (Number.isInteger(contractId) && contractId > 0) {
       routeIntentHandled.current = true;
+      clearContractRouteIntent();
       setSelectedId(contractId);
       return;
     }
     const vendorId = Number(params.get("vendorId") || 0);
     if (params.get("create") !== "1" || !Number.isInteger(vendorId) || vendorId <= 0 || vendorsQuery.isLoading) return;
     routeIntentHandled.current = true;
+    clearContractRouteIntent();
     if (!(vendorsQuery.data || []).some((vendor) => vendor.id === vendorId)) {
       toast.error("Không tìm thấy Nhà cung cấp để tạo Hợp đồng.");
       return;
