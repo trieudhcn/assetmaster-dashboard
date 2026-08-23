@@ -257,6 +257,13 @@
 - [x] Bổ sung helper database và API backend cho CRUD Hóa đơn, dòng, chứng từ S3 và liên kết Tài sản.
 - [x] Bổ sung kiểm thử migration/API/tương thích, TypeScript và production build trước khi phát hành.
 
+## Current Session — Giao diện Hóa đơn mua bán
+
+- [x] Xây dựng menu và màn hình quản lý Hóa đơn: danh sách, tìm kiếm/lọc, tạo-sửa-xem chi tiết và dòng Hóa đơn.
+- [x] Bổ sung tải lên và xem trước PDF, XML, ảnh scan ngay trong form tạo Hóa đơn; lưu chứng từ qua API S3 sau khi tạo.
+- [x] Thay dropdown Hợp đồng bằng dropdown Hóa đơn mua bán trong form Tài sản và truyền liên kết Hóa đơn/dòng Hóa đơn khi lưu.
+- [x] Bổ sung hồi quy, xác minh desktop/mobile, TypeScript và production build trước khi phát hành.
+
 - [x] Mở rộng mô hình dữ liệu tài sản với thông tin chi tiết và trạng thái thao tác.
 - [x] Thêm modal tạo tài sản mới với validation cơ bản.
 - [x] Thêm modal chỉnh sửa tài sản và cập nhật dữ liệu trong bảng.

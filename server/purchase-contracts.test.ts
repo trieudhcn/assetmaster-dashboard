@@ -9,6 +9,7 @@ describe("purchase contract management", () => {
   const home = readFileSync(resolve(import.meta.dirname, "../client/src/pages/Home.tsx"), "utf8");
   const supplies = readFileSync(resolve(import.meta.dirname, "../client/src/pages/SuppliesInventoryView.tsx"), "utf8");
   const contractsView = readFileSync(resolve(import.meta.dirname, "../client/src/pages/PurchaseContractManagementView.tsx"), "utf8");
+  const invoicesView = readFileSync(resolve(import.meta.dirname, "../client/src/pages/PurchaseInvoiceManagementView.tsx"), "utf8");
   const vendorsView = readFileSync(resolve(import.meta.dirname, "../client/src/pages/VendorBrandManagementPage.tsx"), "utf8");
 
   it("models one contract with reusable documents and links to assets or supplies", () => {
@@ -39,7 +40,7 @@ describe("purchase contract management", () => {
     expect(home).toContain('contracts: "Hợp đồng mua bán"');
     expect(home).toContain("PurchaseContractManagementView");
     expect(home).toContain("purchaseContractId: formData.purchaseContractId ?? null");
-    expect(home).toContain("data-asset-purchase-contract");
+    expect(home).toContain("data-asset-purchase-invoice");
     expect(supplies).toContain("purchaseContractId: form.purchaseContractId ? Number(form.purchaseContractId) : null");
     expect(supplies).toContain("data-supply-purchase-contract");
     expect(supplies).toContain("data-edit-supply-contract");
@@ -59,7 +60,7 @@ describe("purchase contract management", () => {
     expect(contractsView).toContain("Đã tạo Hợp đồng và lưu bản giấy đã ký.");
     expect(home).toContain('input[placeholder="Nhập số serial"]');
     expect(home).toContain("serialField.after(field)");
-    expect(home).toContain('field.dataset.assetPurchaseContract = "true"');
+    expect(home).toContain('field.dataset.assetPurchaseInvoice = "true"');
   });
 
   it("uses the vendor profile as a contract index instead of a second contract upload flow", () => {
@@ -116,5 +117,23 @@ describe("purchase contract management", () => {
     expect(router).toContain("Chỉ dòng loại Tài sản mới được dùng để gán Tài sản.");
     expect(router).toContain("purchase-invoices/${invoice.id}/documents/");
     expect(router).toContain('documentType: z.enum(["invoice_pdf", "invoice_xml", "scan", "delivery_note", "adjustment", "other"])');
+  });
+
+  it("provides invoice management, document preview and invoice-first asset selection", () => {
+    expect(home).toContain('label: "Hóa đơn mua bán"');
+    expect(home).toContain('invoices: "Hóa đơn mua bán"');
+    expect(home).toContain("PurchaseInvoiceManagementView");
+    expect(home).toContain("purchaseInvoiceId: formData.purchaseInvoiceId ?? null");
+    expect(home).toContain("purchaseInvoiceLineId: formData.purchaseInvoiceLineId ?? null");
+    expect(home).toContain('label.textContent = "Hóa đơn mua bán"');
+    expect(home).toContain('field.dataset.assetPurchaseInvoice = "true"');
+    expect(invoicesView).toContain("Hóa đơn mua bán");
+    expect(invoicesView).toContain("trpc.purchaseInvoices.list.useQuery()");
+    expect(invoicesView).toContain("purchaseContractId: form.purchaseContractId ? Number(form.purchaseContractId) : null");
+    expect(invoicesView).toContain("queuedDocuments");
+    expect(invoicesView).toContain("uploadInvoiceDocument");
+    expect(invoicesView).toContain("application/xml");
+    expect(invoicesView).toContain("DocumentPreview");
+    expect(invoicesView).toContain("Dòng Hóa đơn");
   });
 });

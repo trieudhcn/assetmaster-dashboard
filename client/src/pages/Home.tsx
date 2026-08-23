@@ -32,6 +32,7 @@ import { RetirementManagementView } from "./RetirementManagementView";
 import { OrganizationManagementPage } from "./OrganizationManagementPage";
 import { VendorBrandManagementPage } from "./VendorBrandManagementPage";
 import { PurchaseContractManagementView } from "./PurchaseContractManagementView";
+import { PurchaseInvoiceManagementView } from "./PurchaseInvoiceManagementView";
 import { AssetCategoryManagementPage } from "./AssetCategoryManagementPage";
 import { SuppliesInventoryView } from "./SuppliesInventoryView";
 import { LoginGateway } from "./LoginGateway";
@@ -72,6 +73,7 @@ import {
   Download,
   FileBarChart,
   FileText,
+  ReceiptText,
   History,
   Printer,
   ShieldCheck,
@@ -143,6 +145,7 @@ const navItems = [
   { label: "Phân loại tài sản", icon: Tags },
   { label: "Nhà cung cấp & Hãng", icon: Tags },
   { label: "Hợp đồng mua bán", icon: FileText },
+  { label: "Hóa đơn mua bán", icon: ReceiptText },
   { label: "Phụ kiện", icon: Box },
   { label: "Bàn giao & Cấp phát", icon: PackageCheck },
   { label: "Bảo hành & Sửa chữa", icon: Wrench },
@@ -169,6 +172,8 @@ type Asset = {
   purchaseDate?: string;
   value: string;
   purchaseContractId?: number | null;
+  purchaseInvoiceId?: number | null;
+  purchaseInvoiceLineId?: number | null;
   repairCost?: number;
   location?: string;
   serial?: string;
@@ -343,7 +348,7 @@ export default function Home() {
 
   const [activeNav, setActiveNav] = useState(() => {
     const view = new URLSearchParams(window.location.search).get("view");
-    const deepLinks: Record<string, string> = { assets: "Danh mục tài sản", supplies: "Phụ kiện", categories: "Phân loại tài sản", maintenance: "Bảo hành & Sửa chữa", audit: "Kiểm kê", retirement: "Khấu hao & Thanh lý", reports: "Báo Cáo", employees: "Quản lý nhân viên", organization: "Phòng Ban & Bộ Phận", vendors: "Nhà cung cấp & Hãng", contracts: "Hợp đồng mua bán", handovers: "Bàn giao & Cấp phát", settings: "Cài đặt", help: "Trợ giúp & hướng dẫn" };
+    const deepLinks: Record<string, string> = { assets: "Danh mục tài sản", supplies: "Phụ kiện", categories: "Phân loại tài sản", maintenance: "Bảo hành & Sửa chữa", audit: "Kiểm kê", retirement: "Khấu hao & Thanh lý", reports: "Báo Cáo", employees: "Quản lý nhân viên", organization: "Phòng Ban & Bộ Phận", vendors: "Nhà cung cấp & Hãng", contracts: "Hợp đồng mua bán", invoices: "Hóa đơn mua bán", handovers: "Bàn giao & Cấp phát", settings: "Cài đặt", help: "Trợ giúp & hướng dẫn" };
     return view ? deepLinks[view] || "Tổng quan" : "Tổng quan";
   });
   const [assetRows, setAssetRows] = useState<Asset[]>([]);
@@ -622,6 +627,15 @@ export default function Home() {
       code: asset.assetCode, qrToken: asset.qrToken, branchId: asset.branchId ?? null, branchLabel: asset.branchId ? (() => { const branch = (branchesQuery.data || []).find((item) => item.id === asset.branchId); return branch ? `${branch.name} · ${branch.code}` : "Chưa gán"; })() : "Chưa gán", holderUserId: asset.holderUserId ?? null, name: asset.name, category: asset.categoryId ? assetCategoriesQuery.data?.find((category) => category.id === asset.categoryId)?.name || "Chưa phân loại" : typeof (asset.metadata as { category?: unknown } | null)?.category === "string" ? String((asset.metadata as { category?: unknown }).category) : "Chưa phân loại", categoryId: asset.categoryId || undefined, holder: asset.holderName || (asset.status === "retired" ? "Khấu hao - Thanh lý" : asset.status === "maintenance" ? "Bảo hành/Sửa chữa" : asset.status === "available" ? "Chưa bàn giao" : "Chưa cấp phát"), status: asset.status === "assigned" ? "Đang cấp phát" : asset.status === "maintenance" ? "Bảo hành/Sửa chữa" : asset.status === "returned_to_vendor" ? "Trả nhà cung cấp" : asset.status === "retired" ? "Khấu hao/Thanh lý" : "Sẵn có", statusType: asset.status === "assigned" ? "active" : asset.status === "maintenance" ? "maintenance" : asset.status === "returned_to_vendor" ? "returned" : asset.status === "retired" ? "retired" : "available", date: asset.purchaseDate ? new Date(asset.purchaseDate).toLocaleDateString("vi-VN") : "—", purchaseDate: asset.purchaseDate ? dateInputValue(asset.purchaseDate) : "", value: asset.purchaseValue ? String(asset.purchaseValue) : "0", purchaseContractId: asset.purchaseContractId ?? null, repairCost: repairCostByAssetId.get(asset.id) || 0, location: asset.location || "", serial: asset.serialNumber || "", maintenanceReason: asset.maintenanceReason || "", supplier: asset.vendor || vendorsQuery.data?.find((vendor) => vendor.id === asset.vendorId)?.name || "", vendorId: asset.vendorId || undefined, brand: brandsQuery.data?.find((brand) => brand.id === asset.brandId)?.name || "", brandId: asset.brandId || undefined, note: asset.note || "", warrantyUntil: asset.warrantyUntil ? new Date(asset.warrantyUntil).toISOString().slice(0, 10) : "", supplierReturnedAt: asset.supplierReturnedAt ? new Date(asset.supplierReturnedAt).toISOString().slice(0, 10) : "", supplierReturnReason: asset.supplierReturnReason || "", retirementCertificateNumber: asset.retirementCertificateNumber || null, retirementCertificateYear: asset.retirementCertificateYear || null, retirementCertificateSequence: asset.retirementCertificateSequence || null, retirementAttachmentUrl: asset.retirementAttachmentUrl || null, retirementAttachmentName: asset.retirementAttachmentName || null, retirementAttachmentContentType: asset.retirementAttachmentContentType || null, supplierReturnAttachmentUrl: asset.supplierReturnAttachmentUrl || null, supplierReturnAttachmentName: asset.supplierReturnAttachmentName || null, supplierReturnAttachmentContentType: asset.supplierReturnAttachmentContentType || null,
     })));
   }, [assetQuery.data, vendorsQuery.data, brandsQuery.data, assetCategoriesQuery.data, branchesQuery.data, repairCostByAssetId]);
+
+  useEffect(() => {
+    if (!assetQuery.data) return;
+    const invoiceByCode = new Map(assetQuery.data.map((asset) => [asset.assetCode, { purchaseInvoiceId: asset.purchaseInvoiceId ?? null, purchaseInvoiceLineId: asset.purchaseInvoiceLineId ?? null }]));
+    setAssetRows((current) => current.map((asset) => {
+      const invoice = invoiceByCode.get(asset.code);
+      return invoice ? { ...asset, ...invoice } : asset;
+    }));
+  }, [assetQuery.data]);
 
   useEffect(() => {
     const persistedAssets = new Map((assetQuery.data || []).filter((asset) => asset.status === "retired" || asset.status === "maintenance").map((asset) => [asset.assetCode, asset]));
@@ -943,6 +957,8 @@ export default function Home() {
       condition: "good" as const,
       purchaseValue: formData.value.replace(/[^0-9.]/g, "") || "0",
       purchaseContractId: formData.purchaseContractId ?? null,
+      purchaseInvoiceId: formData.purchaseInvoiceId ?? null,
+      purchaseInvoiceLineId: formData.purchaseInvoiceLineId ?? null,
       vendor: formData.supplier || null,
       vendorId: formData.vendorId || null,
       brandId: formData.brandId || null,
@@ -973,7 +989,7 @@ export default function Home() {
   };
   const showComingSoon = (label: string) => toast.info(`${label} sẽ được mở trong phiên bản tiếp theo.`, { description: "Bản xem trước hiện đang dùng dữ liệu mẫu để minh họa giao diện." });
   const navigateTo = (label: string) => {
-    const viewByNav: Record<string, string> = { "Danh mục tài sản": "assets", "Phân loại tài sản": "categories", "Bàn giao & Cấp phát": "handovers", "Bảo hành & Sửa chữa": "maintenance", "Kiểm kê": "audit", "Khấu hao & Thanh lý": "retirement", "Báo Cáo": "reports", "Quản lý nhân viên": "employees", "Phòng Ban & Bộ Phận": "organization", "Nhà cung cấp & Hãng": "vendors", "Hợp đồng mua bán": "contracts", "Cài đặt": "settings", "Trợ giúp & hướng dẫn": "help" };
+    const viewByNav: Record<string, string> = { "Danh mục tài sản": "assets", "Phân loại tài sản": "categories", "Bàn giao & Cấp phát": "handovers", "Bảo hành & Sửa chữa": "maintenance", "Kiểm kê": "audit", "Khấu hao & Thanh lý": "retirement", "Báo Cáo": "reports", "Quản lý nhân viên": "employees", "Phòng Ban & Bộ Phận": "organization", "Nhà cung cấp & Hãng": "vendors", "Hợp đồng mua bán": "contracts", "Hóa đơn mua bán": "invoices", "Cài đặt": "settings", "Trợ giúp & hướng dẫn": "help" };
     const url = new URL(window.location.href);
     const view = viewByNav[label];
     url.searchParams.delete("vendorId");
@@ -1073,6 +1089,7 @@ export default function Home() {
         {activeNav === "Phòng Ban & Bộ Phận" ? <OrganizationManagementPage /> : null}
         {activeNav === "Nhà cung cấp & Hãng" ? <VendorBrandManagementPage /> : null}
         {activeNav === "Hợp đồng mua bán" ? <PurchaseContractManagementView /> : null}
+        {activeNav === "Hóa đơn mua bán" ? <PurchaseInvoiceManagementView /> : null}
         {activeNav === "Trợ giúp & hướng dẫn" ? <HelpCenter /> : null}
         {activeNav === "Danh mục tài sản" ? assetQuery.isLoading && !assetQuery.data ? <AssetCatalogLoadingPanel /> : assetQuery.isError && !assetQuery.data ? <AssetCatalogUnavailablePanel onRetry={() => void assetQuery.refetch()} /> : <PaginatedAssetCatalogPage assets={filteredAssets} statusCounts={assetStatusFilterCounts} query={query} category={category} status={status} department={department} vendor={vendorFilter} brand={brandFilter} warranty={warrantyFilter} branch={branchFilter} vendorOptions={["Tất cả nhà cung cấp", ...(vendorsQuery.data || []).map((item) => item.name)]} brandOptions={["Tất cả hãng", ...(brandsQuery.data || []).map((item) => item.name)]} branchOptions={["Tất cả chi nhánh", ...(branchesQuery.data || []).map((item) => item.name)]} branchCounts={branchFilterCounts} onQueryChange={setQuery} onCategoryChange={setCategory} onStatusChange={setStatus} onDepartmentChange={setDepartment} onVendorChange={setVendorFilter} onBrandChange={setBrandFilter} onWarrantyChange={setWarrantyFilter} onBranchChange={setBranchFilter} onReset={() => { setQuery(""); setCategory("Tất cả loại tài sản"); setStatus("Tất cả trạng thái"); setDepartment("Tất cả phòng ban"); setVendorFilter("Tất cả nhà cung cấp"); setBrandFilter("Tất cả hãng"); setWarrantyFilter("Tất cả bảo hành"); setBranchFilter("Tất cả chi nhánh"); }} onCreate={openCreateModal} onEdit={openEditModal} onOpenDetail={openDetailModal} onOpenQr={setQrAsset} onOpenMaintenance={(asset) => { sessionStorage.setItem("assetmaster-open-maintenance-asset-code", asset.code); navigateTo("Bảo hành & Sửa chữa"); }} onAssign={(asset) => { if (asset.statusType !== "available") { toast.error("Chỉ có thể bàn giao tài sản đang sẵn có."); return; } setHandoverAssetCode(asset.code); }} canEditSectionLabels={isAdmin} /> : null}
         <div className={`px-4 py-7 sm:px-6 lg:px-9 lg:py-8 ${activeNav === "Tổng quan" ? "" : "hidden"}`}>
@@ -2425,7 +2442,7 @@ function AssetModal({ mode, asset, formData, setFormData, isSaving, onClose: dis
   });
   const vendorsQuery = trpc.vendors.list.useQuery();
   const brandsQuery = trpc.brands.list.useQuery();
-  const purchaseContractsQuery = trpc.purchaseContracts.list.useQuery();
+  const purchaseInvoicesQuery = trpc.purchaseInvoices.list.useQuery();
   const categoriesQuery = trpc.assetCategories.list.useQuery(undefined, { enabled: !isDetail });
   const [categoryCreatorOpen, setCategoryCreatorOpen] = useState(false);
   const categoryDraftRef = useRef({ name: "", code: "", description: "" });
@@ -2456,14 +2473,12 @@ function AssetModal({ mode, asset, formData, setFormData, isSaving, onClose: dis
     onError: (error) => toast.error(error.message || "Không thể tạo yêu cầu sửa chữa."),
   });
   const update = (key: keyof Asset, value: string) => { setFormDirty(true); setFormData((current) => ({ ...current, [key]: key === "value" ? value.replace(/\D/g, "") : value })); };
-  const purchaseContractOptions = useMemo(() => [{ value: "", label: "Chưa liên kết hợp đồng" }, ...(purchaseContractsQuery.data || []).filter((contract) => contract.status !== "cancelled").map((contract) => ({ value: String(contract.id), label: `${contract.referenceCode} · ${contract.title}`, searchText: `${contract.referenceCode} ${contract.title}` }))], [purchaseContractsQuery.data]);
-  const selectedPurchaseContract = (purchaseContractsQuery.data || []).find((contract) => contract.id === formData.purchaseContractId) || null;
-  const selectPurchaseContract = (value: string) => {
+  const selectPurchaseInvoice = (value: string) => {
     const nextId = value ? Number(value) : null;
-    const contract = (purchaseContractsQuery.data || []).find((item) => item.id === nextId) || null;
-    const contractVendor = contract?.vendorId ? (vendorsQuery.data || []).find((vendor) => vendor.id === contract.vendorId) : null;
+    const invoice = (purchaseInvoicesQuery.data || []).find((item) => item.id === nextId) || null;
+    const invoiceVendor = invoice ? (vendorsQuery.data || []).find((vendor) => vendor.id === invoice.vendorId) : null;
     setFormDirty(true);
-    setFormData((current) => ({ ...current, purchaseContractId: nextId, ...(contractVendor ? { vendorId: contractVendor.id, supplier: contractVendor.name } : {}) }));
+    setFormData((current) => ({ ...current, purchaseContractId: null, purchaseInvoiceId: nextId, purchaseInvoiceLineId: null, ...(invoiceVendor ? { vendorId: invoiceVendor.id, supplier: invoiceVendor.name } : {}) }));
   };
   useEffect(() => {
     if (isDetail) return;
@@ -2471,55 +2486,55 @@ function AssetModal({ mode, asset, formData, setFormData, isSaving, onClose: dis
     const serialInput = dialog?.querySelector<HTMLInputElement>('input[placeholder="Nhập số serial"]');
     const serialField = serialInput?.parentElement;
     const grid = serialField?.parentElement;
-    if (!serialField || !grid || grid.querySelector("[data-asset-purchase-contract]")) return;
+    if (!serialField || !grid || grid.querySelector("[data-asset-purchase-invoice]")) return;
     const field = document.createElement("div");
-    field.dataset.assetPurchaseContract = "true";
+    field.dataset.assetPurchaseInvoice = "true";
     field.className = "min-w-0";
     const label = document.createElement("label");
     label.className = "field-label";
-    label.textContent = "Hợp đồng mua bán";
+    label.textContent = "Hóa đơn mua bán";
     const select = document.createElement("select");
     select.className = "field-input mt-1";
-    select.setAttribute("aria-label", "Hợp đồng mua bán");
+    select.setAttribute("aria-label", "Hóa đơn mua bán");
     const placeholder = document.createElement("option");
     placeholder.value = "";
-    placeholder.textContent = purchaseContractsQuery.isLoading ? "Đang tải hợp đồng..." : "Chưa liên kết hợp đồng";
+    placeholder.textContent = purchaseInvoicesQuery.isLoading ? "Đang tải Hóa đơn..." : "Chưa liên kết Hóa đơn";
     select.append(placeholder);
-    (purchaseContractsQuery.data || []).filter((contract) => contract.status !== "cancelled").forEach((contract) => {
+    (purchaseInvoicesQuery.data || []).filter((invoice) => invoice.status !== "cancelled").forEach((invoice) => {
       const option = document.createElement("option");
-      option.value = String(contract.id);
-      option.textContent = `${contract.referenceCode} · ${contract.title}`;
+      option.value = String(invoice.id);
+      option.textContent = invoice.invoiceKey;
       select.append(option);
     });
-    select.value = formData.purchaseContractId ? String(formData.purchaseContractId) : "";
-    select.disabled = purchaseContractsQuery.isLoading;
-    const onChange = () => selectPurchaseContract(select.value);
+    select.value = formData.purchaseInvoiceId ? String(formData.purchaseInvoiceId) : "";
+    select.disabled = purchaseInvoicesQuery.isLoading;
+    const onChange = () => selectPurchaseInvoice(select.value);
     select.addEventListener("change", onChange);
     field.append(label, select);
     serialField.after(field);
     return () => { select.removeEventListener("change", onChange); field.remove(); };
-  }, [isDetail, mode, formData.purchaseContractId, purchaseContractsQuery.data, purchaseContractsQuery.isLoading]);
+  }, [isDetail, mode, formData.purchaseInvoiceId, purchaseInvoicesQuery.data, purchaseInvoicesQuery.isLoading]);
   useEffect(() => {
     if (!isDetail || !asset) return;
     const dialog = document.querySelector<HTMLElement>('[role="dialog"][aria-label="Chi tiết tài sản"]');
     const vendorLabel = Array.from(dialog?.querySelectorAll<HTMLElement>("div") || []).find((element) => element.textContent?.trim() === "Nhà cung cấp");
     const vendorCard = vendorLabel?.parentElement;
     const grid = vendorCard?.parentElement;
-    if (!grid || grid.querySelector("[data-asset-contract-detail]")) return;
+    if (!grid || grid.querySelector("[data-asset-invoice-detail]")) return;
     const block = document.createElement("div");
-    block.dataset.assetContractDetail = "true";
+    block.dataset.assetInvoiceDetail = "true";
     block.className = "min-w-0 rounded-lg border border-[#CDE5E5] bg-[#F4FBFA] px-3.5 py-3";
     const label = document.createElement("div");
     label.className = "text-[10px] font-bold uppercase tracking-[0.1em] text-[#4B8884]";
-    label.textContent = "Hợp đồng mua bán";
+    label.textContent = "Hóa đơn mua bán";
     const value = document.createElement("div");
     value.className = "mt-1.5 break-words text-sm font-semibold leading-5 text-[#193B57]";
-    const contract = (purchaseContractsQuery.data || []).find((item) => item.id === asset.purchaseContractId);
-    value.textContent = asset.purchaseContractId ? contract ? `${contract.referenceCode} · ${contract.title}` : "Đang tải hoặc hợp đồng không còn khả dụng" : "Chưa liên kết hợp đồng";
+    const invoice = (purchaseInvoicesQuery.data || []).find((item) => item.id === asset.purchaseInvoiceId);
+    value.textContent = asset.purchaseInvoiceId ? invoice ? invoice.invoiceKey : "Đang tải hoặc Hóa đơn không còn khả dụng" : "Chưa liên kết Hóa đơn";
     block.append(label, value);
     grid.append(block);
     return () => block.remove();
-  }, [isDetail, asset?.purchaseContractId, purchaseContractsQuery.data]);
+  }, [isDetail, asset?.purchaseInvoiceId, purchaseInvoicesQuery.data]);
   useEffect(() => {
     if (isDetail) return;
     const holderLabel = Array.from(document.querySelectorAll("label")).find((label) => label.textContent?.trim().startsWith("Người / Phòng giữ"));
