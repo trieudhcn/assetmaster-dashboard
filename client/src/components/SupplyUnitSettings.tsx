@@ -35,7 +35,7 @@ export function SupplyUnitSettings() {
   const activeUnitCount = units.filter((unit) => unit.isActive).length;
 
   return (
-    <section className="mx-auto mt-5 max-w-[1100px] rounded-2xl border border-[#DFE9F0] bg-white p-4 shadow-[0_8px_24px_rgba(16,42,67,0.045)] sm:p-5">
+    <section data-system-settings-supply-units className="mx-auto mt-5 max-w-[1100px] rounded-2xl border border-[#DFE9F0] bg-white p-4 shadow-[0_8px_24px_rgba(16,42,67,0.045)] sm:p-5">
       <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
         <div className="min-w-0">
           <div className="text-[10px] font-extrabold uppercase tracking-[.14em] text-[#0F8C8C]">Dữ liệu chuẩn</div>

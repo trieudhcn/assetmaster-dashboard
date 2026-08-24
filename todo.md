@@ -567,6 +567,11 @@
 - [x] Căn đều vị trí dòng mô tả và phần phụ trợ bên dưới giá trị KPI.
 - [x] Bổ sung hồi quy, xác minh desktop/mobile và phát hành.
 
+## Current Session — Sắp xếp Cài đặt hệ thống
+
+- [x] Sắp xếp các mục: Cài đặt thương hiệu, Quản lý chi nhánh, Thứ tự menu, Nhận diện mở rộng.
+- [x] Bổ sung hồi quy, xác minh giao diện Cài đặt và phát hành.
+
 - [x] Mở rộng mô hình dữ liệu tài sản với thông tin chi tiết và trạng thái thao tác.
 - [x] Thêm modal tạo tài sản mới với validation cơ bản.
 - [x] Thêm modal chỉnh sửa tài sản và cập nhật dữ liệu trong bảng.

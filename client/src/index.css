@@ -94,6 +94,12 @@ header.sticky.top-0.z-20 { z-index: 30; }
 .animate-kpi > div:nth-child(3) { display: flex; min-height: 1.5rem; align-items: center; }
 .animate-kpi > div:nth-child(3) :is(span, button) { font-size: 1.125rem !important; line-height: 1.25rem; white-space: nowrap; }
 .animate-kpi > div:nth-child(4) { display: flex; min-height: 1.25rem; align-items: center; margin-top: auto; }
+main[data-system-settings-layout="true"] { display: flex; flex-direction: column; }
+main[data-system-settings-layout="true"] [data-system-settings-brand] { order: 1; }
+main[data-system-settings-layout="true"] [data-system-settings-branches] { order: 2; }
+main[data-system-settings-layout="true"] [data-system-settings-menu] { order: 3; }
+main[data-system-settings-layout="true"] [data-system-settings-enhancements] { order: 4; }
+main[data-system-settings-layout="true"] [data-system-settings-supply-units] { order: 5; }
 
 @keyframes notification-bell-ring {
   0%, 66%, 100% { transform: rotate(0deg); }

@@ -27,6 +27,8 @@ describe("menu order settings and invoice context", () => {
     expect(home).toContain("trpc.menuPreferences.get.useQuery");
     expect(home).toContain("trpc.menuPreferences.save.useMutation");
     expect(home).toContain("<MenuOrderSettings");
+    expect(home).toContain('data-system-settings-layout={activeNav === "Cài đặt" ? "true" : undefined}');
+    expect(readFileSync(resolve(process.cwd(), "client/src/index.css"), "utf8")).toContain('[data-system-settings-brand] { order: 1; }');
     expect(home).toContain("sidebarMenuOrder.map");
     expect(menuSettings).toContain("Thứ tự menu điều hướng");
     expect(menuSettings).toContain("đồng bộ theo tài khoản");

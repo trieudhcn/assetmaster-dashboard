@@ -125,7 +125,7 @@ export function CompanyBrandSettings({ companyInfo, onSave }: { companyInfo: Com
 
   const copyButton = (value: string, label: string) => <button type="button" disabled={!value.trim()} onClick={() => { void copyContact(value, label); }} className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md p-1.5 text-[#60758A] transition hover:bg-[#ECF8F7] hover:text-[#087A6A] disabled:cursor-not-allowed disabled:opacity-40" aria-label={`Sao chép ${label}`} title={`Sao chép ${label}`}><Copy size={15} /></button>;
 
-  return <div className="min-h-screen bg-[#F4F7FB] px-4 py-7 sm:px-6 lg:px-9 lg:py-8">
+  return <div data-system-settings-brand className="min-h-screen bg-[#F4F7FB] px-4 py-7 sm:px-6 lg:px-9 lg:py-8">
     <div className="mx-auto max-w-[1100px]">
       <div className="mb-7">
         <div className="mb-2 flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.16em] text-[#0F8C8C]"><span className="h-1.5 w-1.5 rounded-full bg-[#F0A516]" />Thiết lập thương hiệu</div>
