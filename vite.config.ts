@@ -167,6 +167,16 @@ export default defineConfig({
   build: {
     outDir: path.resolve(import.meta.dirname, "dist/public"),
     emptyOutDir: true,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          "vendor-react": ["react", "react-dom", "react-dom/client"],
+          "vendor-ui": ["lucide-react"],
+          "vendor-pdf": ["jspdf"],
+          "vendor-export": ["xlsx", "exceljs"],
+        },
+      },
+    },
   },
   server: {
     host: true,

@@ -3318,3 +3318,16 @@
 - [x] Hiển thị số lượng tài sản cạnh từng tên Phòng ban trong bộ lọc.
 - [x] Thêm trạng thái tải cho các dropdown bộ lọc Danh mục Tài sản.
 - [x] Bổ sung hồi quy, kiểm thử giao diện, TypeScript và production build trước khi phát hành.
+
+## Current Session — Dropdown danh mục và hiệu năng xuất bản
+
+- [x] Hiển thị số lượng tài sản cạnh từng Nhà cung cấp và Hãng trong bộ lọc.
+- [x] Gắn nhãn Ngừng hoạt động cho Phòng ban không còn hoạt động trong dropdown.
+- [x] Rà soát và tối ưu an toàn các điểm làm bản build/xuất bản chậm.
+- [x] Bổ sung hồi quy, kiểm thử giao diện, TypeScript và production build trước khi phát hành.
+
+## Current Session — Xuất Excel toàn bộ bộ lọc
+
+- [x] Khôi phục xuất Excel theo toàn bộ kết quả lọc, không giới hạn trang hiện tại.
+- [x] Sửa cấu hình tách bundle gây lỗi build trong lúc rà soát hiệu năng.
+- [x] Bổ sung hồi quy, kiểm thử xuất Excel, TypeScript và production build trước khi phát hành.

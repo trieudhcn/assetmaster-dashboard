@@ -40,9 +40,27 @@ describe("asset catalog invoice code", () => {
   it("shows the asset count for each Department and keeps filters visibly loading until data is ready", () => {
     expect(home).toContain("departmentFilterCounts");
     expect(home).toContain("departmentCounts={departmentFilterCounts}");
-    expect(home).toContain("counts={departmentCounts} isLoading={isFilterDataLoading}");
+    expect(home).toContain("counts={departmentCounts} optionLabels={departmentOptionLabels} isLoading={isFilterDataLoading}");
     expect(home).toContain("assetFilterDataLoading");
     expect(home).toContain("loading={isLoading}");
+  });
+
+  it("shows counts for Vendors and Brands while clearly labeling inactive Departments", () => {
+    expect(home).toContain("vendorFilterCounts");
+    expect(home).toContain("brandFilterCounts");
+    expect(home).toContain("counts={vendorCounts} isLoading={isFilterDataLoading}");
+    expect(home).toContain("counts={brandCounts} isLoading={isFilterDataLoading}");
+    expect(home).toContain("departmentOptionLabels");
+    expect(home).toContain("Ngừng hoạt động");
+  });
+
+  it("exports every matching asset rather than only the current pagination page", () => {
+    expect(home).toContain("allFilteredAssets = assets");
+    expect(home).toContain("allAssetExportRows");
+    expect(home).toContain("Xuất theo bộ lọc (${filteredAssetCount})");
+    expect(home).toContain("Xuất tất cả ({allAssetCount})");
+    expect(home).toContain("onExportAllAssets={exportAllAssetsExcel}");
+    expect(home).not.toContain("Xuất danh sách (${assets.length})");
   });
 
   it("opens the corresponding invoice detail when a linked invoice code is activated", () => {

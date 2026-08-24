@@ -1927,8 +1927,9 @@ describe("currency input and scrollbar contract", () => {
     expect(home).toContain("exportFilteredAssetsExcel");
     expect(home).toContain("onExportFilteredAssets");
     expect(home).toContain("DANH SÁCH TÀI SẢN THEO BỘ LỌC");
-    expect(home).toContain("assetmaster-danh-sach-tai-san-da-loc-");
-    expect(home).toContain("Xuất danh sách");
+    expect(home).toContain('assetmaster-danh-sach-tai-san-${isFiltered ? "da-loc" : "tat-ca"}-');
+    expect(home).toContain("Xuất theo bộ lọc");
+    expect(home).toContain("Xuất tất cả");
     expect(home).toContain("data-asset-column-picker");
     expect(home).toContain("assetmaster-asset-catalog-visible-columns");
     expect(home).toContain("onOpenImportHistory");
