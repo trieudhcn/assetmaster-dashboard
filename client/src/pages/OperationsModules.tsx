@@ -607,8 +607,6 @@ export function MaintenancePage() {
           </div>
         </div>
 
-        <OperationalReminderPanel />
-
         <section className={`mt-5 ${card} border-[#E7D9B9] p-4 sm:p-5`} data-maintenance-cost-summary>
           <div className="flex flex-col gap-3 xl:flex-row xl:items-end xl:justify-between"><div><div className="flex items-center gap-2 text-sm font-extrabold text-[#8F5A00]"><FileBarChart size={16} />Tổng chi phí Bảo hành & Sửa chữa</div><p className="mt-1 text-xs text-[#71869A]">Tổng chi phí thực tế của các phiếu theo năm và kênh xử lý đã chọn.</p></div><div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-end"><div className="w-full sm:w-44"><label className="mb-1 block text-[10px] font-extrabold uppercase tracking-[.1em] text-[#8A7140]">Năm chi phí</label><SearchableSelect value={costSummaryYear} onChange={setCostSummaryYear} placeholder="Tất cả năm" searchPlaceholder="Tìm năm..." options={[{ value: "all", label: "Tất cả năm" }, ...maintenanceYears.map((year) => ({ value: String(year), label: `Năm ${year}` }))]} /></div><div className="w-full sm:w-44"><label className="mb-1 block text-[10px] font-extrabold uppercase tracking-[.1em] text-[#8A7140]">Kênh xử lý</label><SearchableSelect value={costSummaryChannel} onChange={(value) => setCostSummaryChannel(value as typeof costSummaryChannel)} placeholder="Tất cả kênh" searchPlaceholder="Tìm kênh..." options={[{ value: "all", label: "Tất cả kênh" }, ...Object.entries(serviceChannelLabels).map(([value, label]) => ({ value, label }))]} /></div><button type="button" onClick={exportMaintenanceCosts} disabled={ticketsQuery.isLoading || costSummaryTickets.length === 0 || isExportingCosts} className="inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-lg border border-[#E7D9B9] bg-[#FFF7E3] px-4 text-xs font-bold text-[#8F5A00] transition hover:bg-white disabled:cursor-not-allowed disabled:opacity-50"><Download size={15} className={isExportingCosts ? "animate-pulse" : ""} />{isExportingCosts ? "Đang xuất..." : `Xuất Excel (${costSummaryTickets.length})`}</button></div></div>
           {ticketsQuery.isLoading ? <div className="mt-4 grid min-h-24 place-items-center text-xs text-[#71869A]">Đang tổng hợp chi phí...</div> : <div className="mt-4 grid gap-3 sm:grid-cols-3"><div className="rounded-lg border border-[#E7D9B9] bg-[#FFFDF7] p-3"><div className="text-[10px] font-extrabold uppercase tracking-[.08em] text-[#8A7140]">Tổng chi phí</div><div className="mt-1 text-lg font-extrabold text-[#8F5A00]">{costSummaryTickets.length ? `${formatVnd(totalServiceCost)} VNĐ` : "—"}</div><div className="mt-1 text-[10px] text-[#8A7140]">{costSummaryTickets.length ? `${costSummaryTickets.length} phiếu trong phạm vi lọc` : "Không có dữ liệu trong phạm vi lọc."}</div></div><div className="rounded-lg border border-[#CDE5E5] bg-[#F4FBFA] p-3"><div className="text-[10px] font-extrabold uppercase tracking-[.08em] text-[#4C7E76]">Chi phí Bảo hành</div><div className="mt-1 text-lg font-extrabold text-[#087A6A]">{costSummaryTickets.length ? `${formatVnd(costSummary.warrantyCost)} VNĐ` : "—"}</div><div className="mt-1 text-[10px] text-[#4C7E76]">Kênh Bảo hành</div></div><div className="rounded-lg border border-[#C7DDF8] bg-[#F7FBFF] p-3"><div className="text-[10px] font-extrabold uppercase tracking-[.08em] text-[#526D92]">Chi phí Sửa chữa</div><div className="mt-1 text-lg font-extrabold text-[#2666A8]">{costSummaryTickets.length ? `${formatVnd(costSummary.repairCost)} VNĐ` : "—"}</div><div className="mt-1 text-[10px] text-[#526D92]">Kênh Sửa chữa</div></div></div>}
@@ -908,6 +906,7 @@ export function AuditPage() {
   };
 
   const auditsQuery = trpc.audits.list.useQuery();
+  const auditRemindersQuery = trpc.reminders.list.useQuery();
   const assetsQuery = trpc.assets.list.useQuery();
   const branchesQuery = trpc.branches.list.useQuery();
   const departmentsQuery = trpc.departments.list.useQuery();
@@ -980,6 +979,8 @@ export function AuditPage() {
   });
 
   const auditSessions = auditsQuery.data || [];
+  type AuditReminder = Extract<NonNullable<typeof auditRemindersQuery.data>[number], { kind: "audit" }>;
+  const overdueAuditReminders = (auditRemindersQuery.data || []).filter((reminder): reminder is AuditReminder => reminder.kind === "audit" && reminder.isOverdue);
   const filteredAuditSessions = auditStatusFilter === "all" ? auditSessions : auditSessions.filter((audit) => audit.status === auditStatusFilter);
   const assets = assetsQuery.data || [];
   const auditItems = auditItemsQuery.data || [];
@@ -1623,7 +1624,7 @@ export function AuditPage() {
         </div>
 
         {!selectedAudit && <>
-        <OperationalReminderPanel />
+        {overdueAuditReminders.length > 0 && <section data-audit-overdue-reminder className="mb-5 overflow-hidden rounded-xl border border-[#F2B18B] bg-[#FFF9F5] shadow-[0_8px_24px_rgba(16,42,67,0.045)]"><div className="flex flex-col gap-3 border-b border-[#F6D7C2] px-4 py-3 sm:flex-row sm:items-center sm:justify-between"><div className="flex items-center gap-2"><span className="grid h-8 w-8 place-items-center rounded-lg bg-[#FDEDEE] text-[#B44545]"><AlertTriangle size={16} /></span><div><h2 className="text-sm font-extrabold text-[#9E3F12]">Đợt Kiểm kê quá hạn</h2><p className="mt-0.5 text-[11px] text-[#A66B48]">Mở nhanh từng đợt để tiếp tục đối chiếu và chốt biên bản.</p></div></div><span className="w-fit rounded-full bg-[#FDEDEE] px-2.5 py-1 text-[10px] font-extrabold text-[#B44545]">{overdueAuditReminders.length} đợt cần xử lý</span></div><div className="divide-y divide-[#F6E3D6]">{overdueAuditReminders.slice(0, 3).map((reminder) => <button key={reminder.id} type="button" onClick={() => openAuditSession(reminder.auditSessionId)} className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left transition hover:bg-white"><div className="min-w-0"><div className="truncate text-xs font-extrabold text-[#193B57]">{reminder.title}</div><div className="mt-0.5 font-mono text-[11px] text-[#A66B48]">{reminder.detail}</div></div><span className="shrink-0 text-[11px] font-extrabold text-[#B44545]">Mở đợt →</span></button>)}</div></section>}
 
         <section className={`${card} p-5`}>
           <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_155px_145px_auto]">

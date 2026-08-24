@@ -5,13 +5,15 @@ import { describe, expect, it } from "vitest";
 const readProjectFile = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8");
 
 describe("audit reminder navigation", () => {
-  it("keeps audit reminders compact and exposes a direct open action", () => {
+  it("shows overdue audit reminders in the Audit page with a direct open action", () => {
     const operations = readProjectFile("client/src/pages/OperationsModules.tsx");
 
-    expect(operations).toContain("assetmaster:open-audit-session");
-    expect(operations).toContain("reminders.slice(0, 3)");
+    expect(operations).toContain("auditRemindersQuery");
+    expect(operations).toContain("overdueAuditReminders");
+    expect(operations).toContain("data-audit-overdue-reminder");
     expect(operations).toContain("Mở đợt");
-    expect(operations).toContain("!(reminder.kind === \"audit\" && reminder.isOverdue)");
+    expect(operations).toContain("openAuditSession(reminder.auditSessionId)");
+    expect(operations).not.toContain("<OperationalReminderPanel />");
   });
 
   it("surfaces overdue audits in the dashboard and opens the exact session", () => {

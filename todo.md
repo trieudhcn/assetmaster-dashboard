@@ -453,6 +453,13 @@
 - [x] Hiển thị danh sách phiếu theo lưới bốn cột trên desktop, tự đáp ứng tablet/mobile.
 - [x] Bổ sung hồi quy, xác minh desktop/mobile và phát hành.
 
+## Current Session — Thao tác phiếu và nhắc Kiểm kê
+
+- [x] Thêm nút mở nhanh chi tiết trên từng thẻ phiếu Bảo hành/Sửa chữa theo tháng.
+- [x] Thêm sắp xếp chi phí tăng dần/giảm dần cho các phiếu tháng được chọn.
+- [x] Khôi phục nhắc Kiểm kê quá hạn có liên kết tại trang Kiểm kê và bỏ khối nhắc trùng ở Bảo hành/Sửa chữa.
+- [x] Bổ sung hồi quy, xác minh desktop/mobile và phát hành.
+
 - [x] Mở rộng mô hình dữ liệu tài sản với thông tin chi tiết và trạng thái thao tác.
 - [x] Thêm modal tạo tài sản mới với validation cơ bản.
 - [x] Thêm modal chỉnh sửa tài sản và cập nhật dữ liệu trong bảng.

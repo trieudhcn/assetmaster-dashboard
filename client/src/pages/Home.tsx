@@ -410,6 +410,7 @@ export default function Home() {
   const [companyInfo, setCompanyInfo] = useState<CompanyInfo>(readCompanyInfo);
   const [maintenanceChartYear, setMaintenanceChartYear] = useState(() => new Date().getFullYear());
   const [selectedMaintenanceChartMonth, setSelectedMaintenanceChartMonth] = useState<number | null>(null);
+  const [maintenanceTicketCostSort, setMaintenanceTicketCostSort] = useState<"desc" | "asc">("desc");
   const isAdmin = user?.role === "admin";
   const assetQuery = trpc.assets.list.useQuery(undefined, { enabled: isAuthenticated && isAdmin });
   const suppliesQuery = trpc.supplies.list.useQuery(undefined, { enabled: isAuthenticated && isAdmin });
@@ -569,12 +570,21 @@ export default function Home() {
       summary.className = "mt-1 text-xs text-[#60758A]";
       summary.textContent = `${selectedMonth.tickets.length} phiếu · Bảo hành ${formatVnd(selectedMonth.warrantyTotal)} VNĐ · Sửa chữa ${formatVnd(selectedMonth.repairTotal)} VNĐ · Tổng ${formatVnd(selectedMonth.total)} VNĐ${selectedMonth.budget !== null ? ` · Ngân sách ${formatVnd(selectedMonth.budget)} VNĐ` : " · Chưa đặt ngân sách"}`;
       titleBlock.append(title, summary);
+      const detailActions = document.createElement("div");
+      detailActions.className = "flex items-center gap-2";
+      const sortSelect = document.createElement("select");
+      sortSelect.className = "h-8 rounded-md border border-[#D7E3EB] bg-white px-2 text-[11px] font-bold text-[#60758A] outline-none focus:border-[#0F8C8C]";
+      sortSelect.setAttribute("aria-label", "Sắp xếp phiếu theo chi phí");
+      sortSelect.innerHTML = '<option value="desc">Chi phí cao → thấp</option><option value="asc">Chi phí thấp → cao</option>';
+      sortSelect.value = maintenanceTicketCostSort;
+      sortSelect.addEventListener("change", () => setMaintenanceTicketCostSort(sortSelect.value === "asc" ? "asc" : "desc"));
       const close = document.createElement("button");
       close.type = "button";
       close.className = "rounded-md px-2 py-1 text-xs font-bold text-[#60758A] hover:bg-white";
       close.textContent = "Đóng";
       close.addEventListener("click", () => setSelectedMaintenanceChartMonth(null));
-      detailsHeader.append(titleBlock, close);
+      detailActions.append(sortSelect, close);
+      detailsHeader.append(titleBlock, detailActions);
       const budgetForm = document.createElement("div");
       budgetForm.className = "mt-4 grid gap-2 rounded-lg border border-[#E1EAEE] bg-white p-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end";
       const budgetField = document.createElement("label");
@@ -608,7 +618,11 @@ export default function Home() {
         empty.textContent = "Không có phiếu Bảo hành/Sửa chữa phát sinh trong tháng này.";
         ticketList.append(empty);
       } else {
-        selectedMonth.tickets.forEach((ticket) => {
+        const sortedTickets = [...selectedMonth.tickets].sort((left, right) => {
+          const difference = Number(left.actualCost ?? left.estimatedCost ?? 0) - Number(right.actualCost ?? right.estimatedCost ?? 0);
+          return maintenanceTicketCostSort === "asc" ? difference : -difference;
+        });
+        sortedTickets.forEach((ticket) => {
           const row = document.createElement("article");
           row.className = "flex min-h-[118px] flex-col rounded-lg border border-[#E1EAEE] bg-white p-3 shadow-[0_2px_8px_rgba(16,42,67,0.025)]";
           const code = document.createElement("div");
@@ -620,7 +634,17 @@ export default function Home() {
           const costs = document.createElement("p");
           costs.className = "mt-auto pt-2 text-[11px] font-semibold leading-5 text-[#71869A]";
           costs.textContent = `Dự kiến: ${ticket.estimatedCost === null ? "—" : `${formatVnd(ticket.estimatedCost)} VNĐ`} · Thực tế: ${ticket.actualCost === null ? "—" : `${formatVnd(ticket.actualCost)} VNĐ`}`;
-          row.append(code, description, costs);
+          const openTicket = document.createElement("button");
+          openTicket.type = "button";
+          openTicket.className = "mt-2 inline-flex h-7 w-fit items-center rounded-md border border-[#CDE5E5] bg-[#F4FBFA] px-2.5 text-[10px] font-extrabold text-[#087A6A] transition hover:bg-[#E6F6F2]";
+          openTicket.textContent = "Mở nhanh";
+          openTicket.addEventListener("click", () => {
+            sessionStorage.setItem("assetmaster-open-maintenance-ticket-id", String(ticket.id));
+            setActiveNav("Bảo hành & Sửa chữa");
+            setMobileNavOpen(false);
+            window.requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: "smooth" }));
+          });
+          row.append(code, description, costs, openTicket);
           ticketList.append(row);
         });
       }
@@ -629,7 +653,7 @@ export default function Home() {
     }
     anchor.insertAdjacentElement("afterend", chart);
     return () => chart.remove();
-  }, [isAuthenticated, isAdmin, maintenanceChartYear, maintenanceChartYears, monthlyMaintenanceCosts, saveMaintenanceBudgetMutation, selectedMaintenanceChartMonth]);
+  }, [isAuthenticated, isAdmin, maintenanceChartYear, maintenanceChartYears, maintenanceTicketCostSort, monthlyMaintenanceCosts, saveMaintenanceBudgetMutation, selectedMaintenanceChartMonth]);
 
   useEffect(() => {
     const openImport = () => setAssetImportOpen(true);
