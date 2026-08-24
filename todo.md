@@ -502,6 +502,11 @@
 - [x] Cho phép nhấp Mã Hóa đơn trong bảng để mở nhanh chi tiết Hóa đơn tương ứng.
 - [x] Bổ sung hồi quy, xác minh desktop/mobile, TypeScript và production build.
 
+## Current Session — Căn giữa chữ ký Người nhận
+
+- [x] Căn giữa tên và chữ ký Người nhận trong mẫu PDF.
+- [x] Bổ sung hồi quy, xác minh bố cục PDF và phát hành.
+
 - [x] Mở rộng mô hình dữ liệu tài sản với thông tin chi tiết và trạng thái thao tác.
 - [x] Thêm modal tạo tài sản mới với validation cơ bản.
 - [x] Thêm modal chỉnh sửa tài sản và cập nhật dữ liệu trong bảng.

@@ -2053,21 +2053,23 @@ async function downloadHandoverPdf(item: Handover, signature: string | undefined
   doc.setFontSize(11);
   doc.text("XÁC NHẬN CỦA CÁC BÊN", left, y);
   y += 8;
+  const recipientSignatureCenter = 150;
+  const recipientSignatureWidth = 52;
   doc.setFontSize(9);
   doc.setTextColor(112, 134, 154);
   doc.text("Người giao", left + 18, y);
-  doc.text("Người nhận", 125, y);
+  doc.text("Người nhận", recipientSignatureCenter, y, { align: "center" });
   if (signature) {
     try {
       const signatureImage = signature.startsWith("data:image/") ? signature : await loadImageData(signature);
-      doc.addImage(signatureImage, 118, y + 4, 52, 24);
+      doc.addImage(signatureImage, recipientSignatureCenter - recipientSignatureWidth / 2, y + 4, recipientSignatureWidth, 24);
     } catch {
       // The biên bản remains downloadable even when a stored signature cannot be retrieved.
     }
   }
   doc.setTextColor(25, 59, 87);
   doc.text(item.handoverBy, left + 12, y + 39);
-  doc.text(item.recipient, 119, y + 39);
+  doc.text(item.recipient, recipientSignatureCenter, y + 39, { align: "center" });
   doc.setFontSize(8);
   doc.setTextColor(138, 160, 182);
   doc.text(`Biên bản được tạo ngày ${new Date().toLocaleDateString("vi-VN")}`, left, 282);
