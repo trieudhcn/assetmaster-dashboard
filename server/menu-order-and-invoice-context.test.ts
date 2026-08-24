@@ -35,6 +35,7 @@ describe("menu order settings and invoice context", () => {
   it("keeps linked assets actionable and suppresses allocation when every source is fulfilled", () => {
     const invoiceView = readProjectFile("client/src/pages/PurchaseInvoiceManagementView.tsx");
     const linkedAssetLinks = readProjectFile("client/src/components/InvoiceLinkedAssetQuickLinks.tsx");
+    const home = readProjectFile("client/src/pages/Home.tsx");
 
     expect(invoiceView).toContain("needsSourceAllocation");
     expect(invoiceView).toContain("<InvoiceLinkedAssetQuickLinks");
@@ -46,6 +47,9 @@ describe("menu order settings and invoice context", () => {
     expect(linkedAssetLinks).toContain("warrantyMeta");
     expect(linkedAssetLinks).toContain("grid-cols-[78px_minmax(0,1fr)_auto_auto_15px]");
     expect(linkedAssetLinks).toContain("title={tooltip}");
+    expect(linkedAssetLinks).toContain("Mở tài sản");
+    expect(linkedAssetLinks).toContain("/?view=assets&openAsset=");
+    expect(home).toContain('url.searchParams.get("openAsset")');
     expect(invoiceView).toContain('startsWith("Tài sản liên kết:")');
   });
 

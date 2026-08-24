@@ -413,6 +413,11 @@
 - [x] Bổ sung tooltip thống nhất khi hover/focus Tài sản liên kết.
 - [x] Bổ sung hồi quy, xác minh giao diện, TypeScript và production build trước khi phát hành.
 
+## Current Session — Liên kết mở hồ sơ Tài sản từ Hóa đơn
+
+- [x] Thêm liên kết mở trực tiếp hồ sơ Tài sản trong modal chi tiết tại Hóa đơn.
+- [x] Bổ sung hồi quy, xác minh giao diện, TypeScript và production build trước khi phát hành.
+
 - [x] Mở rộng mô hình dữ liệu tài sản với thông tin chi tiết và trạng thái thao tác.
 - [x] Thêm modal tạo tài sản mới với validation cơ bản.
 - [x] Thêm modal chỉnh sửa tài sản và cập nhật dữ liệu trong bảng.

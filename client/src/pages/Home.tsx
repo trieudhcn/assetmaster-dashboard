@@ -961,6 +961,16 @@ export default function Home() {
   }, [assetRows]);
   const openEditModal = (asset: Asset) => { if (asset.statusType === "retired" || asset.statusType === "returned") { toast.error("Tài sản đã Trả nhà cung cấp hoặc Khấu hao/Thanh lý đã được khóa và không thể chỉnh sửa."); return; } setSelectedAsset(asset); setFormData({ ...asset, date: dateInputValue(asset.purchaseDate || asset.date) }); setAssetModal("edit"); };
   const openDetailModal = (asset: Asset) => { setSelectedAsset(asset); setAssetModal("detail"); };
+  useEffect(() => {
+    const url = new URL(window.location.href);
+    const assetCode = url.searchParams.get("openAsset");
+    if (!assetCode || !assetRows.length) return;
+    const target = assetRows.find((asset) => asset.code === assetCode);
+    if (target) openDetailModal(target);
+    else toast.error("Không tìm thấy tài sản cần mở.");
+    url.searchParams.delete("openAsset");
+    window.history.replaceState({}, "", `${url.pathname}${url.search}${url.hash}`);
+  }, [assetRows]);
   const saveAsset = (attachments?: AssetSaveAttachments) => {
     if (!formData.name.trim() || !formData.value.trim()) { toast.error("Vui lòng nhập tên tài sản và giá trị."); return; }
     if (!formData.categoryId || !formData.code) { toast.error("Vui lòng chọn Phân loại để hệ thống tạo mã tài sản."); return; }
