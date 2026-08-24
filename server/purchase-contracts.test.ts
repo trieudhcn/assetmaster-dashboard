@@ -143,7 +143,7 @@ describe("purchase contract management", () => {
     expect(home).toContain('label.textContent = "Hóa đơn mua bán"');
     expect(home).toContain('field.dataset.assetPurchaseInvoice = "true"');
     expect(invoicesView).toContain("Hóa đơn mua bán");
-    expect(invoicesView).toContain("trpc.purchaseInvoices.list.useQuery()");
+    expect(invoicesView).toContain("trpc.purchaseInvoices.page.useQuery(invoicePageInput)");
     expect(invoicesView).toContain("purchaseContractId: form.purchaseContractId ? Number(form.purchaseContractId) : null");
     expect(invoicesView).toContain("queuedDocuments");
     expect(invoicesView).toContain("uploadInvoiceDocument");

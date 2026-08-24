@@ -116,6 +116,7 @@ import {
   listPurchaseContracts,
   listPurchaseInvoiceDocuments,
   listPurchaseInvoiceLines,
+  listPurchaseInvoicePage,
   listPurchaseInvoices,
   listAssetsByPurchaseInvoiceId,
   listPurchaseInvoiceSupplyReceipts,
@@ -748,6 +749,7 @@ export const appRouter = router({
   }),
   purchaseInvoices: router({
     list: adminProcedure.query(() => listPurchaseInvoices()),
+    page: adminProcedure.input(z.object({ page: z.number().int().positive().default(1), pageSize: z.number().int().min(5).max(50).default(10), query: z.string().trim().max(160).default(""), vendorId: z.number().int().positive().nullable().default(null), status: z.enum(["draft", "issued", "adjusted", "replaced", "cancelled"]).nullable().default(null) })).query(({ input }) => listPurchaseInvoicePage(input)),
     get: adminProcedure.input(z.object({ id: z.number().int().positive() })).query(async ({ input }) => {
       const invoice = await getPurchaseInvoiceById(input.id);
       if (!invoice) throw new TRPCError({ code: "NOT_FOUND", message: "Không tìm thấy Hóa đơn mua bán." });

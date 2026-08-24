@@ -373,6 +373,30 @@ export async function listPurchaseInvoices() {
   return db.select().from(purchaseInvoices).orderBy(desc(purchaseInvoices.issuedAt), desc(purchaseInvoices.updatedAt));
 }
 
+export async function listPurchaseInvoicePage(input: { page: number; pageSize: number; query?: string; vendorId?: number | null; status?: string | null }) {
+  const db = await getDb();
+  if (!db) return { items: [], total: 0, totalPages: 1, summary: { issued: 0, draft: 0 } };
+  const page = Math.max(1, input.page);
+  const pageSize = Math.min(50, Math.max(5, input.pageSize));
+  const query = input.query?.trim() || "";
+  const filters = [];
+  if (input.vendorId) filters.push(eq(purchaseInvoices.vendorId, input.vendorId));
+  if (input.status) filters.push(eq(purchaseInvoices.status, input.status as typeof purchaseInvoices.status.enumValues[number]));
+  if (query) {
+    const pattern = `%${query}%`;
+    filters.push(sql`(${purchaseInvoices.invoiceKey} LIKE ${pattern} OR ${vendors.name} LIKE ${pattern})`);
+  }
+  const where = filters.length ? and(...filters) : undefined;
+  const [rows, totals, statuses] = await Promise.all([
+    db.select({ invoice: purchaseInvoices }).from(purchaseInvoices).leftJoin(vendors, eq(purchaseInvoices.vendorId, vendors.id)).where(where).orderBy(desc(purchaseInvoices.issuedAt), desc(purchaseInvoices.updatedAt)).limit(pageSize).offset((page - 1) * pageSize),
+    db.select({ total: sql<number>`count(*)` }).from(purchaseInvoices).leftJoin(vendors, eq(purchaseInvoices.vendorId, vendors.id)).where(where),
+    db.select({ status: purchaseInvoices.status, count: sql<number>`count(*)` }).from(purchaseInvoices).leftJoin(vendors, eq(purchaseInvoices.vendorId, vendors.id)).where(where).groupBy(purchaseInvoices.status),
+  ]);
+  const total = Number(totals[0]?.total || 0);
+  const summaryByStatus = new Map(statuses.map((item) => [item.status, Number(item.count || 0)]));
+  return { items: rows.map((row) => row.invoice), total, totalPages: Math.max(1, Math.ceil(total / pageSize)), summary: { issued: summaryByStatus.get("issued") || 0, draft: summaryByStatus.get("draft") || 0 } };
+}
+
 export async function getPurchaseInvoiceById(id: number, executor?: any) {
   const db = executor ?? await getDb();
   if (!db) return undefined;

@@ -1,5 +1,12 @@
 # AssetMaster — Asset Catalog Expansion
 
+## Current Session — Phản hồi tải, phân trang Hóa đơn và % VAT
+
+- [x] Hiển thị loading spinner hoặc skeleton khi bộ lọc Danh mục Tài sản thay đổi.
+- [x] Thêm phân trang có điều hướng rõ ràng cho danh sách Hóa đơn khi dữ liệu tăng.
+- [x] Bổ sung nhãn/hướng dẫn nhỏ “% VAT” cho trường thuế tại từng dòng Hóa đơn.
+- [x] Bổ sung hồi quy, xác minh desktop/mobile, TypeScript và production build trước khi phát hành.
+
 ## Current Session — Giai đoạn đầu quản lý Chi nhánh
 
 - [x] Hoàn thiện schema và API CRUD Chi nhánh tương thích ngược.
