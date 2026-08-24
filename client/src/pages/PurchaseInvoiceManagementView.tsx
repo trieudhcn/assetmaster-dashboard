@@ -261,7 +261,7 @@ export function PurchaseInvoiceManagementView({ sharedQuery = "" }: { sharedQuer
     };
   }, [selectedInvoice?.id, selectedInvoice?.invoiceKey, detail?.lines, detail?.linkedAssets, detail?.supplyReceipts, assetsQuery.data, suppliesQuery.data, categoriesQuery.data, brandsQuery.data, attachAsset.isPending, detachAsset.isPending, receiveSupply.isPending, createSupplyAndReceive.isPending]);
   useEffect(() => {
-    if (!returnToAssetCatalog || !selectedInvoice) return;
+    if (!selectedInvoice) return;
     const drawerHeader = document.querySelector<HTMLButtonElement>('aside.fixed button[aria-label="Đóng"]')?.parentElement;
     if (!drawerHeader || drawerHeader.querySelector("[data-return-to-asset-catalog]")) return;
     const button = document.createElement("button");
@@ -272,7 +272,7 @@ export function PurchaseInvoiceManagementView({ sharedQuery = "" }: { sharedQuer
     button.addEventListener("click", returnToAssets);
     drawerHeader.insertBefore(button, drawerHeader.lastElementChild);
     return () => button.remove();
-  }, [returnToAssetCatalog, selectedInvoice?.id, selectedInvoice?.invoiceKey]);
+  }, [selectedInvoice?.id, selectedInvoice?.invoiceKey]);
 
   return <div className="min-h-screen bg-[#F4F7FB] px-4 py-7 sm:px-6 lg:px-9 lg:py-8"><div className="mx-auto max-w-[1500px]">
     <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between"><div><div className="flex items-center gap-2 text-[10px] font-extrabold uppercase tracking-[.16em] text-[#0F8C8C]"><ReceiptText size={14} />Mua sắm & chứng từ</div><h1 className="mt-1 font-display text-3xl font-extrabold text-[#102A43]">Hóa đơn mua bán</h1><p className="mt-1 max-w-2xl text-sm text-[#71869A]">Theo dõi hóa đơn là nguồn mua trực tiếp của Tài sản và Phụ kiện; Hợp đồng chỉ là liên kết tùy chọn.</p></div><div className="flex flex-wrap items-center gap-2"><button type="button" onClick={() => void exportReconciliation()} data-invoice-reconciliation-export="true" className="inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-[#8BCDC6] bg-white px-3 text-xs font-extrabold text-[#087A6A] transition hover:bg-[#ECF8F7]"><span aria-hidden="true">⇩</span> Xuất đối soát Excel</button><button type="button" onClick={openCreate} className="primary-action"><Plus size={16} />Tạo hóa đơn</button></div></div>

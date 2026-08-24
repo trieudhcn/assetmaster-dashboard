@@ -60,6 +60,7 @@ describe("menu order settings and invoice context", () => {
     expect(invoiceView).toContain('url.searchParams.get("fromAssetCatalog") === "true"');
     expect(invoiceView).toContain('aside.fixed button[aria-label="Đóng"]');
     expect(invoiceView).toContain('button.textContent = "← Quay lại Danh mục Tài sản"');
+    expect(invoiceView).toContain("if (!selectedInvoice) return;");
     expect(invoiceView).toContain('assetmaster:return-to-asset-catalog');
     expect(home).toContain('window.addEventListener("assetmaster:return-to-asset-catalog"');
     expect(invoiceView).toContain("queueMicrotask(() => {");

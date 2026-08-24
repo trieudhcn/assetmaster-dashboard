@@ -550,6 +550,11 @@
 - [x] Loại bỏ unmount React đồng bộ gây lỗi trong hồ sơ Hóa đơn.
 - [x] Bổ sung hồi quy, kiểm thử luồng Hóa đơn và phát hành.
 
+## Current Session — Render trực tiếp nút quay lại Hóa đơn
+
+- [x] Thay nút quay lại chèn động bằng thành phần React trực tiếp trong header drawer Hóa đơn.
+- [x] Xác minh deep-link từ Danh mục Tài sản và phát hành bản sửa.
+
 - [x] Mở rộng mô hình dữ liệu tài sản với thông tin chi tiết và trạng thái thao tác.
 - [x] Thêm modal tạo tài sản mới với validation cơ bản.
 - [x] Thêm modal chỉnh sửa tài sản và cập nhật dữ liệu trong bảng.
