@@ -66,6 +66,15 @@ export function PurchaseInvoiceManagementView({ sharedQuery = "" }: { sharedQuer
   const contractOptions = useMemo(() => [{ value: "", label: "Không gán Hợp đồng" }, ...(contractsQuery.data || []).filter((contract) => contract.status !== "cancelled").map((contract) => ({ value: String(contract.id), label: `${contract.referenceCode} · ${contract.title}` }))], [contractsQuery.data]);
   const statusOptions = [{ value: "all", label: "Tất cả trạng thái" }, ...Object.entries(invoiceStatuses).map(([value, meta]) => ({ value, label: meta.label }))];
   const invoices = invoicesQuery.data || [];
+  useEffect(() => {
+    const url = new URL(window.location.href);
+    const invoiceId = Number(url.searchParams.get("invoiceId"));
+    if (!Number.isInteger(invoiceId) || invoiceId <= 0 || !invoices.length) return;
+    if (invoices.some((invoice) => invoice.id === invoiceId)) setSelectedId(invoiceId);
+    else toast.error("Không tìm thấy Hóa đơn cần quay lại.");
+    url.searchParams.delete("invoiceId");
+    window.history.replaceState({}, "", `${url.pathname}${url.search}${url.hash}`);
+  }, [invoices]);
   const filteredInvoices = useMemo(() => invoices.filter((invoice) => {
     const vendor = vendorsById.get(invoice.vendorId)?.name || "";
     const matchesQuery = `${invoice.invoiceKey} ${vendor}`.toLocaleLowerCase("vi-VN").includes(query.trim().toLocaleLowerCase("vi-VN"));
@@ -230,7 +239,7 @@ export function PurchaseInvoiceManagementView({ sharedQuery = "" }: { sharedQuer
     host.className = "mt-4";
     lineSection.append(host);
     const root = createRoot(host);
-    root.render(<><InvoiceLinkedAssetQuickLinks assets={detail.linkedAssets} assetDetails={(assetsQuery.data || []).map((asset) => ({ ...asset, categoryName: categoriesQuery.data?.find((category) => category.id === asset.categoryId)?.name || null }))} />{needsSourceAllocation && <InvoiceLineOperationsPanel invoiceId={selectedInvoice.id} invoiceKey={selectedInvoice.invoiceKey} lines={detail.lines} linkedAssets={detail.linkedAssets} supplyReceipts={detail.supplyReceipts} assets={assetsQuery.data || []} supplies={suppliesQuery.data || []} categories={categoriesQuery.data || []} brands={brandsQuery.data || []} onAttach={(assetId, lineId) => attachAsset.mutate({ purchaseInvoiceId: selectedInvoice.id, purchaseInvoiceLineId: lineId, assetId })} onDetach={(assetId) => detachAsset.mutate({ assetId })} onReceive={(input) => receiveSupply.mutate(input)} onCreateAndReceive={(input) => createSupplyAndReceive.mutate(input)} isWorking={attachAsset.isPending || detachAsset.isPending || receiveSupply.isPending || createSupplyAndReceive.isPending} />}</>);
+    root.render(<><InvoiceLinkedAssetQuickLinks invoiceId={selectedInvoice.id} assets={detail.linkedAssets} assetDetails={(assetsQuery.data || []).map((asset) => ({ ...asset, categoryName: categoriesQuery.data?.find((category) => category.id === asset.categoryId)?.name || null }))} />{needsSourceAllocation && <InvoiceLineOperationsPanel invoiceId={selectedInvoice.id} invoiceKey={selectedInvoice.invoiceKey} lines={detail.lines} linkedAssets={detail.linkedAssets} supplyReceipts={detail.supplyReceipts} assets={assetsQuery.data || []} supplies={suppliesQuery.data || []} categories={categoriesQuery.data || []} brands={brandsQuery.data || []} onAttach={(assetId, lineId) => attachAsset.mutate({ purchaseInvoiceId: selectedInvoice.id, purchaseInvoiceLineId: lineId, assetId })} onDetach={(assetId) => detachAsset.mutate({ assetId })} onReceive={(input) => receiveSupply.mutate(input)} onCreateAndReceive={(input) => createSupplyAndReceive.mutate(input)} isWorking={attachAsset.isPending || detachAsset.isPending || receiveSupply.isPending || createSupplyAndReceive.isPending} />}</>);
     return () => { root.unmount(); host.remove(); };
   }, [selectedInvoice?.id, selectedInvoice?.invoiceKey, detail?.lines, detail?.linkedAssets, detail?.supplyReceipts, assetsQuery.data, suppliesQuery.data, categoriesQuery.data, brandsQuery.data, attachAsset.isPending, detachAsset.isPending, receiveSupply.isPending, createSupplyAndReceive.isPending]);
 

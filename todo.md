@@ -418,6 +418,12 @@
 - [x] Thêm liên kết mở trực tiếp hồ sơ Tài sản trong modal chi tiết tại Hóa đơn.
 - [x] Bổ sung hồi quy, xác minh giao diện, TypeScript và production build trước khi phát hành.
 
+## Current Session — Menu hai cột và quay lại Hóa đơn
+
+- [x] Hiển thị sắp xếp menu theo hai cột, với thứ tự đánh số và đọc từ trên xuống.
+- [x] Thêm nút quay lại Hóa đơn khi chi tiết Tài sản được mở từ Hóa đơn.
+- [x] Bổ sung hồi quy, xác minh giao diện, TypeScript và production build trước khi phát hành.
+
 - [x] Mở rộng mô hình dữ liệu tài sản với thông tin chi tiết và trạng thái thao tác.
 - [x] Thêm modal tạo tài sản mới với validation cơ bản.
 - [x] Thêm modal chỉnh sửa tài sản và cập nhật dữ liệu trong bảng.

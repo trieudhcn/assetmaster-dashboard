@@ -372,6 +372,7 @@ export default function Home() {
   const [assetRows, setAssetRows] = useState<Asset[]>([]);
   const [assetModal, setAssetModal] = useState<"create" | "edit" | "detail" | null>(null);
   const [selectedAsset, setSelectedAsset] = useState<Asset | null>(null);
+  const [returnInvoiceId, setReturnInvoiceId] = useState<number | null>(null);
   const [qrAsset, setQrAsset] = useState<Asset | null>(null);
   const [handoverAssetCode, setHandoverAssetCode] = useState<string | null>(null);
   const [qrLookupOpen, setQrLookupOpen] = useState(false);
@@ -960,15 +961,17 @@ export default function Home() {
     window.history.replaceState({}, "", `${url.pathname}${url.search}${url.hash}`);
   }, [assetRows]);
   const openEditModal = (asset: Asset) => { if (asset.statusType === "retired" || asset.statusType === "returned") { toast.error("Tài sản đã Trả nhà cung cấp hoặc Khấu hao/Thanh lý đã được khóa và không thể chỉnh sửa."); return; } setSelectedAsset(asset); setFormData({ ...asset, date: dateInputValue(asset.purchaseDate || asset.date) }); setAssetModal("edit"); };
-  const openDetailModal = (asset: Asset) => { setSelectedAsset(asset); setAssetModal("detail"); };
+  const openDetailModal = (asset: Asset, invoiceId: number | null = null) => { setSelectedAsset(asset); setReturnInvoiceId(invoiceId); setAssetModal("detail"); };
   useEffect(() => {
     const url = new URL(window.location.href);
     const assetCode = url.searchParams.get("openAsset");
     if (!assetCode || !assetRows.length) return;
+    const invoiceId = Number(url.searchParams.get("returnInvoice"));
     const target = assetRows.find((asset) => asset.code === assetCode);
-    if (target) openDetailModal(target);
+    if (target) openDetailModal(target, Number.isInteger(invoiceId) && invoiceId > 0 ? invoiceId : null);
     else toast.error("Không tìm thấy tài sản cần mở.");
     url.searchParams.delete("openAsset");
+    url.searchParams.delete("returnInvoice");
     window.history.replaceState({}, "", `${url.pathname}${url.search}${url.hash}`);
   }, [assetRows]);
   const saveAsset = (attachments?: AssetSaveAttachments) => {
@@ -1152,7 +1155,7 @@ export default function Home() {
             <div className="mt-5 flex items-center justify-between rounded-xl border border-[#CDE5E5] bg-[#ECF8F7] px-4 py-3.5"><div className="flex items-center gap-3"><div className="grid h-8 w-8 place-items-center rounded-lg bg-white text-[#0F8C8C] shadow-sm"><Sparkles size={15} /></div><div><div className="text-xs font-bold text-[#087A6A]">Kiểm kê và đối soát tài sản</div><div className="mt-0.5 text-[11px] text-[#4B8884]">{inventoryAssetRows.length} tài sản còn thuộc công ty; mở Kiểm kê để lập đợt và ghi nhận kết quả thực tế.</div></div></div><button onClick={() => navigateTo("Kiểm kê")} className="hidden text-xs font-extrabold text-[#087A6A] underline decoration-[#8BCDC6] underline-offset-4 sm:block">Mở kiểm kê <span className="no-underline">→</span></button></div>
           </div>
         </div>
-        {assetModal && <AssetModal mode={assetModal} asset={selectedAsset} formData={formData} setFormData={setFormData} isSaving={createAssetMutation.isPending || updateAssetMutation.isPending} onClose={() => setAssetModal(null)} onSave={saveAsset} onEdit={() => selectedAsset && openEditModal(selectedAsset)} onStartHandover={(assetCode) => { setAssetModal(null); setHandoverAssetCode(assetCode); }} />}
+        {assetModal && <AssetModal mode={assetModal} asset={selectedAsset} formData={formData} setFormData={setFormData} isSaving={createAssetMutation.isPending || updateAssetMutation.isPending} onClose={() => { setAssetModal(null); setReturnInvoiceId(null); }} onSave={saveAsset} onEdit={() => selectedAsset && openEditModal(selectedAsset)} onStartHandover={(assetCode) => { setAssetModal(null); setHandoverAssetCode(assetCode); }} onReturnToInvoice={returnInvoiceId ? () => { const url = new URL(window.location.href); url.searchParams.set("view", "invoices"); url.searchParams.set("invoiceId", String(returnInvoiceId)); window.history.replaceState({}, "", `${url.pathname}${url.search}${url.hash}`); setAssetModal(null); setReturnInvoiceId(null); setActiveNav("Hợp đồng & Hóa đơn"); } : undefined} />}
         {assetImportOpen && <AssetImportModal onClose={() => setAssetImportOpen(false)} onImported={() => { void assetQuery.refetch(); }} />}
         {isAdmin && <ImportHistoryLauncher onUndone={() => { void assetQuery.refetch(); }} />}
         {assetHistoryId && <AssetFieldHistoryDrawer assetId={assetHistoryId} onClose={() => setAssetHistoryId(null)} />}
@@ -2234,7 +2237,7 @@ function SignaturePad({ onSigned }: { onSigned: (dataUrl: string) => void }) {
   return <div><div className="overflow-hidden rounded-lg border border-dashed border-[#8BCDC6] bg-white"><canvas ref={canvasRef} width={900} height={180} onPointerDown={start} onPointerMove={move} onPointerUp={stop} onPointerLeave={stop} className="h-[120px] w-full touch-none cursor-crosshair" aria-label="Vùng ký điện tử" /></div><div className="mt-2 flex items-center justify-between"><span className="text-[10px] text-[#8AA0B6]">Dùng chuột hoặc ngón tay để ký</span><div className="flex gap-2"><button onClick={clear} className="text-[11px] font-bold text-[#60758A] hover:text-[#193B57]">Xóa / ký lại</button><button onClick={confirm} className="rounded-md bg-[#0F8C8C] px-3 py-1.5 text-[11px] font-bold text-white hover:bg-[#087A6A]">Xác nhận chữ ký</button></div></div></div>;
 }
 
-function AssetModal({ mode, asset, formData, setFormData, isSaving, onClose: dismiss, onSave, onEdit, onStartHandover }: { mode: "create" | "edit" | "detail"; asset: Asset | null; formData: Asset; setFormData: React.Dispatch<React.SetStateAction<Asset>>; isSaving: boolean; onClose: () => void; onSave: (attachments?: AssetSaveAttachments) => void; onEdit: () => void; onStartHandover: (assetCode: string) => void }) {
+function AssetModal({ mode, asset, formData, setFormData, isSaving, onClose: dismiss, onSave, onEdit, onStartHandover, onReturnToInvoice }: { mode: "create" | "edit" | "detail"; asset: Asset | null; formData: Asset; setFormData: React.Dispatch<React.SetStateAction<Asset>>; isSaving: boolean; onClose: () => void; onSave: (attachments?: AssetSaveAttachments) => void; onEdit: () => void; onStartHandover: (assetCode: string) => void; onReturnToInvoice?: () => void }) {
   const isDetail = mode === "detail";
   const preservePurchaseDate = mode === "edit" && Boolean(asset?.code);
   const [repairOpen, setRepairOpen] = useState(false);
@@ -2351,6 +2354,22 @@ function AssetModal({ mode, asset, formData, setFormData, isSaving, onClose: dis
     header.insertBefore(historyButton, closeButton);
     return () => { historyButton.removeEventListener("click", openHistory); historyButton.remove(); };
   }, [isDetail, persistedAsset?.id, assetFieldHistoryQuery.data?.total, assetFieldHistoryQuery.isLoading]);
+  useEffect(() => {
+    if (!isDetail || !onReturnToInvoice) return;
+    const dialog = document.querySelector('[role="dialog"][aria-label="Chi tiết tài sản"]');
+    const closeButton = dialog?.querySelector('button[aria-label="Đóng"]');
+    const header = closeButton?.parentElement;
+    if (!header || header.querySelector("[data-return-to-invoice]")) return;
+    const button = document.createElement("button");
+    button.type = "button";
+    button.dataset.returnToInvoice = "true";
+    button.className = "mr-2 inline-flex min-h-10 items-center rounded-lg border border-[#B8D6F5] bg-[#F2F8FF] px-3 py-2 text-[11px] font-bold text-[#2666A8] transition hover:bg-[#EAF3FF] active:scale-[0.98]";
+    button.textContent = "Quay lại Hóa đơn";
+    button.setAttribute("aria-label", "Quay lại Hóa đơn trước đó");
+    button.addEventListener("click", onReturnToInvoice);
+    header.insertBefore(button, closeButton);
+    return () => { button.removeEventListener("click", onReturnToInvoice); button.remove(); };
+  }, [isDetail, onReturnToInvoice]);
   useEffect(() => {
     if (!isDetail) return;
     const dialog = document.querySelector('[role="dialog"][aria-label="Chi tiết tài sản"]');

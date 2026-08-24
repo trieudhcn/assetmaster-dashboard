@@ -49,7 +49,10 @@ describe("menu order settings and invoice context", () => {
     expect(linkedAssetLinks).toContain("title={tooltip}");
     expect(linkedAssetLinks).toContain("Mở tài sản");
     expect(linkedAssetLinks).toContain("/?view=assets&openAsset=");
+    expect(linkedAssetLinks).toContain("returnInvoice=");
     expect(home).toContain('url.searchParams.get("openAsset")');
+    expect(home).toContain("Quay lại Hóa đơn");
+    expect(invoiceView).toContain('url.searchParams.get("invoiceId")');
     expect(invoiceView).toContain('startsWith("Tài sản liên kết:")');
   });
 
@@ -60,7 +63,8 @@ describe("menu order settings and invoice context", () => {
 
     expect(menuSettings).toContain("draggable={!isSaving}");
     expect(menuSettings).toContain("onReorder(next.map");
-    expect(menuSettings).toContain('className="mt-5 grid gap-2"');
+    expect(menuSettings).toContain('className="mt-5 grid grid-flow-col grid-cols-2 gap-2"');
+    expect(menuSettings).toContain("rowsPerColumn");
     expect(branches).toContain("max-w-[1100px]");
     expect(supplyUnits).toContain("max-w-[1100px]");
   });
