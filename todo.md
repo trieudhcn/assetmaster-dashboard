@@ -3299,3 +3299,9 @@
 
 - [x] Xác minh không còn tham chiếu columnSaveFeedback trong mã nguồn và trang Danh mục Tài sản.
 - [x] Phát hành bản sửa lỗi sau kiểm thử giao diện, TypeScript và production build.
+
+## Current Session — Cột Tên tài sản và bộ lọc
+
+- [x] Cân chỉnh độ rộng mặc định cột Tên tài sản theo nội dung hiển thị.
+- [x] Xác minh bộ lọc Danh mục Tài sản hoạt động ổn định sau khi dọn cấu hình cột.
+- [x] Bổ sung hồi quy, kiểm thử giao diện, TypeScript và production build trước khi phát hành.

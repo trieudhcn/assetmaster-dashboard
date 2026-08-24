@@ -1258,7 +1258,7 @@ function AssetCatalogPage({ assets, totalAssets, statusCounts, branchCounts, que
   type OptionalAssetColumn = Exclude<AssetCatalogColumn, "code" | "name">;
   const defaultVisibleColumns: Record<OptionalAssetColumn, boolean> = { holder: true, branch: true, status: true, location: true, invoice: false, value: true };
   const defaultColumnOrder: AssetCatalogColumn[] = ["code", "name", "holder", "branch", "status", "location", "invoice", "value"];
-  const defaultColumnWidths: Record<AssetCatalogColumn, number> = { code: 96, name: 240, holder: 130, branch: 126, status: 112, location: 150, invoice: 96, value: 140 };
+  const defaultColumnWidths: Record<AssetCatalogColumn, number> = { code: 96, name: 260, holder: 130, branch: 126, status: 112, location: 150, invoice: 96, value: 140 };
   const columnLabels: Record<AssetCatalogColumn, string> = { code: "Mã TS", name: "Tên tài sản", holder: "Người giữ", branch: "Chi nhánh", status: "Trạng thái", location: "Vị trí / Serial", invoice: "Mã Hóa đơn", value: "Giá trị" };
   const columnOptions: Array<{ key: OptionalAssetColumn; label: string }> = [
     { key: "holder", label: "Người giữ" },

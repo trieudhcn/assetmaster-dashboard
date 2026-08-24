@@ -24,6 +24,9 @@ describe("asset catalog invoice code", () => {
   it("provides an invoice filter beside the narrower catalog search field", () => {
     expect(home).toContain("flex-[1_1_260px]");
     expect(home).toContain("<FilterSelect value={invoice} onChange={onInvoiceChange} options={invoiceOptions} />");
+    expect(home).toContain("onBranchChange={onBranchChange}");
+    expect(home).toContain("onReset={resetAndGoFirst}");
+    expect(home).not.toContain("assetCatalogPreferences");
   });
 
   it("opens the corresponding invoice detail when a linked invoice code is activated", () => {
@@ -40,6 +43,7 @@ describe("asset catalog invoice code", () => {
 
   it("keeps the invoice column compact and remembers its originating asset catalog", () => {
     expect(home).toContain('invoice: 96');
+    expect(home).toContain('name: 260');
     expect(home).toContain('columnWidths[key]');
     expect(home).toContain('tableLayout: "fixed"');
     expect(home).toContain('assetmaster-return-to-asset-catalog');
