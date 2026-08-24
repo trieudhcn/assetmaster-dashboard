@@ -48,6 +48,7 @@ export function PurchaseInvoiceManagementView({ sharedQuery = "" }: { sharedQuer
   const [vendorFilter, setVendorFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState<"all" | InvoiceStatus>("all");
   const [selectedId, setSelectedId] = useState<number | null>(null);
+  const [returnToAssetCatalog, setReturnToAssetCatalog] = useState(false);
   const [formOpen, setFormOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [form, setForm] = useState<InvoiceForm>(emptyForm);
@@ -70,11 +71,17 @@ export function PurchaseInvoiceManagementView({ sharedQuery = "" }: { sharedQuer
     const url = new URL(window.location.href);
     const invoiceId = Number(url.searchParams.get("invoiceId"));
     if (!Number.isInteger(invoiceId) || invoiceId <= 0 || !invoices.length) return;
-    if (invoices.some((invoice) => invoice.id === invoiceId)) setSelectedId(invoiceId);
+    if (invoices.some((invoice) => invoice.id === invoiceId)) {
+      const openedFromAssetCatalog = window.sessionStorage.getItem("assetmaster-return-to-asset-catalog") === "true";
+      window.sessionStorage.removeItem("assetmaster-return-to-asset-catalog");
+      setReturnToAssetCatalog(openedFromAssetCatalog);
+      setSelectedId(invoiceId);
+    }
     else toast.error("Không tìm thấy Hóa đơn cần quay lại.");
     url.searchParams.delete("invoiceId");
     window.history.replaceState({}, "", `${url.pathname}${url.search}${url.hash}`);
   }, [invoices]);
+  useEffect(() => { if (selectedId === null) setReturnToAssetCatalog(false); }, [selectedId]);
   const filteredInvoices = useMemo(() => invoices.filter((invoice) => {
     const vendor = vendorsById.get(invoice.vendorId)?.name || "";
     const matchesQuery = `${invoice.invoiceKey} ${vendor}`.toLocaleLowerCase("vi-VN").includes(query.trim().toLocaleLowerCase("vi-VN"));
@@ -188,6 +195,11 @@ export function PurchaseInvoiceManagementView({ sharedQuery = "" }: { sharedQuer
   };
   const detail = detailsQuery.data ? { ...detailsQuery.data, lines: detailsQuery.data.lines.map((line) => ({ ...line, quantity: String(Number(line.quantity)) })), supplyReceipts: detailsQuery.data.supplyReceipts.map((receipt) => ({ ...receipt, receivedQuantity: String(Number(receipt.receivedQuantity)) })) } : undefined;
   const selectedInvoice = detail?.invoice;
+  const returnToAssets = () => {
+    setSelectedId(null);
+    setReturnToAssetCatalog(false);
+    window.dispatchEvent(new Event("assetmaster:return-to-asset-catalog"));
+  };
   const exportReconciliation = async () => {
     const loading = toast.loading("Đang chuẩn bị Excel đối soát Hóa đơn–Tài sản...");
     try {
@@ -242,6 +254,20 @@ export function PurchaseInvoiceManagementView({ sharedQuery = "" }: { sharedQuer
     root.render(<><InvoiceLinkedAssetQuickLinks invoiceId={selectedInvoice.id} assets={detail.linkedAssets} assetDetails={(assetsQuery.data || []).map((asset) => ({ ...asset, categoryName: categoriesQuery.data?.find((category) => category.id === asset.categoryId)?.name || null }))} />{needsSourceAllocation && <InvoiceLineOperationsPanel invoiceId={selectedInvoice.id} invoiceKey={selectedInvoice.invoiceKey} lines={detail.lines} linkedAssets={detail.linkedAssets} supplyReceipts={detail.supplyReceipts} assets={assetsQuery.data || []} supplies={suppliesQuery.data || []} categories={categoriesQuery.data || []} brands={brandsQuery.data || []} onAttach={(assetId, lineId) => attachAsset.mutate({ purchaseInvoiceId: selectedInvoice.id, purchaseInvoiceLineId: lineId, assetId })} onDetach={(assetId) => detachAsset.mutate({ assetId })} onReceive={(input) => receiveSupply.mutate(input)} onCreateAndReceive={(input) => createSupplyAndReceive.mutate(input)} isWorking={attachAsset.isPending || detachAsset.isPending || receiveSupply.isPending || createSupplyAndReceive.isPending} />}</>);
     return () => { root.unmount(); host.remove(); };
   }, [selectedInvoice?.id, selectedInvoice?.invoiceKey, detail?.lines, detail?.linkedAssets, detail?.supplyReceipts, assetsQuery.data, suppliesQuery.data, categoriesQuery.data, brandsQuery.data, attachAsset.isPending, detachAsset.isPending, receiveSupply.isPending, createSupplyAndReceive.isPending]);
+  useEffect(() => {
+    if (!returnToAssetCatalog || !selectedInvoice) return;
+    const drawerTitle = Array.from(document.querySelectorAll("h2")).find((item) => item.textContent?.trim() === selectedInvoice.invoiceKey);
+    const drawerHeader = drawerTitle?.parentElement?.parentElement;
+    if (!drawerHeader || drawerHeader.querySelector("[data-return-to-asset-catalog]")) return;
+    const button = document.createElement("button");
+    button.type = "button";
+    button.dataset.returnToAssetCatalog = "true";
+    button.className = "mr-2 inline-flex h-8 items-center rounded-lg border border-[#CDE5E5] bg-[#F4FBFA] px-2.5 text-[11px] font-extrabold text-[#087A6A] transition hover:bg-[#E6F6F2]";
+    button.textContent = "← Danh mục Tài sản";
+    button.addEventListener("click", returnToAssets);
+    drawerHeader.insertBefore(button, drawerHeader.lastElementChild);
+    return () => button.remove();
+  }, [returnToAssetCatalog, selectedInvoice?.id, selectedInvoice?.invoiceKey]);
 
   return <div className="min-h-screen bg-[#F4F7FB] px-4 py-7 sm:px-6 lg:px-9 lg:py-8"><div className="mx-auto max-w-[1500px]">
     <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between"><div><div className="flex items-center gap-2 text-[10px] font-extrabold uppercase tracking-[.16em] text-[#0F8C8C]"><ReceiptText size={14} />Mua sắm & chứng từ</div><h1 className="mt-1 font-display text-3xl font-extrabold text-[#102A43]">Hóa đơn mua bán</h1><p className="mt-1 max-w-2xl text-sm text-[#71869A]">Theo dõi hóa đơn là nguồn mua trực tiếp của Tài sản và Phụ kiện; Hợp đồng chỉ là liên kết tùy chọn.</p></div><div className="flex flex-wrap items-center gap-2"><button type="button" onClick={() => void exportReconciliation()} data-invoice-reconciliation-export="true" className="inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-[#8BCDC6] bg-white px-3 text-xs font-extrabold text-[#087A6A] transition hover:bg-[#ECF8F7]"><span aria-hidden="true">⇩</span> Xuất đối soát Excel</button><button type="button" onClick={openCreate} className="primary-action"><Plus size={16} />Tạo hóa đơn</button></div></div>

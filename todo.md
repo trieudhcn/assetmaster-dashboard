@@ -512,6 +512,12 @@
 - [x] Điều chỉnh Mã Hóa đơn về cùng kích thước chữ với Mã Tài sản trong bảng.
 - [x] Xác minh giao diện và phát hành.
 
+## Current Session — Quay lại Danh mục từ Hóa đơn
+
+- [x] Thêm nút quay lại Danh mục Tài sản khi Hóa đơn được mở từ bảng Tài sản.
+- [x] Điều chỉnh chiều rộng cột Mã Hóa đơn cân đối trong bảng Tài sản.
+- [x] Bổ sung hồi quy, xác minh điều hướng/giao diện và phát hành.
+
 - [x] Mở rộng mô hình dữ liệu tài sản với thông tin chi tiết và trạng thái thao tác.
 - [x] Thêm modal tạo tài sản mới với validation cơ bản.
 - [x] Thêm modal chỉnh sửa tài sản và cập nhật dữ liệu trong bảng.

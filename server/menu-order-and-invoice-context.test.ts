@@ -56,6 +56,10 @@ describe("menu order settings and invoice context", () => {
     expect(home).toContain("Quay lại Hóa đơn");
     expect(invoiceView).toContain('url.searchParams.get("invoiceId")');
     expect(invoiceView).toContain('startsWith("Tài sản liên kết:")');
+    expect(invoiceView).toContain("const [returnToAssetCatalog, setReturnToAssetCatalog]");
+    expect(invoiceView).toContain('button.textContent = "← Danh mục Tài sản"');
+    expect(invoiceView).toContain('assetmaster:return-to-asset-catalog');
+    expect(home).toContain('window.addEventListener("assetmaster:return-to-asset-catalog"');
   });
 
   it("supports drag-and-drop menu ordering and aligns the compact settings panels", () => {

@@ -29,10 +29,18 @@ describe("asset catalog invoice code", () => {
     expect(home).toContain('url.searchParams.set("view", "invoices")');
     expect(home).toContain('url.searchParams.set("invoiceId", String(asset.purchaseInvoiceId))');
     expect(home).toContain('invoiceLink.textContent = asset.invoiceKey');
-    expect(home).toContain('invoiceLink.addEventListener("click", () => onOpenInvoice(asset))');
+    expect(home).toContain('window.sessionStorage.setItem("assetmaster-return-to-asset-catalog", "true")');
+    expect(home).toContain("onOpenInvoice(asset)");
   });
 
   it("uses the compact invoice-code typography in line with asset identifiers", () => {
     expect(home).toContain('font-mono text-[9px] font-semibold text-[#2666A8]');
+  });
+
+  it("keeps the invoice column compact and remembers its originating asset catalog", () => {
+    expect(home).toContain('header.style.width = "130px"');
+    expect(home).toContain('cell.style.maxWidth = "130px"');
+    expect(home).toContain('assetmaster-return-to-asset-catalog');
+    expect(home).toContain('assetmaster:return-to-asset-catalog');
   });
 });

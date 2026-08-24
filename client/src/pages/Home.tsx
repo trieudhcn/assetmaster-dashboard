@@ -1083,6 +1083,11 @@ export default function Home() {
     setActiveNav(label);
     setMobileNavOpen(false);
   };
+  useEffect(() => {
+    const returnToAssetCatalog = () => navigateTo("Danh mục tài sản");
+    window.addEventListener("assetmaster:return-to-asset-catalog", returnToAssetCatalog);
+    return () => window.removeEventListener("assetmaster:return-to-asset-catalog", returnToAssetCatalog);
+  }, []);
   const openAuditSessionFromReminder = (sessionId: number) => {
     const url = new URL(window.location.href);
     url.searchParams.set("view", "audit");
@@ -1274,11 +1279,17 @@ function AssetCatalogPage({ assets, totalAssets, statusCounts, branchCounts, que
     if (!visibleColumns.invoice) return;
     const header = Array.from(document.querySelectorAll<HTMLTableCellElement>("th")).find((cell) => cell.textContent?.trim() === "Mã Hóa đơn");
     const invoiceColumnIndex = header?.cellIndex;
-    if (invoiceColumnIndex === undefined || invoiceColumnIndex < 0) return;
+    if (!header || invoiceColumnIndex === undefined || invoiceColumnIndex < 0) return;
+    header.style.width = "130px";
+    header.style.minWidth = "130px";
     document.querySelectorAll<HTMLTableRowElement>("tbody tr").forEach((row) => {
       const assetCode = row.cells.item(0)?.textContent?.trim();
       const asset = assets.find((item) => item.code === assetCode);
       const cell = row.cells.item(invoiceColumnIndex);
+      if (cell) {
+        cell.style.width = "130px";
+        cell.style.maxWidth = "130px";
+      }
       const badge = cell?.querySelector<HTMLSpanElement>("span");
       if (!asset?.purchaseInvoiceId || !asset.invoiceKey || !badge || badge.dataset.invoiceLinkReady === "true") return;
       const invoiceLink = document.createElement("button");
@@ -1288,11 +1299,14 @@ function AssetCatalogPage({ assets, totalAssets, statusCounts, branchCounts, que
       invoiceLink.textContent = asset.invoiceKey;
       invoiceLink.title = `Mở Hóa đơn ${asset.invoiceKey}`;
       invoiceLink.setAttribute("aria-label", `Mở Hóa đơn ${asset.invoiceKey}`);
-      invoiceLink.addEventListener("click", () => onOpenInvoice(asset));
+      invoiceLink.addEventListener("click", () => {
+        window.sessionStorage.setItem("assetmaster-return-to-asset-catalog", "true");
+        onOpenInvoice(asset);
+      });
       badge.replaceWith(invoiceLink);
     });
   }, [assets, onOpenInvoice, visibleColumns.invoice]);
-  const tableMinWidth = 570 + (visibleColumns.holder ? 105 : 0) + (visibleColumns.branch ? 150 : 0) + (visibleColumns.status ? 115 : 0) + (visibleColumns.location ? 145 : 0) + (visibleColumns.invoice ? 170 : 0) + (visibleColumns.value ? 125 : 0);
+  const tableMinWidth = 570 + (visibleColumns.holder ? 105 : 0) + (visibleColumns.branch ? 150 : 0) + (visibleColumns.status ? 115 : 0) + (visibleColumns.location ? 145 : 0) + (visibleColumns.invoice ? 130 : 0) + (visibleColumns.value ? 125 : 0);
   const assignedCount = assets.filter((asset) => asset.statusType === "active").length;
   const maintenanceCount = assets.filter((asset) => asset.statusType === "maintenance").length;
   return <div className="min-h-screen bg-[#F4F7FB] px-4 py-7 sm:px-6 lg:px-9 lg:py-8"><div className="mx-auto max-w-[1500px]">
