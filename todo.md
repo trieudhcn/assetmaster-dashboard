@@ -3264,3 +3264,9 @@
 - [x] Mở rộng Logo công ty trên toàn bộ hàng đầu của lưới thương hiệu.
 - [x] Dời tùy chọn Ẩn Website xuống dưới mô tả Website công ty và bỏ khối hiển thị riêng phía trên.
 - [x] Bổ sung hồi quy, xác minh giao diện, TypeScript và production build trước khi phát hành.
+
+## Current Session — Hiển thị Mã Hóa đơn và Chi nhánh
+
+- [x] Khôi phục font-size 11px cho Mã Hóa đơn trong Danh mục Tài sản.
+- [x] Chỉ hiển thị tên Chi nhánh, ẩn mã Chi nhánh trong nhãn bảng Tài sản.
+- [x] Bổ sung hồi quy, xác minh giao diện, TypeScript và production build trước khi phát hành.

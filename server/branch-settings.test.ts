@@ -51,7 +51,7 @@ describe("branch settings", () => {
     expect(home).toContain("branchCounts={branchFilterCounts}");
     expect(home).toContain("branchLabel: asset.branchId ?");
     expect(home).toContain('key === "branch"');
-    expect(home).toContain('asset.branchLabel || "Chưa gán"');
+    expect(home).toContain('split(" · ")[0].trim() || "Chưa gán"');
     expect(home).toContain("data-asset-column-picker");
     expect(home).toContain("assetmaster-asset-catalog-visible-columns");
     expect(home).toContain("Khôi phục mặc định");
