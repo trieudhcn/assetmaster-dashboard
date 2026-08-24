@@ -317,7 +317,7 @@ button[aria-label="Mở menu người dùng"] + div { animation: popover-in 180m
 .floating-action-tooltip {
   position: fixed;
   z-index: 10000;
-  max-width: min(17rem, calc(100vw - 2rem));
+  max-width: min(18rem, calc(100vw - 1.5rem));
   padding: 0.42rem 0.56rem;
   border-radius: 0.4rem;
   background: #102A43;
@@ -329,7 +329,12 @@ button[aria-label="Mở menu người dùng"] + div { animation: popover-in 180m
   text-align: center;
   transform: translate(-50%, -100%);
   animation: tooltip-in 150ms cubic-bezier(0.23, 1, 0.32, 1) both;
-  white-space: nowrap;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+  white-space: normal;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
 }
 .floating-action-tooltip--bottom { transform: translate(-50%, 0); }
 @keyframes tooltip-in { from { opacity: 0; } to { opacity: 1; } }

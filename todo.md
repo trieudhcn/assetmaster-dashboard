@@ -429,6 +429,12 @@
 - [x] Rút gọn tooltip khi hover/focus Tài sản liên kết trong Hóa đơn để không tràn chữ.
 - [x] Bổ sung hồi quy, xác minh giao diện và phát hành bản sửa.
 
+## Current Session — Chuẩn hóa tooltip desktop và mobile
+
+- [x] Kiểm kê tooltip trong các danh sách để xác định nội dung dài và nguy cơ bị che khuất trên điện thoại.
+- [x] Chuẩn hóa tooltip ngắn gọn, giới hạn chiều rộng và cơ chế hiển thị phù hợp viewport.
+- [x] Bổ sung hồi quy, xác minh desktop/mobile và phát hành bản cập nhật.
+
 - [x] Mở rộng mô hình dữ liệu tài sản với thông tin chi tiết và trạng thái thao tác.
 - [x] Thêm modal tạo tài sản mới với validation cơ bản.
 - [x] Thêm modal chỉnh sửa tài sản và cập nhật dữ liệu trong bảng.

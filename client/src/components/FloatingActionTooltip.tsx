@@ -8,9 +8,11 @@ type TooltipState = {
   placement: "top" | "bottom";
 };
 
+const canDisplayHoverTooltip = () => window.matchMedia("(hover: hover) and (pointer: fine)").matches;
+
 function getTooltipTarget(target: EventTarget | null) {
   if (!(target instanceof Element)) return null;
-  return target.closest<HTMLElement>(".icon-action-tooltip[data-tooltip]");
+  return target.closest<HTMLElement>("[data-tooltip]");
 }
 
 export function FloatingActionTooltip() {
@@ -23,11 +25,14 @@ export function FloatingActionTooltip() {
     const label = target.dataset.tooltip?.trim();
     if (!label) return;
     const rect = target.getBoundingClientRect();
-    const placement = rect.top < 68 ? "bottom" : "top";
-    const horizontalPadding = 10;
+    const placement = rect.top < 76 ? "bottom" : "top";
+    const horizontalPadding = 12;
+    const tooltipHalfWidth = Math.min(144, Math.max(0, (window.innerWidth - horizontalPadding * 2) / 2));
+    const minCenter = horizontalPadding + tooltipHalfWidth;
+    const maxCenter = window.innerWidth - horizontalPadding - tooltipHalfWidth;
     setTooltip({
       label,
-      left: Math.min(window.innerWidth - horizontalPadding, Math.max(horizontalPadding, rect.left + rect.width / 2)),
+      left: Math.min(maxCenter, Math.max(minCenter, rect.left + rect.width / 2)),
       top: placement === "top" ? rect.top - 8 : rect.bottom + 8,
       placement,
     });
@@ -45,6 +50,7 @@ export function FloatingActionTooltip() {
       positionTooltip(target);
     };
     const show = (event: Event) => {
+      if (!canDisplayHoverTooltip()) return;
       const target = getTooltipTarget(event.target);
       if (!target || target.matches(":disabled")) return;
       if (event.type === "focusin") {

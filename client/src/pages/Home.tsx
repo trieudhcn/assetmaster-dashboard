@@ -736,8 +736,16 @@ export default function Home() {
       "chevron-left": "Quay lại",
       "chevron-right": "Tiếp tục",
     };
+    const compactTooltipLabel = (value: string) => {
+      const normalized = value.replace(/\s+/g, " ").trim();
+      if (normalized.length <= 48) return normalized;
+      const breakAt = normalized.lastIndexOf(" ", 45);
+      const end = breakAt > 24 ? breakAt : 45;
+      return `${normalized.slice(0, end).trimEnd()}…`;
+    };
     const decorateActionTooltips = () => {
-      document.querySelectorAll<HTMLElement>("button, a").forEach((element) => {
+      document.querySelectorAll<HTMLElement>("button, a, span[title], div[title], td[title], dd[title]").forEach((element) => {
+        const isAction = element.matches("button, a");
         if (element.dataset.suppressIconTooltip === "true") {
           element.classList.remove("icon-action-tooltip");
           element.removeAttribute("data-tooltip");
@@ -752,14 +760,15 @@ export default function Home() {
         }
         const iconName = element.querySelector("svg")?.getAttribute("data-lucide") || "";
         const visibleText = element.textContent?.trim() || "";
-        const fallbackLabel = !sourceLabel && !visibleText ? iconFallbackLabels[iconName] : undefined;
-        const cancelLabel = !sourceLabel && /^(Hủy|Quay lại|Đóng)$/.test(visibleText) ? (visibleText === "Hủy" ? "Hủy thao tác" : visibleText) : undefined;
-        const label = sourceLabel ? handoverTooltipMap[sourceLabel] || sourceLabel : fallbackLabel || cancelLabel;
+        const nativeTitle = element.getAttribute("title")?.trim();
+        const fallbackLabel = isAction && !sourceLabel && !visibleText ? iconFallbackLabels[iconName] : undefined;
+        const cancelLabel = isAction && !sourceLabel && /^(Hủy|Quay lại|Đóng)$/.test(visibleText) ? (visibleText === "Hủy" ? "Hủy thao tác" : visibleText) : undefined;
+        const label = compactTooltipLabel(nativeTitle || (sourceLabel ? handoverTooltipMap[sourceLabel] || sourceLabel : fallbackLabel || cancelLabel || ""));
         if (!label) return;
-        if (label !== sourceLabel) element.setAttribute("aria-label", label);
+        if (isAction && !sourceLabel) element.setAttribute("aria-label", label);
         element.dataset.tooltip = label;
         element.removeAttribute("title");
-        element.classList.add("icon-action-tooltip");
+        if (isAction) element.classList.add("icon-action-tooltip");
       });
     };
     decorateActionTooltips();
