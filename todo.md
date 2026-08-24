@@ -385,6 +385,13 @@
 - [x] Thêm giao diện Cài đặt hệ thống để thay đổi thứ tự menu gọn gàng, có lưu và khôi phục mặc định.
 - [x] Bổ sung hồi quy, xác minh desktop/mobile, TypeScript và production build trước khi phát hành.
 
+## Current Session — Đồng bộ menu và hồ sơ Hóa đơn
+
+- [x] Lưu thứ tự menu theo tài khoản trong cơ sở dữ liệu, có migration và API đọc/cập nhật an toàn.
+- [x] Đồng bộ sidebar và Cài đặt hệ thống theo thứ tự menu từ tài khoản trên mọi thiết bị.
+- [x] Hiển thị số lượng nguyên nhất quán, ẩn phân bổ nguồn mua khi Phụ kiện đã tiếp nhận đủ và thêm xem nhanh Tài sản liên kết.
+- [x] Bổ sung hồi quy, xác minh desktop/mobile, TypeScript và production build trước khi phát hành.
+
 - [x] Mở rộng mô hình dữ liệu tài sản với thông tin chi tiết và trạng thái thao tác.
 - [x] Thêm modal tạo tài sản mới với validation cơ bản.
 - [x] Thêm modal chỉnh sửa tài sản và cập nhật dữ liệu trong bảng.

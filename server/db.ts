@@ -38,6 +38,7 @@ import {
   supplyIssueSlips,
   uiLabels,
   type InsertUser,
+  userMenuPreferences,
   userNotificationPreferences,
   users,
   vendors,
@@ -75,6 +76,18 @@ export async function getUserByOpenId(openId: string) {
   const db = await getDb();
   if (!db) return undefined;
   return (await db.select().from(users).where(eq(users.openId, openId)).limit(1))[0];
+}
+
+export async function getUserMenuPreference(userId: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+  return (await db.select().from(userMenuPreferences).where(eq(userMenuPreferences.userId, userId)).limit(1))[0];
+}
+
+export async function saveUserMenuPreference(userId: number, menuOrder: string[]) {
+  const db = await getDb();
+  if (!db) throw new Error("Database unavailable");
+  await db.insert(userMenuPreferences).values({ userId, menuOrder }).onDuplicateKeyUpdate({ set: { menuOrder } });
 }
 
 export async function listUsers() {

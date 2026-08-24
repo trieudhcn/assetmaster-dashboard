@@ -38,6 +38,12 @@ export const userNotificationPreferences = mysqlTable("userNotificationPreferenc
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
 
+export const userMenuPreferences = mysqlTable("userMenuPreferences", {
+  userId: int("userId").primaryKey().references(() => users.id, { onDelete: "cascade", onUpdate: "cascade" }),
+  menuOrder: json("menuOrder").notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
 export const companies = mysqlTable("companies", {
   id: int("id").autoincrement().primaryKey(),
   name: varchar("name", { length: 255 }).notNull(),

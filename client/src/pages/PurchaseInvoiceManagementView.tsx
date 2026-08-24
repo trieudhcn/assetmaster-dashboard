@@ -8,6 +8,7 @@ import { SearchableSelect } from "@/components/SearchableSelect";
 import { CurrencyInput } from "@/components/CurrencyInput";
 import { DatePickerField } from "@/components/DatePickerField";
 import { InvoiceLineOperationsPanel } from "@/components/InvoiceLineOperationsPanel";
+import { InvoiceLinkedAssetQuickLinks } from "@/components/InvoiceLinkedAssetQuickLinks";
 import { writeBrandedWorkbook } from "@/lib/brandedWorkbook";
 import { isInvalidWholeQuantity } from "@shared/quantity";
 
@@ -176,7 +177,7 @@ export function PurchaseInvoiceManagementView({ sharedQuery = "" }: { sharedQuer
     setSelectedId(created.id);
     invalidate();
   };
-  const detail = detailsQuery.data;
+  const detail = detailsQuery.data ? { ...detailsQuery.data, lines: detailsQuery.data.lines.map((line) => ({ ...line, quantity: String(Number(line.quantity)) })), supplyReceipts: detailsQuery.data.supplyReceipts.map((receipt) => ({ ...receipt, receivedQuantity: String(Number(receipt.receivedQuantity)) })) } : undefined;
   const selectedInvoice = detail?.invoice;
   const exportReconciliation = async () => {
     const loading = toast.loading("Đang chuẩn bị Excel đối soát Hóa đơn–Tài sản...");
@@ -217,12 +218,18 @@ export function PurchaseInvoiceManagementView({ sharedQuery = "" }: { sharedQuer
     if (!lineSection) return;
     const existing = lineSection.querySelector<HTMLElement>("[data-invoice-line-operations]");
     existing?.remove();
+    const needsSourceAllocation = detail.lines.some((line) => {
+      if (line.itemType === "asset") return detail.linkedAssets.filter((asset) => asset.purchaseInvoiceLineId === line.id).length < Number(line.quantity);
+      if (line.itemType === "supply") return detail.supplyReceipts.filter((receipt) => receipt.purchaseInvoiceLineId === line.id && receipt.status === "received").reduce((total, receipt) => total + Number(receipt.receivedQuantity), 0) < Number(line.quantity);
+      return false;
+    });
+    if (!detail.linkedAssets.length && !needsSourceAllocation) return;
     const host = document.createElement("div");
     host.dataset.invoiceLineOperations = "true";
     host.className = "mt-4";
     lineSection.append(host);
     const root = createRoot(host);
-    root.render(<InvoiceLineOperationsPanel invoiceId={selectedInvoice.id} invoiceKey={selectedInvoice.invoiceKey} lines={detail.lines} linkedAssets={detail.linkedAssets} supplyReceipts={detail.supplyReceipts} assets={assetsQuery.data || []} supplies={suppliesQuery.data || []} categories={categoriesQuery.data || []} brands={brandsQuery.data || []} onAttach={(assetId, lineId) => attachAsset.mutate({ purchaseInvoiceId: selectedInvoice.id, purchaseInvoiceLineId: lineId, assetId })} onDetach={(assetId) => detachAsset.mutate({ assetId })} onReceive={(input) => receiveSupply.mutate(input)} onCreateAndReceive={(input) => createSupplyAndReceive.mutate(input)} isWorking={attachAsset.isPending || detachAsset.isPending || receiveSupply.isPending || createSupplyAndReceive.isPending} />);
+    root.render(<><InvoiceLinkedAssetQuickLinks assets={detail.linkedAssets} />{needsSourceAllocation && <InvoiceLineOperationsPanel invoiceId={selectedInvoice.id} invoiceKey={selectedInvoice.invoiceKey} lines={detail.lines} linkedAssets={detail.linkedAssets} supplyReceipts={detail.supplyReceipts} assets={assetsQuery.data || []} supplies={suppliesQuery.data || []} categories={categoriesQuery.data || []} brands={brandsQuery.data || []} onAttach={(assetId, lineId) => attachAsset.mutate({ purchaseInvoiceId: selectedInvoice.id, purchaseInvoiceLineId: lineId, assetId })} onDetach={(assetId) => detachAsset.mutate({ assetId })} onReceive={(input) => receiveSupply.mutate(input)} onCreateAndReceive={(input) => createSupplyAndReceive.mutate(input)} isWorking={attachAsset.isPending || detachAsset.isPending || receiveSupply.isPending || createSupplyAndReceive.isPending} />}</>);
     return () => { root.unmount(); host.remove(); };
   }, [selectedInvoice?.id, selectedInvoice?.invoiceKey, detail?.lines, detail?.linkedAssets, detail?.supplyReceipts, assetsQuery.data, suppliesQuery.data, categoriesQuery.data, brandsQuery.data, attachAsset.isPending, detachAsset.isPending, receiveSupply.isPending, createSupplyAndReceive.isPending]);
 

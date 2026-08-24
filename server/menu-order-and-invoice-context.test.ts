@@ -19,11 +19,28 @@ describe("menu order settings and invoice context", () => {
   it("renders a compact persisted menu-order setting that applies to the sidebar", () => {
     const home = readProjectFile("client/src/pages/Home.tsx");
     const menuSettings = readProjectFile("client/src/components/MenuOrderSettings.tsx");
+    const schema = readProjectFile("drizzle/schema.ts");
+    const router = readProjectFile("server/routers.ts");
 
-    expect(home).toContain("assetmaster-sidebar-menu-order");
+    expect(schema).toContain("export const userMenuPreferences");
+    expect(router).toContain("menuPreferences: router");
+    expect(home).toContain("trpc.menuPreferences.get.useQuery");
+    expect(home).toContain("trpc.menuPreferences.save.useMutation");
     expect(home).toContain("<MenuOrderSettings");
     expect(home).toContain("sidebarMenuOrder.map");
     expect(menuSettings).toContain("Thứ tự menu điều hướng");
-    expect(menuSettings).toContain("Khôi phục mặc định");
+    expect(menuSettings).toContain("đồng bộ theo tài khoản");
+  });
+
+  it("keeps linked assets actionable and suppresses allocation when every source is fulfilled", () => {
+    const invoiceView = readProjectFile("client/src/pages/PurchaseInvoiceManagementView.tsx");
+    const linkedAssetLinks = readProjectFile("client/src/components/InvoiceLinkedAssetQuickLinks.tsx");
+
+    expect(invoiceView).toContain("needsSourceAllocation");
+    expect(invoiceView).toContain("<InvoiceLinkedAssetQuickLinks");
+    expect(invoiceView).toContain("quantity: String(Number(line.quantity))");
+    expect(invoiceView).toContain("receivedQuantity: String(Number(receipt.receivedQuantity))");
+    expect(linkedAssetLinks).toContain("data-invoice-linked-asset-links");
+    expect(linkedAssetLinks).toContain("Xem nhanh Tài sản");
   });
 });
