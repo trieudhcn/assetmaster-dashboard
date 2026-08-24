@@ -10,7 +10,15 @@ describe("asset catalog invoice code", () => {
     expect(home).toContain("invoiceFilterOptions");
     expect(home).toContain('const [invoiceFilter, setInvoiceFilter] = useState("Tất cả Hóa đơn")');
     expect(home).toContain('matchesVietnameseSearch(asset.invoiceKey || "", invoiceFilter)');
-    expect(home).toContain("setInvoiceFilter(\"Tất cả Hóa đơn\")");
+    expect(home).toContain('setInvoiceFilter("Tất cả Hóa đơn")');
+  });
+
+  it("maps invoice keys together with every asset-row refresh so filters cannot clear them", () => {
+    expect(home).toContain("const invoiceKeyById = new Map((dashboardInvoicesQuery.data || []).map");
+    expect(home).toContain("purchaseInvoiceId: asset.purchaseInvoiceId ?? null");
+    expect(home).toContain("invoiceKey: asset.purchaseInvoiceId ? invoiceKeyById.get(asset.purchaseInvoiceId) || null : null");
+    expect(home).toContain("dashboardInvoicesQuery.data, repairCostByAssetId");
+    expect(home).not.toContain("setAssetRows((current) => current.map((asset) => ({ ...asset, invoiceKey:");
   });
 
   it("keeps the invoice column hidden by default while making it selectable and renderable", () => {

@@ -3341,3 +3341,9 @@
 
 - [x] Gộp Xuất theo bộ lọc và Xuất tất cả vào một nút menu.
 - [x] Bổ sung hồi quy, kiểm thử giao diện, TypeScript và production build trước khi phát hành.
+
+## Current Session — Ổn định Mã Hóa đơn trong bộ lọc
+
+- [x] Ổn định Mã Hóa đơn trên bảng khi thay đổi bộ lọc Tài sản.
+- [x] Giữ danh sách tùy chọn Mã Hóa đơn sẵn sàng và nhất quán khi lọc.
+- [x] Bổ sung hồi quy, kiểm thử giao diện, TypeScript và production build trước khi phát hành.
