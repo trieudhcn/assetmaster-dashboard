@@ -35,21 +35,12 @@ describe("menu order settings and invoice context", () => {
     expect(menuSettings).toContain("đồng bộ theo tài khoản");
   });
 
-  it("persists the order and width of Asset Catalog columns per authenticated account", () => {
+  it("keeps the Asset Catalog table static while retaining its fixed code column", () => {
     const home = readProjectFile("client/src/pages/Home.tsx");
-    const schema = readProjectFile("drizzle/schema.ts");
-    const db = readProjectFile("server/db.ts");
-    const router = readProjectFile("server/routers.ts");
 
-    expect(schema).toContain("export const userAssetCatalogPreferences");
-    expect(schema).toContain("columnWidths: json");
-    expect(db).toContain("getUserAssetCatalogPreference");
-    expect(db).toContain("saveUserAssetCatalogPreference");
-    expect(router).toContain("assetCatalogPreferences: router");
-    expect(router).toContain("assetCatalogColumnKeys");
-    expect(router).toContain("min(72).max(420)");
     expect(home).not.toContain("trpc.assetCatalogPreferences.get.useQuery");
     expect(home).not.toContain("trpc.assetCatalogPreferences.save.useMutation");
+    expect(home).not.toContain("Bố cục theo tài khoản");
     expect(home).not.toContain("draggable={!isColumnResizing}");
     expect(home).not.toContain("startColumnResize");
     expect(home).not.toContain("Kéo tiêu đề để đổi thứ tự cột");

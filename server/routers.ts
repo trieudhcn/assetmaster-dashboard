@@ -103,11 +103,9 @@ import {
   getPurchaseInvoiceDocumentById,
   getPurchaseInvoiceLineById,
   getRetirementCertificateById,
-  getUserAssetCatalogPreference,
   getUserMenuPreference,
   getUserNotificationPreferences,
   saveUiLabel,
-  saveUserAssetCatalogPreference,
   listMaintenanceTickets,
   listMaintenanceMonthlyBudgets,
   listMaintenanceTicketsByAsset,
@@ -222,7 +220,6 @@ const nullableText = z.string().trim().max(1000).optional().nullable();
 const nullableEmail = z.string().trim().email().max(320).optional().nullable();
 const nullableWebsiteUrl = z.string().trim().max(320).url("Website công ty phải là URL hợp lệ, ví dụ https://congty.vn").optional().nullable();
 const sidebarMenuLabels = ["Tổng quan", "Danh mục tài sản", "Phân loại tài sản", "Nhà cung cấp & Hãng", "Hợp đồng & Hóa đơn", "Phụ kiện", "Bàn giao & Cấp phát", "Bảo hành & Sửa chữa", "Phòng Ban & Bộ Phận", "Quản lý nhân viên", "Khấu hao & Thanh lý", "Kiểm kê", "Báo Cáo"] as const;
-const assetCatalogColumnKeys = ["code", "name", "holder", "branch", "status", "location", "invoice", "value"] as const;
 const emailDomain = (email?: string | null) => email?.trim().split("@")[1]?.toLocaleLowerCase("en-US") || null;
 async function ensureInternalBranchEmail(email?: string | null) {
   if (!email) return;
@@ -410,22 +407,6 @@ export const appRouter = router({
       if (normalized.length !== sidebarMenuLabels.length || normalized.some((label) => !sidebarMenuLabels.includes(label as typeof sidebarMenuLabels[number]))) throw new TRPCError({ code: "BAD_REQUEST", message: "Thứ tự menu không hợp lệ." });
       await saveUserMenuPreference(ctx.user.id, normalized);
       return { menuOrder: normalized };
-    }),
-  }),
-  assetCatalogPreferences: router({
-    get: protectedProcedure.query(async ({ ctx }) => {
-      const preference = await getUserAssetCatalogPreference(ctx.user.id);
-      const columnOrder = Array.isArray(preference?.columnOrder) ? preference.columnOrder.filter((key): key is string => typeof key === "string" && assetCatalogColumnKeys.includes(key as typeof assetCatalogColumnKeys[number])) : [];
-      const rawWidths = preference?.columnWidths && typeof preference.columnWidths === "object" && !Array.isArray(preference.columnWidths) ? preference.columnWidths as Record<string, unknown> : {};
-      const columnWidths = Object.fromEntries(assetCatalogColumnKeys.flatMap((key) => typeof rawWidths[key] === "number" && Number.isFinite(rawWidths[key]) && rawWidths[key] >= 72 && rawWidths[key] <= 420 ? [[key, Math.round(rawWidths[key])]] : []));
-      return { columnOrder, columnWidths };
-    }),
-    save: protectedProcedure.input(z.object({ columnOrder: z.array(z.string().trim().min(1).max(24)).length(8), columnWidths: z.record(z.string().trim().min(1).max(24), z.number().finite().int().min(72).max(420)) })).mutation(async ({ ctx, input }) => {
-      const normalizedOrder = Array.from(new Set(input.columnOrder));
-      if (normalizedOrder.length !== assetCatalogColumnKeys.length || normalizedOrder.some((key) => !assetCatalogColumnKeys.includes(key as typeof assetCatalogColumnKeys[number]))) throw new TRPCError({ code: "BAD_REQUEST", message: "Thứ tự cột Danh mục Tài sản không hợp lệ." });
-      const columnWidths = Object.fromEntries(assetCatalogColumnKeys.flatMap((key) => typeof input.columnWidths[key] === "number" ? [[key, input.columnWidths[key]]] : []));
-      await saveUserAssetCatalogPreference(ctx.user.id, { columnOrder: normalizedOrder, columnWidths });
-      return { columnOrder: normalizedOrder, columnWidths };
     }),
   }),
   notifications: router({

@@ -44,13 +44,6 @@ export const userMenuPreferences = mysqlTable("userMenuPreferences", {
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
 
-export const userAssetCatalogPreferences = mysqlTable("userAssetCatalogPreferences", {
-  userId: int("userId").primaryKey().references(() => users.id, { onDelete: "cascade", onUpdate: "cascade" }),
-  columnOrder: json("columnOrder").notNull(),
-  columnWidths: json("columnWidths").notNull(),
-  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
-});
-
 export const companies = mysqlTable("companies", {
   id: int("id").autoincrement().primaryKey(),
   name: varchar("name", { length: 255 }).notNull(),

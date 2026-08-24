@@ -3283,3 +3283,19 @@
 - [x] Đưa tùy chọn Ẩn Website vào cuối input Website, có tooltip giải thích.
 - [x] Cân chỉnh độ rộng mặc định các cột Danh mục Tài sản theo nội dung hiển thị.
 - [x] Bổ sung hồi quy, xác minh giao diện, TypeScript và production build trước khi phát hành.
+
+## Current Session — Dọn cấu hình điều chỉnh cột
+
+- [x] Xóa nhãn Bố cục theo tài khoản và các trạng thái giao diện điều chỉnh cột còn sót lại.
+- [x] Xóa các hằng số, API giao diện và hồi quy chỉ phục vụ đổi vị trí/độ rộng cột.
+- [x] Bổ sung hồi quy bảng cột tĩnh, xác minh giao diện, TypeScript và production build trước khi phát hành.
+
+## Current Session — Sửa lỗi trạng thái cột cũ
+
+- [x] Xóa tham chiếu columnSaveFeedback còn sót lại gây lỗi AssetCatalogPage.
+- [x] Kiểm thử trang Danh mục Tài sản, TypeScript và production build trước khi phát hành.
+
+## Current Session — Xác minh lỗi columnSaveFeedback
+
+- [x] Xác minh không còn tham chiếu columnSaveFeedback trong mã nguồn và trang Danh mục Tài sản.
+- [x] Phát hành bản sửa lỗi sau kiểm thử giao diện, TypeScript và production build.
