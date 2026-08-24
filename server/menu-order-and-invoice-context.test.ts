@@ -42,7 +42,19 @@ describe("menu order settings and invoice context", () => {
     expect(invoiceView).toContain("receivedQuantity: String(Number(receipt.receivedQuantity))");
     expect(linkedAssetLinks).toContain("data-invoice-linked-asset-links");
     expect(linkedAssetLinks).toContain("Chi tiết Tài sản");
-    expect(linkedAssetLinks).toContain("grid-cols-[84px_minmax(0,1fr)_16px]");
+    expect(linkedAssetLinks).toContain("statusMeta");
+    expect(linkedAssetLinks).toContain("grid-cols-[78px_minmax(0,1fr)_auto_15px]");
     expect(invoiceView).toContain('startsWith("Tài sản liên kết:")');
+  });
+
+  it("supports drag-and-drop menu ordering and aligns the compact settings panels", () => {
+    const menuSettings = readProjectFile("client/src/components/MenuOrderSettings.tsx");
+    const branches = readProjectFile("client/src/components/BranchSettings.tsx");
+    const supplyUnits = readProjectFile("client/src/components/SupplyUnitSettings.tsx");
+
+    expect(menuSettings).toContain("draggable={!isSaving}");
+    expect(menuSettings).toContain("onReorder(next.map");
+    expect(branches).toContain("max-w-[1100px]");
+    expect(supplyUnits).toContain("max-w-[1100px]");
   });
 });

@@ -399,6 +399,13 @@
 - [x] Mở modal chi tiết Tài sản ngay trong trang Hóa đơn khi nhấp vào từng dòng liên kết.
 - [x] Bổ sung hồi quy, xác minh giao diện, TypeScript và production build trước khi phát hành.
 
+## Current Session — Kéo-thả menu và nhãn Tài sản liên kết
+
+- [x] Thêm kéo-thả để thay đổi thứ tự menu, tiếp tục đồng bộ theo tài khoản.
+- [x] Cân chỉnh chiều ngang khu vực Quản lý Chi nhánh và Đơn vị tính chuẩn theo cùng chuẩn với Quản lý thương hiệu.
+- [x] Hiển thị nhãn trạng thái hiện tại cho từng dòng Tài sản liên kết Hóa đơn.
+- [x] Bổ sung hồi quy, xác minh giao diện, TypeScript và production build trước khi phát hành.
+
 - [x] Mở rộng mô hình dữ liệu tài sản với thông tin chi tiết và trạng thái thao tác.
 - [x] Thêm modal tạo tài sản mới với validation cơ bản.
 - [x] Thêm modal chỉnh sửa tài sản và cập nhật dữ liệu trong bảng.
