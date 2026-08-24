@@ -3276,3 +3276,10 @@
 - [x] Bỏ kéo thay đổi thứ tự và độ rộng cột khỏi Danh mục Tài sản.
 - [x] Giữ cố định cột Mã Tài sản khi cuộn ngang trên desktop.
 - [x] Bổ sung hồi quy, xác minh giao diện desktop/mobile, TypeScript và production build trước khi phát hành.
+
+## Current Session — Tooltip Website và độ rộng cột
+
+- [x] Chuyển gợi ý Tiêu đề Website và Website công ty thành tooltip hover trên nhãn.
+- [x] Đưa tùy chọn Ẩn Website vào cuối input Website, có tooltip giải thích.
+- [x] Cân chỉnh độ rộng mặc định các cột Danh mục Tài sản theo nội dung hiển thị.
+- [x] Bổ sung hồi quy, xác minh giao diện, TypeScript và production build trước khi phát hành.
