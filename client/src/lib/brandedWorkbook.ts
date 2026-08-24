@@ -20,6 +20,7 @@ type BrandedWorkbookOptions = {
   fileName: string;
   description?: string;
   prepareWorkbook?: (workbook: any) => void | Promise<void>;
+  downloadDirect?: boolean;
 };
 
 const infoSheetName = "Thông tin doanh nghiệp";
@@ -144,8 +145,20 @@ export async function writeBrandedWorkbook(workbook: XLSX.WorkBook, options: Bra
   copySourceSheets(workbook, brandedWorkbook, brandColor);
   if (options.prepareWorkbook) await options.prepareWorkbook(brandedWorkbook);
   const bytes = await brandedWorkbook.xlsx.writeBuffer();
+  const blob = new Blob([bytes as ArrayBuffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+  if (options.downloadDirect) {
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = options.fileName;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+    return;
+  }
   openExportPreview({
-    blob: new Blob([bytes as ArrayBuffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }),
+    blob,
     fileName: options.fileName,
     title: localizeExcelTechnicalText(options.documentTitle),
     kind: "excel",

@@ -435,6 +435,18 @@
 - [x] Chuẩn hóa tooltip ngắn gọn, giới hạn chiều rộng và cơ chế hiển thị phù hợp viewport.
 - [x] Bổ sung hồi quy, xác minh desktop/mobile và phát hành bản cập nhật.
 
+## Current Session — Import Tài sản theo Hóa đơn
+
+- [x] Khắc phục thao tác tải template trong hộp nhập Tài sản hàng loạt.
+- [x] Bổ sung cột Số Hóa đơn trong template/import để liên kết nhiều Tài sản với cùng Hóa đơn tồn tại.
+- [x] Kiểm tra xác thực, dữ liệu liên kết, hồi quy, TypeScript, build và phát hành.
+
+## Current Session — Nhắc đợt Kiểm kê trên Tổng quan
+
+- [x] Biến nhắc đợt Kiểm kê thành liên kết mở nhanh đúng đợt Kiểm kê.
+- [x] Thu gọn thẻ nhắc Kiểm kê và đưa cảnh báo quá hạn vào khu vực Tổng quan.
+- [x] Bổ sung hồi quy, xác minh desktop/mobile và phát hành cùng các cải tiến import đang chờ.
+
 - [x] Mở rộng mô hình dữ liệu tài sản với thông tin chi tiết và trạng thái thao tác.
 - [x] Thêm modal tạo tài sản mới với validation cơ bản.
 - [x] Thêm modal chỉnh sửa tài sản và cập nhật dữ liệu trong bảng.

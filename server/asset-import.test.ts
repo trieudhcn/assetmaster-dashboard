@@ -42,6 +42,12 @@ describe("asset Excel import", () => {
     expect(result.candidates[0]).toMatchObject({ category: "Thiết bị CNTT", location: "Kho tầng 3" });
   });
 
+  it("preserves the optional invoice number so several assets can target one invoice", () => {
+    const result = parseAssetImportRows([{ "Tên tài sản*": "Laptop cùng hóa đơn", "Phân loại*": "Laptop", "Trạng thái (Sẵn có/Bảo trì)": "Sẵn có", "Tình trạng": "Tốt", "Số Hóa đơn": "0000001" }]);
+    expect(result.issues).toEqual([]);
+    expect(result.candidates[0]).toMatchObject({ invoiceNumber: "0000001" });
+  });
+
   it("keeps a corrected maintenance reason available for direct preview edits", () => {
     const result = parseAssetImportRows([{ "Tên tài sản*": "Thiết bị bảo trì", "Phân loại*": "Laptop", "Trạng thái (Sẵn có/Bảo trì)": "Bảo trì", "Lý do bảo trì": "Thay màn hình", "Tình trạng": "Cần kiểm tra" }]);
     expect(result.issues).toEqual([]);

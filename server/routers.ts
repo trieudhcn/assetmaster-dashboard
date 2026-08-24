@@ -358,6 +358,7 @@ const assetImportRow = z.object({
   condition: z.enum(["good", "fair", "needs_inspection", "damaged"]),
   purchaseDate: dateFromMs,
   purchaseValue: z.string().regex(/^\d+(\.\d{1,2})?$/).optional().nullable(),
+  invoiceNumber: nullableText,
   vendor: nullableText,
   brandName: z.string().trim().max(160).nullable(),
   serialNumber: nullableText,
@@ -366,7 +367,7 @@ const assetImportRow = z.object({
   note: nullableText,
 });
 
-const trackedAssetFields = ["name", "status", "condition", "purchaseDate", "purchaseValue", "vendor", "brandId", "serialNumber", "location", "warrantyUntil", "metadata", "note", "maintenanceReason", "isArchived"] as const;
+const trackedAssetFields = ["name", "status", "condition", "purchaseDate", "purchaseValue", "purchaseInvoiceId", "purchaseInvoiceLineId", "vendor", "brandId", "serialNumber", "location", "warrantyUntil", "metadata", "note", "maintenanceReason", "isArchived"] as const;
 function assetSnapshot(asset: Record<string, unknown>) {
   return Object.fromEntries(trackedAssetFields.map((field) => [field, asset[field] ?? null]));
 }
@@ -378,8 +379,8 @@ function valueText(value: unknown) {
 export function fieldChanges(assetId: number, before: Record<string, unknown>, after: Record<string, unknown>, source: "import" | "manual" | "undo", actorUserId: number, actorName: string | null | undefined, importSessionId?: number) {
   return trackedAssetFields.filter((field) => valueText(before[field]) !== valueText(after[field])).map((field) => ({ assetId, importSessionId: importSessionId ?? null, fieldName: field, previousValue: valueText(before[field]), nextValue: valueText(after[field]), source, actorUserId, actorName: actorName ?? null }));
 }
-function importAssetValues(row: z.infer<typeof assetImportRow>, brandId: number | null, vendorId: number | null, categoryId: number) {
-  return { name: row.name, categoryId, status: row.status, condition: row.condition, purchaseDate: row.purchaseDate, purchaseValue: row.purchaseValue, vendor: row.vendor, vendorId, brandId, serialNumber: row.serialNumber, location: row.location, warrantyUntil: row.warrantyUntil, metadata: { category: row.category }, note: row.note, maintenanceReason: row.status === "maintenance" ? row.maintenanceReason : null, isArchived: false };
+function importAssetValues(row: z.infer<typeof assetImportRow>, brandId: number | null, vendorId: number | null, categoryId: number, purchaseInvoiceId: number | null) {
+  return { name: row.name, categoryId, status: row.status, condition: row.condition, purchaseDate: row.purchaseDate, purchaseValue: row.purchaseValue, ...(purchaseInvoiceId ? { purchaseInvoiceId } : {}), vendor: row.vendor, vendorId, brandId, serialNumber: row.serialNumber, location: row.location, warrantyUntil: row.warrantyUntil, metadata: { category: row.category }, note: row.note, maintenanceReason: row.status === "maintenance" ? row.maintenanceReason : null, isArchived: false };
 }
 export const IMPORT_UNDO_WINDOW_MS = 24 * 60 * 60 * 1000;
 export function getImportUndoDeadline(createdAt: Date) {
@@ -1392,8 +1393,15 @@ export const appRouter = router({
       return asset;
     }),
     import: adminProcedure.input(z.object({ rows: z.array(assetImportRow).min(1).max(100), updateExisting: z.boolean().default(false) })).mutation(async ({ input, ctx }) => {
-      const rowsToImport: Array<{ row: typeof assetImportRow._output; category: NonNullable<Awaited<ReturnType<typeof getAssetCategoryByName>>>; vendorId: number | null; brandId: number | null; existingAsset: Awaited<ReturnType<typeof listActiveAssetsBySerialNumber>>[number] | null }> = [];
+      const rowsToImport: Array<{ row: typeof assetImportRow._output; category: NonNullable<Awaited<ReturnType<typeof getAssetCategoryByName>>>; vendorId: number | null; brandId: number | null; purchaseInvoiceId: number | null; existingAsset: Awaited<ReturnType<typeof listActiveAssetsBySerialNumber>>[number] | null }> = [];
       const errors: Array<{ rowNumber: number; message: string }> = [];
+      const purchaseInvoices = input.rows.some((row) => Boolean(row.invoiceNumber)) ? await listPurchaseInvoices() : [];
+      const invoiceByKey = new Map(purchaseInvoices.map((invoice) => [invoice.invoiceKey.trim().toUpperCase(), invoice]));
+      const invoicesByNumber = new Map<string, typeof purchaseInvoices>();
+      purchaseInvoices.forEach((invoice) => {
+        const key = invoice.invoiceNumber.trim().toUpperCase();
+        invoicesByNumber.set(key, [...(invoicesByNumber.get(key) || []), invoice]);
+      });
       for (const row of input.rows) {
         if (!hasRequiredMaintenanceReason(row.status, row.maintenanceReason)) { errors.push({ rowNumber: row.rowNumber, message: "Tài sản Bảo trì cần có Lý do bảo trì." }); continue; }
         const category = await getAssetCategoryByName(row.category);
@@ -1402,9 +1410,18 @@ export const appRouter = router({
         if (row.vendor && !vendor?.isActive) { errors.push({ rowNumber: row.rowNumber, message: `Nhà cung cấp ${row.vendor} không tồn tại hoặc đã ngừng hoạt động.` }); continue; }
         const brand = row.brandName ? await getBrandByName(row.brandName) : null;
         if (row.brandName && !brand?.isActive) { errors.push({ rowNumber: row.rowNumber, message: `Hãng ${row.brandName} không tồn tại hoặc đã ngừng hoạt động.` }); continue; }
+        let purchaseInvoiceId: number | null = null;
+        if (row.invoiceNumber) {
+          const reference = row.invoiceNumber.trim().toUpperCase();
+          const matches = invoiceByKey.get(reference) ? [invoiceByKey.get(reference)!] : invoicesByNumber.get(reference) || [];
+          if (matches.length === 0) { errors.push({ rowNumber: row.rowNumber, message: `Không tìm thấy Hóa đơn ${row.invoiceNumber}.` }); continue; }
+          if (matches.length > 1) { errors.push({ rowNumber: row.rowNumber, message: `Số Hóa đơn ${row.invoiceNumber} trùng nhiều mẫu/ký hiệu. Hãy nhập đầy đủ khóa Hóa đơn.` }); continue; }
+          if (matches[0].status === "cancelled") { errors.push({ rowNumber: row.rowNumber, message: `Hóa đơn ${row.invoiceNumber} đã hủy, không thể liên kết Tài sản.` }); continue; }
+          purchaseInvoiceId = matches[0].id;
+        }
         const existingMatches = input.updateExisting && row.serialNumber ? await listActiveAssetsBySerialNumber(row.serialNumber) : [];
         if (existingMatches.length > 1) { errors.push({ rowNumber: row.rowNumber, message: `Serial/IMEI ${row.serialNumber} đang trùng trên nhiều tài sản, không thể cập nhật tự động.` }); continue; }
-        rowsToImport.push({ row, category, vendorId: vendor?.id ?? null, brandId: brand?.id ?? null, existingAsset: existingMatches[0] ?? null });
+        rowsToImport.push({ row, category, vendorId: vendor?.id ?? null, brandId: brand?.id ?? null, purchaseInvoiceId, existingAsset: existingMatches[0] ?? null });
       }
       if (!rowsToImport.length) return { created: 0, updated: 0, errors, sessionId: null };
       return runAssetImportTransaction(async (transaction) => {
@@ -1412,8 +1429,8 @@ export const appRouter = router({
         const nextSequenceByPrefix = new Map<string, number>();
         let created = 0;
         let updated = 0;
-        for (const { row, category, vendorId, brandId, existingAsset } of rowsToImport) {
-          const changes = importAssetValues(row, brandId, vendorId, category.id);
+        for (const { row, category, vendorId, brandId, purchaseInvoiceId, existingAsset } of rowsToImport) {
+          const changes = { ...importAssetValues(row, brandId, vendorId, category.id, purchaseInvoiceId), ...(existingAsset && purchaseInvoiceId && existingAsset.purchaseInvoiceId !== purchaseInvoiceId ? { purchaseInvoiceLineId: null } : {}) };
           if (input.updateExisting && existingAsset) {
             const before = assetSnapshot(existingAsset as unknown as Record<string, unknown>);
             await updateAsset(existingAsset.id, changes, transaction);
@@ -2021,7 +2038,7 @@ export const appRouter = router({
       const [tickets, audits, assets] = await Promise.all([listMaintenanceTickets(), listAuditSessions(), listAssets()]);
       const reminders = [
         ...tickets.filter((ticket) => (ticket.status === "open" || ticket.status === "in_progress") && ticket.dueAt && ticket.dueAt <= operationalHorizon).map((ticket) => ({ id: `maintenance-${ticket.id}`, kind: "maintenance" as const, title: `Bảo hành/Sửa chữa ${ticket.ticketCode}`, dueAt: ticket.dueAt!, isOverdue: ticket.dueAt! < now, detail: ticket.description, recurrenceDays: ticket.recurrenceDays })),
-        ...audits.filter((audit) => (audit.status === "draft" || audit.status === "active") && audit.scheduledAt && audit.scheduledAt <= operationalHorizon).map((audit) => ({ id: `audit-${audit.id}`, kind: "audit" as const, title: audit.name, dueAt: audit.scheduledAt!, isOverdue: audit.scheduledAt! < now, detail: audit.referenceCode, recurrenceDays: audit.recurrenceDays })),
+        ...audits.filter((audit) => (audit.status === "draft" || audit.status === "active") && audit.scheduledAt && audit.scheduledAt <= operationalHorizon).map((audit) => ({ id: `audit-${audit.id}`, kind: "audit" as const, auditSessionId: audit.id, title: audit.name, dueAt: audit.scheduledAt!, isOverdue: audit.scheduledAt! < now, detail: audit.referenceCode, recurrenceDays: audit.recurrenceDays })),
         ...assets.filter((asset) => !asset.isArchived && asset.status !== "returned_to_vendor" && asset.status !== "retired" && asset.warrantyUntil && asset.warrantyUntil >= now && asset.warrantyUntil <= warrantyHorizon).map((asset) => {
           const remainingDays = Math.max(0, Math.ceil((asset.warrantyUntil!.getTime() - now.getTime()) / 86_400_000));
           return { id: `warranty-expiry-${asset.id}`, kind: "warranty" as const, assetId: asset.id, title: `Sắp hết hạn bảo hành · ${asset.assetCode}`, dueAt: asset.warrantyUntil!, isOverdue: false, detail: `${asset.name} · còn ${remainingDays} ngày`, recurrenceDays: null };

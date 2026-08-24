@@ -63,8 +63,8 @@ describe("branded workbook", () => {
     const { Workbook } = await import("exceljs");
     const workbook = new Workbook();
     const template = workbook.addWorksheet("Danh sách tài sản");
-    template.addRow(["Tên tài sản*", "Phân loại*", "Trạng thái", "Lý do", "Tình trạng", "Ngày mua", "Giá trị", "Nhà cung cấp", "Hãng"]);
-    template.addRow(["Laptop mẫu", "Laptop", "Sẵn có", "", "Tốt", "15/08/2026", "25000000", "Nhà cung cấp A", "Hãng A"]);
+    template.addRow(["Tên tài sản*", "Phân loại*", "Trạng thái", "Lý do", "Tình trạng", "Ngày mua", "Giá trị", "Số Hóa đơn", "Nhà cung cấp", "Hãng"]);
+    template.addRow(["Laptop mẫu", "Laptop", "Sẵn có", "", "Tốt", "15/08/2026", "25000000", "0000001", "Nhà cung cấp A", "Hãng A"]);
 
     configureAssetImportTemplate(workbook, { categories: ["Laptop", "Thiết bị mạng"], vendors: ["Nhà cung cấp A"], brands: ["Hãng A"] });
 
@@ -75,8 +75,8 @@ describe("branded workbook", () => {
     await reopened.xlsx.load(await workbook.xlsx.writeBuffer());
     const reopenedTemplate = reopened.getWorksheet("Danh sách tài sản");
     expect(reopenedTemplate?.getCell("B2").dataValidation).toMatchObject({ type: "list", formulae: ["=ImportCategories"] });
-    expect(reopenedTemplate?.getCell("H2").dataValidation).toMatchObject({ type: "list", formulae: ["=ImportVendors"] });
-    expect(reopenedTemplate?.getCell("I2").dataValidation).toMatchObject({ type: "list", formulae: ["=ImportBrands"] });
+    expect(reopenedTemplate?.getCell("I2").dataValidation).toMatchObject({ type: "list", formulae: ["=ImportVendors"] });
+    expect(reopenedTemplate?.getCell("J2").dataValidation).toMatchObject({ type: "list", formulae: ["=ImportBrands"] });
     expect(uniqueTemplateNames(["Laptop", " Laptop ", "", null, "Màn hình"])).toEqual(["Laptop", "Màn hình"]);
   });
 });

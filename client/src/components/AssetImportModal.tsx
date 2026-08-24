@@ -36,6 +36,7 @@ export function AssetImportModal({ onClose, onImported }: { onClose: () => void;
   const [progress, setProgress] = useState(0);
   const [statusDetail, setStatusDetail] = useState("Sẵn sàng tải template hoặc chọn tệp Excel.");
   const [isExportingErrors, setIsExportingErrors] = useState(false);
+  const [isDownloadingTemplate, setIsDownloadingTemplate] = useState(false);
   const [previewPage, setPreviewPage] = useState(1);
   const [bulkPreviewStatus, setBulkPreviewStatus] = useState("");
 
@@ -46,21 +47,32 @@ export function AssetImportModal({ onClose, onImported }: { onClose: () => void;
   }), [brandsQuery.data, categoriesQuery.data, vendorsQuery.data]);
 
   const downloadTemplate = async () => {
-    const { categories, vendors, brands } = templateCatalogValues;
-    const exampleRow = ["Laptop mẫu", categories[0] || "", "Sẵn có", "", "Tốt", "15/08/2026", "25000000", vendors[0] || "", brands[0] || "", "SN-001", "Kho CNTT", "15/08/2028", "Điền một tài sản trên mỗi dòng"];
-    const book = XLSX.utils.book_new();
-    const sheet = XLSX.utils.aoa_to_sheet([[...assetImportHeaders], exampleRow]);
-    sheet["!cols"] = [34, 18, 25, 38, 18, 22, 18, 26, 22, 20, 24, 25, 38].map((wch) => ({ wch }));
-    XLSX.utils.book_append_sheet(book, sheet, "Danh sách tài sản");
-    const guide = XLSX.utils.aoa_to_sheet([["HƯỚNG DẪN IMPORT TÀI SẢN"], ["Cột có dấu * là bắt buộc. Không đổi tên, thêm hoặc di chuyển cột header."], ["Phân loại, Nhà cung cấp và Hãng có dropdown lấy từ dữ liệu đang hoạt động của hệ thống."], ["Serial/IMEI trùng sẽ được xem là cập nhật nếu công tắc cập nhật tự động đang bật."], ["Ngày dùng dd/mm/yyyy. Giá trị dùng số VNĐ nguyên, ví dụ 25000000 hoặc 25.000.000."]]);
-    guide["!cols"] = [{ wch: 110 }];
-    XLSX.utils.book_append_sheet(book, guide, "Hướng dẫn");
-    await writeBrandedWorkbook(book, {
-      documentTitle: "TEMPLATE IMPORT TÀI SẢN",
-      fileName: "AssetMaster-Template-Import-TaiSan.xlsx",
-      description: "Mẫu nhập nhiều tài sản có danh mục đồng bộ, kiểm tra định dạng và hỗ trợ cập nhật theo Serial/IMEI.",
-      prepareWorkbook: (workbook) => configureAssetImportTemplate(workbook, { categories, vendors, brands }),
-    });
+    if (isDownloadingTemplate) return;
+    setIsDownloadingTemplate(true);
+    try {
+      const { categories, vendors, brands } = templateCatalogValues;
+      const exampleRow = ["Laptop mẫu", categories[0] || "", "Sẵn có", "", "Tốt", "15/08/2026", "25000000", "0000001", vendors[0] || "", brands[0] || "", "SN-001", "Kho CNTT", "15/08/2028", "Điền một tài sản trên mỗi dòng"];
+      const book = XLSX.utils.book_new();
+      const sheet = XLSX.utils.aoa_to_sheet([[...assetImportHeaders], exampleRow]);
+      sheet["!cols"] = [34, 18, 25, 38, 18, 22, 18, 18, 26, 22, 20, 24, 25, 38].map((wch) => ({ wch }));
+      XLSX.utils.book_append_sheet(book, sheet, "Danh sách tài sản");
+      const guide = XLSX.utils.aoa_to_sheet([["HƯỚNG DẪN IMPORT TÀI SẢN"], ["Cột có dấu * là bắt buộc. Không đổi tên, thêm hoặc di chuyển cột header."], ["Phân loại, Nhà cung cấp và Hãng có dropdown lấy từ dữ liệu đang hoạt động của hệ thống."], ["Số Hóa đơn là tùy chọn. Dùng cùng một số cho nhiều dòng để liên kết các tài sản vào cùng Hóa đơn đã có."], ["Serial/IMEI trùng sẽ được xem là cập nhật nếu công tắc cập nhật tự động đang bật."], ["Ngày dùng dd/mm/yyyy. Giá trị dùng số VNĐ nguyên, ví dụ 25000000 hoặc 25.000.000."]]);
+      guide["!cols"] = [{ wch: 110 }];
+      XLSX.utils.book_append_sheet(book, guide, "Hướng dẫn");
+      await writeBrandedWorkbook(book, {
+        documentTitle: "TEMPLATE IMPORT TÀI SẢN",
+        fileName: "AssetMaster-Template-Import-TaiSan.xlsx",
+        description: "Mẫu nhập nhiều tài sản, hỗ trợ liên kết Hóa đơn theo số Hóa đơn và cập nhật theo Serial/IMEI.",
+        prepareWorkbook: (workbook) => configureAssetImportTemplate(workbook, { categories, vendors, brands }),
+        downloadDirect: true,
+      });
+      toast.success("Đã tải template import Tài sản.");
+    } catch (error) {
+      console.error(error);
+      toast.error("Không thể tải template. Vui lòng thử lại.");
+    } finally {
+      setIsDownloadingTemplate(false);
+    }
   };
 
   const closeModal = () => {
@@ -200,13 +212,13 @@ export function AssetImportModal({ onClose, onImported }: { onClose: () => void;
     <div className="fixed inset-0 z-[80] flex items-center justify-center bg-[#102A43]/45 px-4 py-6 backdrop-blur-sm" role="dialog" aria-modal="true" aria-label="Import tài sản từ Excel">
       <div className="max-h-[92vh] w-full max-w-6xl overflow-y-auto rounded-2xl border border-[#DDE7F0] bg-white shadow-[0_24px_70px_rgba(16,42,67,0.24)]">
         <header className="flex items-start justify-between border-b border-[#E7EEF3] px-6 py-5">
-          <div><div className="flex items-center gap-2 text-[10px] font-extrabold uppercase tracking-[.16em] text-[#087A6A]"><FileSpreadsheet size={14} />Nhập dữ liệu hàng loạt</div><h2 className="mt-1 font-display text-xl font-extrabold text-[#102A43]">Xem trước và chỉnh sửa import</h2><p className="mt-1 text-xs leading-5 text-[#71869A]">Kiểm tra dữ liệu trước khi ghi transaction; Serial/IMEI có thể dùng để cập nhật tài sản tồn tại.</p></div>
+          <div><div className="flex items-center gap-2 text-[10px] font-extrabold uppercase tracking-[.16em] text-[#087A6A]"><FileSpreadsheet size={14} />Nhập dữ liệu hàng loạt</div><h2 className="mt-1 font-display text-xl font-extrabold text-[#102A43]">Xem trước và chỉnh sửa import</h2><p className="mt-1 text-xs leading-5 text-[#71869A]">Kiểm tra dữ liệu trước khi ghi transaction; một Số Hóa đơn có thể liên kết nhiều Tài sản.</p></div>
           <button onClick={closeModal} disabled={isWorking} className="rounded-lg p-2 text-[#8AA0B6] hover:bg-[#F0F5F8] disabled:opacity-50" aria-label="Đóng import Excel"><X size={18} /></button>
         </header>
         <div className="space-y-5 p-6">
           <section className="grid gap-4 rounded-xl border border-[#CDE5E5] bg-[#F4FBFA] p-4 sm:grid-cols-[1fr_auto]">
-            <div><div className="text-sm font-extrabold text-[#193B57]">1. Tải template chuẩn</div><p className="mt-1 text-xs text-[#4B8884]">Phân loại, Nhà cung cấp và Hãng được đồng bộ vào dropdown Excel.</p></div>
-            <button onClick={() => void downloadTemplate()} className="inline-flex items-center justify-center gap-2 rounded-lg border border-[#8BCDC6] bg-white px-3 py-2 text-xs font-bold text-[#087A6A]"><Download size={15} />Tải template</button>
+            <div><div className="text-sm font-extrabold text-[#193B57]">1. Tải template chuẩn</div><p className="mt-1 text-xs text-[#4B8884]">Có cột Số Hóa đơn để gán nhiều Tài sản vào cùng Hóa đơn.</p></div>
+            <button disabled={isDownloadingTemplate} onClick={() => void downloadTemplate()} className="inline-flex items-center justify-center gap-2 rounded-lg border border-[#8BCDC6] bg-white px-3 py-2 text-xs font-bold text-[#087A6A] disabled:cursor-not-allowed disabled:opacity-60"><Download size={15} className={isDownloadingTemplate ? "animate-pulse" : ""} />{isDownloadingTemplate ? "Đang tải..." : "Tải template"}</button>
           </section>
           <section className="rounded-xl border border-dashed border-[#9ADBD3] bg-[#FBFEFD] p-4 text-center">
             <div className="mx-auto grid h-10 w-10 place-items-center rounded-xl bg-[#E6F6F2] text-[#087A6A]"><Upload size={19} /></div><div className="mt-2 text-sm font-extrabold text-[#193B57]">2. Chọn tệp Excel</div>
@@ -226,7 +238,7 @@ export function AssetImportModal({ onClose, onImported }: { onClose: () => void;
             </section>
             <section className="overflow-hidden rounded-xl border border-[#DFE9F0]">
               <div className="border-b border-[#E7EEF3] bg-[#FBFCFD] px-4 py-3"><div className="flex flex-wrap items-start justify-between gap-3"><div><div className="text-xs font-extrabold text-[#193B57]">3. Xem trước lô dữ liệu · {parsed.fileName}</div><p className="mt-1 text-[11px] text-[#71869A]">{parsed.sourceRows} dòng nguồn. Bạn có thể chỉnh sửa trực tiếp trước khi import.</p></div><div className="flex items-center gap-1"><button type="button" aria-label="Trang preview import tài sản trước" disabled={activePreviewPage <= 1} onClick={() => setPreviewPage((page) => Math.max(1, page - 1))} className="grid h-8 w-8 place-items-center rounded-md border border-[#DDE7F0] text-[#526779] disabled:opacity-40"><ChevronLeft size={16} /></button><span className="min-w-20 text-center text-[11px] font-bold text-[#60758A]">Trang {activePreviewPage}/{previewPageCount}</span><button type="button" aria-label="Trang preview import tài sản sau" disabled={activePreviewPage >= previewPageCount} onClick={() => setPreviewPage((page) => Math.min(previewPageCount, page + 1))} className="grid h-8 w-8 place-items-center rounded-md border border-[#DDE7F0] text-[#526779] disabled:opacity-40"><ChevronRight size={16} /></button></div></div><div className="mt-3 max-w-sm"><SearchableSelect value={bulkPreviewStatus} onChange={(status) => { setBulkPreviewStatus(status); previewRows.forEach((row) => patchRow(row.rowNumber, { status: status as AssetImportCandidate["status"], maintenanceReason: status === "maintenance" ? row.maintenanceReason : null })); }} options={[{ value: "available", label: "Sẵn có" }, { value: "maintenance", label: "Bảo trì" }]} placeholder="Đặt trạng thái cho trang này" searchPlaceholder="Tìm trạng thái..." className="w-full" /></div></div>
-              <div className="max-h-[360px] overflow-auto"><table className="w-full min-w-[1040px] text-left text-xs"><thead className="sticky top-0 bg-[#F1F3F5] text-[10px] uppercase tracking-[.08em] text-[#526779]"><tr><th className="px-3 py-3">Dòng</th><th className="px-3 py-3">Hành động</th><th className="px-3 py-3">Tên tài sản</th><th className="px-3 py-3">Phân loại</th><th className="px-3 py-3">Serial/IMEI</th><th className="px-3 py-3">Trạng thái</th><th className="px-3 py-3">Nhà cung cấp</th><th className="px-3 py-3">Giá trị</th></tr></thead><tbody>{previewRows.map((row) => <tr key={row.rowNumber} className="border-t border-[#EDF2F5]"><td className="px-3 py-2.5 font-mono text-[#0F8C8C]">{row.rowNumber}</td><td className="px-3 py-2">{row.action === "update" ? <span className="rounded-full bg-[#EAF3FF] px-2 py-1 text-[10px] font-extrabold text-[#2666A8]">Cập nhật</span> : row.action === "conflict" ? <span className="rounded-full bg-[#FFF5DC] px-2 py-1 text-[10px] font-extrabold text-[#A86B00]">Xung đột</span> : <span className="rounded-full bg-[#E6F6F2] px-2 py-1 text-[10px] font-extrabold text-[#087A6A]">Tạo mới</span>}</td><td className="px-3 py-2"><input value={row.name} onChange={(event) => patchRow(row.rowNumber, { name: event.target.value })} className="h-8 w-44 rounded border border-[#DDE7F0] px-2 font-semibold text-[#193B57] focus:border-[#0F8C8C] focus:outline-none" /></td><td className="px-3 py-2"><input value={row.category} onChange={(event) => patchRow(row.rowNumber, { category: event.target.value })} className="h-8 w-32 rounded border border-[#DDE7F0] px-2 text-[#60758A] focus:border-[#0F8C8C] focus:outline-none" /></td><td className="px-3 py-2"><input value={row.serialNumber || ""} onChange={(event) => patchRow(row.rowNumber, { serialNumber: event.target.value || null })} className="h-8 w-32 rounded border border-[#DDE7F0] px-2 text-[#60758A] focus:border-[#0F8C8C] focus:outline-none" /></td><td className="px-3 py-2"><select value={row.status} onChange={(event) => patchRow(row.rowNumber, { status: event.target.value as AssetImportCandidate["status"], maintenanceReason: event.target.value === "maintenance" ? row.maintenanceReason : null })} className="h-8 rounded border border-[#DDE7F0] bg-white px-2 text-[#60758A]"><option value="available">Sẵn có</option><option value="maintenance">Bảo trì</option></select></td><td className="px-3 py-2 text-[#60758A]">{row.vendor || "—"}</td><td className="px-3 py-2 text-[#60758A]">{displayMoney(row.purchaseValue)}</td></tr>)}</tbody></table></div>
+              <div className="max-h-[360px] overflow-auto"><table className="w-full min-w-[1160px] text-left text-xs"><thead className="sticky top-0 bg-[#F1F3F5] text-[10px] uppercase tracking-[.08em] text-[#526779]"><tr><th className="px-3 py-3">Dòng</th><th className="px-3 py-3">Hành động</th><th className="px-3 py-3">Tên tài sản</th><th className="px-3 py-3">Phân loại</th><th className="px-3 py-3">Serial/IMEI</th><th className="px-3 py-3">Trạng thái</th><th className="px-3 py-3">Số Hóa đơn</th><th className="px-3 py-3">Nhà cung cấp</th><th className="px-3 py-3">Giá trị</th></tr></thead><tbody>{previewRows.map((row) => <tr key={row.rowNumber} className="border-t border-[#EDF2F5]"><td className="px-3 py-2.5 font-mono text-[#0F8C8C]">{row.rowNumber}</td><td className="px-3 py-2">{row.action === "update" ? <span className="rounded-full bg-[#EAF3FF] px-2 py-1 text-[10px] font-extrabold text-[#2666A8]">Cập nhật</span> : row.action === "conflict" ? <span className="rounded-full bg-[#FFF5DC] px-2 py-1 text-[10px] font-extrabold text-[#A86B00]">Xung đột</span> : <span className="rounded-full bg-[#E6F6F2] px-2 py-1 text-[10px] font-extrabold text-[#087A6A]">Tạo mới</span>}</td><td className="px-3 py-2"><input value={row.name} onChange={(event) => patchRow(row.rowNumber, { name: event.target.value })} className="h-8 w-44 rounded border border-[#DDE7F0] px-2 font-semibold text-[#193B57] focus:border-[#0F8C8C] focus:outline-none" /></td><td className="px-3 py-2"><input value={row.category} onChange={(event) => patchRow(row.rowNumber, { category: event.target.value })} className="h-8 w-32 rounded border border-[#DDE7F0] px-2 text-[#60758A] focus:border-[#0F8C8C] focus:outline-none" /></td><td className="px-3 py-2"><input value={row.serialNumber || ""} onChange={(event) => patchRow(row.rowNumber, { serialNumber: event.target.value || null })} className="h-8 w-32 rounded border border-[#DDE7F0] px-2 text-[#60758A] focus:border-[#0F8C8C] focus:outline-none" /></td><td className="px-3 py-2"><select value={row.status} onChange={(event) => patchRow(row.rowNumber, { status: event.target.value as AssetImportCandidate["status"], maintenanceReason: event.target.value === "maintenance" ? row.maintenanceReason : null })} className="h-8 rounded border border-[#DDE7F0] bg-white px-2 text-[#60758A]"><option value="available">Sẵn có</option><option value="maintenance">Bảo trì</option></select></td><td className="px-3 py-2"><input value={row.invoiceNumber || ""} onChange={(event) => patchRow(row.rowNumber, { invoiceNumber: event.target.value || null })} className="h-8 w-28 rounded border border-[#DDE7F0] px-2 font-mono text-[#60758A] focus:border-[#0F8C8C] focus:outline-none" /></td><td className="px-3 py-2 text-[#60758A]">{row.vendor || "—"}</td><td className="px-3 py-2 text-[#60758A]">{displayMoney(row.purchaseValue)}</td></tr>)}</tbody></table></div>
             </section>
             {updateRows.length ? <section className="overflow-hidden rounded-xl border border-[#B9D7F5] bg-[#F7FBFF]"><div className="border-b border-[#DDEBFA] px-4 py-3"><div className="text-sm font-extrabold text-[#193B57]">Trường sẽ thay đổi khi cập nhật</div><p className="mt-1 text-xs text-[#4E7CAA]">Chỉ các dòng Serial/IMEI khớp duy nhất mới xuất hiện tại đây.</p></div><div className="max-h-72 overflow-auto"><table className="w-full min-w-[780px] text-left text-xs"><thead className="bg-[#EAF3FF] text-[10px] uppercase tracking-[.08em] text-[#376EAA]"><tr><th className="px-3 py-3">Tài sản</th><th className="px-3 py-3">Serial/IMEI</th><th className="px-3 py-3">Trường</th><th className="px-3 py-3">Hiện tại</th><th className="px-3 py-3">Sau import</th></tr></thead><tbody>{updateRows.flatMap((row) => {
               const current = row.existingAsset as any;

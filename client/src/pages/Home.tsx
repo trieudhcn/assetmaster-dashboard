@@ -423,6 +423,9 @@ export default function Home() {
   const companyQuery = trpc.company.get.useQuery(undefined, { enabled: isAuthenticated && isAdmin });
   const notificationHandoversQuery = trpc.handovers.list.useQuery(undefined, { enabled: isAuthenticated && isAdmin });
   const notificationPreferencesQuery = trpc.notifications.preferences.useQuery(undefined, { enabled: isAuthenticated });
+  const operationalRemindersQuery = trpc.reminders.list.useQuery(undefined, { enabled: isAuthenticated && isAdmin });
+  type OperationalReminder = NonNullable<typeof operationalRemindersQuery.data>[number];
+  const overdueAuditReminders = (operationalRemindersQuery.data || []).filter((reminder): reminder is Extract<OperationalReminder, { kind: "audit" }> => reminder.kind === "audit" && reminder.isOverdue);
   useEffect(() => {
     if (!assetQuery.isError) return;
     const message = assetQuery.error instanceof Error ? assetQuery.error.message : "Vui lòng kiểm tra kết nối và thử lại.";
@@ -1040,6 +1043,23 @@ export default function Home() {
     setActiveNav(label);
     setMobileNavOpen(false);
   };
+  const openAuditSessionFromReminder = (sessionId: number) => {
+    const url = new URL(window.location.href);
+    url.searchParams.set("view", "audit");
+    url.searchParams.set("auditSession", String(sessionId));
+    window.history.pushState({}, "", url);
+    setActiveNav("Kiểm kê");
+    setMobileNavOpen(false);
+    window.requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: "smooth" }));
+  };
+  useEffect(() => {
+    const handleOpenAuditSession = (event: Event) => {
+      const sessionId = Number((event as CustomEvent<{ sessionId?: unknown }>).detail?.sessionId);
+      if (Number.isInteger(sessionId) && sessionId > 0) openAuditSessionFromReminder(sessionId);
+    };
+    window.addEventListener("assetmaster:open-audit-session", handleOpenAuditSession);
+    return () => window.removeEventListener("assetmaster:open-audit-session", handleOpenAuditSession);
+  }, []);
 
   if (loading) return <div className="grid min-h-screen place-items-center bg-[#F4F7FB] px-6"><div className="text-center"><div className="mx-auto grid h-12 w-12 place-items-center rounded-2xl bg-[#0F8C8C] text-white shadow-[0_10px_22px_rgba(15,140,140,.24)]"><Box size={22} /></div><div className="mt-4 text-sm font-extrabold text-[#193B57]">Đang kiểm tra phiên đăng nhập...</div></div></div>;
   if (!isAuthenticated) return <LoginGateway onLogin={startLogin} />;
@@ -1138,6 +1158,8 @@ export default function Home() {
             <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
               {dashboardKpis.map((kpi, index) => { const Icon = kpi.icon; const toneMap: Record<string, string> = { teal: "bg-[#E6F6F2] text-[#0F8C8C]", blue: "bg-[#EAF3FF] text-[#3278BD]", amber: "bg-[#FFF5DC] text-[#D38A00]", navy: "bg-[#EAF0F7] text-[#193B57]" }; return <div key={kpi.label} className="animate-kpi group rounded-xl border border-[#DFE9F0] bg-white p-5 shadow-[0_8px_24px_rgba(16,42,67,0.045)] transition duration-200 hover:-translate-y-0.5 hover:shadow-[0_12px_30px_rgba(16,42,67,0.08)]" style={{ animationDelay: `${index * 45}ms` }}><div className="flex items-start justify-between"><div className={`grid h-10 w-10 place-items-center rounded-[11px] ${toneMap[kpi.tone]}`}><Icon size={19} /></div></div><div className="mt-5 text-[12px] font-semibold text-[#7890A5]">{kpi.label}</div><div className="mt-1 flex items-baseline gap-2"><span className="font-display text-[26px] font-extrabold tracking-[-0.04em] text-[#102A43]">{kpi.value}</span></div><div className="mt-2 text-[11px] font-medium text-[#9AAEBD]">{kpi.detail}</div></div>; })}
             </section>
+
+            {overdueAuditReminders.length > 0 && <section data-overdue-audit-alert className="mt-5 overflow-hidden rounded-xl border border-[#F2B18B] bg-[#FFF9F5] shadow-[0_8px_24px_rgba(16,42,67,0.045)]"><div className="flex flex-col gap-3 border-b border-[#F6D7C2] px-4 py-3 sm:flex-row sm:items-center sm:justify-between"><div className="flex items-center gap-2"><span className="grid h-8 w-8 place-items-center rounded-lg bg-[#FDEDEE] text-[#B44545]"><AlertTriangle size={16} /></span><div><h2 className="text-sm font-extrabold text-[#9E3F12]">Kiểm kê quá hạn</h2><p className="mt-0.5 text-[11px] text-[#A66B48]">Mở trực tiếp từng đợt để tiếp tục đối chiếu và chốt biên bản.</p></div></div><span className="w-fit rounded-full bg-[#FDEDEE] px-2.5 py-1 text-[10px] font-extrabold text-[#B44545]">{overdueAuditReminders.length} đợt cần xử lý</span></div><div className="divide-y divide-[#F6E3D6]">{overdueAuditReminders.slice(0, 3).map((reminder) => <button key={reminder.id} type="button" onClick={() => openAuditSessionFromReminder(reminder.auditSessionId)} className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left transition hover:bg-white"><div className="min-w-0"><div className="truncate text-xs font-extrabold text-[#193B57]">{reminder.title}</div><div className="mt-0.5 font-mono text-[11px] text-[#A66B48]">{reminder.detail}</div></div><span className="shrink-0 text-[11px] font-extrabold text-[#B44545]">Mở đợt →</span></button>)}</div></section>}
 
             <section data-branch-asset-value-chart className="mt-5 rounded-xl border border-[#CDE5E5] bg-white p-5 shadow-[0_8px_24px_rgba(16,42,67,0.045)]">
 <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between"><div className="flex items-start gap-3"><span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-[#E6F6F2] text-[#087A6A]"><Building2 size={17} /></span><div><div className="text-sm font-extrabold text-[#193B57]">Giá trị tài sản theo Chi nhánh</div><p className="mt-1 text-xs text-[#71869A]">Tổng nguyên giá của tài sản đang còn thuộc công ty, phân theo Chi nhánh.</p></div></div><div className="rounded-lg bg-[#F4FBFA] px-3 py-2 text-right"><div className="text-[10px] font-extrabold uppercase tracking-[.1em] text-[#4B8884]">Tổng giá trị</div><div className="mt-0.5 text-sm font-extrabold tabular-nums text-[#087A6A]">{formatVnd(assetValueTotal)} VNĐ</div></div></div>

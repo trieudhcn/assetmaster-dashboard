@@ -24,8 +24,8 @@ export function configureAssetImportTemplate(workbook: any, { categories, vendor
   optionSheet.state = "veryHidden";
   const dropdowns = [
     { key: "ImportCategories", header: "Phân loại", values: categories, column: "A", target: "B2:B101" },
-    { key: "ImportVendors", header: "Nhà cung cấp", values: vendors, column: "B", target: "H2:H101" },
-    { key: "ImportBrands", header: "Hãng", values: brands, column: "C", target: "I2:I101" },
+    { key: "ImportVendors", header: "Nhà cung cấp", values: vendors, column: "B", target: "I2:I101" },
+    { key: "ImportBrands", header: "Hãng", values: brands, column: "C", target: "J2:J101" },
   ];
 
   dropdowns.forEach(({ key, header, values, column, target }) => {

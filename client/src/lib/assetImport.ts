@@ -6,6 +6,7 @@ export const assetImportHeaders = [
   "Tình trạng",
   "Ngày mua (dd/mm/yyyy)",
   "Giá trị (VNĐ)",
+  "Số Hóa đơn",
   "Nhà cung cấp",
   "Hãng",
   "Serial/IMEI",
@@ -24,6 +25,7 @@ export type AssetImportCandidate = {
   condition: "good" | "fair" | "needs_inspection" | "damaged";
   purchaseDate: number | null;
   purchaseValue: string | null;
+  invoiceNumber: string | null;
   vendor: string | null;
   brandName: string | null;
   serialNumber: string | null;
@@ -95,7 +97,7 @@ export function parseAssetImportRows(rows: Array<Record<string, unknown>>) {
     else if (warrantySource && !warrantyUntil) issues.push({ rowNumber, message: "Hạn bảo hành phải theo định dạng dd/mm/yyyy." });
     else if (purchaseValueRaw && !purchaseValueSource) issues.push({ rowNumber, message: "Giá trị phải là số VNĐ nguyên, ví dụ 25000000 hoặc 25.000.000." });
     else {
-      candidates.push({ rowNumber, assetCode, name, category, status, maintenanceReason, condition, purchaseDate, purchaseValue: purchaseValueSource || null, vendor: text(row["Nhà cung cấp"]) || null, brandName: text(row["Hãng"]) || null, serialNumber: text(row["Serial/IMEI"]) || null, location: text(row["Vị trí"]) || null, warrantyUntil, note: text(row["Ghi chú"]) || null });
+      candidates.push({ rowNumber, assetCode, name, category, status, maintenanceReason, condition, purchaseDate, purchaseValue: purchaseValueSource || null, invoiceNumber: text(row["Số Hóa đơn"]) || null, vendor: text(row["Nhà cung cấp"]) || null, brandName: text(row["Hãng"]) || null, serialNumber: text(row["Serial/IMEI"]) || null, location: text(row["Vị trí"]) || null, warrantyUntil, note: text(row["Ghi chú"]) || null });
     }
   });
   return { candidates, issues };

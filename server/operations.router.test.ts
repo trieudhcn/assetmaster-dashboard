@@ -435,7 +435,7 @@ describe("operations management", () => {
     mocks.listActivityLogs.mockResolvedValue([{ id: 1, entityType: "asset", entityId: 8, action: "updated", createdAt: new Date() }]);
 
     const employeeCaller = appRouter.createCaller(employeeContext);
-    await expect(employeeCaller.reminders.list()).resolves.toEqual(expect.arrayContaining([expect.objectContaining({ kind: "warranty", assetId: 8, title: "Sắp hết hạn bảo hành · LT00008", detail: expect.stringContaining("còn 20 ngày") })]));
+    await expect(employeeCaller.reminders.list()).resolves.toEqual(expect.arrayContaining([expect.objectContaining({ kind: "warranty", assetId: 8, title: "Sắp hết hạn bảo hành · LT00008", detail: expect.stringContaining("còn 20 ngày") }), expect.objectContaining({ kind: "audit", auditSessionId: 40, detail: "KK-2026-ABC12345" })]));
     await expect(employeeCaller.activity.list({ limit: 50 })).rejects.toMatchObject({ code: "FORBIDDEN" });
 
     const adminCaller = appRouter.createCaller(adminContext);
