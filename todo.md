@@ -561,6 +561,12 @@
 - [x] Xác minh khôi phục vị trí cuộn khi quay từ Hóa đơn về Danh mục Tài sản.
 - [x] Bổ sung hồi quy, kiểm thử giao diện và phát hành.
 
+## Current Session — Chuẩn hóa KPI Tổng quan
+
+- [x] Chuẩn hóa cỡ chữ toàn bộ giá trị KPI trên Tổng quan.
+- [x] Căn đều vị trí dòng mô tả và phần phụ trợ bên dưới giá trị KPI.
+- [x] Bổ sung hồi quy, xác minh desktop/mobile và phát hành.
+
 - [x] Mở rộng mô hình dữ liệu tài sản với thông tin chi tiết và trạng thái thao tác.
 - [x] Thêm modal tạo tài sản mới với validation cơ bản.
 - [x] Thêm modal chỉnh sửa tài sản và cập nhật dữ liệu trong bảng.

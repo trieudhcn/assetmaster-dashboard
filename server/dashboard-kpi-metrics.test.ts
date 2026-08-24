@@ -3,6 +3,7 @@ import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
 const home = readFileSync(resolve(process.cwd(), "client/src/pages/Home.tsx"), "utf8");
+const dashboardCss = readFileSync(resolve(process.cwd(), "client/src/index.css"), "utf8");
 
 describe("dashboard KPI financial metrics", () => {
   it("shows retirement value and total service cost from existing business data", () => {
@@ -19,5 +20,8 @@ describe("dashboard KPI financial metrics", () => {
     expect(home).toContain('kpi.alertValue ? "text-[#C75419]"');
     expect(home).not.toContain('detail: "Cần theo dõi xử lý"');
     expect(home).not.toContain('border-t border-[#EDF2F5] pt-1 text-[10px] font-extrabold text-[#A86B00]');
+    expect(dashboardCss).toContain("font-size: 1.125rem !important");
+    expect(dashboardCss).toContain(".animate-kpi > div:nth-child(4)");
+    expect(dashboardCss).toContain("margin-top: auto");
   });
 });

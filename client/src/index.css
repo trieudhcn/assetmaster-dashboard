@@ -89,7 +89,11 @@ button:not(:disabled), [role="button"]:not([aria-disabled="true"]), select:not(:
 header.sticky.top-0.z-20 { z-index: 30; }
 
 @keyframes kpi-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
-.animate-kpi { animation: kpi-in 420ms cubic-bezier(.23,1,.32,1) both; }
+.animate-kpi { display: flex; min-height: 11.75rem; flex-direction: column; animation: kpi-in 420ms cubic-bezier(.23,1,.32,1) both; }
+/* Dashboard KPI cards share a numeric baseline and reserve the same bottom row for context. */
+.animate-kpi > div:nth-child(3) { display: flex; min-height: 1.5rem; align-items: center; }
+.animate-kpi > div:nth-child(3) :is(span, button) { font-size: 1.125rem !important; line-height: 1.25rem; white-space: nowrap; }
+.animate-kpi > div:nth-child(4) { display: flex; min-height: 1.25rem; align-items: center; margin-top: auto; }
 
 @keyframes notification-bell-ring {
   0%, 66%, 100% { transform: rotate(0deg); }
