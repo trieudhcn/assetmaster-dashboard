@@ -545,6 +545,11 @@
 - [x] Bảo đảm nút quay lại Danh mục Tài sản hiển thị khi mở Hóa đơn từ bảng Tài sản.
 - [x] Bổ sung hồi quy, xác minh PDF/giao diện và phát hành.
 
+## Current Session — Sửa lỗi React Hóa đơn
+
+- [x] Loại bỏ unmount React đồng bộ gây lỗi trong hồ sơ Hóa đơn.
+- [x] Bổ sung hồi quy, kiểm thử luồng Hóa đơn và phát hành.
+
 - [x] Mở rộng mô hình dữ liệu tài sản với thông tin chi tiết và trạng thái thao tác.
 - [x] Thêm modal tạo tài sản mới với validation cơ bản.
 - [x] Thêm modal chỉnh sửa tài sản và cập nhật dữ liệu trong bảng.

@@ -253,7 +253,12 @@ export function PurchaseInvoiceManagementView({ sharedQuery = "" }: { sharedQuer
     lineSection.append(host);
     const root = createRoot(host);
     root.render(<><InvoiceLinkedAssetQuickLinks invoiceId={selectedInvoice.id} assets={detail.linkedAssets} assetDetails={(assetsQuery.data || []).map((asset) => ({ ...asset, categoryName: categoriesQuery.data?.find((category) => category.id === asset.categoryId)?.name || null }))} />{needsSourceAllocation && <InvoiceLineOperationsPanel invoiceId={selectedInvoice.id} invoiceKey={selectedInvoice.invoiceKey} lines={detail.lines} linkedAssets={detail.linkedAssets} supplyReceipts={detail.supplyReceipts} assets={assetsQuery.data || []} supplies={suppliesQuery.data || []} categories={categoriesQuery.data || []} brands={brandsQuery.data || []} onAttach={(assetId, lineId) => attachAsset.mutate({ purchaseInvoiceId: selectedInvoice.id, purchaseInvoiceLineId: lineId, assetId })} onDetach={(assetId) => detachAsset.mutate({ assetId })} onReceive={(input) => receiveSupply.mutate(input)} onCreateAndReceive={(input) => createSupplyAndReceive.mutate(input)} isWorking={attachAsset.isPending || detachAsset.isPending || receiveSupply.isPending || createSupplyAndReceive.isPending} />}</>);
-    return () => { root.unmount(); host.remove(); };
+    return () => {
+      queueMicrotask(() => {
+        root.unmount();
+        host.remove();
+      });
+    };
   }, [selectedInvoice?.id, selectedInvoice?.invoiceKey, detail?.lines, detail?.linkedAssets, detail?.supplyReceipts, assetsQuery.data, suppliesQuery.data, categoriesQuery.data, brandsQuery.data, attachAsset.isPending, detachAsset.isPending, receiveSupply.isPending, createSupplyAndReceive.isPending]);
   useEffect(() => {
     if (!returnToAssetCatalog || !selectedInvoice) return;

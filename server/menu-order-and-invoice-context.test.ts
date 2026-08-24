@@ -62,6 +62,8 @@ describe("menu order settings and invoice context", () => {
     expect(invoiceView).toContain('button.textContent = "← Quay lại Danh mục Tài sản"');
     expect(invoiceView).toContain('assetmaster:return-to-asset-catalog');
     expect(home).toContain('window.addEventListener("assetmaster:return-to-asset-catalog"');
+    expect(invoiceView).toContain("queueMicrotask(() => {");
+    expect(invoiceView).toContain("root.unmount();");
   });
 
   it("supports drag-and-drop menu ordering and aligns the compact settings panels", () => {
