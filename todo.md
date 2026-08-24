@@ -532,6 +532,11 @@
 - [x] Giảm thêm kích thước hiển thị Mã Hóa đơn trong bảng Tài sản.
 - [x] Kiểm thử và phát hành điều chỉnh.
 
+## Current Session — Sửa nút quay lại Danh mục Tài sản
+
+- [x] Hiển thị trực tiếp nút quay lại Danh mục Tài sản trong hồ sơ Hóa đơn mở từ bảng Tài sản.
+- [x] Kiểm thử điều hướng và phát hành bản sửa.
+
 - [x] Mở rộng mô hình dữ liệu tài sản với thông tin chi tiết và trạng thái thao tác.
 - [x] Thêm modal tạo tài sản mới với validation cơ bản.
 - [x] Thêm modal chỉnh sửa tài sản và cập nhật dữ liệu trong bảng.

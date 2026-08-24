@@ -1301,6 +1301,9 @@ function AssetCatalogPage({ assets, totalAssets, statusCounts, branchCounts, que
       invoiceLink.setAttribute("aria-label", `Mở Hóa đơn ${asset.invoiceKey}`);
       invoiceLink.addEventListener("click", () => {
         window.sessionStorage.setItem("assetmaster-return-to-asset-catalog", "true");
+        const url = new URL(window.location.href);
+        url.searchParams.set("fromAssetCatalog", "true");
+        window.history.replaceState({}, "", `${url.pathname}${url.search}${url.hash}`);
         onOpenInvoice(asset);
       });
       badge.replaceWith(invoiceLink);

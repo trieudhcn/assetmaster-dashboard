@@ -72,13 +72,14 @@ export function PurchaseInvoiceManagementView({ sharedQuery = "" }: { sharedQuer
     const invoiceId = Number(url.searchParams.get("invoiceId"));
     if (!Number.isInteger(invoiceId) || invoiceId <= 0 || !invoices.length) return;
     if (invoices.some((invoice) => invoice.id === invoiceId)) {
-      const openedFromAssetCatalog = window.sessionStorage.getItem("assetmaster-return-to-asset-catalog") === "true";
+      const openedFromAssetCatalog = url.searchParams.get("fromAssetCatalog") === "true" || window.sessionStorage.getItem("assetmaster-return-to-asset-catalog") === "true";
       window.sessionStorage.removeItem("assetmaster-return-to-asset-catalog");
       setReturnToAssetCatalog(openedFromAssetCatalog);
       setSelectedId(invoiceId);
     }
     else toast.error("Không tìm thấy Hóa đơn cần quay lại.");
     url.searchParams.delete("invoiceId");
+    url.searchParams.delete("fromAssetCatalog");
     window.history.replaceState({}, "", `${url.pathname}${url.search}${url.hash}`);
   }, [invoices]);
   useEffect(() => { if (selectedId === null) setReturnToAssetCatalog(false); }, [selectedId]);
@@ -256,14 +257,13 @@ export function PurchaseInvoiceManagementView({ sharedQuery = "" }: { sharedQuer
   }, [selectedInvoice?.id, selectedInvoice?.invoiceKey, detail?.lines, detail?.linkedAssets, detail?.supplyReceipts, assetsQuery.data, suppliesQuery.data, categoriesQuery.data, brandsQuery.data, attachAsset.isPending, detachAsset.isPending, receiveSupply.isPending, createSupplyAndReceive.isPending]);
   useEffect(() => {
     if (!returnToAssetCatalog || !selectedInvoice) return;
-    const drawerTitle = Array.from(document.querySelectorAll("h2")).find((item) => item.textContent?.trim() === selectedInvoice.invoiceKey);
-    const drawerHeader = drawerTitle?.parentElement?.parentElement;
+    const drawerHeader = document.querySelector<HTMLButtonElement>('aside.fixed button[aria-label="Đóng"]')?.parentElement;
     if (!drawerHeader || drawerHeader.querySelector("[data-return-to-asset-catalog]")) return;
     const button = document.createElement("button");
     button.type = "button";
     button.dataset.returnToAssetCatalog = "true";
     button.className = "mr-2 inline-flex h-8 items-center rounded-lg border border-[#CDE5E5] bg-[#F4FBFA] px-2.5 text-[11px] font-extrabold text-[#087A6A] transition hover:bg-[#E6F6F2]";
-    button.textContent = "← Danh mục Tài sản";
+    button.textContent = "← Quay lại Danh mục Tài sản";
     button.addEventListener("click", returnToAssets);
     drawerHeader.insertBefore(button, drawerHeader.lastElementChild);
     return () => button.remove();
