@@ -496,6 +496,12 @@
 - [x] Thêm bộ lọc Mã Hóa đơn và thu gọn ô tìm kiếm trong Danh mục tài sản.
 - [x] Bổ sung hồi quy, xác minh desktop/mobile và phát hành.
 
+## Current Session — Xuất và mở nhanh Mã Hóa đơn
+
+- [x] Bổ sung cột Mã Hóa đơn vào file Excel xuất Danh mục Tài sản.
+- [x] Cho phép nhấp Mã Hóa đơn trong bảng để mở nhanh chi tiết Hóa đơn tương ứng.
+- [x] Bổ sung hồi quy, xác minh desktop/mobile, TypeScript và production build.
+
 - [x] Mở rộng mô hình dữ liệu tài sản với thông tin chi tiết và trạng thái thao tác.
 - [x] Thêm modal tạo tài sản mới với validation cơ bản.
 - [x] Thêm modal chỉnh sửa tài sản và cập nhật dữ liệu trong bảng.

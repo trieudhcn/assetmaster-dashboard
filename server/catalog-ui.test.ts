@@ -70,12 +70,12 @@ describe("Catalog UI helpers", () => {
 
   it("keeps every supplied filtered asset and its operational fields in the catalog export", () => {
     const rows = buildFilteredAssetExportRows([
-      { code: "LT-001", name: "Laptop Dell", category: "CNTT", holder: "Phòng Kế toán", status: "Đang cấp phát", location: "Tầng 3", serial: "SN-01", supplier: "Công ty Sao Mai", brand: "Dell", purchaseDate: "2026-08-15", warrantyUntil: "2028-08-15", value: "25.000.000", note: "Đang sử dụng" },
+      { code: "LT-001", name: "Laptop Dell", invoiceKey: "HĐ-2026-001", category: "CNTT", holder: "Phòng Kế toán", status: "Đang cấp phát", location: "Tầng 3", serial: "SN-01", supplier: "Công ty Sao Mai", brand: "Dell", purchaseDate: "2026-08-15", warrantyUntil: "2028-08-15", value: "25.000.000", note: "Đang sử dụng" },
       { code: "MH-002", name: "Màn hình Dell", category: "CNTT", holder: "Phòng Kế toán", status: "Sẵn có", location: "Kho A", serial: "SN-02", supplier: "Công ty Sao Mai", brand: "Dell", purchaseDate: "2026-08-16", warrantyUntil: null, value: "5.000.000", note: "Chờ cấp phát" },
     ]);
     expect(rows).toHaveLength(2);
-    expect(rows[0]).toMatchObject({ "Mã tài sản": "LT-001", "Trạng thái": "Đang cấp phát", "Giá trị (VNĐ)": 25000000, "Nhà cung cấp": "Công ty Sao Mai" });
-    expect(rows[1]).toMatchObject({ "Mã tài sản": "MH-002", "Trạng thái": "Sẵn có", "Giá trị (VNĐ)": 5000000 });
+    expect(rows[0]).toMatchObject({ "Mã tài sản": "LT-001", "Mã Hóa đơn": "HĐ-2026-001", "Trạng thái": "Đang cấp phát", "Giá trị (VNĐ)": 25000000, "Nhà cung cấp": "Công ty Sao Mai" });
+    expect(rows[1]).toMatchObject({ "Mã tài sản": "MH-002", "Mã Hóa đơn": "Chưa liên kết", "Trạng thái": "Sẵn có", "Giá trị (VNĐ)": 5000000 });
   });
 
   it("uses clear action labels for the handover icon controls", () => {

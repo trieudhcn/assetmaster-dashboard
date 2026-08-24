@@ -24,4 +24,11 @@ describe("asset catalog invoice code", () => {
     expect(home).toContain("flex-[1_1_260px]");
     expect(home).toContain("<FilterSelect value={invoice} onChange={onInvoiceChange} options={invoiceOptions} />");
   });
+
+  it("opens the corresponding invoice detail when a linked invoice code is activated", () => {
+    expect(home).toContain('url.searchParams.set("view", "invoices")');
+    expect(home).toContain('url.searchParams.set("invoiceId", String(asset.purchaseInvoiceId))');
+    expect(home).toContain('invoiceLink.textContent = asset.invoiceKey');
+    expect(home).toContain('invoiceLink.addEventListener("click", () => onOpenInvoice(asset))');
+  });
 });

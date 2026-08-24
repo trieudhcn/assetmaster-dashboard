@@ -106,6 +106,7 @@ export function buildMaintenanceExportRows<T extends MaintenanceExportAsset>(ass
 export type FilteredAssetExportAsset = {
   code: string;
   name: string;
+  invoiceKey?: string | null;
   category: string;
   holder: string;
   status: string;
@@ -124,6 +125,7 @@ export function buildFilteredAssetExportRows<T extends FilteredAssetExportAsset>
   return assets.map((asset) => ({
     "Mã tài sản": asset.code,
     "Tên tài sản": asset.name,
+    "Mã Hóa đơn": asset.invoiceKey || "Chưa liên kết",
     "Phân loại": asset.category || "Chưa phân loại",
     "Người / Phòng giữ": asset.holder || "Chưa bàn giao",
     "Trạng thái": asset.status,
