@@ -43,7 +43,9 @@ describe("menu order settings and invoice context", () => {
     expect(linkedAssetLinks).toContain("data-invoice-linked-asset-links");
     expect(linkedAssetLinks).toContain("Chi tiết Tài sản");
     expect(linkedAssetLinks).toContain("statusMeta");
-    expect(linkedAssetLinks).toContain("grid-cols-[78px_minmax(0,1fr)_auto_15px]");
+    expect(linkedAssetLinks).toContain("warrantyMeta");
+    expect(linkedAssetLinks).toContain("grid-cols-[78px_minmax(0,1fr)_auto_auto_15px]");
+    expect(linkedAssetLinks).toContain("title={tooltip}");
     expect(invoiceView).toContain('startsWith("Tài sản liên kết:")');
   });
 
@@ -54,6 +56,7 @@ describe("menu order settings and invoice context", () => {
 
     expect(menuSettings).toContain("draggable={!isSaving}");
     expect(menuSettings).toContain("onReorder(next.map");
+    expect(menuSettings).toContain('className="mt-5 grid gap-2"');
     expect(branches).toContain("max-w-[1100px]");
     expect(supplyUnits).toContain("max-w-[1100px]");
   });

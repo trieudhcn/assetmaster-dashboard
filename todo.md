@@ -406,6 +406,13 @@
 - [x] Hiển thị nhãn trạng thái hiện tại cho từng dòng Tài sản liên kết Hóa đơn.
 - [x] Bổ sung hồi quy, xác minh giao diện, TypeScript và production build trước khi phát hành.
 
+## Current Session — Menu một cột và bảo hành Tài sản liên kết
+
+- [x] Chuyển danh sách sắp xếp menu sang một cột dọc, vẫn hỗ trợ kéo-thả và điều hướng bàn phím.
+- [x] Hiển thị nhãn thời gian bảo hành còn hiệu lực trên từng dòng Tài sản liên kết khi còn hạn.
+- [x] Bổ sung tooltip thống nhất khi hover/focus Tài sản liên kết.
+- [x] Bổ sung hồi quy, xác minh giao diện, TypeScript và production build trước khi phát hành.
+
 - [x] Mở rộng mô hình dữ liệu tài sản với thông tin chi tiết và trạng thái thao tác.
 - [x] Thêm modal tạo tài sản mới với validation cơ bản.
 - [x] Thêm modal chỉnh sửa tài sản và cập nhật dữ liệu trong bảng.
