@@ -471,6 +471,12 @@
 - [x] Hiển thị Chi phí thực tế và Dự kiến trong Chi tiết phiếu · Lịch sử thay đổi Bảo hành/Sửa chữa.
 - [x] Bổ sung hồi quy, xác minh desktop/mobile và phát hành cùng KPI Tổng quan.
 
+## Current Session — Cảnh báo Kiểm kê và Phụ kiện trên Tổng quan
+
+- [x] Đưa Kiểm kê quá hạn và Phụ kiện chạm mức tối thiểu xuống sau Giá trị tài sản theo Chi nhánh.
+- [x] Hiển thị hai vùng cảnh báo cùng một hàng trên desktop, đáp ứng trên mobile.
+- [x] Bổ sung hồi quy, xác minh desktop/mobile và phát hành.
+
 - [x] Mở rộng mô hình dữ liệu tài sản với thông tin chi tiết và trạng thái thao tác.
 - [x] Thêm modal tạo tài sản mới với validation cơ bản.
 - [x] Thêm modal chỉnh sửa tài sản và cập nhật dữ liệu trong bảng.
