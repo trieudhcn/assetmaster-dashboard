@@ -477,6 +477,12 @@
 - [x] Hiển thị hai vùng cảnh báo cùng một hàng trên desktop, đáp ứng trên mobile.
 - [x] Bổ sung hồi quy, xác minh desktop/mobile và phát hành.
 
+## Current Session — KPI Bảo hành/Sửa chữa gọn hơn
+
+- [x] Bỏ mô tả “Cần theo dõi xử lý” và đường phân cách trong KPI Bảo hành/Sửa chữa.
+- [x] Chuyển số lượng phiếu sang màu cam khi lớn hơn 0.
+- [x] Bổ sung hồi quy, xác minh giao diện và phát hành.
+
 - [x] Mở rộng mô hình dữ liệu tài sản với thông tin chi tiết và trạng thái thao tác.
 - [x] Thêm modal tạo tài sản mới với validation cơ bản.
 - [x] Thêm modal chỉnh sửa tài sản và cập nhật dữ liệu trong bảng.
