@@ -555,6 +555,12 @@
 - [x] Thay nút quay lại chèn động bằng thành phần React trực tiếp trong header drawer Hóa đơn.
 - [x] Xác minh deep-link từ Danh mục Tài sản và phát hành bản sửa.
 
+## Current Session — Rút gọn Chi nhánh và vị trí cuộn
+
+- [x] Hiển thị nhãn Chi nhánh trong bảng Tài sản chỉ với tên Chi nhánh.
+- [x] Xác minh khôi phục vị trí cuộn khi quay từ Hóa đơn về Danh mục Tài sản.
+- [x] Bổ sung hồi quy, kiểm thử giao diện và phát hành.
+
 - [x] Mở rộng mô hình dữ liệu tài sản với thông tin chi tiết và trạng thái thao tác.
 - [x] Thêm modal tạo tài sản mới với validation cơ bản.
 - [x] Thêm modal chỉnh sửa tài sản và cập nhật dữ liệu trong bảng.

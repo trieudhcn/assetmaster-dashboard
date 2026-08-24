@@ -1283,6 +1283,14 @@ function AssetCatalogPage({ assets, totalAssets, statusCounts, branchCounts, que
     try { window.localStorage.setItem("assetmaster-asset-catalog-visible-columns", JSON.stringify(visibleColumns)); } catch { /* Không chặn trải nghiệm khi không lưu được cấu hình. */ }
   }, [visibleColumns]);
   useEffect(() => {
+    if (!visibleColumns.branch) return;
+    document.querySelectorAll<HTMLSpanElement>("[data-asset-branch-badge]").forEach((badge) => {
+      const branchName = badge.textContent?.trim().split(" · ")[0] || "Chưa gán";
+      badge.textContent = branchName;
+      badge.title = branchName;
+    });
+  }, [assets, visibleColumns.branch]);
+  useEffect(() => {
     if (!visibleColumns.invoice) return;
     const header = Array.from(document.querySelectorAll<HTMLTableCellElement>("th")).find((cell) => cell.textContent?.trim() === "Mã Hóa đơn");
     const invoiceColumnIndex = header?.cellIndex;

@@ -49,6 +49,7 @@ describe("branch settings", () => {
     expect(home).toContain("branchCounts={branchFilterCounts}");
     expect(home).toContain("branchLabel: asset.branchId ?");
     expect(home).toContain("data-asset-branch-badge");
+    expect(home).toContain('split(" · ")[0] || "Chưa gán"');
     expect(home).toContain("data-asset-column-picker");
     expect(home).toContain("assetmaster-asset-catalog-visible-columns");
     expect(home).toContain("Khôi phục mặc định");
