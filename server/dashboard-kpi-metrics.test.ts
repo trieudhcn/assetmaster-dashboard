@@ -22,6 +22,7 @@ describe("dashboard KPI financial metrics", () => {
     expect(home).not.toContain('border-t border-[#EDF2F5] pt-1 text-[10px] font-extrabold text-[#A86B00]');
     expect(dashboardCss).toContain("font-size: 1.125rem !important");
     expect(dashboardCss).toContain(".animate-kpi > div:nth-child(4)");
-    expect(dashboardCss).toContain("margin-top: auto");
+    expect(dashboardCss).toContain("min-height: 10.5rem");
+    expect(dashboardCss).toContain("margin-top: 0.35rem");
   });
 });

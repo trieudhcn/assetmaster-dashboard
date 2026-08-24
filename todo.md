@@ -3331,3 +3331,8 @@
 - [x] Khôi phục xuất Excel theo toàn bộ kết quả lọc, không giới hạn trang hiện tại.
 - [x] Sửa cấu hình tách bundle gây lỗi build trong lúc rà soát hiệu năng.
 - [x] Bổ sung hồi quy, kiểm thử xuất Excel, TypeScript và production build trước khi phát hành.
+
+## Current Session — Nhịp dọc thẻ KPI
+
+- [x] Thu gọn khoảng cách giữa giá trị KPI và dòng chi tiết trong thẻ Tổng quan.
+- [x] Bổ sung hồi quy, xác minh desktop/mobile, TypeScript và production build trước khi phát hành.
