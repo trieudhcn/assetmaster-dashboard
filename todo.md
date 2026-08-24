@@ -3336,3 +3336,8 @@
 
 - [x] Thu gọn khoảng cách giữa giá trị KPI và dòng chi tiết trong thẻ Tổng quan.
 - [x] Bổ sung hồi quy, xác minh desktop/mobile, TypeScript và production build trước khi phát hành.
+
+## Current Session — Menu xuất Excel Danh mục Tài sản
+
+- [x] Gộp Xuất theo bộ lọc và Xuất tất cả vào một nút menu.
+- [x] Bổ sung hồi quy, kiểm thử giao diện, TypeScript và production build trước khi phát hành.

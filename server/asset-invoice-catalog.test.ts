@@ -57,8 +57,11 @@ describe("asset catalog invoice code", () => {
   it("exports every matching asset rather than only the current pagination page", () => {
     expect(home).toContain("allFilteredAssets = assets");
     expect(home).toContain("allAssetExportRows");
-    expect(home).toContain("Xuất theo bộ lọc (${filteredAssetCount})");
-    expect(home).toContain("Xuất tất cả ({allAssetCount})");
+    expect(home).toContain("data-asset-export-menu");
+    expect(home).toContain("Xuất Excel");
+    expect(home).toContain("Xuất theo bộ lọc");
+    expect(home).toContain("Xuất tất cả</span>");
+    expect(home).toContain(">{allAssetCount}</span>");
     expect(home).toContain("onExportAllAssets={exportAllAssetsExcel}");
     expect(home).not.toContain("Xuất danh sách (${assets.length})");
   });
