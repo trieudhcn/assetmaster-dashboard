@@ -1284,7 +1284,7 @@ function AssetCatalogPage({ assets, totalAssets, statusCounts, branchCounts, que
       const invoiceLink = document.createElement("button");
       invoiceLink.type = "button";
       invoiceLink.dataset.invoiceLinkReady = "true";
-      invoiceLink.className = "inline-flex max-w-[170px] truncate rounded-md bg-[#EAF3FF] px-2 py-1 font-mono text-[10px] font-bold text-[#2666A8] underline-offset-2 transition hover:bg-[#DCEEFF] hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2666A8]";
+      invoiceLink.className = "inline-flex max-w-[170px] truncate rounded-md bg-[#EAF3FF] px-2 py-1 font-mono text-[9px] font-semibold text-[#2666A8] underline-offset-2 transition hover:bg-[#DCEEFF] hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2666A8]";
       invoiceLink.textContent = asset.invoiceKey;
       invoiceLink.title = `Mở Hóa đơn ${asset.invoiceKey}`;
       invoiceLink.setAttribute("aria-label", `Mở Hóa đơn ${asset.invoiceKey}`);

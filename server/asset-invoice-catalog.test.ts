@@ -31,4 +31,8 @@ describe("asset catalog invoice code", () => {
     expect(home).toContain('invoiceLink.textContent = asset.invoiceKey');
     expect(home).toContain('invoiceLink.addEventListener("click", () => onOpenInvoice(asset))');
   });
+
+  it("uses the compact invoice-code typography in line with asset identifiers", () => {
+    expect(home).toContain('font-mono text-[9px] font-semibold text-[#2666A8]');
+  });
 });

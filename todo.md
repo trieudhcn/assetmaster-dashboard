@@ -507,6 +507,11 @@
 - [x] Căn giữa tên và chữ ký Người nhận trong mẫu PDF.
 - [x] Bổ sung hồi quy, xác minh bố cục PDF và phát hành.
 
+## Current Session — Đồng bộ chữ Mã Hóa đơn
+
+- [x] Điều chỉnh Mã Hóa đơn về cùng kích thước chữ với Mã Tài sản trong bảng.
+- [x] Xác minh giao diện và phát hành.
+
 - [x] Mở rộng mô hình dữ liệu tài sản với thông tin chi tiết và trạng thái thao tác.
 - [x] Thêm modal tạo tài sản mới với validation cơ bản.
 - [x] Thêm modal chỉnh sửa tài sản và cập nhật dữ liệu trong bảng.
