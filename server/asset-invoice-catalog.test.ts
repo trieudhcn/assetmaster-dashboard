@@ -34,7 +34,7 @@ describe("asset catalog invoice code", () => {
   });
 
   it("uses the compact invoice-code typography in line with asset identifiers", () => {
-    expect(home).toContain('font-mono !text-[8px] font-medium leading-none text-[#2666A8]');
+    expect(home).toContain('font-mono !text-[11px] font-medium leading-none text-[#2666A8]');
   });
 
   it("keeps the invoice column compact and remembers its originating asset catalog", () => {
@@ -42,5 +42,7 @@ describe("asset catalog invoice code", () => {
     expect(home).toContain('cell.style.maxWidth = "130px"');
     expect(home).toContain('assetmaster-return-to-asset-catalog');
     expect(home).toContain('assetmaster:return-to-asset-catalog');
+    expect(home).toContain('assetmaster-asset-catalog-scroll-y');
+    expect(home).toContain("window.scrollTo(0, savedScrollY)");
   });
 });

@@ -537,6 +537,14 @@
 - [x] Hiển thị trực tiếp nút quay lại Danh mục Tài sản trong hồ sơ Hóa đơn mở từ bảng Tài sản.
 - [x] Kiểm thử điều hướng và phát hành bản sửa.
 
+## Current Session — PDF thu hồi và quay lại Danh mục
+
+- [x] Căn giữa tên Người bàn giao lại và Người thu hồi trên PDF thu hồi tài sản.
+- [x] Lưu và khôi phục vị trí cuộn khi quay lại Danh mục Tài sản từ Hóa đơn.
+- [x] Đặt Mã Hóa đơn hiển thị 11px trong bảng Tài sản.
+- [x] Bảo đảm nút quay lại Danh mục Tài sản hiển thị khi mở Hóa đơn từ bảng Tài sản.
+- [x] Bổ sung hồi quy, xác minh PDF/giao diện và phát hành.
+
 - [x] Mở rộng mô hình dữ liệu tài sản với thông tin chi tiết và trạng thái thao tác.
 - [x] Thêm modal tạo tài sản mới với validation cơ bản.
 - [x] Thêm modal chỉnh sửa tài sản và cập nhật dữ liệu trong bảng.

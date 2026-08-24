@@ -142,4 +142,12 @@ describe("Vietnamese handover PDF", () => {
     expect(source).toContain("recipientSignatureCenter - recipientSignatureWidth / 2");
     expect(source).toContain('doc.text(item.recipient, recipientSignatureCenter, y + 39, { align: "center" })');
   });
+
+  it("keeps both return-confirmation signers centered in their respective columns", () => {
+    const source = readFileSync("client/src/pages/Home.tsx", "utf8");
+    expect(source).toContain("const recoveryReturnerCenter = 61.5");
+    expect(source).toContain("const recoveryReceiverCenter = 148.5");
+    expect(source).toContain('doc.text(item.recipient, recoveryReturnerCenter, y + 33, { align: "center" })');
+    expect(source).toContain('doc.text(item.handoverBy || "Quản trị viên", recoveryReceiverCenter, y + 33, { align: "center" })');
+  });
 });

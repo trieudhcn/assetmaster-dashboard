@@ -1084,7 +1084,14 @@ export default function Home() {
     setMobileNavOpen(false);
   };
   useEffect(() => {
-    const returnToAssetCatalog = () => navigateTo("Danh mục tài sản");
+    const returnToAssetCatalog = () => {
+      const savedScrollY = Number(window.sessionStorage.getItem("assetmaster-asset-catalog-scroll-y"));
+      window.sessionStorage.removeItem("assetmaster-asset-catalog-scroll-y");
+      navigateTo("Danh mục tài sản");
+      if (Number.isFinite(savedScrollY) && savedScrollY > 0) {
+        window.requestAnimationFrame(() => window.requestAnimationFrame(() => window.scrollTo(0, savedScrollY)));
+      }
+    };
     window.addEventListener("assetmaster:return-to-asset-catalog", returnToAssetCatalog);
     return () => window.removeEventListener("assetmaster:return-to-asset-catalog", returnToAssetCatalog);
   }, []);
@@ -1295,12 +1302,13 @@ function AssetCatalogPage({ assets, totalAssets, statusCounts, branchCounts, que
       const invoiceLink = document.createElement("button");
       invoiceLink.type = "button";
       invoiceLink.dataset.invoiceLinkReady = "true";
-      invoiceLink.className = "inline-flex max-w-[170px] truncate rounded-md bg-[#EAF3FF] px-1.5 py-0.5 font-mono !text-[8px] font-medium leading-none text-[#2666A8] underline-offset-2 transition hover:bg-[#DCEEFF] hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2666A8]";
+      invoiceLink.className = "inline-flex max-w-[170px] truncate rounded-md bg-[#EAF3FF] px-2 py-1 font-mono !text-[11px] font-medium leading-none text-[#2666A8] underline-offset-2 transition hover:bg-[#DCEEFF] hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2666A8]";
       invoiceLink.textContent = asset.invoiceKey;
       invoiceLink.title = `Mở Hóa đơn ${asset.invoiceKey}`;
       invoiceLink.setAttribute("aria-label", `Mở Hóa đơn ${asset.invoiceKey}`);
       invoiceLink.addEventListener("click", () => {
         window.sessionStorage.setItem("assetmaster-return-to-asset-catalog", "true");
+        window.sessionStorage.setItem("assetmaster-asset-catalog-scroll-y", String(window.scrollY));
         const url = new URL(window.location.href);
         url.searchParams.set("fromAssetCatalog", "true");
         window.history.replaceState({}, "", `${url.pathname}${url.search}${url.hash}`);
@@ -2188,11 +2196,13 @@ async function downloadAssetRecoveryPdf(item: Handover, companyInfo: CompanyInfo
   y += 10;
   doc.setFontSize(9);
   doc.setTextColor(112, 134, 154);
-  doc.text("Người bàn giao lại", left + 18, y);
-  doc.text("Người thu hồi / Đại diện đơn vị", 125, y);
+  const recoveryReturnerCenter = 61.5;
+  const recoveryReceiverCenter = 148.5;
+  doc.text("Người bàn giao lại", recoveryReturnerCenter, y, { align: "center" });
+  doc.text("Người thu hồi / Đại diện đơn vị", recoveryReceiverCenter, y, { align: "center" });
   doc.setTextColor(25, 59, 87);
-  doc.text(item.recipient, left + 10, y + 33);
-  doc.text(item.handoverBy || "Quản trị viên", 119, y + 33);
+  doc.text(item.recipient, recoveryReturnerCenter, y + 33, { align: "center" });
+  doc.text(item.handoverBy || "Quản trị viên", recoveryReceiverCenter, y + 33, { align: "center" });
   const watermark = await createPdfLogoWatermark(companyInfo.logoUrl).catch(() => null);
   applyPdfLogoWatermark(doc, watermark);
   drawPdfCorporateFooter(doc, companyInfo, "Biên bản thu hồi tài sản");
