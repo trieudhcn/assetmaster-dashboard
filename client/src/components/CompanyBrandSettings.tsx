@@ -125,7 +125,7 @@ export function CompanyBrandSettings({ companyInfo, onSave }: { companyInfo: Com
 
   const copyButton = (value: string, label: string) => <button type="button" disabled={!value.trim()} onClick={() => { void copyContact(value, label); }} className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md p-1.5 text-[#60758A] transition hover:bg-[#ECF8F7] hover:text-[#087A6A] disabled:cursor-not-allowed disabled:opacity-40" aria-label={`Sao chép ${label}`} title={`Sao chép ${label}`}><Copy size={15} /></button>;
 
-  return <div data-system-settings-brand className="min-h-screen bg-[#F4F7FB] px-4 py-7 sm:px-6 lg:px-9 lg:py-8">
+  return <div id="settings-brand" data-system-settings-brand className="min-h-screen w-full bg-[#F4F7FB] px-4 py-7 sm:px-6 lg:px-9 lg:py-8">
     <div className="mx-auto max-w-[1100px]">
       <div className="mb-7">
         <div className="mb-2 flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.16em] text-[#0F8C8C]"><span className="h-1.5 w-1.5 rounded-full bg-[#F0A516]" />Thiết lập thương hiệu</div>
@@ -137,10 +137,10 @@ export function CompanyBrandSettings({ companyInfo, onSave }: { companyInfo: Com
           <div className="grid h-10 w-10 place-items-center rounded-xl bg-[#E6F6F2] text-[#0F8C8C]"><Building2 size={19} /></div>
           <div><h2 className="font-display text-base font-extrabold text-[#102A43]">Thông tin công ty</h2><p className="mt-1 text-xs text-[#8AA0B6]">Các thông tin này được dùng cho website, đăng nhập và biên bản bàn giao.</p></div>
         </div>
-        <div className="mt-5 space-y-4">
+        <div className="mt-5 grid gap-4 lg:grid-cols-2">
           <div><label className="field-label">Tên công ty <span className="text-[#0F8C8C]">*</span></label><input value={draft.name} onChange={(event) => update("name", event.target.value)} className="field-input" /></div>
           <div><label className="field-label">Tiêu đề website <span className="text-[#0F8C8C]">*</span></label><input value={draft.websiteTitle} onChange={(event) => update("websiteTitle", event.target.value)} placeholder="Hệ thống Quản lý Tài sản" className="field-input" /><p className="mt-1 text-[11px] text-[#8AA0B6]">Hiển thị trên tab trình duyệt và khu vực nhận diện đăng nhập.</p></div>
-          <div>
+          <div className="lg:col-span-2">
             <label className="field-label">Logo công ty</label>
             <div className="flex flex-col gap-3 rounded-xl border border-dashed border-[#9ADBD3] bg-[#F8FCFB] p-4 sm:flex-row sm:items-center">
               <div className="grid h-16 w-16 shrink-0 place-items-center">{draft.logoUrl ? <img src={draft.logoUrl} alt="Logo công ty" className="h-16 w-16 object-contain" /> : <ImageUp size={22} className="text-[#60758A]" />}</div>
@@ -148,7 +148,7 @@ export function CompanyBrandSettings({ companyInfo, onSave }: { companyInfo: Com
             </div>
           </div>
           <div><label className="field-label">Mã số thuế</label><div className="relative"><input value={draft.taxCode} onChange={(event) => update("taxCode", event.target.value)} className="field-input pr-10" />{copyButton(draft.taxCode, "Mã số thuế")}</div></div>
-          <div className="grid gap-4 sm:grid-cols-2">
+          <div className="grid gap-4 sm:grid-cols-2 lg:col-span-2">
             <div><label className="field-label">Số điện thoại</label><div className="relative"><input value={draft.phone} onChange={(event) => update("phone", event.target.value)} className="field-input pr-10" />{copyButton(draft.phone, "Số điện thoại")}</div></div>
             <div><label className="field-label">Email công ty</label><div className="relative"><input type="email" value={draft.email} onChange={(event) => update("email", event.target.value)} placeholder="contact@company.vn" className="field-input pr-10" />{copyButton(draft.email, "Email công ty")}</div></div>
           </div>
@@ -161,7 +161,7 @@ export function CompanyBrandSettings({ companyInfo, onSave }: { companyInfo: Com
               <span><span className="block text-xs font-extrabold text-[#193B57]">Ẩn Website trên mẫu phiếu nội bộ</span><span className="mt-1 block text-[11px] leading-5 text-[#71869A]">Khi bật, Website không xuất hiện trên Phiếu phụ kiện, Bàn giao/Thu hồi, Bảo hành/Sửa chữa, Thanh lý và Kiểm kê; Email vẫn hiển thị.</span></span>
             </label>
           </div>
-          <div><label className="field-label">Địa chỉ</label><div className="relative"><textarea value={draft.address} onChange={(event) => update("address", event.target.value)} className="field-input min-h-[76px] resize-y pr-10" /><button type="button" disabled={!draft.address.trim()} onClick={() => { void copyContact(draft.address, "Địa chỉ"); }} className="absolute right-2 top-2 rounded-md p-1.5 text-[#60758A] transition hover:bg-[#ECF8F7] hover:text-[#087A6A] disabled:cursor-not-allowed disabled:opacity-40" aria-label="Sao chép Địa chỉ" title="Sao chép Địa chỉ"><Copy size={15} /></button></div></div>
+          <div className="lg:col-span-2"><label className="field-label">Địa chỉ</label><div className="relative"><textarea value={draft.address} onChange={(event) => update("address", event.target.value)} className="field-input min-h-[76px] resize-y pr-10" /><button type="button" disabled={!draft.address.trim()} onClick={() => { void copyContact(draft.address, "Địa chỉ"); }} className="absolute right-2 top-2 rounded-md p-1.5 text-[#60758A] transition hover:bg-[#ECF8F7] hover:text-[#087A6A] disabled:cursor-not-allowed disabled:opacity-40" aria-label="Sao chép Địa chỉ" title="Sao chép Địa chỉ"><Copy size={15} /></button></div></div>
         </div>
         <div className="mt-6 flex justify-end border-t border-[#E7EEF3] pt-4"><button onClick={save} className="flex items-center gap-2 rounded-lg bg-[#0F8C8C] px-4 py-2.5 text-xs font-bold text-white hover:bg-[#087A6A]"><CheckCircle2 size={15} />Lưu cài đặt thương hiệu</button></div>
       </section>

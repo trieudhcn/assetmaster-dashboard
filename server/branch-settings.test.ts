@@ -28,6 +28,8 @@ describe("branch settings", () => {
     expect(routers).toContain("confirmUsage");
     expect(routers).toContain("Mã Chi nhánh đã tồn tại");
     expect(settings).toContain("Quản lý Chi nhánh");
+    expect(settings).toContain('id="settings-branches"');
+    expect(settings).toContain('w-[calc(100%-2rem)] max-w-[1100px]');
     expect(settings).toContain("branches.create");
     expect(settings).toContain("branches.update");
     expect(settings).toContain("branches.remove");

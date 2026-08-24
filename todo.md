@@ -572,6 +572,18 @@
 - [x] Sắp xếp các mục: Cài đặt thương hiệu, Quản lý chi nhánh, Thứ tự menu, Nhận diện mở rộng.
 - [x] Bổ sung hồi quy, xác minh giao diện Cài đặt và phát hành.
 
+## Current Session — Tối ưu bố cục Cài đặt
+
+- [x] Chia trường nhập Cài đặt thương hiệu thành hai cột trên desktop, một cột trên mobile.
+- [x] Thêm thanh điều hướng nhanh đến từng nhóm Cài đặt.
+- [x] Căn chỉnh khối Quản lý Chi nhánh và các khối Cài đặt trên mobile.
+- [x] Bổ sung hồi quy, xác minh desktop/mobile và phát hành.
+
+## Current Session — Đồng nhất container Cài đặt
+
+- [x] Đồng nhất chiều rộng và căn giữa các khối Cài đặt trên desktop/mobile.
+- [x] Bổ sung hồi quy, xác minh desktop/mobile và phát hành.
+
 - [x] Mở rộng mô hình dữ liệu tài sản với thông tin chi tiết và trạng thái thao tác.
 - [x] Thêm modal tạo tài sản mới với validation cơ bản.
 - [x] Thêm modal chỉnh sửa tài sản và cập nhật dữ liệu trong bảng.

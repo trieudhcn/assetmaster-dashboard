@@ -24,5 +24,8 @@ describe("company brand contact actions", () => {
     expect(settings).toContain("const normalizeLogo = async (file: File)");
     expect(settings).toContain('output.toDataURL("image/webp", 0.92)');
     expect(settings).toContain("Đã căn giữa logo theo tỷ lệ chuẩn");
+    expect(settings).toContain('grid gap-4 lg:grid-cols-2');
+    expect(settings).toContain('id="settings-brand"');
+    expect(settings).toContain('lg:col-span-2');
   });
 });
