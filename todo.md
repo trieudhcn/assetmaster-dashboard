@@ -483,6 +483,12 @@
 - [x] Chuyển số lượng phiếu sang màu cam khi lớn hơn 0.
 - [x] Bổ sung hồi quy, xác minh giao diện và phát hành.
 
+## Current Session — Điều hướng KPI phiếu cần xử lý
+
+- [x] Cho phép nhấn số KPI màu cam để chuyển sang Bảo hành/Sửa chữa.
+- [x] Tự lọc danh sách phiếu đang cần xử lý khi mở từ KPI.
+- [x] Bổ sung hồi quy, xác minh điều hướng và phát hành.
+
 - [x] Mở rộng mô hình dữ liệu tài sản với thông tin chi tiết và trạng thái thao tác.
 - [x] Thêm modal tạo tài sản mới với validation cơ bản.
 - [x] Thêm modal chỉnh sửa tài sản và cập nhật dữ liệu trong bảng.

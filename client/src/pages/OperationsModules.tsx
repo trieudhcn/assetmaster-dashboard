@@ -172,7 +172,7 @@ export function MaintenancePage() {
   const [costSummaryYear, setCostSummaryYear] = useState(String(currentYear));
   const [costSummaryChannel, setCostSummaryChannel] = useState<"all" | "warranty" | "repair">("all");
   const [ticketCodeLookup, setTicketCodeLookup] = useState("");
-  const [ticketStatusFilter, setTicketStatusFilter] = useState<"all" | "open" | "in_progress" | "resolved" | "closed">("all");
+  const [ticketStatusFilter, setTicketStatusFilter] = useState<"all" | "needs_attention" | "open" | "in_progress" | "resolved" | "closed">("all");
   const [maintenancePage, setMaintenancePage] = useState(1);
   const [expandedTicketId, setExpandedTicketId] = useState<number | null>(null);
   const [historyTicket, setHistoryTicket] = useState<(typeof tickets)[number] | null>(null);
@@ -258,7 +258,7 @@ export function MaintenancePage() {
   const maintenanceAssets = assets.filter((asset) => asset.status === "maintenance" && !assetsWithOpenTickets.has(asset.id) && !queuedMaintenanceAssetIds.has(asset.id));
   const maintenanceYears = Array.from(new Set([currentYear, ...tickets.map((ticket) => ticket.ticketYear || new Date(ticket.openedAt).getFullYear())])).sort((left, right) => right - left);
   const yearTickets = tickets.filter((ticket) => maintenanceYear === "all" || (ticket.ticketYear || new Date(ticket.openedAt).getFullYear()) === Number(maintenanceYear));
-  const filteredTickets = yearTickets.filter((ticket) => (serviceChannelTab === "all" || ticket.serviceChannel === serviceChannelTab) && (ticketStatusFilter === "all" || ticket.status === ticketStatusFilter) && (!ticketCodeLookup.trim() || `${ticket.ticketCode} ${ticket.warrantyRequestCode || ""}`.toLocaleLowerCase("vi").includes(ticketCodeLookup.trim().toLocaleLowerCase("vi"))));
+  const filteredTickets = yearTickets.filter((ticket) => (serviceChannelTab === "all" || ticket.serviceChannel === serviceChannelTab) && (ticketStatusFilter === "all" || (ticketStatusFilter === "needs_attention" ? ticket.status === "open" || ticket.status === "in_progress" : ticket.status === ticketStatusFilter)) && (!ticketCodeLookup.trim() || `${ticket.ticketCode} ${ticket.warrantyRequestCode || ""}`.toLocaleLowerCase("vi").includes(ticketCodeLookup.trim().toLocaleLowerCase("vi"))));
   const costSummaryTickets = useMemo(() => tickets.filter((ticket) => (costSummaryYear === "all" || (ticket.ticketYear || new Date(ticket.openedAt).getFullYear()) === Number(costSummaryYear)) && (costSummaryChannel === "all" || ticket.serviceChannel === costSummaryChannel)), [costSummaryChannel, costSummaryYear, tickets]);
   const costSummary = useMemo(() => costSummaryTickets.reduce((summary, ticket) => {
     const actualCost = Number(ticket.actualCost || 0) || 0;
@@ -323,6 +323,14 @@ export function MaintenancePage() {
   useEffect(() => {
     setMaintenancePage(1);
   }, [maintenanceYear, serviceChannelTab, ticketCodeLookup, ticketStatusFilter]);
+  useEffect(() => {
+    if (sessionStorage.getItem("assetmaster-maintenance-status-filter") !== "needs_attention") return;
+    sessionStorage.removeItem("assetmaster-maintenance-status-filter");
+    setMaintenanceYear("all");
+    setServiceChannelTab("all");
+    setTicketCodeLookup("");
+    setTicketStatusFilter("needs_attention");
+  }, []);
   useEffect(() => {
     const ticketId = Number(sessionStorage.getItem("assetmaster-open-maintenance-ticket-id"));
     if (ticketId && !assetsQuery.isLoading && !ticketsQuery.isLoading) {
@@ -666,7 +674,7 @@ export function MaintenancePage() {
               <h2 className="text-sm font-extrabold text-[#193B57]">Quản lý phiếu Bảo hành/Sửa chữa</h2>
               <p className="mt-1 text-xs text-[#8AA0B6]">Phân công, tiến độ, chi phí và Kênh xử lý được lưu tập trung.</p>
             </div>
-            <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:flex-wrap sm:items-center"><div className="flex h-9 w-full items-center rounded-lg border border-[#DDE7F0] bg-white px-3 focus-within:border-[#0F8C8C] sm:min-w-[205px] sm:w-auto"><input value={ticketCodeLookup} onChange={(event) => setTicketCodeLookup(event.target.value)} placeholder="Tra cứu mã phiếu BH / SC..." aria-label="Tra cứu mã phiếu Bảo hành hoặc Sửa chữa" className="min-w-0 flex-1 bg-transparent text-xs font-semibold text-[#193B57] outline-none placeholder:text-[#9BAEC0]" /></div><SearchableSelect value={ticketStatusFilter} onChange={(value) => setTicketStatusFilter(value as typeof ticketStatusFilter)} className="w-full sm:min-w-[172px] sm:w-auto" placeholder="Tất cả trạng thái" searchPlaceholder="Tìm trạng thái xử lý..." options={[{ value: "all", label: "Tất cả trạng thái" }, ...Object.entries(maintenanceStatusLabels).map(([value, label]) => ({ value, label }))]} /><label className="flex w-full items-center gap-2 text-xs font-bold text-[#60758A] sm:min-w-[180px] sm:w-auto"><span className="shrink-0">Năm</span><SearchableSelect value={maintenanceYear} onChange={setMaintenanceYear} className="min-w-0 flex-1" placeholder="Tất cả năm" searchPlaceholder="Tìm năm..." options={[{ value: "all", label: "Tất cả năm" }, ...maintenanceYears.map((year) => ({ value: String(year), label: String(year) }))]} /></label><span className="text-xs font-bold text-[#60758A]">{filteredTickets.length} phiếu</span></div>
+            <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:flex-wrap sm:items-center"><div className="flex h-9 w-full items-center rounded-lg border border-[#DDE7F0] bg-white px-3 focus-within:border-[#0F8C8C] sm:min-w-[205px] sm:w-auto"><input value={ticketCodeLookup} onChange={(event) => setTicketCodeLookup(event.target.value)} placeholder="Tra cứu mã phiếu BH / SC..." aria-label="Tra cứu mã phiếu Bảo hành hoặc Sửa chữa" className="min-w-0 flex-1 bg-transparent text-xs font-semibold text-[#193B57] outline-none placeholder:text-[#9BAEC0]" /></div><SearchableSelect value={ticketStatusFilter} onChange={(value) => setTicketStatusFilter(value as typeof ticketStatusFilter)} className="w-full sm:min-w-[172px] sm:w-auto" placeholder="Tất cả trạng thái" searchPlaceholder="Tìm trạng thái xử lý..." options={[{ value: "all", label: "Tất cả trạng thái" }, { value: "needs_attention", label: "Cần xử lý" }, ...Object.entries(maintenanceStatusLabels).map(([value, label]) => ({ value, label }))]} /><label className="flex w-full items-center gap-2 text-xs font-bold text-[#60758A] sm:min-w-[180px] sm:w-auto"><span className="shrink-0">Năm</span><SearchableSelect value={maintenanceYear} onChange={setMaintenanceYear} className="min-w-0 flex-1" placeholder="Tất cả năm" searchPlaceholder="Tìm năm..." options={[{ value: "all", label: "Tất cả năm" }, ...maintenanceYears.map((year) => ({ value: String(year), label: String(year) }))]} /></label><span className="text-xs font-bold text-[#60758A]">{filteredTickets.length} phiếu</span></div>
           </div>
 
           <div className="flex flex-wrap gap-2 border-b border-[#E7EEF3] px-5 py-3" role="tablist" aria-label="Lọc Kênh xử lý">
