@@ -84,6 +84,7 @@ import {
   Clock3,
   CheckCircle2,
   Filter,
+  GripVertical,
   Laptop,
   LayoutDashboard,
   LogOut,
@@ -1254,8 +1255,12 @@ export default function Home() {
 }
 
 function AssetCatalogPage({ assets, totalAssets, statusCounts, branchCounts, query, category, status, department, vendor, brand, warranty, branch, invoice, invoiceOptions, vendorOptions, brandOptions, branchOptions, onQueryChange, onCategoryChange, onStatusChange, onDepartmentChange, onVendorChange, onBrandChange, onWarrantyChange, onBranchChange, onInvoiceChange, onReset, onCreate, onEdit, onOpenDetail, onOpenQr, onOpenMaintenance, onOpenInvoice, onAssign, onExportFilteredAssets, canExportFilteredAssets, isExportingFilteredAssets, onOpenImport, onOpenImportHistory, canEditSectionLabels = false }: { assets: Asset[]; totalAssets: number; statusCounts: Record<string, number>; branchCounts: Record<string, number>; query: string; category: string; status: string; department: string; vendor: string; brand: string; warranty: string; branch: string; invoice: string; invoiceOptions: string[]; vendorOptions: string[]; brandOptions: string[]; branchOptions: string[]; onQueryChange: (value: string) => void; onCategoryChange: (value: string) => void; onStatusChange: (value: string) => void; onDepartmentChange: (value: string) => void; onVendorChange: (value: string) => void; onBrandChange: (value: string) => void; onWarrantyChange: (value: string) => void; onBranchChange: (value: string) => void; onInvoiceChange: (value: string) => void; onReset: () => void; onCreate: () => void; onEdit: (asset: Asset) => void; onOpenDetail: (asset: Asset) => void; onOpenQr: (asset: Asset) => void; onOpenMaintenance: (asset: Asset) => void; onOpenInvoice: (asset: Asset) => void; onAssign: (asset: Asset) => void; onExportFilteredAssets: () => void; canExportFilteredAssets: boolean; isExportingFilteredAssets: boolean; onOpenImport: () => void; onOpenImportHistory: () => void; canEditSectionLabels?: boolean }) {
-  type OptionalAssetColumn = "holder" | "branch" | "status" | "location" | "invoice" | "value";
+  type AssetCatalogColumn = "code" | "name" | "holder" | "branch" | "status" | "location" | "invoice" | "value";
+  type OptionalAssetColumn = Exclude<AssetCatalogColumn, "code" | "name">;
   const defaultVisibleColumns: Record<OptionalAssetColumn, boolean> = { holder: true, branch: true, status: true, location: true, invoice: false, value: true };
+  const defaultColumnOrder: AssetCatalogColumn[] = ["code", "name", "holder", "branch", "status", "location", "invoice", "value"];
+  const defaultColumnWidths: Record<AssetCatalogColumn, number> = { code: 100, name: 190, holder: 124, branch: 126, status: 126, location: 154, invoice: 96, value: 126 };
+  const columnLabels: Record<AssetCatalogColumn, string> = { code: "Mã TS", name: "Tên tài sản", holder: "Người giữ", branch: "Chi nhánh", status: "Trạng thái", location: "Vị trí / Serial", invoice: "Mã Hóa đơn", value: "Giá trị" };
   const columnOptions: Array<{ key: OptionalAssetColumn; label: string }> = [
     { key: "holder", label: "Người giữ" },
     { key: "branch", label: "Chi nhánh" },
@@ -1267,6 +1272,42 @@ function AssetCatalogPage({ assets, totalAssets, statusCounts, branchCounts, que
   const [visibleColumns, setVisibleColumns] = useState<Record<OptionalAssetColumn, boolean>>(defaultVisibleColumns);
   const [columnPickerOpen, setColumnPickerOpen] = useState(false);
   const columnPickerRef = useRef<HTMLDivElement>(null);
+  const [columnOrder, setColumnOrder] = useState<AssetCatalogColumn[]>(defaultColumnOrder);
+  const [columnWidths, setColumnWidths] = useState<Record<AssetCatalogColumn, number>>(defaultColumnWidths);
+  const [draggedColumn, setDraggedColumn] = useState<AssetCatalogColumn | null>(null);
+  const [isColumnResizing, setIsColumnResizing] = useState(false);
+  const columnLayoutRef = useRef({ order: defaultColumnOrder, widths: defaultColumnWidths });
+  const resizeColumnRef = useRef<{ key: AssetCatalogColumn; startX: number; startWidth: number } | null>(null);
+  const draggedColumnRef = useRef<AssetCatalogColumn | null>(null);
+  const hasLoadedColumnPreferences = useRef(false);
+  const columnPreferencesQuery = trpc.assetCatalogPreferences.get.useQuery();
+  const saveColumnPreferences = trpc.assetCatalogPreferences.save.useMutation({ onError: () => toast.error("Chưa thể đồng bộ bố cục cột. Thay đổi sẽ được giữ trong phiên hiện tại.") });
+  const persistColumnLayout = (nextOrder: AssetCatalogColumn[], nextWidths: Record<AssetCatalogColumn, number>) => {
+    const layout = { order: nextOrder, widths: nextWidths };
+    columnLayoutRef.current = layout;
+    setColumnOrder(nextOrder);
+    setColumnWidths(nextWidths);
+    saveColumnPreferences.mutate({ columnOrder: nextOrder, columnWidths: nextWidths });
+  };
+  const resetColumnLayout = () => {
+    setVisibleColumns(defaultVisibleColumns);
+    persistColumnLayout(defaultColumnOrder, defaultColumnWidths);
+  };
+  const startColumnResize = (event: Pick<PointerEvent, "preventDefault" | "stopPropagation" | "clientX">, key: AssetCatalogColumn) => {
+    event.preventDefault();
+    event.stopPropagation();
+    resizeColumnRef.current = { key, startX: event.clientX, startWidth: columnLayoutRef.current.widths[key] };
+    setIsColumnResizing(true);
+    document.body.style.cursor = "col-resize";
+    document.body.style.userSelect = "none";
+  };
+  const moveColumn = (target: AssetCatalogColumn) => {
+    const source = draggedColumnRef.current;
+    if (!source || source === target) return;
+    const nextOrder = columnLayoutRef.current.order.filter((key) => key !== source);
+    nextOrder.splice(nextOrder.indexOf(target), 0, source);
+    persistColumnLayout(nextOrder, columnLayoutRef.current.widths);
+  };
   useEffect(() => {
     if (!columnPickerOpen) return;
     const closeOnOutsidePointer = (event: PointerEvent) => {
@@ -1285,49 +1326,48 @@ function AssetCatalogPage({ assets, totalAssets, statusCounts, branchCounts, que
     try { window.localStorage.setItem("assetmaster-asset-catalog-visible-columns", JSON.stringify(visibleColumns)); } catch { /* Không chặn trải nghiệm khi không lưu được cấu hình. */ }
   }, [visibleColumns]);
   useEffect(() => {
-    if (!visibleColumns.branch) return;
-    document.querySelectorAll<HTMLSpanElement>("[data-asset-branch-badge]").forEach((badge) => {
-      const branchName = badge.textContent?.trim().split(" · ")[0] || "Chưa gán";
-      badge.textContent = branchName;
-      badge.title = branchName;
-    });
-  }, [assets, visibleColumns.branch]);
+    if (!columnPreferencesQuery.data || hasLoadedColumnPreferences.current) return;
+    const savedOrder = columnPreferencesQuery.data.columnOrder as AssetCatalogColumn[];
+    const nextOrder = savedOrder.length === defaultColumnOrder.length ? savedOrder : defaultColumnOrder;
+    const nextWidths = { ...defaultColumnWidths, ...columnPreferencesQuery.data.columnWidths } as Record<AssetCatalogColumn, number>;
+    columnLayoutRef.current = { order: nextOrder, widths: nextWidths };
+    setColumnOrder(nextOrder);
+    setColumnWidths(nextWidths);
+    hasLoadedColumnPreferences.current = true;
+  }, [columnPreferencesQuery.data]);
   useEffect(() => {
-    if (!visibleColumns.invoice) return;
-    const header = Array.from(document.querySelectorAll<HTMLTableCellElement>("th")).find((cell) => cell.textContent?.trim() === "Mã Hóa đơn");
-    const invoiceColumnIndex = header?.cellIndex;
-    if (!header || invoiceColumnIndex === undefined || invoiceColumnIndex < 0) return;
-    header.style.width = "96px";
-    header.style.minWidth = "96px";
-    document.querySelectorAll<HTMLTableRowElement>("tbody tr").forEach((row) => {
-      const assetCode = row.cells.item(0)?.textContent?.trim();
-      const asset = assets.find((item) => item.code === assetCode);
-      const cell = row.cells.item(invoiceColumnIndex);
-      if (cell) {
-        cell.style.width = "96px";
-        cell.style.maxWidth = "96px";
-      }
-      const badge = cell?.querySelector<HTMLSpanElement>("span");
-      if (!asset?.purchaseInvoiceId || !asset.invoiceKey || !badge || badge.dataset.invoiceLinkReady === "true") return;
-      const invoiceLink = document.createElement("button");
-      invoiceLink.type = "button";
-      invoiceLink.dataset.invoiceLinkReady = "true";
-      invoiceLink.className = "inline-flex max-w-[90px] truncate rounded-md bg-[#EAF3FF] px-1.5 py-1 font-mono !text-[11px] font-medium leading-none text-[#2666A8] underline-offset-2 transition hover:bg-[#DCEEFF] hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2666A8]";
-      invoiceLink.textContent = asset.invoiceKey;
-      invoiceLink.title = `Mở Hóa đơn ${asset.invoiceKey}`;
-      invoiceLink.setAttribute("aria-label", `Mở Hóa đơn ${asset.invoiceKey}`);
-      invoiceLink.addEventListener("click", () => {
-        window.sessionStorage.setItem("assetmaster-return-to-asset-catalog", "true");
-        window.sessionStorage.setItem("assetmaster-asset-catalog-scroll-y", String(window.scrollY));
-        const url = new URL(window.location.href);
-        url.searchParams.set("fromAssetCatalog", "true");
-        window.history.replaceState({}, "", `${url.pathname}${url.search}${url.hash}`);
-        onOpenInvoice(asset);
-      });
-      badge.replaceWith(invoiceLink);
-    });
-  }, [assets, onOpenInvoice, visibleColumns.invoice]);
-  const tableMinWidth = 570 + (visibleColumns.holder ? 105 : 0) + (visibleColumns.branch ? 150 : 0) + (visibleColumns.status ? 115 : 0) + (visibleColumns.location ? 145 : 0) + (visibleColumns.invoice ? 96 : 0) + (visibleColumns.value ? 125 : 0);
+    const updateWidth = (event: PointerEvent) => {
+      const resize = resizeColumnRef.current;
+      if (!resize) return;
+      const nextWidths = { ...columnLayoutRef.current.widths, [resize.key]: Math.min(420, Math.max(72, Math.round(resize.startWidth + event.clientX - resize.startX))) };
+      columnLayoutRef.current = { ...columnLayoutRef.current, widths: nextWidths };
+      setColumnWidths(nextWidths);
+    };
+    const finishResize = () => {
+      if (!resizeColumnRef.current) return;
+      resizeColumnRef.current = null;
+      setIsColumnResizing(false);
+      document.body.style.cursor = "";
+      document.body.style.userSelect = "";
+      saveColumnPreferences.mutate({ columnOrder: columnLayoutRef.current.order, columnWidths: columnLayoutRef.current.widths });
+    };
+    document.addEventListener("pointermove", updateWidth);
+    document.addEventListener("pointerup", finishResize);
+    return () => { document.removeEventListener("pointermove", updateWidth); document.removeEventListener("pointerup", finishResize); };
+  }, [saveColumnPreferences]);
+  const displayedColumns = columnOrder.filter((key) => key === "code" || key === "name" || visibleColumns[key]);
+  const tableMinWidth = displayedColumns.reduce((total, key) => total + columnWidths[key], 160);
+  const renderColumnHeader = (key: AssetCatalogColumn) => <th key={key} draggable={!isColumnResizing} onDragStart={(event) => { draggedColumnRef.current = key; setDraggedColumn(key); event.dataTransfer.effectAllowed = "move"; event.dataTransfer.setData("text/plain", key); }} onDragOver={(event) => { event.preventDefault(); event.dataTransfer.dropEffect = "move"; }} onDrop={(event) => { event.preventDefault(); moveColumn(key); }} onDragEnd={() => { draggedColumnRef.current = null; setDraggedColumn(null); }} className={`relative select-none px-4 py-3.5 text-left ${key === "value" ? "text-right" : ""} ${draggedColumn === key ? "opacity-45" : ""} ${isColumnResizing ? "cursor-col-resize" : "cursor-grab active:cursor-grabbing"}`} title="Kéo tiêu đề để đổi thứ tự cột"><span className="inline-flex max-w-[calc(100%-18px)] items-center gap-1.5 truncate"><GripVertical size={12} className="shrink-0 text-[#B0BFCC]" />{columnLabels[key]}</span><button type="button" onPointerDown={(event) => startColumnResize(event.nativeEvent, key)} className="absolute inset-y-1 right-0 w-3 cursor-col-resize touch-none border-r-2 border-transparent transition hover:border-[#0F8C8C] focus-visible:border-[#0F8C8C] focus-visible:outline-none" aria-label={`Kéo để thay đổi độ rộng cột ${columnLabels[key]}`} title={`Kéo để đổi độ rộng cột ${columnLabels[key]}`} /></th>;
+  const renderAssetCell = (asset: Asset, key: AssetCatalogColumn) => {
+    if (key === "code") return <td key={key} className="px-5 py-4 font-mono text-[11px] font-bold text-[#0F8C8C]" title={asset.code}>{asset.code}</td>;
+    if (key === "name") return <td key={key} className="px-4 py-4"><div className="flex min-w-0 items-center gap-3"><div className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-[#F0F5F8] text-[#527089]"><Laptop size={15} /></div><div className="min-w-0"><div className="truncate text-xs font-bold text-[#193B57]" title={asset.name}>{asset.name}</div><div className="mt-0.5 truncate text-[10px] text-[#9BAEC0]">{asset.category}</div></div></div></td>;
+    if (key === "holder") return <td key={key} className="truncate px-4 py-4 text-xs font-semibold text-[#60758A]" title={asset.holder}>{asset.holder}</td>;
+    if (key === "branch") return <td key={key} className="px-4 py-4"><span className="inline-flex max-w-full truncate rounded-full bg-[#F0F5F8] px-2.5 py-1 text-[10px] font-extrabold text-[#526779]" title={asset.branchLabel || "Chưa gán"}>{asset.branchLabel || "Chưa gán"}</span></td>;
+    if (key === "status") return <td key={key} className="px-4 py-4"><span className={`inline-flex max-w-full items-center gap-1.5 truncate rounded-full px-2.5 py-1 text-[10px] font-extrabold ring-1 ring-inset ${statusStyles[asset.statusType]}`} title={asset.status}><span className="h-1.5 w-1.5 shrink-0 rounded-full bg-current" />{asset.status}</span></td>;
+    if (key === "location") return <td key={key} className="px-4 py-4 text-xs text-[#60758A]"><div className="truncate" title={asset.location || "Chưa cập nhật"}>{asset.location || "Chưa cập nhật"}</div><div className="mt-1 truncate font-mono text-[10px] text-[#9BAEC0]" title={asset.serial || "Chưa có serial"}>{asset.serial || "Chưa có serial"}</div></td>;
+    if (key === "invoice") return <td key={key} className="px-2 py-4">{asset.purchaseInvoiceId && asset.invoiceKey ? <button type="button" onClick={() => { window.sessionStorage.setItem("assetmaster-return-to-asset-catalog", "true"); window.sessionStorage.setItem("assetmaster-asset-catalog-scroll-y", String(window.scrollY)); const url = new URL(window.location.href); url.searchParams.set("fromAssetCatalog", "true"); window.history.replaceState({}, "", `${url.pathname}${url.search}${url.hash}`); onOpenInvoice(asset); }} className="inline-flex max-w-full truncate rounded-md bg-[#EAF3FF] px-1.5 py-1 font-mono text-[11px] font-medium leading-none text-[#2666A8] underline-offset-2 transition hover:bg-[#DCEEFF] hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2666A8]" title={`Mở Hóa đơn ${asset.invoiceKey}`} aria-label={`Mở Hóa đơn ${asset.invoiceKey}`}>{asset.invoiceKey}</button> : <span className="inline-flex max-w-full truncate rounded-md bg-[#F0F5F8] px-1.5 py-1 font-mono text-[10px] font-bold text-[#526779]" title="Chưa liên kết">—</span>}</td>;
+    return <td key={key} className="px-4 py-4 text-right text-xs font-extrabold tabular-nums text-[#193B57]">{formatVnd(asset.value)} <span className="text-[10px] font-semibold text-[#9BAEC0]">VNĐ</span></td>;
+  };
   const assignedCount = assets.filter((asset) => asset.statusType === "active").length;
   const maintenanceCount = assets.filter((asset) => asset.statusType === "maintenance").length;
   return <div className="min-h-screen bg-[#F4F7FB] px-4 py-7 sm:px-6 lg:px-9 lg:py-8"><div className="mx-auto max-w-[1500px]">
@@ -1335,7 +1375,7 @@ function AssetCatalogPage({ assets, totalAssets, statusCounts, branchCounts, que
     <section className="grid gap-3 sm:grid-cols-3"><div className="rounded-xl border border-[#DFE9F0] bg-white p-4 shadow-[0_8px_24px_rgba(16,42,67,0.045)]"><div className="text-[11px] font-bold text-[#8AA0B6]">Tài sản hiển thị</div><div className="mt-2 font-display text-2xl font-extrabold text-[#102A43]">{assets.length}<span className="ml-1 text-xs font-semibold text-[#8AA0B6]">/ {totalAssets}</span></div></div><div className="rounded-xl border border-[#CDE5E5] bg-[#F4FBFA] p-4"><div className="text-[11px] font-bold text-[#4B8884]">Đang cấp phát trong phạm vi</div><div className="mt-2 font-display text-2xl font-extrabold text-[#087A6A]">{assignedCount}</div></div><div className="rounded-xl border border-[#F2D596] bg-[#FFF9EB] p-4"><div className="text-[11px] font-bold text-[#8F6A31]">Bảo hành/Sửa chữa trong phạm vi</div><div className="mt-2 font-display text-2xl font-extrabold text-[#A86B00]">{maintenanceCount}</div></div></section>
     <section className="mt-5 overflow-hidden rounded-xl border border-[#DFE9F0] bg-white shadow-[0_8px_24px_rgba(16,42,67,0.045)]"><div className="flex flex-col gap-4 border-b border-[#E7EEF3] px-5 py-5 lg:flex-row lg:items-center lg:justify-between"><div><h2 className="font-display text-[17px] font-extrabold tracking-[-0.025em] text-[#102A43]">Danh sách quản trị</h2><p className="mt-1 text-xs text-[#8AA0B6]">Tìm đúng tài sản trước khi xem hồ sơ, điều chỉnh thông tin, tạo QR hoặc cấp phát.</p></div><div className="flex flex-wrap items-center gap-2"><div ref={columnPickerRef} className="relative shrink-0"><button type="button" onClick={() => setColumnPickerOpen((open) => !open)} aria-expanded={columnPickerOpen} aria-controls="asset-catalog-column-picker" className="inline-flex h-9 items-center justify-center gap-2 rounded-lg border border-[#CDE5E5] bg-white px-3 text-xs font-bold text-[#087A6A] transition hover:bg-[#ECF8F7]"><Columns3 size={14} />Cột</button>{columnPickerOpen && <div id="asset-catalog-column-picker" data-asset-column-picker className="absolute left-0 top-full z-40 mt-2 w-52 rounded-xl border border-[#D7E5EC] bg-white p-2 shadow-[0_16px_36px_rgba(16,42,67,0.16)]"><div className="px-2 pb-1.5 text-[10px] font-extrabold uppercase tracking-[.1em] text-[#71869A]">Cột hiển thị</div>{columnOptions.map((column) => <label key={column.key} className="flex cursor-pointer items-center gap-2 rounded-lg px-2 py-2 text-xs font-semibold text-[#526779] hover:bg-[#F4FBFA]"><input type="checkbox" checked={visibleColumns[column.key]} onChange={() => setVisibleColumns((current) => ({ ...current, [column.key]: !current[column.key] }))} className="h-3.5 w-3.5 rounded border-[#9FC8C4] text-[#0F8C8C] focus:ring-[#0F8C8C]" />{column.label}</label>)}<button type="button" onClick={() => setVisibleColumns(defaultVisibleColumns)} className="mt-1 w-full rounded-lg border border-[#DDE7F0] px-2 py-1.5 text-[10px] font-extrabold text-[#60758A] transition hover:bg-[#F7FAFC]">Khôi phục mặc định</button></div>}</div><button type="button" onClick={onExportFilteredAssets} disabled={!canExportFilteredAssets || isExportingFilteredAssets} title={canExportFilteredAssets ? "Xuất toàn bộ tài sản đang hiển thị sau khi áp dụng bộ lọc" : "Không có tài sản phù hợp với bộ lọc hiện tại"} className="inline-flex h-9 shrink-0 items-center justify-center rounded-lg border border-[#C7DDF8] bg-white px-3 text-xs font-bold text-[#2666A8] hover:bg-[#EAF3FF] disabled:cursor-not-allowed disabled:opacity-50">{isExportingFilteredAssets ? "Đang xuất..." : `Xuất danh sách (${assets.length})`}</button><button type="button" onClick={onOpenImport} title="Tải template và import nhiều tài sản từ Excel" className="inline-flex h-9 shrink-0 items-center justify-center rounded-lg bg-[#0F8C8C] px-3 text-xs font-bold text-white hover:bg-[#087A6A]">Nhập Excel</button><button onClick={onReset} className="inline-flex h-9 items-center justify-center gap-2 rounded-lg border border-[#DDE7F0] px-3 text-xs font-bold text-[#60758A] hover:bg-[#F7FAFC]"><SlidersHorizontal size={14} />Đặt lại bộ lọc</button></div></div>
       <div className="flex flex-wrap items-center gap-2 border-b border-[#E7EEF3] bg-[#FBFCFD] px-5 py-4"><div className="relative min-w-0 flex-[1_1_260px]"><Search className="absolute left-3 top-2.5 text-[#9BAEC0]" size={16} /><input value={query} onChange={(event) => onQueryChange(event.target.value)} placeholder="Tìm mã, tên hoặc người giữ..." className="h-9 w-full rounded-lg border border-[#DDE7F0] bg-white pl-9 pr-3 text-xs outline-none focus:border-[#0F8C8C]" /></div><FilterSelect value={invoice} onChange={onInvoiceChange} options={invoiceOptions} /><FilterSelect value={category} onChange={onCategoryChange} options={["Tất cả loại tài sản", "CNTT", "Văn phòng", "Thiết bị"]} /><FilterSelect value={status} onChange={onStatusChange} counts={statusCounts} options={["Tất cả trạng thái", "Sẵn có", "Đang cấp phát", "Bảo trì", "Trả nhà cung cấp"]} /><FilterSelect value={department} onChange={onDepartmentChange} options={["Tất cả phòng ban", "Phòng Thiết kế", "Phòng Hành chính"]} /><FilterSelect value={branch} onChange={onBranchChange} options={branchOptions} counts={branchCounts} /><FilterSelect value={vendor} onChange={onVendorChange} options={vendorOptions} /><FilterSelect value={brand} onChange={onBrandChange} options={brandOptions} /><FilterSelect value={warranty} onChange={onWarrantyChange} options={["Tất cả bảo hành", "Đang bảo hành", "Sắp hết hạn", "Đã hết hạn"]} /><button type="button" onClick={onOpenImportHistory} title="Lịch sử import thành công" aria-label="Mở lịch sử import" className="grid h-9 w-9 shrink-0 place-items-center rounded-lg border border-[#CDE5E5] bg-white text-sm font-extrabold text-[#087A6A] transition hover:bg-[#ECF8F7]">↶</button></div>
-      <div className="mobile-table-scroll overflow-x-auto"><table className="w-full min-w-[720px] border-collapse text-left" style={{ minWidth: tableMinWidth }}><thead><tr className="border-b border-[#E7EEF3] bg-[#FCFDFE] text-[10px] font-extrabold uppercase tracking-[0.12em] text-[#8AA0B6]"><th className="px-5 py-3.5">Mã TS</th><th className="px-4 py-3.5">Tên tài sản</th>{visibleColumns.holder && <th className="px-4 py-3.5">Người giữ</th>}{visibleColumns.branch && <th className="px-4 py-3.5">Chi nhánh</th>}{visibleColumns.status && <th className="px-4 py-3.5">Trạng thái</th>}{visibleColumns.location && <th className="px-4 py-3.5">Vị trí / Serial</th>}{visibleColumns.invoice && <th className="px-2 py-3.5">Mã Hóa đơn</th>}{visibleColumns.value && <th className="px-4 py-3.5 text-right">Giá trị</th>}<th className="px-5 py-3.5 text-right">Thao tác</th></tr></thead><tbody>{assets.map((asset) => <tr key={asset.code} className="group border-b border-[#EDF2F5] transition hover:bg-[#F8FBFC]"><td className="px-5 py-4 font-mono text-[11px] font-bold text-[#0F8C8C]">{asset.code}</td><td className="px-4 py-4"><div className="flex items-center gap-3"><div className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-[#F0F5F8] text-[#527089]"><Laptop size={15} /></div><div><div className="text-xs font-bold text-[#193B57]">{asset.name}</div><div className="mt-0.5 text-[10px] text-[#9BAEC0]">{asset.category}</div></div></div></td>{visibleColumns.holder && <td className="px-4 py-4 text-xs font-semibold text-[#60758A]">{asset.holder}</td>}{visibleColumns.branch && <td className="px-4 py-4"><span data-asset-branch-badge className="inline-flex max-w-[150px] truncate rounded-full bg-[#F0F5F8] px-2.5 py-1 text-[10px] font-extrabold text-[#526779]" title={asset.branchLabel || "Chưa gán"}>{asset.branchLabel || "Chưa gán"}</span></td>}{visibleColumns.status && <td className="px-4 py-4"><span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-extrabold ring-1 ring-inset ${statusStyles[asset.statusType]}`}><span className="h-1.5 w-1.5 rounded-full bg-current" />{asset.status}</span></td>}{visibleColumns.location && <td className="px-4 py-4 text-xs text-[#60758A]"><div>{asset.location || "Chưa cập nhật"}</div><div className="mt-1 font-mono text-[10px] text-[#9BAEC0]">{asset.serial || "Chưa có serial"}</div></td>}{visibleColumns.invoice && <td className="px-2 py-4"><span className="inline-flex max-w-[90px] truncate rounded-md bg-[#F0F5F8] px-1.5 py-1 font-mono text-[10px] font-bold text-[#526779]" title={asset.invoiceKey || "Chưa liên kết"}>{asset.invoiceKey || "—"}</span></td>}{visibleColumns.value && <td className="px-4 py-4 text-right text-xs font-extrabold tabular-nums text-[#193B57]">{formatVnd(asset.value)} <span className="text-[10px] font-semibold text-[#9BAEC0]">VNĐ</span></td>}<td className="px-5 py-4"><div className="flex justify-end gap-1 opacity-70 transition group-hover:opacity-100"><button onClick={() => onOpenDetail(asset)} className="rounded-md p-2 text-[#60758A] hover:bg-[#F0F5F8] hover:text-[#193B57]" aria-label={`Hồ sơ ${asset.code}`}><FileText size={15} /></button>{asset.statusType === "maintenance" && <button onClick={() => onOpenMaintenance(asset)} className="rounded-md p-2 text-[#A86B00] hover:bg-[#FFF5DC]" aria-label={`Mở phiếu Bảo hành/Sửa chữa ${asset.code}`}><Wrench size={15} /></button>}<button onClick={() => onEdit(asset)} className="rounded-md p-2 text-[#60758A] hover:bg-[#EAF3FF] hover:text-[#2666A8]" aria-label={`Chỉnh sửa ${asset.code}`}><Settings2 size={15} /></button><button onClick={() => onOpenQr(asset)} className="rounded-md p-2 text-[#60758A] hover:bg-[#E8F7F5] hover:text-[#087A6A]" aria-label={`Mã QR ${asset.code}`}><QrCode size={15} /></button><button onClick={() => onAssign(asset)} className="rounded-md p-2 text-[#60758A] hover:bg-[#FFF5DC] hover:text-[#A86B00]" aria-label={`Cấp phát ${asset.code}`}><PackageCheck size={15} /></button></div></td></tr>)}</tbody></table>{assets.length === 0 && <div className="px-6 py-16 text-center"><div className="mx-auto grid h-12 w-12 place-items-center rounded-full bg-[#F0F5F8] text-[#8AA0B6]"><Search size={19} /></div><div className="mt-3 text-sm font-bold text-[#193B57]">Không tìm thấy tài sản phù hợp</div><p className="mt-1 text-xs text-[#8AA0B6]">Thử đặt lại bộ lọc hoặc thay đổi từ khóa tìm kiếm.</p></div>}</div>
+      <div className="mobile-table-scroll overflow-x-auto"><table className="border-collapse text-left" style={{ minWidth: tableMinWidth, width: tableMinWidth, tableLayout: "fixed" }}><colgroup>{displayedColumns.map((key) => <col key={key} style={{ width: columnWidths[key] }} />)}<col style={{ width: 160 }} /></colgroup><thead><tr className="border-b border-[#E7EEF3] bg-[#FCFDFE] text-[10px] font-extrabold uppercase tracking-[0.12em] text-[#8AA0B6]">{displayedColumns.map(renderColumnHeader)}<th className="px-5 py-3.5 text-right">Thao tác</th></tr></thead><tbody>{assets.map((asset) => <tr key={asset.code} className="group border-b border-[#EDF2F5] transition hover:bg-[#F8FBFC]">{displayedColumns.map((key) => renderAssetCell(asset, key))}<td className="px-5 py-4"><div className="flex justify-end gap-1 opacity-70 transition group-hover:opacity-100"><button onClick={() => onOpenDetail(asset)} className="rounded-md p-2 text-[#60758A] hover:bg-[#F0F5F8] hover:text-[#193B57]" aria-label={`Hồ sơ ${asset.code}`}><FileText size={15} /></button>{asset.statusType === "maintenance" && <button onClick={() => onOpenMaintenance(asset)} className="rounded-md p-2 text-[#A86B00] hover:bg-[#FFF5DC]" aria-label={`Mở phiếu Bảo hành/Sửa chữa ${asset.code}`}><Wrench size={15} /></button>}<button onClick={() => onEdit(asset)} className="rounded-md p-2 text-[#60758A] hover:bg-[#EAF3FF] hover:text-[#2666A8]" aria-label={`Chỉnh sửa ${asset.code}`}><Settings2 size={15} /></button><button onClick={() => onOpenQr(asset)} className="rounded-md p-2 text-[#60758A] hover:bg-[#E8F7F5] hover:text-[#087A6A]" aria-label={`Mã QR ${asset.code}`}><QrCode size={15} /></button><button onClick={() => onAssign(asset)} className="rounded-md p-2 text-[#60758A] hover:bg-[#FFF5DC] hover:text-[#A86B00]" aria-label={`Cấp phát ${asset.code}`}><PackageCheck size={15} /></button></div></td></tr>)}</tbody></table>{assets.length === 0 && <div className="px-6 py-16 text-center"><div className="mx-auto grid h-12 w-12 place-items-center rounded-full bg-[#F0F5F8] text-[#8AA0B6]"><Search size={19} /></div><div className="mt-3 text-sm font-bold text-[#193B57]">Không tìm thấy tài sản phù hợp</div><p className="mt-1 text-xs text-[#8AA0B6]">Thử đặt lại bộ lọc hoặc thay đổi từ khóa tìm kiếm.</p></div>}</div>
       <div className="flex items-center justify-between gap-3 px-5 py-4 text-xs text-[#8AA0B6]"><span>Hiển thị <b className="text-[#60758A]">{assets.length}</b> trên <b className="text-[#60758A]">{totalAssets}</b> tài sản</span><span className="font-bold text-[#0F8C8C]">Dữ liệu đồng bộ từ hệ thống</span></div>
     </section>
   </div></div>;

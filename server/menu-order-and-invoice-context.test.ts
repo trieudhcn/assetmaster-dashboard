@@ -35,6 +35,26 @@ describe("menu order settings and invoice context", () => {
     expect(menuSettings).toContain("đồng bộ theo tài khoản");
   });
 
+  it("persists the order and width of Asset Catalog columns per authenticated account", () => {
+    const home = readProjectFile("client/src/pages/Home.tsx");
+    const schema = readProjectFile("drizzle/schema.ts");
+    const db = readProjectFile("server/db.ts");
+    const router = readProjectFile("server/routers.ts");
+
+    expect(schema).toContain("export const userAssetCatalogPreferences");
+    expect(schema).toContain("columnWidths: json");
+    expect(db).toContain("getUserAssetCatalogPreference");
+    expect(db).toContain("saveUserAssetCatalogPreference");
+    expect(router).toContain("assetCatalogPreferences: router");
+    expect(router).toContain("assetCatalogColumnKeys");
+    expect(router).toContain("min(72).max(420)");
+    expect(home).toContain("trpc.assetCatalogPreferences.get.useQuery");
+    expect(home).toContain("trpc.assetCatalogPreferences.save.useMutation");
+    expect(home).toContain("draggable={!isColumnResizing}");
+    expect(home).toContain("onPointerDown={(event) => startColumnResize");
+    expect(home).toContain("Kéo tiêu đề để đổi thứ tự cột");
+  });
+
   it("keeps linked assets actionable and suppresses allocation when every source is fulfilled", () => {
     const invoiceView = readProjectFile("client/src/pages/PurchaseInvoiceManagementView.tsx");
     const linkedAssetLinks = readProjectFile("client/src/components/InvoiceLinkedAssetQuickLinks.tsx");

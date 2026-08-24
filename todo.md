@@ -594,6 +594,13 @@
 - [x] Thu hẹp chiều rộng cột Mã Hóa đơn và giảm thanh cuộn ngang trên desktop.
 - [x] Bổ sung hồi quy, xác minh desktop/mobile và phát hành.
 
+## Current Session — Cài đặt thương hiệu và cấu hình cột
+
+- [x] Thu gọn Logo, Địa chỉ và đưa Logo cùng tùy chọn Ẩn Website lên đầu lưới hai cột.
+- [x] Thêm lưu cấu hình thứ tự và độ rộng cột Tài sản theo tài khoản.
+- [x] Thêm kéo thay đổi độ rộng và thứ tự cột trong bảng Danh mục Tài sản.
+- [x] Bổ sung migration, hồi quy, xác minh desktop/mobile và phát hành.
+
 - [x] Mở rộng mô hình dữ liệu tài sản với thông tin chi tiết và trạng thái thao tác.
 - [x] Thêm modal tạo tài sản mới với validation cơ bản.
 - [x] Thêm modal chỉnh sửa tài sản và cập nhật dữ liệu trong bảng.

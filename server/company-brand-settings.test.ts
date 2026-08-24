@@ -18,7 +18,7 @@ describe("company brand contact actions", () => {
     expect(settings).toContain("websiteUrl: string");
     expect(settings).toContain("hideWebsiteOnInternalPdf: boolean");
     expect(settings).toContain("Website công ty");
-    expect(settings).toContain("Ẩn Website trên mẫu phiếu nội bộ");
+    expect(settings).toContain("Ẩn Website trên mẫu nội bộ");
     expect(settings).toContain("checked={draft.hideWebsiteOnInternalPdf}");
     expect(settings).toContain("Đã sao chép ${label}.");
     expect(settings).toContain("const normalizeLogo = async (file: File)");
@@ -26,6 +26,7 @@ describe("company brand contact actions", () => {
     expect(settings).toContain("Đã căn giữa logo theo tỷ lệ chuẩn");
     expect(settings).toContain('grid gap-4 lg:grid-cols-2');
     expect(settings).toContain('id="settings-brand"');
-    expect(settings).toContain('lg:col-span-2');
+    expect(settings).toContain('min-h-11 cursor-pointer');
+    expect(settings).toContain('min-h-11 resize-y pr-10');
   });
 });

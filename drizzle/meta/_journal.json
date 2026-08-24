@@ -330,6 +330,13 @@
       "when": 1787532331171,
       "tag": "0046_white_human_torch",
       "breakpoints": true
+    },
+    {
+      "idx": 47,
+      "version": "5",
+      "when": 1787552671246,
+      "tag": "0047_talented_nuke",
+      "breakpoints": true
     }
   ]
 }

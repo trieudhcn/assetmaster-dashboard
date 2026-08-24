@@ -38,6 +38,7 @@ import {
   supplyIssueSlips,
   uiLabels,
   type InsertUser,
+  userAssetCatalogPreferences,
   userMenuPreferences,
   userNotificationPreferences,
   users,
@@ -88,6 +89,18 @@ export async function saveUserMenuPreference(userId: number, menuOrder: string[]
   const db = await getDb();
   if (!db) throw new Error("Database unavailable");
   await db.insert(userMenuPreferences).values({ userId, menuOrder }).onDuplicateKeyUpdate({ set: { menuOrder } });
+}
+
+export async function getUserAssetCatalogPreference(userId: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+  return (await db.select().from(userAssetCatalogPreferences).where(eq(userAssetCatalogPreferences.userId, userId)).limit(1))[0];
+}
+
+export async function saveUserAssetCatalogPreference(userId: number, input: { columnOrder: string[]; columnWidths: Record<string, number> }) {
+  const db = await getDb();
+  if (!db) throw new Error("Database unavailable");
+  await db.insert(userAssetCatalogPreferences).values({ userId, ...input }).onDuplicateKeyUpdate({ set: { ...input, updatedAt: new Date() } });
 }
 
 export async function listUsers() {

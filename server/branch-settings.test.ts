@@ -50,15 +50,15 @@ describe("branch settings", () => {
     expect(home).toContain("branchFilterCounts");
     expect(home).toContain("branchCounts={branchFilterCounts}");
     expect(home).toContain("branchLabel: asset.branchId ?");
-    expect(home).toContain("data-asset-branch-badge");
-    expect(home).toContain('split(" · ")[0] || "Chưa gán"');
+    expect(home).toContain('key === "branch"');
+    expect(home).toContain('asset.branchLabel || "Chưa gán"');
     expect(home).toContain("data-asset-column-picker");
     expect(home).toContain("assetmaster-asset-catalog-visible-columns");
     expect(home).toContain("Khôi phục mặc định");
     expect(home).toContain("columnPickerRef");
     expect(home).toContain('document.addEventListener("pointerdown", closeOnOutsidePointer)');
     expect(home).toContain('absolute left-0 top-full z-40 mt-2');
-    expect(home).toContain('<th className="px-4 py-3.5">Chi nhánh</th>');
+    expect(home).toContain("renderColumnHeader");
     expect(home).toContain("data-handover-reference");
     expect(home).toContain('w-[168px] px-3 py-3.5');
     expect(home).toContain('w-[144px] space-y-1');
@@ -122,7 +122,7 @@ describe("branch settings", () => {
     expect(supplyPreview).not.toContain("Chi nhánh tài sản:");
     expect(supplyPdf).toContain("drawPdfCorporateHeader");
     expect(supplyPdf).toContain("const titleY = header.contentY + 3");
-    expect(home).toContain('<th className="px-4 py-3.5">Chi nhánh</th>');
+    expect(home).toContain('columnLabels: Record<AssetCatalogColumn, string>');
     expect(home).toContain('["Chi nhánh", item.branch || "Chưa gán"]');
     const operations = readProjectFile("client/src/pages/OperationsModules.tsx");
     expect(operations).toContain("branchNameForAsset");

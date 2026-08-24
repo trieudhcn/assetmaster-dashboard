@@ -16,8 +16,9 @@ describe("asset catalog invoice code", () => {
   it("keeps the invoice column hidden by default while making it selectable and renderable", () => {
     expect(home).toContain('invoice: false');
     expect(home).toContain('{ key: "invoice", label: "Mã Hóa đơn" }');
-    expect(home).toContain('visibleColumns.invoice && <th className="px-2 py-3.5">Mã Hóa đơn</th>');
-    expect(home).toContain('title={asset.invoiceKey || "Chưa liên kết"}');
+    expect(home).toContain('visibleColumns[key]');
+    expect(home).toContain('key === "invoice"');
+    expect(home).toContain('title="Chưa liên kết"');
   });
 
   it("provides an invoice filter beside the narrower catalog search field", () => {
@@ -28,19 +29,19 @@ describe("asset catalog invoice code", () => {
   it("opens the corresponding invoice detail when a linked invoice code is activated", () => {
     expect(home).toContain('url.searchParams.set("view", "invoices")');
     expect(home).toContain('url.searchParams.set("invoiceId", String(asset.purchaseInvoiceId))');
-    expect(home).toContain('invoiceLink.textContent = asset.invoiceKey');
+    expect(home).toContain('onClick={() => { window.sessionStorage.setItem("assetmaster-return-to-asset-catalog", "true")');
     expect(home).toContain('window.sessionStorage.setItem("assetmaster-return-to-asset-catalog", "true")');
     expect(home).toContain("onOpenInvoice(asset)");
   });
 
   it("uses the compact invoice-code typography in line with asset identifiers", () => {
-    expect(home).toContain('font-mono !text-[11px] font-medium leading-none text-[#2666A8]');
+    expect(home).toContain('font-mono text-[11px] font-medium leading-none text-[#2666A8]');
   });
 
   it("keeps the invoice column compact and remembers its originating asset catalog", () => {
-    expect(home).toContain('header.style.width = "96px"');
-    expect(home).toContain('cell.style.maxWidth = "96px"');
-    expect(home).toContain('max-w-[90px]');
+    expect(home).toContain('invoice: 96');
+    expect(home).toContain('columnWidths[key]');
+    expect(home).toContain('tableLayout: "fixed"');
     expect(home).toContain('assetmaster-return-to-asset-catalog');
     expect(home).toContain('assetmaster:return-to-asset-catalog');
     expect(home).toContain('assetmaster-asset-catalog-scroll-y');
