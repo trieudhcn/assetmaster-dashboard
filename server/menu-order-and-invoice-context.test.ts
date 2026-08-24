@@ -48,16 +48,13 @@ describe("menu order settings and invoice context", () => {
     expect(router).toContain("assetCatalogPreferences: router");
     expect(router).toContain("assetCatalogColumnKeys");
     expect(router).toContain("min(72).max(420)");
-    expect(home).toContain("trpc.assetCatalogPreferences.get.useQuery");
-    expect(home).toContain("trpc.assetCatalogPreferences.save.useMutation");
-    expect(home).toContain("draggable={!isColumnResizing}");
-    expect(home).toContain("onPointerDown={(event) => startColumnResize");
-    expect(home).toContain("Kéo tiêu đề để đổi thứ tự cột");
-    expect(home).toContain('const [columnSaveFeedback, setColumnSaveFeedback]');
-    expect(home).toContain('setColumnSaveFeedback("saving")');
-    expect(home).toContain("Đang lưu bố cục...");
-    expect(home).toContain("Đã lưu bố cục");
-    expect(home).toContain('aria-live="polite"');
+    expect(home).not.toContain("trpc.assetCatalogPreferences.get.useQuery");
+    expect(home).not.toContain("trpc.assetCatalogPreferences.save.useMutation");
+    expect(home).not.toContain("draggable={!isColumnResizing}");
+    expect(home).not.toContain("startColumnResize");
+    expect(home).not.toContain("Kéo tiêu đề để đổi thứ tự cột");
+    expect(home).toContain('lg:sticky lg:left-0 lg:z-20');
+    expect(home).toContain('lg:sticky lg:left-0 lg:z-10');
   });
 
   it("keeps linked assets actionable and suppresses allocation when every source is fulfilled", () => {

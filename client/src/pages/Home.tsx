@@ -84,7 +84,6 @@ import {
   Clock3,
   CheckCircle2,
   Filter,
-  GripVertical,
   Laptop,
   LayoutDashboard,
   LogOut,
@@ -1272,52 +1271,10 @@ function AssetCatalogPage({ assets, totalAssets, statusCounts, branchCounts, que
   const [visibleColumns, setVisibleColumns] = useState<Record<OptionalAssetColumn, boolean>>(defaultVisibleColumns);
   const [columnPickerOpen, setColumnPickerOpen] = useState(false);
   const columnPickerRef = useRef<HTMLDivElement>(null);
-  const [columnOrder, setColumnOrder] = useState<AssetCatalogColumn[]>(defaultColumnOrder);
-  const [columnWidths, setColumnWidths] = useState<Record<AssetCatalogColumn, number>>(defaultColumnWidths);
-  const [draggedColumn, setDraggedColumn] = useState<AssetCatalogColumn | null>(null);
-  const [isColumnResizing, setIsColumnResizing] = useState(false);
-  const [columnSaveFeedback, setColumnSaveFeedback] = useState<"idle" | "saving" | "saved" | "error">("idle");
-  const columnLayoutRef = useRef({ order: defaultColumnOrder, widths: defaultColumnWidths });
-  const resizeColumnRef = useRef<{ key: AssetCatalogColumn; startX: number; startWidth: number } | null>(null);
-  const draggedColumnRef = useRef<AssetCatalogColumn | null>(null);
-  const hasLoadedColumnPreferences = useRef(false);
-  const columnPreferencesQuery = trpc.assetCatalogPreferences.get.useQuery();
-  const saveColumnPreferences = trpc.assetCatalogPreferences.save.useMutation({
-    onMutate: () => setColumnSaveFeedback("saving"),
-    onSuccess: () => {
-      setColumnSaveFeedback("saved");
-      toast.success("Đã lưu bố cục cột theo tài khoản.");
-    },
-    onError: () => {
-      setColumnSaveFeedback("error");
-      toast.error("Chưa thể đồng bộ bố cục cột. Thay đổi sẽ được giữ trong phiên hiện tại.");
-    },
-  });
-  const persistColumnLayout = (nextOrder: AssetCatalogColumn[], nextWidths: Record<AssetCatalogColumn, number>) => {
-    const layout = { order: nextOrder, widths: nextWidths };
-    columnLayoutRef.current = layout;
-    setColumnOrder(nextOrder);
-    setColumnWidths(nextWidths);
-    saveColumnPreferences.mutate({ columnOrder: nextOrder, columnWidths: nextWidths });
-  };
+  const columnWidths = defaultColumnWidths;
+  const columnSaveFeedback = useRef<"idle" | "saving" | "saved" | "error">("idle").current;
   const resetColumnLayout = () => {
     setVisibleColumns(defaultVisibleColumns);
-    persistColumnLayout(defaultColumnOrder, defaultColumnWidths);
-  };
-  const startColumnResize = (event: Pick<PointerEvent, "preventDefault" | "stopPropagation" | "clientX">, key: AssetCatalogColumn) => {
-    event.preventDefault();
-    event.stopPropagation();
-    resizeColumnRef.current = { key, startX: event.clientX, startWidth: columnLayoutRef.current.widths[key] };
-    setIsColumnResizing(true);
-    document.body.style.cursor = "col-resize";
-    document.body.style.userSelect = "none";
-  };
-  const moveColumn = (target: AssetCatalogColumn) => {
-    const source = draggedColumnRef.current;
-    if (!source || source === target) return;
-    const nextOrder = columnLayoutRef.current.order.filter((key) => key !== source);
-    nextOrder.splice(nextOrder.indexOf(target), 0, source);
-    persistColumnLayout(nextOrder, columnLayoutRef.current.widths);
   };
   useEffect(() => {
     if (!columnPickerOpen) return;
@@ -1336,41 +1293,11 @@ function AssetCatalogPage({ assets, totalAssets, statusCounts, branchCounts, que
   useEffect(() => {
     try { window.localStorage.setItem("assetmaster-asset-catalog-visible-columns", JSON.stringify(visibleColumns)); } catch { /* Không chặn trải nghiệm khi không lưu được cấu hình. */ }
   }, [visibleColumns]);
-  useEffect(() => {
-    if (!columnPreferencesQuery.data || hasLoadedColumnPreferences.current) return;
-    const savedOrder = columnPreferencesQuery.data.columnOrder as AssetCatalogColumn[];
-    const nextOrder = savedOrder.length === defaultColumnOrder.length ? savedOrder : defaultColumnOrder;
-    const nextWidths = { ...defaultColumnWidths, ...columnPreferencesQuery.data.columnWidths } as Record<AssetCatalogColumn, number>;
-    columnLayoutRef.current = { order: nextOrder, widths: nextWidths };
-    setColumnOrder(nextOrder);
-    setColumnWidths(nextWidths);
-    hasLoadedColumnPreferences.current = true;
-  }, [columnPreferencesQuery.data]);
-  useEffect(() => {
-    const updateWidth = (event: PointerEvent) => {
-      const resize = resizeColumnRef.current;
-      if (!resize) return;
-      const nextWidths = { ...columnLayoutRef.current.widths, [resize.key]: Math.min(420, Math.max(72, Math.round(resize.startWidth + event.clientX - resize.startX))) };
-      columnLayoutRef.current = { ...columnLayoutRef.current, widths: nextWidths };
-      setColumnWidths(nextWidths);
-    };
-    const finishResize = () => {
-      if (!resizeColumnRef.current) return;
-      resizeColumnRef.current = null;
-      setIsColumnResizing(false);
-      document.body.style.cursor = "";
-      document.body.style.userSelect = "";
-      saveColumnPreferences.mutate({ columnOrder: columnLayoutRef.current.order, columnWidths: columnLayoutRef.current.widths });
-    };
-    document.addEventListener("pointermove", updateWidth);
-    document.addEventListener("pointerup", finishResize);
-    return () => { document.removeEventListener("pointermove", updateWidth); document.removeEventListener("pointerup", finishResize); };
-  }, [saveColumnPreferences]);
-  const displayedColumns = columnOrder.filter((key) => key === "code" || key === "name" || visibleColumns[key]);
-  const tableMinWidth = displayedColumns.reduce((total, key) => total + columnWidths[key], 160);
-  const renderColumnHeader = (key: AssetCatalogColumn) => <th key={key} draggable={!isColumnResizing} onDragStart={(event) => { draggedColumnRef.current = key; setDraggedColumn(key); event.dataTransfer.effectAllowed = "move"; event.dataTransfer.setData("text/plain", key); }} onDragOver={(event) => { event.preventDefault(); event.dataTransfer.dropEffect = "move"; }} onDrop={(event) => { event.preventDefault(); moveColumn(key); }} onDragEnd={() => { draggedColumnRef.current = null; setDraggedColumn(null); }} className={`relative select-none px-4 py-3.5 text-left ${key === "value" ? "text-right" : ""} ${draggedColumn === key ? "opacity-45" : ""} ${isColumnResizing ? "cursor-col-resize" : "cursor-grab active:cursor-grabbing"}`} title="Kéo tiêu đề để đổi thứ tự cột"><span className="inline-flex max-w-[calc(100%-18px)] items-center gap-1.5 truncate"><GripVertical size={12} className="shrink-0 text-[#B0BFCC]" />{columnLabels[key]}</span><button type="button" onPointerDown={(event) => startColumnResize(event.nativeEvent, key)} className="absolute inset-y-1 right-0 w-3 cursor-col-resize touch-none border-r-2 border-transparent transition hover:border-[#0F8C8C] focus-visible:border-[#0F8C8C] focus-visible:outline-none" aria-label={`Kéo để thay đổi độ rộng cột ${columnLabels[key]}`} title={`Kéo để đổi độ rộng cột ${columnLabels[key]}`} /></th>;
+  const displayedColumns = defaultColumnOrder.filter((key) => key === "code" || key === "name" || visibleColumns[key]);
+  const tableMinWidth = displayedColumns.reduce((total, key) => total + defaultColumnWidths[key], 160);
+  const renderColumnHeader = (key: AssetCatalogColumn) => <th key={key} className={`px-4 py-3.5 text-left ${key === "code" ? "lg:sticky lg:left-0 lg:z-20 lg:border-r lg:border-[#DCE7EC] lg:bg-[#FCFDFE]" : ""} ${key === "value" ? "text-right" : ""}`}><span className="inline-flex max-w-full truncate">{columnLabels[key]}</span></th>;
   const renderAssetCell = (asset: Asset, key: AssetCatalogColumn) => {
-    if (key === "code") return <td key={key} className="px-5 py-4 font-mono text-[11px] font-bold text-[#0F8C8C]" title={asset.code}>{asset.code}</td>;
+    if (key === "code") return <td key={key} className="px-5 py-4 font-mono text-[11px] font-bold text-[#0F8C8C] lg:sticky lg:left-0 lg:z-10 lg:border-r lg:border-[#DCE7EC] lg:bg-white lg:group-hover:bg-[#F8FBFC]" title={asset.code}>{asset.code}</td>;
     if (key === "name") return <td key={key} className="px-4 py-4"><div className="flex min-w-0 items-center gap-3"><div className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-[#F0F5F8] text-[#527089]"><Laptop size={15} /></div><div className="min-w-0"><div className="truncate text-xs font-bold text-[#193B57]" title={asset.name}>{asset.name}</div><div className="mt-0.5 truncate text-[10px] text-[#9BAEC0]">{asset.category}</div></div></div></td>;
     if (key === "holder") return <td key={key} className="truncate px-4 py-4 text-xs font-semibold text-[#60758A]" title={asset.holder}>{asset.holder}</td>;
     if (key === "branch") { const branchName = (asset.branchLabel || "Chưa gán").split(" · ")[0].trim() || "Chưa gán"; return <td key={key} className="px-4 py-4"><span className="inline-flex max-w-full truncate rounded-full bg-[#F0F5F8] px-2.5 py-1 text-[10px] font-extrabold text-[#526779]" title={branchName}>{branchName}</span></td>; }

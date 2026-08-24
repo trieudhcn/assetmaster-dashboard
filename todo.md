@@ -3270,3 +3270,9 @@
 - [x] Khôi phục font-size 11px cho Mã Hóa đơn trong Danh mục Tài sản.
 - [x] Chỉ hiển thị tên Chi nhánh, ẩn mã Chi nhánh trong nhãn bảng Tài sản.
 - [x] Bổ sung hồi quy, xác minh giao diện, TypeScript và production build trước khi phát hành.
+
+## Current Session — Đơn giản hóa bảng Tài sản
+
+- [x] Bỏ kéo thay đổi thứ tự và độ rộng cột khỏi Danh mục Tài sản.
+- [x] Giữ cố định cột Mã Tài sản khi cuộn ngang trên desktop.
+- [x] Bổ sung hồi quy, xác minh giao diện desktop/mobile, TypeScript và production build trước khi phát hành.
