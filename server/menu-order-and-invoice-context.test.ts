@@ -41,6 +41,8 @@ describe("menu order settings and invoice context", () => {
     expect(invoiceView).toContain("quantity: String(Number(line.quantity))");
     expect(invoiceView).toContain("receivedQuantity: String(Number(receipt.receivedQuantity))");
     expect(linkedAssetLinks).toContain("data-invoice-linked-asset-links");
-    expect(linkedAssetLinks).toContain("Xem nhanh Tài sản");
+    expect(linkedAssetLinks).toContain("Chi tiết Tài sản");
+    expect(linkedAssetLinks).toContain("grid-cols-[84px_minmax(0,1fr)_16px]");
+    expect(invoiceView).toContain('startsWith("Tài sản liên kết:")');
   });
 });

@@ -392,6 +392,13 @@
 - [x] Hiển thị số lượng nguyên nhất quán, ẩn phân bổ nguồn mua khi Phụ kiện đã tiếp nhận đủ và thêm xem nhanh Tài sản liên kết.
 - [x] Bổ sung hồi quy, xác minh desktop/mobile, TypeScript và production build trước khi phát hành.
 
+## Current Session — Tinh gọn Tài sản liên kết Hóa đơn
+
+- [x] Bỏ khối văn bản Tài sản liên kết cũ trong hồ sơ Hóa đơn.
+- [x] Hiển thị các Tài sản liên kết thành các dòng ngang bằng nhau, rút gọn tên dài bằng dấu chấm lửng.
+- [x] Mở modal chi tiết Tài sản ngay trong trang Hóa đơn khi nhấp vào từng dòng liên kết.
+- [x] Bổ sung hồi quy, xác minh giao diện, TypeScript và production build trước khi phát hành.
+
 - [x] Mở rộng mô hình dữ liệu tài sản với thông tin chi tiết và trạng thái thao tác.
 - [x] Thêm modal tạo tài sản mới với validation cơ bản.
 - [x] Thêm modal chỉnh sửa tài sản và cập nhật dữ liệu trong bảng.

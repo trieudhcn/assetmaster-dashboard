@@ -216,6 +216,7 @@ export function PurchaseInvoiceManagementView({ sharedQuery = "" }: { sharedQuer
     const drawerTitle = Array.from(document.querySelectorAll("h2")).find((item) => item.textContent?.trim() === selectedInvoice.invoiceKey);
     const lineSection = Array.from(drawerTitle?.parentElement?.parentElement?.parentElement?.querySelectorAll("section") || []).find((section) => section.textContent?.includes("Dòng Hóa đơn & Tài sản"));
     if (!lineSection) return;
+    Array.from(lineSection.querySelectorAll("div")).find((item) => item.textContent?.trim().startsWith("Tài sản liên kết:"))?.remove();
     const existing = lineSection.querySelector<HTMLElement>("[data-invoice-line-operations]");
     existing?.remove();
     const needsSourceAllocation = detail.lines.some((line) => {
@@ -229,7 +230,7 @@ export function PurchaseInvoiceManagementView({ sharedQuery = "" }: { sharedQuer
     host.className = "mt-4";
     lineSection.append(host);
     const root = createRoot(host);
-    root.render(<><InvoiceLinkedAssetQuickLinks assets={detail.linkedAssets} />{needsSourceAllocation && <InvoiceLineOperationsPanel invoiceId={selectedInvoice.id} invoiceKey={selectedInvoice.invoiceKey} lines={detail.lines} linkedAssets={detail.linkedAssets} supplyReceipts={detail.supplyReceipts} assets={assetsQuery.data || []} supplies={suppliesQuery.data || []} categories={categoriesQuery.data || []} brands={brandsQuery.data || []} onAttach={(assetId, lineId) => attachAsset.mutate({ purchaseInvoiceId: selectedInvoice.id, purchaseInvoiceLineId: lineId, assetId })} onDetach={(assetId) => detachAsset.mutate({ assetId })} onReceive={(input) => receiveSupply.mutate(input)} onCreateAndReceive={(input) => createSupplyAndReceive.mutate(input)} isWorking={attachAsset.isPending || detachAsset.isPending || receiveSupply.isPending || createSupplyAndReceive.isPending} />}</>);
+    root.render(<><InvoiceLinkedAssetQuickLinks assets={detail.linkedAssets} assetDetails={(assetsQuery.data || []).map((asset) => ({ ...asset, categoryName: categoriesQuery.data?.find((category) => category.id === asset.categoryId)?.name || null }))} />{needsSourceAllocation && <InvoiceLineOperationsPanel invoiceId={selectedInvoice.id} invoiceKey={selectedInvoice.invoiceKey} lines={detail.lines} linkedAssets={detail.linkedAssets} supplyReceipts={detail.supplyReceipts} assets={assetsQuery.data || []} supplies={suppliesQuery.data || []} categories={categoriesQuery.data || []} brands={brandsQuery.data || []} onAttach={(assetId, lineId) => attachAsset.mutate({ purchaseInvoiceId: selectedInvoice.id, purchaseInvoiceLineId: lineId, assetId })} onDetach={(assetId) => detachAsset.mutate({ assetId })} onReceive={(input) => receiveSupply.mutate(input)} onCreateAndReceive={(input) => createSupplyAndReceive.mutate(input)} isWorking={attachAsset.isPending || detachAsset.isPending || receiveSupply.isPending || createSupplyAndReceive.isPending} />}</>);
     return () => { root.unmount(); host.remove(); };
   }, [selectedInvoice?.id, selectedInvoice?.invoiceKey, detail?.lines, detail?.linkedAssets, detail?.supplyReceipts, assetsQuery.data, suppliesQuery.data, categoriesQuery.data, brandsQuery.data, attachAsset.isPending, detachAsset.isPending, receiveSupply.isPending, createSupplyAndReceive.isPending]);
 
