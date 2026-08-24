@@ -2,7 +2,6 @@ import { useEffect, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { BrowserMultiFormatReader } from "@zxing/browser";
 import { Camera, Link2, Loader2, Plus, ScanLine, X } from "lucide-react";
-import { trpc } from "@/lib/trpc";
 import { QuickSupplyClassificationFields } from "@/components/QuickSupplyClassificationFields";
 
 type InvoiceLine = { id: number; lineNumber: number; itemType: "asset" | "supply" | "service" | "other"; itemCode: string | null; itemName: string; quantity: string; unit: string | null; unitPrice: string; taxRate: string };
@@ -12,6 +11,7 @@ type SupplyReceipt = { id: number; purchaseInvoiceLineId: number; supplyId: numb
 type ReceiveSupplyInput = { purchaseInvoiceLineId: number; supplyId: number; receivedQuantity: string; unitCost: string | null; taxRate: string; taxAmount: string; totalAmount: string; receivedAt: number; note: string | null };
 type CreateSupplyInput = { purchaseInvoiceLineId: number; code: string; name: string; unit: string; receivedQuantity: string; minimumQuantity: number; categoryId: number | null; brandId: number | null; location: string | null; note: string | null };
 type SupplyDraft = { code: string; name: string; unit: string; quantity: string; minimumQuantity: string; location: string; note: string };
+type CatalogItem = { id: number; name: string; isActive: boolean };
 
 const money = (value: string | number | null | undefined) => value === null || value === undefined || value === "" ? "—" : `${Number(value).toLocaleString("vi-VN", { maximumFractionDigits: 0 })} VNĐ`;
 const normalizeSupplyCode = (value: string) => value.toUpperCase().replace(/[^A-Z0-9-]/g, "").slice(0, 64);
@@ -63,7 +63,7 @@ function BarcodeCameraScanner({ onDetected, onClose }: { onDetected: (value: str
   return <><button type="button" aria-label="Đóng quét mã vạch" onClick={onClose} className="fixed inset-0 z-[180] bg-[#102A43]/55 backdrop-blur-sm" /><section role="dialog" aria-modal="true" aria-label="Quét mã vạch" className="fixed left-1/2 top-1/2 z-[181] w-[calc(100%-2rem)] max-w-md -translate-x-1/2 -translate-y-1/2 overflow-hidden rounded-2xl border border-[#CDE5E5] bg-white shadow-2xl"><div className="flex items-start justify-between border-b border-[#E7EEF3] px-5 py-4"><div><div className="flex items-center gap-2 text-[10px] font-extrabold uppercase tracking-[.14em] text-[#0F8C8C]"><ScanLine size={14} />Quét mã vạch</div><h3 className="mt-1 text-lg font-extrabold text-[#102A43]">Đưa mã vào khung hình</h3><p className="mt-1 text-xs leading-5 text-[#71869A]">Ưu tiên camera sau. Mã hợp lệ sẽ tự điền vào Mã Phụ kiện.</p></div><button type="button" onClick={onClose} className="drawer-close-action" aria-label="Đóng"><X size={18} /></button></div><div className="relative bg-[#102A43] p-3"><div className="relative aspect-[4/3] overflow-hidden rounded-xl border border-white/20 bg-black"><video ref={videoRef} autoPlay muted playsInline className="h-full w-full object-cover" />{status === "starting" && <div className="absolute inset-0 grid place-items-center bg-[#102A43]/60 text-center text-xs font-bold text-white"><span><Loader2 className="mx-auto mb-2 animate-spin" size={22} />Đang mở camera...</span></div>}{status === "error" && <div className="absolute inset-0 grid place-items-center bg-[#102A43]/75 p-6 text-center text-xs leading-5 text-white"><span>{errorMessage}</span></div>}<div className="pointer-events-none absolute inset-x-[12%] top-1/2 h-[34%] -translate-y-1/2 rounded-lg border-2 border-[#84E1D9] shadow-[0_0_0_999px_rgba(0,0,0,.15)]" /></div></div><div className="flex items-center justify-between gap-3 px-5 py-4"><p className="text-[11px] leading-5 text-[#60758A]">Giữ mã rõ nét, đủ sáng và nằm trong khung màu xanh.</p><button type="button" onClick={onClose} className="filter-action shrink-0">Hủy</button></div></section></>;
 }
 
-export function InvoiceLineOperationsPanel({ invoiceId, invoiceKey, lines, linkedAssets, supplyReceipts, assets, supplies, onAttach, onDetach, onReceive, onCreateAndReceive, isWorking }: { invoiceId: number; invoiceKey: string; lines: InvoiceLine[]; linkedAssets: Asset[]; supplyReceipts: SupplyReceipt[]; assets: Asset[]; supplies: Supply[]; onAttach: (assetId: number, lineId: number | null) => void; onDetach: (assetId: number) => void; onReceive: (input: ReceiveSupplyInput) => void; onCreateAndReceive: (input: CreateSupplyInput) => void; isWorking: boolean }) {
+export function InvoiceLineOperationsPanel({ invoiceId, invoiceKey, lines, linkedAssets, supplyReceipts, assets, supplies, categories, brands, onAttach, onDetach, onReceive, onCreateAndReceive, isWorking }: { invoiceId: number; invoiceKey: string; lines: InvoiceLine[]; linkedAssets: Asset[]; supplyReceipts: SupplyReceipt[]; assets: Asset[]; supplies: Supply[]; categories: CatalogItem[]; brands: CatalogItem[]; onAttach: (assetId: number, lineId: number | null) => void; onDetach: (assetId: number) => void; onReceive: (input: ReceiveSupplyInput) => void; onCreateAndReceive: (input: CreateSupplyInput) => void; isWorking: boolean }) {
   const [assetDrafts, setAssetDrafts] = useState<Record<number, string>>({});
   const [supplyDrafts, setSupplyDrafts] = useState<Record<number, { supplyId: string; quantity: string }>>({});
   const [createForLine, setCreateForLine] = useState<InvoiceLine | null>(null);
@@ -71,8 +71,6 @@ export function InvoiceLineOperationsPanel({ invoiceId, invoiceKey, lines, linke
   const [newSupply, setNewSupply] = useState<SupplyDraft>({ code: "", name: "", unit: "Cái", quantity: "", minimumQuantity: "0", location: "", note: "" });
   const [categoryId, setCategoryId] = useState("");
   const [brandId, setBrandId] = useState("");
-  const categoriesQuery = trpc.assetCategories.list.useQuery();
-  const brandsQuery = trpc.brands.list.useQuery();
   const activeAssets = assets.filter((asset) => asset.status !== "retired" && asset.status !== "returned_to_vendor");
   lines = lines.map((line) => {
     const quantity = Number(line.quantity);
@@ -102,9 +100,9 @@ export function InvoiceLineOperationsPanel({ invoiceId, invoiceKey, lines, linke
     host.dataset.quickSupplyClassification = "true";
     grid.append(host);
     const root = createRoot(host);
-    root.render(<QuickSupplyClassificationFields categories={categoriesQuery.data || []} brands={brandsQuery.data || []} categoryId={categoryId} brandId={brandId} onCategoryChange={setCategoryId} onBrandChange={setBrandId} />);
+    root.render(<QuickSupplyClassificationFields categories={categories} brands={brands} categoryId={categoryId} brandId={brandId} onCategoryChange={setCategoryId} onBrandChange={setBrandId} />);
     return () => { root.unmount(); host.remove(); };
-  }, [createForLine, categoriesQuery.data, brandsQuery.data, categoryId, brandId]);
+  }, [createForLine, categories, brands, categoryId, brandId]);
 
   return <><section className="mt-4 rounded-xl border border-[#CDE5E5] bg-[#F4FBFA] p-3"><div className="flex items-start justify-between gap-3"><div><div className="flex items-center gap-2 text-sm font-extrabold text-[#193B57]"><Link2 size={15} className="text-[#087A6A]" />Phân bổ nguồn mua theo dòng</div><p className="mt-1 text-[11px] text-[#4B8884]">Gán trực tiếp Tài sản vào dòng loại Tài sản, hoặc tiếp nhận và tạo mới Phụ kiện theo dòng loại Phụ kiện.</p></div><span className="rounded-full bg-white px-2 py-1 text-[10px] font-bold text-[#087A6A]">{invoiceKey}</span></div><div className="mt-3 space-y-3">{lines.filter((line) => line.itemType === "asset" || line.itemType === "supply").map((line) => {
     const lineAssets = linkedAssets.filter((asset) => asset.purchaseInvoiceLineId === line.id);

@@ -249,8 +249,8 @@ describe("purchase contract management", () => {
 
   it("categorizes a supply created from an invoice line with an active group and brand", () => {
     expect(invoiceOperations).toContain("QuickSupplyClassificationFields");
-    expect(invoiceOperations).toContain("trpc.assetCategories.list.useQuery()");
-    expect(invoiceOperations).toContain("trpc.brands.list.useQuery()");
+    expect(invoicesView).toContain("trpc.assetCategories.list.useQuery()");
+    expect(invoicesView).toContain("trpc.brands.list.useQuery()");
     expect(invoiceOperations).toContain("categoryId: categoryId ? Number(categoryId) : null");
     expect(invoiceOperations).toContain("brandId: brandId ? Number(brandId) : null");
   });

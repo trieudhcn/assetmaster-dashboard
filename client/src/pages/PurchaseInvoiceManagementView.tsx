@@ -39,6 +39,8 @@ export function PurchaseInvoiceManagementView({ sharedQuery = "" }: { sharedQuer
   const contractsQuery = trpc.purchaseContracts.list.useQuery();
   const assetsQuery = trpc.assets.list.useQuery();
   const suppliesQuery = trpc.supplies.list.useQuery();
+  const categoriesQuery = trpc.assetCategories.list.useQuery();
+  const brandsQuery = trpc.brands.list.useQuery();
   const reconciliationQuery = trpc.purchaseInvoices.reconciliation.useQuery(undefined, { enabled: false });
   const [query, setQuery] = useState(sharedQuery);
   useEffect(() => { setQuery(sharedQuery); }, [sharedQuery]);
@@ -220,9 +222,9 @@ export function PurchaseInvoiceManagementView({ sharedQuery = "" }: { sharedQuer
     host.className = "mt-4";
     lineSection.append(host);
     const root = createRoot(host);
-    root.render(<InvoiceLineOperationsPanel invoiceId={selectedInvoice.id} invoiceKey={selectedInvoice.invoiceKey} lines={detail.lines} linkedAssets={detail.linkedAssets} supplyReceipts={detail.supplyReceipts} assets={assetsQuery.data || []} supplies={suppliesQuery.data || []} onAttach={(assetId, lineId) => attachAsset.mutate({ purchaseInvoiceId: selectedInvoice.id, purchaseInvoiceLineId: lineId, assetId })} onDetach={(assetId) => detachAsset.mutate({ assetId })} onReceive={(input) => receiveSupply.mutate(input)} onCreateAndReceive={(input) => createSupplyAndReceive.mutate(input)} isWorking={attachAsset.isPending || detachAsset.isPending || receiveSupply.isPending || createSupplyAndReceive.isPending} />);
+    root.render(<InvoiceLineOperationsPanel invoiceId={selectedInvoice.id} invoiceKey={selectedInvoice.invoiceKey} lines={detail.lines} linkedAssets={detail.linkedAssets} supplyReceipts={detail.supplyReceipts} assets={assetsQuery.data || []} supplies={suppliesQuery.data || []} categories={categoriesQuery.data || []} brands={brandsQuery.data || []} onAttach={(assetId, lineId) => attachAsset.mutate({ purchaseInvoiceId: selectedInvoice.id, purchaseInvoiceLineId: lineId, assetId })} onDetach={(assetId) => detachAsset.mutate({ assetId })} onReceive={(input) => receiveSupply.mutate(input)} onCreateAndReceive={(input) => createSupplyAndReceive.mutate(input)} isWorking={attachAsset.isPending || detachAsset.isPending || receiveSupply.isPending || createSupplyAndReceive.isPending} />);
     return () => { root.unmount(); host.remove(); };
-  }, [selectedInvoice?.id, selectedInvoice?.invoiceKey, detail?.lines, detail?.linkedAssets, detail?.supplyReceipts, assetsQuery.data, suppliesQuery.data, attachAsset.isPending, detachAsset.isPending, receiveSupply.isPending, createSupplyAndReceive.isPending]);
+  }, [selectedInvoice?.id, selectedInvoice?.invoiceKey, detail?.lines, detail?.linkedAssets, detail?.supplyReceipts, assetsQuery.data, suppliesQuery.data, categoriesQuery.data, brandsQuery.data, attachAsset.isPending, detachAsset.isPending, receiveSupply.isPending, createSupplyAndReceive.isPending]);
 
   return <div className="min-h-screen bg-[#F4F7FB] px-4 py-7 sm:px-6 lg:px-9 lg:py-8"><div className="mx-auto max-w-[1500px]">
     <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between"><div><div className="flex items-center gap-2 text-[10px] font-extrabold uppercase tracking-[.16em] text-[#0F8C8C]"><ReceiptText size={14} />Mua sắm & chứng từ</div><h1 className="mt-1 font-display text-3xl font-extrabold text-[#102A43]">Hóa đơn mua bán</h1><p className="mt-1 max-w-2xl text-sm text-[#71869A]">Theo dõi hóa đơn là nguồn mua trực tiếp của Tài sản và Phụ kiện; Hợp đồng chỉ là liên kết tùy chọn.</p></div><div className="flex flex-wrap items-center gap-2"><button type="button" onClick={() => void exportReconciliation()} data-invoice-reconciliation-export="true" className="inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-[#8BCDC6] bg-white px-3 text-xs font-extrabold text-[#087A6A] transition hover:bg-[#ECF8F7]"><span aria-hidden="true">⇩</span> Xuất đối soát Excel</button><button type="button" onClick={openCreate} className="primary-action"><Plus size={16} />Tạo hóa đơn</button></div></div>

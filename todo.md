@@ -378,6 +378,13 @@
 - [x] Làm mới số lượng ngay sau khi gán hoặc gỡ Chi nhánh trong hồ sơ Nhân sự.
 - [x] Bổ sung hồi quy, xác minh giao diện, TypeScript và production build trước khi phát hành.
 
+## Current Session — Thứ tự menu và lỗi Hóa đơn
+
+- [x] Rà soát lỗi tRPC Context khi mở Hóa đơn và kiến trúc render các thành phần có truy vấn dữ liệu.
+- [x] Khắc phục lỗi để màn hình Hóa đơn mở ổn định từ điều hướng và deep-link.
+- [x] Thêm giao diện Cài đặt hệ thống để thay đổi thứ tự menu gọn gàng, có lưu và khôi phục mặc định.
+- [x] Bổ sung hồi quy, xác minh desktop/mobile, TypeScript và production build trước khi phát hành.
+
 - [x] Mở rộng mô hình dữ liệu tài sản với thông tin chi tiết và trạng thái thao tác.
 - [x] Thêm modal tạo tài sản mới với validation cơ bản.
 - [x] Thêm modal chỉnh sửa tài sản và cập nhật dữ liệu trong bảng.
