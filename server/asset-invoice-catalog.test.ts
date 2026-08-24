@@ -34,7 +34,7 @@ describe("asset catalog invoice code", () => {
   });
 
   it("uses the compact invoice-code typography in line with asset identifiers", () => {
-    expect(home).toContain('font-mono text-[9px] font-semibold text-[#2666A8]');
+    expect(home).toContain('font-mono !text-[8px] font-medium leading-none text-[#2666A8]');
   });
 
   it("keeps the invoice column compact and remembers its originating asset catalog", () => {

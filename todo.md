@@ -527,6 +527,11 @@
 - [x] Rà soát trạng thái phát hành của nút quay lại Danh mục Tài sản và chiều rộng cột Mã Hóa đơn.
 - [x] Hoàn tất kiểm thử và phát hành các thay đổi còn thiếu.
 
+## Current Session — Thu nhỏ thêm Mã Hóa đơn
+
+- [x] Giảm thêm kích thước hiển thị Mã Hóa đơn trong bảng Tài sản.
+- [x] Kiểm thử và phát hành điều chỉnh.
+
 - [x] Mở rộng mô hình dữ liệu tài sản với thông tin chi tiết và trạng thái thao tác.
 - [x] Thêm modal tạo tài sản mới với validation cơ bản.
 - [x] Thêm modal chỉnh sửa tài sản và cập nhật dữ liệu trong bảng.
