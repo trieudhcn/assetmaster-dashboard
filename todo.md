@@ -3258,3 +3258,9 @@
 
 - [x] Hiển thị trạng thái đang lưu và phản hồi thành công/lỗi khi đồng bộ thay đổi cột Tài sản.
 - [x] Bổ sung hồi quy, xác minh giao diện, TypeScript và production build trước khi phát hành.
+
+## Current Session — Bố cục Logo và tùy chọn Website
+
+- [x] Mở rộng Logo công ty trên toàn bộ hàng đầu của lưới thương hiệu.
+- [x] Dời tùy chọn Ẩn Website xuống dưới mô tả Website công ty và bỏ khối hiển thị riêng phía trên.
+- [x] Bổ sung hồi quy, xác minh giao diện, TypeScript và production build trước khi phát hành.
