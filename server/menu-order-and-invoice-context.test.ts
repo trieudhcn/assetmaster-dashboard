@@ -47,6 +47,8 @@ describe("menu order settings and invoice context", () => {
     expect(linkedAssetLinks).toContain("warrantyMeta");
     expect(linkedAssetLinks).toContain("grid-cols-[78px_minmax(0,1fr)_auto_auto_15px]");
     expect(linkedAssetLinks).toContain("title={tooltip}");
+    expect(linkedAssetLinks).toContain('const tooltip = "Mở chi tiết tài sản"');
+    expect(linkedAssetLinks).toContain("aria-label={`Mở chi tiết Tài sản ${asset.assetCode}: ${asset.name}`}");
     expect(linkedAssetLinks).toContain("Mở tài sản");
     expect(linkedAssetLinks).toContain("/?view=assets&openAsset=");
     expect(linkedAssetLinks).toContain("returnInvoice=");

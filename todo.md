@@ -424,6 +424,11 @@
 - [x] Thêm nút quay lại Hóa đơn khi chi tiết Tài sản được mở từ Hóa đơn.
 - [x] Bổ sung hồi quy, xác minh giao diện, TypeScript và production build trước khi phát hành.
 
+## Current Session — Tooltip Tài sản liên kết gọn hơn
+
+- [x] Rút gọn tooltip khi hover/focus Tài sản liên kết trong Hóa đơn để không tràn chữ.
+- [x] Bổ sung hồi quy, xác minh giao diện và phát hành bản sửa.
+
 - [x] Mở rộng mô hình dữ liệu tài sản với thông tin chi tiết và trạng thái thao tác.
 - [x] Thêm modal tạo tài sản mới với validation cơ bản.
 - [x] Thêm modal chỉnh sửa tài sản và cập nhật dữ liệu trong bảng.
