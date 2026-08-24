@@ -518,6 +518,15 @@
 - [x] Điều chỉnh chiều rộng cột Mã Hóa đơn cân đối trong bảng Tài sản.
 - [x] Bổ sung hồi quy, xác minh điều hướng/giao diện và phát hành.
 
+## Current Session — Khôi phục máy chủ phát triển
+
+- [x] Khởi động lại và xác minh máy chủ phát triển phản hồi bình thường.
+
+## Current Session — Hoàn tất hạng mục Hóa đơn còn dang dở
+
+- [x] Rà soát trạng thái phát hành của nút quay lại Danh mục Tài sản và chiều rộng cột Mã Hóa đơn.
+- [x] Hoàn tất kiểm thử và phát hành các thay đổi còn thiếu.
+
 - [x] Mở rộng mô hình dữ liệu tài sản với thông tin chi tiết và trạng thái thao tác.
 - [x] Thêm modal tạo tài sản mới với validation cơ bản.
 - [x] Thêm modal chỉnh sửa tài sản và cập nhật dữ liệu trong bảng.
