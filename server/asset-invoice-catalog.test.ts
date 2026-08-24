@@ -29,6 +29,14 @@ describe("asset catalog invoice code", () => {
     expect(home).not.toContain("assetCatalogPreferences");
   });
 
+  it("uses the active Department directory instead of hard-coded or holder-name matching", () => {
+    expect(home).toContain("assetDepartmentsQuery = trpc.departments.listAll.useQuery");
+    expect(home).toContain("departmentFilterOptions");
+    expect(home).toContain("asset.departmentName === department");
+    expect(home).toContain("options={departmentOptions}");
+    expect(home).not.toContain('asset.holder.includes(department)');
+  });
+
   it("opens the corresponding invoice detail when a linked invoice code is activated", () => {
     expect(home).toContain('url.searchParams.set("view", "invoices")');
     expect(home).toContain('url.searchParams.set("invoiceId", String(asset.purchaseInvoiceId))');
@@ -41,11 +49,11 @@ describe("asset catalog invoice code", () => {
     expect(home).toContain('font-mono !text-[11px] font-medium leading-none text-[#2666A8]');
   });
 
-  it("keeps the invoice column compact and remembers its originating asset catalog", () => {
-    expect(home).toContain('invoice: 96');
-    expect(home).toContain('name: 260');
-    expect(home).toContain('columnWidths[key]');
-    expect(home).toContain('tableLayout: "fixed"');
+  it("keeps the invoice link compact while allowing the table to fit the available width", () => {
+    expect(home).toContain('invoice: "Hóa đơn"');
+    expect(home).toContain('tableLayout: "auto"');
+    expect(home).toContain('data-asset-catalog-empty');
+    expect(home).toContain('Xóa tất cả bộ lọc');
     expect(home).toContain('assetmaster-return-to-asset-catalog');
     expect(home).toContain('assetmaster:return-to-asset-catalog');
     expect(home).toContain('assetmaster-asset-catalog-scroll-y');

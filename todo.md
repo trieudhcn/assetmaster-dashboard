@@ -3305,3 +3305,10 @@
 - [x] Cân chỉnh độ rộng mặc định cột Tên tài sản theo nội dung hiển thị.
 - [x] Xác minh bộ lọc Danh mục Tài sản hoạt động ổn định sau khi dọn cấu hình cột.
 - [x] Bổ sung hồi quy, kiểm thử giao diện, TypeScript và production build trước khi phát hành.
+
+## Current Session — Bộ lọc Phòng ban, bảng và empty state
+
+- [x] Đồng bộ tùy chọn bộ lọc Phòng ban với danh sách Phòng ban thực tế.
+- [x] Cân chỉnh tiêu đề và độ rộng cột để bảng Tài sản tự co giãn phù hợp vùng hiển thị.
+- [x] Thêm empty state thân thiện cho kết quả lọc không có tài sản.
+- [x] Bổ sung hồi quy, kiểm thử desktop/mobile, TypeScript và production build trước khi phát hành.
