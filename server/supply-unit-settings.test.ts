@@ -12,6 +12,7 @@ describe("standard supply unit settings", () => {
     const routers = readProjectFile("server/routers.ts");
 
     expect(settings).toContain("Đơn vị tính chuẩn");
+    expect(settings).toContain('w-[calc(100%-2rem)] max-w-[1100px]');
     expect(settings).toContain("supplyUnits.create");
     expect(settings).toContain("supplyUnits.update");
     expect(settings).toContain("supplyUnits.remove");
