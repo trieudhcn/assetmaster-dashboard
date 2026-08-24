@@ -11,9 +11,9 @@ describe("dashboard KPI financial metrics", () => {
     expect(home).toContain('label: "Giá trị thanh lý"');
     expect(home).toContain("totalMaintenanceServiceCost");
     expect(home).toContain("Tổng chi phí:");
-    expect(home).toContain("min-[1450px]:grid-cols-5");
+    expect(home).toContain("lg:grid-cols-5");
     expect(home).toContain("compactValue: true");
-    expect(home).toContain("whitespace-nowrap text-[20px]");
+    expect(home).toContain("whitespace-nowrap text-[18px]");
     expect(home).toContain("maintenanceAssetCount");
     expect(home).toContain("alertValue: maintenanceAssetCount > 0");
     expect(home).toContain('kpi.alertValue ? "text-[#C75419]"');

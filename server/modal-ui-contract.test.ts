@@ -1890,7 +1890,7 @@ describe("currency input and scrollbar contract", () => {
     expect(reports).toContain("Mỗi trang");
     expect(reports).toContain("Trang nhật ký trước");
     expect(reports).toContain("Trang nhật ký sau");
-    expect(home).toContain('className="relative min-w-0 flex-[2_1_420px]"');
+    expect(home).toContain('className="relative min-w-0 flex-[1_1_260px]"');
     expect(home).toContain("handoverYearFilter");
     expect(home).toContain("handoverYears");
     expect(home).toContain("referenceCode.match(/^BG-(\\\\d{4})-/)");
@@ -2290,10 +2290,11 @@ describe("maintenance history and filter layout contract", () => {
     expect(searchableSelect).toContain('menuAlign === "right" ? "right-0 left-auto"');
   });
 
-  it("uses a compact wrapped asset filter row with a wide search field", () => {
+  it("uses a compact wrapped asset filter row with room for invoice filtering", () => {
     const home = readProjectFile("client/src/pages/Home.tsx");
     expect(home).toContain('flex flex-wrap items-center gap-2 border-b border-[#E7EEF3] bg-[#FBFCFD] px-5 py-4');
-    expect(home).toContain('relative min-w-0 flex-[2_1_420px]');
+    expect(home).toContain('relative min-w-0 flex-[1_1_260px]');
+    expect(home).toContain('<FilterSelect value={invoice} onChange={onInvoiceChange} options={invoiceOptions} />');
   });
 
   it("tự thử lại API khi gateway Autoscale trả trang bảo trì HTML", () => {

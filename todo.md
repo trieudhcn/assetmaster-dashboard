@@ -489,6 +489,13 @@
 - [x] Tự lọc danh sách phiếu đang cần xử lý khi mở từ KPI.
 - [x] Bổ sung hồi quy, xác minh điều hướng và phát hành.
 
+## Current Session — KPI gọn và Mã Hóa đơn trong Tài sản
+
+- [x] Hiển thị năm KPI cùng hàng và gọn hơn trên desktop.
+- [x] Thêm cột Mã Hóa đơn mặc định ẩn vào bảng cùng tùy chọn ẩn/hiện cột.
+- [x] Thêm bộ lọc Mã Hóa đơn và thu gọn ô tìm kiếm trong Danh mục tài sản.
+- [x] Bổ sung hồi quy, xác minh desktop/mobile và phát hành.
+
 - [x] Mở rộng mô hình dữ liệu tài sản với thông tin chi tiết và trạng thái thao tác.
 - [x] Thêm modal tạo tài sản mới với validation cơ bản.
 - [x] Thêm modal chỉnh sửa tài sản và cập nhật dữ liệu trong bảng.
