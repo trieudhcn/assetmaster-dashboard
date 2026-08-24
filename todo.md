@@ -447,6 +447,12 @@
 - [x] Thu gọn thẻ nhắc Kiểm kê và đưa cảnh báo quá hạn vào khu vực Tổng quan.
 - [x] Bổ sung hồi quy, xác minh desktop/mobile và phát hành cùng các cải tiến import đang chờ.
 
+## Current Session — Lưới phiếu Bảo hành/Sửa chữa theo tháng
+
+- [x] Tinh gọn khu vực nhập ngân sách tháng và chỉ báo chi phí.
+- [x] Hiển thị danh sách phiếu theo lưới bốn cột trên desktop, tự đáp ứng tablet/mobile.
+- [x] Bổ sung hồi quy, xác minh desktop/mobile và phát hành.
+
 - [x] Mở rộng mô hình dữ liệu tài sản với thông tin chi tiết và trạng thái thao tác.
 - [x] Thêm modal tạo tài sản mới với validation cơ bản.
 - [x] Thêm modal chỉnh sửa tài sản và cập nhật dữ liệu trong bảng.

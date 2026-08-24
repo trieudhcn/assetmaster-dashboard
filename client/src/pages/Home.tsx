@@ -576,7 +576,7 @@ export default function Home() {
       close.addEventListener("click", () => setSelectedMaintenanceChartMonth(null));
       detailsHeader.append(titleBlock, close);
       const budgetForm = document.createElement("div");
-      budgetForm.className = "mt-4 flex flex-col gap-2 border-y border-[#E1EAEE] py-3 sm:flex-row sm:items-end";
+      budgetForm.className = "mt-4 grid gap-2 rounded-lg border border-[#E1EAEE] bg-white p-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end";
       const budgetField = document.createElement("label");
       budgetField.className = "flex min-w-0 flex-1 flex-col gap-1 text-[11px] font-bold text-[#60758A]";
       budgetField.textContent = "Ngân sách tháng (VNĐ)";
@@ -601,7 +601,7 @@ export default function Home() {
       budgetForm.append(budgetField, saveBudget);
       details.append(detailsHeader, budgetForm);
       const ticketList = document.createElement("div");
-      ticketList.className = "mt-3 space-y-2";
+      ticketList.className = "mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4";
       if (selectedMonth.tickets.length === 0) {
         const empty = document.createElement("p");
         empty.className = "rounded-lg border border-dashed border-[#D7E3EB] bg-white px-3 py-4 text-center text-xs text-[#71869A]";
@@ -610,7 +610,7 @@ export default function Home() {
       } else {
         selectedMonth.tickets.forEach((ticket) => {
           const row = document.createElement("article");
-          row.className = "rounded-lg border border-[#E1EAEE] bg-white p-3";
+          row.className = "flex min-h-[118px] flex-col rounded-lg border border-[#E1EAEE] bg-white p-3 shadow-[0_2px_8px_rgba(16,42,67,0.025)]";
           const code = document.createElement("div");
           code.className = "text-xs font-extrabold text-[#193B57]";
           code.textContent = `${ticket.ticketCode} · ${ticket.serviceChannel === "warranty" ? "Bảo hành" : "Sửa chữa"} · ${ticket.status === "closed" ? "Đã đóng" : ticket.status === "resolved" ? "Đã xử lý" : ticket.status === "in_progress" ? "Đang xử lý" : "Mới mở"}`;
@@ -618,7 +618,7 @@ export default function Home() {
           description.className = "mt-1 line-clamp-2 text-xs leading-5 text-[#60758A]";
           description.textContent = ticket.description;
           const costs = document.createElement("p");
-          costs.className = "mt-2 text-[11px] font-semibold text-[#71869A]";
+          costs.className = "mt-auto pt-2 text-[11px] font-semibold leading-5 text-[#71869A]";
           costs.textContent = `Dự kiến: ${ticket.estimatedCost === null ? "—" : `${formatVnd(ticket.estimatedCost)} VNĐ`} · Thực tế: ${ticket.actualCost === null ? "—" : `${formatVnd(ticket.actualCost)} VNĐ`}`;
           row.append(code, description, costs);
           ticketList.append(row);
