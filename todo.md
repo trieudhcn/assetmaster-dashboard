@@ -3253,3 +3253,8 @@
 - [x] Tự động mở rộng các Phòng Ban có tên, mã hoặc Bộ Phận trực thuộc khớp từ khóa tìm kiếm.
 - [x] Bổ sung hồi quy, kiểm tra desktop/mobile và build phát hành; Sơ đồ cơ cấu vẫn gọn, hiển thị tốt ở desktop và mobile khi chưa có từ khóa.
 - [x] Đánh giá mô hình quản lý Chi nhánh và lộ trình tích hợp không làm gián đoạn dữ liệu hiện có.
+
+## Current Session — Phản hồi lưu cấu hình cột
+
+- [x] Hiển thị trạng thái đang lưu và phản hồi thành công/lỗi khi đồng bộ thay đổi cột Tài sản.
+- [x] Bổ sung hồi quy, xác minh giao diện, TypeScript và production build trước khi phát hành.

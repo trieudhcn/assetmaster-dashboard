@@ -53,6 +53,11 @@ describe("menu order settings and invoice context", () => {
     expect(home).toContain("draggable={!isColumnResizing}");
     expect(home).toContain("onPointerDown={(event) => startColumnResize");
     expect(home).toContain("Kéo tiêu đề để đổi thứ tự cột");
+    expect(home).toContain('const [columnSaveFeedback, setColumnSaveFeedback]');
+    expect(home).toContain('setColumnSaveFeedback("saving")');
+    expect(home).toContain("Đang lưu bố cục...");
+    expect(home).toContain("Đã lưu bố cục");
+    expect(home).toContain('aria-live="polite"');
   });
 
   it("keeps linked assets actionable and suppresses allocation when every source is fulfilled", () => {
