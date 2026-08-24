@@ -16,7 +16,7 @@ describe("asset catalog invoice code", () => {
   it("keeps the invoice column hidden by default while making it selectable and renderable", () => {
     expect(home).toContain('invoice: false');
     expect(home).toContain('{ key: "invoice", label: "Mã Hóa đơn" }');
-    expect(home).toContain('visibleColumns.invoice && <th className="px-4 py-3.5">Mã Hóa đơn</th>');
+    expect(home).toContain('visibleColumns.invoice && <th className="px-2 py-3.5">Mã Hóa đơn</th>');
     expect(home).toContain('title={asset.invoiceKey || "Chưa liên kết"}');
   });
 
@@ -38,8 +38,9 @@ describe("asset catalog invoice code", () => {
   });
 
   it("keeps the invoice column compact and remembers its originating asset catalog", () => {
-    expect(home).toContain('header.style.width = "130px"');
-    expect(home).toContain('cell.style.maxWidth = "130px"');
+    expect(home).toContain('header.style.width = "96px"');
+    expect(home).toContain('cell.style.maxWidth = "96px"');
+    expect(home).toContain('max-w-[90px]');
     expect(home).toContain('assetmaster-return-to-asset-catalog');
     expect(home).toContain('assetmaster:return-to-asset-catalog');
     expect(home).toContain('assetmaster-asset-catalog-scroll-y');

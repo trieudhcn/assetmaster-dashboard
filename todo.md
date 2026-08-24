@@ -589,6 +589,11 @@
 - [x] Đồng nhất chiều rộng và căn giữa khối Đơn vị tính chuẩn trên desktop/mobile.
 - [x] Bổ sung hồi quy, xác minh giao diện và phát hành.
 
+## Current Session — Thu hẹp cột Mã Hóa đơn
+
+- [x] Thu hẹp chiều rộng cột Mã Hóa đơn và giảm thanh cuộn ngang trên desktop.
+- [x] Bổ sung hồi quy, xác minh desktop/mobile và phát hành.
+
 - [x] Mở rộng mô hình dữ liệu tài sản với thông tin chi tiết và trạng thái thao tác.
 - [x] Thêm modal tạo tài sản mới với validation cơ bản.
 - [x] Thêm modal chỉnh sửa tài sản và cập nhật dữ liệu trong bảng.
