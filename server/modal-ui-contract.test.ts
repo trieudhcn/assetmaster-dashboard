@@ -2294,7 +2294,7 @@ describe("maintenance history and filter layout contract", () => {
     const home = readProjectFile("client/src/pages/Home.tsx");
     expect(home).toContain('flex flex-wrap items-center gap-2 border-b border-[#E7EEF3] bg-[#FBFCFD] px-5 py-4');
     expect(home).toContain('relative min-w-0 flex-[1_1_260px]');
-    expect(home).toContain('<FilterSelect value={invoice} onChange={onInvoiceChange} options={invoiceOptions} />');
+    expect(home).toContain('<FilterSelect value={invoice} onChange={onInvoiceChange} options={invoiceOptions} isLoading={isFilterDataLoading} />');
   });
 
   it("tự thử lại API khi gateway Autoscale trả trang bảo trì HTML", () => {

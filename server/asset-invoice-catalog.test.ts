@@ -23,7 +23,7 @@ describe("asset catalog invoice code", () => {
 
   it("provides an invoice filter beside the narrower catalog search field", () => {
     expect(home).toContain("flex-[1_1_260px]");
-    expect(home).toContain("<FilterSelect value={invoice} onChange={onInvoiceChange} options={invoiceOptions} />");
+    expect(home).toContain("<FilterSelect value={invoice} onChange={onInvoiceChange} options={invoiceOptions} isLoading={isFilterDataLoading} />");
     expect(home).toContain("onBranchChange={onBranchChange}");
     expect(home).toContain("onReset={resetAndGoFirst}");
     expect(home).not.toContain("assetCatalogPreferences");
@@ -35,6 +35,14 @@ describe("asset catalog invoice code", () => {
     expect(home).toContain("asset.departmentName === department");
     expect(home).toContain("options={departmentOptions}");
     expect(home).not.toContain('asset.holder.includes(department)');
+  });
+
+  it("shows the asset count for each Department and keeps filters visibly loading until data is ready", () => {
+    expect(home).toContain("departmentFilterCounts");
+    expect(home).toContain("departmentCounts={departmentFilterCounts}");
+    expect(home).toContain("counts={departmentCounts} isLoading={isFilterDataLoading}");
+    expect(home).toContain("assetFilterDataLoading");
+    expect(home).toContain("loading={isLoading}");
   });
 
   it("opens the corresponding invoice detail when a linked invoice code is activated", () => {

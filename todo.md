@@ -3312,3 +3312,9 @@
 - [x] Cân chỉnh tiêu đề và độ rộng cột để bảng Tài sản tự co giãn phù hợp vùng hiển thị.
 - [x] Thêm empty state thân thiện cho kết quả lọc không có tài sản.
 - [x] Bổ sung hồi quy, kiểm thử desktop/mobile, TypeScript và production build trước khi phát hành.
+
+## Current Session — Số lượng Phòng ban và loading dropdown
+
+- [x] Hiển thị số lượng tài sản cạnh từng tên Phòng ban trong bộ lọc.
+- [x] Thêm trạng thái tải cho các dropdown bộ lọc Danh mục Tài sản.
+- [x] Bổ sung hồi quy, kiểm thử giao diện, TypeScript và production build trước khi phát hành.
