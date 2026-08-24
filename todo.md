@@ -460,6 +460,17 @@
 - [x] Khôi phục nhắc Kiểm kê quá hạn có liên kết tại trang Kiểm kê và bỏ khối nhắc trùng ở Bảo hành/Sửa chữa.
 - [x] Bổ sung hồi quy, xác minh desktop/mobile và phát hành.
 
+## Current Session — KPI Thanh lý và chi phí dịch vụ
+
+- [x] Thêm KPI Tổng giá trị thanh lý sau Tổng giá trị nguyên giá trên Tổng quan.
+- [x] Thêm dòng Tổng chi phí Bảo hành/Sửa chữa trong KPI theo dõi xử lý.
+- [x] Bổ sung hồi quy, xác minh desktop/mobile và phát hành.
+
+## Current Session — Chi phí trong Chi tiết phiếu dịch vụ
+
+- [x] Hiển thị Chi phí thực tế và Dự kiến trong Chi tiết phiếu · Lịch sử thay đổi Bảo hành/Sửa chữa.
+- [x] Bổ sung hồi quy, xác minh desktop/mobile và phát hành cùng KPI Tổng quan.
+
 - [x] Mở rộng mô hình dữ liệu tài sản với thông tin chi tiết và trạng thái thao tác.
 - [x] Thêm modal tạo tài sản mới với validation cơ bản.
 - [x] Thêm modal chỉnh sửa tài sản và cập nhật dữ liệu trong bảng.
