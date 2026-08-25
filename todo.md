@@ -44,6 +44,12 @@
 - [x] Bổ sung kiểm thử UI chung xác nhận Bản quyền và Dịch vụ dùng cùng panel, nhãn/trường và footer chuẩn.
 - [x] Đưa footer Hủy/Lưu Bản quyền và Dịch vụ về cuối nội dung cuộn như form Tài sản.
 - [x] Xác minh cuộn nội bộ và footer cuối form trên desktop/mobile, kèm hồi quy và build.
+- [x] Rà soát và đồng bộ toàn bộ dropdown Bản quyền/Dịch vụ theo cơ chế chọn chuẩn của hệ thống.
+- [x] Bổ sung hồi quy và xác minh desktop/mobile cho dropdown đã chuẩn hóa.
+- [x] Xác minh dropdown bộ lọc, cấp phát và loại tệp đính kèm dùng cùng cơ chế, bao gồm desktop/mobile.
+- [x] Bổ sung hồi quy đếm và kiểm tra các nhóm dropdown chuẩn hóa trong toàn menu.
+- [x] Bổ sung kiểm thử tương tác dropdown cho nhóm Cấp phát Bản quyền dùng cùng component chuẩn.
+- [x] Xác minh responsive cho dropdown Cấp phát và loại tài liệu trong modal Bản quyền mà không tạo dữ liệu nghiệp vụ thử.
 
 ## Current Session — Bản quyền & Dịch vụ
 

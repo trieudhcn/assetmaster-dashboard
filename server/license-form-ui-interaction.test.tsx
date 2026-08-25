@@ -4,7 +4,7 @@ import { createRoot, type Root } from "react-dom/client";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { LicenseDocumentControls, LicenseDuplicatePortal } from "../client/src/pages/LicensesServicesManagementView";
+import { LicenseDocumentControls, LicenseDuplicatePortal, StandardDropdown } from "../client/src/pages/LicensesServicesManagementView";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "../client/src/components/ui/dialog";
 
 let root: Root | null = null;
@@ -23,11 +23,14 @@ describe("tương tác form Bản quyền", () => {
   it("hiển thị tệp đính kèm, nhận tệp người dùng chọn và gỡ tài liệu đã lưu", () => {
     const onSelectFile = vi.fn();
     const onRemove = vi.fn();
+    const onDocumentTypeChange = vi.fn();
+    const originalRaf = window.requestAnimationFrame;
+    window.requestAnimationFrame = (callback) => { callback(0); return 1; };
     const host = document.createElement("div");
     container = host;
     document.body.append(host);
     root = createRoot(host);
-    act(() => root?.render(<LicenseDocumentControls licenseId={71} documents={[{ id: 18, fileName: "gia-han.pdf", url: "/manus-storage/license/gia-han.pdf", documentType: "renewal" }]} documentType="contract" pending={null} isBusy={false} onDocumentTypeChange={vi.fn()} onSelectFile={onSelectFile} onClearPending={vi.fn()} onUpload={vi.fn()} onRemove={onRemove} />));
+    act(() => root?.render(<LicenseDocumentControls licenseId={71} documents={[{ id: 18, fileName: "gia-han.pdf", url: "/manus-storage/license/gia-han.pdf", documentType: "renewal" }]} documentType="contract" pending={null} isBusy={false} onDocumentTypeChange={onDocumentTypeChange} onSelectFile={onSelectFile} onClearPending={vi.fn()} onUpload={vi.fn()} onRemove={onRemove} />));
 
     expect(host.querySelector("[data-license-document-controls]")?.textContent).toContain("Tệp đính kèm");
     expect(host.textContent).toContain("gia-han.pdf");
@@ -36,8 +39,14 @@ describe("tương tác form Bản quyền", () => {
     Object.defineProperty(input, "files", { value: [file] });
     act(() => input.dispatchEvent(new Event("change", { bubbles: true })));
     expect(onSelectFile).toHaveBeenCalledWith(file);
+    act(() => (host.querySelector<HTMLButtonElement>('button[aria-haspopup="listbox"]')!).click());
+    const renewalOption = Array.from(document.querySelectorAll<HTMLButtonElement>('[role="option"]')).find((button) => button.textContent?.includes("Tài liệu gia hạn"));
+    expect(renewalOption).toBeTruthy();
+    act(() => renewalOption?.click());
+    expect(onDocumentTypeChange).toHaveBeenCalledWith("renewal");
     act(() => (host.querySelector<HTMLButtonElement>('[aria-label="Gỡ gia-han.pdf"]')!).click());
     expect(onRemove).toHaveBeenCalledWith(18);
+    window.requestAnimationFrame = originalRaf;
   });
 
   it("đặt nút nhân bản vào form cập nhật và gọi đúng callback", () => {
@@ -54,6 +63,32 @@ describe("tương tác form Bản quyền", () => {
     expect(duplicateButton.textContent).toContain("Nhân bản Bản quyền");
     act(() => duplicateButton.click());
     expect(onDuplicate).toHaveBeenCalledTimes(1);
+    window.requestAnimationFrame = originalRaf;
+  });
+
+  it("mở và chọn Tài sản/Nhân sự bằng dropdown chuẩn của dialog cấp phát", () => {
+    const onAssetChange = vi.fn();
+    const onEmployeeChange = vi.fn();
+    const originalRaf = window.requestAnimationFrame;
+    window.requestAnimationFrame = (callback) => { callback(0); return 1; };
+    const host = document.createElement("div");
+    container = host;
+    document.body.append(host);
+    root = createRoot(host);
+    act(() => root?.render(<div><StandardDropdown value="" onChange={onAssetChange} options={[{ value: "", label: "Chưa gán tài sản" }, { value: "31", label: "TS-031 · Laptop cấp phát" }]} placeholder="Chưa gán tài sản" searchPlaceholder="Tìm mã hoặc tên Tài sản..." /><StandardDropdown value="" onChange={onEmployeeChange} options={[{ value: "", label: "Chưa gán nhân sự" }, { value: "12", label: "Nguyễn Minh An" }]} placeholder="Chưa gán nhân sự" searchPlaceholder="Tìm Nhân sự..." /></div>));
+
+    const triggers = host.querySelectorAll<HTMLButtonElement>('button[aria-haspopup="listbox"]');
+    expect(triggers).toHaveLength(2);
+    act(() => triggers[0].click());
+    const assetOption = Array.from(document.querySelectorAll<HTMLButtonElement>('[role="option"]')).find((button) => button.textContent?.includes("TS-031"));
+    expect(assetOption).toBeTruthy();
+    act(() => assetOption?.click());
+    expect(onAssetChange).toHaveBeenCalledWith("31");
+    act(() => triggers[1].click());
+    const employeeOption = Array.from(document.querySelectorAll<HTMLButtonElement>('[role="option"]')).find((button) => button.textContent?.includes("Nguyễn Minh An"));
+    expect(employeeOption).toBeTruthy();
+    act(() => employeeOption?.click());
+    expect(onEmployeeChange).toHaveBeenCalledWith("12");
     window.requestAnimationFrame = originalRaf;
   });
 

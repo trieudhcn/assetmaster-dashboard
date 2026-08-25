@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import React from "react";
 import { createPortal } from "react-dom";
 import { Check, ChevronDown, Loader2, Plus, Search, X } from "lucide-react";
 import { matchesVietnameseSearch } from "@/lib/catalogUi";
