@@ -44,6 +44,13 @@ describe("Bản quyền & Dịch vụ", () => {
     expect(technologyDirectory).toContain("technologyVendorContracts.uploadDocument.useMutation");
     expect(technologyDirectory).toContain("technologyVendorContracts.removeDocument.useMutation");
     expect(technologyDirectory).toContain('accept="application/pdf,image/png,image/jpeg"');
+    expect(technologyDirectory).toContain('type="file" multiple');
+    expect(technologyDirectory).toContain("selectFiles(event.target.files || [])");
+    expect(technologyDirectory).toContain("upload.mutateAsync");
+    expect(technologyDirectory).toContain("Tải nhiều tệp");
+    expect(technologyDirectory).toContain("tối đa 5 MB mỗi tệp");
+    expect(technologyDirectory).toContain('aria-live="polite"');
+    expect(technologyDirectory).toContain("Đã tải ${uploadedCount} tài liệu Hợp đồng.");
     expect(technologyDirectory).toContain("expiryFilter");
     expect(technologyDirectory).toContain("Sắp hết hạn");
     expect(technologyDirectory).toContain("Đã quá hạn");

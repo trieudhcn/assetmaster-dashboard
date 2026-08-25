@@ -88,6 +88,11 @@
 - [x] Đặt nền panel Công nghệ màu trắng và cho phép bấm ngoài modal để đóng mà vẫn giữ body cuộn/footer chuẩn.
 - [x] Bổ sung hồi quy, xác minh desktop/mobile và phát hành các thay đổi Hợp đồng Công nghệ.
 - [x] Hiển thị biểu tượng lịch cho trường ngày tháng và áp dụng định dạng tiền tệ chuẩn cho trường Chi phí liên quan.
+- [x] Cho phép chọn và tải nhiều tệp PDF/hình ảnh đồng thời khi đính kèm tài liệu Hợp đồng Công nghệ.
+- [x] Hiển thị tiến trình/kết quả theo từng tệp và giữ nguyên kiểm tra định dạng, giới hạn 5 MB mỗi tệp.
+- [x] Bổ sung hồi quy, xác minh responsive, TypeScript, production build và phát hành luồng tải nhiều tệp.
+- [x] Bổ sung hồi quy tương tác chọn nhiều tệp, kết quả từng tệp và trạng thái tải/khóa nút.
+- [x] Xác minh responsive desktop/mobile cho khối tải nhiều tệp và lưu checkpoint phát hành mới.
 
 ## Current Session — Bản quyền & Dịch vụ
 
