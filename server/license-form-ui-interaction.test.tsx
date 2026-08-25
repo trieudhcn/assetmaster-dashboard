@@ -256,8 +256,26 @@ describe("tương tác form Bản quyền", () => {
     expect(form.querySelector(".form-button-secondary")?.textContent).toContain("Hủy");
     expect(form.querySelector(".form-button-primary")?.textContent).toContain("Lưu dịch vụ");
     const styles = readFileSync(resolve(process.cwd(), "client/src/index.css"), "utf8");
-    expect(styles).toContain('[data-licenses-services-dialog="service"] form {');
+    expect(styles).toContain('[data-licenses-services-dialog="service"] form,\n[data-licenses-services-dialog="technology"] form {');
     const view = readFileSync(resolve(process.cwd(), "client/src/pages/LicensesServicesManagementView.tsx"), "utf8");
     expect(view).toContain('<DialogContent data-licenses-services-dialog="service">');
+  });
+
+  it("render Công nghệ bằng panel căn giữa, body cuộn và footer chuẩn", () => {
+    container = document.createElement("div");
+    document.body.append(container);
+    root = createRoot(container);
+    act(() => root?.render(<Dialog open><DialogContent data-licenses-services-dialog="technology"><DialogHeader><DialogTitle>Thêm Nhà cung cấp Công nghệ</DialogTitle><DialogDescription>Mô tả</DialogDescription></DialogHeader><form><label><span className="field-label">Tên nhà cung cấp</span><input className="form-input" /></label><div className="flex justify-end gap-2 sm:col-span-2"><button type="button" className="form-button-secondary">Hủy</button><button type="submit" className="form-button-primary">Lưu nhà cung cấp</button></div></form></DialogContent></Dialog>));
+
+    const dialog = document.querySelector<HTMLElement>('[data-licenses-services-dialog="technology"]')!;
+    const panel = dialog.querySelector<HTMLElement>(":scope > .license-service-dialog-panel")!;
+    const form = panel.querySelector<HTMLFormElement>("form")!;
+    expect(panel.className).toContain("overflow-hidden");
+    expect(form.querySelector(".field-label")?.textContent).toContain("Tên nhà cung cấp");
+    expect(form.querySelector(".form-button-secondary")?.textContent).toContain("Hủy");
+    expect(form.querySelector(".form-button-primary")?.textContent).toContain("Lưu nhà cung cấp");
+    const styles = readFileSync(resolve(process.cwd(), "client/src/index.css"), "utf8");
+    expect(styles).toContain('[data-licenses-services-dialog="technology"] {');
+    expect(styles).toContain('[data-licenses-services-dialog="technology"] form {');
   });
 });

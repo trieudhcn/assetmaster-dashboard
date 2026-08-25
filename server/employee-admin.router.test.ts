@@ -61,6 +61,8 @@ const mocks = vi.hoisted(() => ({
   listTechnologyServices: vi.fn(),
   listTechnologyVendors: vi.fn(),
   listTechnologyVendorContracts: vi.fn(),
+  listTechnologyVendorContractAlerts: vi.fn(),
+  listTechnologyVendorUsageStats: vi.fn(),
   listHandoversByRecipient: vi.fn(),
   listHandoverSupplyItems: vi.fn(),
   listHandoverReturnDecisionHistory: vi.fn(),
@@ -161,6 +163,8 @@ vi.mock("./db", () => ({
   listTechnologyServices: mocks.listTechnologyServices,
   listTechnologyVendors: mocks.listTechnologyVendors,
   listTechnologyVendorContracts: mocks.listTechnologyVendorContracts,
+  listTechnologyVendorContractAlerts: mocks.listTechnologyVendorContractAlerts,
+  listTechnologyVendorUsageStats: mocks.listTechnologyVendorUsageStats,
   listHandovers: vi.fn(),
   listHandoversByRecipient: mocks.listHandoversByRecipient,
   listHandoverSupplyItems: mocks.listHandoverSupplyItems,
@@ -655,6 +659,16 @@ describe("employee administration", () => {
 
     expect(mocks.createTechnologyVendor).toHaveBeenCalledWith(expect.objectContaining({ name: "Nhà cung cấp Cloud", isActive: true }));
     expect(mocks.createTechnologyVendorContract).toHaveBeenCalledWith(expect.objectContaining({ contractCode: "HDCN-001", technologyVendorId: 51, contractType: "service" }));
+  });
+
+  it("returns technology vendor usage statistics and expiring contract alerts", async () => {
+    mocks.listTechnologyVendorUsageStats.mockResolvedValue([{ id: 51, name: "Nhà cung cấp Cloud", activeLicenseCount: 2, activeServiceCount: 1, contractCount: 1 }]);
+    mocks.listTechnologyVendorContractAlerts.mockResolvedValue([{ id: 61, contractCode: "HDCN-001", title: "Dịch vụ Cloud", technologyVendorId: 51, status: "expired" }]);
+    const caller = appRouter.createCaller(adminContext);
+
+    await expect(caller.technologyVendors.usageStats()).resolves.toHaveLength(1);
+    await expect(caller.technologyVendorContracts.expiringAlerts({ daysAhead: 30 })).resolves.toHaveLength(1);
+    expect(mocks.listTechnologyVendorContractAlerts).toHaveBeenCalledWith(30);
   });
 
   it("stores contract and renewal documents for an existing software license", async () => {

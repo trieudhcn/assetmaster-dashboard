@@ -120,7 +120,7 @@ function DialogContent({
     [isComposing, onEscapeKeyDown]
   );
 
-  if (licenseServiceDialog === "license" || licenseServiceDialog === "service") {
+  if (licenseServiceDialog === "license" || licenseServiceDialog === "service" || licenseServiceDialog === "technology") {
     return (
       <DialogPortal data-slot="dialog-portal">
         <DialogOverlay />
@@ -131,7 +131,7 @@ function DialogContent({
           onEscapeKeyDown={handleEscapeKeyDown}
           {...props}
         >
-          <div className={cn("license-service-dialog-panel relative flex h-[min(48rem,calc(100dvh-2rem))] w-[calc(100vw-2rem)] max-w-3xl min-h-0 flex-col overflow-hidden rounded-lg border bg-background p-0 shadow-lg", licenseServiceDialog === "service" && "service-dialog-panel")}>
+          <div className={cn("license-service-dialog-panel relative flex h-[min(48rem,calc(100dvh-2rem))] w-[calc(100vw-2rem)] max-w-3xl min-h-0 flex-col overflow-hidden rounded-lg border bg-background p-0 shadow-lg", licenseServiceDialog === "service" && "service-dialog-panel", licenseServiceDialog === "technology" && "technology-dialog-panel")}>
             {children}
             {showCloseButton && (
               <DialogPrimitive.Close

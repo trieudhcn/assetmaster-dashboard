@@ -234,6 +234,18 @@ aside.fixed.inset-y-0 { animation: drawer-in 220ms cubic-bezier(0.23, 1, 0.32, 1
   place-items: center !important;
   padding: 1rem !important;
 }
+[data-licenses-services-dialog="technology"] {
+  position: fixed !important;
+  inset: 0 !important;
+  display: grid !important;
+  place-items: center !important;
+  width: auto !important;
+  max-width: none !important;
+  max-height: none !important;
+  overflow: hidden !important;
+  padding: 1rem !important;
+  transform: none !important;
+}
 [data-licenses-services-dialog="service"] > .service-dialog-panel {
   width: calc(100vw - 2rem) !important;
   max-width: 48rem !important;
@@ -243,9 +255,11 @@ aside.fixed.inset-y-0 { animation: drawer-in 220ms cubic-bezier(0.23, 1, 0.32, 1
   overflow-x: hidden !important;
 }
 [data-licenses-services-dialog="license"] form,
-[data-licenses-services-dialog="service"] form { margin-top: 1rem; gap: 1rem; }
+[data-licenses-services-dialog="service"] form,
+[data-licenses-services-dialog="technology"] form { margin-top: 1rem; gap: 1rem; }
 [data-licenses-services-dialog="license"] .form-input,
-[data-licenses-services-dialog="service"] .form-input {
+[data-licenses-services-dialog="service"] .form-input,
+[data-licenses-services-dialog="technology"] .form-input {
   display: block;
   width: 100%;
   min-height: 2.45rem;
@@ -261,9 +275,11 @@ aside.fixed.inset-y-0 { animation: drawer-in 220ms cubic-bezier(0.23, 1, 0.32, 1
   transition: border-color 160ms ease-out, box-shadow 160ms ease-out, background-color 160ms ease-out;
 }
 [data-licenses-services-dialog="license"] .form-input::placeholder,
-[data-licenses-services-dialog="service"] .form-input::placeholder { color: #A8B8C5; font-weight: 500; }
+[data-licenses-services-dialog="service"] .form-input::placeholder,
+[data-licenses-services-dialog="technology"] .form-input::placeholder { color: #A8B8C5; font-weight: 500; }
 [data-licenses-services-dialog="license"] .form-input:focus,
-[data-licenses-services-dialog="service"] .form-input:focus { border-color: #0F8C8C; box-shadow: 0 0 0 3px rgba(15,140,140,0.11); }
+[data-licenses-services-dialog="service"] .form-input:focus,
+[data-licenses-services-dialog="technology"] .form-input:focus { border-color: #0F8C8C; box-shadow: 0 0 0 3px rgba(15,140,140,0.11); }
 [data-licenses-services-dialog="license"] textarea.form-input,
 [data-licenses-services-dialog="service"] textarea.form-input { min-height: 5rem; resize: vertical; }
 [data-licenses-services-dialog="license"] form > .flex.justify-end,
@@ -305,6 +321,7 @@ aside.fixed.inset-y-0 { animation: drawer-in 220ms cubic-bezier(0.23, 1, 0.32, 1
   font-weight: 800;
   letter-spacing: 0.16em;
 }
+[data-licenses-services-dialog="technology"] [data-slot="dialog-header"]::before { content: "DANH MỤC CÔNG NGHỆ"; }
 [data-licenses-services-dialog] [data-slot="dialog-title"] { font-size: 1.25rem; font-weight: 800; letter-spacing: -0.03em; color: #102A43; }
 [data-licenses-services-dialog] [data-slot="dialog-description"] { color: #8AA0B6; font-size: 0.75rem; line-height: 1.25rem; }
 .license-service-dialog-close {
@@ -334,7 +351,8 @@ aside.fixed.inset-y-0 { animation: drawer-in 220ms cubic-bezier(0.23, 1, 0.32, 1
   overflow: hidden !important;
 }
 [data-licenses-services-dialog="license"] > .license-service-dialog-panel,
-[data-licenses-services-dialog="service"] > .license-service-dialog-panel {
+[data-licenses-services-dialog="service"] > .license-service-dialog-panel,
+[data-licenses-services-dialog="technology"] > .license-service-dialog-panel {
   box-sizing: border-box;
   width: min(calc(100vw - 2rem), 48rem) !important;
   height: min(48rem, calc(100dvh - 2rem)) !important;
@@ -346,13 +364,15 @@ aside.fixed.inset-y-0 { animation: drawer-in 220ms cubic-bezier(0.23, 1, 0.32, 1
   overflow: hidden !important;
 }
 [data-licenses-services-dialog="license"] [data-slot="dialog-header"],
-[data-licenses-services-dialog="service"] [data-slot="dialog-header"] {
+[data-licenses-services-dialog="service"] [data-slot="dialog-header"],
+[data-licenses-services-dialog="technology"] [data-slot="dialog-header"] {
   flex: none;
   margin: 0 !important;
   padding: 1.25rem 4.5rem 1.1rem 1.5rem !important;
 }
 [data-licenses-services-dialog="license"] form,
-[data-licenses-services-dialog="service"] form {
+[data-licenses-services-dialog="service"] form,
+[data-licenses-services-dialog="technology"] form {
   flex: 1 1 auto;
   height: 0;
   min-height: 0;
@@ -364,7 +384,8 @@ aside.fixed.inset-y-0 { animation: drawer-in 220ms cubic-bezier(0.23, 1, 0.32, 1
   overscroll-behavior: contain;
 }
 [data-licenses-services-dialog="license"] form > .flex.justify-end,
-[data-licenses-services-dialog="service"] form > .flex.justify-end {
+[data-licenses-services-dialog="service"] form > .flex.justify-end,
+[data-licenses-services-dialog="technology"] form > .flex.justify-end {
   position: static;
   grid-column: 1 / -1;
   min-height: auto;

@@ -74,6 +74,14 @@
 - [x] Bổ sung hồi quy DOM xác nhận nhãn Nhà cung cấp Công nghệ và vùng Hợp đồng không phá bố cục modal hai form.
 - [x] Tăng cường contract panel/form/footer của hai modal sau khi thêm vùng Hợp đồng Công nghệ.
 - [x] Bổ sung contract panel/form/footer Dịch vụ khi gắn vùng Hợp đồng Công nghệ.
+- [x] Bổ sung thống kê số Bản quyền và Dịch vụ đang sử dụng theo từng Nhà cung cấp Công nghệ.
+- [x] Tạo cảnh báo Hợp đồng Công nghệ sắp hết hạn trong 30 ngày và quá hạn.
+- [x] Chuẩn hóa modal tạo/sửa Nhà cung cấp và Hợp đồng Công nghệ theo panel form Tài sản, căn giữa và cuộn nội bộ.
+- [x] Bổ sung hồi quy, xác minh desktop/mobile và phát hành cho thống kê, cảnh báo và modal mới.
+- [x] Mở rộng cảnh báo để bao gồm Hợp đồng Công nghệ quá hạn đang ở trạng thái Hết hạn và bổ sung hồi quy.
+- [x] Xác minh rõ khối thống kê/cảnh báo responsive, chạy lại phát hành sau bản vá quá hạn.
+- [x] Bổ sung contract DOM/UI xác nhận KPI thống kê, cảnh báo Hợp đồng và panel Công nghệ chuẩn.
+- [x] Chạy lại kiểm thử phát hành và lưu checkpoint sau xác minh cuối cho cảnh báo quá hạn.
 
 ## Current Session — Bản quyền & Dịch vụ
 

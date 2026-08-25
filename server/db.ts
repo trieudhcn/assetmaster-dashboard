@@ -317,6 +317,36 @@ export async function listTechnologyVendorContracts(technologyVendorId?: number)
     : query.orderBy(desc(technologyVendorContracts.updatedAt));
 }
 
+export async function listTechnologyVendorUsageStats() {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select({
+    id: technologyVendors.id,
+    name: technologyVendors.name,
+    isActive: technologyVendors.isActive,
+    activeLicenseCount: sql<number>`(select count(*) from ${softwareLicenses} where ${softwareLicenses.technologyVendorId} = ${technologyVendors.id} and ${softwareLicenses.status} in ('active', 'expiring'))`.mapWith(Number),
+    activeServiceCount: sql<number>`(select count(*) from ${technologyServices} where ${technologyServices.technologyVendorId} = ${technologyVendors.id} and ${technologyServices.status} in ('active', 'expiring'))`.mapWith(Number),
+    contractCount: sql<number>`(select count(*) from ${technologyVendorContracts} where ${technologyVendorContracts.technologyVendorId} = ${technologyVendors.id})`.mapWith(Number),
+  }).from(technologyVendors).orderBy(desc(technologyVendors.updatedAt));
+}
+
+export async function listTechnologyVendorContractAlerts(daysAhead = 30) {
+  const db = await getDb();
+  if (!db) return [];
+  const limitDate = new Date();
+  limitDate.setDate(limitDate.getDate() + daysAhead);
+  return db.select({
+    id: technologyVendorContracts.id,
+    contractCode: technologyVendorContracts.contractCode,
+    title: technologyVendorContracts.title,
+    technologyVendorId: technologyVendorContracts.technologyVendorId,
+    vendorName: technologyVendors.name,
+    effectiveTo: technologyVendorContracts.effectiveTo,
+    status: technologyVendorContracts.status,
+    autoRenew: technologyVendorContracts.autoRenew,
+  }).from(technologyVendorContracts).innerJoin(technologyVendors, eq(technologyVendorContracts.technologyVendorId, technologyVendors.id)).where(and(sql`${technologyVendorContracts.effectiveTo} is not null`, sql`${technologyVendorContracts.effectiveTo} <= ${limitDate}`, sql`${technologyVendorContracts.status} in ('active', 'expiring', 'expired')`)).orderBy(technologyVendorContracts.effectiveTo);
+}
+
 export async function getTechnologyVendorContractById(id: number) {
   const db = await getDb();
   if (!db) return undefined;

@@ -184,6 +184,8 @@ import {
   listSupplyIssueAnalytics,
   listTechnologyServices,
   listTechnologyVendorContracts,
+  listTechnologyVendorContractAlerts,
+  listTechnologyVendorUsageStats,
   listTechnologyVendors,
   listHelpGuideVersions,
   listVendors,
@@ -694,6 +696,7 @@ export const appRouter = router({
   }),
   technologyVendors: router({
     list: adminProcedure.query(() => listTechnologyVendors()),
+    usageStats: adminProcedure.query(() => listTechnologyVendorUsageStats()),
     create: adminProcedure.input(z.object({
       name: z.string().trim().min(2).max(160),
       contactName: nullableText,
@@ -729,6 +732,7 @@ export const appRouter = router({
   }),
   technologyVendorContracts: router({
     list: adminProcedure.input(z.object({ technologyVendorId: z.number().int().positive().optional() }).optional()).query(({ input }) => listTechnologyVendorContracts(input?.technologyVendorId)),
+    expiringAlerts: adminProcedure.input(z.object({ daysAhead: z.number().int().min(1).max(90).default(30) }).optional()).query(({ input }) => listTechnologyVendorContractAlerts(input?.daysAhead ?? 30)),
     create: adminProcedure.input(z.object({
       contractCode: z.string().trim().min(2).max(64),
       title: z.string().trim().min(2).max(255),

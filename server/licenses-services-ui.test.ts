@@ -34,6 +34,19 @@ describe("Bản quyền & Dịch vụ", () => {
     expect(view).toContain("Nhà cung cấp & Hợp đồng Công nghệ");
     expect(view).toContain("technologyVendorId");
     expect(view).toContain("technologyVendorContractId");
+    const technologyDirectory = readFileSync(resolve(process.cwd(), "client/src/components/TechnologyVendorDirectoryPanel.tsx"), "utf8");
+    expect(technologyDirectory).toContain("technologyVendors.usageStats.useQuery");
+    expect(technologyDirectory).toContain("technologyVendorContracts.expiringAlerts.useQuery({ daysAhead: 30 })");
+    expect(technologyDirectory).toContain("Bản quyền đang sử dụng");
+    expect(technologyDirectory).toContain("Dịch vụ đang sử dụng");
+    expect(technologyDirectory).toContain("Hợp đồng Công nghệ cần theo dõi");
+    expect(readFileSync(resolve(process.cwd(), "server/db.ts"), "utf8")).toContain("('active', 'expiring', 'expired')");
+    expect(technologyDirectory).toContain('data-licenses-services-dialog="technology"');
+    expect(technologyDirectory).toContain("data-technology-vendor-usage");
+    expect(technologyDirectory).toContain('grid gap-3 sm:grid-cols-3');
+    expect(technologyDirectory).toContain("data-technology-contract-alerts");
+    expect(technologyDirectory).toContain("Quá hạn ${Math.abs(days || 0)} ngày");
+    expect(technologyDirectory).toContain("Còn ${days ?? 0} ngày");
     expect(view).toContain("Bản quyền sắp hết hạn");
     expect(view).toContain("Dịch vụ sắp hết hạn");
     expect(view).toContain("Đường truyền Internet");
@@ -85,6 +98,7 @@ describe("Bản quyền & Dịch vụ", () => {
     expect(styles).toContain(".service-dialog-panel");
     expect(styles).toContain('[data-licenses-services-dialog="license"]');
     expect(styles).toContain('[data-licenses-services-dialog="service"]');
+    expect(styles).toContain('[data-licenses-services-dialog="technology"]');
     expect(styles).toContain("place-items: center !important");
     expect(styles).toContain('[data-licenses-services-dialog="license"] .form-input');
     expect(styles).toContain("overflow-x: hidden !important");
@@ -104,7 +118,7 @@ describe("Bản quyền & Dịch vụ", () => {
     expect(styles).toContain('content: "BẢN QUYỀN & DỊCH VỤ"');
     expect(styles).toContain("license-service-dialog-close");
     const dialog = readFileSync(resolve(process.cwd(), "client/src/components/ui/dialog.tsx"), "utf8");
-    expect(dialog).toContain('licenseServiceDialog === "license" || licenseServiceDialog === "service"');
+    expect(dialog).toContain('licenseServiceDialog === "license" || licenseServiceDialog === "service" || licenseServiceDialog === "technology"');
     expect(dialog).toContain("license-service-dialog-panel relative flex");
   });
 });
