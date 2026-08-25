@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import React, { useMemo, useState } from "react";
 import { vi } from "date-fns/locale";
 import { CalendarDays, X } from "lucide-react";
 import { Calendar } from "@/components/ui/calendar";
@@ -25,6 +25,28 @@ function toIsoDate(value: Date) {
   const month = String(value.getMonth() + 1).padStart(2, "0");
   const day = String(value.getDate()).padStart(2, "0");
   return `${year}-${month}-${day}`;
+}
+
+export function openNativeDatePickerFromIcon(input: HTMLInputElement, clientX: number) {
+  const pickerInput = input as HTMLInputElement & { showPicker?: () => void };
+  if (input.type !== "date" || typeof pickerInput.showPicker !== "function") return false;
+  const bounds = input.getBoundingClientRect();
+  if (clientX < bounds.right - 48) return false;
+  pickerInput.showPicker();
+  return true;
+}
+
+if (typeof document !== "undefined" && !document.documentElement.dataset.assetmasterNativeDatePicker) {
+  document.documentElement.dataset.assetmasterNativeDatePicker = "ready";
+  document.addEventListener("pointerdown", (event) => {
+    const input = event.target instanceof HTMLInputElement ? event.target : null;
+    if (!input?.closest('[data-licenses-services-dialog]')) return;
+    try {
+      if (openNativeDatePickerFromIcon(input, event.clientX)) event.preventDefault();
+    } catch {
+      // Older browsers may decline programmatic native picker invocation; their own indicator remains available.
+    }
+  }, true);
 }
 
 export function DatePickerField({ value, onChange, className = "", disabled, placeholder = "Chọn ngày", "aria-label": ariaLabel, "data-purchase-date-picker": purchaseDatePicker }: DatePickerFieldProps) {

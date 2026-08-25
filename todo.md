@@ -96,6 +96,13 @@
 - [x] Khắc phục lỗi hiển thị trường ngày tháng trong hai form Bản quyền và Dịch vụ.
 - [x] Bổ sung hồi quy và xác minh desktop/mobile cho các trường ngày sau khi sửa.
 - [x] Xác minh trực quan DatePicker trong form Bản quyền trên desktop/mobile và ghi nhận kết quả trước checkpoint.
+- [x] Khắc phục thao tác bấm biểu tượng lịch để mở và chọn ngày trong Bản quyền, Dịch vụ và Hợp đồng Công nghệ.
+- [x] Bổ sung hồi quy tương tác, xác minh desktop/mobile và phát hành bản sửa lịch.
+- [x] Bổ sung kiểm thử tương tác click trigger lịch cho DatePickerField Bản quyền/Dịch vụ và trường ngày Hợp đồng Công nghệ.
+- [x] Xác minh trực quan desktop/mobile thao tác mở lịch và chọn ngày trong cả ba form trước checkpoint.
+- [x] Kiểm thử trực tiếp DatePickerField mở lịch và chọn ngày trong ngữ cảnh Bản quyền/Dịch vụ.
+- [x] Chuẩn hóa thao tác trường ngày native Bản quyền/Hợp đồng bằng bộ điều phối click gọi `showPicker`, đồng nhất với trigger DatePicker Dịch vụ.
+- [x] Xác minh thao tác mở/chọn ngày desktop/mobile ở cả ba form, chạy lại kiểm tra phát hành và lưu checkpoint.
 
 ## Current Session — Bản quyền & Dịch vụ
 
