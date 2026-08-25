@@ -35,6 +35,7 @@ const mocks = vi.hoisted(() => ({
   getNextHandoverSequence: vi.fn(),
   getNextRecoveryCertificateSequence: vi.fn(),
   getUserByEmployeeCode: vi.fn(),
+  getUserMenuPreference: vi.fn(),
   getUserNotificationPreferences: vi.fn(),
   listUserDashboardAlertHistory: vi.fn(),
   listUserDashboardAlertStateIds: vi.fn(),
@@ -58,6 +59,7 @@ const mocks = vi.hoisted(() => ({
   restoreUserDashboardAlerts: vi.fn(),
   revokeSoftwareLicenseAssignment: vi.fn(),
   runInventoryTransaction: vi.fn(),
+  saveUserMenuPreference: vi.fn(),
   saveUserNotificationPreferences: vi.fn(),
   storagePut: vi.fn(),
   transitionHandoverStatus: vi.fn(),
@@ -117,6 +119,7 @@ vi.mock("./db", () => ({
   getNextRecoveryCertificateSequence: mocks.getNextRecoveryCertificateSequence,
   getNextRetirementCertificateSequence: vi.fn().mockResolvedValue(1),
   getUserByEmployeeCode: mocks.getUserByEmployeeCode,
+  getUserMenuPreference: mocks.getUserMenuPreference,
   getUserNotificationPreferences: mocks.getUserNotificationPreferences,
   listUserDashboardAlertHistory: mocks.listUserDashboardAlertHistory,
   listUserDashboardAlertStateIds: mocks.listUserDashboardAlertStateIds,
@@ -148,6 +151,7 @@ vi.mock("./db", () => ({
   restoreUserDashboardAlerts: mocks.restoreUserDashboardAlerts,
   revokeSoftwareLicenseAssignment: mocks.revokeSoftwareLicenseAssignment,
   runInventoryTransaction: mocks.runInventoryTransaction,
+  saveUserMenuPreference: mocks.saveUserMenuPreference,
   saveCompany: vi.fn(),
   saveHelpGuide: vi.fn(),
   saveUserNotificationPreferences: mocks.saveUserNotificationPreferences,
@@ -174,6 +178,7 @@ vi.mock("./db", () => ({
 vi.mock("./storage", () => ({ storagePut: mocks.storagePut }));
 
 import { appRouter } from "./routers";
+import { reorderMenuItems } from "../client/src/lib/menuOrder";
 
 const adminContext = {
   user: { id: 1, openId: "admin", role: "admin", name: "Quản trị viên", isActive: true },
@@ -187,7 +192,21 @@ const userContext = {
   res: {},
 } as any;
 
+const currentSidebarMenuOrder = ["Tổng quan", "Danh mục tài sản", "Phân loại tài sản", "Nhà cung cấp & Hãng", "Hợp đồng & Hóa đơn", "Bản quyền & Dịch vụ", "Phụ kiện", "Bàn giao & Cấp phát", "Bảo hành & Sửa chữa", "Phòng Ban & Bộ Phận", "Quản lý nhân viên", "Khấu hao & Thanh lý", "Kiểm kê", "Báo Cáo"];
+
 describe("employee administration", () => {
+  it("lưu được thứ tự kéo-thả gồm toàn bộ 14 menu hiện hành", async () => {
+    let persistedMenuOrder: string[] | null = null;
+    mocks.saveUserMenuPreference.mockImplementation(async (_userId, menuOrder: string[]) => { persistedMenuOrder = [...menuOrder]; });
+    mocks.getUserMenuPreference.mockImplementation(async () => persistedMenuOrder ? { menuOrder: persistedMenuOrder } : undefined);
+    const caller = appRouter.createCaller(adminContext);
+    const reordered = reorderMenuItems(currentSidebarMenuOrder, 13, 5);
+
+    await expect(caller.menuPreferences.save({ menuOrder: reordered })).resolves.toEqual({ menuOrder: reordered });
+    expect(mocks.saveUserMenuPreference).toHaveBeenCalledWith(adminContext.user.id, reordered);
+    await expect(caller.menuPreferences.get()).resolves.toEqual({ menuOrder: reordered });
+  });
+
   beforeEach(() => {
     vi.clearAllMocks();
     mocks.getCompany.mockResolvedValue(null);

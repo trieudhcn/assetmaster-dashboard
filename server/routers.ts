@@ -234,7 +234,7 @@ import { storagePut } from "./storage";
 const nullableText = z.string().trim().max(1000).optional().nullable();
 const nullableEmail = z.string().trim().email().max(320).optional().nullable();
 const nullableWebsiteUrl = z.string().trim().max(320).url("Website công ty phải là URL hợp lệ, ví dụ https://congty.vn").optional().nullable();
-const sidebarMenuLabels = ["Tổng quan", "Danh mục tài sản", "Phân loại tài sản", "Nhà cung cấp & Hãng", "Hợp đồng & Hóa đơn", "Phụ kiện", "Bàn giao & Cấp phát", "Bảo hành & Sửa chữa", "Phòng Ban & Bộ Phận", "Quản lý nhân viên", "Khấu hao & Thanh lý", "Kiểm kê", "Báo Cáo"] as const;
+const sidebarMenuLabels = ["Tổng quan", "Danh mục tài sản", "Phân loại tài sản", "Nhà cung cấp & Hãng", "Hợp đồng & Hóa đơn", "Bản quyền & Dịch vụ", "Phụ kiện", "Bàn giao & Cấp phát", "Bảo hành & Sửa chữa", "Phòng Ban & Bộ Phận", "Quản lý nhân viên", "Khấu hao & Thanh lý", "Kiểm kê", "Báo Cáo"] as const;
 const emailDomain = (email?: string | null) => email?.trim().split("@")[1]?.toLocaleLowerCase("en-US") || null;
 async function ensureInternalBranchEmail(email?: string | null) {
   if (!email) return;

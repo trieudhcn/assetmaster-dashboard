@@ -24,6 +24,8 @@ describe("menu order settings and invoice context", () => {
 
     expect(schema).toContain("export const userMenuPreferences");
     expect(router).toContain("menuPreferences: router");
+    expect(router).toContain('"Bản quyền & Dịch vụ"');
+    expect(router).toContain(".max(sidebarMenuLabels.length)");
     expect(home).toContain("trpc.menuPreferences.get.useQuery");
     expect(home).toContain("trpc.menuPreferences.save.useMutation");
     expect(home).toContain("<MenuOrderSettings");

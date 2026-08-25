@@ -94,9 +94,11 @@ function DialogContent({
   children,
   showCloseButton = true,
   onEscapeKeyDown,
+  ["data-licenses-services-dialog"]: licenseServiceDialog,
   ...props
 }: React.ComponentProps<typeof DialogPrimitive.Content> & {
   showCloseButton?: boolean;
+  "data-licenses-services-dialog"?: string;
 }) {
   const { isComposing } = useDialogComposition();
 
@@ -117,6 +119,33 @@ function DialogContent({
     },
     [isComposing, onEscapeKeyDown]
   );
+
+  if (licenseServiceDialog === "license") {
+    return (
+      <DialogPortal data-slot="dialog-portal">
+        <DialogOverlay />
+        <DialogPrimitive.Content
+          data-slot="dialog-content"
+          data-licenses-services-dialog="license"
+          className="fixed inset-0 z-[60] grid place-items-center p-4 outline-none"
+          onEscapeKeyDown={handleEscapeKeyDown}
+          {...props}
+        >
+          <div className={cn("relative max-h-[calc(100dvh-2rem)] w-[calc(100vw-2rem)] max-w-3xl overflow-y-auto rounded-lg border bg-background p-6 shadow-lg", className)}>
+            {children}
+            {showCloseButton && (
+              <DialogPrimitive.Close
+                data-slot="dialog-close"
+                className="absolute top-4 right-4 rounded-md px-2 py-1 text-xs font-extrabold text-[#527089] transition hover:bg-[#F4F7F9]"
+              >
+                Đóng
+              </DialogPrimitive.Close>
+            )}
+          </div>
+        </DialogPrimitive.Content>
+      </DialogPortal>
+    );
+  }
 
   return (
     <DialogPortal data-slot="dialog-portal">

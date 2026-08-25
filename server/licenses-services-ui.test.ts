@@ -25,6 +25,10 @@ describe("Bản quyền & Dịch vụ", () => {
     expect(view).toContain("SSL");
     expect(view).toContain("data-license-services-filter-controls");
     expect(view).toContain("Lọc trạng thái");
+    expect(view).toContain("Lọc hạn dùng");
+    expect(view).toContain("Sắp xếp hạn dùng");
+    expect(view).toContain("Hết hạn trong 7 ngày");
+    expect(view).toContain("Hạn gần nhất trước");
     expect(view).toContain("Lọc nhà cung cấp");
     expect(view).toContain("Lọc loại dịch vụ");
     expect(view).toContain("Lọc chi nhánh");
@@ -37,10 +41,17 @@ describe("Bản quyền & Dịch vụ", () => {
     expect(view).toContain("assignmentDirectoryUnavailable");
     expect(view).toContain("Không thể tải dữ liệu quản lý");
     expect(view).toContain("CenteredServiceDialogContent");
+    expect(view).toContain('get("createLicense") === "1"');
     expect(view).toContain('data-licenses-services-dialog="service"');
     expect(view).toContain("fixed inset-0 z-[60] grid place-items-center");
     expect(view).toContain('width: "min(calc(100vw - 2rem), 48rem)"');
     expect(view).toContain("max-h-[calc(100dvh-2rem)]");
+    expect(view).toContain("data-expiry-overdue");
+    expect(view).toContain("Quá hạn ${Math.abs(days)} ngày");
     expect(styles).toContain(".service-dialog-panel");
+    expect(styles).toContain('[data-licenses-services-dialog="license"]');
+    expect(styles).toContain('[data-licenses-services-dialog="service"]');
+    expect(styles).toContain("place-items: center !important");
+    expect(readFileSync(resolve(process.cwd(), "client/src/components/ui/dialog.tsx"), "utf8")).toContain('licenseServiceDialog === "license"');
   });
 });

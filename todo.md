@@ -10,6 +10,14 @@
 - [x] Mở thực tế modal Thêm dịch vụ trên desktop/mobile để xác minh căn giữa và cuộn nội dung.
 - [x] Xác minh hành vi Mở/Đã xem của cảnh báo Bản quyền & Dịch vụ và bổ sung contract chống hồi quy.
 - [x] Bổ sung kiểm thử hành vi điều hướng Mở và định danh ẩn Đã xem cho cảnh báo Bản quyền/Dịch vụ.
+- [x] Hiển thị trạng thái quá hạn nổi bật bằng màu sắc cho Dịch vụ và Bản quyền đã hết hạn.
+- [x] Bổ sung bộ lọc thời hạn và sắp xếp danh sách Bản quyền/Dịch vụ theo ngày hết hạn.
+- [x] Bổ sung hồi quy, xác minh desktop/mobile, TypeScript và production build trước khi phát hành.
+- [x] Sửa giới hạn `menuOrder` khiến lưu kéo-thả menu thất bại khi có hơn 13 mục.
+- [x] Bổ sung hồi quy lưu thứ tự menu với toàn bộ danh sách menu hiện hành.
+- [x] Xác minh chuỗi kéo-thả 14 mục → lưu tRPC → tải lại thứ tự và hiển thị mobile trước khi phát hành.
+- [x] Chuẩn hóa modal Thêm/Sửa Bản quyền và Dịch vụ để luôn căn giữa, không neo góc màn hình.
+- [x] Xác minh modal Bản quyền/Dịch vụ ở desktop và mobile, bao gồm cuộn nội bộ biểu mẫu dài.
 
 ## Current Session — Bản quyền & Dịch vụ
 

@@ -213,6 +213,34 @@ html[data-motion="off"] *::after { animation: none !important; transition: none 
 [role="dialog"] { animation: overlay-in 180ms cubic-bezier(0.23, 1, 0.32, 1) both; }
 [role="dialog"] > :first-child { animation: modal-in 220ms cubic-bezier(0.23, 1, 0.32, 1) both; }
 aside.fixed.inset-y-0 { animation: drawer-in 220ms cubic-bezier(0.23, 1, 0.32, 1) both; }
+
+/* License and service forms use an explicit centering contract so shared dialog motion cannot pin them to a corner. */
+[data-licenses-services-dialog="license"] {
+  position: fixed !important;
+  top: 50% !important;
+  right: auto !important;
+  bottom: auto !important;
+  left: 50% !important;
+  width: calc(100vw - 2rem) !important;
+  max-width: 48rem !important;
+  max-height: calc(100dvh - 2rem) !important;
+  overflow-y: auto !important;
+  transform: translate(-50%, -50%) !important;
+}
+[data-licenses-services-dialog="service"] {
+  position: fixed !important;
+  inset: 0 !important;
+  display: grid !important;
+  place-items: center !important;
+  padding: 1rem !important;
+}
+[data-licenses-services-dialog="service"] > .service-dialog-panel {
+  width: calc(100vw - 2rem) !important;
+  max-width: 48rem !important;
+  max-height: calc(100dvh - 2rem) !important;
+  margin: 0 !important;
+  animation: none !important;
+}
 .popup-surface { animation: popover-in 180ms cubic-bezier(0.23, 1, 0.32, 1) both; transform-origin: top right; }
 .popup-surface--closing { animation: popover-out 170ms cubic-bezier(0.77, 0, 0.175, 1) both; pointer-events: none; }
 button[aria-label="Thông báo"] + div,
