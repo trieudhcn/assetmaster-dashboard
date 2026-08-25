@@ -365,10 +365,51 @@ aside.fixed.inset-y-0 { animation: drawer-in 220ms cubic-bezier(0.23, 1, 0.32, 1
   bottom: 0;
   z-index: 2;
   grid-column: 1 / -1;
+  min-height: 4.75rem;
   margin: 0.75rem 0 0 !important;
-  padding: 1rem 0 0 !important;
+  padding: 0.85rem 0 calc(0.85rem + env(safe-area-inset-bottom)) !important;
+  align-items: center;
   background: #FFFFFF;
 }
+[data-licenses-services-dialog="license"] form > .flex.justify-end::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: 0;
+  border-top: 1px solid #E7EEF3;
+}
+.form-button-secondary,
+.form-button-primary {
+  display: inline-flex;
+  min-height: 2.7rem;
+  min-width: 5.4rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.7rem;
+  padding: 0.65rem 1rem;
+  font-size: 0.78rem;
+  font-weight: 800;
+  line-height: 1;
+  transition: background-color 160ms ease-out, border-color 160ms ease-out, box-shadow 160ms ease-out, transform 160ms ease-out;
+}
+.form-button-secondary {
+  border: 1px solid #D7E3EB;
+  background: #FFFFFF;
+  color: #60758A;
+}
+.form-button-secondary:hover { border-color: #BFD1DC; background: #F4F7F9; color: #193B57; }
+.form-button-primary {
+  border: 1px solid #0F8C8C;
+  background: #0F8C8C;
+  box-shadow: 0 8px 16px rgba(15, 140, 140, 0.18);
+  color: #FFFFFF;
+}
+.form-button-primary:hover { border-color: #087A6A; background: #087A6A; }
+.form-button-primary:active,
+.form-button-secondary:active { transform: scale(0.97); }
+.form-button-primary:disabled,
+.form-button-secondary:disabled { cursor: not-allowed; opacity: 0.58; }
 .popup-surface { animation: popover-in 180ms cubic-bezier(0.23, 1, 0.32, 1) both; transform-origin: top right; }
 .popup-surface--closing { animation: popover-out 170ms cubic-bezier(0.77, 0, 0.175, 1) both; pointer-events: none; }
 button[aria-label="Thông báo"] + div,

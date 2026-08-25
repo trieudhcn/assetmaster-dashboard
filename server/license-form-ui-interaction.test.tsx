@@ -61,17 +61,26 @@ describe("tương tác form Bản quyền", () => {
     container = document.createElement("div");
     document.body.append(container);
     root = createRoot(container);
-    act(() => root?.render(<Dialog open><DialogContent data-licenses-services-dialog="license"><DialogHeader><DialogTitle>Thêm Bản quyền</DialogTitle><DialogDescription>Mô tả</DialogDescription></DialogHeader><form><input aria-label="Mã bản quyền" /><div className="flex justify-end"><button type="button">Hủy</button><button type="submit">Lưu</button></div></form></DialogContent></Dialog>));
+    act(() => root?.render(<Dialog open><DialogContent data-licenses-services-dialog="license"><DialogHeader><DialogTitle>Thêm Bản quyền</DialogTitle><DialogDescription>Mô tả</DialogDescription></DialogHeader><form><input aria-label="Mã bản quyền" /><div className="flex justify-end gap-2 sm:col-span-2"><button type="button" className="form-button-secondary">Hủy</button><button type="submit" className="form-button-primary">Lưu bản quyền</button></div></form></DialogContent></Dialog>));
 
     const dialog = document.querySelector<HTMLElement>('[data-licenses-services-dialog="license"]')!;
     const panel = dialog.querySelector<HTMLElement>(':scope > .license-service-dialog-panel')!;
     const form = panel.querySelector<HTMLFormElement>("form")!;
     expect(panel.className).toContain("overflow-hidden");
-    expect(form.querySelector(".flex.justify-end")?.textContent).toContain("Lưu");
+    const footer = form.querySelector<HTMLElement>(".flex.justify-end")!;
+    expect(footer.textContent).toContain("Hủy");
+    expect(footer.textContent).toContain("Lưu bản quyền");
+    expect(footer.querySelector(".form-button-secondary")).not.toBeNull();
+    expect(footer.querySelector(".form-button-primary")).not.toBeNull();
     const styles = readFileSync(resolve(process.cwd(), "client/src/index.css"), "utf8");
     expect(styles).toContain('[data-licenses-services-dialog="license"] form {');
     expect(styles).toContain("overflow-y: auto !important");
     expect(styles).toContain("position: sticky");
     expect(styles).toContain("overflow: hidden !important");
+    expect(styles).toContain("safe-area-inset-bottom");
+    expect(styles).toContain("min-width: 5.4rem");
+    const view = readFileSync(resolve(process.cwd(), "client/src/pages/LicensesServicesManagementView.tsx"), "utf8");
+    expect(view).toContain('className="form-button-secondary">Hủy</button><button type="submit"');
+    expect(view).toContain('className="form-button-primary">{createLicense.isPending || updateLicense.isPending ? "Đang lưu..." : "Lưu bản quyền"}');
   });
 });

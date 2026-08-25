@@ -36,6 +36,9 @@
 - [x] Thay panel modal Bản quyền bằng bố cục header–body–footer với chỉ vùng body cuộn dọc.
 - [x] Xác minh không còn thanh cuộn ngang và footer luôn ổn định trên desktop/mobile.
 - [x] Bổ sung kiểm thử UI rõ ràng cho panel Bản quyền chỉ cuộn body dọc và footer ổn định.
+- [x] Chuẩn hóa footer nút Hủy/Lưu Bản quyền theo chuẩn form hiện hành, không bị cắt ở đáy.
+- [x] Xác minh desktop/mobile, hồi quy và build trước khi phát hành footer nút mới.
+- [x] Bổ sung kiểm thử UI rõ ràng cho cấu trúc và nút Hủy/Lưu của footer Bản quyền.
 
 ## Current Session — Bản quyền & Dịch vụ
 

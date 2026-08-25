@@ -64,8 +64,12 @@ describe("Bản quyền & Dịch vụ", () => {
     expect(styles).toContain("place-items: center !important");
     expect(styles).toContain('[data-licenses-services-dialog="license"] .form-input');
     expect(styles).toContain("overflow-x: hidden !important");
-    expect(styles).toContain("position: static");
-    expect(styles).toContain("order: 10");
+    expect(styles).toContain("position: sticky");
+    expect(styles).toContain("overflow: hidden !important");
+    expect(styles).toContain("min-height: 4.75rem");
+    expect(styles).toContain("safe-area-inset-bottom");
+    expect(styles).toContain(".form-button-primary");
+    expect(styles).toContain(".form-button-secondary");
     expect(styles).toContain("License modal: fixed panel shell");
     expect(styles).toContain("height: min(48rem, calc(100dvh - 2rem)) !important");
     expect(styles).toContain("overflow-y: auto !important");
