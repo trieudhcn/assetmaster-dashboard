@@ -42,6 +42,8 @@
 - [x] Đồng bộ header, vùng nội dung, trường nhập và footer của form Bản quyền/Dịch vụ theo form Tài sản.
 - [x] Bổ sung hồi quy và xác minh desktop/mobile cho hai form đã đồng bộ.
 - [x] Bổ sung kiểm thử UI chung xác nhận Bản quyền và Dịch vụ dùng cùng panel, nhãn/trường và footer chuẩn.
+- [x] Đưa footer Hủy/Lưu Bản quyền và Dịch vụ về cuối nội dung cuộn như form Tài sản.
+- [x] Xác minh cuộn nội bộ và footer cuối form trên desktop/mobile, kèm hồi quy và build.
 
 ## Current Session — Bản quyền & Dịch vụ
 

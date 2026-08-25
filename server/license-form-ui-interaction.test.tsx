@@ -57,7 +57,7 @@ describe("tương tác form Bản quyền", () => {
     window.requestAnimationFrame = originalRaf;
   });
 
-  it("render panel Bản quyền tách khung cố định, body cuộn dọc và footer thao tác", () => {
+  it("render panel Bản quyền có body cuộn dọc và footer nằm cuối nội dung", () => {
     container = document.createElement("div");
     document.body.append(container);
     root = createRoot(container);
@@ -75,9 +75,9 @@ describe("tương tác form Bản quyền", () => {
     const styles = readFileSync(resolve(process.cwd(), "client/src/index.css"), "utf8");
     expect(styles).toContain('[data-licenses-services-dialog="license"] form,');
     expect(styles).toContain("overflow-y: auto !important");
-    expect(styles).toContain("position: sticky");
+    expect(styles).toContain("position: static");
     expect(styles).toContain("overflow: hidden !important");
-    expect(styles).toContain("safe-area-inset-bottom");
+    expect(styles).toContain("margin: 1rem 0 0 !important");
     expect(styles).toContain("min-width: 5.4rem");
     const view = readFileSync(resolve(process.cwd(), "client/src/pages/LicensesServicesManagementView.tsx"), "utf8");
     expect(view).toContain('className="form-button-secondary">Hủy</button><button type="submit"');

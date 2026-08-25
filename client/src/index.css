@@ -364,24 +364,16 @@ aside.fixed.inset-y-0 { animation: drawer-in 220ms cubic-bezier(0.23, 1, 0.32, 1
 }
 [data-licenses-services-dialog="license"] form > .flex.justify-end,
 [data-licenses-services-dialog="service"] form > .flex.justify-end {
-  position: sticky;
-  right: 0;
-  bottom: 0;
-  z-index: 2;
+  position: static;
   grid-column: 1 / -1;
-  min-height: 4.75rem;
-  margin: 0.75rem 0 0 !important;
-  padding: 0.85rem 0 calc(0.85rem + env(safe-area-inset-bottom)) !important;
+  min-height: auto;
+  margin: 1rem 0 0 !important;
+  padding: 1rem 0 0 !important;
   align-items: center;
-  background: #FFFFFF;
+  background: transparent;
 }
 [data-licenses-services-dialog="license"] form > .flex.justify-end::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  right: 0;
-  left: 0;
-  border-top: 1px solid #E7EEF3;
+  content: none;
 }
 .form-button-secondary,
 .form-button-primary {
