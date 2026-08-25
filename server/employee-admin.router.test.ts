@@ -11,6 +11,8 @@ const mocks = vi.hoisted(() => ({
   createSoftwareLicenseDocument: vi.fn(),
   createSoftwareLicenseAssignment: vi.fn(),
   createTechnologyService: vi.fn(),
+  createTechnologyVendor: vi.fn(),
+  createTechnologyVendorContract: vi.fn(),
   createVendor: vi.fn(),
   createBrand: vi.fn(),
   createVendorDocument: vi.fn(),
@@ -26,6 +28,8 @@ const mocks = vi.hoisted(() => ({
   getVendorById: vi.fn(),
   getVendorByName: vi.fn(),
   getVendorDocumentById: vi.fn(),
+  getTechnologyVendorById: vi.fn(),
+  getTechnologyVendorContractById: vi.fn(),
   getBrandById: vi.fn(),
   getBrandByName: vi.fn(),
   getActiveDepartmentById: vi.fn(),
@@ -55,6 +59,8 @@ const mocks = vi.hoisted(() => ({
   listSoftwareLicenseAssignments: vi.fn(),
   listSoftwareLicenseDocuments: vi.fn(),
   listTechnologyServices: vi.fn(),
+  listTechnologyVendors: vi.fn(),
+  listTechnologyVendorContracts: vi.fn(),
   listHandoversByRecipient: vi.fn(),
   listHandoverSupplyItems: vi.fn(),
   listHandoverReturnDecisionHistory: vi.fn(),
@@ -81,6 +87,8 @@ const mocks = vi.hoisted(() => ({
   updateBrand: vi.fn(),
   updateSoftwareLicense: vi.fn(),
   updateTechnologyService: vi.fn(),
+  updateTechnologyVendor: vi.fn(),
+  updateTechnologyVendorContract: vi.fn(),
 }));
 
 vi.mock("./db", () => ({
@@ -97,6 +105,8 @@ vi.mock("./db", () => ({
   createSoftwareLicenseDocument: mocks.createSoftwareLicenseDocument,
   createSoftwareLicenseAssignment: mocks.createSoftwareLicenseAssignment,
   createTechnologyService: mocks.createTechnologyService,
+  createTechnologyVendor: mocks.createTechnologyVendor,
+  createTechnologyVendorContract: mocks.createTechnologyVendorContract,
   createVendor: mocks.createVendor,
   createBrand: mocks.createBrand,
   createVendorDocument: mocks.createVendorDocument,
@@ -114,6 +124,8 @@ vi.mock("./db", () => ({
   getVendorById: mocks.getVendorById,
   getVendorByName: mocks.getVendorByName,
   getVendorDocumentById: mocks.getVendorDocumentById,
+  getTechnologyVendorById: mocks.getTechnologyVendorById,
+  getTechnologyVendorContractById: mocks.getTechnologyVendorContractById,
   getBrandById: mocks.getBrandById,
   getBrandByName: mocks.getBrandByName,
   getCompany: mocks.getCompany,
@@ -147,6 +159,8 @@ vi.mock("./db", () => ({
   listSoftwareLicenseAssignments: mocks.listSoftwareLicenseAssignments,
   listSoftwareLicenseDocuments: mocks.listSoftwareLicenseDocuments,
   listTechnologyServices: mocks.listTechnologyServices,
+  listTechnologyVendors: mocks.listTechnologyVendors,
+  listTechnologyVendorContracts: mocks.listTechnologyVendorContracts,
   listHandovers: vi.fn(),
   listHandoversByRecipient: mocks.listHandoversByRecipient,
   listHandoverSupplyItems: mocks.listHandoverSupplyItems,
@@ -181,6 +195,8 @@ vi.mock("./db", () => ({
   updateBrand: mocks.updateBrand,
   updateSoftwareLicense: mocks.updateSoftwareLicense,
   updateTechnologyService: mocks.updateTechnologyService,
+  updateTechnologyVendor: mocks.updateTechnologyVendor,
+  updateTechnologyVendorContract: mocks.updateTechnologyVendorContract,
 }));
 
 vi.mock("./storage", () => ({ storagePut: mocks.storagePut }));
@@ -617,13 +633,28 @@ describe("employee administration", () => {
     mocks.createTechnologyService.mockResolvedValue(41);
     const caller = appRouter.createCaller(adminContext);
 
-    await expect(caller.softwareLicenses.create({ licenseCode: "LIC-001", productName: "Microsoft 365", publisher: "Microsoft", edition: null, licenseModel: "subscription", licenseKey: null, purchasedQuantity: 2, vendorId: null, purchaseContractId: null, purchaseInvoiceId: null, purchasedAt: null, expiresAt: null, autoRenew: true, status: "active", note: null })).resolves.toEqual({ id: 71 });
+    await expect(caller.softwareLicenses.create({ licenseCode: "LIC-001", productName: "Microsoft 365", publisher: "Microsoft", edition: null, licenseModel: "subscription", licenseKey: null, purchasedQuantity: 2, vendorId: null, technologyVendorId: 51, technologyVendorContractId: 61, purchaseContractId: null, purchaseInvoiceId: null, purchasedAt: null, expiresAt: null, autoRenew: true, status: "active", note: null })).resolves.toEqual({ id: 71 });
     await expect(caller.softwareLicenses.assign({ softwareLicenseId: 71, assetId: null, userId: null, assignedToName: "Máy Kế toán", deviceName: "PC-01", assignedAt: new Date("2026-08-25"), note: null })).resolves.toEqual({ id: 91 });
-    await expect(caller.technologyServices.create({ serviceCode: "DOM-001", serviceType: "domain", name: "Tên miền công ty", vendorId: null, branchId: null, accountReference: null, billingReference: null, domainName: "example.vn", serviceEndpoint: null, startedAt: null, renewalAt: null, expiresAt: null, autoRenew: true, billingCycle: "annual", costAmount: 300000, status: "active", note: null })).resolves.toEqual({ id: 41 });
+    await expect(caller.technologyServices.create({ serviceCode: "DOM-001", serviceType: "domain", name: "Tên miền công ty", vendorId: null, technologyVendorId: 51, technologyVendorContractId: 61, branchId: null, accountReference: null, billingReference: null, domainName: "example.vn", serviceEndpoint: null, startedAt: null, renewalAt: null, expiresAt: null, autoRenew: true, billingCycle: "annual", costAmount: 300000, status: "active", note: null })).resolves.toEqual({ id: 41 });
 
     expect(mocks.createSoftwareLicense).toHaveBeenCalledWith(expect.objectContaining({ licenseCode: "LIC-001", createdByUserId: 1 }));
+    expect(mocks.createSoftwareLicense).toHaveBeenCalledWith(expect.objectContaining({ technologyVendorId: 51, technologyVendorContractId: 61 }));
     expect(mocks.createSoftwareLicenseAssignment).toHaveBeenCalledWith(expect.objectContaining({ softwareLicenseId: 71, status: "active", assignedToName: "Máy Kế toán" }));
     expect(mocks.createTechnologyService).toHaveBeenCalledWith(expect.objectContaining({ serviceCode: "DOM-001", costAmount: "300000", createdByUserId: 1 }));
+    expect(mocks.createTechnologyService).toHaveBeenCalledWith(expect.objectContaining({ technologyVendorId: 51, technologyVendorContractId: 61 }));
+  });
+
+  it("manages technology vendors and contracts separately from asset vendors", async () => {
+    mocks.createTechnologyVendor.mockResolvedValue(51);
+    mocks.getTechnologyVendorById.mockResolvedValue({ id: 51, name: "Nhà cung cấp Cloud" });
+    mocks.createTechnologyVendorContract.mockResolvedValue(61);
+    const caller = appRouter.createCaller(adminContext);
+
+    await expect(caller.technologyVendors.create({ name: "Nhà cung cấp Cloud", contactName: "Minh", phone: null, email: "minh@example.com", website: null, address: null, isActive: true, note: null })).resolves.toEqual({ id: 51 });
+    await expect(caller.technologyVendorContracts.create({ contractCode: "HDCN-001", title: "Dịch vụ hạ tầng Cloud", technologyVendorId: 51, contractType: "service", signedAt: null, effectiveFrom: null, effectiveTo: null, autoRenew: true, status: "active", note: null })).resolves.toEqual({ id: 61 });
+
+    expect(mocks.createTechnologyVendor).toHaveBeenCalledWith(expect.objectContaining({ name: "Nhà cung cấp Cloud", isActive: true }));
+    expect(mocks.createTechnologyVendorContract).toHaveBeenCalledWith(expect.objectContaining({ contractCode: "HDCN-001", technologyVendorId: 51, contractType: "service" }));
   });
 
   it("stores contract and renewal documents for an existing software license", async () => {

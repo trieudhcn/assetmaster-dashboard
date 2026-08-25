@@ -47,6 +47,8 @@ import {
   createSoftwareLicenseDocument,
   createSoftwareLicenseAssignment,
   createTechnologyService,
+  createTechnologyVendor,
+  createTechnologyVendorContract,
   createVendor,
   createVendorDocument,
   countAssetsByCategoryId,
@@ -142,6 +144,8 @@ import {
   getVendorById,
   getVendorByName,
   getVendorDocumentById,
+  getTechnologyVendorById,
+  getTechnologyVendorContractById,
   listAssets,
   listAssetCategories,
   listAllAssetCategories,
@@ -179,6 +183,8 @@ import {
   listSupplyUnitUsageCounts,
   listSupplyIssueAnalytics,
   listTechnologyServices,
+  listTechnologyVendorContracts,
+  listTechnologyVendors,
   listHelpGuideVersions,
   listVendors,
   listVendorDocuments,
@@ -222,6 +228,8 @@ import {
   updateRetirementCertificateAssetSalvageValues,
   updateSoftwareLicense,
   updateTechnologyService,
+  updateTechnologyVendor,
+  updateTechnologyVendorContract,
   updateUserRole,
   updateUserDirectoryProfile,
   updateUserActiveStatus,
@@ -684,6 +692,82 @@ export const appRouter = router({
       return { success: true };
     }),
   }),
+  technologyVendors: router({
+    list: adminProcedure.query(() => listTechnologyVendors()),
+    create: adminProcedure.input(z.object({
+      name: z.string().trim().min(2).max(160),
+      contactName: nullableText,
+      phone: nullableText,
+      email: z.string().trim().email().max(320).nullable().optional(),
+      website: z.string().trim().max(320).nullable().optional(),
+      address: z.string().trim().max(4000).nullable().optional(),
+      isActive: z.boolean().default(true),
+      note: z.string().trim().max(4000).nullable().optional(),
+    })).mutation(async ({ input, ctx }) => {
+      const id = await createTechnologyVendor(input);
+      await recordActivity({ entityType: "technologyVendor", entityId: id, action: "created", actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: `Tạo Nhà cung cấp Công nghệ ${input.name}` });
+      return { id };
+    }),
+    update: adminProcedure.input(z.object({
+      id: z.number().int().positive(),
+      name: z.string().trim().min(2).max(160).optional(),
+      contactName: nullableText,
+      phone: nullableText,
+      email: z.string().trim().email().max(320).nullable().optional(),
+      website: z.string().trim().max(320).nullable().optional(),
+      address: z.string().trim().max(4000).nullable().optional(),
+      isActive: z.boolean().optional(),
+      note: z.string().trim().max(4000).nullable().optional(),
+    })).mutation(async ({ input, ctx }) => {
+      const existing = await getTechnologyVendorById(input.id);
+      if (!existing) throw new TRPCError({ code: "NOT_FOUND", message: "Không tìm thấy Nhà cung cấp Công nghệ." });
+      const { id, ...changes } = input;
+      await updateTechnologyVendor(id, changes);
+      await recordActivity({ entityType: "technologyVendor", entityId: id, action: "updated", actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: `Cập nhật Nhà cung cấp Công nghệ ${changes.name || existing.name}` });
+      return { success: true };
+    }),
+  }),
+  technologyVendorContracts: router({
+    list: adminProcedure.input(z.object({ technologyVendorId: z.number().int().positive().optional() }).optional()).query(({ input }) => listTechnologyVendorContracts(input?.technologyVendorId)),
+    create: adminProcedure.input(z.object({
+      contractCode: z.string().trim().min(2).max(64),
+      title: z.string().trim().min(2).max(255),
+      technologyVendorId: z.number().int().positive(),
+      contractType: z.enum(["license", "service", "framework", "other"]),
+      signedAt: z.coerce.date().nullable().optional(),
+      effectiveFrom: z.coerce.date().nullable().optional(),
+      effectiveTo: z.coerce.date().nullable().optional(),
+      autoRenew: z.boolean(),
+      status: z.enum(["draft", "active", "expiring", "expired", "cancelled"]),
+      note: z.string().trim().max(4000).nullable().optional(),
+    })).mutation(async ({ input, ctx }) => {
+      const vendor = await getTechnologyVendorById(input.technologyVendorId);
+      if (!vendor) throw new TRPCError({ code: "NOT_FOUND", message: "Không tìm thấy Nhà cung cấp Công nghệ." });
+      const id = await createTechnologyVendorContract(input);
+      await recordActivity({ entityType: "technologyVendorContract", entityId: id, action: "created", actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: `Tạo Hợp đồng Công nghệ ${input.contractCode} · ${vendor.name}` });
+      return { id };
+    }),
+    update: adminProcedure.input(z.object({
+      id: z.number().int().positive(),
+      title: z.string().trim().min(2).max(255).optional(),
+      technologyVendorId: z.number().int().positive().optional(),
+      contractType: z.enum(["license", "service", "framework", "other"]).optional(),
+      signedAt: z.coerce.date().nullable().optional(),
+      effectiveFrom: z.coerce.date().nullable().optional(),
+      effectiveTo: z.coerce.date().nullable().optional(),
+      autoRenew: z.boolean().optional(),
+      status: z.enum(["draft", "active", "expiring", "expired", "cancelled"]).optional(),
+      note: z.string().trim().max(4000).nullable().optional(),
+    })).mutation(async ({ input, ctx }) => {
+      const existing = await getTechnologyVendorContractById(input.id);
+      if (!existing) throw new TRPCError({ code: "NOT_FOUND", message: "Không tìm thấy Hợp đồng Công nghệ." });
+      const { id, ...changes } = input;
+      if (changes.technologyVendorId && !(await getTechnologyVendorById(changes.technologyVendorId))) throw new TRPCError({ code: "NOT_FOUND", message: "Không tìm thấy Nhà cung cấp Công nghệ." });
+      await updateTechnologyVendorContract(id, changes);
+      await recordActivity({ entityType: "technologyVendorContract", entityId: id, action: "updated", actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: `Cập nhật Hợp đồng Công nghệ ${existing.contractCode}` });
+      return { success: true };
+    }),
+  }),
   softwareLicenses: router({
     list: adminProcedure.query(() => listSoftwareLicenses()),
     assignments: adminProcedure.input(z.object({ softwareLicenseId: z.number().int().positive() }).optional()).query(({ input }) => listSoftwareLicenseAssignments(input?.softwareLicenseId)),
@@ -697,6 +781,8 @@ export const appRouter = router({
       licenseKey: z.string().trim().max(4000).nullable().optional(),
       purchasedQuantity: z.number().int().min(1).max(100_000),
       vendorId: z.number().int().positive().nullable().optional(),
+      technologyVendorId: z.number().int().positive().nullable().optional(),
+      technologyVendorContractId: z.number().int().positive().nullable().optional(),
       purchaseContractId: z.number().int().positive().nullable().optional(),
       purchaseInvoiceId: z.number().int().positive().nullable().optional(),
       purchasedAt: z.coerce.date().nullable().optional(),
@@ -718,6 +804,8 @@ export const appRouter = router({
       licenseKey: z.string().trim().max(4000).nullable().optional(),
       purchasedQuantity: z.number().int().min(1).max(100_000).optional(),
       vendorId: z.number().int().positive().nullable().optional(),
+      technologyVendorId: z.number().int().positive().nullable().optional(),
+      technologyVendorContractId: z.number().int().positive().nullable().optional(),
       purchaseContractId: z.number().int().positive().nullable().optional(),
       purchaseInvoiceId: z.number().int().positive().nullable().optional(),
       purchasedAt: z.coerce.date().nullable().optional(),
@@ -793,6 +881,8 @@ export const appRouter = router({
       serviceType: z.enum(["internet", "domain", "ssl"]),
       name: z.string().trim().min(2).max(255),
       vendorId: z.number().int().positive().nullable().optional(),
+      technologyVendorId: z.number().int().positive().nullable().optional(),
+      technologyVendorContractId: z.number().int().positive().nullable().optional(),
       branchId: z.number().int().positive().nullable().optional(),
       accountReference: nullableText,
       billingReference: nullableText,
@@ -816,6 +906,8 @@ export const appRouter = router({
       id: z.number().int().positive(),
       name: z.string().trim().min(2).max(255).optional(),
       vendorId: z.number().int().positive().nullable().optional(),
+      technologyVendorId: z.number().int().positive().nullable().optional(),
+      technologyVendorContractId: z.number().int().positive().nullable().optional(),
       branchId: z.number().int().positive().nullable().optional(),
       accountReference: nullableText,
       billingReference: nullableText,

@@ -40,6 +40,8 @@ import {
   supplyIssueSlipItems,
   supplyIssueSlips,
   technologyServices,
+  technologyVendorContracts,
+  technologyVendors,
   uiLabels,
   type InsertUser,
   userDashboardAlertStates,
@@ -279,6 +281,59 @@ export async function updateVendor(id: number, data: Partial<typeof vendors.$inf
   const db = await getDb();
   if (!db) throw new Error("Database unavailable");
   await db.update(vendors).set(data).where(eq(vendors.id, id));
+}
+
+export async function listTechnologyVendors() {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(technologyVendors).orderBy(desc(technologyVendors.updatedAt));
+}
+
+export async function getTechnologyVendorById(id: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+  return (await db.select().from(technologyVendors).where(eq(technologyVendors.id, id)).limit(1))[0];
+}
+
+export async function createTechnologyVendor(data: typeof technologyVendors.$inferInsert) {
+  const db = await getDb();
+  if (!db) throw new Error("Database unavailable");
+  const result = await db.insert(technologyVendors).values(data);
+  return Number(result[0].insertId);
+}
+
+export async function updateTechnologyVendor(id: number, data: Partial<typeof technologyVendors.$inferInsert>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database unavailable");
+  await db.update(technologyVendors).set(data).where(eq(technologyVendors.id, id));
+}
+
+export async function listTechnologyVendorContracts(technologyVendorId?: number) {
+  const db = await getDb();
+  if (!db) return [];
+  const query = db.select().from(technologyVendorContracts);
+  return technologyVendorId
+    ? query.where(eq(technologyVendorContracts.technologyVendorId, technologyVendorId)).orderBy(desc(technologyVendorContracts.updatedAt))
+    : query.orderBy(desc(technologyVendorContracts.updatedAt));
+}
+
+export async function getTechnologyVendorContractById(id: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+  return (await db.select().from(technologyVendorContracts).where(eq(technologyVendorContracts.id, id)).limit(1))[0];
+}
+
+export async function createTechnologyVendorContract(data: typeof technologyVendorContracts.$inferInsert) {
+  const db = await getDb();
+  if (!db) throw new Error("Database unavailable");
+  const result = await db.insert(technologyVendorContracts).values(data);
+  return Number(result[0].insertId);
+}
+
+export async function updateTechnologyVendorContract(id: number, data: Partial<typeof technologyVendorContracts.$inferInsert>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database unavailable");
+  await db.update(technologyVendorContracts).set(data).where(eq(technologyVendorContracts.id, id));
 }
 
 export async function listSoftwareLicenses() {

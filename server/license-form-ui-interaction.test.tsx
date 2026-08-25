@@ -4,7 +4,7 @@ import { createRoot, type Root } from "react-dom/client";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { LicenseDocumentControls, LicenseDuplicatePortal, StandardDropdown } from "../client/src/pages/LicensesServicesManagementView";
+import { LicenseDocumentControls, LicenseDuplicatePortal, StandardDropdown, TechnologyContractPortal, technologyLinkPayload } from "../client/src/pages/LicensesServicesManagementView";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "../client/src/components/ui/dialog";
 
 let root: Root | null = null;
@@ -18,6 +18,14 @@ afterEach(() => {
   root = null;
   container = null;
 });
+
+function TechnologyLinkedFormHarness({ dialog, onSubmit }: { dialog: "license" | "service"; onSubmit: (payload: { technologyVendorId: number | null; technologyVendorContractId: number | null }) => void }) {
+  const [vendorId, setVendorId] = React.useState("");
+  const [contractId, setContractId] = React.useState("");
+  const vendorOptions = [{ value: "", label: "Chưa chọn" }, { value: "7", label: "Nhà cung cấp Cloud" }, { value: "8", label: "Nhà cung cấp khác" }];
+  const contracts = [{ id: 21, contractCode: "HDCN-021", title: "Microsoft 365", technologyVendorId: 7, status: "active" }, { id: 22, contractCode: "HDCN-022", title: "Hợp đồng khác", technologyVendorId: 8, status: "active" }];
+  return <><div data-licenses-services-dialog={dialog}><form onSubmit={(event) => { event.preventDefault(); onSubmit(technologyLinkPayload(vendorId, contractId)); }}><label><span>Nhà cung cấp Công nghệ</span><StandardDropdown value={vendorId} onChange={(value) => { setVendorId(value); setContractId(""); }} options={vendorOptions} placeholder="Chưa chọn" searchPlaceholder="Tìm nhà cung cấp..." /></label><button type="submit">Lưu</button></form></div><TechnologyContractPortal isOpen dialog={dialog} vendorId={vendorId} value={contractId} onChange={setContractId} isLoading={false} contracts={contracts} /></>;
+}
 
 describe("tương tác form Bản quyền", () => {
   it("hiển thị tệp đính kèm, nhận tệp người dùng chọn và gỡ tài liệu đã lưu", () => {
@@ -127,6 +135,79 @@ describe("tương tác form Bản quyền", () => {
     expect(option?.closest('[data-licenses-services-dialog="service"]')).toBe(modal);
     act(() => option?.click());
     expect(onChange).toHaveBeenCalledWith("monthly");
+    window.requestAnimationFrame = originalRaf;
+  });
+
+  it("lọc và chọn đúng Hợp đồng Công nghệ theo Nhà cung cấp trong form", () => {
+    const onChange = vi.fn();
+    const originalRaf = window.requestAnimationFrame;
+    window.requestAnimationFrame = (callback) => { callback(0); return 1; };
+    const host = document.createElement("div");
+    container = host;
+    document.body.append(host);
+    root = createRoot(host);
+    act(() => root?.render(<><div data-licenses-services-dialog="license"><form /></div><TechnologyContractPortal isOpen dialog="license" vendorId="7" value="" onChange={onChange} isLoading={false} contracts={[{ id: 21, contractCode: "HDCN-021", title: "Microsoft 365", technologyVendorId: 7, status: "active" }, { id: 22, contractCode: "HDCN-022", title: "Hợp đồng khác", technologyVendorId: 8, status: "active" }]} /></>));
+
+    const trigger = document.querySelector<HTMLButtonElement>('button[aria-haspopup="listbox"]')!;
+    act(() => trigger.click());
+    expect(document.body.textContent).toContain("HDCN-021 · Microsoft 365");
+    expect(document.body.textContent).not.toContain("HDCN-022 · Hợp đồng khác");
+    const option = Array.from(document.querySelectorAll<HTMLButtonElement>('[role="option"]')).find((button) => button.textContent?.includes("HDCN-021"));
+    act(() => option?.click());
+    expect(onChange).toHaveBeenCalledWith("21");
+    window.requestAnimationFrame = originalRaf;
+  });
+
+  it("tạo payload liên kết Công nghệ đúng cho form Bản quyền và Dịch vụ", () => {
+    expect(technologyLinkPayload("7", "21")).toEqual({ technologyVendorId: 7, technologyVendorContractId: 21 });
+    expect(technologyLinkPayload("", "")).toEqual({ technologyVendorId: null, technologyVendorContractId: null });
+  });
+
+  it.each(["license", "service"] as const)("chọn Nhà cung cấp, lọc Hợp đồng và submit đúng liên kết trong form %s", (dialog) => {
+    const onSubmit = vi.fn();
+    const originalRaf = window.requestAnimationFrame;
+    window.requestAnimationFrame = (callback) => { callback(0); return 1; };
+    const host = document.createElement("div");
+    container = host;
+    document.body.append(host);
+    root = createRoot(host);
+    act(() => root?.render(<TechnologyLinkedFormHarness dialog={dialog} onSubmit={onSubmit} />));
+
+    const triggers = () => Array.from(document.querySelectorAll<HTMLButtonElement>('button[aria-haspopup="listbox"]'));
+    const modal = document.querySelector<HTMLElement>(`[data-licenses-services-dialog="${dialog}"]`)!;
+    expect(modal.textContent).toContain("Nhà cung cấp Công nghệ");
+    act(() => triggers()[0].click());
+    const vendorOption = Array.from(document.querySelectorAll<HTMLButtonElement>('[role="option"]')).find((button) => button.textContent?.includes("Nhà cung cấp Cloud"));
+    act(() => vendorOption?.click());
+    expect(modal.textContent).toContain("Hợp đồng Công nghệ");
+    expect(triggers()[1].closest(`[data-licenses-services-dialog="${dialog}"]`)).toBe(modal);
+    act(() => triggers()[1].click());
+    expect(document.body.textContent).toContain("HDCN-021 · Microsoft 365");
+    expect(document.body.textContent).not.toContain("HDCN-022 · Hợp đồng khác");
+    const contractOption = Array.from(document.querySelectorAll<HTMLButtonElement>('[role="option"]')).find((button) => button.textContent?.includes("HDCN-021"));
+    act(() => contractOption?.click());
+    act(() => document.querySelector<HTMLFormElement>(`[data-licenses-services-dialog="${dialog}"] form`)?.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true })));
+    expect(onSubmit).toHaveBeenCalledWith({ technologyVendorId: 7, technologyVendorContractId: 21 });
+    window.requestAnimationFrame = originalRaf;
+  });
+
+  it.each(["license", "service"] as const)("giữ nguyên panel, form và footer modal %s khi chèn vùng Hợp đồng Công nghệ", (dialogKind) => {
+    const originalRaf = window.requestAnimationFrame;
+    window.requestAnimationFrame = (callback) => { callback(0); return 1; };
+    container = document.createElement("div");
+    document.body.append(container);
+    root = createRoot(container);
+    const dialog = <Dialog open><DialogContent data-licenses-services-dialog={dialogKind}><DialogHeader><DialogTitle>{dialogKind === "license" ? "Thêm Bản quyền" : "Thêm Dịch vụ"}</DialogTitle><DialogDescription>Mô tả</DialogDescription></DialogHeader><form><div className="flex justify-end gap-2 sm:col-span-2"><button type="button" className="form-button-secondary">Hủy</button><button type="submit" className="form-button-primary">Lưu</button></div></form></DialogContent></Dialog>;
+    act(() => root?.render(dialog));
+    act(() => root?.render(<>{dialog}<TechnologyContractPortal isOpen dialog={dialogKind} vendorId="7" value="" onChange={vi.fn()} isLoading={false} contracts={[{ id: 21, contractCode: "HDCN-021", title: "Microsoft 365", technologyVendorId: 7, status: "active" }]} /></>));
+
+    const modal = document.querySelector<HTMLElement>(`[data-licenses-services-dialog="${dialogKind}"]`)!;
+    const panel = modal.querySelector<HTMLElement>(":scope > .license-service-dialog-panel")!;
+    const form = panel.querySelector<HTMLFormElement>("form")!;
+    expect(panel.className).toContain("overflow-hidden");
+    expect(form.textContent).toContain("Hợp đồng Công nghệ");
+    expect(form.querySelector(".form-button-secondary")?.textContent).toContain("Hủy");
+    expect(form.querySelector(".form-button-primary")?.textContent).toContain("Lưu");
     window.requestAnimationFrame = originalRaf;
   });
 

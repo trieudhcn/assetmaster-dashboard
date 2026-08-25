@@ -51,6 +51,36 @@ export const userDashboardAlertStates = mysqlTable("userDashboardAlertStates", {
   dismissedAt: timestamp("dismissedAt").defaultNow().notNull(),
 }, (table) => [uniqueIndex("user_dashboard_alert_state_unique").on(table.userId, table.alertId), index("user_dashboard_alert_state_user_idx").on(table.userId)]);
 
+export const technologyVendors = mysqlTable("technologyVendors", {
+  id: int("id").autoincrement().primaryKey(),
+  name: varchar("name", { length: 160 }).notNull().unique(),
+  contactName: varchar("contactName", { length: 160 }),
+  phone: varchar("phone", { length: 32 }),
+  email: varchar("email", { length: 320 }),
+  website: varchar("website", { length: 320 }),
+  address: text("address"),
+  isActive: boolean("isActive").default(true).notNull(),
+  note: text("note"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+}, (table) => [index("technology_vendors_active_idx").on(table.isActive)]);
+
+export const technologyVendorContracts = mysqlTable("technologyVendorContracts", {
+  id: int("id").autoincrement().primaryKey(),
+  contractCode: varchar("contractCode", { length: 64 }).notNull().unique(),
+  title: varchar("title", { length: 255 }).notNull(),
+  technologyVendorId: int("technologyVendorId").notNull().references(() => technologyVendors.id, { onDelete: "restrict", onUpdate: "cascade" }),
+  contractType: mysqlEnum("contractType", ["license", "service", "framework", "other"]).default("framework").notNull(),
+  signedAt: timestamp("signedAt"),
+  effectiveFrom: timestamp("effectiveFrom"),
+  effectiveTo: timestamp("effectiveTo"),
+  autoRenew: boolean("autoRenew").default(false).notNull(),
+  status: mysqlEnum("status", ["draft", "active", "expiring", "expired", "cancelled"]).default("draft").notNull(),
+  note: text("note"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+}, (table) => [index("technology_vendor_contracts_vendor_idx").on(table.technologyVendorId), index("technology_vendor_contracts_status_expiry_idx").on(table.status, table.effectiveTo)]);
+
 export const softwareLicenses = mysqlTable("softwareLicenses", {
   id: int("id").autoincrement().primaryKey(),
   licenseCode: varchar("licenseCode", { length: 64 }).notNull().unique(),
@@ -61,6 +91,8 @@ export const softwareLicenses = mysqlTable("softwareLicenses", {
   licenseKey: text("licenseKey"),
   purchasedQuantity: int("purchasedQuantity").default(1).notNull(),
   vendorId: int("vendorId").references(() => vendors.id, { onDelete: "set null", onUpdate: "cascade" }),
+  technologyVendorId: int("technologyVendorId").references(() => technologyVendors.id, { onDelete: "set null", onUpdate: "cascade" }),
+  technologyVendorContractId: int("technologyVendorContractId").references(() => technologyVendorContracts.id, { onDelete: "set null", onUpdate: "cascade" }),
   purchaseContractId: int("purchaseContractId").references(() => purchaseContracts.id, { onDelete: "set null", onUpdate: "cascade" }),
   purchaseInvoiceId: int("purchaseInvoiceId").references(() => purchaseInvoices.id, { onDelete: "set null", onUpdate: "cascade" }),
   purchasedAt: timestamp("purchasedAt"),
@@ -72,7 +104,7 @@ export const softwareLicenses = mysqlTable("softwareLicenses", {
   createdByName: varchar("createdByName", { length: 160 }),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
-}, (table) => [index("software_licenses_status_expiry_idx").on(table.status, table.expiresAt), index("software_licenses_vendor_idx").on(table.vendorId)]);
+}, (table) => [index("software_licenses_status_expiry_idx").on(table.status, table.expiresAt), index("software_licenses_vendor_idx").on(table.vendorId), index("software_licenses_technology_vendor_idx").on(table.technologyVendorId), index("software_licenses_technology_contract_idx").on(table.technologyVendorContractId)]);
 
 export const softwareLicenseDocuments = mysqlTable("softwareLicenseDocuments", {
   id: int("id").autoincrement().primaryKey(),
@@ -109,6 +141,8 @@ export const technologyServices = mysqlTable("technologyServices", {
   serviceType: mysqlEnum("serviceType", ["internet", "domain", "ssl"]).notNull(),
   name: varchar("name", { length: 255 }).notNull(),
   vendorId: int("vendorId").references(() => vendors.id, { onDelete: "set null", onUpdate: "cascade" }),
+  technologyVendorId: int("technologyVendorId").references(() => technologyVendors.id, { onDelete: "set null", onUpdate: "cascade" }),
+  technologyVendorContractId: int("technologyVendorContractId").references(() => technologyVendorContracts.id, { onDelete: "set null", onUpdate: "cascade" }),
   branchId: int("branchId").references(() => branches.id, { onDelete: "set null", onUpdate: "cascade" }),
   accountReference: varchar("accountReference", { length: 160 }),
   billingReference: varchar("billingReference", { length: 160 }),
@@ -126,7 +160,7 @@ export const technologyServices = mysqlTable("technologyServices", {
   createdByName: varchar("createdByName", { length: 160 }),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
-}, (table) => [index("technology_services_type_status_expiry_idx").on(table.serviceType, table.status, table.expiresAt), index("technology_services_vendor_idx").on(table.vendorId), index("technology_services_branch_idx").on(table.branchId)]);
+}, (table) => [index("technology_services_type_status_expiry_idx").on(table.serviceType, table.status, table.expiresAt), index("technology_services_vendor_idx").on(table.vendorId), index("technology_services_technology_vendor_idx").on(table.technologyVendorId), index("technology_services_technology_contract_idx").on(table.technologyVendorContractId), index("technology_services_branch_idx").on(table.branchId)]);
 
 export const companies = mysqlTable("companies", {
   id: int("id").autoincrement().primaryKey(),

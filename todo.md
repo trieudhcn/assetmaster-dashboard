@@ -56,6 +56,24 @@
 - [x] Bổ sung hồi quy tương tác click/chọn dropdown trong modal và xác minh desktop/mobile.
 - [x] Bổ sung kiểm thử integration chọn dropdown trong modal Dịch vụ dùng chung portal.
 - [x] Xác minh lại hiển thị desktop/mobile cho form Bản quyền và Dịch vụ sau bản sửa portal dropdown.
+- [x] Chuẩn hóa nút Xóa bộ lọc Bản quyền/Dịch vụ theo component nút xóa bộ lọc chung của hệ thống.
+- [x] Bổ sung hồi quy và xác minh desktop/mobile cho nút xóa bộ lọc đã chuẩn hóa.
+- [x] Chạy hồi quy, typecheck, build và xác minh responsive riêng cho nút Xóa bộ lọc chuẩn.
+- [x] Rà soát quan hệ Bản quyền/Dịch vụ hiện tại để tách danh mục Nhà cung cấp Công nghệ an toàn.
+- [x] Tạo schema, migration và API tRPC quản lý Nhà cung cấp Công nghệ cùng Hợp đồng Công nghệ.
+- [x] Xây dựng khu vực quản lý Nhà cung cấp/Hợp đồng Công nghệ trong menu Bản quyền & Dịch vụ.
+- [x] Chuyển form Bản quyền/Dịch vụ sang danh mục Nhà cung cấp Công nghệ và liên kết Hợp đồng phù hợp.
+- [x] Kiểm thử, xác minh desktop/mobile và phát hành sau khi tách danh mục.
+- [x] Bổ sung kiểm thử integration chọn Nhà cung cấp Công nghệ, lọc Hợp đồng và gửi liên kết qua form Bản quyền/Dịch vụ.
+- [x] Xác minh phản hồi responsive cho vùng Nhà cung cấp/Hợp đồng Công nghệ trong hai form trước khi phát hành.
+- [x] Bổ sung integration trọn luồng chọn Nhà cung cấp, lọc Hợp đồng và submit liên kết cho form Bản quyền/Dịch vụ.
+- [x] Ghi nhận xác minh runtime responsive cho vùng Nhà cung cấp/Hợp đồng trong hai form trước checkpoint.
+- [x] Bổ sung integration trạng thái form Bản quyền chọn Nhà cung cấp, lọc Hợp đồng và submit payload.
+- [x] Bổ sung integration trạng thái form Dịch vụ chọn Nhà cung cấp, lọc Hợp đồng và submit payload.
+- [x] Ghi nhận rõ xác minh vùng Nhà cung cấp/Hợp đồng của hai form trên desktop/mobile.
+- [x] Bổ sung hồi quy DOM xác nhận nhãn Nhà cung cấp Công nghệ và vùng Hợp đồng không phá bố cục modal hai form.
+- [x] Tăng cường contract panel/form/footer của hai modal sau khi thêm vùng Hợp đồng Công nghệ.
+- [x] Bổ sung contract panel/form/footer Dịch vụ khi gắn vùng Hợp đồng Công nghệ.
 
 ## Current Session — Bản quyền & Dịch vụ
 
