@@ -103,6 +103,12 @@
 - [x] Kiểm thử trực tiếp DatePickerField mở lịch và chọn ngày trong ngữ cảnh Bản quyền/Dịch vụ.
 - [x] Chuẩn hóa thao tác trường ngày native Bản quyền/Hợp đồng bằng bộ điều phối click gọi `showPicker`, đồng nhất với trigger DatePicker Dịch vụ.
 - [x] Xác minh thao tác mở/chọn ngày desktop/mobile ở cả ba form, chạy lại kiểm tra phát hành và lưu checkpoint.
+- [x] Ngăn modal Bản quyền, Dịch vụ và Hợp đồng Công nghệ tự đóng khi bấm biểu tượng lịch.
+- [x] Bổ sung hồi quy click lịch không đóng modal, xác minh desktop/mobile và phát hành bản sửa.
+- [x] Bổ sung hồi quy trigger DatePicker trong modal Dịch vụ không đóng form khi mở/chọn ngày.
+- [x] Xác minh runtime desktop/mobile cho Bản quyền, Dịch vụ và Hợp đồng sau bản vá cuối, rồi chạy lại phát hành.
+- [x] Xác minh runtime desktop và bố cục mobile cho Bản quyền, Dịch vụ, Hợp đồng; hồi quy thao tác lịch không phụ thuộc viewport trước checkpoint.
+- [x] Xác minh hồi quy tương tác lịch không phụ thuộc viewport và bố cục mobile cho Bản quyền, Dịch vụ, Hợp đồng Công nghệ.
 
 ## Current Session — Bản quyền & Dịch vụ
 

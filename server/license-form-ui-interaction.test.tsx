@@ -6,6 +6,7 @@ import { resolve } from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { LicenseDocumentControls, LicenseDuplicatePortal, StandardDropdown, TechnologyContractPortal, technologyLinkPayload } from "../client/src/pages/LicensesServicesManagementView";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "../client/src/components/ui/dialog";
+import { DatePickerField } from "../client/src/components/DatePickerField";
 
 let root: Root | null = null;
 let container: HTMLDivElement | null = null;
@@ -297,5 +298,51 @@ describe("tương tác form Bản quyền", () => {
 
     act(() => modal.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true })));
     expect(document.querySelector('[data-licenses-services-dialog="technology"]')).toBeNull();
+  });
+
+  it.each(["license", "technology"])("không đóng modal %s khi bấm trường ngày", (dialogKind) => {
+    function DateDialogHarness() {
+      const [open, setOpen] = React.useState(true);
+      return <Dialog open={open} onOpenChange={setOpen}><DialogContent data-licenses-services-dialog={dialogKind}><DialogHeader><DialogTitle>Chọn ngày</DialogTitle><DialogDescription>Mô tả</DialogDescription></DialogHeader><form><input aria-label="Ngày áp dụng" type="date" className="form-input" /></form></DialogContent></Dialog>;
+    }
+
+    container = document.createElement("div");
+    document.body.append(container);
+    root = createRoot(container);
+    act(() => root?.render(<DateDialogHarness />));
+
+    const input = document.querySelector<HTMLInputElement>('input[aria-label="Ngày áp dụng"]')!;
+    act(() => {
+      input.dispatchEvent(new MouseEvent("pointerdown", { bubbles: true, cancelable: true }));
+      input.click();
+    });
+    expect(document.querySelector(`[data-licenses-services-dialog="${dialogKind}"]`)).not.toBeNull();
+  });
+
+  it("không đóng modal Dịch vụ khi mở và chọn ngày trong DatePicker", async () => {
+    function ServiceDateDialogHarness() {
+      const [open, setOpen] = React.useState(true);
+      const [value, setValue] = React.useState("");
+      return <Dialog open={open} onOpenChange={setOpen}><DialogContent data-licenses-services-dialog="service"><DialogHeader><DialogTitle>Thêm dịch vụ</DialogTitle><DialogDescription>Mô tả</DialogDescription></DialogHeader><form><DatePickerField value={value} onChange={setValue} className="form-input" aria-label="Ngày bắt đầu Dịch vụ" /></form></DialogContent></Dialog>;
+    }
+
+    container = document.createElement("div");
+    document.body.append(container);
+    root = createRoot(container);
+    act(() => root?.render(<ServiceDateDialogHarness />));
+
+    const trigger = document.querySelector<HTMLButtonElement>('button[aria-label="Mở lịch: Ngày bắt đầu Dịch vụ"]')!;
+    await act(async () => {
+      trigger.click();
+      await Promise.resolve();
+    });
+    expect(document.querySelector('[data-licenses-services-dialog="service"]')).not.toBeNull();
+    const day = document.querySelector<HTMLButtonElement>("button[data-day]")!;
+    await act(async () => {
+      day.click();
+      await Promise.resolve();
+    });
+    expect(document.querySelector('[data-licenses-services-dialog="service"]')).not.toBeNull();
+    expect(trigger.textContent).not.toContain("Chọn ngày");
   });
 });

@@ -27,28 +27,6 @@ function toIsoDate(value: Date) {
   return `${year}-${month}-${day}`;
 }
 
-export function openNativeDatePickerFromIcon(input: HTMLInputElement, clientX: number) {
-  const pickerInput = input as HTMLInputElement & { showPicker?: () => void };
-  if (input.type !== "date" || typeof pickerInput.showPicker !== "function") return false;
-  const bounds = input.getBoundingClientRect();
-  if (clientX < bounds.right - 48) return false;
-  pickerInput.showPicker();
-  return true;
-}
-
-if (typeof document !== "undefined" && !document.documentElement.dataset.assetmasterNativeDatePicker) {
-  document.documentElement.dataset.assetmasterNativeDatePicker = "ready";
-  document.addEventListener("pointerdown", (event) => {
-    const input = event.target instanceof HTMLInputElement ? event.target : null;
-    if (!input?.closest('[data-licenses-services-dialog]')) return;
-    try {
-      if (openNativeDatePickerFromIcon(input, event.clientX)) event.preventDefault();
-    } catch {
-      // Older browsers may decline programmatic native picker invocation; their own indicator remains available.
-    }
-  }, true);
-}
-
 export function DatePickerField({ value, onChange, className = "", disabled, placeholder = "Chọn ngày", "aria-label": ariaLabel, "data-purchase-date-picker": purchaseDatePicker }: DatePickerFieldProps) {
   const [open, setOpen] = useState(false);
   const selectedDate = useMemo(() => parseDate(value), [value]);

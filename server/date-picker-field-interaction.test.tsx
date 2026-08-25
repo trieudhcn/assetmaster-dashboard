@@ -1,8 +1,8 @@
 /* @vitest-environment happy-dom */
 import React, { act, useState } from "react";
 import { createRoot, type Root } from "react-dom/client";
-import { afterEach, describe, expect, it, vi } from "vitest";
-import { DatePickerField, openNativeDatePickerFromIcon } from "../client/src/components/DatePickerField";
+import { afterEach, describe, expect, it } from "vitest";
+import { DatePickerField } from "../client/src/components/DatePickerField";
 
 let root: Root | null = null;
 let container: HTMLDivElement | null = null;
@@ -51,15 +51,4 @@ describe("DatePickerField", () => {
     expect(document.body.textContent).not.toContain("Lịch AssetMaster");
   });
 
-  it("mở native picker khi bấm đúng vùng biểu tượng lịch", () => {
-    const input = document.createElement("input");
-    input.type = "date";
-    const showPicker = vi.fn();
-    Object.assign(input, { showPicker, getBoundingClientRect: () => new DOMRect(20, 10, 300, 42) });
-
-    expect(openNativeDatePickerFromIcon(input, 260)).toBe(false);
-    expect(showPicker).not.toHaveBeenCalled();
-    expect(openNativeDatePickerFromIcon(input, 305)).toBe(true);
-    expect(showPicker).toHaveBeenCalledTimes(1);
-  });
 });
