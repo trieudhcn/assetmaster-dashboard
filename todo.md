@@ -1,5 +1,12 @@
 # AssetMaster — Asset Catalog Expansion
 
+## Current Session — Ngày quá hạn và cảnh báo đã xem
+
+- [x] Hiển thị số ngày quá hạn cạnh từng đợt Kiểm kê trong cảnh báo Tổng quan.
+- [x] Thêm nút Đã xem để ẩn cảnh báo Kiểm kê hoặc Phụ kiện đã kiểm tra.
+- [x] Giữ trạng thái cảnh báo đã xem có thể quản lý rõ ràng mà không xóa dữ liệu nghiệp vụ.
+- [x] Bổ sung hồi quy, xác minh desktop/mobile, TypeScript và production build trước khi phát hành.
+
 ## Current Session — Cảnh báo Kiểm kê và Phụ kiện trên Tổng quan
 
 - [x] Cân chỉnh chiều cao và cấu trúc tiêu đề thẻ Phụ kiện tương đương thẻ Kiểm kê quá hạn.

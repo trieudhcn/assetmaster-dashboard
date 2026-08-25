@@ -23,10 +23,23 @@ describe("dashboard alert layout", () => {
 
     expect(home).toContain('data-low-stock-supply-alert');
     expect(home).toContain('min-h-[72px]');
-    expect(home).toContain('overdueAuditReminders.slice(0, 3)');
-    expect(home).toContain('const lowStockSupplyPreview = lowStockSupplies.slice(0, 3);');
+    expect(home).toContain('visibleOverdueAuditReminders.slice(0, 3)');
+    expect(home).toContain('const lowStockSupplyPreview = visibleLowStockSupplies.slice(0, 3);');
     expect(home).toContain('left.dueAt.getTime() - right.dueAt.getTime()');
     expect(home).toContain('Math.abs(Number(left.stockQuantity)) - Math.abs(Number(right.stockQuantity))');
     expect(home).toContain('Ưu tiên số lượng tồn gần 0 nhất để bổ sung kịp thời.');
+  });
+
+  it("shows overdue days and lets each active dashboard warning be marked as reviewed", () => {
+    const home = readFileSync(resolve(process.cwd(), "client/src/pages/Home.tsx"), "utf8");
+
+    expect(home).toContain("assetmaster-dismissed-dashboard-alert-ids");
+    expect(home).toContain("dismissDashboardAlert");
+    expect(home).toContain("Quá hạn {overdueDays(reminder.dueAt)} ngày");
+    expect(home).toContain("Đã xem");
+    expect(home).toContain("data-dismissed-dashboard-alerts");
+    expect(home).toContain("Hiện lại");
+    expect(home).toContain("visibleOverdueAuditReminders");
+    expect(home).toContain("visibleLowStockSupplies");
   });
 });
