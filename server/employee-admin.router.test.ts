@@ -7,6 +7,9 @@ const mocks = vi.hoisted(() => ({
   countActiveDivisionsByDepartment: vi.fn(),
   createDepartment: vi.fn(),
   createDivision: vi.fn(),
+  createSoftwareLicense: vi.fn(),
+  createSoftwareLicenseAssignment: vi.fn(),
+  createTechnologyService: vi.fn(),
   createVendor: vi.fn(),
   createBrand: vi.fn(),
   createVendorDocument: vi.fn(),
@@ -16,6 +19,7 @@ const mocks = vi.hoisted(() => ({
   createInventoryMovement: vi.fn(),
   getAssetById: vi.fn(),
   getInventorySupplyById: vi.fn(),
+  getSoftwareLicenseById: vi.fn(),
   getVendorById: vi.fn(),
   getVendorByName: vi.fn(),
   getVendorDocumentById: vi.fn(),
@@ -43,12 +47,16 @@ const mocks = vi.hoisted(() => ({
   listAllVendors: vi.fn(),
   listAllBrands: vi.fn(),
   listVendorDocuments: vi.fn(),
+  listSoftwareLicenses: vi.fn(),
+  listSoftwareLicenseAssignments: vi.fn(),
+  listTechnologyServices: vi.fn(),
   listHandoversByRecipient: vi.fn(),
   listHandoverSupplyItems: vi.fn(),
   listHandoverReturnDecisionHistory: vi.fn(),
   recordActivity: vi.fn(),
   dismissUserDashboardAlerts: vi.fn(),
   restoreUserDashboardAlerts: vi.fn(),
+  revokeSoftwareLicenseAssignment: vi.fn(),
   runInventoryTransaction: vi.fn(),
   saveUserNotificationPreferences: vi.fn(),
   storagePut: vi.fn(),
@@ -65,6 +73,8 @@ const mocks = vi.hoisted(() => ({
   updateInventorySupply: vi.fn(),
   updateVendor: vi.fn(),
   updateBrand: vi.fn(),
+  updateSoftwareLicense: vi.fn(),
+  updateTechnologyService: vi.fn(),
 }));
 
 vi.mock("./db", () => ({
@@ -77,6 +87,9 @@ vi.mock("./db", () => ({
   createAuditSession: vi.fn(),
   createDepartment: mocks.createDepartment,
   createDivision: mocks.createDivision,
+  createSoftwareLicense: mocks.createSoftwareLicense,
+  createSoftwareLicenseAssignment: mocks.createSoftwareLicenseAssignment,
+  createTechnologyService: mocks.createTechnologyService,
   createVendor: mocks.createVendor,
   createBrand: mocks.createBrand,
   createVendorDocument: mocks.createVendorDocument,
@@ -88,6 +101,7 @@ vi.mock("./db", () => ({
   getActiveDepartmentById: mocks.getActiveDepartmentById,
   getAssetById: mocks.getAssetById,
   getInventorySupplyById: mocks.getInventorySupplyById,
+  getSoftwareLicenseById: mocks.getSoftwareLicenseById,
   getVendorById: mocks.getVendorById,
   getVendorByName: mocks.getVendorByName,
   getVendorDocumentById: mocks.getVendorDocumentById,
@@ -119,6 +133,9 @@ vi.mock("./db", () => ({
   listAllVendors: mocks.listAllVendors,
   listAllBrands: mocks.listAllBrands,
   listVendorDocuments: mocks.listVendorDocuments,
+  listSoftwareLicenses: mocks.listSoftwareLicenses,
+  listSoftwareLicenseAssignments: mocks.listSoftwareLicenseAssignments,
+  listTechnologyServices: mocks.listTechnologyServices,
   listHandovers: vi.fn(),
   listHandoversByRecipient: mocks.listHandoversByRecipient,
   listHandoverSupplyItems: mocks.listHandoverSupplyItems,
@@ -129,6 +146,7 @@ vi.mock("./db", () => ({
   recordActivity: mocks.recordActivity,
   dismissUserDashboardAlerts: mocks.dismissUserDashboardAlerts,
   restoreUserDashboardAlerts: mocks.restoreUserDashboardAlerts,
+  revokeSoftwareLicenseAssignment: mocks.revokeSoftwareLicenseAssignment,
   runInventoryTransaction: mocks.runInventoryTransaction,
   saveCompany: vi.fn(),
   saveHelpGuide: vi.fn(),
@@ -149,6 +167,8 @@ vi.mock("./db", () => ({
   updateDivision: mocks.updateDivision,
   updateVendor: mocks.updateVendor,
   updateBrand: mocks.updateBrand,
+  updateSoftwareLicense: mocks.updateSoftwareLicense,
+  updateTechnologyService: mocks.updateTechnologyService,
 }));
 
 vi.mock("./storage", () => ({ storagePut: mocks.storagePut }));
@@ -556,6 +576,23 @@ describe("employee administration", () => {
     expect(mocks.listUserDashboardAlertHistory).toHaveBeenCalledWith(8, 20);
     expect(mocks.dismissUserDashboardAlerts).toHaveBeenCalledWith(8, ["audit-40", "supply-12"]);
     expect(mocks.restoreUserDashboardAlerts).toHaveBeenCalledWith(8, ["audit-40"]);
+  });
+
+  it("manages software licenses, seat assignments and technology services", async () => {
+    mocks.createSoftwareLicense.mockResolvedValue(71);
+    mocks.getSoftwareLicenseById.mockResolvedValue({ id: 71, productName: "Microsoft 365", purchasedQuantity: 2 });
+    mocks.listSoftwareLicenseAssignments.mockResolvedValue([]);
+    mocks.createSoftwareLicenseAssignment.mockResolvedValue(91);
+    mocks.createTechnologyService.mockResolvedValue(41);
+    const caller = appRouter.createCaller(adminContext);
+
+    await expect(caller.softwareLicenses.create({ licenseCode: "LIC-001", productName: "Microsoft 365", publisher: "Microsoft", edition: null, licenseModel: "subscription", licenseKey: null, purchasedQuantity: 2, vendorId: null, purchaseContractId: null, purchaseInvoiceId: null, purchasedAt: null, expiresAt: null, autoRenew: true, status: "active", note: null })).resolves.toEqual({ id: 71 });
+    await expect(caller.softwareLicenses.assign({ softwareLicenseId: 71, assetId: null, userId: null, assignedToName: "Máy Kế toán", deviceName: "PC-01", assignedAt: new Date("2026-08-25"), note: null })).resolves.toEqual({ id: 91 });
+    await expect(caller.technologyServices.create({ serviceCode: "DOM-001", serviceType: "domain", name: "Tên miền công ty", vendorId: null, branchId: null, accountReference: null, billingReference: null, domainName: "example.vn", serviceEndpoint: null, startedAt: null, renewalAt: null, expiresAt: null, autoRenew: true, billingCycle: "annual", costAmount: 300000, status: "active", note: null })).resolves.toEqual({ id: 41 });
+
+    expect(mocks.createSoftwareLicense).toHaveBeenCalledWith(expect.objectContaining({ licenseCode: "LIC-001", createdByUserId: 1 }));
+    expect(mocks.createSoftwareLicenseAssignment).toHaveBeenCalledWith(expect.objectContaining({ softwareLicenseId: 71, status: "active", assignedToName: "Máy Kế toán" }));
+    expect(mocks.createTechnologyService).toHaveBeenCalledWith(expect.objectContaining({ serviceCode: "DOM-001", costAmount: "300000", createdByUserId: 1 }));
   });
 
   it("allows the recipient to submit a follow-up and mark a rejected return result as seen", async () => {

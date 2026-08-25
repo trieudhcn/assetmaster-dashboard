@@ -43,6 +43,9 @@ import {
   createPurchaseInvoiceSupplyReceipt,
   createRetirementCertificate,
   createRetirementCertificateAssets,
+  createSoftwareLicense,
+  createSoftwareLicenseAssignment,
+  createTechnologyService,
   createVendor,
   createVendorDocument,
   countAssetsByCategoryId,
@@ -103,6 +106,7 @@ import {
   getPurchaseInvoiceDocumentById,
   getPurchaseInvoiceLineById,
   getRetirementCertificateById,
+  getSoftwareLicenseById,
   getUserMenuPreference,
   getUserNotificationPreferences,
   listUserDashboardAlertHistory,
@@ -126,6 +130,8 @@ import {
   listPurchaseInvoiceSupplyReceipts,
   listRetirementCertificateAssetAssignments,
   listRetirementCertificates,
+  listSoftwareLicenseAssignments,
+  listSoftwareLicenses,
   getNextRepairTicketSequence,
   getNextWarrantyRequestSequence,
   listActivityLogsByEntity,
@@ -168,6 +174,7 @@ import {
   listSupplyUnits,
   listSupplyUnitUsageCounts,
   listSupplyIssueAnalytics,
+  listTechnologyServices,
   listHelpGuideVersions,
   listVendors,
   listVendorDocuments,
@@ -175,6 +182,7 @@ import {
   getUserByEmployeeCode,
   countInventorySuppliesByUnit,
   recordActivity,
+  revokeSoftwareLicenseAssignment,
   runAssetImportTransaction,
   runInventoryTransaction,
   runRetirementCertificateTransaction,
@@ -208,6 +216,8 @@ import {
   updateAssetPurchaseInvoiceReference,
   updateRetirementCertificate,
   updateRetirementCertificateAssetSalvageValues,
+  updateSoftwareLicense,
+  updateTechnologyService,
   updateUserRole,
   updateUserDirectoryProfile,
   updateUserActiveStatus,
@@ -667,6 +677,132 @@ export const appRouter = router({
       if (!document) throw new TRPCError({ code: "NOT_FOUND", message: "Không tìm thấy tài liệu Nhà cung cấp." });
       await deleteVendorDocument(document.id);
       await recordActivity({ entityType: "vendorDocument", entityId: document.id, action: "removed", actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: `Gỡ tài liệu ${document.fileName}` });
+      return { success: true };
+    }),
+  }),
+  softwareLicenses: router({
+    list: adminProcedure.query(() => listSoftwareLicenses()),
+    assignments: adminProcedure.input(z.object({ softwareLicenseId: z.number().int().positive() }).optional()).query(({ input }) => listSoftwareLicenseAssignments(input?.softwareLicenseId)),
+    create: adminProcedure.input(z.object({
+      licenseCode: z.string().trim().min(2).max(64),
+      productName: z.string().trim().min(2).max(255),
+      publisher: nullableText,
+      edition: nullableText,
+      licenseModel: z.enum(["perpetual", "subscription", "volume", "oem", "other"]),
+      licenseKey: z.string().trim().max(4000).nullable().optional(),
+      purchasedQuantity: z.number().int().min(1).max(100_000),
+      vendorId: z.number().int().positive().nullable().optional(),
+      purchaseContractId: z.number().int().positive().nullable().optional(),
+      purchaseInvoiceId: z.number().int().positive().nullable().optional(),
+      purchasedAt: z.coerce.date().nullable().optional(),
+      expiresAt: z.coerce.date().nullable().optional(),
+      autoRenew: z.boolean(),
+      status: z.enum(["active", "expiring", "expired", "suspended", "retired"]),
+      note: z.string().trim().max(4000).nullable().optional(),
+    })).mutation(async ({ input, ctx }) => {
+      const id = await createSoftwareLicense({ ...input, createdByUserId: ctx.user!.id, createdByName: ctx.user!.name ?? "Quản trị viên" });
+      await recordActivity({ entityType: "softwareLicense", entityId: id, action: "created", actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: `Tạo bản quyền ${input.productName} (${input.licenseCode})` });
+      return { id };
+    }),
+    update: adminProcedure.input(z.object({
+      id: z.number().int().positive(),
+      productName: z.string().trim().min(2).max(255).optional(),
+      publisher: nullableText,
+      edition: nullableText,
+      licenseModel: z.enum(["perpetual", "subscription", "volume", "oem", "other"]).optional(),
+      licenseKey: z.string().trim().max(4000).nullable().optional(),
+      purchasedQuantity: z.number().int().min(1).max(100_000).optional(),
+      vendorId: z.number().int().positive().nullable().optional(),
+      purchaseContractId: z.number().int().positive().nullable().optional(),
+      purchaseInvoiceId: z.number().int().positive().nullable().optional(),
+      purchasedAt: z.coerce.date().nullable().optional(),
+      expiresAt: z.coerce.date().nullable().optional(),
+      autoRenew: z.boolean().optional(),
+      status: z.enum(["active", "expiring", "expired", "suspended", "retired"]).optional(),
+      note: z.string().trim().max(4000).nullable().optional(),
+    })).mutation(async ({ input, ctx }) => {
+      const existing = await getSoftwareLicenseById(input.id);
+      if (!existing) throw new TRPCError({ code: "NOT_FOUND", message: "Không tìm thấy bản quyền phần mềm." });
+      const { id, ...changes } = input;
+      if (changes.purchasedQuantity !== undefined) {
+        const activeCount = (await listSoftwareLicenseAssignments(id)).filter((assignment) => assignment.status === "active").length;
+        if (changes.purchasedQuantity < activeCount) throw new TRPCError({ code: "BAD_REQUEST", message: `Số lượng mua không thể thấp hơn ${activeCount} license đang cấp phát.` });
+      }
+      await updateSoftwareLicense(id, changes);
+      await recordActivity({ entityType: "softwareLicense", entityId: id, action: "updated", actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: `Cập nhật bản quyền ${changes.productName || existing.productName}` });
+      return { success: true };
+    }),
+    assign: adminProcedure.input(z.object({
+      softwareLicenseId: z.number().int().positive(),
+      assetId: z.number().int().positive().nullable().optional(),
+      userId: z.number().int().positive().nullable().optional(),
+      assignedToName: nullableText,
+      deviceName: nullableText,
+      assignedAt: z.coerce.date().optional(),
+      note: z.string().trim().max(2000).nullable().optional(),
+    })).mutation(async ({ input, ctx }) => {
+      const license = await getSoftwareLicenseById(input.softwareLicenseId);
+      if (!license) throw new TRPCError({ code: "NOT_FOUND", message: "Không tìm thấy bản quyền phần mềm." });
+      const activeCount = (await listSoftwareLicenseAssignments(license.id)).filter((assignment) => assignment.status === "active").length;
+      if (activeCount >= license.purchasedQuantity) throw new TRPCError({ code: "BAD_REQUEST", message: "Bản quyền này đã sử dụng hết số lượng được cấp." });
+      const id = await createSoftwareLicenseAssignment({ ...input, assignedAt: input.assignedAt ?? new Date(), status: "active" });
+      await recordActivity({ entityType: "softwareLicenseAssignment", entityId: id, action: "assigned", actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: `Cấp ${license.productName} cho ${input.assignedToName || input.deviceName || "đối tượng quản lý"}` });
+      return { id };
+    }),
+    revokeAssignment: adminProcedure.input(z.object({ id: z.number().int().positive() })).mutation(async ({ input, ctx }) => {
+      await revokeSoftwareLicenseAssignment(input.id);
+      await recordActivity({ entityType: "softwareLicenseAssignment", entityId: input.id, action: "revoked", actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: "Thu hồi cấp phát bản quyền" });
+      return { success: true };
+    }),
+  }),
+  technologyServices: router({
+    list: adminProcedure.query(() => listTechnologyServices()),
+    create: adminProcedure.input(z.object({
+      serviceCode: z.string().trim().min(2).max(64),
+      serviceType: z.enum(["internet", "domain", "ssl"]),
+      name: z.string().trim().min(2).max(255),
+      vendorId: z.number().int().positive().nullable().optional(),
+      branchId: z.number().int().positive().nullable().optional(),
+      accountReference: nullableText,
+      billingReference: nullableText,
+      domainName: z.string().trim().max(255).nullable().optional(),
+      serviceEndpoint: z.string().trim().max(255).nullable().optional(),
+      startedAt: z.coerce.date().nullable().optional(),
+      renewalAt: z.coerce.date().nullable().optional(),
+      expiresAt: z.coerce.date().nullable().optional(),
+      autoRenew: z.boolean(),
+      billingCycle: z.enum(["monthly", "quarterly", "annual", "other"]),
+      costAmount: z.number().min(0).max(999_999_999_999).nullable().optional(),
+      status: z.enum(["active", "expiring", "expired", "suspended", "cancelled"]),
+      note: z.string().trim().max(4000).nullable().optional(),
+    })).mutation(async ({ input, ctx }) => {
+      const { costAmount, ...service } = input;
+      const id = await createTechnologyService({ ...service, costAmount: costAmount === undefined ? undefined : costAmount === null ? null : String(costAmount), createdByUserId: ctx.user!.id, createdByName: ctx.user!.name ?? "Quản trị viên" });
+      await recordActivity({ entityType: "technologyService", entityId: id, action: "created", actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: `Tạo dịch vụ ${input.name} (${input.serviceCode})` });
+      return { id };
+    }),
+    update: adminProcedure.input(z.object({
+      id: z.number().int().positive(),
+      name: z.string().trim().min(2).max(255).optional(),
+      vendorId: z.number().int().positive().nullable().optional(),
+      branchId: z.number().int().positive().nullable().optional(),
+      accountReference: nullableText,
+      billingReference: nullableText,
+      domainName: z.string().trim().max(255).nullable().optional(),
+      serviceEndpoint: z.string().trim().max(255).nullable().optional(),
+      startedAt: z.coerce.date().nullable().optional(),
+      renewalAt: z.coerce.date().nullable().optional(),
+      expiresAt: z.coerce.date().nullable().optional(),
+      autoRenew: z.boolean().optional(),
+      billingCycle: z.enum(["monthly", "quarterly", "annual", "other"]).optional(),
+      costAmount: z.number().min(0).max(999_999_999_999).nullable().optional(),
+      status: z.enum(["active", "expiring", "expired", "suspended", "cancelled"]).optional(),
+      note: z.string().trim().max(4000).nullable().optional(),
+    })).mutation(async ({ input, ctx }) => {
+      const { id, ...changes } = input;
+      const { costAmount, ...serviceChanges } = changes;
+      await updateTechnologyService(id, { ...serviceChanges, costAmount: costAmount === undefined ? undefined : costAmount === null ? null : String(costAmount) });
+      await recordActivity({ entityType: "technologyService", entityId: id, action: "updated", actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: `Cập nhật dịch vụ ${changes.name || id}` });
       return { success: true };
     }),
   }),

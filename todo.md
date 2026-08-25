@@ -1,5 +1,17 @@
 # AssetMaster — Asset Catalog Expansion
 
+## Current Session — Bản quyền & Dịch vụ
+
+- [x] Thiết kế menu Bản quyền & Dịch vụ cho Windows, Office, phần mềm, Internet, Tên miền và SSL.
+- [x] Tạo schema, migration và API quản lý danh mục, thời hạn, nhà cung cấp và trạng thái dịch vụ.
+- [x] Xây dựng giao diện quản lý, bộ lọc, biểu mẫu thêm/sửa và cảnh báo hết hạn.
+- [x] Bổ sung hồi quy, xác minh desktop/mobile, TypeScript và production build trước khi phát hành.
+- [x] Bổ sung bộ lọc theo trạng thái, nhà cung cấp, loại dịch vụ và chi nhánh cho Bản quyền & Dịch vụ.
+- [x] Thêm trạng thái loading/error/empty rõ ràng cho các truy vấn chính của Bản quyền & Dịch vụ.
+- [x] Bổ sung hồi quy cho bộ lọc và trạng thái lỗi, sau đó chạy lại kiểm thử phát hành.
+- [x] Thêm phản hồi tải/lỗi rõ ràng cho Nhà cung cấp, Chi nhánh, Tài sản và Nhân sự trong biểu mẫu Bản quyền & Dịch vụ.
+- [x] Bổ sung hồi quy dữ liệu phụ và chạy lại kiểm thử phát hành.
+
 ## Current Session — Lối vào lịch sử cảnh báo luôn hiển thị
 
 - [x] Đưa lối vào Lịch sử cảnh báo đã xem lên vị trí luôn quan sát được trên Tổng quan.

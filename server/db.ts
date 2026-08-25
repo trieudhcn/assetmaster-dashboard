@@ -31,11 +31,14 @@ import {
   purchaseInvoices,
   retirementCertificateAssets,
   retirementCertificates,
+  softwareLicenseAssignments,
+  softwareLicenses,
   supplyImportItems,
   supplyImportSessions,
   supplyUnits,
   supplyIssueSlipItems,
   supplyIssueSlips,
+  technologyServices,
   uiLabels,
   type InsertUser,
   userDashboardAlertStates,
@@ -275,6 +278,70 @@ export async function updateVendor(id: number, data: Partial<typeof vendors.$inf
   const db = await getDb();
   if (!db) throw new Error("Database unavailable");
   await db.update(vendors).set(data).where(eq(vendors.id, id));
+}
+
+export async function listSoftwareLicenses() {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(softwareLicenses).orderBy(desc(softwareLicenses.updatedAt));
+}
+
+export async function getSoftwareLicenseById(id: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+  return (await db.select().from(softwareLicenses).where(eq(softwareLicenses.id, id)).limit(1))[0];
+}
+
+export async function createSoftwareLicense(data: typeof softwareLicenses.$inferInsert) {
+  const db = await getDb();
+  if (!db) throw new Error("Database unavailable");
+  const result = await db.insert(softwareLicenses).values(data);
+  return Number(result[0].insertId);
+}
+
+export async function updateSoftwareLicense(id: number, data: Partial<typeof softwareLicenses.$inferInsert>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database unavailable");
+  await db.update(softwareLicenses).set(data).where(eq(softwareLicenses.id, id));
+}
+
+export async function listSoftwareLicenseAssignments(softwareLicenseId?: number) {
+  const db = await getDb();
+  if (!db) return [];
+  const query = db.select().from(softwareLicenseAssignments);
+  return softwareLicenseId ? query.where(eq(softwareLicenseAssignments.softwareLicenseId, softwareLicenseId)).orderBy(desc(softwareLicenseAssignments.assignedAt)) : query.orderBy(desc(softwareLicenseAssignments.assignedAt));
+}
+
+export async function createSoftwareLicenseAssignment(data: typeof softwareLicenseAssignments.$inferInsert) {
+  const db = await getDb();
+  if (!db) throw new Error("Database unavailable");
+  const result = await db.insert(softwareLicenseAssignments).values(data);
+  return Number(result[0].insertId);
+}
+
+export async function revokeSoftwareLicenseAssignment(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database unavailable");
+  await db.update(softwareLicenseAssignments).set({ status: "revoked", revokedAt: new Date() }).where(eq(softwareLicenseAssignments.id, id));
+}
+
+export async function listTechnologyServices() {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(technologyServices).orderBy(desc(technologyServices.updatedAt));
+}
+
+export async function createTechnologyService(data: typeof technologyServices.$inferInsert) {
+  const db = await getDb();
+  if (!db) throw new Error("Database unavailable");
+  const result = await db.insert(technologyServices).values(data);
+  return Number(result[0].insertId);
+}
+
+export async function updateTechnologyService(id: number, data: Partial<typeof technologyServices.$inferInsert>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database unavailable");
+  await db.update(technologyServices).set(data).where(eq(technologyServices.id, id));
 }
 
 export async function listVendorDocuments(vendorId: number) {
