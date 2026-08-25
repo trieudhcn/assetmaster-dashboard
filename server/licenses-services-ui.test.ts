@@ -17,6 +17,7 @@ describe("Bản quyền & Dịch vụ", () => {
 
     expect(view).toContain("trpc.softwareLicenses.list.useQuery");
     expect(view).toContain("trpc.softwareLicenses.assign.useMutation");
+    expect(view).toContain('trpc.softwareLicenses.create.useMutation({ onSuccess: () => { refresh(); setLicenseModal(null); toast.success("Đã thêm bản quyền phần mềm."); }');
     expect(view).toContain("trpc.technologyServices.list.useQuery");
     expect(view).toContain("Bản quyền sắp hết hạn");
     expect(view).toContain("Dịch vụ sắp hết hạn");
@@ -52,6 +53,8 @@ describe("Bản quyền & Dịch vụ", () => {
     expect(styles).toContain('[data-licenses-services-dialog="license"]');
     expect(styles).toContain('[data-licenses-services-dialog="service"]');
     expect(styles).toContain("place-items: center !important");
+    expect(styles).toContain('[data-licenses-services-dialog="license"] .form-input');
+    expect(styles).toContain("position: sticky");
     expect(readFileSync(resolve(process.cwd(), "client/src/components/ui/dialog.tsx"), "utf8")).toContain('licenseServiceDialog === "license"');
   });
 });

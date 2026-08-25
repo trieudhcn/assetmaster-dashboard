@@ -18,6 +18,11 @@
 - [x] Xác minh chuỗi kéo-thả 14 mục → lưu tRPC → tải lại thứ tự và hiển thị mobile trước khi phát hành.
 - [x] Chuẩn hóa modal Thêm/Sửa Bản quyền và Dịch vụ để luôn căn giữa, không neo góc màn hình.
 - [x] Xác minh modal Bản quyền/Dịch vụ ở desktop và mobile, bao gồm cuộn nội bộ biểu mẫu dài.
+- [x] Hiển thị toast thành công và tự động đóng modal sau khi tạo Bản quyền mới.
+- [x] Bổ sung hồi quy, xác minh giao diện và build trước khi phát hành.
+- [x] Chuẩn hóa trường nhập, khoảng cách và vùng nút thao tác của form Bản quyền/Dịch vụ.
+- [x] Xác minh form Bản quyền/Dịch vụ trên desktop/mobile theo chuẩn giao diện hệ thống.
+- [x] Ghi nhận xác minh trực quan chi tiết form Bản quyền/Dịch vụ trên desktop và mobile trước khi phát hành.
 
 ## Current Session — Bản quyền & Dịch vụ
 
