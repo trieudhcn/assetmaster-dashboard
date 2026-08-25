@@ -278,4 +278,24 @@ describe("tương tác form Bản quyền", () => {
     expect(styles).toContain('[data-licenses-services-dialog="technology"] {');
     expect(styles).toContain('[data-licenses-services-dialog="technology"] form {');
   });
+
+  it("đóng modal Công nghệ khi click ngoài panel", () => {
+    function TechnologyDialogHarness() {
+      const [open, setOpen] = React.useState(true);
+      return <Dialog open={open} onOpenChange={setOpen}><DialogContent data-licenses-services-dialog="technology"><DialogHeader><DialogTitle>Thêm Hợp đồng Công nghệ</DialogTitle><DialogDescription>Mô tả</DialogDescription></DialogHeader><form><input aria-label="Mã hợp đồng" className="form-input" /></form></DialogContent></Dialog>;
+    }
+
+    container = document.createElement("div");
+    document.body.append(container);
+    root = createRoot(container);
+    act(() => root?.render(<TechnologyDialogHarness />));
+
+    const modal = document.querySelector<HTMLElement>('[data-licenses-services-dialog="technology"]')!;
+    const panel = modal.querySelector<HTMLElement>(":scope > .technology-dialog-panel")!;
+    act(() => panel.dispatchEvent(new MouseEvent("pointerdown", { bubbles: true, cancelable: true })));
+    expect(document.querySelector('[data-licenses-services-dialog="technology"]')).not.toBeNull();
+
+    act(() => modal.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true })));
+    expect(document.querySelector('[data-licenses-services-dialog="technology"]')).toBeNull();
+  });
 });

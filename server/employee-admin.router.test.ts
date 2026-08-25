@@ -13,11 +13,13 @@ const mocks = vi.hoisted(() => ({
   createTechnologyService: vi.fn(),
   createTechnologyVendor: vi.fn(),
   createTechnologyVendorContract: vi.fn(),
+  createTechnologyVendorContractDocument: vi.fn(),
   createVendor: vi.fn(),
   createBrand: vi.fn(),
   createVendorDocument: vi.fn(),
   deleteVendorDocument: vi.fn(),
   deleteSoftwareLicenseDocument: vi.fn(),
+  deleteTechnologyVendorContractDocument: vi.fn(),
   createHandover: vi.fn(),
   createHandoverSupplyItem: vi.fn(),
   createInventoryMovement: vi.fn(),
@@ -30,6 +32,7 @@ const mocks = vi.hoisted(() => ({
   getVendorDocumentById: vi.fn(),
   getTechnologyVendorById: vi.fn(),
   getTechnologyVendorContractById: vi.fn(),
+  getTechnologyVendorContractDocumentById: vi.fn(),
   getBrandById: vi.fn(),
   getBrandByName: vi.fn(),
   getActiveDepartmentById: vi.fn(),
@@ -62,6 +65,7 @@ const mocks = vi.hoisted(() => ({
   listTechnologyVendors: vi.fn(),
   listTechnologyVendorContracts: vi.fn(),
   listTechnologyVendorContractAlerts: vi.fn(),
+  listTechnologyVendorContractDocuments: vi.fn(),
   listTechnologyVendorUsageStats: vi.fn(),
   listHandoversByRecipient: vi.fn(),
   listHandoverSupplyItems: vi.fn(),
@@ -109,11 +113,13 @@ vi.mock("./db", () => ({
   createTechnologyService: mocks.createTechnologyService,
   createTechnologyVendor: mocks.createTechnologyVendor,
   createTechnologyVendorContract: mocks.createTechnologyVendorContract,
+  createTechnologyVendorContractDocument: mocks.createTechnologyVendorContractDocument,
   createVendor: mocks.createVendor,
   createBrand: mocks.createBrand,
   createVendorDocument: mocks.createVendorDocument,
   deleteVendorDocument: mocks.deleteVendorDocument,
   deleteSoftwareLicenseDocument: mocks.deleteSoftwareLicenseDocument,
+  deleteTechnologyVendorContractDocument: mocks.deleteTechnologyVendorContractDocument,
   createHandover: mocks.createHandover,
   createHandoverSupplyItem: mocks.createHandoverSupplyItem,
   createInventoryMovement: mocks.createInventoryMovement,
@@ -128,6 +134,7 @@ vi.mock("./db", () => ({
   getVendorDocumentById: mocks.getVendorDocumentById,
   getTechnologyVendorById: mocks.getTechnologyVendorById,
   getTechnologyVendorContractById: mocks.getTechnologyVendorContractById,
+  getTechnologyVendorContractDocumentById: mocks.getTechnologyVendorContractDocumentById,
   getBrandById: mocks.getBrandById,
   getBrandByName: mocks.getBrandByName,
   getCompany: mocks.getCompany,
@@ -164,6 +171,7 @@ vi.mock("./db", () => ({
   listTechnologyVendors: mocks.listTechnologyVendors,
   listTechnologyVendorContracts: mocks.listTechnologyVendorContracts,
   listTechnologyVendorContractAlerts: mocks.listTechnologyVendorContractAlerts,
+  listTechnologyVendorContractDocuments: mocks.listTechnologyVendorContractDocuments,
   listTechnologyVendorUsageStats: mocks.listTechnologyVendorUsageStats,
   listHandovers: vi.fn(),
   listHandoversByRecipient: mocks.listHandoversByRecipient,
@@ -682,6 +690,23 @@ describe("employee administration", () => {
     expect(mocks.createSoftwareLicenseDocument).toHaveBeenCalledWith(expect.objectContaining({ softwareLicenseId: 71, documentType: "renewal", fileName: "gia-han.pdf", fileSize: 5 }));
     await expect(caller.softwareLicenses.removeDocument({ id: 120 })).resolves.toEqual({ success: true });
     expect(mocks.deleteSoftwareLicenseDocument).toHaveBeenCalledWith(120);
+  });
+
+  it("stores PDF and image documents for an existing technology vendor contract", async () => {
+    mocks.getTechnologyVendorContractById.mockResolvedValue({ id: 61, contractCode: "HDCN-001", title: "Dịch vụ Cloud" });
+    mocks.listTechnologyVendorContractDocuments.mockResolvedValue([]);
+    mocks.createTechnologyVendorContractDocument.mockResolvedValue(221);
+    mocks.getTechnologyVendorContractDocumentById.mockResolvedValue({ id: 221, technologyVendorContractId: 61, fileName: "hop-dong.pdf" });
+    mocks.deleteTechnologyVendorContractDocument.mockResolvedValue(undefined);
+    mocks.storagePut.mockResolvedValue({ key: "technology-vendor-contracts/61/documents/hop-dong.pdf", url: "/manus-storage/technology-vendor-contracts/61/documents/hop-dong.pdf" });
+    const caller = appRouter.createCaller(adminContext);
+
+    await expect(caller.technologyVendorContracts.documents({ technologyVendorContractId: 61 })).resolves.toEqual([]);
+    await expect(caller.technologyVendorContracts.uploadDocument({ technologyVendorContractId: 61, fileName: "hop-dong.pdf", contentType: "application/pdf", dataUrl: "data:application/pdf;base64,SGVsbG8=" })).resolves.toMatchObject({ id: 221, fileName: "hop-dong.pdf", fileSize: 5 });
+    expect(mocks.storagePut).toHaveBeenCalledWith(expect.stringMatching(/^technology-vendor-contracts\/61\/documents\//), expect.any(Buffer), "application/pdf");
+    expect(mocks.createTechnologyVendorContractDocument).toHaveBeenCalledWith(expect.objectContaining({ technologyVendorContractId: 61, fileName: "hop-dong.pdf", contentType: "application/pdf" }));
+    await expect(caller.technologyVendorContracts.removeDocument({ id: 221 })).resolves.toEqual({ success: true });
+    expect(mocks.deleteTechnologyVendorContractDocument).toHaveBeenCalledWith(221);
   });
 
   it("allows the recipient to submit a follow-up and mark a rejected return result as seen", async () => {

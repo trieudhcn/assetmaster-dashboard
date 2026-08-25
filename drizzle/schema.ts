@@ -81,6 +81,19 @@ export const technologyVendorContracts = mysqlTable("technologyVendorContracts",
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 }, (table) => [index("technology_vendor_contracts_vendor_idx").on(table.technologyVendorId), index("technology_vendor_contracts_status_expiry_idx").on(table.status, table.effectiveTo)]);
 
+export const technologyVendorContractDocuments = mysqlTable("technologyVendorContractDocuments", {
+  id: int("id").autoincrement().primaryKey(),
+  technologyVendorContractId: int("technologyVendorContractId").notNull().references(() => technologyVendorContracts.id, { onDelete: "cascade", onUpdate: "cascade" }),
+  fileName: varchar("fileName", { length: 255 }).notNull(),
+  contentType: varchar("contentType", { length: 128 }).notNull(),
+  fileSize: int("fileSize").notNull(),
+  storageKey: text("storageKey").notNull(),
+  url: text("url").notNull(),
+  uploadedByUserId: int("uploadedByUserId"),
+  uploadedByName: varchar("uploadedByName", { length: 160 }),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+}, (table) => [index("tvcd_contract_idx").on(table.technologyVendorContractId)]);
+
 export const softwareLicenses = mysqlTable("softwareLicenses", {
   id: int("id").autoincrement().primaryKey(),
   licenseCode: varchar("licenseCode", { length: 64 }).notNull().unique(),

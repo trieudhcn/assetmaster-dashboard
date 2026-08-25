@@ -112,6 +112,7 @@ import {
   getRetirementCertificateById,
   getSoftwareLicenseById,
   getSoftwareLicenseDocumentById,
+  getTechnologyVendorContractDocumentById,
   getUserMenuPreference,
   getUserNotificationPreferences,
   listUserDashboardAlertHistory,
@@ -137,6 +138,7 @@ import {
   listRetirementCertificates,
   listSoftwareLicenseAssignments,
   listSoftwareLicenseDocuments,
+  listTechnologyVendorContractDocuments,
   listSoftwareLicenses,
   getNextRepairTicketSequence,
   getNextWarrantyRequestSequence,
@@ -232,6 +234,8 @@ import {
   updateTechnologyService,
   updateTechnologyVendor,
   updateTechnologyVendorContract,
+  createTechnologyVendorContractDocument,
+  deleteTechnologyVendorContractDocument,
   updateUserRole,
   updateUserDirectoryProfile,
   updateUserActiveStatus,
@@ -733,6 +737,7 @@ export const appRouter = router({
   technologyVendorContracts: router({
     list: adminProcedure.input(z.object({ technologyVendorId: z.number().int().positive().optional() }).optional()).query(({ input }) => listTechnologyVendorContracts(input?.technologyVendorId)),
     expiringAlerts: adminProcedure.input(z.object({ daysAhead: z.number().int().min(1).max(90).default(30) }).optional()).query(({ input }) => listTechnologyVendorContractAlerts(input?.daysAhead ?? 30)),
+    documents: adminProcedure.input(z.object({ technologyVendorContractId: z.number().int().positive() })).query(({ input }) => listTechnologyVendorContractDocuments(input.technologyVendorContractId)),
     create: adminProcedure.input(z.object({
       contractCode: z.string().trim().min(2).max(64),
       title: z.string().trim().min(2).max(255),
@@ -769,6 +774,31 @@ export const appRouter = router({
       if (changes.technologyVendorId && !(await getTechnologyVendorById(changes.technologyVendorId))) throw new TRPCError({ code: "NOT_FOUND", message: "Không tìm thấy Nhà cung cấp Công nghệ." });
       await updateTechnologyVendorContract(id, changes);
       await recordActivity({ entityType: "technologyVendorContract", entityId: id, action: "updated", actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: `Cập nhật Hợp đồng Công nghệ ${existing.contractCode}` });
+      return { success: true };
+    }),
+    uploadDocument: adminProcedure.input(z.object({
+      technologyVendorContractId: z.number().int().positive(),
+      fileName: z.string().trim().min(1).max(255),
+      contentType: z.enum(["application/pdf", "image/png", "image/jpeg"]),
+      dataUrl: z.string().max(7_500_000).regex(/^data:(application\/pdf|image\/(png|jpeg));base64,/),
+    })).mutation(async ({ input, ctx }) => {
+      const contract = await getTechnologyVendorContractById(input.technologyVendorContractId);
+      if (!contract) throw new TRPCError({ code: "NOT_FOUND", message: "Không tìm thấy Hợp đồng Công nghệ." });
+      const buffer = Buffer.from(input.dataUrl.split(",", 2)[1], "base64");
+      if (!buffer.length || buffer.length > 5 * 1024 * 1024) throw new TRPCError({ code: "BAD_REQUEST", message: "Tài liệu phải có dung lượng từ 1 byte đến 5 MB." });
+      const extensionByContentType: Record<string, string> = { "application/pdf": "pdf", "image/png": "png", "image/jpeg": "jpg" };
+      const safeBaseName = input.fileName.replace(/[^a-zA-Z0-9._-]/g, "-").replace(/-+/g, "-").slice(0, 120) || "tai-lieu-hop-dong-cong-nghe";
+      const storageKey = `technology-vendor-contracts/${contract.id}/documents/${Date.now()}-${safeBaseName}.${extensionByContentType[input.contentType]}`;
+      const { url } = await storagePut(storageKey, buffer, input.contentType);
+      const id = await createTechnologyVendorContractDocument({ technologyVendorContractId: contract.id, fileName: input.fileName, contentType: input.contentType, fileSize: buffer.length, storageKey, url, uploadedByUserId: ctx.user!.id, uploadedByName: ctx.user!.name ?? "Quản trị viên" });
+      await recordActivity({ entityType: "technologyVendorContractDocument", entityId: id, action: "uploaded", actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: `Tải tài liệu ${input.fileName} cho Hợp đồng ${contract.contractCode}` });
+      return { id, url, fileName: input.fileName, contentType: input.contentType, fileSize: buffer.length };
+    }),
+    removeDocument: adminProcedure.input(z.object({ id: z.number().int().positive() })).mutation(async ({ input, ctx }) => {
+      const document = await getTechnologyVendorContractDocumentById(input.id);
+      if (!document) throw new TRPCError({ code: "NOT_FOUND", message: "Không tìm thấy tài liệu Hợp đồng Công nghệ." });
+      await deleteTechnologyVendorContractDocument(document.id);
+      await recordActivity({ entityType: "technologyVendorContractDocument", entityId: document.id, action: "removed", actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: `Gỡ tài liệu ${document.fileName} của Hợp đồng Công nghệ` });
       return { success: true };
     }),
   }),

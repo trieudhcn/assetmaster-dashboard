@@ -82,6 +82,12 @@
 - [x] Xác minh rõ khối thống kê/cảnh báo responsive, chạy lại phát hành sau bản vá quá hạn.
 - [x] Bổ sung contract DOM/UI xác nhận KPI thống kê, cảnh báo Hợp đồng và panel Công nghệ chuẩn.
 - [x] Chạy lại kiểm thử phát hành và lưu checkpoint sau xác minh cuối cho cảnh báo quá hạn.
+- [x] Bổ sung lưu trữ tệp PDF/hình ảnh và API quản lý tài liệu cho Hợp đồng Công nghệ.
+- [x] Hiển thị, tải lên, xem và gỡ tài liệu trong form tạo/chỉnh sửa Hợp đồng Công nghệ.
+- [x] Thêm bộ lọc hợp đồng theo còn hạn, sắp hết hạn và đã quá hạn.
+- [x] Đặt nền panel Công nghệ màu trắng và cho phép bấm ngoài modal để đóng mà vẫn giữ body cuộn/footer chuẩn.
+- [x] Bổ sung hồi quy, xác minh desktop/mobile và phát hành các thay đổi Hợp đồng Công nghệ.
+- [x] Hiển thị biểu tượng lịch cho trường ngày tháng và áp dụng định dạng tiền tệ chuẩn cho trường Chi phí liên quan.
 
 ## Current Session — Bản quyền & Dịch vụ
 

@@ -40,6 +40,7 @@ import {
   supplyIssueSlipItems,
   supplyIssueSlips,
   technologyServices,
+  technologyVendorContractDocuments,
   technologyVendorContracts,
   technologyVendors,
   uiLabels,
@@ -414,6 +415,31 @@ export async function deleteSoftwareLicenseDocument(id: number) {
   const db = await getDb();
   if (!db) throw new Error("Database unavailable");
   await db.delete(softwareLicenseDocuments).where(eq(softwareLicenseDocuments.id, id));
+}
+
+export async function listTechnologyVendorContractDocuments(technologyVendorContractId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(technologyVendorContractDocuments).where(eq(technologyVendorContractDocuments.technologyVendorContractId, technologyVendorContractId)).orderBy(desc(technologyVendorContractDocuments.createdAt));
+}
+
+export async function getTechnologyVendorContractDocumentById(id: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+  return (await db.select().from(technologyVendorContractDocuments).where(eq(technologyVendorContractDocuments.id, id)).limit(1))[0];
+}
+
+export async function createTechnologyVendorContractDocument(data: typeof technologyVendorContractDocuments.$inferInsert) {
+  const db = await getDb();
+  if (!db) throw new Error("Database unavailable");
+  const result = await db.insert(technologyVendorContractDocuments).values(data);
+  return Number(result[0].insertId);
+}
+
+export async function deleteTechnologyVendorContractDocument(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database unavailable");
+  await db.delete(technologyVendorContractDocuments).where(eq(technologyVendorContractDocuments.id, id));
 }
 
 export async function listSoftwareLicenseAssignments(softwareLicenseId?: number) {

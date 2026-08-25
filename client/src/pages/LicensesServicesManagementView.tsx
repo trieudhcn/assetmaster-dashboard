@@ -7,6 +7,8 @@ import { getDaysUntilExpiry, matchesExpiryFilter, sortByExpiry, type ExpiryFilte
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { SearchableSelect, type SearchableSelectOption } from "@/components/SearchableSelect";
 import { TechnologyVendorDirectoryPanel } from "@/components/TechnologyVendorDirectoryPanel";
+import { DatePickerField } from "@/components/DatePickerField";
+import { CurrencyInput } from "@/components/CurrencyInput";
 
 type LicenseForm = {
   licenseCode: string;
@@ -227,7 +229,23 @@ export function LicensesServicesManagementView() {
 }
 
 function CenteredServiceDialogContent({ children }: { children: React.ReactNode }) {
-  return <DialogContent data-licenses-services-dialog="service">{children}</DialogContent>;
+  const standardizedChildren = React.Children.map(children, (child) => {
+    if (!React.isValidElement<{ children?: React.ReactNode }>(child) || child.type !== "form") return child;
+    return React.cloneElement(child, undefined, React.Children.map(child.props.children, (field) => {
+      if (!React.isValidElement<{ label?: string; children?: React.ReactNode }>(field) || field.type !== Field) return field;
+      const label = field.props.label || "";
+      if (!["Ngày bắt đầu", "Ngày gia hạn", "Ngày hết hạn", "Chi phí"].includes(label)) return field;
+      const input = field.props.children as React.ReactElement<React.InputHTMLAttributes<HTMLInputElement>>;
+      if (!React.isValidElement(input) || input.type !== "input") return field;
+      const { value, onChange, className, type: _type, ...inputProps } = input.props;
+      const updateValue = (nextValue: string) => onChange?.({ target: { value: nextValue } } as React.ChangeEvent<HTMLInputElement>);
+      const control = label === "Chi phí"
+        ? <CurrencyInput {...inputProps} value={String(value ?? "")} onChange={updateValue} className={className} showWords aria-label="Chi phí" />
+        : <DatePickerField value={String(value ?? "")} onChange={updateValue} className={className} aria-label={label} />;
+      return React.cloneElement(field, undefined, control);
+    }));
+  });
+  return <DialogContent data-licenses-services-dialog="service">{standardizedChildren}</DialogContent>;
 }
 
 function SummaryCard({ label, value, icon: Icon, tone, detail }: { label: string; value: string | number; icon: typeof KeyRound; tone: "teal" | "blue" | "amber" | "navy"; detail?: string }) {
