@@ -109,6 +109,11 @@
 - [x] Xác minh runtime desktop/mobile cho Bản quyền, Dịch vụ và Hợp đồng sau bản vá cuối, rồi chạy lại phát hành.
 - [x] Xác minh runtime desktop và bố cục mobile cho Bản quyền, Dịch vụ, Hợp đồng; hồi quy thao tác lịch không phụ thuộc viewport trước checkpoint.
 - [x] Xác minh hồi quy tương tác lịch không phụ thuộc viewport và bố cục mobile cho Bản quyền, Dịch vụ, Hợp đồng Công nghệ.
+- [x] Bổ sung nút Hôm nay nhất quán trong DatePicker dùng chung để chọn nhanh ngày hiện tại.
+- [x] Kiểm kê và chuyển toàn bộ trường ngày của các form sang DatePicker dùng chung.
+- [x] Bổ sung hồi quy, xác minh desktop/mobile và phát hành chuẩn DatePicker toàn hệ thống.
+- [x] Xác minh mobile DatePicker và nút Hôm nay trong các form Bản quyền, Dịch vụ và Hợp đồng Công nghệ trước checkpoint.
+- [x] Xác minh tương tác runtime mobile: mở DatePicker và dùng Hôm nay mà không đóng modal ở Bản quyền, Dịch vụ, Hợp đồng Công nghệ.
 
 ## Current Session — Bản quyền & Dịch vụ
 

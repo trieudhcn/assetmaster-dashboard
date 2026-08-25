@@ -7,6 +7,7 @@ import { formatVnd } from "@/lib/formatters";
 import { openRetirementPdf } from "@/lib/retirementPdf";
 import { writeBrandedWorkbook } from "@/lib/brandedWorkbook";
 import { CurrencyInput } from "@/components/CurrencyInput";
+import { DatePickerField } from "@/components/DatePickerField";
 
 const DEFAULT_RETIREMENT_REASON = "Thanh lý theo thời gian quy định";
 const CERTIFICATE_PAGE_SIZE = 5;
@@ -274,7 +275,7 @@ export function RetirementCertificateManager() {
 
         <div className="min-w-0 rounded-xl border border-[#D7E8E5] bg-[#F9FDFC] p-4">
           <h3 className="text-sm font-extrabold text-[#193B57]">2. Hoàn thiện nháp</h3>
-          <div className="mt-3 grid gap-3 sm:grid-cols-[180px_minmax(0,1fr)]"><div><label className="field-label">Ngày thanh lý</label><input type="date" value={retiredAt} onChange={(event) => setRetiredAt(event.target.value)} className="field-input h-10 w-full text-xs" /></div><div><label className="field-label">Ghi chú chung</label><input value={note} onChange={(event) => setNote(event.target.value)} placeholder="Không bắt buộc" className="field-input h-10 w-full text-xs" /></div></div>
+          <div className="mt-3 grid gap-3 sm:grid-cols-[180px_minmax(0,1fr)]"><div><label className="field-label">Ngày thanh lý</label><DatePickerField value={retiredAt} onChange={setRetiredAt} className="h-10 w-full text-xs" aria-label="Ngày thanh lý" /></div><div><label className="field-label">Ghi chú chung</label><input value={note} onChange={(event) => setNote(event.target.value)} placeholder="Không bắt buộc" className="field-input h-10 w-full text-xs" /></div></div>
           <div className="mt-3 max-h-[286px] space-y-3 overflow-auto">
             {selectedIds.length ? selectedIds.map((assetId) => {
               const asset = candidates.find((candidate) => candidate.id === assetId); const detail = selected[assetId]; const serviceCostInfo = serviceCostByAsset.get(assetId); if (!asset || !detail) return null;

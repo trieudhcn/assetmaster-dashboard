@@ -51,4 +51,27 @@ describe("DatePickerField", () => {
     expect(document.body.textContent).not.toContain("Lịch AssetMaster");
   });
 
+  it("chọn nhanh ngày hiện tại bằng nút Hôm nay", async () => {
+    container = document.createElement("div");
+    document.body.append(container);
+    root = createRoot(container);
+    act(() => root?.render(<DatePickerHarness />));
+
+    const trigger = container.querySelector<HTMLButtonElement>('button[aria-label="Mở lịch: Ngày ký Hợp đồng"]')!;
+    await act(async () => {
+      trigger.click();
+      await Promise.resolve();
+    });
+
+    const todayButton = Array.from(document.body.querySelectorAll<HTMLButtonElement>("button")).find((button) => button.textContent === "Hôm nay");
+    expect(todayButton).toBeTruthy();
+    await act(async () => {
+      todayButton?.click();
+      await Promise.resolve();
+    });
+
+    expect(trigger.textContent).toContain(new Date().toLocaleDateString("vi-VN"));
+    expect(document.body.textContent).not.toContain("Lịch AssetMaster");
+  });
+
 });
