@@ -105,6 +105,9 @@ import {
   getRetirementCertificateById,
   getUserMenuPreference,
   getUserNotificationPreferences,
+  listUserDashboardAlertStateIds,
+  dismissUserDashboardAlerts,
+  restoreUserDashboardAlerts,
   saveUiLabel,
   listMaintenanceTickets,
   listMaintenanceMonthlyBudgets,
@@ -417,6 +420,15 @@ export const appRouter = router({
     }),
     savePreferences: protectedProcedure.input(z.object({ maintenanceEnabled: z.boolean(), handoverEnabled: z.boolean(), returnRequestEnabled: z.boolean() })).mutation(async ({ input, ctx }) => {
       await saveUserNotificationPreferences(ctx.user.id, input);
+      return { success: true };
+    }),
+    dashboardAlertStates: protectedProcedure.query(async ({ ctx }) => ({ alertIds: await listUserDashboardAlertStateIds(ctx.user.id) })),
+    dismissDashboardAlerts: protectedProcedure.input(z.object({ alertIds: z.array(z.string().trim().min(1).max(160)).min(1).max(100) })).mutation(async ({ input, ctx }) => {
+      await dismissUserDashboardAlerts(ctx.user.id, input.alertIds);
+      return { success: true };
+    }),
+    restoreDashboardAlerts: protectedProcedure.input(z.object({ alertIds: z.array(z.string().trim().min(1).max(160)).min(1).max(100) })).mutation(async ({ input, ctx }) => {
+      await restoreUserDashboardAlerts(ctx.user.id, input.alertIds);
       return { success: true };
     }),
   }),

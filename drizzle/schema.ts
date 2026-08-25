@@ -44,6 +44,13 @@ export const userMenuPreferences = mysqlTable("userMenuPreferences", {
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
 
+export const userDashboardAlertStates = mysqlTable("userDashboardAlertStates", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull().references(() => users.id, { onDelete: "cascade", onUpdate: "cascade" }),
+  alertId: varchar("alertId", { length: 160 }).notNull(),
+  dismissedAt: timestamp("dismissedAt").defaultNow().notNull(),
+}, (table) => [uniqueIndex("user_dashboard_alert_state_unique").on(table.userId, table.alertId), index("user_dashboard_alert_state_user_idx").on(table.userId)]);
+
 export const companies = mysqlTable("companies", {
   id: int("id").autoincrement().primaryKey(),
   name: varchar("name", { length: 255 }).notNull(),

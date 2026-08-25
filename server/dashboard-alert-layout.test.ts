@@ -22,6 +22,7 @@ describe("dashboard alert layout", () => {
     const home = readFileSync(resolve(process.cwd(), "client/src/pages/Home.tsx"), "utf8");
 
     expect(home).toContain('data-low-stock-supply-alert');
+    expect(home).toContain('visibleLowStockSupplies.length > 0 || lowStockSupplies.length === 0');
     expect(home).toContain('min-h-[72px]');
     expect(home).toContain('visibleOverdueAuditReminders.slice(0, 3)');
     expect(home).toContain('const lowStockSupplyPreview = visibleLowStockSupplies.slice(0, 3);');

@@ -38,6 +38,7 @@ import {
   supplyIssueSlips,
   uiLabels,
   type InsertUser,
+  userDashboardAlertStates,
   userMenuPreferences,
   userNotificationPreferences,
   users,
@@ -137,6 +138,29 @@ export async function saveUserNotificationPreferences(userId: number, preference
   const db = await getDb();
   if (!db) throw new Error("Database unavailable");
   await db.insert(userNotificationPreferences).values({ userId, ...preferences }).onDuplicateKeyUpdate({ set: { ...preferences, updatedAt: new Date() } });
+}
+
+export async function listUserDashboardAlertStateIds(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  const rows = await db.select({ alertId: userDashboardAlertStates.alertId }).from(userDashboardAlertStates).where(eq(userDashboardAlertStates.userId, userId));
+  return rows.map((row) => row.alertId);
+}
+
+export async function dismissUserDashboardAlerts(userId: number, alertIds: string[]) {
+  const db = await getDb();
+  if (!db) throw new Error("Database unavailable");
+  const uniqueAlertIds = Array.from(new Set(alertIds));
+  if (!uniqueAlertIds.length) return;
+  await db.insert(userDashboardAlertStates).values(uniqueAlertIds.map((alertId) => ({ userId, alertId }))).onDuplicateKeyUpdate({ set: { dismissedAt: new Date() } });
+}
+
+export async function restoreUserDashboardAlerts(userId: number, alertIds: string[]) {
+  const db = await getDb();
+  if (!db) throw new Error("Database unavailable");
+  const uniqueAlertIds = Array.from(new Set(alertIds));
+  if (!uniqueAlertIds.length) return;
+  await db.delete(userDashboardAlertStates).where(and(eq(userDashboardAlertStates.userId, userId), inArray(userDashboardAlertStates.alertId, uniqueAlertIds)));
 }
 
 export async function updateUserDepartment(id: number, departmentId: number | null) {

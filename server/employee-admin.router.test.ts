@@ -32,6 +32,7 @@ const mocks = vi.hoisted(() => ({
   getNextRecoveryCertificateSequence: vi.fn(),
   getUserByEmployeeCode: vi.fn(),
   getUserNotificationPreferences: vi.fn(),
+  listUserDashboardAlertStateIds: vi.fn(),
   listDepartments: vi.fn(),
   listAllDepartments: vi.fn(),
   listAllDivisions: vi.fn(),
@@ -45,6 +46,8 @@ const mocks = vi.hoisted(() => ({
   listHandoverSupplyItems: vi.fn(),
   listHandoverReturnDecisionHistory: vi.fn(),
   recordActivity: vi.fn(),
+  dismissUserDashboardAlerts: vi.fn(),
+  restoreUserDashboardAlerts: vi.fn(),
   runInventoryTransaction: vi.fn(),
   saveUserNotificationPreferences: vi.fn(),
   storagePut: vi.fn(),
@@ -100,6 +103,7 @@ vi.mock("./db", () => ({
   getNextRetirementCertificateSequence: vi.fn().mockResolvedValue(1),
   getUserByEmployeeCode: mocks.getUserByEmployeeCode,
   getUserNotificationPreferences: mocks.getUserNotificationPreferences,
+  listUserDashboardAlertStateIds: mocks.listUserDashboardAlertStateIds,
   getMaintenanceTicket: vi.fn(),
   listAssets: vi.fn(),
   listAuditItems: vi.fn(),
@@ -121,6 +125,8 @@ vi.mock("./db", () => ({
   listMaintenanceTickets: vi.fn(),
   listUsers: vi.fn(),
   recordActivity: mocks.recordActivity,
+  dismissUserDashboardAlerts: mocks.dismissUserDashboardAlerts,
+  restoreUserDashboardAlerts: mocks.restoreUserDashboardAlerts,
   runInventoryTransaction: mocks.runInventoryTransaction,
   saveCompany: vi.fn(),
   saveHelpGuide: vi.fn(),
@@ -531,6 +537,19 @@ describe("employee administration", () => {
     await expect(caller.notifications.preferences()).resolves.toEqual({ maintenanceEnabled: true, handoverEnabled: true, returnRequestEnabled: true });
     await expect(caller.notifications.savePreferences({ maintenanceEnabled: false, handoverEnabled: true, returnRequestEnabled: false })).resolves.toEqual({ success: true });
     expect(mocks.saveUserNotificationPreferences).toHaveBeenCalledWith(8, { maintenanceEnabled: false, handoverEnabled: true, returnRequestEnabled: false });
+  });
+
+  it("stores dashboard alert review state per signed-in account", async () => {
+    mocks.listUserDashboardAlertStateIds.mockResolvedValue(["audit-40"]);
+    const caller = appRouter.createCaller(userContext);
+
+    await expect(caller.notifications.dashboardAlertStates()).resolves.toEqual({ alertIds: ["audit-40"] });
+    await expect(caller.notifications.dismissDashboardAlerts({ alertIds: ["audit-40", "supply-12"] })).resolves.toEqual({ success: true });
+    await expect(caller.notifications.restoreDashboardAlerts({ alertIds: ["audit-40"] })).resolves.toEqual({ success: true });
+
+    expect(mocks.listUserDashboardAlertStateIds).toHaveBeenCalledWith(8);
+    expect(mocks.dismissUserDashboardAlerts).toHaveBeenCalledWith(8, ["audit-40", "supply-12"]);
+    expect(mocks.restoreUserDashboardAlerts).toHaveBeenCalledWith(8, ["audit-40"]);
   });
 
   it("allows the recipient to submit a follow-up and mark a rejected return result as seen", async () => {

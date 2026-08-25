@@ -1,5 +1,18 @@
 # AssetMaster — Asset Catalog Expansion
 
+## Current Session — Hai cảnh báo cùng hàng
+
+- [x] Khôi phục thẻ Kiểm kê quá hạn và Phụ kiện chạm mức tồn tối thiểu trên cùng một hàng ở desktop.
+- [x] Giữ bố cục xếp dọc dễ đọc trên màn hình điện thoại.
+- [x] Xác minh giao diện cùng hồi quy, TypeScript và production build trước khi phát hành.
+
+## Current Session — Đồng bộ cảnh báo đã xem theo tài khoản
+
+- [x] Thiết kế và áp dụng schema lưu trạng thái Đã xem cảnh báo theo người dùng.
+- [x] Bổ sung API tRPC an toàn để đọc, đánh dấu và khôi phục cảnh báo theo tài khoản.
+- [x] Thay trạng thái cục bộ bằng đồng bộ máy chủ trên Tổng quan, tương thích trạng thái cũ.
+- [x] Bổ sung hồi quy, xác minh desktop/mobile, TypeScript và production build trước khi phát hành.
+
 ## Current Session — Ngày quá hạn và cảnh báo đã xem
 
 - [x] Hiển thị số ngày quá hạn cạnh từng đợt Kiểm kê trong cảnh báo Tổng quan.
