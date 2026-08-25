@@ -115,6 +115,9 @@ describe("Bản quyền & Dịch vụ", () => {
     expect(styles).toContain('[data-licenses-services-dialog="service"]');
     expect(styles).toContain('[data-licenses-services-dialog="technology"]');
     expect(styles).toContain('[data-licenses-services-dialog="technology"] input[type="date"]');
+    expect(styles).toContain('[data-licenses-services-dialog="service"] button.field-input.form-input');
+    expect(styles).toContain("display: flex !important");
+    expect(styles).toContain("align-items: center !important");
     expect(view).toContain('import { DatePickerField } from "@/components/DatePickerField"');
     expect(view).toContain('import { CurrencyInput } from "@/components/CurrencyInput"');
     expect(view).toContain('<DatePickerField value={String(value ?? "")}');

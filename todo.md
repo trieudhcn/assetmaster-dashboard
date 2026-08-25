@@ -93,6 +93,9 @@
 - [x] Bổ sung hồi quy, xác minh responsive, TypeScript, production build và phát hành luồng tải nhiều tệp.
 - [x] Bổ sung hồi quy tương tác chọn nhiều tệp, kết quả từng tệp và trạng thái tải/khóa nút.
 - [x] Xác minh responsive desktop/mobile cho khối tải nhiều tệp và lưu checkpoint phát hành mới.
+- [x] Khắc phục lỗi hiển thị trường ngày tháng trong hai form Bản quyền và Dịch vụ.
+- [x] Bổ sung hồi quy và xác minh desktop/mobile cho các trường ngày sau khi sửa.
+- [x] Xác minh trực quan DatePicker trong form Bản quyền trên desktop/mobile và ghi nhận kết quả trước checkpoint.
 
 ## Current Session — Bản quyền & Dịch vụ
 
