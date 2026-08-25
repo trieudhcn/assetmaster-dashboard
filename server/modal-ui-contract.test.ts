@@ -2082,7 +2082,8 @@ describe("maintenance history and filter layout contract", () => {
     expect(operations).toContain("relative z-20 border-b border-[#E7EEF3]");
     expect(operations).toContain("w-full sm:max-w-[520px]");
     const searchableSelect = readProjectFile("client/src/components/SearchableSelect.tsx");
-    expect(searchableSelect).toContain("createPortal(menu, document.body)");
+    expect(searchableSelect).toContain("closest<HTMLElement>(\"[data-licenses-services-dialog]\")");
+    expect(searchableSelect).toContain("createPortal(menu, portalContainer || document.body)");
     expect(searchableSelect).toContain("menuPortal = true");
     expect(searchableSelect).toContain('fixed z-[9999]');
     expect(searchableSelect).toContain("const estimatedMenuHeight = 340");

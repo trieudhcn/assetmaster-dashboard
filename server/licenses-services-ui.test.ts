@@ -86,6 +86,7 @@ describe("Bản quyền & Dịch vụ", () => {
     expect(styles).toContain("License modal: fixed panel shell");
     expect(styles).toContain("height: min(48rem, calc(100dvh - 2rem)) !important");
     expect(styles).toContain("overflow-y: auto !important");
+    expect(styles).toContain("height: 0;");
     expect(styles).toContain("min-height: 2.45rem");
     expect(styles).toContain("color: #A8B8C5");
     expect(readFileSync(resolve(process.cwd(), "client/src/components/ui/dialog.tsx"), "utf8")).toContain("license-service-dialog-panel relative flex");

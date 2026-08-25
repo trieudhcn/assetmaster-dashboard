@@ -92,6 +92,44 @@ describe("tương tác form Bản quyền", () => {
     window.requestAnimationFrame = originalRaf;
   });
 
+  it("đặt menu dropdown vào lớp modal và vẫn chọn được option", () => {
+    const onChange = vi.fn();
+    const originalRaf = window.requestAnimationFrame;
+    window.requestAnimationFrame = (callback) => { callback(0); return 1; };
+    const host = document.createElement("div");
+    container = host;
+    document.body.append(host);
+    root = createRoot(host);
+    act(() => root?.render(<Dialog open><DialogContent data-licenses-services-dialog="license"><DialogHeader><DialogTitle>Thêm Bản quyền</DialogTitle><DialogDescription>Mô tả</DialogDescription></DialogHeader><StandardDropdown value="subscription" onChange={onChange} options={[{ value: "subscription", label: "Thuê bao" }, { value: "perpetual", label: "Vĩnh viễn" }]} placeholder="Chọn mô hình" searchPlaceholder="Tìm mô hình..." /></DialogContent></Dialog>));
+
+    act(() => (document.querySelector<HTMLButtonElement>('button[aria-haspopup="listbox"]')!).click());
+    const modal = document.querySelector<HTMLElement>('[data-licenses-services-dialog="license"]')!;
+    const option = Array.from(document.querySelectorAll<HTMLButtonElement>('[role="option"]')).find((button) => button.textContent?.includes("Vĩnh viễn"));
+    expect(option?.closest('[data-licenses-services-dialog="license"]')).toBe(modal);
+    act(() => option?.click());
+    expect(onChange).toHaveBeenCalledWith("perpetual");
+    window.requestAnimationFrame = originalRaf;
+  });
+
+  it("đặt menu dropdown Dịch vụ trong lớp modal và vẫn chọn được option", () => {
+    const onChange = vi.fn();
+    const originalRaf = window.requestAnimationFrame;
+    window.requestAnimationFrame = (callback) => { callback(0); return 1; };
+    const host = document.createElement("div");
+    container = host;
+    document.body.append(host);
+    root = createRoot(host);
+    act(() => root?.render(<Dialog open><DialogContent data-licenses-services-dialog="service"><DialogHeader><DialogTitle>Thêm Dịch vụ</DialogTitle><DialogDescription>Mô tả</DialogDescription></DialogHeader><StandardDropdown value="annual" onChange={onChange} options={[{ value: "monthly", label: "Hàng tháng" }, { value: "annual", label: "Hàng năm" }]} placeholder="Chọn chu kỳ" searchPlaceholder="Tìm chu kỳ..." /></DialogContent></Dialog>));
+
+    act(() => (document.querySelector<HTMLButtonElement>('button[aria-haspopup="listbox"]')!).click());
+    const modal = document.querySelector<HTMLElement>('[data-licenses-services-dialog="service"]')!;
+    const option = Array.from(document.querySelectorAll<HTMLButtonElement>('[role="option"]')).find((button) => button.textContent?.includes("Hàng tháng"));
+    expect(option?.closest('[data-licenses-services-dialog="service"]')).toBe(modal);
+    act(() => option?.click());
+    expect(onChange).toHaveBeenCalledWith("monthly");
+    window.requestAnimationFrame = originalRaf;
+  });
+
   it("render panel Bản quyền có body cuộn dọc và footer nằm cuối nội dung", () => {
     container = document.createElement("div");
     document.body.append(container);
@@ -110,6 +148,8 @@ describe("tương tác form Bản quyền", () => {
     const styles = readFileSync(resolve(process.cwd(), "client/src/index.css"), "utf8");
     expect(styles).toContain('[data-licenses-services-dialog="license"] form,');
     expect(styles).toContain("overflow-y: auto !important");
+    expect(styles).toContain("height: 0;");
+    expect(styles).toContain("place-items: center !important");
     expect(styles).toContain("position: static");
     expect(styles).toContain("overflow: hidden !important");
     expect(styles).toContain("margin: 1rem 0 0 !important");

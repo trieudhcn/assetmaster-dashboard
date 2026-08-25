@@ -44,6 +44,7 @@ export function SearchableSelect({ value, onChange, options, placeholder = "Chá»
   const [menuReady, setMenuReady] = useState(false);
   const [menuPosition, setMenuPosition] = useState({ top: 0, left: 0, width: 280 });
   const [menuPlacement, setMenuPlacement] = useState<"bottom" | "top">("bottom");
+  const [portalContainer, setPortalContainer] = useState<HTMLElement | null>(null);
   const closeTimerRef = useRef<number | null>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const isAssetStatusOptions = options.some((option) => option.value === "returned") && options.some((option) => option.value === "maintenance") && options.some((option) => option.value === "active");
@@ -60,6 +61,7 @@ export function SearchableSelect({ value, onChange, options, placeholder = "Chá»
   };
   const openMenu = () => {
     if (closeTimerRef.current) window.clearTimeout(closeTimerRef.current);
+    setPortalContainer(rootRef.current?.closest<HTMLElement>("[data-licenses-services-dialog]") || null);
     setMenuReady(false);
     setMenuMounted(true);
     requestAnimationFrame(() => setOpen(true));
@@ -131,6 +133,6 @@ export function SearchableSelect({ value, onChange, options, placeholder = "Chá»
       </button>
       {!menuPortal && menu}
     </div>
-    {menuPortal && menu && typeof document !== "undefined" ? createPortal(menu, document.body) : null}
+    {menuPortal && menu && typeof document !== "undefined" ? createPortal(menu, portalContainer || document.body) : null}
   </>;
 }

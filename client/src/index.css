@@ -217,15 +217,15 @@ aside.fixed.inset-y-0 { animation: drawer-in 220ms cubic-bezier(0.23, 1, 0.32, 1
 /* License and service forms use an explicit centering contract so shared dialog motion cannot pin them to a corner. */
 [data-licenses-services-dialog="license"] {
   position: fixed !important;
-  top: 50% !important;
-  right: auto !important;
-  bottom: auto !important;
-  left: 50% !important;
-  width: calc(100vw - 2rem) !important;
-  max-width: 48rem !important;
-  max-height: calc(100dvh - 2rem) !important;
-  overflow-y: auto !important;
-  transform: translate(-50%, -50%) !important;
+  inset: 0 !important;
+  display: grid !important;
+  place-items: center !important;
+  width: auto !important;
+  max-width: none !important;
+  max-height: none !important;
+  overflow: hidden !important;
+  padding: 1rem !important;
+  transform: none !important;
 }
 [data-licenses-services-dialog="service"] {
   position: fixed !important;
@@ -354,6 +354,7 @@ aside.fixed.inset-y-0 { animation: drawer-in 220ms cubic-bezier(0.23, 1, 0.32, 1
 [data-licenses-services-dialog="license"] form,
 [data-licenses-services-dialog="service"] form {
   flex: 1 1 auto;
+  height: 0;
   min-height: 0;
   margin: 0 !important;
   padding: 1.25rem 1.5rem !important;

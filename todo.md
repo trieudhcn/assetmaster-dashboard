@@ -50,6 +50,12 @@
 - [x] Bổ sung hồi quy đếm và kiểm tra các nhóm dropdown chuẩn hóa trong toàn menu.
 - [x] Bổ sung kiểm thử tương tác dropdown cho nhóm Cấp phát Bản quyền dùng cùng component chuẩn.
 - [x] Xác minh responsive cho dropdown Cấp phát và loại tài liệu trong modal Bản quyền mà không tạo dữ liệu nghiệp vụ thử.
+- [x] Khôi phục body cuộn dọc nội bộ cho form Thêm/Sửa Bản quyền như form Dịch vụ.
+- [x] Bổ sung hồi quy và xác minh desktop/mobile cho vùng cuộn nội bộ Bản quyền.
+- [x] Khắc phục sự kiện chọn option trong dropdown của form Bản quyền và Dịch vụ.
+- [x] Bổ sung hồi quy tương tác click/chọn dropdown trong modal và xác minh desktop/mobile.
+- [x] Bổ sung kiểm thử integration chọn dropdown trong modal Dịch vụ dùng chung portal.
+- [x] Xác minh lại hiển thị desktop/mobile cho form Bản quyền và Dịch vụ sau bản sửa portal dropdown.
 
 ## Current Session — Bản quyền & Dịch vụ
 
