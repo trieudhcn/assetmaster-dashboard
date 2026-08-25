@@ -698,3 +698,6 @@ input[type="date"] {
   line-height: 1;
   letter-spacing: -0.015em;
 }
+
+.service-dialog-panel { width: min(100%, 48rem) !important; }
+@media (max-width: 639px) { .service-dialog-panel { width: calc(100vw - 2rem) !important; max-width: calc(100vw - 2rem) !important; padding: 1rem !important; } }

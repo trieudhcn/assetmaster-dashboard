@@ -13,6 +13,7 @@ describe("Bản quyền & Dịch vụ", () => {
 
   it("provides licensing, assignment and service-expiry management flows", () => {
     const view = readFileSync(resolve(process.cwd(), "client/src/pages/LicensesServicesManagementView.tsx"), "utf8");
+    const styles = readFileSync(resolve(process.cwd(), "client/src/index.css"), "utf8");
 
     expect(view).toContain("trpc.softwareLicenses.list.useQuery");
     expect(view).toContain("trpc.softwareLicenses.assign.useMutation");
@@ -35,5 +36,11 @@ describe("Bản quyền & Dịch vụ", () => {
     expect(view).toContain("vendorUnavailable");
     expect(view).toContain("assignmentDirectoryUnavailable");
     expect(view).toContain("Không thể tải dữ liệu quản lý");
+    expect(view).toContain("CenteredServiceDialogContent");
+    expect(view).toContain('data-licenses-services-dialog="service"');
+    expect(view).toContain("fixed inset-0 z-[60] grid place-items-center");
+    expect(view).toContain('width: "min(calc(100vw - 2rem), 48rem)"');
+    expect(view).toContain("max-h-[calc(100dvh-2rem)]");
+    expect(styles).toContain(".service-dialog-panel");
   });
 });

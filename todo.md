@@ -1,5 +1,16 @@
 # AssetMaster — Asset Catalog Expansion
 
+## Current Session — Cảnh báo hết hạn và modal Dịch vụ
+
+- [x] Hiển thị cảnh báo Bản quyền và Dịch vụ sắp hết hạn trong trang Tổng quan.
+- [x] Liên kết từng cảnh báo đến bản ghi Bản quyền/Dịch vụ tương ứng.
+- [x] Căn giữa modal Thêm/Sửa dịch vụ ổn định trên desktop và mobile, kể cả biểu mẫu dài.
+- [x] Bổ sung hồi quy, xác minh desktop/mobile, TypeScript và production build trước khi phát hành.
+- [x] Xác minh mobile cảnh báo Bản quyền/Dịch vụ sắp hết hạn và thao tác Mở/Đã xem.
+- [x] Mở thực tế modal Thêm dịch vụ trên desktop/mobile để xác minh căn giữa và cuộn nội dung.
+- [x] Xác minh hành vi Mở/Đã xem của cảnh báo Bản quyền & Dịch vụ và bổ sung contract chống hồi quy.
+- [x] Bổ sung kiểm thử hành vi điều hướng Mở và định danh ẩn Đã xem cho cảnh báo Bản quyền/Dịch vụ.
+
 ## Current Session — Bản quyền & Dịch vụ
 
 - [x] Thiết kế menu Bản quyền & Dịch vụ cho Windows, Office, phần mềm, Internet, Tên miền và SSL.

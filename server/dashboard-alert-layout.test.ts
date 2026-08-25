@@ -57,4 +57,19 @@ describe("dashboard alert layout", () => {
     expect(home).toContain("Đã xem {new Intl.DateTimeFormat");
     expect(home).toContain("Hiện lại");
   });
+
+  it("surfaces expiring software licenses and services with direct management links", () => {
+    const home = readFileSync(resolve(process.cwd(), "client/src/pages/Home.tsx"), "utf8");
+
+    expect(home).toContain("dashboardSoftwareLicensesQuery");
+    expect(home).toContain("dashboardTechnologyServicesQuery");
+    expect(home).toContain("data-digital-expiry-alert");
+    expect(home).toContain("Bản quyền & Dịch vụ sắp hết hạn");
+    expect(home).toContain("visibleDigitalExpiryAlerts.slice(0, 3)");
+    expect(home).toContain("openDigitalExpiryAlert");
+    expect(home).toContain("buildDigitalExpiryAlertUrl");
+    expect(home).toContain("onClick={() => openDigitalExpiryAlert(alert.kind, alert.id, alert.detail)}");
+    expect(home).toContain("onClick={() => dismissDashboardAlert(alert.alertId)}");
+    expect(home).toContain("Đánh dấu đã xem cảnh báo Bản quyền hoặc Dịch vụ");
+  });
 });
