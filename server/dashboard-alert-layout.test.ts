@@ -17,4 +17,16 @@ describe("dashboard alert layout", () => {
     expect(home).toContain('"xl:grid-cols-2"');
     expect(home).toContain('document.querySelector<HTMLElement>("[data-dashboard-alert-row]")');
   });
+
+  it("keeps both alert headers aligned and limits each priority list to three rows", () => {
+    const home = readFileSync(resolve(process.cwd(), "client/src/pages/Home.tsx"), "utf8");
+
+    expect(home).toContain('data-low-stock-supply-alert');
+    expect(home).toContain('min-h-[72px]');
+    expect(home).toContain('overdueAuditReminders.slice(0, 3)');
+    expect(home).toContain('const lowStockSupplyPreview = lowStockSupplies.slice(0, 3);');
+    expect(home).toContain('left.dueAt.getTime() - right.dueAt.getTime()');
+    expect(home).toContain('Math.abs(Number(left.stockQuantity)) - Math.abs(Number(right.stockQuantity))');
+    expect(home).toContain('Ưu tiên số lượng tồn gần 0 nhất để bổ sung kịp thời.');
+  });
 });

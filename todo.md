@@ -1,5 +1,12 @@
 # AssetMaster — Asset Catalog Expansion
 
+## Current Session — Cảnh báo Kiểm kê và Phụ kiện trên Tổng quan
+
+- [x] Cân chỉnh chiều cao và cấu trúc tiêu đề thẻ Phụ kiện tương đương thẻ Kiểm kê quá hạn.
+- [x] Chỉ hiển thị tối đa ba đợt Kiểm kê quá hạn lâu nhất trong thẻ cảnh báo.
+- [x] Chỉ hiển thị tối đa ba Phụ kiện chạm mức tối thiểu, ưu tiên số lượng gần 0 nhất.
+- [x] Bổ sung hồi quy, xác minh desktop/mobile, TypeScript và production build trước khi phát hành.
+
 ## Current Session — Phản hồi tải, phân trang Hóa đơn và % VAT
 
 - [x] Hiển thị loading spinner hoặc skeleton khi bộ lọc Danh mục Tài sản thay đổi.
