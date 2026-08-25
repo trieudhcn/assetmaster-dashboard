@@ -147,6 +147,16 @@ export async function listUserDashboardAlertStateIds(userId: number) {
   return rows.map((row) => row.alertId);
 }
 
+export async function listUserDashboardAlertHistory(userId: number, limit = 50) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select({ alertId: userDashboardAlertStates.alertId, dismissedAt: userDashboardAlertStates.dismissedAt })
+    .from(userDashboardAlertStates)
+    .where(eq(userDashboardAlertStates.userId, userId))
+    .orderBy(desc(userDashboardAlertStates.dismissedAt))
+    .limit(limit);
+}
+
 export async function dismissUserDashboardAlerts(userId: number, alertIds: string[]) {
   const db = await getDb();
   if (!db) throw new Error("Database unavailable");

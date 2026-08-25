@@ -43,4 +43,15 @@ describe("dashboard alert layout", () => {
     expect(home).toContain("visibleOverdueAuditReminders");
     expect(home).toContain("visibleLowStockSupplies");
   });
+
+  it("provides an account-synced review history with open and restore actions", () => {
+    const home = readFileSync(resolve(process.cwd(), "client/src/pages/Home.tsx"), "utf8");
+
+    expect(home).toContain("dashboardAlertHistory");
+    expect(home).toContain("data-dashboard-alert-history");
+    expect(home).toContain("Lịch sử cảnh báo đã xem");
+    expect(home).toContain("openDashboardAlertHistoryItem");
+    expect(home).toContain("Đã xem {new Intl.DateTimeFormat");
+    expect(home).toContain("Hiện lại");
+  });
 });

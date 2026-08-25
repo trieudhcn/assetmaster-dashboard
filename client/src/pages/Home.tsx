@@ -442,6 +442,7 @@ export default function Home() {
       return [];
     }
   });
+  const [dashboardAlertHistoryOpen, setDashboardAlertHistoryOpen] = useState(false);
   const [headerProfileOpen, setHeaderProfileOpen] = useState(false);
   const [notificationSettingsOpen, setNotificationSettingsOpen] = useState(false);
   const [companyInfo, setCompanyInfo] = useState<CompanyInfo>(readCompanyInfo);
@@ -453,6 +454,7 @@ export default function Home() {
   const dashboardInvoicesQuery = trpc.purchaseInvoices.list.useQuery(undefined, { enabled: isAuthenticated && isAdmin });
   const suppliesQuery = trpc.supplies.list.useQuery(undefined, { enabled: isAuthenticated && isAdmin });
   const dashboardAlertStatesQuery = trpc.notifications.dashboardAlertStates.useQuery(undefined, { enabled: isAuthenticated && isAdmin });
+  const dashboardAlertHistoryQuery = trpc.notifications.dashboardAlertHistory.useQuery({ limit: 50 }, { enabled: isAuthenticated && isAdmin });
   const assetCategoriesQuery = trpc.assetCategories.list.useQuery(undefined, { enabled: isAuthenticated && isAdmin });
   const maintenanceTicketsQuery = trpc.maintenance.list.useQuery(undefined, { enabled: isAuthenticated && isAdmin });
   const repairCostByAssetId = useMemo(() => (maintenanceTicketsQuery.data || []).filter((ticket) => (ticket.serviceChannel || "repair") === "repair").reduce((totals, ticket) => totals.set(ticket.assetId, (totals.get(ticket.assetId) || 0) + Number(ticket.actualCost ?? 0)), new Map<number, number>()), [maintenanceTicketsQuery.data]);
@@ -537,7 +539,7 @@ export default function Home() {
       if (context?.previous) trpcUtils.notifications.dashboardAlertStates.setData(undefined, context.previous);
       toast.error(error.message || "Không thể lưu trạng thái cảnh báo.");
     },
-    onSettled: () => void trpcUtils.notifications.dashboardAlertStates.invalidate(),
+    onSettled: () => { void trpcUtils.notifications.dashboardAlertStates.invalidate(); void trpcUtils.notifications.dashboardAlertHistory.invalidate(); },
   });
   const restoreDashboardAlertsMutation = trpc.notifications.restoreDashboardAlerts.useMutation({
     onMutate: async ({ alertIds }) => {
@@ -550,7 +552,7 @@ export default function Home() {
       if (context?.previous) trpcUtils.notifications.dashboardAlertStates.setData(undefined, context.previous);
       toast.error(error.message || "Không thể khôi phục cảnh báo.");
     },
-    onSettled: () => void trpcUtils.notifications.dashboardAlertStates.invalidate(),
+    onSettled: () => { void trpcUtils.notifications.dashboardAlertStates.invalidate(); void trpcUtils.notifications.dashboardAlertHistory.invalidate(); },
   });
   const uploadSupplierReturnAttachmentMutation = trpc.assets.uploadSupplierReturnAttachment.useMutation({ onSuccess: () => { void assetQuery.refetch(); toast.success("Đã lưu tệp xác nhận trả nhà cung cấp."); }, onError: (error) => toast.error(error.message || "Không thể lưu tệp xác nhận trả nhà cung cấp.") });
   const uploadRetirementAttachmentMutation = trpc.assets.uploadRetirementAttachment.useMutation({ onSuccess: () => { void assetQuery.refetch(); toast.success("Đã lưu chứng từ thanh lý."); }, onError: (error) => toast.error(error.message || "Không thể lưu chứng từ thanh lý.") });
@@ -1058,6 +1060,17 @@ export default function Home() {
   const visibleLowStockSupplies = useMemo(() => lowStockSupplies.filter((supply) => !dismissedDashboardAlertIds.includes("supply-" + supply.id)), [dismissedDashboardAlertIds, lowStockSupplies]);
   const lowStockSupplyPreview = visibleLowStockSupplies.slice(0, 3);
   const activeDashboardAlertIds = useMemo(() => [...overdueAuditReminders.map((reminder) => reminder.id), ...lowStockSupplies.map((supply) => "supply-" + supply.id)], [lowStockSupplies, overdueAuditReminders]);
+  const dashboardAlertHistory = useMemo(() => (dashboardAlertHistoryQuery.data || []).map((entry) => {
+    const [kind, rawId] = entry.alertId.split("-");
+    const numericId = Number(rawId);
+    if (kind === "audit") {
+      const reminder = (operationalRemindersQuery.data || []).find((item) => item.kind === "audit" && item.auditSessionId === numericId);
+      return { ...entry, kind, numericId, title: reminder?.title || `Đợt Kiểm kê #${rawId}`, detail: reminder?.detail || entry.alertId };
+    }
+    const supply = (suppliesQuery.data || []).find((item) => item.id === numericId);
+    const quantity = Number(supply?.stockQuantity || 0).toLocaleString("vi-VN", { maximumFractionDigits: 2 });
+    return { ...entry, kind, numericId, title: supply?.name || `Phụ kiện #${rawId}`, detail: supply ? `${supply.code} · tồn ${quantity} ${supply.unit}` : entry.alertId };
+  }), [dashboardAlertHistoryQuery.data, operationalRemindersQuery.data, suppliesQuery.data]);
   const dismissedDashboardAlertCount = activeDashboardAlertIds.filter((alertId) => dismissedDashboardAlertIds.includes(alertId)).length;
   const dismissDashboardAlert = (alertId: string) => dismissDashboardAlertsMutation.mutate({ alertIds: [alertId] });
   const restoreDashboardAlerts = () => {
@@ -1196,6 +1209,15 @@ export default function Home() {
     setMobileNavOpen(false);
     window.requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: "smooth" }));
   };
+  const openDashboardAlertHistoryItem = (item: typeof dashboardAlertHistory[number]) => {
+    if (item.kind === "audit" && Number.isInteger(item.numericId) && item.numericId > 0) {
+      openAuditSessionFromReminder(item.numericId);
+    } else if (item.kind === "supply" && Number.isInteger(item.numericId) && item.numericId > 0) {
+      sessionStorage.setItem("assetmaster-open-supply-receipt-id", String(item.numericId));
+      navigateTo("Phụ kiện");
+    }
+    setDashboardAlertHistoryOpen(false);
+  };
   useEffect(() => {
     const handleOpenAuditSession = (event: Event) => {
       const sessionId = Number((event as CustomEvent<{ sessionId?: unknown }>).detail?.sessionId);
@@ -1312,6 +1334,11 @@ export default function Home() {
             <div data-dashboard-alert-row className={`mt-5 grid gap-5 ${visibleOverdueAuditReminders.length > 0 && (visibleLowStockSupplies.length > 0 || lowStockSupplies.length === 0) ? "xl:grid-cols-2" : ""}`}>
               {visibleOverdueAuditReminders.length > 0 && <section data-overdue-audit-alert className="min-w-0 overflow-hidden rounded-xl border border-[#F2B18B] bg-[#FFF9F5] shadow-[0_8px_24px_rgba(16,42,67,0.045)]"><div className="flex min-h-[72px] flex-col gap-3 border-b border-[#F6D7C2] px-4 py-3 sm:flex-row sm:items-center sm:justify-between"><div className="flex items-center gap-2"><span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-[#FDEDEE] text-[#B44545]"><AlertTriangle size={16} /></span><div><h2 className="text-sm font-extrabold text-[#9E3F12]">Kiểm kê quá hạn</h2><p className="mt-0.5 text-[11px] text-[#A66B48]">Mở trực tiếp từng đợt để tiếp tục đối chiếu và chốt biên bản.</p></div></div><span className="w-fit rounded-full bg-[#FDEDEE] px-2.5 py-1 text-[10px] font-extrabold text-[#B44545]">{visibleOverdueAuditReminders.length} đợt cần xử lý</span></div><div className="divide-y divide-[#F6E3D6]">{visibleOverdueAuditReminders.slice(0, 3).map((reminder) => <div key={reminder.id} className="flex items-center justify-between gap-3 px-4 py-3"><button type="button" onClick={() => openAuditSessionFromReminder(reminder.auditSessionId)} className="min-w-0 flex-1 text-left transition hover:text-[#B44545]"><div className="truncate text-xs font-extrabold text-[#193B57]">{reminder.title}</div><div className="mt-0.5 flex flex-wrap items-center gap-1.5"><span className="font-mono text-[11px] text-[#A66B48]">{reminder.detail}</span><span className="rounded-full bg-[#FDEDEE] px-1.5 py-0.5 text-[9px] font-extrabold text-[#B44545]">Quá hạn {overdueDays(reminder.dueAt)} ngày</span></div></button><div className="flex shrink-0 items-center gap-1.5"><button type="button" onClick={() => dismissDashboardAlert(reminder.id)} className="rounded-md border border-[#EFC8CD] bg-white px-2 py-1.5 text-[10px] font-extrabold text-[#B44545] transition hover:bg-[#FDEDEE]" aria-label="Đánh dấu đã xem cảnh báo Kiểm kê">Đã xem</button><button type="button" onClick={() => openAuditSessionFromReminder(reminder.auditSessionId)} className="text-[11px] font-extrabold text-[#B44545]">Mở đợt →</button></div></div>)}</div></section>}              {visibleLowStockSupplies.length > 0 && <section data-low-stock-supply-alert className="min-w-0 overflow-hidden rounded-xl border border-[#F2D596] bg-white shadow-[0_8px_24px_rgba(16,42,67,0.045)]"><div className="flex min-h-[72px] flex-col gap-3 border-b border-[#F7E4B7] bg-[#FFF9EB] px-4 py-3 sm:flex-row sm:items-center sm:justify-between"><div className="flex items-center gap-2"><span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-white text-[#A86B00] shadow-sm"><Archive size={16} /></span><div><h2 className="text-sm font-extrabold text-[#8F5A00]">Phụ kiện chạm mức tồn tối thiểu</h2><p className="mt-0.5 text-[11px] text-[#8F6A31]">Ưu tiên số lượng tồn gần 0 nhất để bổ sung kịp thời.</p></div></div><div className="flex items-center gap-2"><span className="w-fit rounded-full bg-[#FFF0C9] px-2.5 py-1 text-[10px] font-extrabold text-[#A86B00]">{visibleLowStockSupplies.length} cần theo dõi</span><button onClick={() => navigateTo("Phụ kiện")} className="inline-flex shrink-0 items-center justify-center gap-2 rounded-lg border border-[#F2D596] bg-white px-3 py-2 text-xs font-bold text-[#A86B00] transition hover:bg-[#FFF5DC]"><Archive size={14} />Mở phụ kiện</button></div></div><div className="divide-y divide-[#F7E4B7]">{lowStockSupplyPreview.map((supply) => <div key={supply.id} className="flex items-center justify-between gap-3 px-4 py-3"><button type="button" onClick={() => { sessionStorage.setItem("assetmaster-open-supply-receipt-id", String(supply.id)); navigateTo("Phụ kiện"); }} aria-label="Tạo phiếu nhập kho" className="min-w-0 flex-1 text-left transition hover:text-[#A86B00]"><div className="truncate text-xs font-extrabold text-[#193B57]">{supply.name}</div><div className="mt-0.5 truncate font-mono text-[11px] text-[#8F6A31]">{supply.code}{supply.location ? " · " + supply.location : ""}</div></button><div className="flex shrink-0 items-center gap-2"><span className="text-right"><span className="block text-[10px] font-bold uppercase tracking-[.08em] text-[#A86B00]">Tồn / tối thiểu</span><span className="mt-0.5 block text-xs font-extrabold text-[#C75419]">{formatSupplyQuantity(supply.stockQuantity)} <span className="text-[10px] text-[#8F6A31]">/ {formatSupplyQuantity(supply.minimumQuantity)} {supply.unit}</span></span></span><button type="button" onClick={() => dismissDashboardAlert("supply-" + supply.id)} className="rounded-md border border-[#F2D596] bg-white px-2 py-1.5 text-[10px] font-extrabold text-[#A86B00] transition hover:bg-[#FFF5DC]" aria-label="Đánh dấu đã xem cảnh báo Phụ kiện">Đã xem</button></div></div>)}</div></section>}{lowStockSupplies.length === 0 && <section data-low-stock-supply-safe className="min-w-0 overflow-hidden rounded-xl border border-[#CDE5E5] bg-white shadow-[0_8px_24px_rgba(16,42,67,0.045)]"><div className="flex min-h-[72px] items-center gap-2 border-b border-[#DCE9ED] bg-[#F4FBFA] px-4 py-3"><span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-white text-[#087A6A] shadow-sm"><Archive size={16} /></span><div><h2 className="text-sm font-extrabold text-[#087A6A]">Phụ kiện chạm mức tồn tối thiểu</h2><p className="mt-0.5 text-[11px] text-[#4B8884]">Theo dõi các phụ kiện cần được nhập thêm để không gián đoạn vận hành.</p></div></div><div className="flex min-h-[120px] flex-col items-center justify-center px-5 py-6 text-center"><div className="grid h-9 w-9 place-items-center rounded-xl bg-[#E6F6F2] text-[#087A6A]"><CheckCircle2 size={18} /></div><div className="mt-2 text-sm font-extrabold text-[#087A6A]">Tồn kho phụ kiện đang an toàn</div><p className="mt-1 text-xs text-[#6B8F8D]">Chưa có phụ kiện nào chạm mức tồn tối thiểu.</p></div></section>}{dismissedDashboardAlertCount > 0 && <div data-dismissed-dashboard-alerts className={["flex items-center justify-between gap-3 rounded-xl border border-dashed border-[#D9E4E8] bg-[#FBFCFD] px-4 py-3 text-xs text-[#71869A]", visibleOverdueAuditReminders.length > 0 && visibleLowStockSupplies.length > 0 ? "xl:col-span-2" : ""].join(" ")}><span>Đã ẩn {dismissedDashboardAlertCount} cảnh báo đã xem.</span><button type="button" onClick={restoreDashboardAlerts} className="font-extrabold text-[#087A6A] hover:underline">Hiện lại</button></div>}
             </div>
+
+            <section data-dashboard-alert-history className="mt-4 overflow-hidden rounded-xl border border-[#D9E4E8] bg-white shadow-[0_8px_24px_rgba(16,42,67,0.045)]">
+              <div className="flex flex-col gap-3 px-4 py-3 sm:flex-row sm:items-center sm:justify-between"><div><h2 className="text-sm font-extrabold text-[#193B57]">Lịch sử cảnh báo đã xem</h2><p className="mt-0.5 text-[11px] text-[#71869A]">Xem lại thời điểm kiểm tra, mở đúng nghiệp vụ hoặc khôi phục từng cảnh báo.</p></div><button type="button" onClick={() => setDashboardAlertHistoryOpen((open) => !open)} className="w-fit rounded-lg border border-[#CDE5E5] bg-[#F8FCFB] px-3 py-2 text-xs font-extrabold text-[#087A6A] transition hover:bg-[#E6F6F2]">{dashboardAlertHistoryOpen ? "Thu gọn" : `Xem lịch sử${dashboardAlertHistory.length ? ` (${dashboardAlertHistory.length})` : ""}`}</button></div>
+              {dashboardAlertHistoryOpen && <div className="border-t border-[#E7EEF3]">{dashboardAlertHistoryQuery.isLoading ? <div className="space-y-2 p-4">{Array.from({ length: 3 }).map((_, index) => <div key={index} className="h-12 animate-pulse rounded-lg bg-[#F4F7F9]" />)}</div> : dashboardAlertHistory.length ? <div className="divide-y divide-[#E7EEF3]">{dashboardAlertHistory.map((item) => <div key={item.alertId} className="flex flex-col gap-3 px-4 py-3 sm:flex-row sm:items-center sm:justify-between"><button type="button" onClick={() => openDashboardAlertHistoryItem(item)} className="min-w-0 text-left"><div className="truncate text-xs font-extrabold text-[#193B57]">{item.kind === "audit" ? "Kiểm kê · " : "Phụ kiện · "}{item.title}</div><div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px]"><span className="font-mono text-[#71869A]">{item.detail}</span><span className="rounded-full bg-[#F4F7F9] px-1.5 py-0.5 font-semibold text-[#60758A]">Đã xem {new Intl.DateTimeFormat("vi-VN", { dateStyle: "short", timeStyle: "short" }).format(new Date(item.dismissedAt))}</span></div></button><div className="flex shrink-0 items-center gap-2"><button type="button" onClick={() => openDashboardAlertHistoryItem(item)} className="text-[11px] font-extrabold text-[#087A6A] hover:underline">Mở lại</button><button type="button" onClick={() => restoreDashboardAlertsMutation.mutate({ alertIds: [item.alertId] })} className="rounded-md border border-[#CDE5E5] bg-white px-2 py-1.5 text-[10px] font-extrabold text-[#527089] transition hover:bg-[#F4F7F9]">Hiện lại</button></div></div>)}</div> : <div className="px-4 py-8 text-center text-xs text-[#71869A]">Chưa có cảnh báo nào được đánh dấu Đã xem.</div>}</div>}
+            </section>
 
             <section className="mt-6 grid gap-5 xl:grid-cols-[1.1fr_0.9fr]">
               <div className="rounded-xl border border-[#DFE9F0] bg-white p-5 shadow-[0_8px_24px_rgba(16,42,67,0.045)]">

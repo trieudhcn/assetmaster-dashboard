@@ -32,6 +32,7 @@ const mocks = vi.hoisted(() => ({
   getNextRecoveryCertificateSequence: vi.fn(),
   getUserByEmployeeCode: vi.fn(),
   getUserNotificationPreferences: vi.fn(),
+  listUserDashboardAlertHistory: vi.fn(),
   listUserDashboardAlertStateIds: vi.fn(),
   listDepartments: vi.fn(),
   listAllDepartments: vi.fn(),
@@ -103,6 +104,7 @@ vi.mock("./db", () => ({
   getNextRetirementCertificateSequence: vi.fn().mockResolvedValue(1),
   getUserByEmployeeCode: mocks.getUserByEmployeeCode,
   getUserNotificationPreferences: mocks.getUserNotificationPreferences,
+  listUserDashboardAlertHistory: mocks.listUserDashboardAlertHistory,
   listUserDashboardAlertStateIds: mocks.listUserDashboardAlertStateIds,
   getMaintenanceTicket: vi.fn(),
   listAssets: vi.fn(),
@@ -540,14 +542,18 @@ describe("employee administration", () => {
   });
 
   it("stores dashboard alert review state per signed-in account", async () => {
+    const dismissedAt = new Date("2026-08-25T01:00:00.000Z");
     mocks.listUserDashboardAlertStateIds.mockResolvedValue(["audit-40"]);
+    mocks.listUserDashboardAlertHistory.mockResolvedValue([{ alertId: "audit-40", dismissedAt }]);
     const caller = appRouter.createCaller(userContext);
 
     await expect(caller.notifications.dashboardAlertStates()).resolves.toEqual({ alertIds: ["audit-40"] });
+    await expect(caller.notifications.dashboardAlertHistory({ limit: 20 })).resolves.toEqual([{ alertId: "audit-40", dismissedAt }]);
     await expect(caller.notifications.dismissDashboardAlerts({ alertIds: ["audit-40", "supply-12"] })).resolves.toEqual({ success: true });
     await expect(caller.notifications.restoreDashboardAlerts({ alertIds: ["audit-40"] })).resolves.toEqual({ success: true });
 
     expect(mocks.listUserDashboardAlertStateIds).toHaveBeenCalledWith(8);
+    expect(mocks.listUserDashboardAlertHistory).toHaveBeenCalledWith(8, 20);
     expect(mocks.dismissUserDashboardAlerts).toHaveBeenCalledWith(8, ["audit-40", "supply-12"]);
     expect(mocks.restoreUserDashboardAlerts).toHaveBeenCalledWith(8, ["audit-40"]);
   });

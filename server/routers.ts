@@ -105,6 +105,7 @@ import {
   getRetirementCertificateById,
   getUserMenuPreference,
   getUserNotificationPreferences,
+  listUserDashboardAlertHistory,
   listUserDashboardAlertStateIds,
   dismissUserDashboardAlerts,
   restoreUserDashboardAlerts,
@@ -423,6 +424,7 @@ export const appRouter = router({
       return { success: true };
     }),
     dashboardAlertStates: protectedProcedure.query(async ({ ctx }) => ({ alertIds: await listUserDashboardAlertStateIds(ctx.user.id) })),
+    dashboardAlertHistory: protectedProcedure.input(z.object({ limit: z.number().int().min(1).max(100).default(50) })).query(async ({ input, ctx }) => listUserDashboardAlertHistory(ctx.user.id, input.limit)),
     dismissDashboardAlerts: protectedProcedure.input(z.object({ alertIds: z.array(z.string().trim().min(1).max(160)).min(1).max(100) })).mutation(async ({ input, ctx }) => {
       await dismissUserDashboardAlerts(ctx.user.id, input.alertIds);
       return { success: true };

@@ -1,5 +1,13 @@
 # AssetMaster — Asset Catalog Expansion
 
+## Current Session — Lịch sử cảnh báo đã xem
+
+- [x] Mở rộng API trạng thái cảnh báo để trả lịch sử đã xem theo tài khoản và thời điểm.
+- [x] Hiển thị danh sách lịch sử cảnh báo đã xem trong Tổng quan.
+- [x] Cho phép mở lại đúng nghiệp vụ từ mỗi mục lịch sử và khôi phục cảnh báo khi cần.
+- [x] Bổ sung hồi quy, xác minh desktop/mobile, TypeScript và production build trước khi phát hành.
+- [x] Xác minh giao diện mobile cho khu vực Lịch sử cảnh báo đã xem trước khi phát hành.
+
 ## Current Session — Hai cảnh báo cùng hàng
 
 - [x] Khôi phục thẻ Kiểm kê quá hạn và Phụ kiện chạm mức tồn tối thiểu trên cùng một hàng ở desktop.
