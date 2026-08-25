@@ -66,6 +66,10 @@ describe("Bản quyền & Dịch vụ", () => {
     expect(styles).toContain("overflow-x: hidden !important");
     expect(styles).toContain("position: static");
     expect(styles).toContain("order: 10");
+    expect(styles).toContain("License modal: fixed panel shell");
+    expect(styles).toContain("height: min(48rem, calc(100dvh - 2rem)) !important");
+    expect(styles).toContain("overflow-y: auto !important");
+    expect(readFileSync(resolve(process.cwd(), "client/src/components/ui/dialog.tsx"), "utf8")).toContain("license-service-dialog-panel relative flex");
     expect(styles).toContain('content: "BẢN QUYỀN & DỊCH VỤ"');
     expect(styles).toContain("license-service-dialog-close");
     expect(readFileSync(resolve(process.cwd(), "client/src/components/ui/dialog.tsx"), "utf8")).toContain('licenseServiceDialog === "license"');

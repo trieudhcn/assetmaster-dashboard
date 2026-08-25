@@ -131,7 +131,7 @@ function DialogContent({
           onEscapeKeyDown={handleEscapeKeyDown}
           {...props}
         >
-          <div className={cn("relative max-h-[calc(100dvh-2rem)] w-[calc(100vw-2rem)] max-w-3xl overflow-y-auto rounded-lg border bg-background p-6 shadow-lg", className)}>
+          <div className="license-service-dialog-panel relative flex h-[min(48rem,calc(100dvh-2rem))] w-[calc(100vw-2rem)] max-w-3xl min-h-0 flex-col overflow-hidden rounded-lg border bg-background p-0 shadow-lg">
             {children}
             {showCloseButton && (
               <DialogPrimitive.Close

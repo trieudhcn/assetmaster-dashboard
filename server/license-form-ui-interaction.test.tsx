@@ -1,8 +1,11 @@
 /* @vitest-environment happy-dom */
 import React, { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { LicenseDocumentControls, LicenseDuplicatePortal } from "../client/src/pages/LicensesServicesManagementView";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "../client/src/components/ui/dialog";
 
 let root: Root | null = null;
 let container: HTMLDivElement | null = null;
@@ -52,5 +55,23 @@ describe("tương tác form Bản quyền", () => {
     act(() => duplicateButton.click());
     expect(onDuplicate).toHaveBeenCalledTimes(1);
     window.requestAnimationFrame = originalRaf;
+  });
+
+  it("render panel Bản quyền tách khung cố định, body cuộn dọc và footer thao tác", () => {
+    container = document.createElement("div");
+    document.body.append(container);
+    root = createRoot(container);
+    act(() => root?.render(<Dialog open><DialogContent data-licenses-services-dialog="license"><DialogHeader><DialogTitle>Thêm Bản quyền</DialogTitle><DialogDescription>Mô tả</DialogDescription></DialogHeader><form><input aria-label="Mã bản quyền" /><div className="flex justify-end"><button type="button">Hủy</button><button type="submit">Lưu</button></div></form></DialogContent></Dialog>));
+
+    const dialog = document.querySelector<HTMLElement>('[data-licenses-services-dialog="license"]')!;
+    const panel = dialog.querySelector<HTMLElement>(':scope > .license-service-dialog-panel')!;
+    const form = panel.querySelector<HTMLFormElement>("form")!;
+    expect(panel.className).toContain("overflow-hidden");
+    expect(form.querySelector(".flex.justify-end")?.textContent).toContain("Lưu");
+    const styles = readFileSync(resolve(process.cwd(), "client/src/index.css"), "utf8");
+    expect(styles).toContain('[data-licenses-services-dialog="license"] form {');
+    expect(styles).toContain("overflow-y: auto !important");
+    expect(styles).toContain("position: sticky");
+    expect(styles).toContain("overflow: hidden !important");
   });
 });

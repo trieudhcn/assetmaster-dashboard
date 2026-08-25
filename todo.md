@@ -33,6 +33,9 @@
 - [x] Loại bỏ tràn ngang và chuẩn hóa panel cuộn/footers của form Bản quyền theo form hệ thống.
 - [x] Bổ sung hồi quy và xác minh desktop/mobile cho lỗi vùng cuộn trước khi tiếp tục hạng mục đính kèm.
 - [x] Ghi nhận xác minh trực quan vùng cuộn form Bản quyền/Dịch vụ sau bản sửa tràn ngang.
+- [x] Thay panel modal Bản quyền bằng bố cục header–body–footer với chỉ vùng body cuộn dọc.
+- [x] Xác minh không còn thanh cuộn ngang và footer luôn ổn định trên desktop/mobile.
+- [x] Bổ sung kiểm thử UI rõ ràng cho panel Bản quyền chỉ cuộn body dọc và footer ổn định.
 
 ## Current Session — Bản quyền & Dịch vụ
 

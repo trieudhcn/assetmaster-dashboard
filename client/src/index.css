@@ -328,6 +328,47 @@ aside.fixed.inset-y-0 { animation: drawer-in 220ms cubic-bezier(0.23, 1, 0.32, 1
   margin-top: 0.5rem;
   padding: 1rem 0 0;
 }
+
+/* License modal: fixed panel shell with a single vertical scrolling body. */
+[data-licenses-services-dialog="license"] {
+  overflow: hidden !important;
+}
+[data-licenses-services-dialog="license"] > .license-service-dialog-panel {
+  box-sizing: border-box;
+  width: min(calc(100vw - 2rem), 48rem) !important;
+  height: min(48rem, calc(100dvh - 2rem)) !important;
+  max-width: none !important;
+  max-height: none !important;
+  min-height: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+}
+[data-licenses-services-dialog="license"] [data-slot="dialog-header"] {
+  flex: none;
+  margin: 0 !important;
+  padding: 1.25rem 4.5rem 1.1rem 1.5rem !important;
+}
+[data-licenses-services-dialog="license"] form {
+  flex: 1 1 auto;
+  min-height: 0;
+  margin: 0 !important;
+  padding: 1.25rem 1.5rem !important;
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+  align-content: start;
+  overscroll-behavior: contain;
+}
+[data-licenses-services-dialog="license"] form > .flex.justify-end {
+  position: sticky;
+  right: 0;
+  bottom: 0;
+  z-index: 2;
+  grid-column: 1 / -1;
+  margin: 0.75rem 0 0 !important;
+  padding: 1rem 0 0 !important;
+  background: #FFFFFF;
+}
 .popup-surface { animation: popover-in 180ms cubic-bezier(0.23, 1, 0.32, 1) both; transform-origin: top right; }
 .popup-surface--closing { animation: popover-out 170ms cubic-bezier(0.77, 0, 0.175, 1) both; pointer-events: none; }
 button[aria-label="Thông báo"] + div,
