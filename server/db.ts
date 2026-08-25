@@ -32,6 +32,7 @@ import {
   retirementCertificateAssets,
   retirementCertificates,
   softwareLicenseAssignments,
+  softwareLicenseDocuments,
   softwareLicenses,
   supplyImportItems,
   supplyImportSessions,
@@ -303,6 +304,31 @@ export async function updateSoftwareLicense(id: number, data: Partial<typeof sof
   const db = await getDb();
   if (!db) throw new Error("Database unavailable");
   await db.update(softwareLicenses).set(data).where(eq(softwareLicenses.id, id));
+}
+
+export async function listSoftwareLicenseDocuments(softwareLicenseId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(softwareLicenseDocuments).where(eq(softwareLicenseDocuments.softwareLicenseId, softwareLicenseId)).orderBy(desc(softwareLicenseDocuments.createdAt));
+}
+
+export async function getSoftwareLicenseDocumentById(id: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+  return (await db.select().from(softwareLicenseDocuments).where(eq(softwareLicenseDocuments.id, id)).limit(1))[0];
+}
+
+export async function createSoftwareLicenseDocument(data: typeof softwareLicenseDocuments.$inferInsert) {
+  const db = await getDb();
+  if (!db) throw new Error("Database unavailable");
+  const result = await db.insert(softwareLicenseDocuments).values(data);
+  return Number(result[0].insertId);
+}
+
+export async function deleteSoftwareLicenseDocument(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database unavailable");
+  await db.delete(softwareLicenseDocuments).where(eq(softwareLicenseDocuments.id, id));
 }
 
 export async function listSoftwareLicenseAssignments(softwareLicenseId?: number) {

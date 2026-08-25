@@ -1,6 +1,7 @@
-import { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 import { toast } from "sonner";
-import { CalendarDays, CheckCircle2, Globe2, KeyRound, Laptop, Network, Plus, RotateCcw, Search, ShieldCheck, UserRound } from "lucide-react";
+import { CalendarDays, CheckCircle2, Copy, Globe2, KeyRound, Laptop, Network, Paperclip, Plus, RotateCcw, Search, ShieldCheck, UserRound, X } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import { getDaysUntilExpiry, matchesExpiryFilter, sortByExpiry, type ExpiryFilter, type ExpirySortDirection } from "@/lib/expiryTracking";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogOverlay, DialogPortal, DialogTitle } from "@/components/ui/dialog";
@@ -20,6 +21,12 @@ type LicenseForm = {
   autoRenew: boolean;
   status: "active" | "expiring" | "expired" | "suspended" | "retired";
   note: string;
+};
+
+type PendingLicenseDocument = {
+  fileName: string;
+  contentType: "application/pdf" | "application/vnd.openxmlformats-officedocument.wordprocessingml.document" | "image/png" | "image/jpeg";
+  dataUrl: string;
 };
 
 type ServiceForm = {
@@ -49,6 +56,8 @@ const toDate = (value: string) => value ? new Date(`${value}T00:00:00`) : null;
 const nullable = (value: string) => value.trim() || null;
 const daysUntil = getDaysUntilExpiry;
 const formatVnd = (value: string | number | null | undefined) => Number(value || 0).toLocaleString("vi-VN", { maximumFractionDigits: 0 });
+const acceptedLicenseDocumentTypes = ["application/pdf", "application/vnd.openxmlformats-officedocument.wordprocessingml.document", "image/png", "image/jpeg"] as const;
+const readFileAsDataUrl = (file: File) => new Promise<string>((resolve, reject) => { const reader = new FileReader(); reader.onload = () => resolve(String(reader.result || "")); reader.onerror = () => reject(reader.error); reader.readAsDataURL(file); });
 
 const serviceMeta = {
   internet: { label: "Đường truyền Internet", icon: Network, tone: "text-[#3278BD] bg-[#EAF3FF]" },
@@ -78,8 +87,11 @@ export function LicensesServicesManagementView() {
   const [serviceModal, setServiceModal] = useState<"create" | number | null>(() => new URLSearchParams(window.location.search).get("createService") === "1" ? "create" : null);
   const [assignmentLicenseId, setAssignmentLicenseId] = useState<number | null>(null);
   const [licenseForm, setLicenseForm] = useState<LicenseForm>(blankLicense);
+  const [pendingLicenseDocument, setPendingLicenseDocument] = useState<PendingLicenseDocument | null>(null);
+  const [licenseDocumentType, setLicenseDocumentType] = useState<"contract" | "renewal" | "other">("contract");
   const [serviceForm, setServiceForm] = useState<ServiceForm>(blankService);
   const [assignmentForm, setAssignmentForm] = useState({ assetId: "", userId: "", assignedToName: "", deviceName: "", assignedAt: toDateField(new Date()), note: "" });
+  const licenseDocumentsQuery = trpc.softwareLicenses.documents.useQuery({ softwareLicenseId: typeof licenseModal === "number" ? licenseModal : 0 }, { enabled: typeof licenseModal === "number" });
 
   useEffect(() => {
     if (serviceModal === null) return;
@@ -90,7 +102,9 @@ export function LicensesServicesManagementView() {
   }, [serviceModal]);
 
   const refresh = () => { void utils.softwareLicenses.list.invalidate(); void utils.softwareLicenses.assignments.invalidate(); void utils.technologyServices.list.invalidate(); };
-  const createLicense = trpc.softwareLicenses.create.useMutation({ onSuccess: () => { refresh(); setLicenseModal(null); toast.success("Đã thêm bản quyền phần mềm."); }, onError: (error) => toast.error(error.message || "Không thể thêm bản quyền.") });
+  const uploadLicenseDocument = trpc.softwareLicenses.uploadDocument.useMutation({ onSuccess: () => { void utils.softwareLicenses.documents.invalidate(); setPendingLicenseDocument(null); toast.success("Đã tải tài liệu Bản quyền."); }, onError: (error) => toast.error(error.message || "Không thể tải tài liệu Bản quyền.") });
+  const removeLicenseDocument = trpc.softwareLicenses.removeDocument.useMutation({ onSuccess: () => { void utils.softwareLicenses.documents.invalidate(); toast.success("Đã gỡ tài liệu Bản quyền."); }, onError: (error) => toast.error(error.message || "Không thể gỡ tài liệu Bản quyền.") });
+  const createLicense = trpc.softwareLicenses.create.useMutation({ onSuccess: (created) => { refresh(); if (pendingLicenseDocument) uploadLicenseDocument.mutate({ softwareLicenseId: created.id, documentType: licenseDocumentType, ...pendingLicenseDocument }); setLicenseModal(null); toast.success(pendingLicenseDocument ? "Đã thêm Bản quyền, đang lưu tài liệu." : "Đã thêm bản quyền phần mềm."); }, onError: (error) => toast.error(error.message || "Không thể thêm bản quyền.") });
   const updateLicense = trpc.softwareLicenses.update.useMutation({ onSuccess: () => { refresh(); setLicenseModal(null); toast.success("Đã cập nhật bản quyền."); }, onError: (error) => toast.error(error.message || "Không thể cập nhật bản quyền.") });
   const assignLicense = trpc.softwareLicenses.assign.useMutation({ onSuccess: () => { refresh(); setAssignmentLicenseId(null); toast.success("Đã cấp phát bản quyền."); }, onError: (error) => toast.error(error.message || "Không thể cấp phát bản quyền.") });
   const revokeAssignment = trpc.softwareLicenses.revokeAssignment.useMutation({ onSuccess: () => { refresh(); toast.success("Đã thu hồi cấp phát bản quyền."); }, onError: (error) => toast.error(error.message || "Không thể thu hồi cấp phát.") });
@@ -123,7 +137,25 @@ export function LicensesServicesManagementView() {
   const assignmentDirectoryUnavailable = assetsQuery.isLoading || assetsQuery.isError || usersQuery.isLoading || usersQuery.isError;
   const openLicense = (license?: typeof licenses[number]) => {
     setLicenseForm(license ? { licenseCode: license.licenseCode, productName: license.productName, publisher: license.publisher || "", edition: license.edition || "", licenseModel: license.licenseModel, licenseKey: license.licenseKey || "", purchasedQuantity: String(license.purchasedQuantity), vendorId: license.vendorId ? String(license.vendorId) : "", purchasedAt: toDateField(license.purchasedAt), expiresAt: toDateField(license.expiresAt), autoRenew: license.autoRenew, status: license.status, note: license.note || "" } : blankLicense());
+    setPendingLicenseDocument(null);
+    setLicenseDocumentType("contract");
     setLicenseModal(license?.id || "create");
+  };
+  const duplicateLicense = (license: typeof licenses[number]) => {
+    setLicenseForm({ licenseCode: "", productName: license.productName, publisher: license.publisher || "", edition: license.edition || "", licenseModel: license.licenseModel, licenseKey: "", purchasedQuantity: String(license.purchasedQuantity), vendorId: license.vendorId ? String(license.vendorId) : "", purchasedAt: "", expiresAt: "", autoRenew: license.autoRenew, status: "active", note: license.note || "" });
+    setPendingLicenseDocument(null);
+    setLicenseDocumentType("contract");
+    setLicenseModal("create");
+    toast.success("Đã sao chép thông tin. Hãy nhập Mã bản quyền và khóa mới.");
+  };
+  const selectLicenseDocument = async (file: File) => {
+    if (!acceptedLicenseDocumentTypes.includes(file.type as typeof acceptedLicenseDocumentTypes[number]) || file.size > 5 * 1024 * 1024) { toast.error("Chỉ hỗ trợ PDF, DOCX, PNG, JPG; tối đa 5 MB."); return; }
+    try { setPendingLicenseDocument({ fileName: file.name, contentType: file.type as PendingLicenseDocument["contentType"], dataUrl: await readFileAsDataUrl(file) }); }
+    catch { toast.error("Không thể đọc tệp đã chọn."); }
+  };
+  const uploadPendingLicenseDocument = () => {
+    if (typeof licenseModal !== "number" || !pendingLicenseDocument) return;
+    uploadLicenseDocument.mutate({ softwareLicenseId: licenseModal, documentType: licenseDocumentType, ...pendingLicenseDocument });
   };
   const openService = (service?: typeof services[number]) => {
     setServiceForm(service ? { serviceCode: service.serviceCode, serviceType: service.serviceType, name: service.name, vendorId: service.vendorId ? String(service.vendorId) : "", branchId: service.branchId ? String(service.branchId) : "", accountReference: service.accountReference || "", billingReference: service.billingReference || "", domainName: service.domainName || "", serviceEndpoint: service.serviceEndpoint || "", startedAt: toDateField(service.startedAt), renewalAt: toDateField(service.renewalAt), expiresAt: toDateField(service.expiresAt), autoRenew: service.autoRenew, billingCycle: service.billingCycle, costAmount: service.costAmount || "", status: service.status, note: service.note || "" } : blankService());
@@ -148,6 +180,8 @@ export function LicensesServicesManagementView() {
   };
 
   return <section className="mx-auto max-w-[1500px] px-4 py-7 sm:px-6 lg:px-9 lg:py-8">
+    <LicenseDocumentPortal isOpen={licenseModal !== null} licenseId={typeof licenseModal === "number" ? licenseModal : null} documents={licenseDocumentsQuery.data || []} documentType={licenseDocumentType} pending={pendingLicenseDocument} isBusy={uploadLicenseDocument.isPending} onDocumentTypeChange={setLicenseDocumentType} onSelectFile={(file) => { void selectLicenseDocument(file); }} onClearPending={() => setPendingLicenseDocument(null)} onUpload={uploadPendingLicenseDocument} onRemove={(id) => removeLicenseDocument.mutate({ id })} />
+    <LicenseDuplicatePortal isOpen={typeof licenseModal === "number"} onDuplicate={() => { if (openingLicense) duplicateLicense(openingLicense); }} />
     <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between"><div><div className="mb-2 flex items-center gap-2 text-[11px] font-bold uppercase tracking-[.16em] text-[#0F8C8C]"><span className="h-1.5 w-1.5 rounded-full bg-[#F0A516]" />HẠ TẦNG SỐ</div><h1 className="font-display text-[28px] font-extrabold tracking-[-0.045em] text-[#102A43] sm:text-[34px]">Bản quyền & Dịch vụ</h1><p className="mt-1.5 text-sm text-[#71869A]">Quản lý license Windows, Office, phần mềm và thời hạn Internet, Tên miền, SSL.</p></div><div className="flex flex-wrap gap-2"><button onClick={() => tab === "licenses" ? openLicense() : openService()} className="inline-flex items-center gap-2 rounded-lg bg-[#0F8C8C] px-4 py-2.5 text-xs font-extrabold text-white shadow-[0_8px_18px_rgba(15,140,140,0.18)] transition hover:bg-[#087A6A]"><Plus size={15} />{tab === "licenses" ? "Thêm bản quyền" : "Thêm dịch vụ"}</button></div></div>
 
     <section className="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-4"><SummaryCard label="Bản quyền đang quản lý" value={licenses.length} icon={KeyRound} tone="teal" /><SummaryCard label="Đã cấp phát" value={`${activeAssignments.length} / ${licenses.reduce((sum, item) => sum + item.purchasedQuantity, 0)}`} icon={Laptop} tone="blue" /><SummaryCard label="Sắp hết hạn" value={nearDueLicenses.length + nearDueServices.length} icon={CalendarDays} tone="amber" detail="Trong 30 ngày tới" /><SummaryCard label="Dịch vụ đang hoạt động" value={services.filter((item) => item.status === "active").length} icon={Globe2} tone="navy" /></section>
@@ -176,6 +210,31 @@ function SummaryCard({ label, value, icon: Icon, tone, detail }: { label: string
 
 function Field({ label, children, className = "", required = false }: { label: string; children: React.ReactNode; className?: string; required?: boolean }) {
   return <label className={`grid gap-1.5 text-xs font-bold text-[#527089] ${className}`}><span>{label}{required && <span className="ml-1 text-[#B44545]">*</span>}</span>{children}</label>;
+}
+
+export function LicenseDocumentControls({ licenseId, documents, documentType, pending, isBusy, onDocumentTypeChange, onSelectFile, onClearPending, onUpload, onRemove }: { licenseId: number | null; documents: Array<{ id: number; fileName: string; url: string; documentType: "contract" | "renewal" | "other" }>; documentType: "contract" | "renewal" | "other"; pending: PendingLicenseDocument | null; isBusy: boolean; onDocumentTypeChange: (value: "contract" | "renewal" | "other") => void; onSelectFile: (file: File) => void; onClearPending: () => void; onUpload: () => void; onRemove: (id: number) => void }) {
+  const labels = { contract: "Hợp đồng", renewal: "Tài liệu gia hạn", other: "Tài liệu khác" };
+  return <div data-license-document-controls className="license-document-controls sm:col-span-2"><div className="flex flex-wrap items-start justify-between gap-3"><div><div className="flex items-center gap-2 text-xs font-extrabold text-[#193B57]"><Paperclip size={15} className="text-[#087A6A]" />Tệp đính kèm</div><p className="mt-1 text-[11px] leading-5 text-[#71869A]">PDF, DOCX, PNG hoặc JPG; tối đa 5 MB.</p></div><select value={documentType} onChange={(event) => onDocumentTypeChange(event.target.value as typeof documentType)} className="form-input w-auto min-w-[156px]"><option value="contract">Hợp đồng</option><option value="renewal">Tài liệu gia hạn</option><option value="other">Tài liệu khác</option></select></div><div className="mt-3 flex flex-wrap items-center gap-2"><label className="inline-flex min-h-9 cursor-pointer items-center gap-2 rounded-lg border border-[#CDE5E5] bg-white px-3 text-[11px] font-extrabold text-[#087A6A] transition hover:bg-[#ECF8F7]"><Paperclip size={14} />Chọn tệp<input type="file" accept=".pdf,.docx,.png,.jpg,.jpeg" className="hidden" onChange={(event) => { const file = event.target.files?.[0]; if (file) onSelectFile(file); event.currentTarget.value = ""; }} /></label>{pending && <><span className="max-w-[260px] truncate text-[11px] font-bold text-[#527089]" title={pending.fileName}>{pending.fileName}</span><button type="button" onClick={onClearPending} aria-label="Bỏ tệp đã chọn" className="grid h-8 w-8 place-items-center rounded-md text-[#8AA0B6] transition hover:bg-[#FDEDEE] hover:text-[#B44545]"><X size={15} /></button>{licenseId ? <button type="button" disabled={isBusy} onClick={onUpload} className="form-button-primary min-h-9 px-3 text-[11px]">{isBusy ? "Đang tải..." : "Tải tệp"}</button> : <span className="text-[11px] font-semibold text-[#71869A]">Sẽ lưu sau khi tạo Bản quyền.</span>}</>}</div>{licenseId ? <div className="mt-3 space-y-2">{documents.map((document) => <div key={document.id} className="flex items-center gap-3 rounded-lg border border-[#E7EEF3] bg-white px-3 py-2.5"><Paperclip size={14} className="shrink-0 text-[#087A6A]" /><a href={document.url} target="_blank" rel="noreferrer" className="min-w-0 flex-1 truncate text-xs font-bold text-[#193B57] hover:text-[#087A6A] hover:underline">{document.fileName}</a><span className="hidden rounded-full bg-[#F4F7F9] px-2 py-1 text-[10px] font-bold text-[#60758A] sm:inline">{labels[document.documentType]}</span><button type="button" onClick={() => onRemove(document.id)} aria-label={`Gỡ ${document.fileName}`} className="grid h-7 w-7 place-items-center rounded-md text-[#8AA0B6] transition hover:bg-[#FDEDEE] hover:text-[#B44545]"><X size={14} /></button></div>)}{!documents.length && <p className="rounded-lg border border-dashed border-[#CDE5E5] bg-white/60 px-3 py-3 text-center text-xs text-[#71869A]">Chưa có tệp hợp đồng hoặc gia hạn.</p>}</div> : null}</div>;
+}
+
+function LicenseDocumentPortal({ isOpen, ...props }: React.ComponentProps<typeof LicenseDocumentControls> & { isOpen: boolean }) {
+  const [target, setTarget] = useState<HTMLFormElement | null>(null);
+  useEffect(() => {
+    if (!isOpen) { setTarget(null); return; }
+    const frame = window.requestAnimationFrame(() => setTarget(document.querySelector<HTMLFormElement>('[data-licenses-services-dialog="license"] form')));
+    return () => window.cancelAnimationFrame(frame);
+  }, [isOpen, props.licenseId]);
+  return target ? createPortal(<LicenseDocumentControls {...props} />, target) : null;
+}
+
+export function LicenseDuplicatePortal({ isOpen, onDuplicate }: { isOpen: boolean; onDuplicate: () => void }) {
+  const [target, setTarget] = useState<HTMLFormElement | null>(null);
+  useEffect(() => {
+    if (!isOpen) { setTarget(null); return; }
+    const frame = window.requestAnimationFrame(() => setTarget(document.querySelector<HTMLFormElement>('[data-licenses-services-dialog="license"] form')));
+    return () => window.cancelAnimationFrame(frame);
+  }, [isOpen]);
+  return target ? createPortal(<div className="order-first flex justify-end sm:col-span-2"><button type="button" onClick={onDuplicate} className="inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-[#CDE5E5] bg-white px-3 text-[11px] font-extrabold text-[#087A6A] transition hover:bg-[#E6F6F2]"><Copy size={14} />Nhân bản Bản quyền</button></div>, target) : null;
 }
 
 function StatusBadge({ status }: { status: string }) {

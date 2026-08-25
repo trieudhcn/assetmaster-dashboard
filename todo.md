@@ -26,6 +26,13 @@
 - [x] Đồng bộ cấu trúc header, trường nhập và footer form Bản quyền/Dịch vụ theo chuẩn Danh mục tài sản.
 - [x] Bổ sung hồi quy và xác minh desktop/mobile cho form đã đồng bộ.
 - [x] Ghi nhận xác minh trực quan chi tiết header, trường nhập và footer form đã đồng bộ trên desktop/mobile.
+- [x] Thêm tệp đính kèm hợp đồng/tài liệu gia hạn cho Bản quyền bằng lưu trữ an toàn.
+- [x] Thêm nhân bản Bản quyền để điền nhanh biểu mẫu mới nhưng tạo mã Bản quyền riêng.
+- [x] Bổ sung migration, tRPC, hồi quy, xác minh desktop/mobile và build trước khi phát hành.
+- [x] Bổ sung kiểm thử UI tương tác cho khối Tệp đính kèm và nút Nhân bản trong form Bản quyền.
+- [x] Loại bỏ tràn ngang và chuẩn hóa panel cuộn/footers của form Bản quyền theo form hệ thống.
+- [x] Bổ sung hồi quy và xác minh desktop/mobile cho lỗi vùng cuộn trước khi tiếp tục hạng mục đính kèm.
+- [x] Ghi nhận xác minh trực quan vùng cuộn form Bản quyền/Dịch vụ sau bản sửa tràn ngang.
 
 ## Current Session — Bản quyền & Dịch vụ
 

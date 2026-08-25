@@ -8,18 +8,21 @@ const mocks = vi.hoisted(() => ({
   createDepartment: vi.fn(),
   createDivision: vi.fn(),
   createSoftwareLicense: vi.fn(),
+  createSoftwareLicenseDocument: vi.fn(),
   createSoftwareLicenseAssignment: vi.fn(),
   createTechnologyService: vi.fn(),
   createVendor: vi.fn(),
   createBrand: vi.fn(),
   createVendorDocument: vi.fn(),
   deleteVendorDocument: vi.fn(),
+  deleteSoftwareLicenseDocument: vi.fn(),
   createHandover: vi.fn(),
   createHandoverSupplyItem: vi.fn(),
   createInventoryMovement: vi.fn(),
   getAssetById: vi.fn(),
   getInventorySupplyById: vi.fn(),
   getSoftwareLicenseById: vi.fn(),
+  getSoftwareLicenseDocumentById: vi.fn(),
   getVendorById: vi.fn(),
   getVendorByName: vi.fn(),
   getVendorDocumentById: vi.fn(),
@@ -50,6 +53,7 @@ const mocks = vi.hoisted(() => ({
   listVendorDocuments: vi.fn(),
   listSoftwareLicenses: vi.fn(),
   listSoftwareLicenseAssignments: vi.fn(),
+  listSoftwareLicenseDocuments: vi.fn(),
   listTechnologyServices: vi.fn(),
   listHandoversByRecipient: vi.fn(),
   listHandoverSupplyItems: vi.fn(),
@@ -90,12 +94,14 @@ vi.mock("./db", () => ({
   createDepartment: mocks.createDepartment,
   createDivision: mocks.createDivision,
   createSoftwareLicense: mocks.createSoftwareLicense,
+  createSoftwareLicenseDocument: mocks.createSoftwareLicenseDocument,
   createSoftwareLicenseAssignment: mocks.createSoftwareLicenseAssignment,
   createTechnologyService: mocks.createTechnologyService,
   createVendor: mocks.createVendor,
   createBrand: mocks.createBrand,
   createVendorDocument: mocks.createVendorDocument,
   deleteVendorDocument: mocks.deleteVendorDocument,
+  deleteSoftwareLicenseDocument: mocks.deleteSoftwareLicenseDocument,
   createHandover: mocks.createHandover,
   createHandoverSupplyItem: mocks.createHandoverSupplyItem,
   createInventoryMovement: mocks.createInventoryMovement,
@@ -104,6 +110,7 @@ vi.mock("./db", () => ({
   getAssetById: mocks.getAssetById,
   getInventorySupplyById: mocks.getInventorySupplyById,
   getSoftwareLicenseById: mocks.getSoftwareLicenseById,
+  getSoftwareLicenseDocumentById: mocks.getSoftwareLicenseDocumentById,
   getVendorById: mocks.getVendorById,
   getVendorByName: mocks.getVendorByName,
   getVendorDocumentById: mocks.getVendorDocumentById,
@@ -138,6 +145,7 @@ vi.mock("./db", () => ({
   listVendorDocuments: mocks.listVendorDocuments,
   listSoftwareLicenses: mocks.listSoftwareLicenses,
   listSoftwareLicenseAssignments: mocks.listSoftwareLicenseAssignments,
+  listSoftwareLicenseDocuments: mocks.listSoftwareLicenseDocuments,
   listTechnologyServices: mocks.listTechnologyServices,
   listHandovers: vi.fn(),
   listHandoversByRecipient: mocks.listHandoversByRecipient,
@@ -263,6 +271,10 @@ describe("employee administration", () => {
     mocks.recordActivity.mockResolvedValue(undefined);
     mocks.listHandoversByRecipient.mockResolvedValue([{ id: 91, assetCode: "TS-00091", assetName: "Laptop cá nhân", status: "active" }]);
     mocks.storagePut.mockResolvedValue({ key: "vendors/41/documents/bao-gia.pdf", url: "/manus-storage/vendors/41/documents/bao-gia.pdf" });
+    mocks.listSoftwareLicenseDocuments.mockResolvedValue([]);
+    mocks.createSoftwareLicenseDocument.mockResolvedValue(120);
+    mocks.deleteSoftwareLicenseDocument.mockResolvedValue(undefined);
+    mocks.getSoftwareLicenseDocumentById.mockResolvedValue({ id: 120, softwareLicenseId: 71, fileName: "gia-han.pdf" });
   });
 
   it("allows administrators to list active departments", async () => {
@@ -612,6 +624,19 @@ describe("employee administration", () => {
     expect(mocks.createSoftwareLicense).toHaveBeenCalledWith(expect.objectContaining({ licenseCode: "LIC-001", createdByUserId: 1 }));
     expect(mocks.createSoftwareLicenseAssignment).toHaveBeenCalledWith(expect.objectContaining({ softwareLicenseId: 71, status: "active", assignedToName: "Máy Kế toán" }));
     expect(mocks.createTechnologyService).toHaveBeenCalledWith(expect.objectContaining({ serviceCode: "DOM-001", costAmount: "300000", createdByUserId: 1 }));
+  });
+
+  it("stores contract and renewal documents for an existing software license", async () => {
+    mocks.getSoftwareLicenseById.mockResolvedValue({ id: 71, licenseCode: "LIC-001", productName: "Microsoft 365", purchasedQuantity: 2 });
+    mocks.storagePut.mockResolvedValue({ key: "software-licenses/71/documents/gia-han.pdf", url: "/manus-storage/software-licenses/71/documents/gia-han.pdf" });
+    const caller = appRouter.createCaller(adminContext);
+
+    await expect(caller.softwareLicenses.documents({ softwareLicenseId: 71 })).resolves.toEqual([]);
+    await expect(caller.softwareLicenses.uploadDocument({ softwareLicenseId: 71, documentType: "renewal", fileName: "gia-han.pdf", contentType: "application/pdf", dataUrl: "data:application/pdf;base64,SGVsbG8=" })).resolves.toMatchObject({ id: 120, fileName: "gia-han.pdf", fileSize: 5 });
+    expect(mocks.storagePut).toHaveBeenCalledWith(expect.stringMatching(/^software-licenses\/71\/documents\//), expect.any(Buffer), "application/pdf");
+    expect(mocks.createSoftwareLicenseDocument).toHaveBeenCalledWith(expect.objectContaining({ softwareLicenseId: 71, documentType: "renewal", fileName: "gia-han.pdf", fileSize: 5 }));
+    await expect(caller.softwareLicenses.removeDocument({ id: 120 })).resolves.toEqual({ success: true });
+    expect(mocks.deleteSoftwareLicenseDocument).toHaveBeenCalledWith(120);
   });
 
   it("allows the recipient to submit a follow-up and mark a rejected return result as seen", async () => {

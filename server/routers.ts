@@ -44,6 +44,7 @@ import {
   createRetirementCertificate,
   createRetirementCertificateAssets,
   createSoftwareLicense,
+  createSoftwareLicenseDocument,
   createSoftwareLicenseAssignment,
   createTechnologyService,
   createVendor,
@@ -59,6 +60,7 @@ import {
   deletePurchaseContractItemsBySupplyId,
   deletePurchaseInvoiceDocument,
   deletePurchaseInvoiceLine,
+  deleteSoftwareLicenseDocument,
   deleteVendorDocument,
   getAssetById,
   getAssetImportSessionById,
@@ -107,6 +109,7 @@ import {
   getPurchaseInvoiceLineById,
   getRetirementCertificateById,
   getSoftwareLicenseById,
+  getSoftwareLicenseDocumentById,
   getUserMenuPreference,
   getUserNotificationPreferences,
   listUserDashboardAlertHistory,
@@ -131,6 +134,7 @@ import {
   listRetirementCertificateAssetAssignments,
   listRetirementCertificates,
   listSoftwareLicenseAssignments,
+  listSoftwareLicenseDocuments,
   listSoftwareLicenses,
   getNextRepairTicketSequence,
   getNextWarrantyRequestSequence,
@@ -683,6 +687,7 @@ export const appRouter = router({
   softwareLicenses: router({
     list: adminProcedure.query(() => listSoftwareLicenses()),
     assignments: adminProcedure.input(z.object({ softwareLicenseId: z.number().int().positive() }).optional()).query(({ input }) => listSoftwareLicenseAssignments(input?.softwareLicenseId)),
+    documents: adminProcedure.input(z.object({ softwareLicenseId: z.number().int().positive() })).query(({ input }) => listSoftwareLicenseDocuments(input.softwareLicenseId)),
     create: adminProcedure.input(z.object({
       licenseCode: z.string().trim().min(2).max(64),
       productName: z.string().trim().min(2).max(255),
@@ -730,6 +735,32 @@ export const appRouter = router({
       }
       await updateSoftwareLicense(id, changes);
       await recordActivity({ entityType: "softwareLicense", entityId: id, action: "updated", actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: `Cập nhật bản quyền ${changes.productName || existing.productName}` });
+      return { success: true };
+    }),
+    uploadDocument: adminProcedure.input(z.object({
+      softwareLicenseId: z.number().int().positive(),
+      documentType: z.enum(["contract", "renewal", "other"]),
+      fileName: z.string().trim().min(1).max(255),
+      contentType: z.enum(["application/pdf", "application/vnd.openxmlformats-officedocument.wordprocessingml.document", "image/png", "image/jpeg"]),
+      dataUrl: z.string().max(7_500_000).regex(/^data:(application\/pdf|application\/vnd\.openxmlformats-officedocument\.wordprocessingml\.document|image\/(png|jpeg));base64,/),
+    })).mutation(async ({ input, ctx }) => {
+      const license = await getSoftwareLicenseById(input.softwareLicenseId);
+      if (!license) throw new TRPCError({ code: "NOT_FOUND", message: "Không tìm thấy bản quyền phần mềm." });
+      const buffer = Buffer.from(input.dataUrl.split(",", 2)[1], "base64");
+      if (!buffer.length || buffer.length > 5 * 1024 * 1024) throw new TRPCError({ code: "BAD_REQUEST", message: "Tài liệu phải có dung lượng từ 1 byte đến 5 MB." });
+      const extensionByContentType: Record<string, string> = { "application/pdf": "pdf", "application/vnd.openxmlformats-officedocument.wordprocessingml.document": "docx", "image/png": "png", "image/jpeg": "jpg" };
+      const safeBaseName = input.fileName.replace(/[^a-zA-Z0-9._-]/g, "-").replace(/-+/g, "-").slice(0, 120) || "tai-lieu-ban-quyen";
+      const storageKey = `software-licenses/${license.id}/documents/${Date.now()}-${safeBaseName}.${extensionByContentType[input.contentType]}`;
+      const { url } = await storagePut(storageKey, buffer, input.contentType);
+      const id = await createSoftwareLicenseDocument({ softwareLicenseId: license.id, documentType: input.documentType, fileName: input.fileName, contentType: input.contentType, fileSize: buffer.length, storageKey, url, uploadedByUserId: ctx.user!.id, uploadedByName: ctx.user!.name ?? "Quản trị viên" });
+      await recordActivity({ entityType: "softwareLicenseDocument", entityId: id, action: "uploaded", actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: `Tải tài liệu ${input.fileName} cho Bản quyền ${license.licenseCode}` });
+      return { id, url, fileName: input.fileName, contentType: input.contentType, fileSize: buffer.length };
+    }),
+    removeDocument: adminProcedure.input(z.object({ id: z.number().int().positive() })).mutation(async ({ input, ctx }) => {
+      const document = await getSoftwareLicenseDocumentById(input.id);
+      if (!document) throw new TRPCError({ code: "NOT_FOUND", message: "Không tìm thấy tài liệu Bản quyền." });
+      await deleteSoftwareLicenseDocument(document.id);
+      await recordActivity({ entityType: "softwareLicenseDocument", entityId: document.id, action: "removed", actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: `Gỡ tài liệu ${document.fileName} của Bản quyền` });
       return { success: true };
     }),
     assign: adminProcedure.input(z.object({

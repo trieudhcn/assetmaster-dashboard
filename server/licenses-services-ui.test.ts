@@ -17,7 +17,16 @@ describe("Bản quyền & Dịch vụ", () => {
 
     expect(view).toContain("trpc.softwareLicenses.list.useQuery");
     expect(view).toContain("trpc.softwareLicenses.assign.useMutation");
-    expect(view).toContain('trpc.softwareLicenses.create.useMutation({ onSuccess: () => { refresh(); setLicenseModal(null); toast.success("Đã thêm bản quyền phần mềm."); }');
+    expect(view).toContain("trpc.softwareLicenses.create.useMutation");
+    expect(view).toContain("trpc.softwareLicenses.documents.useQuery");
+    expect(view).toContain("trpc.softwareLicenses.uploadDocument.useMutation");
+    expect(view).toContain("trpc.softwareLicenses.removeDocument.useMutation");
+    expect(view).toContain("LicenseDocumentControls");
+    expect(view).toContain("Tệp đính kèm");
+    expect(view).toContain("Tài liệu gia hạn");
+    expect(view).toContain("Nhân bản Bản quyền");
+    expect(view).toContain("licenseCode: \"\"");
+    expect(view).toContain("khóa mới");
     expect(view).toContain("trpc.technologyServices.list.useQuery");
     expect(view).toContain("Bản quyền sắp hết hạn");
     expect(view).toContain("Dịch vụ sắp hết hạn");
@@ -54,7 +63,9 @@ describe("Bản quyền & Dịch vụ", () => {
     expect(styles).toContain('[data-licenses-services-dialog="service"]');
     expect(styles).toContain("place-items: center !important");
     expect(styles).toContain('[data-licenses-services-dialog="license"] .form-input');
-    expect(styles).toContain("position: sticky");
+    expect(styles).toContain("overflow-x: hidden !important");
+    expect(styles).toContain("position: static");
+    expect(styles).toContain("order: 10");
     expect(styles).toContain('content: "BẢN QUYỀN & DỊCH VỤ"');
     expect(styles).toContain("license-service-dialog-close");
     expect(readFileSync(resolve(process.cwd(), "client/src/components/ui/dialog.tsx"), "utf8")).toContain('licenseServiceDialog === "license"');

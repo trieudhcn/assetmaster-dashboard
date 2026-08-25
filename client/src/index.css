@@ -240,6 +240,7 @@ aside.fixed.inset-y-0 { animation: drawer-in 220ms cubic-bezier(0.23, 1, 0.32, 1
   max-height: calc(100dvh - 2rem) !important;
   margin: 0 !important;
   animation: none !important;
+  overflow-x: hidden !important;
 }
 [data-licenses-services-dialog="license"] form,
 [data-licenses-services-dialog="service"] form { margin-top: 1rem; gap: 1rem; }
@@ -267,13 +268,12 @@ aside.fixed.inset-y-0 { animation: drawer-in 220ms cubic-bezier(0.23, 1, 0.32, 1
 [data-licenses-services-dialog="service"] textarea.form-input { min-height: 5.5rem; resize: vertical; }
 [data-licenses-services-dialog="license"] form > .flex.justify-end,
 [data-licenses-services-dialog="service"] form > .flex.justify-end {
-  position: sticky;
-  bottom: -1.5rem;
-  z-index: 1;
-  margin: 0.25rem -1.5rem -1.5rem;
+  order: 10;
+  position: static;
+  margin: 0.5rem 0 0;
   border-top: 1px solid #E7EEF3;
-  background: rgba(255, 255, 255, 0.97);
-  padding: 0.9rem 1.5rem;
+  background: transparent;
+  padding: 1rem 0 0;
 }
 [data-licenses-services-dialog="license"] .form-button-primary,
 [data-licenses-services-dialog="service"] .form-button-primary,
@@ -282,10 +282,12 @@ aside.fixed.inset-y-0 { animation: drawer-in 220ms cubic-bezier(0.23, 1, 0.32, 1
 
 /* Match the Asset Catalog form vocabulary: branded header, white form surface and clear action footer. */
 :is([data-licenses-services-dialog="license"] > div, [data-licenses-services-dialog="service"] > .service-dialog-panel) {
+  box-sizing: border-box;
   border-color: #DDE7F0 !important;
   border-radius: 1rem !important;
   background: #FFFFFF !important;
   box-shadow: 0 24px 70px rgba(16, 42, 67, 0.22) !important;
+  overflow-x: hidden !important;
 }
 [data-licenses-services-dialog] [data-slot="dialog-header"] {
   position: relative;
@@ -322,9 +324,9 @@ aside.fixed.inset-y-0 { animation: drawer-in 220ms cubic-bezier(0.23, 1, 0.32, 1
 .license-service-dialog-close:hover { background: #F0F5F8 !important; }
 [data-licenses-services-dialog] form { padding-top: 0.25rem; }
 [data-licenses-services-dialog] form > .flex.justify-end {
-  bottom: -1.5rem;
+  position: static;
   margin-top: 0.5rem;
-  padding: 1.2rem 1.5rem;
+  padding: 1rem 0 0;
 }
 .popup-surface { animation: popover-in 180ms cubic-bezier(0.23, 1, 0.32, 1) both; transform-origin: top right; }
 .popup-surface--closing { animation: popover-out 170ms cubic-bezier(0.77, 0, 0.175, 1) both; pointer-events: none; }

@@ -74,6 +74,20 @@ export const softwareLicenses = mysqlTable("softwareLicenses", {
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 }, (table) => [index("software_licenses_status_expiry_idx").on(table.status, table.expiresAt), index("software_licenses_vendor_idx").on(table.vendorId)]);
 
+export const softwareLicenseDocuments = mysqlTable("softwareLicenseDocuments", {
+  id: int("id").autoincrement().primaryKey(),
+  softwareLicenseId: int("softwareLicenseId").notNull().references(() => softwareLicenses.id, { onDelete: "cascade", onUpdate: "cascade" }),
+  documentType: mysqlEnum("documentType", ["contract", "renewal", "other"]).default("other").notNull(),
+  fileName: varchar("fileName", { length: 255 }).notNull(),
+  contentType: varchar("contentType", { length: 128 }).notNull(),
+  fileSize: int("fileSize").notNull(),
+  storageKey: text("storageKey").notNull(),
+  url: text("url").notNull(),
+  uploadedByUserId: int("uploadedByUserId"),
+  uploadedByName: varchar("uploadedByName", { length: 160 }),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+}, (table) => [index("software_license_documents_license_idx").on(table.softwareLicenseId)]);
+
 export const softwareLicenseAssignments = mysqlTable("softwareLicenseAssignments", {
   id: int("id").autoincrement().primaryKey(),
   softwareLicenseId: int("softwareLicenseId").notNull().references(() => softwareLicenses.id, { onDelete: "cascade", onUpdate: "cascade" }),
