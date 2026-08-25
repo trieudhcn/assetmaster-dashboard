@@ -248,24 +248,24 @@ aside.fixed.inset-y-0 { animation: drawer-in 220ms cubic-bezier(0.23, 1, 0.32, 1
 [data-licenses-services-dialog="service"] .form-input {
   display: block;
   width: 100%;
-  min-height: 2.55rem;
+  min-height: 2.45rem;
   border: 1px solid #DDE7F0;
   border-radius: 0.55rem;
   background: #FFFFFF;
-  padding: 0.62rem 0.75rem;
+  padding: 0.65rem 0.75rem;
   color: #193B57;
-  font-size: 0.8rem;
+  font-size: 0.78rem;
   font-weight: 600;
   line-height: 1.25rem;
   outline: none;
   transition: border-color 160ms ease-out, box-shadow 160ms ease-out, background-color 160ms ease-out;
 }
 [data-licenses-services-dialog="license"] .form-input::placeholder,
-[data-licenses-services-dialog="service"] .form-input::placeholder { color: #9AAEBD; font-weight: 500; }
+[data-licenses-services-dialog="service"] .form-input::placeholder { color: #A8B8C5; font-weight: 500; }
 [data-licenses-services-dialog="license"] .form-input:focus,
-[data-licenses-services-dialog="service"] .form-input:focus { border-color: #0F8C8C; box-shadow: 0 0 0 3px rgba(15, 140, 140, 0.12); }
+[data-licenses-services-dialog="service"] .form-input:focus { border-color: #0F8C8C; box-shadow: 0 0 0 3px rgba(15,140,140,0.11); }
 [data-licenses-services-dialog="license"] textarea.form-input,
-[data-licenses-services-dialog="service"] textarea.form-input { min-height: 5.5rem; resize: vertical; }
+[data-licenses-services-dialog="service"] textarea.form-input { min-height: 5rem; resize: vertical; }
 [data-licenses-services-dialog="license"] form > .flex.justify-end,
 [data-licenses-services-dialog="service"] form > .flex.justify-end {
   order: 10;
@@ -333,7 +333,8 @@ aside.fixed.inset-y-0 { animation: drawer-in 220ms cubic-bezier(0.23, 1, 0.32, 1
 [data-licenses-services-dialog="license"] {
   overflow: hidden !important;
 }
-[data-licenses-services-dialog="license"] > .license-service-dialog-panel {
+[data-licenses-services-dialog="license"] > .license-service-dialog-panel,
+[data-licenses-services-dialog="service"] > .license-service-dialog-panel {
   box-sizing: border-box;
   width: min(calc(100vw - 2rem), 48rem) !important;
   height: min(48rem, calc(100dvh - 2rem)) !important;
@@ -344,12 +345,14 @@ aside.fixed.inset-y-0 { animation: drawer-in 220ms cubic-bezier(0.23, 1, 0.32, 1
   padding: 0 !important;
   overflow: hidden !important;
 }
-[data-licenses-services-dialog="license"] [data-slot="dialog-header"] {
+[data-licenses-services-dialog="license"] [data-slot="dialog-header"],
+[data-licenses-services-dialog="service"] [data-slot="dialog-header"] {
   flex: none;
   margin: 0 !important;
   padding: 1.25rem 4.5rem 1.1rem 1.5rem !important;
 }
-[data-licenses-services-dialog="license"] form {
+[data-licenses-services-dialog="license"] form,
+[data-licenses-services-dialog="service"] form {
   flex: 1 1 auto;
   min-height: 0;
   margin: 0 !important;
@@ -359,7 +362,8 @@ aside.fixed.inset-y-0 { animation: drawer-in 220ms cubic-bezier(0.23, 1, 0.32, 1
   align-content: start;
   overscroll-behavior: contain;
 }
-[data-licenses-services-dialog="license"] form > .flex.justify-end {
+[data-licenses-services-dialog="license"] form > .flex.justify-end,
+[data-licenses-services-dialog="service"] form > .flex.justify-end {
   position: sticky;
   right: 0;
   bottom: 0;

@@ -4,8 +4,7 @@ import { toast } from "sonner";
 import { CalendarDays, CheckCircle2, Copy, Globe2, KeyRound, Laptop, Network, Paperclip, Plus, RotateCcw, Search, ShieldCheck, UserRound, X } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import { getDaysUntilExpiry, matchesExpiryFilter, sortByExpiry, type ExpiryFilter, type ExpirySortDirection } from "@/lib/expiryTracking";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogOverlay, DialogPortal, DialogTitle } from "@/components/ui/dialog";
-import * as DialogPrimitive from "@radix-ui/react-dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 type LicenseForm = {
   licenseCode: string;
@@ -200,7 +199,7 @@ export function LicensesServicesManagementView() {
 }
 
 function CenteredServiceDialogContent({ children }: { children: React.ReactNode }) {
-  return <DialogPortal><DialogOverlay /><DialogPrimitive.Content data-licenses-services-dialog="service" className="fixed inset-0 z-[60] grid place-items-center p-4 outline-none"><div className="service-dialog-panel relative max-h-[calc(100dvh-2rem)] overflow-y-auto rounded-lg border bg-background p-6 shadow-lg" style={{ width: "min(calc(100vw - 2rem), 48rem)" }}>{children}<DialogPrimitive.Close aria-label="Đóng" className="license-service-dialog-close absolute right-4 top-4 rounded-md px-2 py-1 text-xs font-extrabold text-[#527089] transition hover:bg-[#F4F7F9]">Đóng</DialogPrimitive.Close></div></DialogPrimitive.Content></DialogPortal>;
+  return <DialogContent data-licenses-services-dialog="service">{children}</DialogContent>;
 }
 
 function SummaryCard({ label, value, icon: Icon, tone, detail }: { label: string; value: string | number; icon: typeof KeyRound; tone: "teal" | "blue" | "amber" | "navy"; detail?: string }) {
@@ -209,7 +208,7 @@ function SummaryCard({ label, value, icon: Icon, tone, detail }: { label: string
 }
 
 function Field({ label, children, className = "", required = false }: { label: string; children: React.ReactNode; className?: string; required?: boolean }) {
-  return <label className={`grid gap-1.5 text-xs font-bold text-[#527089] ${className}`}><span>{label}{required && <span className="ml-1 text-[#B44545]">*</span>}</span>{children}</label>;
+  return <label className={`block ${className}`}><span className="field-label">{label}{required && <span className="ml-1 text-[#B44545]">*</span>}</span>{children}</label>;
 }
 
 export function LicenseDocumentControls({ licenseId, documents, documentType, pending, isBusy, onDocumentTypeChange, onSelectFile, onClearPending, onUpload, onRemove }: { licenseId: number | null; documents: Array<{ id: number; fileName: string; url: string; documentType: "contract" | "renewal" | "other" }>; documentType: "contract" | "renewal" | "other"; pending: PendingLicenseDocument | null; isBusy: boolean; onDocumentTypeChange: (value: "contract" | "renewal" | "other") => void; onSelectFile: (file: File) => void; onClearPending: () => void; onUpload: () => void; onRemove: (id: number) => void }) {

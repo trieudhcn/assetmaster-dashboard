@@ -53,9 +53,9 @@ describe("Bản quyền & Dịch vụ", () => {
     expect(view).toContain("CenteredServiceDialogContent");
     expect(view).toContain('get("createLicense") === "1"');
     expect(view).toContain('data-licenses-services-dialog="service"');
-    expect(view).toContain("fixed inset-0 z-[60] grid place-items-center");
-    expect(view).toContain('width: "min(calc(100vw - 2rem), 48rem)"');
-    expect(view).toContain("max-h-[calc(100dvh-2rem)]");
+    expect(view).toContain('<DialogContent data-licenses-services-dialog="service">');
+    expect(view).toContain('<DialogContent data-licenses-services-dialog="license"');
+    expect(view).toContain('className="field-label"');
     expect(view).toContain("data-expiry-overdue");
     expect(view).toContain("Quá hạn ${Math.abs(days)} ngày");
     expect(styles).toContain(".service-dialog-panel");
@@ -73,9 +73,13 @@ describe("Bản quyền & Dịch vụ", () => {
     expect(styles).toContain("License modal: fixed panel shell");
     expect(styles).toContain("height: min(48rem, calc(100dvh - 2rem)) !important");
     expect(styles).toContain("overflow-y: auto !important");
+    expect(styles).toContain("min-height: 2.45rem");
+    expect(styles).toContain("color: #A8B8C5");
     expect(readFileSync(resolve(process.cwd(), "client/src/components/ui/dialog.tsx"), "utf8")).toContain("license-service-dialog-panel relative flex");
     expect(styles).toContain('content: "BẢN QUYỀN & DỊCH VỤ"');
     expect(styles).toContain("license-service-dialog-close");
-    expect(readFileSync(resolve(process.cwd(), "client/src/components/ui/dialog.tsx"), "utf8")).toContain('licenseServiceDialog === "license"');
+    const dialog = readFileSync(resolve(process.cwd(), "client/src/components/ui/dialog.tsx"), "utf8");
+    expect(dialog).toContain('licenseServiceDialog === "license" || licenseServiceDialog === "service"');
+    expect(dialog).toContain("license-service-dialog-panel relative flex");
   });
 });

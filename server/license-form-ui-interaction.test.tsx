@@ -73,7 +73,7 @@ describe("tương tác form Bản quyền", () => {
     expect(footer.querySelector(".form-button-secondary")).not.toBeNull();
     expect(footer.querySelector(".form-button-primary")).not.toBeNull();
     const styles = readFileSync(resolve(process.cwd(), "client/src/index.css"), "utf8");
-    expect(styles).toContain('[data-licenses-services-dialog="license"] form {');
+    expect(styles).toContain('[data-licenses-services-dialog="license"] form,');
     expect(styles).toContain("overflow-y: auto !important");
     expect(styles).toContain("position: sticky");
     expect(styles).toContain("overflow: hidden !important");
@@ -82,5 +82,26 @@ describe("tương tác form Bản quyền", () => {
     const view = readFileSync(resolve(process.cwd(), "client/src/pages/LicensesServicesManagementView.tsx"), "utf8");
     expect(view).toContain('className="form-button-secondary">Hủy</button><button type="submit"');
     expect(view).toContain('className="form-button-primary">{createLicense.isPending || updateLicense.isPending ? "Đang lưu..." : "Lưu bản quyền"}');
+  });
+
+  it("render Dịch vụ bằng cùng panel, nhãn trường và footer chuẩn", () => {
+    const host = document.createElement("div");
+    container = host;
+    document.body.append(host);
+    root = createRoot(host);
+    act(() => root?.render(<Dialog open><DialogContent data-licenses-services-dialog="service"><DialogHeader><DialogTitle>Thêm dịch vụ</DialogTitle><DialogDescription>Mô tả</DialogDescription></DialogHeader><form><label><span className="field-label">Mã dịch vụ</span><input className="form-input" /></label><div className="flex justify-end gap-2 sm:col-span-2"><button type="button" className="form-button-secondary">Hủy</button><button type="submit" className="form-button-primary">Lưu dịch vụ</button></div></form></DialogContent></Dialog>));
+
+    const dialog = document.querySelector<HTMLElement>('[data-licenses-services-dialog="service"]')!;
+    const panel = dialog.querySelector<HTMLElement>(":scope > .license-service-dialog-panel")!;
+    const form = panel.querySelector<HTMLFormElement>("form")!;
+    expect(panel.className).toContain("overflow-hidden");
+    expect(form.querySelector(".field-label")?.textContent).toContain("Mã dịch vụ");
+    expect(form.querySelector(".form-input")).not.toBeNull();
+    expect(form.querySelector(".form-button-secondary")?.textContent).toContain("Hủy");
+    expect(form.querySelector(".form-button-primary")?.textContent).toContain("Lưu dịch vụ");
+    const styles = readFileSync(resolve(process.cwd(), "client/src/index.css"), "utf8");
+    expect(styles).toContain('[data-licenses-services-dialog="service"] form {');
+    const view = readFileSync(resolve(process.cwd(), "client/src/pages/LicensesServicesManagementView.tsx"), "utf8");
+    expect(view).toContain('<DialogContent data-licenses-services-dialog="service">');
   });
 });

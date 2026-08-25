@@ -39,6 +39,9 @@
 - [x] Chuẩn hóa footer nút Hủy/Lưu Bản quyền theo chuẩn form hiện hành, không bị cắt ở đáy.
 - [x] Xác minh desktop/mobile, hồi quy và build trước khi phát hành footer nút mới.
 - [x] Bổ sung kiểm thử UI rõ ràng cho cấu trúc và nút Hủy/Lưu của footer Bản quyền.
+- [x] Đồng bộ header, vùng nội dung, trường nhập và footer của form Bản quyền/Dịch vụ theo form Tài sản.
+- [x] Bổ sung hồi quy và xác minh desktop/mobile cho hai form đã đồng bộ.
+- [x] Bổ sung kiểm thử UI chung xác nhận Bản quyền và Dịch vụ dùng cùng panel, nhãn/trường và footer chuẩn.
 
 ## Current Session — Bản quyền & Dịch vụ
 
