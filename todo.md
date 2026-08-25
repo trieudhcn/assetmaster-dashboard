@@ -1,5 +1,12 @@
 # AssetMaster — Asset Catalog Expansion
 
+## Current Session — Lối vào lịch sử cảnh báo luôn hiển thị
+
+- [x] Đưa lối vào Lịch sử cảnh báo đã xem lên vị trí luôn quan sát được trên Tổng quan.
+- [x] Giữ thao tác mở lại và hiện lại cảnh báo rõ ràng sau khi cảnh báo bị ẩn.
+- [x] Bổ sung hồi quy, xác minh desktop/mobile, TypeScript và production build trước khi phát hành.
+- [x] Chạy lại hồi quy đầy đủ sau khi bổ sung contract cho launcher lịch sử luôn hiển thị.
+
 ## Current Session — Lịch sử cảnh báo đã xem
 
 - [x] Mở rộng API trạng thái cảnh báo để trả lịch sử đã xem theo tài khoản và thời điểm.

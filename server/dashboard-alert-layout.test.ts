@@ -47,6 +47,9 @@ describe("dashboard alert layout", () => {
   it("provides an account-synced review history with open and restore actions", () => {
     const home = readFileSync(resolve(process.cwd(), "client/src/pages/Home.tsx"), "utf8");
 
+    expect(home).toContain("data-dashboard-alert-history-launcher");
+    expect(home).toContain("Xem lịch sử cảnh báo");
+    expect(home).toContain("scrollIntoView");
     expect(home).toContain("dashboardAlertHistory");
     expect(home).toContain("data-dashboard-alert-history");
     expect(home).toContain("Lịch sử cảnh báo đã xem");
