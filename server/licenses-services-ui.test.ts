@@ -55,6 +55,8 @@ describe("Bản quyền & Dịch vụ", () => {
     expect(styles).toContain("place-items: center !important");
     expect(styles).toContain('[data-licenses-services-dialog="license"] .form-input');
     expect(styles).toContain("position: sticky");
+    expect(styles).toContain('content: "BẢN QUYỀN & DỊCH VỤ"');
+    expect(styles).toContain("license-service-dialog-close");
     expect(readFileSync(resolve(process.cwd(), "client/src/components/ui/dialog.tsx"), "utf8")).toContain('licenseServiceDialog === "license"');
   });
 });

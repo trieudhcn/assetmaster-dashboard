@@ -136,7 +136,7 @@ function DialogContent({
             {showCloseButton && (
               <DialogPrimitive.Close
                 data-slot="dialog-close"
-                className="absolute top-4 right-4 rounded-md px-2 py-1 text-xs font-extrabold text-[#527089] transition hover:bg-[#F4F7F9]"
+                className="license-service-dialog-close absolute top-4 right-4 rounded-md px-2 py-1 text-xs font-extrabold text-[#527089] transition hover:bg-[#F4F7F9]"
               >
                 Đóng
               </DialogPrimitive.Close>

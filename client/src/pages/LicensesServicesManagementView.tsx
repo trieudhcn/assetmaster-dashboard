@@ -166,7 +166,7 @@ export function LicensesServicesManagementView() {
 }
 
 function CenteredServiceDialogContent({ children }: { children: React.ReactNode }) {
-  return <DialogPortal><DialogOverlay /><DialogPrimitive.Content data-licenses-services-dialog="service" className="fixed inset-0 z-[60] grid place-items-center p-4 outline-none"><div className="service-dialog-panel relative max-h-[calc(100dvh-2rem)] overflow-y-auto rounded-lg border bg-background p-6 shadow-lg" style={{ width: "min(calc(100vw - 2rem), 48rem)" }}>{children}<DialogPrimitive.Close aria-label="Đóng" className="absolute right-4 top-4 rounded-md px-2 py-1 text-xs font-extrabold text-[#527089] transition hover:bg-[#F4F7F9]">Đóng</DialogPrimitive.Close></div></DialogPrimitive.Content></DialogPortal>;
+  return <DialogPortal><DialogOverlay /><DialogPrimitive.Content data-licenses-services-dialog="service" className="fixed inset-0 z-[60] grid place-items-center p-4 outline-none"><div className="service-dialog-panel relative max-h-[calc(100dvh-2rem)] overflow-y-auto rounded-lg border bg-background p-6 shadow-lg" style={{ width: "min(calc(100vw - 2rem), 48rem)" }}>{children}<DialogPrimitive.Close aria-label="Đóng" className="license-service-dialog-close absolute right-4 top-4 rounded-md px-2 py-1 text-xs font-extrabold text-[#527089] transition hover:bg-[#F4F7F9]">Đóng</DialogPrimitive.Close></div></DialogPrimitive.Content></DialogPortal>;
 }
 
 function SummaryCard({ label, value, icon: Icon, tone, detail }: { label: string; value: string | number; icon: typeof KeyRound; tone: "teal" | "blue" | "amber" | "navy"; detail?: string }) {

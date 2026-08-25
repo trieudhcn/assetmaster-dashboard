@@ -23,6 +23,9 @@
 - [x] Chuẩn hóa trường nhập, khoảng cách và vùng nút thao tác của form Bản quyền/Dịch vụ.
 - [x] Xác minh form Bản quyền/Dịch vụ trên desktop/mobile theo chuẩn giao diện hệ thống.
 - [x] Ghi nhận xác minh trực quan chi tiết form Bản quyền/Dịch vụ trên desktop và mobile trước khi phát hành.
+- [x] Đồng bộ cấu trúc header, trường nhập và footer form Bản quyền/Dịch vụ theo chuẩn Danh mục tài sản.
+- [x] Bổ sung hồi quy và xác minh desktop/mobile cho form đã đồng bộ.
+- [x] Ghi nhận xác minh trực quan chi tiết header, trường nhập và footer form đã đồng bộ trên desktop/mobile.
 
 ## Current Session — Bản quyền & Dịch vụ
 
