@@ -143,6 +143,7 @@ import {
   listRetirementCertificateAssetAssignments,
   listRetirementCertificates,
   listSoftwareLicenseActivationAccounts,
+  listActiveSoftwareLicenseAssignmentsForHandover,
   listSoftwareLicenseAssignments,
   listSoftwareLicenseCredentialAccessLogs,
   listSoftwareLicenseDocuments,
@@ -319,8 +320,16 @@ async function restoreHandoverAccessories(
           returnedAccessoryCount += 1;
           if (returnedQuantityAfter < Number(item.issuedQuantity)) outstandingAccessoryCount += 1;
         }
+        const returnedLicenseAssignments = handover.recipientUserId
+          ? await listActiveSoftwareLicenseAssignmentsForHandover(handover.assetId, handover.recipientUserId, transaction)
+          : [];
+        for (const assignment of returnedLicenseAssignments) {
+          await revokeSoftwareLicenseAssignment(assignment.id, transaction);
+          if (assignment.softwareLicenseKeyId) await updateSoftwareLicenseKey(assignment.softwareLicenseKeyId, { status: "available" }, transaction);
+          await recordActivity({ entityType: "softwareLicenseAssignment", entityId: assignment.id, action: "revoked_with_handover", actorUserId: actor.id, actorName: actor.name ?? "Quản trị viên", summary: `Thu hồi ${assignment.productName} khi hoàn trả tài sản ${handover.assetCode} · Phiếu ${handover.referenceCode}` }, transaction);
+        }
         await transitionHandoverStatus(handover.id, "returned", { ...changes, returnedAt: recoveryDate, recoveryCertificateNumber, recoveryCertificateYear: recoveryYear, recoveryCertificateMonth: recoveryMonth, recoveryCertificateSequence: recoverySequence }, transaction);
-        return { returnedAccessoryCount, outstandingAccessoryCount, recoveryCertificateNumber };
+        return { returnedAccessoryCount, outstandingAccessoryCount, returnedLicenseCount: returnedLicenseAssignments.length, returnedLicenseNames: returnedLicenseAssignments.map((assignment: { productName: string }) => assignment.productName), recoveryCertificateNumber };
       });
     } catch (error) {
       const duplicateCertificate = typeof error === "object" && error !== null && (("code" in error && error.code === "ER_DUP_ENTRY") || ("errno" in error && Number(error.errno) === 1062));
@@ -2227,6 +2236,19 @@ export const appRouter = router({
       return listHandoverReturnDecisionHistory(input.id);
     }),
     list: adminProcedure.query(() => listHandovers()),
+    licenseAllocations: adminProcedure.query(async () => {
+      const [licenses, assignments] = await Promise.all([listSoftwareLicenses(), listSoftwareLicenseAssignments()]);
+      const licenseById = new Map(licenses.map((license) => [license.id, license]));
+      return assignments.filter((assignment) => assignment.status === "active" && assignment.userId).map((assignment) => ({
+        id: assignment.id,
+        assetId: assignment.assetId,
+        userId: assignment.userId!,
+        productName: licenseById.get(assignment.softwareLicenseId)?.productName || `Bản quyền #${assignment.softwareLicenseId}`,
+        licenseCode: licenseById.get(assignment.softwareLicenseId)?.licenseCode || null,
+        assignmentMethod: assignment.assignmentMethod,
+        returnsWithHandoverAsset: Boolean(assignment.assetId),
+      }));
+    }),
     nextReferenceCode: adminProcedure.query(async () => {
       const handoverYear = new Date().getFullYear();
       const sequence = await getNextHandoverSequence(handoverYear);

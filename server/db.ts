@@ -452,6 +452,22 @@ export async function listSoftwareLicenseAssignments(softwareLicenseId?: number)
   return softwareLicenseId ? query.where(eq(softwareLicenseAssignments.softwareLicenseId, softwareLicenseId)).orderBy(desc(softwareLicenseAssignments.assignedAt)) : query.orderBy(desc(softwareLicenseAssignments.assignedAt));
 }
 
+export async function listActiveSoftwareLicenseAssignmentsForHandover(assetId: number, recipientUserId: number, executor?: any) {
+  const db = executor ?? await getDb();
+  if (!db) return [];
+  return db.select({
+    id: softwareLicenseAssignments.id,
+    softwareLicenseId: softwareLicenseAssignments.softwareLicenseId,
+    softwareLicenseKeyId: softwareLicenseAssignments.softwareLicenseKeyId,
+    productName: softwareLicenses.productName,
+    licenseCode: softwareLicenses.licenseCode,
+  }).from(softwareLicenseAssignments).innerJoin(softwareLicenses, eq(softwareLicenseAssignments.softwareLicenseId, softwareLicenses.id)).where(and(
+    eq(softwareLicenseAssignments.status, "active"),
+    eq(softwareLicenseAssignments.assetId, assetId),
+    eq(softwareLicenseAssignments.userId, recipientUserId),
+  )).orderBy(desc(softwareLicenseAssignments.assignedAt));
+}
+
 export async function getSoftwareLicenseAssignmentById(id: number) {
   const db = await getDb();
   if (!db) return undefined;
@@ -477,8 +493,8 @@ export async function createSoftwareLicenseKey(data: typeof softwareLicenseKeys.
   return Number(result[0].insertId);
 }
 
-export async function updateSoftwareLicenseKey(id: number, data: Partial<typeof softwareLicenseKeys.$inferInsert>) {
-  const db = await getDb();
+export async function updateSoftwareLicenseKey(id: number, data: Partial<typeof softwareLicenseKeys.$inferInsert>, executor?: any) {
+  const db = executor ?? await getDb();
   if (!db) throw new Error("Database unavailable");
   await db.update(softwareLicenseKeys).set(data).where(eq(softwareLicenseKeys.id, id));
 }
@@ -534,8 +550,8 @@ export async function createSoftwareLicenseAssignment(data: typeof softwareLicen
   return Number(result[0].insertId);
 }
 
-export async function revokeSoftwareLicenseAssignment(id: number) {
-  const db = await getDb();
+export async function revokeSoftwareLicenseAssignment(id: number, executor?: any) {
+  const db = executor ?? await getDb();
   if (!db) throw new Error("Database unavailable");
   await db.update(softwareLicenseAssignments).set({ status: "revoked", revokedAt: new Date() }).where(eq(softwareLicenseAssignments.id, id));
 }

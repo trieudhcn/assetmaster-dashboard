@@ -64,6 +64,7 @@ const mocks = vi.hoisted(() => ({
   listAllVendors: vi.fn(),
   listAllBrands: vi.fn(),
   listVendorDocuments: vi.fn(),
+  listActiveSoftwareLicenseAssignmentsForHandover: vi.fn(),
   listSoftwareLicenses: vi.fn(),
   listSoftwareLicenseActivationAccounts: vi.fn(),
   listSoftwareLicenseAssignments: vi.fn(),
@@ -182,6 +183,7 @@ vi.mock("./db", () => ({
   listAllVendors: mocks.listAllVendors,
   listAllBrands: mocks.listAllBrands,
   listVendorDocuments: mocks.listVendorDocuments,
+  listActiveSoftwareLicenseAssignmentsForHandover: mocks.listActiveSoftwareLicenseAssignmentsForHandover,
   listSoftwareLicenses: mocks.listSoftwareLicenses,
   listSoftwareLicenseActivationAccounts: mocks.listSoftwareLicenseActivationAccounts,
   listSoftwareLicenseAssignments: mocks.listSoftwareLicenseAssignments,
@@ -278,6 +280,7 @@ describe("employee administration", () => {
     mocks.getNextHandoverSequence.mockResolvedValue(1);
     mocks.getNextRecoveryCertificateSequence.mockResolvedValue(1);
     mocks.listHandoverReturnDecisionHistory.mockResolvedValue([]);
+    mocks.listActiveSoftwareLicenseAssignmentsForHandover.mockResolvedValue([]);
     mocks.createHandover.mockResolvedValue(99);
     mocks.runInventoryTransaction.mockImplementation(async (callback: (transaction: unknown) => Promise<unknown>) => callback({ transaction: true }));
     mocks.getInventorySupplyById.mockResolvedValue({ id: 81, code: "PK-CHUOT", name: "Chuột không dây", unit: "Cái", stockQuantity: "5", isActive: true });
@@ -634,6 +637,26 @@ describe("employee administration", () => {
     await expect(caller.handovers.updateStatus({ id: 99, status: "returned", recipientSignatureUrl: null, handoverSignatureUrl: null })).resolves.toMatchObject({ success: true, returnedAccessoryCount: 0, outstandingAccessoryCount: 0, recoveryCertificateNumber: expect.stringMatching(/^TH-\d{6}-001$/) });
     expect(mocks.transitionHandoverStatus).toHaveBeenCalledWith(99, "returned", expect.objectContaining({ recipientSignatureUrl: null, handoverSignatureUrl: null, recoveryCertificateNumber: expect.stringMatching(/^TH-\d{6}-001$/), recoveryCertificateYear: 2026, recoveryCertificateMonth: 8, recoveryCertificateSequence: 1 }), expect.anything());
     expect(mocks.recordActivity).toHaveBeenCalledWith(expect.objectContaining({ entityType: "handover", entityId: 99, action: "returned" }));
+  });
+
+  it("lists active software allocations and returns linked licenses with the handed-over asset", async () => {
+    mocks.listSoftwareLicenses.mockResolvedValue([{ id: 71, productName: "Windows 11 Pro", licenseCode: "WIN-001" }]);
+    mocks.listSoftwareLicenseAssignments.mockResolvedValue([
+      { id: 301, softwareLicenseId: 71, assetId: 50, userId: 7, assignmentMethod: "product_key", status: "active" },
+      { id: 302, softwareLicenseId: 71, assetId: 51, userId: 7, assignmentMethod: "seat", status: "active" },
+      { id: 303, softwareLicenseId: 71, assetId: 50, userId: 7, assignmentMethod: "seat", status: "revoked" },
+    ]);
+    mocks.getHandoverById.mockResolvedValue({ id: 99, referenceCode: "BG-2026-001", assetId: 50, assetCode: "TS-00050", recipientName: "Nguyễn Văn A", recipientUserId: 7, recipientDepartmentId: 12, recipientSignatureUrl: "https://storage.example/signature.png" });
+    mocks.listActiveSoftwareLicenseAssignmentsForHandover.mockResolvedValue([{ id: 301, softwareLicenseId: 71, softwareLicenseKeyId: 401, productName: "Windows 11 Pro", licenseCode: "WIN-001" }]);
+    const caller = appRouter.createCaller(adminContext);
+
+    await expect(caller.handovers.licenseAllocations()).resolves.toEqual(expect.arrayContaining([expect.objectContaining({ id: 301, assetId: 50, userId: 7, productName: "Windows 11 Pro", licenseCode: "WIN-001", returnsWithHandoverAsset: true }), expect.objectContaining({ id: 302, assetId: 51, userId: 7, returnsWithHandoverAsset: true })]));
+    await expect(caller.handovers.updateStatus({ id: 99, status: "returned", recipientSignatureUrl: null, handoverSignatureUrl: null })).resolves.toMatchObject({ success: true, returnedLicenseCount: 1, returnedLicenseNames: ["Windows 11 Pro"] });
+
+    expect(mocks.listActiveSoftwareLicenseAssignmentsForHandover).toHaveBeenCalledWith(50, 7, expect.anything());
+    expect(mocks.revokeSoftwareLicenseAssignment).toHaveBeenCalledWith(301, expect.anything());
+    expect(mocks.updateSoftwareLicenseKey).toHaveBeenCalledWith(401, { status: "available" }, expect.anything());
+    expect(mocks.recordActivity).toHaveBeenCalledWith(expect.objectContaining({ entityType: "softwareLicenseAssignment", entityId: 301, action: "revoked_with_handover" }), expect.anything());
   });
 
   it("returns defaults and saves notification preferences for the signed-in user", async () => {

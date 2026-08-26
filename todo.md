@@ -155,6 +155,10 @@
 - [x] Kiểm thử số tiền bằng chữ và các trường hợp vượt giới hạn Bản quyền.
 - [x] Hiển thị nhãn số lượng Bản quyền còn trống trên từng mục danh sách.
 - [x] Kiểm thử nhãn sức chứa theo seat, key riêng và tài khoản chủ.
+- [x] Hiển thị tên phần mềm Bản quyền đang cấp cho nhân sự trên bảng Bàn giao & Cấp phát.
+- [x] Thu hồi Bản quyền đang cấp cho người nhận khi thu hồi tài sản trong phiếu Bàn giao & Cấp phát.
+- [x] Bổ sung kiểm thử nghiệp vụ trả chỗ dùng, key hoặc tài khoản chủ về kho Bản quyền.
+- [x] Xác minh luồng cấp phát/thu hồi Bản quyền cùng tài sản trên desktop và mobile.
 
 ## Current Session — Bản quyền & Dịch vụ
 

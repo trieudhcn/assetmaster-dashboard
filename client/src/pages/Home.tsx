@@ -1713,6 +1713,7 @@ function AssignmentsPage({ showComingSoon, companyInfo }: { showComingSoon: (lab
   const isAdmin = user?.role === "admin";
   const [handovers, setHandovers] = useState<Handover[]>([]);
   const handoversQuery = trpc.handovers.list.useQuery();
+  const handoverLicenseAllocationsQuery = trpc.handovers.licenseAllocations.useQuery(undefined, { enabled: isAdmin });
   const assignmentAssetsQuery = trpc.assets.list.useQuery();
   const handoverBranchesQuery = trpc.branches.list.useQuery();
   const handoverSuppliesQuery = trpc.supplies.list.useQuery(undefined, { enabled: isAdmin });
@@ -1850,6 +1851,54 @@ function AssignmentsPage({ showComingSoon, companyInfo }: { showComingSoon: (lab
   const handoverPageSize = 10;
   const handoverTotalPages = Math.max(1, Math.ceil(filtered.length / handoverPageSize));
   const pagedHandovers = filtered.slice((handoverPage - 1) * handoverPageSize, handoverPage * handoverPageSize);
+  const licenseAllocationsByHandoverId = useMemo(() => new Map(pagedHandovers.map((handover) => {
+    const source = handoversQuery.data?.find((item) => item.id === handover.id);
+    const allocations = (handoverLicenseAllocationsQuery.data || []).filter((allocation) => allocation.userId === source?.recipientUserId);
+    return [handover.id, allocations];
+  })), [handoverLicenseAllocationsQuery.data, handoversQuery.data, pagedHandovers]);
+  useEffect(() => { if (handoversQuery.dataUpdatedAt) void handoverLicenseAllocationsQuery.refetch(); }, [handoversQuery.dataUpdatedAt]);
+  useEffect(() => {
+    const handoverTable = Array.from(document.querySelectorAll<HTMLTableElement>("table")).find((table) => Array.from(table.querySelectorAll("thead th")).some((heading) => heading.textContent?.trim() === "Mã phiếu"));
+    if (!handoverTable) return;
+    const headingRow = handoverTable.querySelector("thead tr");
+    if (headingRow && !headingRow.querySelector("[data-handover-license-heading]")) {
+      const heading = document.createElement("th");
+      heading.dataset.handoverLicenseHeading = "true";
+      heading.className = "px-4 py-3 text-left";
+      heading.textContent = "Bản quyền";
+      headingRow.insertBefore(heading, headingRow.children[3] || null);
+    }
+    const rows = Array.from(handoverTable.querySelectorAll<HTMLTableRowElement>("tbody tr"));
+    rows.forEach((row, index) => {
+      const handover = pagedHandovers[index];
+      if (!handover) return;
+      const cell = row.querySelector<HTMLTableCellElement>("[data-handover-license-cell]") || document.createElement("td");
+      cell.dataset.handoverLicenseCell = "true";
+      cell.className = "max-w-44 px-4 py-4 align-top text-xs text-[#60758A]";
+      const allocations = licenseAllocationsByHandoverId.get(handover.id) || [];
+      cell.replaceChildren();
+      if (handoverLicenseAllocationsQuery.isLoading) {
+        cell.textContent = "Đang tải…";
+        cell.classList.add("text-[#8AA0B6]");
+      } else if (!allocations.length) {
+        cell.textContent = "—";
+        cell.classList.add("text-[#8AA0B6]");
+      } else {
+        cell.classList.remove("text-[#8AA0B6]");
+        const list = document.createElement("div");
+        list.className = "flex flex-col gap-1";
+        allocations.forEach((allocation) => {
+          const badge = document.createElement("span");
+          badge.className = "w-fit truncate rounded-full bg-[#EAF3FF] px-2 py-1 text-[10px] font-extrabold text-[#2666A8]";
+          badge.title = `${allocation.licenseCode ? `${allocation.productName} · ${allocation.licenseCode}` : allocation.productName}${allocation.assetId ? " · Sẽ thu hồi cùng tài sản nếu là máy đang bàn giao" : " · Cấp theo nhân sự"}`;
+          badge.textContent = allocation.productName;
+          list.append(badge);
+        });
+        cell.append(list);
+      }
+      if (!cell.parentElement) row.insertBefore(cell, row.children[3] || null);
+    });
+  }, [handoverLicenseAllocationsQuery.isLoading, licenseAllocationsByHandoverId, pagedHandovers]);
   useEffect(() => { setHandoverPage(1); }, [query, statusFilter, handoverYearFilter, handoverDepartmentFilter, handoverBranchFilter, handoverRecipientFilter]);
   useEffect(() => { setHandoverPage((current) => Math.min(current, handoverTotalPages)); }, [handoverTotalPages]);
   const exportHandovers = async () => {
@@ -2427,6 +2476,7 @@ function HandoverDetailModal({ item: listItem, companyInfo, onClose, onDataChang
   const [isPreparingPdf, setIsPreparingPdf] = useState(false);
   const handoverDetailQuery = trpc.handovers.get.useQuery({ id: listItem.id });
   const returnDecisionHistoryQuery = trpc.handovers.returnDecisionHistory.useQuery({ id: listItem.id });
+  const handoverLicenseAllocationsQuery = trpc.handovers.licenseAllocations.useQuery();
   const item = handoverDetailQuery.data ? { ...listItem, id: handoverDetailQuery.data.id, referenceCode: handoverDetailQuery.data.referenceCode, assetCode: handoverDetailQuery.data.assetCode, assetName: handoverDetailQuery.data.assetName, recipient: handoverDetailQuery.data.recipientName, department: handoverDetailQuery.data.recipientDepartmentName || "Chưa xác định", date: new Date(handoverDetailQuery.data.handedOverAt).toLocaleDateString("vi-VN"), returnedAt: handoverDetailQuery.data.returnedAt, recoveryCertificateNumber: handoverDetailQuery.data.recoveryCertificateNumber, recoveryCertificateYear: handoverDetailQuery.data.recoveryCertificateYear, recoveryCertificateMonth: handoverDetailQuery.data.recoveryCertificateMonth, recoveryCertificateSequence: handoverDetailQuery.data.recoveryCertificateSequence, conditionIn: handoverDetailQuery.data.conditionIn, status: handoverDetailQuery.data.status === "active" ? "Đã bàn giao" as const : handoverDetailQuery.data.status === "pending_signature" ? "Chờ ký" as const : handoverDetailQuery.data.status === "returned" ? "Đã hoàn trả" as const : "Nháp" as const, condition: handoverDetailQuery.data.conditionOut || "Tốt", handoverBy: handoverDetailQuery.data.handoverByName || "Quản trị viên", note: handoverDetailQuery.data.note || "", accessories: handoverDetailQuery.data.accessories || "", supplyItems: handoverDetailQuery.data.supplyItems, recipientUserId: handoverDetailQuery.data.recipientUserId, recipientDepartmentId: handoverDetailQuery.data.recipientDepartmentId, recipientSignatureUrl: handoverDetailQuery.data.recipientSignatureUrl } : listItem;
   const saveRecipientSignature = trpc.handovers.saveRecipientSignature.useMutation({
     onSuccess: ({ url }) => { setSignature(url); setSigned(true); void handoverDetailQuery.refetch(); onDataChanged(); toast.success("Đã lưu chữ ký điện tử."); },
@@ -2435,7 +2485,9 @@ function HandoverDetailModal({ item: listItem, companyInfo, onClose, onDataChang
   const updateHandoverStatus = trpc.handovers.updateStatus.useMutation({
     onSuccess: (result, variables) => {
       onDataChanged();
-      toast.success(variables.status === "returned" ? (result.outstandingAccessoryCount ? "Đã hoàn trả · còn phụ kiện chưa đủ." : "Đã hoàn trả.") : "Đã cập nhật phiếu bàn giao.");
+      const returnedLicenseCount = "returnedLicenseCount" in result ? result.returnedLicenseCount : 0;
+      const licenseSummary = returnedLicenseCount ? ` · Đã thu hồi ${returnedLicenseCount} Bản quyền về kho.` : "";
+      toast.success(variables.status === "returned" ? `${result.outstandingAccessoryCount ? "Đã hoàn trả · còn phụ kiện chưa đủ." : "Đã hoàn trả."}${licenseSummary}` : "Đã cập nhật phiếu bàn giao.");
       onClose();
     },
     onError: (error) => toast.error(error.message || "Không thể cập nhật trạng thái phiếu."),
@@ -2463,6 +2515,7 @@ function HandoverDetailModal({ item: listItem, companyInfo, onClose, onDataChang
   };
   const isBusy = saveRecipientSignature.isPending || updateHandoverStatus.isPending || isPreparingPdf;
   const saveSignature = (dataUrl: string) => saveRecipientSignature.mutate({ id: item.id, dataUrl });
+  const licensesReturnedWithAsset = (handoverLicenseAllocationsQuery.data || []).filter((allocation) => allocation.assetId === handoverDetailQuery.data?.assetId && allocation.userId === item.recipientUserId);
   const updateStatus = (status: "draft" | "pending_signature" | "active" | "returned") => {
     const returnedSupplyItems = status === "returned" ? (item.supplyItems || []).map((supplyItem: NonNullable<Handover["supplyItems"]>[number]) => { const outstanding = Math.floor(Math.max(0, Number(supplyItem.issuedQuantity) - Number(supplyItem.returnedQuantity || 0))); return { handoverSupplyItemId: supplyItem.id, quantity: Math.min(outstanding, Math.floor(Math.max(0, Number(returnQuantities[supplyItem.id] ?? outstanding)))) }; }) : undefined;
     updateHandoverStatus.mutate({ id: item.id, status, recipientSignatureUrl: signature || null, handoverSignatureUrl: null, returnedSupplyItems });
@@ -2480,10 +2533,10 @@ function HandoverDetailModal({ item: listItem, companyInfo, onClose, onDataChang
         {item.status === "Đã hoàn trả" && <section className="rounded-xl border border-[#F0DFC0] bg-[#FFFDF7] p-4"><div className="text-[10px] font-extrabold uppercase tracking-[0.12em] text-[#8F5A00]">Số biên bản thu hồi</div><div className="mt-2 flex flex-wrap items-center justify-between gap-3"><div className="font-mono text-base font-extrabold text-[#8F5A00]">{item.recoveryCertificateNumber || "Đang cấp số"}</div><div className="text-[11px] text-[#8A7140]">Mã tự sinh theo năm và tháng</div></div></section>}
         <section className="rounded-xl border border-[#E7EEF3] p-4"><div className="text-[10px] font-extrabold uppercase tracking-[0.12em] text-[#8AA0B6]">Tình trạng, phụ kiện và ghi chú</div><div className="mt-3 grid gap-4 sm:grid-cols-3"><div><div className="text-xs text-[#8AA0B6]">Tình trạng</div><div className="mt-1 text-sm font-bold text-[#193B57]">{item.condition}</div></div><div><div className="text-xs text-[#8AA0B6]">Phụ kiện ghi tay</div><div className="mt-1 text-sm font-bold text-[#193B57]">{item.accessories || "Không có"}</div></div><div><div className="text-xs text-[#8AA0B6]">Ghi chú</div><div className="mt-1 text-sm font-bold text-[#193B57]">{item.note || "Không có"}</div></div></div>{item.supplyItems?.length ? <div className="mt-4 rounded-xl border border-[#CDE5E5] bg-[#F4FBFA] p-3"><div className="text-[10px] font-extrabold uppercase tracking-[0.12em] text-[#087A6A]">Phụ kiện lấy từ kho</div><div className="mt-2 space-y-2">{item.supplyItems.map((supplyItem: NonNullable<Handover["supplyItems"]>[number]) => { const issued = Number(supplyItem.issuedQuantity); const returned = Number(supplyItem.returnedQuantity || 0); const outstanding = issued - returned; return <div key={supplyItem.id} className="flex flex-wrap items-center justify-between gap-2 rounded-lg bg-white px-3 py-2 text-xs"><span className="font-bold text-[#193B57]">{supplyItem.supplyName} <span className="font-mono text-[10px] text-[#71869A]">{supplyItem.supplyCode}</span></span><span className="text-[#60758A]">Cấp: <b>{issued} {supplyItem.unit}</b>{returned > 0 && <> · Hoàn: <b className="text-[#087A6A]">{returned} {supplyItem.unit}</b></>}{outstanding > 0 && <span className="ml-1 text-[#A86B00]">· Đang giữ: <b>{outstanding} {supplyItem.unit}</b></span>}</span></div>; })}</div></div> : null}</section>
         <section className="rounded-xl border border-[#E7EEF3] bg-[#FBFCFD] p-4"><div className="mb-3 flex items-center gap-2 text-[10px] font-extrabold uppercase tracking-[0.12em] text-[#527089]"><History size={14} />Lịch sử quyết định hoàn trả</div>{returnDecisionHistoryQuery.isLoading ? <p className="text-xs text-[#71869A]">Đang tải lịch sử quyết định...</p> : returnDecisionHistoryQuery.data?.length ? <div className="space-y-3">{returnDecisionHistoryQuery.data.map((entry) => { const approved = entry.action === "return_approved"; return <div key={entry.id} className="flex gap-3"><div className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${approved ? "bg-[#0F8C8C]" : "bg-[#D26767]"}`} /><div><div className={`text-xs font-extrabold ${approved ? "text-[#087A6A]" : "text-[#B44545]"}`}>{approved ? "Đã duyệt yêu cầu hoàn trả" : "Đã từ chối yêu cầu hoàn trả"}</div><div className="mt-1 text-[11px] text-[#60758A]">{entry.summary}</div><div className="mt-1 text-[10px] text-[#8AA0B6]">{entry.actorName || "Quản trị viên"} · {new Date(entry.createdAt).toLocaleString("vi-VN")}</div></div></div>; })}</div> : <p className="text-xs text-[#71869A]">Chưa có quyết định hoàn trả nào cho phiếu này.</p>}</section>
-        {nextAction?.status === "returned" && <PartialAccessoryReturnPanel supplyItems={item.supplyItems || []} quantities={returnQuantities} onQuantityChange={(id, quantity) => setReturnQuantities((current) => ({ ...current, [id]: quantity }))} />}
+        {nextAction?.status === "returned" && <><section className="rounded-xl border border-[#D6E5F8] bg-[#F5F9FF] p-4"><div className="text-[10px] font-extrabold uppercase tracking-[0.12em] text-[#2666A8]">Bản quyền thu hồi cùng tài sản</div><p className="mt-1 text-[11px] leading-5 text-[#527089]">Các Bản quyền đang gắn với đúng tài sản và người nhận trong phiếu sẽ được thu hồi, trả lại chỗ dùng hoặc key về kho Bản quyền.</p>{handoverLicenseAllocationsQuery.isLoading ? <p className="mt-2 text-xs text-[#71869A]">Đang kiểm tra Bản quyền...</p> : licensesReturnedWithAsset.length ? <div className="mt-3 flex flex-wrap gap-2">{licensesReturnedWithAsset.map((allocation) => <span key={allocation.id} className="rounded-full bg-white px-2.5 py-1 text-[10px] font-extrabold text-[#2666A8] shadow-sm">{allocation.productName}</span>)}</div> : <p className="mt-2 text-xs font-semibold text-[#71869A]">Không có Bản quyền nào gắn với tài sản này cần thu hồi.</p>}</section><PartialAccessoryReturnPanel supplyItems={item.supplyItems || []} quantities={returnQuantities} onQuantityChange={(id, quantity) => setReturnQuantities((current) => ({ ...current, [id]: quantity }))} /></>}
         <section className="rounded-xl border border-[#CDE5E5] bg-[#F4FBFA] p-4"><div className="mb-3 flex items-center justify-between"><div><div className="flex items-center gap-2 text-[10px] font-extrabold uppercase tracking-[0.12em] text-[#087A6A]"><Signature size={14} />Ký tên điện tử</div><p className="mt-1 text-[11px] text-[#6B8F8D]">Chữ ký được lưu an toàn cùng phiếu bàn giao.</p></div>{signed && <span className="flex items-center gap-1 text-[10px] font-extrabold text-[#087A6A]"><CheckCircle2 size={13} />Đã ký</span>}</div><SignaturePad onSigned={saveSignature} /></section>
         {item.status === "Đã hoàn trả" && <div className="flex justify-end"><button disabled={isBusy} onClick={() => preparePdf("recovery")} className="flex items-center gap-2 rounded-lg border border-[#F0DFC0] bg-[#FFFDF7] px-4 py-2.5 text-xs font-bold text-[#8F5A00] transition hover:bg-white disabled:opacity-50">{isPreparingPdf ? <><Loader2 size={14} className="animate-spin" />Đang chuẩn bị PDF...</> : <><Printer size={14} />Biên bản thu hồi / In PDF</>}</button></div>}
-        <div className="flex flex-wrap justify-end gap-2 border-t border-[#E7EEF3] pt-4"><button onClick={onClose} className="modal-close-action">Đóng</button><button disabled={isBusy} onClick={() => preparePdf("handover")} className="flex items-center gap-2 rounded-lg border border-[#CDE5E5] px-4 py-2 text-xs font-bold text-[#087A6A] disabled:opacity-50">{isPreparingPdf ? <><Loader2 size={14} className="animate-spin" />Đang chuẩn bị PDF...</> : <><FileText size={14} />Xem trước PDF</>}</button>{nextAction?.status === "returned" ? <AlertDialog><AlertDialogTrigger asChild><button disabled={isBusy} className="flex items-center gap-2 rounded-lg bg-[#0F8C8C] px-4 py-2 text-xs font-bold text-white hover:bg-[#087A6A] disabled:cursor-not-allowed disabled:opacity-50"><Signature size={14} />{nextAction.label}</button></AlertDialogTrigger><AlertDialogContent className="max-w-md border-[#CDE5E5] bg-white"><AlertDialogHeader><div className="mb-1 flex h-10 w-10 items-center justify-center rounded-xl bg-[#FFF2E9] text-[#C75419]"><AlertTriangle size={19} /></div><AlertDialogTitle className="font-display text-xl font-extrabold text-[#102A43]">Xác nhận ghi nhận hoàn trả?</AlertDialogTitle><AlertDialogDescription className="text-sm leading-6 text-[#60758A]">Tài sản sẽ được chuyển về trạng thái sẵn có; phụ kiện kho đang giữ cũng tự động được hoàn về kho.</AlertDialogDescription></AlertDialogHeader><div className="rounded-xl border border-[#E7EEF3] bg-[#FBFCFD] px-4 py-3 text-xs"><div className="font-extrabold text-[#193B57]">{item.assetName}</div><div className="mt-1 font-mono text-[11px] text-[#71869A]">{item.assetCode}</div><div className="mt-2 text-[#60758A]">Người đang nhận: <span className="font-bold text-[#193B57]">{item.recipient}</span></div></div><AlertDialogFooter><AlertDialogCancel disabled={isBusy}>Hủy</AlertDialogCancel><AlertDialogAction disabled={isBusy} onClick={() => updateStatus("returned")} className="bg-[#0F8C8C] hover:bg-[#087A6A]">{isBusy ? "Đang ghi nhận..." : "Xác nhận hoàn trả"}</AlertDialogAction></AlertDialogFooter></AlertDialogContent></AlertDialog> : nextAction && <button disabled={isBusy || (nextAction.status === "active" && !signed)} onClick={() => updateStatus(nextAction.status)} className="flex items-center gap-2 rounded-lg bg-[#0F8C8C] px-4 py-2 text-xs font-bold text-white hover:bg-[#087A6A] disabled:cursor-not-allowed disabled:opacity-50"><Signature size={14} />{isBusy ? "Đang lưu..." : nextAction.label}</button>}</div>
+        <div className="flex flex-wrap justify-end gap-2 border-t border-[#E7EEF3] pt-4"><button onClick={onClose} className="modal-close-action">Đóng</button><button disabled={isBusy} onClick={() => preparePdf("handover")} className="flex items-center gap-2 rounded-lg border border-[#CDE5E5] px-4 py-2 text-xs font-bold text-[#087A6A] disabled:opacity-50">{isPreparingPdf ? <><Loader2 size={14} className="animate-spin" />Đang chuẩn bị PDF...</> : <><FileText size={14} />Xem trước PDF</>}</button>{nextAction?.status === "returned" ? <AlertDialog><AlertDialogTrigger asChild><button disabled={isBusy} className="flex items-center gap-2 rounded-lg bg-[#0F8C8C] px-4 py-2 text-xs font-bold text-white hover:bg-[#087A6A] disabled:cursor-not-allowed disabled:opacity-50"><Signature size={14} />{nextAction.label}</button></AlertDialogTrigger><AlertDialogContent className="max-w-md border-[#CDE5E5] bg-white"><AlertDialogHeader><div className="mb-1 flex h-10 w-10 items-center justify-center rounded-xl bg-[#FFF2E9] text-[#C75419]"><AlertTriangle size={19} /></div><AlertDialogTitle className="font-display text-xl font-extrabold text-[#102A43]">Xác nhận ghi nhận hoàn trả?</AlertDialogTitle><AlertDialogDescription className="text-sm leading-6 text-[#60758A]">Tài sản sẽ được chuyển về trạng thái sẵn có; phụ kiện kho đang giữ được hoàn về kho, đồng thời Bản quyền gắn với tài sản và người nhận sẽ được thu hồi để trả chỗ dùng hoặc key về kho Bản quyền.</AlertDialogDescription></AlertDialogHeader><div className="rounded-xl border border-[#E7EEF3] bg-[#FBFCFD] px-4 py-3 text-xs"><div className="font-extrabold text-[#193B57]">{item.assetName}</div><div className="mt-1 font-mono text-[11px] text-[#71869A]">{item.assetCode}</div><div className="mt-2 text-[#60758A]">Người đang nhận: <span className="font-bold text-[#193B57]">{item.recipient}</span></div></div><AlertDialogFooter><AlertDialogCancel disabled={isBusy}>Hủy</AlertDialogCancel><AlertDialogAction disabled={isBusy} onClick={() => updateStatus("returned")} className="bg-[#0F8C8C] hover:bg-[#087A6A]">{isBusy ? "Đang ghi nhận..." : "Xác nhận hoàn trả"}</AlertDialogAction></AlertDialogFooter></AlertDialogContent></AlertDialog> : nextAction && <button disabled={isBusy || (nextAction.status === "active" && !signed)} onClick={() => updateStatus(nextAction.status)} className="flex items-center gap-2 rounded-lg bg-[#0F8C8C] px-4 py-2 text-xs font-bold text-white hover:bg-[#087A6A] disabled:cursor-not-allowed disabled:opacity-50"><Signature size={14} />{isBusy ? "Đang lưu..." : nextAction.label}</button>}</div>
       </div>
     </div>
   </div>;
