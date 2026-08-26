@@ -1730,6 +1730,7 @@ function AssignmentsPage({ showComingSoon, companyInfo }: { showComingSoon: (lab
   const [handoverDepartmentFilter, setHandoverDepartmentFilter] = useState("Tất cả phòng ban");
   const [handoverBranchFilter, setHandoverBranchFilter] = useState("Tất cả chi nhánh");
   const [handoverRecipientFilter, setHandoverRecipientFilter] = useState("Tất cả người nhận");
+  const [handoverLicenseFilter, setHandoverLicenseFilter] = useState("Tất cả Bản quyền");
   const [handoverPage, setHandoverPage] = useState(1);
   const [isExportingHandovers, setIsExportingHandovers] = useState(false);
   const [handoverKpisCollapsed, setHandoverKpisCollapsed] = useState(true);
@@ -1840,14 +1841,18 @@ function AssignmentsPage({ showComingSoon, companyInfo }: { showComingSoon: (lab
   const visibleHandoverDepartments = handoverDepartments;
   const handoverBranches = Array.from(new Set([...(handoverBranchesQuery.data || []).map((branch) => branch.name), ...handovers.map((item) => item.branch || "Chưa gán")])).sort((left, right) => left.localeCompare(right, "vi"));
   const handoverRecipients = Array.from(new Set(handovers.map((item) => item.recipient).filter(Boolean))).sort((left, right) => left.localeCompare(right, "vi"));
+  const activeLicenseRecipientIds = new Set((handoverLicenseAllocationsQuery.data || []).map((allocation) => allocation.userId));
   const filtered = handovers.filter((item) => {
     const itemYear = item.referenceCode.match(/^BG-(\d{4})-/)?.[1] || item.date.split("/").at(-1);
     const hasRecoveryCertificate = Boolean(item.recoveryCertificateNumber);
     const matchesStatus = statusFilter === "Tất cả trạng thái" || (statusFilter === "Đã có mã biên bản thu hồi" ? hasRecoveryCertificate : item.status === statusFilter);
-    return matchesVietnameseSearch(`${item.referenceCode} ${item.recoveryCertificateNumber || ""}`, query) && matchesStatus && (handoverYearFilter === "Tất cả các năm" || itemYear === handoverYearFilter) && (handoverDepartmentFilter === "Tất cả phòng ban" || item.department === handoverDepartmentFilter) && (handoverBranchFilter === "Tất cả chi nhánh" || (item.branch || "Chưa gán") === handoverBranchFilter) && (handoverRecipientFilter === "Tất cả người nhận" || item.recipient === handoverRecipientFilter);
+    const source = handoversQuery.data?.find((handover) => handover.id === item.id);
+    const hasLicense = Boolean(source?.recipientUserId && activeLicenseRecipientIds.has(source.recipientUserId));
+    const matchesLicense = handoverLicenseFilter === "Tất cả Bản quyền" || (handoverLicenseFilter === "Có Bản quyền đang cấp" ? hasLicense : !hasLicense);
+    return matchesVietnameseSearch(`${item.referenceCode} ${item.recoveryCertificateNumber || ""}`, query) && matchesStatus && matchesLicense && (handoverYearFilter === "Tất cả các năm" || itemYear === handoverYearFilter) && (handoverDepartmentFilter === "Tất cả phòng ban" || item.department === handoverDepartmentFilter) && (handoverBranchFilter === "Tất cả chi nhánh" || (item.branch || "Chưa gán") === handoverBranchFilter) && (handoverRecipientFilter === "Tất cả người nhận" || item.recipient === handoverRecipientFilter);
   });
-  const hasActiveHandoverFilters = Boolean(query.trim()) || statusFilter !== "Tất cả trạng thái" || handoverYearFilter !== "Tất cả các năm" || handoverDepartmentFilter !== "Tất cả phòng ban" || handoverBranchFilter !== "Tất cả chi nhánh" || handoverRecipientFilter !== "Tất cả người nhận";
-  const resetHandoverFilters = () => { setQuery(""); setStatusFilter("Tất cả trạng thái"); setHandoverYearFilter("Tất cả các năm"); setHandoverDepartmentFilter("Tất cả phòng ban"); setHandoverBranchFilter("Tất cả chi nhánh"); setHandoverRecipientFilter("Tất cả người nhận"); };
+  const hasActiveHandoverFilters = Boolean(query.trim()) || statusFilter !== "Tất cả trạng thái" || handoverYearFilter !== "Tất cả các năm" || handoverDepartmentFilter !== "Tất cả phòng ban" || handoverBranchFilter !== "Tất cả chi nhánh" || handoverRecipientFilter !== "Tất cả người nhận" || handoverLicenseFilter !== "Tất cả Bản quyền";
+  const resetHandoverFilters = () => { setQuery(""); setStatusFilter("Tất cả trạng thái"); setHandoverYearFilter("Tất cả các năm"); setHandoverDepartmentFilter("Tất cả phòng ban"); setHandoverBranchFilter("Tất cả chi nhánh"); setHandoverRecipientFilter("Tất cả người nhận"); setHandoverLicenseFilter("Tất cả Bản quyền"); };
   const handoverPageSize = 10;
   const handoverTotalPages = Math.max(1, Math.ceil(filtered.length / handoverPageSize));
   const pagedHandovers = filtered.slice((handoverPage - 1) * handoverPageSize, handoverPage * handoverPageSize);
@@ -1861,12 +1866,12 @@ function AssignmentsPage({ showComingSoon, companyInfo }: { showComingSoon: (lab
     const handoverTable = Array.from(document.querySelectorAll<HTMLTableElement>("table")).find((table) => Array.from(table.querySelectorAll("thead th")).some((heading) => heading.textContent?.trim() === "Mã phiếu"));
     if (!handoverTable) return;
     const headingRow = handoverTable.querySelector("thead tr");
-    if (headingRow && !headingRow.querySelector("[data-handover-license-heading]")) {
-      const heading = document.createElement("th");
+    if (headingRow) {
+      const heading = headingRow.querySelector<HTMLTableCellElement>("[data-handover-license-heading]") || document.createElement("th");
       heading.dataset.handoverLicenseHeading = "true";
       heading.className = "px-4 py-3 text-left";
       heading.textContent = "Bản quyền";
-      headingRow.insertBefore(heading, headingRow.children[3] || null);
+      headingRow.insertBefore(heading, headingRow.children[headingRow.children.length - 2] || null);
     }
     const rows = Array.from(handoverTable.querySelectorAll<HTMLTableRowElement>("tbody tr"));
     rows.forEach((row, index) => {
@@ -1896,10 +1901,28 @@ function AssignmentsPage({ showComingSoon, companyInfo }: { showComingSoon: (lab
         });
         cell.append(list);
       }
-      if (!cell.parentElement) row.insertBefore(cell, row.children[3] || null);
+      row.insertBefore(cell, row.children[row.children.length - 2] || null);
     });
   }, [handoverLicenseAllocationsQuery.isLoading, licenseAllocationsByHandoverId, pagedHandovers]);
-  useEffect(() => { setHandoverPage(1); }, [query, statusFilter, handoverYearFilter, handoverDepartmentFilter, handoverBranchFilter, handoverRecipientFilter]);
+  useEffect(() => { setHandoverPage(1); }, [query, statusFilter, handoverYearFilter, handoverDepartmentFilter, handoverBranchFilter, handoverRecipientFilter, handoverLicenseFilter]);
+  useEffect(() => {
+    const resetButton = Array.from(document.querySelectorAll<HTMLButtonElement>("button")).find((button) => button.textContent?.trim() === "Xóa bộ lọc");
+    const host = resetButton?.parentElement;
+    if (!host) return;
+    const existing = host.querySelector<HTMLElement>("[data-handover-license-filter]");
+    const control = existing || document.createElement("label");
+    control.dataset.handoverLicenseFilter = "true";
+    control.className = "relative flex h-9 min-w-[184px] items-center rounded-lg border border-[#DDE7F0] bg-white px-3 text-xs font-bold text-[#60758A]";
+    const select = existing?.querySelector<HTMLSelectElement>("select") || document.createElement("select");
+    select.className = "h-full w-full appearance-none bg-transparent pr-5 outline-none";
+    select.setAttribute("aria-label", "Lọc phiếu theo Bản quyền");
+    select.replaceChildren(...["Tất cả Bản quyền", "Có Bản quyền đang cấp", "Không có Bản quyền đang cấp"].map((value) => { const option = document.createElement("option"); option.value = value; option.textContent = value; return option; }));
+    select.value = handoverLicenseFilter;
+    const onChange = () => setHandoverLicenseFilter(select.value);
+    select.addEventListener("change", onChange);
+    if (!existing) { control.append(select); const caret = document.createElement("span"); caret.className = "pointer-events-none absolute right-3 text-[#8AA0B6]"; caret.textContent = "⌄"; control.append(caret); host.insertBefore(control, resetButton || null); }
+    return () => select.removeEventListener("change", onChange);
+  }, [handoverLicenseFilter]);
   useEffect(() => { setHandoverPage((current) => Math.min(current, handoverTotalPages)); }, [handoverTotalPages]);
   const exportHandovers = async () => {
     if (!filtered.length) { toast.info("Không có phiếu bàn giao phù hợp để xuất."); return; }
@@ -2515,7 +2538,8 @@ function HandoverDetailModal({ item: listItem, companyInfo, onClose, onDataChang
   };
   const isBusy = saveRecipientSignature.isPending || updateHandoverStatus.isPending || isPreparingPdf;
   const saveSignature = (dataUrl: string) => saveRecipientSignature.mutate({ id: item.id, dataUrl });
-  const licensesReturnedWithAsset = (handoverLicenseAllocationsQuery.data || []).filter((allocation) => allocation.assetId === handoverDetailQuery.data?.assetId && allocation.userId === item.recipientUserId);
+  const licensesForRecipient = (handoverLicenseAllocationsQuery.data || []).filter((allocation) => allocation.userId === item.recipientUserId);
+  const licensesReturnedWithAsset = licensesForRecipient.filter((allocation) => allocation.assetId === handoverDetailQuery.data?.assetId);
   const updateStatus = (status: "draft" | "pending_signature" | "active" | "returned") => {
     const returnedSupplyItems = status === "returned" ? (item.supplyItems || []).map((supplyItem: NonNullable<Handover["supplyItems"]>[number]) => { const outstanding = Math.floor(Math.max(0, Number(supplyItem.issuedQuantity) - Number(supplyItem.returnedQuantity || 0))); return { handoverSupplyItemId: supplyItem.id, quantity: Math.min(outstanding, Math.floor(Math.max(0, Number(returnQuantities[supplyItem.id] ?? outstanding)))) }; }) : undefined;
     updateHandoverStatus.mutate({ id: item.id, status, recipientSignatureUrl: signature || null, handoverSignatureUrl: null, returnedSupplyItems });
@@ -2532,6 +2556,7 @@ function HandoverDetailModal({ item: listItem, companyInfo, onClose, onDataChang
         <div className="grid gap-4 sm:grid-cols-2"><section className="rounded-xl border border-[#E7EEF3] p-4"><div className="text-[10px] font-extrabold uppercase tracking-[0.12em] text-[#0F8C8C]">Người nhận</div><div className="mt-3 text-sm font-extrabold text-[#193B57]">{item.recipient}</div><div className="mt-1 text-xs text-[#71869A]">{item.department}</div><div className="mt-2 border-t border-[#E7EEF3] pt-2 text-xs font-semibold text-[#526779]">Chi nhánh: <span className="font-bold text-[#193B57]">{item.branch || "Chưa gán"}</span></div></section><section className="rounded-xl border border-[#E7EEF3] p-4"><div className="text-[10px] font-extrabold uppercase tracking-[0.12em] text-[#0F8C8C]">Thông tin bàn giao</div><div className="mt-3 text-sm font-extrabold text-[#193B57]">{item.date}</div><div className="mt-1 text-xs text-[#71869A]">Người lập: {item.handoverBy}</div></section></div>
         {item.status === "Đã hoàn trả" && <section className="rounded-xl border border-[#F0DFC0] bg-[#FFFDF7] p-4"><div className="text-[10px] font-extrabold uppercase tracking-[0.12em] text-[#8F5A00]">Số biên bản thu hồi</div><div className="mt-2 flex flex-wrap items-center justify-between gap-3"><div className="font-mono text-base font-extrabold text-[#8F5A00]">{item.recoveryCertificateNumber || "Đang cấp số"}</div><div className="text-[11px] text-[#8A7140]">Mã tự sinh theo năm và tháng</div></div></section>}
         <section className="rounded-xl border border-[#E7EEF3] p-4"><div className="text-[10px] font-extrabold uppercase tracking-[0.12em] text-[#8AA0B6]">Tình trạng, phụ kiện và ghi chú</div><div className="mt-3 grid gap-4 sm:grid-cols-3"><div><div className="text-xs text-[#8AA0B6]">Tình trạng</div><div className="mt-1 text-sm font-bold text-[#193B57]">{item.condition}</div></div><div><div className="text-xs text-[#8AA0B6]">Phụ kiện ghi tay</div><div className="mt-1 text-sm font-bold text-[#193B57]">{item.accessories || "Không có"}</div></div><div><div className="text-xs text-[#8AA0B6]">Ghi chú</div><div className="mt-1 text-sm font-bold text-[#193B57]">{item.note || "Không có"}</div></div></div>{item.supplyItems?.length ? <div className="mt-4 rounded-xl border border-[#CDE5E5] bg-[#F4FBFA] p-3"><div className="text-[10px] font-extrabold uppercase tracking-[0.12em] text-[#087A6A]">Phụ kiện lấy từ kho</div><div className="mt-2 space-y-2">{item.supplyItems.map((supplyItem: NonNullable<Handover["supplyItems"]>[number]) => { const issued = Number(supplyItem.issuedQuantity); const returned = Number(supplyItem.returnedQuantity || 0); const outstanding = issued - returned; return <div key={supplyItem.id} className="flex flex-wrap items-center justify-between gap-2 rounded-lg bg-white px-3 py-2 text-xs"><span className="font-bold text-[#193B57]">{supplyItem.supplyName} <span className="font-mono text-[10px] text-[#71869A]">{supplyItem.supplyCode}</span></span><span className="text-[#60758A]">Cấp: <b>{issued} {supplyItem.unit}</b>{returned > 0 && <> · Hoàn: <b className="text-[#087A6A]">{returned} {supplyItem.unit}</b></>}{outstanding > 0 && <span className="ml-1 text-[#A86B00]">· Đang giữ: <b>{outstanding} {supplyItem.unit}</b></span>}</span></div>; })}</div></div> : null}</section>
+        <section data-handover-license-detail className="rounded-xl border border-[#D6E5F8] bg-[#F5F9FF] p-4"><div className="text-[10px] font-extrabold uppercase tracking-[0.12em] text-[#2666A8]">Bản quyền đang cấp cho người nhận</div><p className="mt-1 text-[11px] leading-5 text-[#527089]">Danh sách này dùng cùng dữ liệu Bản quyền với cột của phiếu bàn giao.</p>{handoverLicenseAllocationsQuery.isLoading ? <p className="mt-2 text-xs text-[#71869A]">Đang tải Bản quyền...</p> : licensesForRecipient.length ? <div className="mt-3 flex flex-wrap gap-2">{licensesForRecipient.map((allocation) => <span key={allocation.id} className="rounded-full bg-white px-2.5 py-1 text-[10px] font-extrabold text-[#2666A8] shadow-sm" title={allocation.licenseCode || allocation.productName}>{allocation.productName}</span>)}</div> : <p className="mt-2 text-xs font-semibold text-[#71869A]">Người nhận chưa có Bản quyền đang cấp.</p>}</section>
         <section className="rounded-xl border border-[#E7EEF3] bg-[#FBFCFD] p-4"><div className="mb-3 flex items-center gap-2 text-[10px] font-extrabold uppercase tracking-[0.12em] text-[#527089]"><History size={14} />Lịch sử quyết định hoàn trả</div>{returnDecisionHistoryQuery.isLoading ? <p className="text-xs text-[#71869A]">Đang tải lịch sử quyết định...</p> : returnDecisionHistoryQuery.data?.length ? <div className="space-y-3">{returnDecisionHistoryQuery.data.map((entry) => { const approved = entry.action === "return_approved"; return <div key={entry.id} className="flex gap-3"><div className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${approved ? "bg-[#0F8C8C]" : "bg-[#D26767]"}`} /><div><div className={`text-xs font-extrabold ${approved ? "text-[#087A6A]" : "text-[#B44545]"}`}>{approved ? "Đã duyệt yêu cầu hoàn trả" : "Đã từ chối yêu cầu hoàn trả"}</div><div className="mt-1 text-[11px] text-[#60758A]">{entry.summary}</div><div className="mt-1 text-[10px] text-[#8AA0B6]">{entry.actorName || "Quản trị viên"} · {new Date(entry.createdAt).toLocaleString("vi-VN")}</div></div></div>; })}</div> : <p className="text-xs text-[#71869A]">Chưa có quyết định hoàn trả nào cho phiếu này.</p>}</section>
         {nextAction?.status === "returned" && <><section className="rounded-xl border border-[#D6E5F8] bg-[#F5F9FF] p-4"><div className="text-[10px] font-extrabold uppercase tracking-[0.12em] text-[#2666A8]">Bản quyền thu hồi cùng tài sản</div><p className="mt-1 text-[11px] leading-5 text-[#527089]">Các Bản quyền đang gắn với đúng tài sản và người nhận trong phiếu sẽ được thu hồi, trả lại chỗ dùng hoặc key về kho Bản quyền.</p>{handoverLicenseAllocationsQuery.isLoading ? <p className="mt-2 text-xs text-[#71869A]">Đang kiểm tra Bản quyền...</p> : licensesReturnedWithAsset.length ? <div className="mt-3 flex flex-wrap gap-2">{licensesReturnedWithAsset.map((allocation) => <span key={allocation.id} className="rounded-full bg-white px-2.5 py-1 text-[10px] font-extrabold text-[#2666A8] shadow-sm">{allocation.productName}</span>)}</div> : <p className="mt-2 text-xs font-semibold text-[#71869A]">Không có Bản quyền nào gắn với tài sản này cần thu hồi.</p>}</section><PartialAccessoryReturnPanel supplyItems={item.supplyItems || []} quantities={returnQuantities} onQuantityChange={(id, quantity) => setReturnQuantities((current) => ({ ...current, [id]: quantity }))} /></>}
         <section className="rounded-xl border border-[#CDE5E5] bg-[#F4FBFA] p-4"><div className="mb-3 flex items-center justify-between"><div><div className="flex items-center gap-2 text-[10px] font-extrabold uppercase tracking-[0.12em] text-[#087A6A]"><Signature size={14} />Ký tên điện tử</div><p className="mt-1 text-[11px] text-[#6B8F8D]">Chữ ký được lưu an toàn cùng phiếu bàn giao.</p></div>{signed && <span className="flex items-center gap-1 text-[10px] font-extrabold text-[#087A6A]"><CheckCircle2 size={13} />Đã ký</span>}</div><SignaturePad onSigned={saveSignature} /></section>

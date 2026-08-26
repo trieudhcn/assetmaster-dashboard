@@ -146,6 +146,12 @@ describe("Bản quyền & Dịch vụ", () => {
     expect(view).toContain("data-license-available-badge");
     expect(view).toContain("Còn ${capacity.available} ${unit}");
     expect(view).toContain('"Đã hết chỗ"');
+    expect(view).toContain("existingBadge?.remove(); return;");
+    expect(view).toContain("assignmentRecipientLabel");
+    expect(view).toContain("deviceName: nullable(assignmentForm.deviceName)");
+    expect(view).toContain("Chưa gán nhân sự hoặc thiết bị");
+    expect(view).toContain("Đã cấp cho ${keyAssignment ? assignmentTarget(keyAssignment)");
+    expect(view).toContain('element.dataset.assignmentRecipientLabel = "true"');
     expect(view).not.toContain("service-currency-input");
     expect(styles).toContain("place-items: center !important");
     expect(styles).toContain('[data-licenses-services-dialog="license"] .form-input');

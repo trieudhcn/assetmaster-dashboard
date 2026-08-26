@@ -159,6 +159,13 @@
 - [x] Thu hồi Bản quyền đang cấp cho người nhận khi thu hồi tài sản trong phiếu Bàn giao & Cấp phát.
 - [x] Bổ sung kiểm thử nghiệp vụ trả chỗ dùng, key hoặc tài khoản chủ về kho Bản quyền.
 - [x] Xác minh luồng cấp phát/thu hồi Bản quyền cùng tài sản trên desktop và mobile.
+- [x] Hiển thị thiết bị hoặc nhân sự thực tế thay cho mã cấp phát Bản quyền.
+- [x] Loại bỏ nhãn sức chứa Bản quyền khỏi danh sách Dịch vụ.
+- [x] Thêm bộ lọc phiếu Bàn giao có hoặc không có Bản quyền đang cấp.
+- [x] Kiểm thử và xác minh desktop/mobile các điều chỉnh hiển thị, lọc Bản quyền.
+- [x] Đưa cột Bản quyền sau cột Ngày bàn giao trong bảng Bàn giao & Cấp phát.
+- [x] Đồng bộ danh sách Bản quyền trong chi tiết phiếu với cột Bản quyền của bảng.
+- [x] Kiểm thử bảng và modal Bàn giao có Bản quyền trên desktop/mobile.
 
 ## Current Session — Bản quyền & Dịch vụ
 
