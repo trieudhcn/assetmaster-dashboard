@@ -1,5 +1,6 @@
 import { cn } from "@/lib/utils";
 import * as DialogPrimitive from "@radix-ui/react-dialog";
+import * as AlertDialogPrimitive from "@radix-ui/react-alert-dialog";
 import { XIcon } from "lucide-react";
 import * as React from "react";
 
@@ -89,7 +90,25 @@ function DialogOverlay({
 
 DialogOverlay.displayName = "DialogOverlay";
 
+type AssignmentRevokeConfirmation = { label: string; action: () => void };
+
+function AssignmentRevokeConfirmationDialog({ pending, onClose }: { pending: AssignmentRevokeConfirmation | null; onClose: () => void }) {
+  return <AlertDialogPrimitive.Root open={Boolean(pending)} onOpenChange={(open) => { if (!open) onClose(); }}><AlertDialogPrimitive.Portal><AlertDialogPrimitive.Overlay className="fixed inset-0 z-[80] bg-black/50 backdrop-blur-[2px]" /><AlertDialogPrimitive.Content className="fixed top-1/2 left-1/2 z-[81] w-[calc(100vw-2rem)] max-w-md -translate-x-1/2 -translate-y-1/2 rounded-xl border border-[#CDE5E5] bg-white p-5 shadow-[0_24px_70px_rgba(16,42,67,.24)]"><AlertDialogPrimitive.Title className="font-display text-lg font-extrabold text-[#102A43]">Thu hồi cấp phát Bản quyền?</AlertDialogPrimitive.Title><AlertDialogPrimitive.Description className="mt-2 text-sm leading-6 text-[#60758A]">{pending?.label || "Lượt cấp phát này"} sẽ bị thu hồi và trả lại chỗ dùng hoặc thông tin kích hoạt tương ứng.</AlertDialogPrimitive.Description><div className="mt-5 flex justify-end gap-2"><AlertDialogPrimitive.Cancel className="form-button-secondary">Hủy</AlertDialogPrimitive.Cancel><AlertDialogPrimitive.Action onClick={() => pending?.action()} className="form-button-primary bg-[#B44545] hover:bg-[#933737]">Xác nhận thu hồi</AlertDialogPrimitive.Action></div></AlertDialogPrimitive.Content></AlertDialogPrimitive.Portal></AlertDialogPrimitive.Root>;
+}
+
+function withAssignmentRevokeConfirmation(node: React.ReactNode, requestConfirmation: (confirmation: AssignmentRevokeConfirmation) => void): React.ReactNode {
+  if (!React.isValidElement<{ children?: React.ReactNode; type?: string; onClick?: () => void }>(node)) return node;
+  const props = node.props;
+  const hasRevokeLabel = React.Children.toArray(props.children).some((child) => typeof child === "string" && child.includes("Thu hồi"));
+  if (node.type === "button" && props.type === "button" && hasRevokeLabel && props.onClick) {
+    return React.cloneElement(node, { onClick: () => requestConfirmation({ label: "Lượt cấp phát đang chọn", action: props.onClick! }) });
+  }
+  if (!props.children) return node;
+  return React.cloneElement(node, undefined, React.Children.map(props.children, (child) => withAssignmentRevokeConfirmation(child, requestConfirmation)));
+}
+
 function AssignmentDialogLayout({ children }: { children: React.ReactNode }) {
+  const [pendingRevoke, setPendingRevoke] = React.useState<AssignmentRevokeConfirmation | null>(null);
   const items = React.Children.toArray(children);
   const header = items.find((item) => React.isValidElement(item) && item.type === DialogHeader);
   const form = items.find((item): item is React.ReactElement<{ children?: React.ReactNode; className?: string }> => React.isValidElement(item) && item.type === "form");
@@ -112,7 +131,7 @@ function AssignmentDialogLayout({ children }: { children: React.ReactNode }) {
     return React.cloneElement(control, { className: `${control.props.className || ""} assignment-submit-loading`, "aria-busy": true }, <><span className="size-3 animate-spin rounded-full border-2 border-white/35 border-t-white" />Đang cấp phát…</>);
   });
 
-  return <>{header}{React.cloneElement(form, { className: "flex min-h-0 flex-1 flex-col" }, <div data-slot="dialog-body" className="grid min-h-0 flex-1 gap-4 overflow-y-auto px-5 py-4 sm:grid-cols-2">{bodyPrelude}{bodyFields}</div>, <div data-slot="dialog-footer" className="flex justify-end gap-2 border-t border-[#E7EEF3] bg-white px-5 py-4">{footerChildren}</div>)}</>;
+  return <><AssignmentRevokeConfirmationDialog pending={pendingRevoke} onClose={() => setPendingRevoke(null)} />{header}{React.cloneElement(form, { className: "flex min-h-0 flex-1 flex-col" }, <div data-slot="dialog-body" className="grid min-h-0 flex-1 gap-4 overflow-y-auto px-5 py-4 sm:grid-cols-2">{bodyPrelude}{bodyFields.map((field) => withAssignmentRevokeConfirmation(field, setPendingRevoke))}</div>, <div data-slot="dialog-footer" className="flex justify-end gap-2 border-t border-[#E7EEF3] bg-white px-5 py-4">{footerChildren}</div>)}</>;
 }
 
 function DialogContent({

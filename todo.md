@@ -140,6 +140,8 @@
 - [x] Loại bỏ trường Tên người/đối tượng giữ và Thiết bị khỏi form Cấp phát Bản quyền.
 - [x] Kiểm thử chống gửi lặp và bố cục form Cấp phát sau khi tinh gọn.
 - [x] Bổ sung kiểm thử tương tác cho trạng thái loading và điều kiện chặn gửi lặp của Cấp phát Bản quyền.
+- [x] Thêm popup xác nhận trước khi thu hồi một lượt cấp phát Bản quyền.
+- [x] Hiển thị trạng thái đang thu hồi và kiểm thử luồng Hủy/Xác nhận.
 
 ## Current Session — Bản quyền & Dịch vụ
 

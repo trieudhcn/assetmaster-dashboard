@@ -169,6 +169,10 @@ describe("Bản quyền & Dịch vụ", () => {
     expect(dialog).toContain('item.props.label !== "Tên người/đối tượng giữ"');
     expect(dialog).toContain('item.props.label !== "Thiết bị"');
     expect(dialog).toContain('Đang cấp phát…');
+    expect(dialog).toContain("AssignmentRevokeConfirmationDialog");
+    expect(dialog).toContain("Thu hồi cấp phát Bản quyền?");
+    expect(dialog).toContain("Xác nhận thu hồi");
+    expect(dialog).toContain("withAssignmentRevokeConfirmation");
     expect(view).toContain('if (!canSubmitLicenseAssignment(assignmentLicenseId, assignLicense.isPending)) return;');
     expect(view).toContain('import { canSubmitLicenseAssignment } from "@/lib/licenseAssignmentSubmission"');
     expect(view).toContain('assignLicense.isPending ? "Đang cấp..." : "Xác nhận cấp phát"');
