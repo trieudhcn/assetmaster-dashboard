@@ -188,6 +188,15 @@ html[data-motion="off"] *::after { animation: none !important; transition: none 
 .modal-close-action:active { transform: scale(0.97); }
 .modal-close-action:focus-visible { outline: 2px solid #0F8C8C; outline-offset: 2px; }
 
+/* Modal Quản lý Loại License uses shared field, containment and dismissal styling. */
+[data-slot="dialog-content"]:has(input[placeholder="VD: Đồ họa / Thiết kế"]) { overflow: hidden !important; border-radius: 1rem !important; }
+[data-slot="dialog-content"]:has(input[placeholder="VD: Đồ họa / Thiết kế"]) input[placeholder="VD: Đồ họa / Thiết kế"] { min-height: 2.7rem; border: 1px solid #D7E3EB; border-radius: 0.5rem; background: #FFFFFF; padding: 0.625rem 0.75rem; color: #193B57; font-size: 0.8125rem; font-weight: 600; }
+[data-slot="dialog-content"]:has(input[placeholder="VD: Đồ họa / Thiết kế"]) input[placeholder="VD: Đồ họa / Thiết kế"]:focus { border-color: #0F8C8C; outline: 2px solid rgba(15, 140, 140, 0.16); outline-offset: 1px; }
+[data-slot="dialog-content"]:has(input[placeholder="VD: Đồ họa / Thiết kế"]) [data-slot="dialog-close"] { top: 1rem; right: 1rem; display: inline-flex; min-height: 2.25rem; align-items: center; justify-content: center; border: 1px solid #8BCDC6; border-radius: 0.5rem; background: #FFFFFF; padding: 0 0.75rem; color: #087A6A; opacity: 1; }
+[data-slot="dialog-content"]:has(input[placeholder="VD: Đồ họa / Thiết kế"]) [data-slot="dialog-close"] svg, [data-slot="dialog-content"]:has(input[placeholder="VD: Đồ họa / Thiết kế"]) [data-slot="dialog-close"] .sr-only { display: none; }
+[data-slot="dialog-content"]:has(input[placeholder="VD: Đồ họa / Thiết kế"]) [data-slot="dialog-close"]::after { content: "Đóng"; font-size: 0.75rem; font-weight: 800; }
+[data-slot="dialog-content"]:has(input[placeholder="VD: Đồ họa / Thiết kế"]) [data-slot="dialog-close"]:hover { border-color: #0F8C8C; background: #E6F6F2; }
+
 @keyframes overlay-in { from { opacity: 0; } to { opacity: 1; } }
 @keyframes modal-in { from { opacity: 0; transform: translateY(0.65rem) scale(0.97); } to { opacity: 1; transform: translateY(0) scale(1); } }
 @keyframes drawer-in { from { opacity: 0; transform: translateX(1.25rem); } to { opacity: 1; transform: translateX(0); } }

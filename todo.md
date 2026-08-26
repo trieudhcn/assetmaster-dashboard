@@ -187,6 +187,11 @@
 - [x] Kiểm thử modal Loại License trên desktop và mobile.
 - [x] Loại bỏ triệt để nhãn sức chứa Bản quyền khỏi danh sách Dịch vụ.
 - [x] Kiểm thử hồi quy danh sách Dịch vụ không có nhãn số chỗ.
+- [x] Thêm widget Dashboard hiển thị License còn trống chưa gắn với tài sản.
+- [x] Chuẩn hóa dropdown bộ lọc Bản quyền trong Bàn giao & Cấp phát theo component dùng chung.
+- [x] Cập nhật tức thời sức chứa và trạng thái License sau cấp phát hoặc thu hồi, không cần tải lại trang.
+- [x] Đồng bộ input, bo góc, nút Đóng và xác nhận xóa của modal Quản lý Loại License.
+- [x] Kiểm thử các hạng mục License trên desktop/mobile và hồi quy toàn bộ.
 
 ## Current Session — Bản quyền & Dịch vụ
 

@@ -458,6 +458,7 @@ export default function Home() {
   const dashboardInvoicesQuery = trpc.purchaseInvoices.list.useQuery(undefined, { enabled: isAuthenticated && isAdmin });
   const suppliesQuery = trpc.supplies.list.useQuery(undefined, { enabled: isAuthenticated && isAdmin });
   const dashboardSoftwareLicensesQuery = trpc.softwareLicenses.list.useQuery(undefined, { enabled: isAuthenticated && isAdmin });
+  const dashboardSoftwareLicenseCapacityQuery = trpc.softwareLicenses.capacity.useQuery(undefined, { enabled: isAuthenticated && isAdmin });
   const dashboardTechnologyServicesQuery = trpc.technologyServices.list.useQuery(undefined, { enabled: isAuthenticated && isAdmin });
   const dashboardAlertStatesQuery = trpc.notifications.dashboardAlertStates.useQuery(undefined, { enabled: isAuthenticated && isAdmin });
   const dashboardAlertHistoryQuery = trpc.notifications.dashboardAlertHistory.useQuery({ limit: 50 }, { enabled: isAuthenticated && isAdmin });
@@ -465,6 +466,13 @@ export default function Home() {
   const maintenanceTicketsQuery = trpc.maintenance.list.useQuery(undefined, { enabled: isAuthenticated && isAdmin });
   const repairCostByAssetId = useMemo(() => (maintenanceTicketsQuery.data || []).filter((ticket) => (ticket.serviceChannel || "repair") === "repair").reduce((totals, ticket) => totals.set(ticket.assetId, (totals.get(ticket.assetId) || 0) + Number(ticket.actualCost ?? 0)), new Map<number, number>()), [maintenanceTicketsQuery.data]);
   const totalMaintenanceServiceCost = useMemo(() => (maintenanceTicketsQuery.data || []).reduce((total, ticket) => total + Number(ticket.actualCost ?? 0), 0), [maintenanceTicketsQuery.data]);
+  const dashboardAvailableLicenses = useMemo(() => {
+    const capacities = new Map((dashboardSoftwareLicenseCapacityQuery.data || []).map((item) => [item.softwareLicenseId, item]));
+    return (dashboardSoftwareLicensesQuery.data || []).map((license) => {
+      const capacity = capacities.get(license.id);
+      return { id: license.id, name: license.productName, code: license.licenseCode, mode: capacity?.activationMode || license.activationMode || "seat", available: capacity?.available || 0 };
+    }).filter((license) => license.available > 0);
+  }, [dashboardSoftwareLicenseCapacityQuery.data, dashboardSoftwareLicensesQuery.data]);
   const maintenanceBudgetsQuery = trpc.maintenance.monthlyBudgets.useQuery({ year: maintenanceChartYear }, { enabled: isAuthenticated && isAdmin });
   const retirementCertificatesQuery = trpc.retirementCertificates.list.useQuery(undefined, { enabled: isAuthenticated && isAdmin });
   const vendorsQuery = trpc.vendors.list.useQuery(undefined, { enabled: isAuthenticated && isAdmin });
@@ -1115,12 +1123,77 @@ export default function Home() {
   const refreshDashboardData = async () => {
     const refreshToast = toast.loading("Đang đồng bộ dữ liệu dashboard...");
     try {
-      await Promise.all([assetQuery.refetch(), maintenanceTicketsQuery.refetch(), retirementCertificatesQuery.refetch(), suppliesQuery.refetch()]);
+      await Promise.all([assetQuery.refetch(), maintenanceTicketsQuery.refetch(), retirementCertificatesQuery.refetch(), suppliesQuery.refetch(), dashboardSoftwareLicensesQuery.refetch(), dashboardSoftwareLicenseCapacityQuery.refetch()]);
       toast.success("Dữ liệu dashboard đã được đồng bộ.", { id: refreshToast });
     } catch {
       toast.error("Không thể đồng bộ dữ liệu dashboard. Vui lòng thử lại.", { id: refreshToast });
     }
   };
+
+  useEffect(() => {
+    if (activeNav !== "Tổng quan") return;
+    const anchor = document.querySelector<HTMLElement>("[data-dashboard-alert-history-launcher]");
+    if (!anchor) return;
+    document.querySelector<HTMLElement>("[data-dashboard-available-licenses]")?.remove();
+    const widget = document.createElement("section");
+    widget.dataset.dashboardAvailableLicenses = "true";
+    widget.className = "mb-5 overflow-hidden rounded-xl border border-[#CDE5E5] bg-white shadow-[0_8px_24px_rgba(16,42,67,0.045)]";
+    const header = document.createElement("div");
+    header.className = "flex flex-wrap items-center justify-between gap-3 border-b border-[#DCE9ED] bg-[#F4FBFA] px-4 py-3";
+    const heading = document.createElement("div");
+    const title = document.createElement("div");
+    title.className = "text-sm font-extrabold text-[#087A6A]";
+    title.textContent = "License còn trống";
+    const subtitle = document.createElement("p");
+    subtitle.className = "mt-0.5 text-[11px] text-[#4B8884]";
+    subtitle.textContent = "Chưa được cấp phát hoặc gắn với bất kỳ tài sản nào.";
+    heading.append(title, subtitle);
+    const count = document.createElement("span");
+    count.className = "rounded-full bg-white px-2.5 py-1 text-[10px] font-extrabold text-[#087A6A] ring-1 ring-[#BFE7E1]";
+    count.textContent = dashboardSoftwareLicenseCapacityQuery.isLoading ? "Đang tải" : `${dashboardAvailableLicenses.reduce((total, item) => total + item.available, 0)} chỗ trống`;
+    header.append(heading, count);
+    const body = document.createElement("div");
+    body.className = "divide-y divide-[#E7EEF3]";
+    if (dashboardSoftwareLicenseCapacityQuery.isLoading || dashboardSoftwareLicensesQuery.isLoading) {
+      body.textContent = "Đang kiểm tra sức chứa License...";
+      body.className = "px-4 py-6 text-center text-xs font-semibold text-[#71869A]";
+    } else if (!dashboardAvailableLicenses.length) {
+      body.textContent = "Hiện không có License trống chưa gắn với tài sản.";
+      body.className = "px-4 py-6 text-center text-xs font-semibold text-[#71869A]";
+    } else {
+      dashboardAvailableLicenses.slice(0, 5).forEach((license) => {
+        const row = document.createElement("button");
+        row.type = "button";
+        row.className = "flex w-full items-center justify-between gap-4 px-4 py-3 text-left transition hover:bg-[#F8FCFC]";
+        row.onclick = () => setActiveNav("Bản quyền & Dịch vụ");
+        const copy = document.createElement("span");
+        copy.className = "min-w-0";
+        const name = document.createElement("span");
+        name.className = "block truncate text-xs font-extrabold text-[#193B57]";
+        name.textContent = license.name;
+        const detail = document.createElement("span");
+        detail.className = "mt-0.5 block font-mono text-[10px] text-[#8AA0B6]";
+        detail.textContent = license.code || "Chưa có mã nội bộ";
+        copy.append(name, detail);
+        const available = document.createElement("span");
+        available.className = "shrink-0 rounded-full bg-[#E6F6F2] px-2.5 py-1 text-[10px] font-extrabold text-[#087A6A]";
+        available.textContent = `Còn ${license.available} ${license.mode === "product_key" ? "key" : "chỗ"}`;
+        row.append(copy, available);
+        body.append(row);
+      });
+    }
+    const footer = document.createElement("div");
+    footer.className = "flex justify-end border-t border-[#E7EEF3] bg-[#FBFCFD] px-4 py-2.5";
+    const open = document.createElement("button");
+    open.type = "button";
+    open.className = "text-xs font-extrabold text-[#087A6A] hover:underline";
+    open.textContent = "Mở quản lý Bản quyền →";
+    open.onclick = () => setActiveNav("Bản quyền & Dịch vụ");
+    footer.append(open);
+    widget.append(header, body, footer);
+    anchor.parentElement?.insertBefore(widget, anchor.nextSibling);
+    return () => widget.remove();
+  }, [activeNav, dashboardAvailableLicenses, dashboardSoftwareLicenseCapacityQuery.isLoading, dashboardSoftwareLicensesQuery.isLoading]);
 
   const openCreateModal = () => { setFormData({ code: "", name: "", category: "", holder: "", status: "Sẵn có", statusType: "available", date: new Date().toISOString().slice(0, 10), value: "", location: "", serial: "", maintenanceReason: "", supplier: "", warrantyUntil: "", supplierReturnedAt: "", supplierReturnReason: "", retiredAt: "", retirementReason: "", note: "", branchId: undefined }); setSelectedAsset(null); setAssetModal("create"); };
   useEffect(() => {
@@ -1910,19 +1983,58 @@ function AssignmentsPage({ showComingSoon, companyInfo }: { showComingSoon: (lab
     const resetButton = Array.from(document.querySelectorAll<HTMLButtonElement>("button")).find((button) => button.textContent?.trim() === "Xóa bộ lọc");
     const host = resetButton?.parentElement;
     if (!host) return;
-    const existing = host.querySelector<HTMLElement>("[data-handover-license-filter]");
-    const control = existing || document.createElement("label");
+    host.querySelector<HTMLElement>("[data-handover-license-filter]")?.remove();
+    const control = document.createElement("div");
     control.dataset.handoverLicenseFilter = "true";
-    control.className = "relative flex h-9 min-w-[184px] items-center rounded-lg border border-[#DDE7F0] bg-white px-3 text-xs font-bold text-[#60758A]";
-    const select = existing?.querySelector<HTMLSelectElement>("select") || document.createElement("select");
-    select.className = "h-full w-full appearance-none bg-transparent pr-5 outline-none";
-    select.setAttribute("aria-label", "Lọc phiếu theo Bản quyền");
-    select.replaceChildren(...["Tất cả Bản quyền", "Có Bản quyền đang cấp", "Không có Bản quyền đang cấp"].map((value) => { const option = document.createElement("option"); option.value = value; option.textContent = value; return option; }));
-    select.value = handoverLicenseFilter;
-    const onChange = () => setHandoverLicenseFilter(select.value);
-    select.addEventListener("change", onChange);
-    if (!existing) { control.append(select); const caret = document.createElement("span"); caret.className = "pointer-events-none absolute right-3 text-[#8AA0B6]"; caret.textContent = "⌄"; control.append(caret); host.insertBefore(control, resetButton || null); }
-    return () => select.removeEventListener("change", onChange);
+    control.className = "relative min-w-[184px]";
+    const trigger = document.createElement("button");
+    trigger.type = "button";
+    trigger.className = "field-input flex h-9 w-full items-center justify-between gap-2 text-left text-xs font-bold text-[#60758A]";
+    trigger.setAttribute("aria-label", "Lọc phiếu theo Bản quyền");
+    trigger.setAttribute("aria-haspopup", "listbox");
+    const label = document.createElement("span");
+    label.className = "truncate";
+    label.textContent = handoverLicenseFilter;
+    const caret = document.createElement("span");
+    caret.className = "shrink-0 text-[#8AA0B6]";
+    caret.textContent = "⌄";
+    trigger.append(label, caret);
+    const menu = document.createElement("div");
+    menu.className = "absolute left-0 top-[calc(100%+0.35rem)] z-[95] hidden w-[min(280px,calc(100vw-2rem))] overflow-hidden rounded-xl border border-[#CDE5E5] bg-white shadow-[0_16px_36px_rgba(16,42,67,0.18)]";
+    menu.setAttribute("role", "listbox");
+    const searchWrap = document.createElement("div");
+    searchWrap.className = "border-b border-[#E7EEF3] p-2";
+    const search = document.createElement("input");
+    search.type = "search";
+    search.placeholder = "Tìm trạng thái Bản quyền...";
+    search.className = "h-9 w-full rounded-lg border border-[#DDE7F0] bg-[#FBFCFD] px-3 text-xs font-semibold text-[#193B57] outline-none focus:border-[#0F8C8C]";
+    searchWrap.append(search);
+    const optionsWrap = document.createElement("div");
+    optionsWrap.className = "max-h-64 overflow-y-auto p-1";
+    const options = ["Tất cả Bản quyền", "Có Bản quyền đang cấp", "Không có Bản quyền đang cấp"];
+    const renderOptions = () => {
+      optionsWrap.replaceChildren();
+      const normalized = search.value.trim().toLocaleLowerCase("vi-VN");
+      options.filter((value) => value.toLocaleLowerCase("vi-VN").includes(normalized)).forEach((value) => {
+        const option = document.createElement("button");
+        option.type = "button";
+        option.className = `flex w-full items-center justify-between rounded-lg px-3 py-2.5 text-left text-xs font-semibold text-[#193B57] transition ${value === handoverLicenseFilter ? "bg-[#E6F6F2]" : "hover:bg-[#ECF8F7]"}`;
+        option.textContent = value;
+        option.onclick = () => { setHandoverLicenseFilter(value); menu.classList.add("hidden"); };
+        optionsWrap.append(option);
+      });
+    };
+    let opened = false;
+    const close = () => { opened = false; trigger.setAttribute("aria-expanded", "false"); menu.classList.add("hidden"); };
+    trigger.onclick = () => { opened = !opened; trigger.setAttribute("aria-expanded", String(opened)); menu.classList.toggle("hidden", !opened); if (opened) window.requestAnimationFrame(() => search.focus()); };
+    search.oninput = renderOptions;
+    const closeOnOutside = (event: PointerEvent) => { if (!control.contains(event.target as Node)) close(); };
+    document.addEventListener("pointerdown", closeOnOutside);
+    renderOptions();
+    control.append(trigger, menu);
+    menu.append(searchWrap, optionsWrap);
+    host.insertBefore(control, resetButton || null);
+    return () => { document.removeEventListener("pointerdown", closeOnOutside); control.remove(); };
   }, [handoverLicenseFilter]);
   useEffect(() => { setHandoverPage((current) => Math.min(current, handoverTotalPages)); }, [handoverTotalPages]);
   const exportHandovers = async () => {
