@@ -73,7 +73,12 @@ describe("Bản quyền & Dịch vụ", () => {
     expect(view).toContain('from "@/components/SearchableSelect"');
     expect(view).toContain("function StandardDropdown");
     expect(view).toContain("<StandardDropdown");
-    expect((view.match(/<StandardDropdown/g) || []).length).toBe(18);
+    expect((view.match(/<StandardDropdown/g) || []).length).toBe(21);
+    expect(view).toContain("Mô hình kích hoạt");
+    expect(view).toContain("Key riêng cho từng người");
+    expect(view).toContain("Tài khoản email dùng chung");
+    expect(view).toContain("LicenseCredentialPortal");
+    expect(view).toContain("Chỉ Admin được xem hoặc sao chép mật khẩu.");
     expect(view).toContain("Tìm nhà cung cấp...");
     expect(view).toContain("Tìm chi nhánh...");
     expect(view).toContain("Tìm mã hoặc tên Tài sản...");

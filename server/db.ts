@@ -31,8 +31,11 @@ import {
   purchaseInvoices,
   retirementCertificateAssets,
   retirementCertificates,
+  softwareLicenseActivationAccounts,
   softwareLicenseAssignments,
+  softwareLicenseCredentialAccessLogs,
   softwareLicenseDocuments,
+  softwareLicenseKeys,
   softwareLicenses,
   supplyImportItems,
   supplyImportSessions,
@@ -447,6 +450,81 @@ export async function listSoftwareLicenseAssignments(softwareLicenseId?: number)
   if (!db) return [];
   const query = db.select().from(softwareLicenseAssignments);
   return softwareLicenseId ? query.where(eq(softwareLicenseAssignments.softwareLicenseId, softwareLicenseId)).orderBy(desc(softwareLicenseAssignments.assignedAt)) : query.orderBy(desc(softwareLicenseAssignments.assignedAt));
+}
+
+export async function getSoftwareLicenseAssignmentById(id: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+  return (await db.select().from(softwareLicenseAssignments).where(eq(softwareLicenseAssignments.id, id)).limit(1))[0];
+}
+
+export async function listSoftwareLicenseKeys(softwareLicenseId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(softwareLicenseKeys).where(eq(softwareLicenseKeys.softwareLicenseId, softwareLicenseId)).orderBy(desc(softwareLicenseKeys.createdAt));
+}
+
+export async function getSoftwareLicenseKeyById(id: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+  return (await db.select().from(softwareLicenseKeys).where(eq(softwareLicenseKeys.id, id)).limit(1))[0];
+}
+
+export async function createSoftwareLicenseKey(data: typeof softwareLicenseKeys.$inferInsert) {
+  const db = await getDb();
+  if (!db) throw new Error("Database unavailable");
+  const result = await db.insert(softwareLicenseKeys).values(data);
+  return Number(result[0].insertId);
+}
+
+export async function updateSoftwareLicenseKey(id: number, data: Partial<typeof softwareLicenseKeys.$inferInsert>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database unavailable");
+  await db.update(softwareLicenseKeys).set(data).where(eq(softwareLicenseKeys.id, id));
+}
+
+export async function listSoftwareLicenseActivationAccounts(softwareLicenseId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(softwareLicenseActivationAccounts).where(eq(softwareLicenseActivationAccounts.softwareLicenseId, softwareLicenseId)).orderBy(desc(softwareLicenseActivationAccounts.createdAt));
+}
+
+export async function getSoftwareLicenseActivationAccountById(id: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+  return (await db.select().from(softwareLicenseActivationAccounts).where(eq(softwareLicenseActivationAccounts.id, id)).limit(1))[0];
+}
+
+export async function createSoftwareLicenseActivationAccount(data: typeof softwareLicenseActivationAccounts.$inferInsert) {
+  const db = await getDb();
+  if (!db) throw new Error("Database unavailable");
+  const result = await db.insert(softwareLicenseActivationAccounts).values(data);
+  return Number(result[0].insertId);
+}
+
+export async function updateSoftwareLicenseActivationAccount(id: number, data: Partial<typeof softwareLicenseActivationAccounts.$inferInsert>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database unavailable");
+  await db.update(softwareLicenseActivationAccounts).set(data).where(eq(softwareLicenseActivationAccounts.id, id));
+}
+
+export async function updateSoftwareLicenseActivationAccountLimits(softwareLicenseId: number, maxUsers: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database unavailable");
+  await db.update(softwareLicenseActivationAccounts).set({ maxUsers }).where(eq(softwareLicenseActivationAccounts.softwareLicenseId, softwareLicenseId));
+}
+
+export async function createSoftwareLicenseCredentialAccessLog(data: typeof softwareLicenseCredentialAccessLogs.$inferInsert) {
+  const db = await getDb();
+  if (!db) throw new Error("Database unavailable");
+  const result = await db.insert(softwareLicenseCredentialAccessLogs).values(data);
+  return Number(result[0].insertId);
+}
+
+export async function listSoftwareLicenseCredentialAccessLogs(softwareLicenseId: number, limit = 100) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(softwareLicenseCredentialAccessLogs).where(eq(softwareLicenseCredentialAccessLogs.softwareLicenseId, softwareLicenseId)).orderBy(desc(softwareLicenseCredentialAccessLogs.createdAt)).limit(limit);
 }
 
 export async function createSoftwareLicenseAssignment(data: typeof softwareLicenseAssignments.$inferInsert) {

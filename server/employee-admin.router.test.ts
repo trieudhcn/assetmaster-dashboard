@@ -8,8 +8,11 @@ const mocks = vi.hoisted(() => ({
   createDepartment: vi.fn(),
   createDivision: vi.fn(),
   createSoftwareLicense: vi.fn(),
+  createSoftwareLicenseActivationAccount: vi.fn(),
+  createSoftwareLicenseCredentialAccessLog: vi.fn(),
   createSoftwareLicenseDocument: vi.fn(),
   createSoftwareLicenseAssignment: vi.fn(),
+  createSoftwareLicenseKey: vi.fn(),
   createTechnologyService: vi.fn(),
   createTechnologyVendor: vi.fn(),
   createTechnologyVendorContract: vi.fn(),
@@ -26,7 +29,10 @@ const mocks = vi.hoisted(() => ({
   getAssetById: vi.fn(),
   getInventorySupplyById: vi.fn(),
   getSoftwareLicenseById: vi.fn(),
+  getSoftwareLicenseActivationAccountById: vi.fn(),
+  getSoftwareLicenseAssignmentById: vi.fn(),
   getSoftwareLicenseDocumentById: vi.fn(),
+  getSoftwareLicenseKeyById: vi.fn(),
   getVendorById: vi.fn(),
   getVendorByName: vi.fn(),
   getVendorDocumentById: vi.fn(),
@@ -59,8 +65,11 @@ const mocks = vi.hoisted(() => ({
   listAllBrands: vi.fn(),
   listVendorDocuments: vi.fn(),
   listSoftwareLicenses: vi.fn(),
+  listSoftwareLicenseActivationAccounts: vi.fn(),
   listSoftwareLicenseAssignments: vi.fn(),
+  listSoftwareLicenseCredentialAccessLogs: vi.fn(),
   listSoftwareLicenseDocuments: vi.fn(),
+  listSoftwareLicenseKeys: vi.fn(),
   listTechnologyServices: vi.fn(),
   listTechnologyVendors: vi.fn(),
   listTechnologyVendorContracts: vi.fn(),
@@ -92,6 +101,9 @@ const mocks = vi.hoisted(() => ({
   updateVendor: vi.fn(),
   updateBrand: vi.fn(),
   updateSoftwareLicense: vi.fn(),
+  updateSoftwareLicenseActivationAccount: vi.fn(),
+  updateSoftwareLicenseActivationAccountLimits: vi.fn(),
+  updateSoftwareLicenseKey: vi.fn(),
   updateTechnologyService: vi.fn(),
   updateTechnologyVendor: vi.fn(),
   updateTechnologyVendorContract: vi.fn(),
@@ -108,8 +120,11 @@ vi.mock("./db", () => ({
   createDepartment: mocks.createDepartment,
   createDivision: mocks.createDivision,
   createSoftwareLicense: mocks.createSoftwareLicense,
+  createSoftwareLicenseActivationAccount: mocks.createSoftwareLicenseActivationAccount,
+  createSoftwareLicenseCredentialAccessLog: mocks.createSoftwareLicenseCredentialAccessLog,
   createSoftwareLicenseDocument: mocks.createSoftwareLicenseDocument,
   createSoftwareLicenseAssignment: mocks.createSoftwareLicenseAssignment,
+  createSoftwareLicenseKey: mocks.createSoftwareLicenseKey,
   createTechnologyService: mocks.createTechnologyService,
   createTechnologyVendor: mocks.createTechnologyVendor,
   createTechnologyVendorContract: mocks.createTechnologyVendorContract,
@@ -128,7 +143,10 @@ vi.mock("./db", () => ({
   getAssetById: mocks.getAssetById,
   getInventorySupplyById: mocks.getInventorySupplyById,
   getSoftwareLicenseById: mocks.getSoftwareLicenseById,
+  getSoftwareLicenseActivationAccountById: mocks.getSoftwareLicenseActivationAccountById,
+  getSoftwareLicenseAssignmentById: mocks.getSoftwareLicenseAssignmentById,
   getSoftwareLicenseDocumentById: mocks.getSoftwareLicenseDocumentById,
+  getSoftwareLicenseKeyById: mocks.getSoftwareLicenseKeyById,
   getVendorById: mocks.getVendorById,
   getVendorByName: mocks.getVendorByName,
   getVendorDocumentById: mocks.getVendorDocumentById,
@@ -165,8 +183,11 @@ vi.mock("./db", () => ({
   listAllBrands: mocks.listAllBrands,
   listVendorDocuments: mocks.listVendorDocuments,
   listSoftwareLicenses: mocks.listSoftwareLicenses,
+  listSoftwareLicenseActivationAccounts: mocks.listSoftwareLicenseActivationAccounts,
   listSoftwareLicenseAssignments: mocks.listSoftwareLicenseAssignments,
+  listSoftwareLicenseCredentialAccessLogs: mocks.listSoftwareLicenseCredentialAccessLogs,
   listSoftwareLicenseDocuments: mocks.listSoftwareLicenseDocuments,
+  listSoftwareLicenseKeys: mocks.listSoftwareLicenseKeys,
   listTechnologyServices: mocks.listTechnologyServices,
   listTechnologyVendors: mocks.listTechnologyVendors,
   listTechnologyVendorContracts: mocks.listTechnologyVendorContracts,
@@ -206,6 +227,9 @@ vi.mock("./db", () => ({
   updateVendor: mocks.updateVendor,
   updateBrand: mocks.updateBrand,
   updateSoftwareLicense: mocks.updateSoftwareLicense,
+  updateSoftwareLicenseActivationAccount: mocks.updateSoftwareLicenseActivationAccount,
+  updateSoftwareLicenseActivationAccountLimits: mocks.updateSoftwareLicenseActivationAccountLimits,
+  updateSoftwareLicenseKey: mocks.updateSoftwareLicenseKey,
   updateTechnologyService: mocks.updateTechnologyService,
   updateTechnologyVendor: mocks.updateTechnologyVendor,
   updateTechnologyVendorContract: mocks.updateTechnologyVendorContract,
@@ -654,6 +678,49 @@ describe("employee administration", () => {
     expect(mocks.createSoftwareLicenseAssignment).toHaveBeenCalledWith(expect.objectContaining({ softwareLicenseId: 71, status: "active", assignedToName: "Máy Kế toán" }));
     expect(mocks.createTechnologyService).toHaveBeenCalledWith(expect.objectContaining({ serviceCode: "DOM-001", costAmount: "300000", createdByUserId: 1 }));
     expect(mocks.createTechnologyService).toHaveBeenCalledWith(expect.objectContaining({ technologyVendorId: 51, technologyVendorContractId: 61 }));
+  });
+
+  it("manages encrypted individual keys and binds an available key during assignment", async () => {
+    process.env.JWT_SECRET = "router-license-test-secret";
+    mocks.getSoftwareLicenseById.mockResolvedValue({ id: 72, productName: "Windows 11 Pro", purchasedQuantity: 2, activationMode: "product_key", sharedAccountMaxUsers: 1 });
+    mocks.listSoftwareLicenseKeys.mockResolvedValue([]);
+    mocks.createSoftwareLicenseKey.mockResolvedValue(301);
+    const caller = appRouter.createCaller(adminContext);
+
+    await expect(caller.softwareLicenses.addKey({ softwareLicenseId: 72, key: "AAAA-BBBB-CCCC-1234", note: null })).resolves.toEqual({ id: 301 });
+    const createdKey = mocks.createSoftwareLicenseKey.mock.calls[0]?.[0];
+    expect(createdKey).toMatchObject({ softwareLicenseId: 72, maskedKey: expect.stringMatching(/1234$/), status: "available" });
+    expect(createdKey.encryptedKey).not.toContain("AAAA-BBBB-CCCC-1234");
+
+    mocks.listSoftwareLicenseKeys.mockResolvedValue([{ id: 301, softwareLicenseId: 72, status: "available", maskedKey: createdKey.maskedKey }]);
+    mocks.listSoftwareLicenseAssignments.mockResolvedValue([]);
+    mocks.createSoftwareLicenseAssignment.mockResolvedValue(901);
+    await expect(caller.softwareLicenses.assign({ softwareLicenseId: 72, assignmentMethod: "product_key", softwareLicenseKeyId: 301, assetId: null, userId: null, assignedToName: "Máy Kế toán", deviceName: "PC-01", assignedAt: new Date("2026-08-25"), note: null })).resolves.toEqual({ id: 901 });
+
+    expect(mocks.createSoftwareLicenseAssignment).toHaveBeenCalledWith(expect.objectContaining({ assignmentMethod: "product_key", softwareLicenseKeyId: 301 }));
+    expect(mocks.updateSoftwareLicenseKey).toHaveBeenCalledWith(301, { status: "assigned" });
+  });
+
+  it("limits shared-account allocation by the Admin-configured maximum", async () => {
+    process.env.JWT_SECRET = "router-license-test-secret";
+    mocks.getSoftwareLicenseById.mockResolvedValue({ id: 73, productName: "Ứng dụng dùng chung", purchasedQuantity: 1, activationMode: "shared_account", sharedAccountMaxUsers: 3 });
+    mocks.listSoftwareLicenseActivationAccounts.mockResolvedValue([]);
+    mocks.createSoftwareLicenseActivationAccount.mockResolvedValue(401);
+    const caller = appRouter.createCaller(adminContext);
+
+    await expect(caller.softwareLicenses.createActivationAccount({ softwareLicenseId: 73, loginEmail: "nhanviena@company.com", password: "Password!2026", note: null })).resolves.toEqual({ id: 401 });
+    const createdAccount = mocks.createSoftwareLicenseActivationAccount.mock.calls[0]?.[0];
+    expect(createdAccount).toMatchObject({ softwareLicenseId: 73, loginEmail: "nhanviena@company.com", maxUsers: 3, status: "active" });
+    expect(createdAccount.encryptedPassword).not.toContain("Password!2026");
+
+    mocks.getSoftwareLicenseActivationAccountById.mockResolvedValue({ id: 401, softwareLicenseId: 73, loginEmail: "nhanviena@company.com", maxUsers: 3, status: "active" });
+    mocks.listSoftwareLicenseAssignments.mockResolvedValue([]);
+    mocks.createSoftwareLicenseAssignment.mockResolvedValue(902);
+    await expect(caller.softwareLicenses.assign({ softwareLicenseId: 73, assignmentMethod: "shared_account", softwareLicenseActivationAccountId: 401, assetId: null, userId: null, assignedToName: "Nhân viên B", deviceName: "PC-02", assignedAt: new Date("2026-08-25"), note: null })).resolves.toEqual({ id: 902 });
+    expect(mocks.createSoftwareLicenseAssignment).toHaveBeenCalledWith(expect.objectContaining({ assignmentMethod: "shared_account", softwareLicenseActivationAccountId: 401 }));
+
+    mocks.listSoftwareLicenseAssignments.mockResolvedValue([{ id: 1, status: "active", softwareLicenseActivationAccountId: 401 }, { id: 2, status: "active", softwareLicenseActivationAccountId: 401 }, { id: 3, status: "active", softwareLicenseActivationAccountId: 401 }]);
+    await expect(caller.softwareLicenses.assign({ softwareLicenseId: 73, assignmentMethod: "shared_account", softwareLicenseActivationAccountId: 401, assetId: null, userId: null, assignedToName: "Nhân viên E", deviceName: "PC-05", assignedAt: new Date("2026-08-25"), note: null })).rejects.toMatchObject({ code: "BAD_REQUEST" });
   });
 
   it("manages technology vendors and contracts separately from asset vendors", async () => {

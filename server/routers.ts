@@ -44,8 +44,11 @@ import {
   createRetirementCertificate,
   createRetirementCertificateAssets,
   createSoftwareLicense,
+  createSoftwareLicenseActivationAccount,
+  createSoftwareLicenseCredentialAccessLog,
   createSoftwareLicenseDocument,
   createSoftwareLicenseAssignment,
+  createSoftwareLicenseKey,
   createTechnologyService,
   createTechnologyVendor,
   createTechnologyVendorContract,
@@ -110,8 +113,11 @@ import {
   getPurchaseInvoiceDocumentById,
   getPurchaseInvoiceLineById,
   getRetirementCertificateById,
+  getSoftwareLicenseActivationAccountById,
+  getSoftwareLicenseAssignmentById,
   getSoftwareLicenseById,
   getSoftwareLicenseDocumentById,
+  getSoftwareLicenseKeyById,
   getTechnologyVendorContractDocumentById,
   getUserMenuPreference,
   getUserNotificationPreferences,
@@ -136,8 +142,11 @@ import {
   listPurchaseInvoiceSupplyReceipts,
   listRetirementCertificateAssetAssignments,
   listRetirementCertificates,
+  listSoftwareLicenseActivationAccounts,
   listSoftwareLicenseAssignments,
+  listSoftwareLicenseCredentialAccessLogs,
   listSoftwareLicenseDocuments,
+  listSoftwareLicenseKeys,
   listTechnologyVendorContractDocuments,
   listSoftwareLicenses,
   getNextRepairTicketSequence,
@@ -230,7 +239,10 @@ import {
   updateAssetPurchaseInvoiceReference,
   updateRetirementCertificate,
   updateRetirementCertificateAssetSalvageValues,
+  updateSoftwareLicenseActivationAccount,
+  updateSoftwareLicenseActivationAccountLimits,
   updateSoftwareLicense,
+  updateSoftwareLicenseKey,
   updateTechnologyService,
   updateTechnologyVendor,
   updateTechnologyVendorContract,
@@ -247,6 +259,7 @@ import {
   transitionHandoverStatus,
   deleteSupplyUnit,
 } from "./db";
+import { credentialFingerprint, decryptLicenseCredential, encryptLicenseCredential, maskLicenseKey } from "./licenseCredentials";
 import { storagePut } from "./storage";
 
 const nullableText = z.string().trim().max(1000).optional().nullable();
@@ -812,6 +825,8 @@ export const appRouter = router({
       publisher: nullableText,
       edition: nullableText,
       licenseModel: z.enum(["perpetual", "subscription", "volume", "oem", "other"]),
+      activationMode: z.enum(["seat", "product_key", "shared_account"]).default("seat"),
+      sharedAccountMaxUsers: z.number().int().min(1).max(10_000).default(1),
       licenseKey: z.string().trim().max(4000).nullable().optional(),
       purchasedQuantity: z.number().int().min(1).max(100_000),
       vendorId: z.number().int().positive().nullable().optional(),
@@ -835,6 +850,8 @@ export const appRouter = router({
       publisher: nullableText,
       edition: nullableText,
       licenseModel: z.enum(["perpetual", "subscription", "volume", "oem", "other"]).optional(),
+      activationMode: z.enum(["seat", "product_key", "shared_account"]).optional(),
+      sharedAccountMaxUsers: z.number().int().min(1).max(10_000).optional(),
       licenseKey: z.string().trim().max(4000).nullable().optional(),
       purchasedQuantity: z.number().int().min(1).max(100_000).optional(),
       vendorId: z.number().int().positive().nullable().optional(),
@@ -851,11 +868,29 @@ export const appRouter = router({
       const existing = await getSoftwareLicenseById(input.id);
       if (!existing) throw new TRPCError({ code: "NOT_FOUND", message: "Không tìm thấy bản quyền phần mềm." });
       const { id, ...changes } = input;
+      const assignments = await listSoftwareLicenseAssignments(id);
+      const activeAssignments = assignments.filter((assignment) => assignment.status === "active");
+      const keys = await listSoftwareLicenseKeys(id);
+      const activationAccounts = await listSoftwareLicenseActivationAccounts(id);
+      const existingActivationMode = existing.activationMode ?? "seat";
+      const targetActivationMode = changes.activationMode ?? existingActivationMode;
+      if (changes.activationMode && changes.activationMode !== existingActivationMode && activeAssignments.length) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "Hãy thu hồi các cấp phát đang hoạt động trước khi đổi mô hình kích hoạt." });
+      }
       if (changes.purchasedQuantity !== undefined) {
-        const activeCount = (await listSoftwareLicenseAssignments(id)).filter((assignment) => assignment.status === "active").length;
-        if (changes.purchasedQuantity < activeCount) throw new TRPCError({ code: "BAD_REQUEST", message: `Số lượng mua không thể thấp hơn ${activeCount} license đang cấp phát.` });
+        const usedQuantity = targetActivationMode === "seat"
+          ? activeAssignments.length
+          : targetActivationMode === "product_key"
+            ? keys.filter((key) => key.status !== "retired").length
+            : activationAccounts.filter((account) => account.status !== "retired").length;
+        if (changes.purchasedQuantity < usedQuantity) throw new TRPCError({ code: "BAD_REQUEST", message: `Số lượng mua không thể thấp hơn ${usedQuantity} mục đang được quản lý theo mô hình kích hoạt đã chọn.` });
+      }
+      if (changes.sharedAccountMaxUsers !== undefined) {
+        const overLimit = activationAccounts.some((account) => activeAssignments.filter((assignment) => assignment.softwareLicenseActivationAccountId === account.id).length > changes.sharedAccountMaxUsers!);
+        if (overLimit) throw new TRPCError({ code: "BAD_REQUEST", message: "Giới hạn mới thấp hơn số người đang dùng một hoặc nhiều tài khoản chủ." });
       }
       await updateSoftwareLicense(id, changes);
+      if (changes.sharedAccountMaxUsers !== undefined) await updateSoftwareLicenseActivationAccountLimits(id, changes.sharedAccountMaxUsers);
       await recordActivity({ entityType: "softwareLicense", entityId: id, action: "updated", actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: `Cập nhật bản quyền ${changes.productName || existing.productName}` });
       return { success: true };
     }),
@@ -885,8 +920,102 @@ export const appRouter = router({
       await recordActivity({ entityType: "softwareLicenseDocument", entityId: document.id, action: "removed", actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: `Gỡ tài liệu ${document.fileName} của Bản quyền` });
       return { success: true };
     }),
+    keys: adminProcedure.input(z.object({ softwareLicenseId: z.number().int().positive() })).query(async ({ input }) => {
+      const keys = await listSoftwareLicenseKeys(input.softwareLicenseId);
+      return keys.map(({ encryptedKey: _encryptedKey, ...key }) => key);
+    }),
+    activationAccounts: adminProcedure.input(z.object({ softwareLicenseId: z.number().int().positive() })).query(async ({ input }) => {
+      const accounts = await listSoftwareLicenseActivationAccounts(input.softwareLicenseId);
+      return accounts.map(({ encryptedPassword: _encryptedPassword, ...account }) => account);
+    }),
+    credentialAccessLogs: adminProcedure.input(z.object({ softwareLicenseId: z.number().int().positive() })).query(({ input }) => listSoftwareLicenseCredentialAccessLogs(input.softwareLicenseId)),
+    addKey: adminProcedure.input(z.object({
+      softwareLicenseId: z.number().int().positive(),
+      key: z.string().trim().min(4).max(4000),
+      note: z.string().trim().max(2000).nullable().optional(),
+    })).mutation(async ({ input, ctx }) => {
+      const license = await getSoftwareLicenseById(input.softwareLicenseId);
+      if (!license) throw new TRPCError({ code: "NOT_FOUND", message: "Không tìm thấy bản quyền phần mềm." });
+      if (license.activationMode !== "product_key") throw new TRPCError({ code: "BAD_REQUEST", message: "Bản quyền này không dùng mô hình key riêng." });
+      const existingKeys = await listSoftwareLicenseKeys(license.id);
+      if (existingKeys.filter((key) => key.status !== "retired").length >= license.purchasedQuantity) throw new TRPCError({ code: "BAD_REQUEST", message: "Số key đang quản lý đã đạt số lượng mua của Bản quyền." });
+      try {
+        const id = await createSoftwareLicenseKey({ softwareLicenseId: license.id, encryptedKey: encryptLicenseCredential(input.key), keyFingerprint: credentialFingerprint(input.key), maskedKey: maskLicenseKey(input.key), note: input.note ?? null, status: "available", createdByUserId: ctx.user!.id, createdByName: ctx.user!.name ?? "Quản trị viên" });
+        await recordActivity({ entityType: "softwareLicenseKey", entityId: id, action: "created", actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: `Thêm key riêng cho ${license.productName}` });
+        return { id };
+      } catch (error) {
+        if (String(error).includes("Duplicate")) throw new TRPCError({ code: "CONFLICT", message: "Key này đã tồn tại trong Bản quyền." });
+        throw error;
+      }
+    }),
+    updateKeyStatus: adminProcedure.input(z.object({ id: z.number().int().positive(), status: z.enum(["available", "retired"]), note: z.string().trim().max(2000).nullable().optional() })).mutation(async ({ input, ctx }) => {
+      const key = await getSoftwareLicenseKeyById(input.id);
+      if (!key) throw new TRPCError({ code: "NOT_FOUND", message: "Không tìm thấy key Bản quyền." });
+      const activeAssignment = (await listSoftwareLicenseAssignments(key.softwareLicenseId)).find((assignment) => assignment.status === "active" && assignment.softwareLicenseKeyId === key.id);
+      if (activeAssignment) throw new TRPCError({ code: "BAD_REQUEST", message: "Hãy thu hồi cấp phát đang dùng key này trước khi thay đổi trạng thái." });
+      await updateSoftwareLicenseKey(key.id, { status: input.status, note: input.note ?? key.note });
+      await recordActivity({ entityType: "softwareLicenseKey", entityId: key.id, action: input.status === "retired" ? "retired" : "updated", actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: `${input.status === "retired" ? "Ngừng dùng" : "Cập nhật"} key của Bản quyền #${key.softwareLicenseId}` });
+      return { success: true };
+    }),
+    revealKey: adminProcedure.input(z.object({ id: z.number().int().positive(), action: z.enum(["view", "copy"]) })).mutation(async ({ input, ctx }) => {
+      const key = await getSoftwareLicenseKeyById(input.id);
+      if (!key) throw new TRPCError({ code: "NOT_FOUND", message: "Không tìm thấy key Bản quyền." });
+      const value = decryptLicenseCredential(key.encryptedKey);
+      await createSoftwareLicenseCredentialAccessLog({ softwareLicenseId: key.softwareLicenseId, softwareLicenseKeyId: key.id, accessType: input.action === "copy" ? "copy_key" : "view_key", actorUserId: ctx.user!.id, actorName: ctx.user!.name ?? "Quản trị viên" });
+      await recordActivity({ entityType: "softwareLicenseKey", entityId: key.id, action: input.action === "copy" ? "copied" : "viewed", actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: `${input.action === "copy" ? "Sao chép" : "Xem"} key của Bản quyền #${key.softwareLicenseId}` });
+      return { value };
+    }),
+    createActivationAccount: adminProcedure.input(z.object({
+      softwareLicenseId: z.number().int().positive(),
+      loginEmail: z.string().trim().email().max(320),
+      password: z.string().min(1).max(4000),
+      note: z.string().trim().max(2000).nullable().optional(),
+    })).mutation(async ({ input, ctx }) => {
+      const license = await getSoftwareLicenseById(input.softwareLicenseId);
+      if (!license) throw new TRPCError({ code: "NOT_FOUND", message: "Không tìm thấy bản quyền phần mềm." });
+      if (license.activationMode !== "shared_account") throw new TRPCError({ code: "BAD_REQUEST", message: "Bản quyền này không dùng mô hình tài khoản dùng chung." });
+      const accounts = await listSoftwareLicenseActivationAccounts(license.id);
+      if (accounts.filter((account) => account.status !== "retired").length >= license.purchasedQuantity) throw new TRPCError({ code: "BAD_REQUEST", message: "Số tài khoản chủ đã đạt số lượng mua của Bản quyền." });
+      try {
+        const id = await createSoftwareLicenseActivationAccount({ softwareLicenseId: license.id, loginEmail: input.loginEmail.toLocaleLowerCase("en-US"), encryptedPassword: encryptLicenseCredential(input.password), maxUsers: license.sharedAccountMaxUsers, note: input.note ?? null, status: "active", createdByUserId: ctx.user!.id, createdByName: ctx.user!.name ?? "Quản trị viên" });
+        await recordActivity({ entityType: "softwareLicenseActivationAccount", entityId: id, action: "created", actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: `Thêm tài khoản kích hoạt ${input.loginEmail} cho ${license.productName}` });
+        return { id };
+      } catch (error) {
+        if (String(error).includes("Duplicate")) throw new TRPCError({ code: "CONFLICT", message: "Email đăng nhập này đã tồn tại trong Bản quyền." });
+        throw error;
+      }
+    }),
+    updateActivationAccount: adminProcedure.input(z.object({
+      id: z.number().int().positive(),
+      loginEmail: z.string().trim().email().max(320).optional(),
+      password: z.string().min(1).max(4000).optional(),
+      status: z.enum(["active", "suspended", "retired"]).optional(),
+      note: z.string().trim().max(2000).nullable().optional(),
+    })).mutation(async ({ input, ctx }) => {
+      const account = await getSoftwareLicenseActivationAccountById(input.id);
+      if (!account) throw new TRPCError({ code: "NOT_FOUND", message: "Không tìm thấy tài khoản kích hoạt." });
+      const { id, password, loginEmail, ...changes } = input;
+      if (changes.status === "retired") {
+        const activeAssignment = (await listSoftwareLicenseAssignments(account.softwareLicenseId)).find((assignment) => assignment.status === "active" && assignment.softwareLicenseActivationAccountId === account.id);
+        if (activeAssignment) throw new TRPCError({ code: "BAD_REQUEST", message: "Hãy thu hồi người dùng đang dùng tài khoản này trước khi ngừng sử dụng." });
+      }
+      await updateSoftwareLicenseActivationAccount(account.id, { ...changes, loginEmail: loginEmail?.toLocaleLowerCase("en-US"), encryptedPassword: password ? encryptLicenseCredential(password) : undefined });
+      await recordActivity({ entityType: "softwareLicenseActivationAccount", entityId: account.id, action: "updated", actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: `Cập nhật tài khoản kích hoạt ${loginEmail || account.loginEmail}` });
+      return { success: true };
+    }),
+    revealActivationPassword: adminProcedure.input(z.object({ id: z.number().int().positive(), action: z.enum(["view", "copy"]) })).mutation(async ({ input, ctx }) => {
+      const account = await getSoftwareLicenseActivationAccountById(input.id);
+      if (!account) throw new TRPCError({ code: "NOT_FOUND", message: "Không tìm thấy tài khoản kích hoạt." });
+      const value = decryptLicenseCredential(account.encryptedPassword);
+      await createSoftwareLicenseCredentialAccessLog({ softwareLicenseId: account.softwareLicenseId, softwareLicenseActivationAccountId: account.id, accessType: input.action === "copy" ? "copy_password" : "view_password", actorUserId: ctx.user!.id, actorName: ctx.user!.name ?? "Quản trị viên" });
+      await recordActivity({ entityType: "softwareLicenseActivationAccount", entityId: account.id, action: input.action === "copy" ? "copied" : "viewed", actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: `${input.action === "copy" ? "Sao chép" : "Xem"} mật khẩu tài khoản ${account.loginEmail}` });
+      return { value };
+    }),
     assign: adminProcedure.input(z.object({
       softwareLicenseId: z.number().int().positive(),
+      assignmentMethod: z.enum(["seat", "product_key", "shared_account"]).optional(),
+      softwareLicenseKeyId: z.number().int().positive().nullable().optional(),
+      softwareLicenseActivationAccountId: z.number().int().positive().nullable().optional(),
       assetId: z.number().int().positive().nullable().optional(),
       userId: z.number().int().positive().nullable().optional(),
       assignedToName: nullableText,
@@ -897,13 +1026,37 @@ export const appRouter = router({
       const license = await getSoftwareLicenseById(input.softwareLicenseId);
       if (!license) throw new TRPCError({ code: "NOT_FOUND", message: "Không tìm thấy bản quyền phần mềm." });
       const activeCount = (await listSoftwareLicenseAssignments(license.id)).filter((assignment) => assignment.status === "active").length;
-      if (activeCount >= license.purchasedQuantity) throw new TRPCError({ code: "BAD_REQUEST", message: "Bản quyền này đã sử dụng hết số lượng được cấp." });
-      const id = await createSoftwareLicenseAssignment({ ...input, assignedAt: input.assignedAt ?? new Date(), status: "active" });
+      const licenseActivationMode = license.activationMode ?? "seat";
+      const assignmentMethod = input.assignmentMethod ?? licenseActivationMode;
+      if (assignmentMethod !== licenseActivationMode) throw new TRPCError({ code: "BAD_REQUEST", message: "Hình thức cấp phát không khớp với mô hình kích hoạt của Bản quyền." });
+      let softwareLicenseKeyId: number | null = null;
+      let softwareLicenseActivationAccountId: number | null = null;
+      if (assignmentMethod === "seat") {
+        if (activeCount >= license.purchasedQuantity) throw new TRPCError({ code: "BAD_REQUEST", message: "Bản quyền này đã sử dụng hết số lượng được cấp." });
+      } else if (assignmentMethod === "product_key") {
+        const keys = await listSoftwareLicenseKeys(license.id);
+        const key = input.softwareLicenseKeyId ? keys.find((item) => item.id === input.softwareLicenseKeyId) : keys.find((item) => item.status === "available");
+        if (!key || key.status !== "available") throw new TRPCError({ code: "BAD_REQUEST", message: "Không còn key khả dụng để cấp phát." });
+        softwareLicenseKeyId = key.id;
+      } else {
+        if (!input.softwareLicenseActivationAccountId) throw new TRPCError({ code: "BAD_REQUEST", message: "Hãy chọn tài khoản chủ để cấp phát." });
+        const account = await getSoftwareLicenseActivationAccountById(input.softwareLicenseActivationAccountId);
+        if (!account || account.softwareLicenseId !== license.id || account.status !== "active") throw new TRPCError({ code: "BAD_REQUEST", message: "Tài khoản chủ không khả dụng." });
+        const usedSlots = (await listSoftwareLicenseAssignments(license.id)).filter((assignment) => assignment.status === "active" && assignment.softwareLicenseActivationAccountId === account.id).length;
+        if (usedSlots >= account.maxUsers) throw new TRPCError({ code: "BAD_REQUEST", message: `Tài khoản ${account.loginEmail} đã sử dụng hết ${account.maxUsers} chỗ.` });
+        softwareLicenseActivationAccountId = account.id;
+      }
+      const { assignmentMethod: _requestedMethod, softwareLicenseKeyId: _requestedKeyId, softwareLicenseActivationAccountId: _requestedAccountId, ...assignment } = input;
+      const id = await createSoftwareLicenseAssignment({ ...assignment, assignmentMethod, softwareLicenseKeyId, softwareLicenseActivationAccountId, assignedAt: input.assignedAt ?? new Date(), status: "active" });
+      if (softwareLicenseKeyId) await updateSoftwareLicenseKey(softwareLicenseKeyId, { status: "assigned" });
       await recordActivity({ entityType: "softwareLicenseAssignment", entityId: id, action: "assigned", actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: `Cấp ${license.productName} cho ${input.assignedToName || input.deviceName || "đối tượng quản lý"}` });
       return { id };
     }),
     revokeAssignment: adminProcedure.input(z.object({ id: z.number().int().positive() })).mutation(async ({ input, ctx }) => {
+      const assignment = await getSoftwareLicenseAssignmentById(input.id);
+      if (!assignment) throw new TRPCError({ code: "NOT_FOUND", message: "Không tìm thấy cấp phát Bản quyền." });
       await revokeSoftwareLicenseAssignment(input.id);
+      if (assignment.status === "active" && assignment.softwareLicenseKeyId) await updateSoftwareLicenseKey(assignment.softwareLicenseKeyId, { status: "available" });
       await recordActivity({ entityType: "softwareLicenseAssignment", entityId: input.id, action: "revoked", actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: "Thu hồi cấp phát bản quyền" });
       return { success: true };
     }),

@@ -101,6 +101,8 @@ export const softwareLicenses = mysqlTable("softwareLicenses", {
   publisher: varchar("publisher", { length: 160 }),
   edition: varchar("edition", { length: 160 }),
   licenseModel: mysqlEnum("licenseModel", ["perpetual", "subscription", "volume", "oem", "other"]).default("subscription").notNull(),
+  activationMode: mysqlEnum("activationMode", ["seat", "product_key", "shared_account"]).default("seat").notNull(),
+  sharedAccountMaxUsers: int("sharedAccountMaxUsers").default(1).notNull(),
   licenseKey: text("licenseKey"),
   purchasedQuantity: int("purchasedQuantity").default(1).notNull(),
   vendorId: int("vendorId").references(() => vendors.id, { onDelete: "set null", onUpdate: "cascade" }),
@@ -119,6 +121,34 @@ export const softwareLicenses = mysqlTable("softwareLicenses", {
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 }, (table) => [index("software_licenses_status_expiry_idx").on(table.status, table.expiresAt), index("software_licenses_vendor_idx").on(table.vendorId), index("software_licenses_technology_vendor_idx").on(table.technologyVendorId), index("software_licenses_technology_contract_idx").on(table.technologyVendorContractId)]);
 
+export const softwareLicenseKeys = mysqlTable("softwareLicenseKeys", {
+  id: int("id").autoincrement().primaryKey(),
+  softwareLicenseId: int("softwareLicenseId").notNull().references(() => softwareLicenses.id, { onDelete: "cascade", onUpdate: "cascade" }),
+  encryptedKey: text("encryptedKey").notNull(),
+  keyFingerprint: varchar("keyFingerprint", { length: 64 }).notNull(),
+  maskedKey: varchar("maskedKey", { length: 96 }).notNull(),
+  status: mysqlEnum("status", ["available", "assigned", "revoked", "retired"]).default("available").notNull(),
+  note: text("note"),
+  createdByUserId: int("createdByUserId"),
+  createdByName: varchar("createdByName", { length: 160 }),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+}, (table) => [uniqueIndex("software_license_keys_license_fingerprint_unique").on(table.softwareLicenseId, table.keyFingerprint), index("software_license_keys_license_status_idx").on(table.softwareLicenseId, table.status)]);
+
+export const softwareLicenseActivationAccounts = mysqlTable("softwareLicenseActivationAccounts", {
+  id: int("id").autoincrement().primaryKey(),
+  softwareLicenseId: int("softwareLicenseId").notNull().references(() => softwareLicenses.id, { onDelete: "cascade", onUpdate: "cascade" }),
+  loginEmail: varchar("loginEmail", { length: 320 }).notNull(),
+  encryptedPassword: text("encryptedPassword").notNull(),
+  maxUsers: int("maxUsers").notNull(),
+  status: mysqlEnum("status", ["active", "suspended", "retired"]).default("active").notNull(),
+  note: text("note"),
+  createdByUserId: int("createdByUserId"),
+  createdByName: varchar("createdByName", { length: 160 }),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+}, (table) => [uniqueIndex("software_license_activation_account_license_email_unique").on(table.softwareLicenseId, table.loginEmail), index("software_license_activation_account_license_status_idx").on(table.softwareLicenseId, table.status)]);
+
 export const softwareLicenseDocuments = mysqlTable("softwareLicenseDocuments", {
   id: int("id").autoincrement().primaryKey(),
   softwareLicenseId: int("softwareLicenseId").notNull().references(() => softwareLicenses.id, { onDelete: "cascade", onUpdate: "cascade" }),
@@ -136,6 +166,9 @@ export const softwareLicenseDocuments = mysqlTable("softwareLicenseDocuments", {
 export const softwareLicenseAssignments = mysqlTable("softwareLicenseAssignments", {
   id: int("id").autoincrement().primaryKey(),
   softwareLicenseId: int("softwareLicenseId").notNull().references(() => softwareLicenses.id, { onDelete: "cascade", onUpdate: "cascade" }),
+  assignmentMethod: mysqlEnum("assignmentMethod", ["seat", "product_key", "shared_account"]).default("seat").notNull(),
+  softwareLicenseKeyId: int("softwareLicenseKeyId").references(() => softwareLicenseKeys.id, { onDelete: "set null", onUpdate: "cascade" }),
+  softwareLicenseActivationAccountId: int("softwareLicenseActivationAccountId").references(() => softwareLicenseActivationAccounts.id, { onDelete: "set null", onUpdate: "cascade" }),
   assetId: int("assetId").references(() => assets.id, { onDelete: "set null", onUpdate: "cascade" }),
   userId: int("userId").references(() => users.id, { onDelete: "set null", onUpdate: "cascade" }),
   assignedToName: varchar("assignedToName", { length: 160 }),
@@ -146,7 +179,18 @@ export const softwareLicenseAssignments = mysqlTable("softwareLicenseAssignments
   note: text("note"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
-}, (table) => [index("software_license_assignments_license_status_idx").on(table.softwareLicenseId, table.status), index("software_license_assignments_asset_idx").on(table.assetId), index("software_license_assignments_user_idx").on(table.userId)]);
+}, (table) => [index("software_license_assignments_license_status_idx").on(table.softwareLicenseId, table.status), index("software_license_assignments_key_status_idx").on(table.softwareLicenseKeyId, table.status), index("software_license_assignments_account_status_idx").on(table.softwareLicenseActivationAccountId, table.status), index("software_license_assignments_asset_idx").on(table.assetId), index("software_license_assignments_user_idx").on(table.userId)]);
+
+export const softwareLicenseCredentialAccessLogs = mysqlTable("softwareLicenseCredentialAccessLogs", {
+  id: int("id").autoincrement().primaryKey(),
+  softwareLicenseId: int("softwareLicenseId").notNull().references(() => softwareLicenses.id, { onDelete: "cascade", onUpdate: "cascade" }),
+  softwareLicenseKeyId: int("softwareLicenseKeyId").references(() => softwareLicenseKeys.id, { onDelete: "set null", onUpdate: "cascade" }),
+  softwareLicenseActivationAccountId: int("softwareLicenseActivationAccountId").references(() => softwareLicenseActivationAccounts.id, { onDelete: "set null", onUpdate: "cascade" }),
+  accessType: mysqlEnum("accessType", ["view_key", "copy_key", "view_password", "copy_password"]).notNull(),
+  actorUserId: int("actorUserId").notNull().references(() => users.id, { onDelete: "restrict", onUpdate: "cascade" }),
+  actorName: varchar("actorName", { length: 160 }),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+}, (table) => [index("software_license_credential_access_license_idx").on(table.softwareLicenseId, table.createdAt), index("software_license_credential_access_account_idx").on(table.softwareLicenseActivationAccountId, table.createdAt)]);
 
 export const technologyServices = mysqlTable("technologyServices", {
   id: int("id").autoincrement().primaryKey(),

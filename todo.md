@@ -122,6 +122,15 @@
 - [x] Bổ sung hồi quy chọn option/chỉnh sửa, xác minh desktop/mobile và phát hành bản sửa.
 - [x] Xác minh tương tác mobile thực tế: mở dropdown, chọn option và chỉnh sửa Bản quyền/Dịch vụ mà không lưu dữ liệu.
 - [x] Chạy kiểm tra phát hành đầy đủ, cập nhật nhật ký và lưu checkpoint cho bản vá dropdown.
+- [x] Rà soát luồng cấp phát Bản quyền hiện có cho nhân viên.
+- [x] Đề xuất mô hình cấp phát bằng key riêng và email dùng chung tối đa năm người dùng.
+- [x] Xác nhận phạm vi trước khi triển khai dữ liệu, API và giao diện cấp phát nâng cao.
+- [x] Thiết kế cấp phát tài khoản chủ dùng chung, trong đó một email đăng nhập được phân cho tối đa bốn nhân viên khác.
+- [x] Đề xuất cách lưu trữ/hiển thị mật khẩu an toàn, quyền xem và lịch sử thay đổi tài khoản dùng chung.
+- [x] Cho phép Admin cấu hình số người dùng tối đa của từng tài khoản chủ khi tạo hoặc chỉnh sửa Bản quyền.
+- [x] Triển khai kho key riêng, tài khoản chủ dùng chung, cấp phát/thu hồi theo nhân viên và thiết bị.
+- [x] Mã hóa mật khẩu tài khoản chủ; chỉ cho phép Admin xem hoặc sao chép, đồng thời ghi lịch sử truy cập.
+- [x] Bổ sung kiểm thử, xác minh desktop/mobile và phát hành tính năng cấp phát nâng cao.
 
 ## Current Session — Bản quyền & Dịch vụ
 
