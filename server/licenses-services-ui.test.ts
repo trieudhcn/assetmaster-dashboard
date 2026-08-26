@@ -124,6 +124,9 @@ describe("Bản quyền & Dịch vụ", () => {
     expect(styles).toContain('[data-licenses-services-dialog="license"]');
     expect(styles).toContain('[data-licenses-services-dialog="service"]');
     expect(styles).toContain('[data-licenses-services-dialog="technology"]');
+    expect(styles).toContain('[data-licenses-services-dialog="assignment"]');
+    expect(styles).toContain('[data-licenses-services-dialog="assignment"] > .license-service-dialog-panel');
+    expect(styles).toContain('[data-licenses-services-dialog="assignment"] form');
     expect(styles).toContain('[data-licenses-services-dialog="technology"] input[type="date"]');
     expect(styles).toContain('[data-licenses-services-dialog="service"] button.field-input.form-input');
     expect(styles).toContain("display: flex !important");
@@ -159,7 +162,10 @@ describe("Bản quyền & Dịch vụ", () => {
     expect(dialog).toContain('licenseServiceDialog === "license" || licenseServiceDialog === "service" || licenseServiceDialog === "technology" || licenseServiceDialog === "assignment"');
     expect(dialog).toContain("license-service-dialog-panel relative flex");
     expect(dialog).toContain("assignment-dialog-panel");
-    expect(dialog).toContain('licenseServiceDialog === "assignment" ? "h-auto max-h-[calc(100dvh-2rem)]"');
+    expect(dialog).toContain('licenseServiceDialog === "assignment" ? "h-auto max-h-[calc(100dvh-2rem)] max-w-xl"');
+    expect(dialog).toContain("function AssignmentDialogLayout");
+    expect(dialog).toContain('data-slot="dialog-body"');
+    expect(dialog).toContain('data-slot="dialog-footer"');
     expect(view).toContain('data-licenses-services-dialog="assignment"');
     expect(readFileSync(resolve(process.cwd(), "client/src/components/SearchableSelect.tsx"), "utf8")).toContain("closest<HTMLElement>('[data-slot=\"dialog-content\"]')");
     expect(view).toContain('vendorId: license.technologyVendorId ? String(license.technologyVendorId) : "", technologyVendorId: license.technologyVendorId ? String(license.technologyVendorId) : ""');

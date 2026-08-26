@@ -134,6 +134,8 @@
 - [x] Khắc phục modal Cấp phát Bản quyền bị lệch góc trên-trái và chuẩn hóa nền/vỏ modal theo form hệ thống.
 - [x] Bổ sung biểu đồ trực quan thống kê Bản quyền đang cấp phát theo phòng ban.
 - [x] Bổ sung hồi quy và xác minh desktop/mobile cho modal cấp phát và biểu đồ phòng ban.
+- [x] Thay hẳn modal Cấp phát Bản quyền theo cấu trúc header–body–footer của form chuẩn hệ thống.
+- [x] Xác minh lại tính nhất quán về nền, chiều cao, cuộn nội bộ, nút Đóng/Hủy/Lưu trên desktop và mobile.
 
 ## Current Session — Bản quyền & Dịch vụ
 

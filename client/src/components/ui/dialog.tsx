@@ -89,6 +89,24 @@ function DialogOverlay({
 
 DialogOverlay.displayName = "DialogOverlay";
 
+function AssignmentDialogLayout({ children }: { children: React.ReactNode }) {
+  const items = React.Children.toArray(children);
+  const header = items.find((item) => React.isValidElement(item) && item.type === DialogHeader);
+  const form = items.find((item): item is React.ReactElement<{ children?: React.ReactNode; className?: string }> => React.isValidElement(item) && item.type === "form");
+  const bodyPrelude = items.filter((item) => item !== header && item !== form);
+
+  if (!form) return <>{children}</>;
+
+  const formItems = React.Children.toArray(form.props.children);
+  const footer = formItems.find((item): item is React.ReactElement<{ children?: React.ReactNode; className?: string }> => {
+    if (!React.isValidElement<{ children?: React.ReactNode; className?: string }>(item)) return false;
+    return typeof item.props.className === "string" && item.props.className.includes("justify-end");
+  });
+  const bodyFields = formItems.filter((item) => item !== footer);
+
+  return <>{header}{React.cloneElement(form, { className: "flex min-h-0 flex-1 flex-col" }, <div data-slot="dialog-body" className="grid min-h-0 flex-1 gap-4 overflow-y-auto px-5 py-4 sm:grid-cols-2">{bodyPrelude}{bodyFields}</div>, <div data-slot="dialog-footer" className="flex justify-end gap-2 border-t border-[#E7EEF3] bg-white px-5 py-4">{footer?.props.children}</div>)}</>;
+}
+
 function DialogContent({
   className,
   children,
@@ -140,12 +158,12 @@ function DialogContent({
         <div data-licenses-services-dialog={licenseServiceDialog} className="fixed inset-0 z-[60] grid place-items-center p-4 outline-none" onClick={(event) => { if (licenseServiceDialog !== "technology" || event.target !== event.currentTarget) return; (event.currentTarget.querySelector<HTMLElement>('[data-slot="dialog-close"]'))?.click(); }}>
           <DialogPrimitive.Content
             data-slot="dialog-content"
-            className={cn("license-service-dialog-panel relative flex w-[calc(100vw-2rem)] max-w-3xl min-h-0 flex-col overflow-hidden rounded-lg border bg-background p-0 shadow-lg", licenseServiceDialog === "assignment" ? "h-auto max-h-[calc(100dvh-2rem)]" : "h-[min(48rem,calc(100dvh-2rem))]", licenseServiceDialog === "service" && "service-dialog-panel", licenseServiceDialog === "technology" && "technology-dialog-panel", licenseServiceDialog === "assignment" && "assignment-dialog-panel")}
+            className={cn("license-service-dialog-panel relative flex w-[calc(100vw-2rem)] min-h-0 flex-col overflow-hidden rounded-lg border bg-background p-0 shadow-lg", licenseServiceDialog === "assignment" ? "h-auto max-h-[calc(100dvh-2rem)] max-w-xl" : "h-[min(48rem,calc(100dvh-2rem))] max-w-3xl", licenseServiceDialog === "service" && "service-dialog-panel", licenseServiceDialog === "technology" && "technology-dialog-panel", licenseServiceDialog === "assignment" && "assignment-dialog-panel")}
             onEscapeKeyDown={handleEscapeKeyDown}
             onPointerDownOutside={handlePointerDownOutside}
             {...props}
           >
-            {children}
+            {licenseServiceDialog === "assignment" ? <AssignmentDialogLayout>{children}</AssignmentDialogLayout> : children}
             {showCloseButton && (
               <DialogPrimitive.Close
                 data-slot="dialog-close"
