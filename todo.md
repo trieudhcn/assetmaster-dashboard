@@ -177,10 +177,11 @@
 - [x] Bổ sung Loại License và Mã hóa đơn mua hàng vào dữ liệu Bản quyền.
 - [x] Bỏ Mã bản quyền và bố trí Tên phần mềm, Loại License, Mã hóa đơn theo form mới.
 - [x] Kiểm thử nghiệp vụ, desktop/mobile và phát hành thay đổi Bản quyền.
-- [ ] Rà soát và cập nhật thu hồi License khi hoàn trả tài sản.
-- [ ] Thêm luồng thu hồi License khi nhân sự được ngừng hoạt động/nghỉ việc.
-- [ ] Kiểm thử trả seat, key và chỗ tài khoản về kho theo hai tình huống.
-- [ ] Xác minh xác nhận và lịch sử thu hồi License trên desktop/mobile.
+- [x] Rà soát và cập nhật thu hồi License khi hoàn trả tài sản.
+- [x] Thêm luồng thu hồi License khi nhân sự được ngừng hoạt động/nghỉ việc.
+- [x] Kiểm thử trả seat, key và chỗ tài khoản về kho theo hai tình huống.
+- [x] Xác minh xác nhận và lịch sử thu hồi License trên desktop/mobile.
+- [x] Đảm bảo thu hồi License, trả key, ghi audit và khóa nhân sự được thực hiện trong một transaction.
 - [x] Chuẩn hóa căn giữa, header/body/footer của modal Quản lý Loại License.
 - [x] Chuẩn hóa danh sách Loại License theo giao diện quản trị AssetMaster.
 - [x] Kiểm thử modal Loại License trên desktop và mobile.

@@ -448,6 +448,20 @@ describe("modal presentation contract", () => {
     expect(db).toContain("issuedByName: supplyIssueSlips.issuedByName");
   });
 
+  it("confirms and returns active licenses to inventory when an employee leaves", () => {
+    const employees = readProjectFile("client/src/pages/EmployeeManagementView.tsx");
+    const routers = readProjectFile("server/routers.ts");
+
+    expect(employees).toContain("trpc.employees.activeLicenseAssignments.useQuery");
+    expect(employees).toContain("Nghỉ việc & License");
+    expect(employees).toContain("License sẽ được thu hồi");
+    expect(employees).toContain("Xác nhận nghỉ việc");
+    expect(routers).toContain("activeLicenseAssignments: adminProcedure");
+    expect(routers).toContain("revoked_with_employee_deactivation");
+    expect(routers).toContain("runSoftwareLicenseTransaction");
+    expect(routers).toContain("revokeSoftwareLicenseAssignment(assignment.id, transaction)");
+  });
+
   it("includes handover accessories in employee holdings without creating a duplicate PK issue slip", () => {
     const employees = readProjectFile("client/src/pages/EmployeeManagementView.tsx");
     const issueSlips = readProjectFile("client/src/components/SupplyIssueSlipManager.tsx");

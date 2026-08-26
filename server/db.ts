@@ -133,8 +133,8 @@ export async function updateUserRole(id: number, role: "admin" | "user") {
   await db.update(users).set({ role }).where(eq(users.id, id));
 }
 
-export async function updateUserActiveStatus(id: number, isActive: boolean) {
-  const db = await getDb();
+export async function updateUserActiveStatus(id: number, isActive: boolean, executor?: any) {
+  const db = executor ?? await getDb();
   if (!db) throw new Error("Database unavailable");
   await db.update(users).set({ isActive }).where(eq(users.id, id));
 }
@@ -371,8 +371,8 @@ export async function updateTechnologyVendorContract(id: number, data: Partial<t
   await db.update(technologyVendorContracts).set(data).where(eq(technologyVendorContracts.id, id));
 }
 
-export async function listSoftwareLicenses() {
-  const db = await getDb();
+export async function listSoftwareLicenses(executor?: any): Promise<Array<typeof softwareLicenses.$inferSelect>> {
+  const db = executor ?? await getDb();
   if (!db) return [];
   return db.select().from(softwareLicenses).orderBy(desc(softwareLicenses.updatedAt));
 }
@@ -484,8 +484,8 @@ export async function deleteTechnologyVendorContractDocument(id: number) {
   await db.delete(technologyVendorContractDocuments).where(eq(technologyVendorContractDocuments.id, id));
 }
 
-export async function listSoftwareLicenseAssignments(softwareLicenseId?: number) {
-  const db = await getDb();
+export async function listSoftwareLicenseAssignments(softwareLicenseId?: number, executor?: any): Promise<Array<typeof softwareLicenseAssignments.$inferSelect>> {
+  const db = executor ?? await getDb();
   if (!db) return [];
   const query = db.select().from(softwareLicenseAssignments);
   return softwareLicenseId ? query.where(eq(softwareLicenseAssignments.softwareLicenseId, softwareLicenseId)).orderBy(desc(softwareLicenseAssignments.assignedAt)) : query.orderBy(desc(softwareLicenseAssignments.assignedAt));
@@ -1994,6 +1994,12 @@ export async function runAssetImportTransaction<T>(callback: (transaction: any) 
 }
 
 export async function runInventoryTransaction<T>(callback: (transaction: any) => Promise<T>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database unavailable");
+  return db.transaction(async (transaction) => callback(transaction));
+}
+
+export async function runSoftwareLicenseTransaction<T>(callback: (transaction: any) => Promise<T>) {
   const db = await getDb();
   if (!db) throw new Error("Database unavailable");
   return db.transaction(async (transaction) => callback(transaction));

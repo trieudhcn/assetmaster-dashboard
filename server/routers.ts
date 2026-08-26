@@ -214,6 +214,7 @@ import {
   revokeSoftwareLicenseAssignment,
   runAssetImportTransaction,
   runInventoryTransaction,
+  runSoftwareLicenseTransaction,
   runRetirementCertificateTransaction,
   runPurchaseContractTransaction,
   runPurchaseInvoiceTransaction,
@@ -548,6 +549,14 @@ export const appRouter = router({
     roleHistory: adminProcedure.input(z.object({ userId: z.number().int().positive() })).query(async ({ input }) => (await listActivityLogsByEntity("user", input.userId)).filter((entry) => entry.action === "role_updated")),
     assetHistory: adminProcedure.input(z.object({ userId: z.number().int().positive() })).query(({ input }) => listHandoversByRecipient(input.userId)),
     supplyHistory: adminProcedure.input(z.object({ userId: z.number().int().positive() })).query(({ input }) => listSupplyIssueHistoryByRecipientUserId(input.userId)),
+    activeLicenseAssignments: adminProcedure.input(z.object({ userId: z.number().int().positive() })).query(async ({ input }) => {
+      const [licenses, assignments] = await Promise.all([listSoftwareLicenses(), listSoftwareLicenseAssignments()]);
+      const licensesById = new Map(licenses.map((license) => [license.id, license]));
+      return assignments.filter((assignment) => assignment.userId === input.userId && assignment.status === "active").map((assignment) => {
+        const license = licensesById.get(assignment.softwareLicenseId);
+        return { id: assignment.id, softwareLicenseId: assignment.softwareLicenseId, productName: license?.productName || `Bản quyền #${assignment.softwareLicenseId}`, assignmentMethod: assignment.assignmentMethod, deviceName: assignment.deviceName, assetId: assignment.assetId };
+      });
+    }),
     myAssetHistory: protectedProcedure.query(({ ctx }) => listHandoversByRecipient(ctx.user.id)),
     updateRole: adminProcedure.input(z.object({ id: z.number().int().positive(), role: z.enum(["admin", "user"]) })).mutation(async ({ input, ctx }) => {
       if (input.id === ctx.user!.id && input.role !== "admin") {
@@ -564,9 +573,27 @@ export const appRouter = router({
       if (input.id === ctx.user!.id && !input.isActive) {
         throw new TRPCError({ code: "BAD_REQUEST", message: "Bạn không thể khóa tài khoản quản trị đang sử dụng." });
       }
-      await updateUserActiveStatus(input.id, input.isActive);
-      await recordActivity({ entityType: "user", entityId: input.id, action: input.isActive ? "activated" : "deactivated", actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: input.isActive ? "Mở khóa tài khoản" : "Khóa tài khoản" });
-      return { success: true };
+      if (input.isActive) {
+        await updateUserActiveStatus(input.id, true);
+        await recordActivity({ entityType: "user", entityId: input.id, action: "activated", actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: "Mở khóa tài khoản" });
+        return { success: true, revokedLicenseCount: 0, revokedLicenseNames: [] };
+      }
+
+      const revocation = await runSoftwareLicenseTransaction(async (transaction) => {
+        const [licenses, assignments] = await Promise.all([listSoftwareLicenses(transaction), listSoftwareLicenseAssignments(undefined, transaction)]);
+        const licensesById = new Map(licenses.map((license) => [license.id, license]));
+        const assignmentsToRevoke = assignments.filter((assignment) => assignment.userId === input.id && assignment.status === "active");
+        for (const assignment of assignmentsToRevoke) {
+          await revokeSoftwareLicenseAssignment(assignment.id, transaction);
+          if (assignment.softwareLicenseKeyId) await updateSoftwareLicenseKey(assignment.softwareLicenseKeyId, { status: "available" }, transaction);
+          const license = licensesById.get(assignment.softwareLicenseId);
+          await recordActivity({ entityType: "softwareLicenseAssignment", entityId: assignment.id, action: "revoked_with_employee_deactivation", actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: `Thu hồi ${license?.productName || `Bản quyền #${assignment.softwareLicenseId}`} khi nhân sự nghỉ việc/ngừng hoạt động` }, transaction);
+        }
+        await updateUserActiveStatus(input.id, false, transaction);
+        await recordActivity({ entityType: "user", entityId: input.id, action: "deactivated", actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: "Khóa tài khoản" }, transaction);
+        return { revokedLicenseCount: assignmentsToRevoke.length, revokedLicenseNames: assignmentsToRevoke.map((assignment) => licensesById.get(assignment.softwareLicenseId)?.productName || `Bản quyền #${assignment.softwareLicenseId}`) };
+      });
+      return { success: true, ...revocation };
     }),
     updateDirectoryProfile: adminProcedure.input(z.object({ id: z.number().int().positive(), employeeCode: z.string().trim().max(64).nullable(), jobTitle: z.string().trim().max(160).nullable() })).mutation(async ({ input, ctx }) => {
       const employeeCode = input.employeeCode?.toUpperCase() || null;

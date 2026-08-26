@@ -90,6 +90,7 @@ const mocks = vi.hoisted(() => ({
   restoreUserDashboardAlerts: vi.fn(),
   revokeSoftwareLicenseAssignment: vi.fn(),
   runInventoryTransaction: vi.fn(),
+  runSoftwareLicenseTransaction: vi.fn(),
   saveUserMenuPreference: vi.fn(),
   saveUserNotificationPreferences: vi.fn(),
   storagePut: vi.fn(),
@@ -219,6 +220,7 @@ vi.mock("./db", () => ({
   restoreUserDashboardAlerts: mocks.restoreUserDashboardAlerts,
   revokeSoftwareLicenseAssignment: mocks.revokeSoftwareLicenseAssignment,
   runInventoryTransaction: mocks.runInventoryTransaction,
+  runSoftwareLicenseTransaction: mocks.runSoftwareLicenseTransaction,
   saveUserMenuPreference: mocks.saveUserMenuPreference,
   saveCompany: vi.fn(),
   saveHelpGuide: vi.fn(),
@@ -295,6 +297,7 @@ describe("employee administration", () => {
     mocks.listActiveSoftwareLicenseAssignmentsForHandover.mockResolvedValue([]);
     mocks.createHandover.mockResolvedValue(99);
     mocks.runInventoryTransaction.mockImplementation(async (callback: (transaction: unknown) => Promise<unknown>) => callback({ transaction: true }));
+    mocks.runSoftwareLicenseTransaction.mockImplementation(async (callback: (transaction: unknown) => Promise<unknown>) => callback({ softwareLicenseTransaction: true }));
     mocks.getInventorySupplyById.mockResolvedValue({ id: 81, code: "PK-CHUOT", name: "Chuột không dây", unit: "Cái", stockQuantity: "5", isActive: true });
     mocks.listHandoverSupplyItems.mockResolvedValue([]);
     mocks.transitionHandoverStatus.mockResolvedValue({ id: 99, assetId: 50 });
@@ -339,6 +342,8 @@ describe("employee administration", () => {
     mocks.listHandoversByRecipient.mockResolvedValue([{ id: 91, assetCode: "TS-00091", assetName: "Laptop cá nhân", status: "active" }]);
     mocks.storagePut.mockResolvedValue({ key: "vendors/41/documents/bao-gia.pdf", url: "/manus-storage/vendors/41/documents/bao-gia.pdf" });
     mocks.listSoftwareLicenseDocuments.mockResolvedValue([]);
+    mocks.listSoftwareLicenses.mockResolvedValue([]);
+    mocks.listSoftwareLicenseAssignments.mockResolvedValue([]);
     mocks.createSoftwareLicenseDocument.mockResolvedValue(120);
     mocks.deleteSoftwareLicenseDocument.mockResolvedValue(undefined);
     mocks.getSoftwareLicenseDocumentById.mockResolvedValue({ id: 120, softwareLicenseId: 71, fileName: "gia-han.pdf" });
@@ -567,9 +572,23 @@ describe("employee administration", () => {
   it("records a lock operation for another employee", async () => {
     const caller = appRouter.createCaller(adminContext);
 
-    await expect(caller.employees.updateActiveStatus({ id: 2, isActive: false })).resolves.toEqual({ success: true });
-    expect(mocks.updateUserActiveStatus).toHaveBeenCalledWith(2, false);
-    expect(mocks.recordActivity).toHaveBeenCalledWith(expect.objectContaining({ entityType: "user", entityId: 2, action: "deactivated" }));
+    await expect(caller.employees.updateActiveStatus({ id: 2, isActive: false })).resolves.toEqual({ success: true, revokedLicenseCount: 0, revokedLicenseNames: [] });
+    expect(mocks.runSoftwareLicenseTransaction).toHaveBeenCalledTimes(1);
+    expect(mocks.updateUserActiveStatus).toHaveBeenCalledWith(2, false, expect.objectContaining({ softwareLicenseTransaction: true }));
+    expect(mocks.recordActivity).toHaveBeenCalledWith(expect.objectContaining({ entityType: "user", entityId: 2, action: "deactivated" }), expect.objectContaining({ softwareLicenseTransaction: true }));
+  });
+
+  it("revokes active licenses and returns private keys when an employee leaves", async () => {
+    mocks.listSoftwareLicenses.mockResolvedValue([{ id: 71, productName: "Adobe Photoshop" }]);
+    mocks.listSoftwareLicenseAssignments.mockResolvedValue([{ id: 91, softwareLicenseId: 71, userId: 2, status: "active", softwareLicenseKeyId: 81 }]);
+    const caller = appRouter.createCaller(adminContext);
+
+    await expect(caller.employees.activeLicenseAssignments({ userId: 2 })).resolves.toEqual([{ id: 91, softwareLicenseId: 71, productName: "Adobe Photoshop", assignmentMethod: undefined, deviceName: undefined, assetId: undefined }]);
+    await expect(caller.employees.updateActiveStatus({ id: 2, isActive: false })).resolves.toEqual({ success: true, revokedLicenseCount: 1, revokedLicenseNames: ["Adobe Photoshop"] });
+
+    expect(mocks.revokeSoftwareLicenseAssignment).toHaveBeenCalledWith(91, expect.objectContaining({ softwareLicenseTransaction: true }));
+    expect(mocks.updateSoftwareLicenseKey).toHaveBeenCalledWith(81, { status: "available" }, expect.objectContaining({ softwareLicenseTransaction: true }));
+    expect(mocks.recordActivity).toHaveBeenCalledWith(expect.objectContaining({ entityType: "softwareLicenseAssignment", entityId: 91, action: "revoked_with_employee_deactivation" }), expect.objectContaining({ softwareLicenseTransaction: true }));
   });
 
   it("prevents an administrator from locking the active account in use", async () => {
