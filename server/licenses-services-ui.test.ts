@@ -144,12 +144,13 @@ describe("Bản quyền & Dịch vụ", () => {
     expect(view).toContain("showWords aria-label=\"Chi phí\"");
     expect(view).toContain("licenseCapacityQuery");
     expect(view).toContain("licenseCapacityById");
-    expect(view).toContain("handleAssignmentAttempt");
     expect(view).toContain("đã hết chỗ cấp phát");
     expect(view).toContain("data-license-available-badge");
-    expect(view).toContain("Còn ${capacity.available} ${unit}");
+    expect(view).toContain("Còn ${capacity.available} ${capacityUnit}");
     expect(view).toContain('"Đã hết chỗ"');
-    expect(view).toContain("existingBadge?.remove(); return;");
+    expect(view).toContain("assignmentUnavailable");
+    expect(view).toContain("tab === \"licenses\" ?");
+    expect(view.indexOf("data-license-available-badge")).toBeLessThan(view.indexOf("filteredServices.map"));
     expect(view).toContain("assignmentRecipientLabel");
     expect(view).toContain("deviceName: nullable(assignmentForm.deviceName)");
     expect(view).toContain("Chưa gán nhân sự hoặc thiết bị");
