@@ -153,6 +153,8 @@
 - [x] Hiển thị tự động số tiền bằng chữ bên dưới trường Chi phí Dịch vụ.
 - [x] Chặn cấp phát Bản quyền khi không còn chỗ trống tại giao diện và API.
 - [x] Kiểm thử số tiền bằng chữ và các trường hợp vượt giới hạn Bản quyền.
+- [x] Hiển thị nhãn số lượng Bản quyền còn trống trên từng mục danh sách.
+- [x] Kiểm thử nhãn sức chứa theo seat, key riêng và tài khoản chủ.
 
 ## Current Session — Bản quyền & Dịch vụ
 

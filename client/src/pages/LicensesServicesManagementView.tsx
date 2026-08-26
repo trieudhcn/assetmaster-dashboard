@@ -194,6 +194,23 @@ export function LicensesServicesManagementView() {
       toast.error(`Bản quyền ${license?.productName || "này"} đã hết chỗ cấp phát.`);
     }
   };
+  useEffect(() => {
+    document.querySelectorAll<HTMLElement>("div.flex.flex-col.gap-3.p-4").forEach((row) => {
+      const licenseCode = row.querySelector(".font-mono")?.textContent?.trim();
+      const license = licenses.find((item) => item.licenseCode === licenseCode);
+      const actionGroup = row.lastElementChild;
+      if (!license || !actionGroup) return;
+      const capacity = licenseCapacityById.get(license.id);
+      const existingBadge = actionGroup.querySelector<HTMLElement>("[data-license-available-badge]");
+      if (!capacity) { existingBadge?.remove(); return; }
+      const unit = capacity.activationMode === "product_key" ? "key" : capacity.activationMode === "shared_account" ? "chỗ tài khoản" : "chỗ";
+      const badge = existingBadge ?? document.createElement("span");
+      badge.dataset.licenseAvailableBadge = "true";
+      badge.className = `rounded-lg px-2.5 py-1.5 text-xs font-extrabold ${capacity.available > 0 ? "bg-[#E6F6F2] text-[#087A6A]" : "bg-[#FDEDEE] text-[#B44545]"}`;
+      badge.textContent = capacity.available > 0 ? `Còn ${capacity.available} ${unit}` : "Đã hết chỗ";
+      if (!existingBadge) actionGroup.insertBefore(badge, actionGroup.firstChild);
+    });
+  }, [licenseCapacityById, licenses]);
   const openingLicense = licenseModal && licenseModal !== "create" ? licenses.find((item) => item.id === licenseModal) : null;
   const openingService = serviceModal && serviceModal !== "create" ? services.find((item) => item.id === serviceModal) : null;
   const assignmentLicense = assignmentLicenseId ? licenses.find((item) => item.id === assignmentLicenseId) : null;

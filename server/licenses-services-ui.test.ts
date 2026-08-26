@@ -143,6 +143,9 @@ describe("Bản quyền & Dịch vụ", () => {
     expect(view).toContain("licenseCapacityById");
     expect(view).toContain("handleAssignmentAttempt");
     expect(view).toContain("đã hết chỗ cấp phát");
+    expect(view).toContain("data-license-available-badge");
+    expect(view).toContain("Còn ${capacity.available} ${unit}");
+    expect(view).toContain('"Đã hết chỗ"');
     expect(view).not.toContain("service-currency-input");
     expect(styles).toContain("place-items: center !important");
     expect(styles).toContain('[data-licenses-services-dialog="license"] .form-input');
