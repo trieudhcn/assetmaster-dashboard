@@ -79,6 +79,11 @@ describe("Bản quyền & Dịch vụ", () => {
     expect(view).toContain("Tài khoản email dùng chung");
     expect(view).toContain("LicenseCredentialPortal");
     expect(view).toContain("Chỉ Admin được xem hoặc sao chép mật khẩu.");
+    expect(view).toContain("trpc.departments.listAll.useQuery");
+    expect(view).toContain("licenseAssignmentsByDepartment");
+    expect(view).toContain("data-license-department-chart");
+    expect(view).toContain("Cấp phát Bản quyền theo phòng ban");
+    expect(view).toContain("ResponsiveContainer");
     expect(view).toContain("Tìm nhà cung cấp...");
     expect(view).toContain("Tìm chi nhánh...");
     expect(view).toContain("Tìm mã hoặc tên Tài sản...");
@@ -151,8 +156,11 @@ describe("Bản quyền & Dịch vụ", () => {
     expect(styles).toContain('content: "BẢN QUYỀN & DỊCH VỤ"');
     expect(styles).toContain("license-service-dialog-close");
     const dialog = readFileSync(resolve(process.cwd(), "client/src/components/ui/dialog.tsx"), "utf8");
-    expect(dialog).toContain('licenseServiceDialog === "license" || licenseServiceDialog === "service" || licenseServiceDialog === "technology"');
+    expect(dialog).toContain('licenseServiceDialog === "license" || licenseServiceDialog === "service" || licenseServiceDialog === "technology" || licenseServiceDialog === "assignment"');
     expect(dialog).toContain("license-service-dialog-panel relative flex");
+    expect(dialog).toContain("assignment-dialog-panel");
+    expect(dialog).toContain('licenseServiceDialog === "assignment" ? "h-auto max-h-[calc(100dvh-2rem)]"');
+    expect(view).toContain('data-licenses-services-dialog="assignment"');
     expect(readFileSync(resolve(process.cwd(), "client/src/components/SearchableSelect.tsx"), "utf8")).toContain("closest<HTMLElement>('[data-slot=\"dialog-content\"]')");
     expect(view).toContain('vendorId: license.technologyVendorId ? String(license.technologyVendorId) : "", technologyVendorId: license.technologyVendorId ? String(license.technologyVendorId) : ""');
     expect(view).toContain('vendorId: service.technologyVendorId ? String(service.technologyVendorId) : "", technologyVendorId: service.technologyVendorId ? String(service.technologyVendorId) : ""');

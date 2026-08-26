@@ -131,6 +131,9 @@
 - [x] Triển khai kho key riêng, tài khoản chủ dùng chung, cấp phát/thu hồi theo nhân viên và thiết bị.
 - [x] Mã hóa mật khẩu tài khoản chủ; chỉ cho phép Admin xem hoặc sao chép, đồng thời ghi lịch sử truy cập.
 - [x] Bổ sung kiểm thử, xác minh desktop/mobile và phát hành tính năng cấp phát nâng cao.
+- [x] Khắc phục modal Cấp phát Bản quyền bị lệch góc trên-trái và chuẩn hóa nền/vỏ modal theo form hệ thống.
+- [x] Bổ sung biểu đồ trực quan thống kê Bản quyền đang cấp phát theo phòng ban.
+- [x] Bổ sung hồi quy và xác minh desktop/mobile cho modal cấp phát và biểu đồ phòng ban.
 
 ## Current Session — Bản quyền & Dịch vụ
 

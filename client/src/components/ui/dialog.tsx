@@ -133,14 +133,14 @@ function DialogContent({
     [onPointerDownOutside]
   );
 
-  if (licenseServiceDialog === "license" || licenseServiceDialog === "service" || licenseServiceDialog === "technology") {
+  if (licenseServiceDialog === "license" || licenseServiceDialog === "service" || licenseServiceDialog === "technology" || licenseServiceDialog === "assignment") {
     return (
       <DialogPortal data-slot="dialog-portal">
         <DialogOverlay />
         <div data-licenses-services-dialog={licenseServiceDialog} className="fixed inset-0 z-[60] grid place-items-center p-4 outline-none" onClick={(event) => { if (licenseServiceDialog !== "technology" || event.target !== event.currentTarget) return; (event.currentTarget.querySelector<HTMLElement>('[data-slot="dialog-close"]'))?.click(); }}>
           <DialogPrimitive.Content
             data-slot="dialog-content"
-            className={cn("license-service-dialog-panel relative flex h-[min(48rem,calc(100dvh-2rem))] w-[calc(100vw-2rem)] max-w-3xl min-h-0 flex-col overflow-hidden rounded-lg border bg-background p-0 shadow-lg", licenseServiceDialog === "service" && "service-dialog-panel", licenseServiceDialog === "technology" && "technology-dialog-panel")}
+            className={cn("license-service-dialog-panel relative flex w-[calc(100vw-2rem)] max-w-3xl min-h-0 flex-col overflow-hidden rounded-lg border bg-background p-0 shadow-lg", licenseServiceDialog === "assignment" ? "h-auto max-h-[calc(100dvh-2rem)]" : "h-[min(48rem,calc(100dvh-2rem))]", licenseServiceDialog === "service" && "service-dialog-panel", licenseServiceDialog === "technology" && "technology-dialog-panel", licenseServiceDialog === "assignment" && "assignment-dialog-panel")}
             onEscapeKeyDown={handleEscapeKeyDown}
             onPointerDownOutside={handlePointerDownOutside}
             {...props}
