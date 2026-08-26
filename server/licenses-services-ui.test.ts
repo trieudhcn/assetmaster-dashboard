@@ -73,7 +73,7 @@ describe("Bản quyền & Dịch vụ", () => {
     expect(view).toContain('from "@/components/SearchableSelect"');
     expect(view).toContain("function StandardDropdown");
     expect(view).toContain("<StandardDropdown");
-    expect((view.match(/<StandardDropdown/g) || []).length).toBe(21);
+    expect((view.match(/<StandardDropdown/g) || []).length).toBe(22);
     expect(view).toContain("Mô hình kích hoạt");
     expect(view).toContain("Key riêng cho từng người");
     expect(view).toContain("Tài khoản email dùng chung");
@@ -173,6 +173,12 @@ describe("Bản quyền & Dịch vụ", () => {
     expect(dialog).toContain("Thu hồi cấp phát Bản quyền?");
     expect(dialog).toContain("Xác nhận thu hồi");
     expect(dialog).toContain("withAssignmentRevokeConfirmation");
+    expect(view).toContain('data-license-employee-history');
+    expect(view).toContain('Lịch sử Bản quyền theo nhân viên');
+    expect(view).toContain('employeeLicenseHistory');
+    expect(view).toContain('historyEmployeeId');
+    expect(styles).toContain('[data-licenses-services-dialog="assignment"] .form-input');
+    expect(styles).toContain('[data-licenses-services-dialog="assignment"] [data-slot="dialog-footer"]');
     expect(view).toContain('if (!canSubmitLicenseAssignment(assignmentLicenseId, assignLicense.isPending)) return;');
     expect(view).toContain('import { canSubmitLicenseAssignment } from "@/lib/licenseAssignmentSubmission"');
     expect(view).toContain('assignLicense.isPending ? "Đang cấp..." : "Xác nhận cấp phát"');

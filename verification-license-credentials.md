@@ -10,3 +10,7 @@
 - Desktop sau chuẩn hóa lần cuối: modal Cấp phát dùng cùng bề mặt trắng, header nhận diện, viền/overlay, vùng nội dung và hàng hành động với form Bản quyền/Dịch vụ; kích thước ôm sát nội dung ngắn.
 - Desktop sau refactor cấu trúc: modal Cấp phát có `header`, vùng `body` cuộn nội bộ và `footer` tách biệt bằng đường viền; nút Hủy/Xác nhận luôn nằm trong footer, nền/overlay/căn giữa đồng nhất với form chuẩn.
 - Desktop sau tinh gọn form: chỉ còn chọn Tài sản, Nhân sự, Ngày cấp và Ghi chú; hai trường Tên người/đối tượng giữ và Thiết bị không còn hiển thị, footer vẫn căn phải và đầy đủ thao tác.
+- Desktop sau bản vá field: modal tài khoản chủ hiển thị đủ Tài khoản chủ, Tài sản, Nhân sự, Ngày cấp, Ghi chú, danh sách đang cấp phát và footer Hủy/Xác nhận; field Ghi chú có vùng input riêng trong lưới hai cột.
+- Xác minh không ghi dữ liệu: field Ghi chú nhận và hiển thị đúng chuỗi thử nghiệm; thao tác chưa được xác nhận hoặc lưu.
+- Đã đóng modal Cấp phát bằng Hủy sau khi kiểm tra, không tạo cấp phát mới; một form Tạo tài sản mở ngoài ý muốn trong bước kiểm tra cũng đã được đóng, không thay đổi dữ liệu.
+- Xác minh dữ liệu thực: chọn nhân viên Kiều Lâm Quốc Triều hiển thị lịch sử Autocad, mã CAD, mô hình Tài khoản chủ, trạng thái Đang cấp phát, ngày cấp và thông tin Chưa thu hồi.

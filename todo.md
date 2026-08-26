@@ -142,6 +142,10 @@
 - [x] Bổ sung kiểm thử tương tác cho trạng thái loading và điều kiện chặn gửi lặp của Cấp phát Bản quyền.
 - [x] Thêm popup xác nhận trước khi thu hồi một lượt cấp phát Bản quyền.
 - [x] Hiển thị trạng thái đang thu hồi và kiểm thử luồng Hủy/Xác nhận.
+- [x] Bổ sung lịch sử cấp phát và thu hồi Bản quyền chi tiết cho từng nhân viên.
+- [x] Sửa footer modal Cấp phát bị lệch và tách đúng khỏi vùng nội dung.
+- [x] Sửa field Ghi chú trong modal Cấp phát để hiển thị, nhập liệu và cuộn đúng chuẩn.
+- [x] Kiểm thử lịch sử Bản quyền cùng modal Cấp phát trên desktop/mobile.
 
 ## Current Session — Bản quyền & Dịch vụ
 
