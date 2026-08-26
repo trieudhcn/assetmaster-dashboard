@@ -120,8 +120,8 @@
 - [x] Khắc phục dropdown không chọn được option trong form Bản quyền/Dịch vụ và các form liên quan.
 - [x] Khôi phục luồng chỉnh sửa sau khi mở form Bản quyền/Dịch vụ.
 - [x] Bổ sung hồi quy chọn option/chỉnh sửa, xác minh desktop/mobile và phát hành bản sửa.
-- [ ] Xác minh tương tác mobile thực tế: mở dropdown, chọn option và chỉnh sửa Bản quyền/Dịch vụ mà không lưu dữ liệu.
-- [ ] Chạy kiểm tra phát hành đầy đủ, cập nhật nhật ký và lưu checkpoint cho bản vá dropdown.
+- [x] Xác minh tương tác mobile thực tế: mở dropdown, chọn option và chỉnh sửa Bản quyền/Dịch vụ mà không lưu dữ liệu.
+- [x] Chạy kiểm tra phát hành đầy đủ, cập nhật nhật ký và lưu checkpoint cho bản vá dropdown.
 
 ## Current Session — Bản quyền & Dịch vụ
 
