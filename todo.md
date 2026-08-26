@@ -146,6 +146,10 @@
 - [x] Sửa footer modal Cấp phát bị lệch và tách đúng khỏi vùng nội dung.
 - [x] Sửa field Ghi chú trong modal Cấp phát để hiển thị, nhập liệu và cuộn đúng chuẩn.
 - [x] Kiểm thử lịch sử Bản quyền cùng modal Cấp phát trên desktop/mobile.
+- [x] Sửa lỗi kiểm tra định dạng khi nhập Chi phí Dịch vụ có dấu phân tách VNĐ.
+- [x] Kiểm thử nhập/lưu Chi phí Dịch vụ với giá trị đã định dạng.
+- [x] Thêm khoảng đệm ngang và safe-area cho footer modal Cấp phát để nút không sát mép.
+- [x] Xác minh footer Cấp phát trên desktop/mobile sau khi căn chỉnh.
 
 ## Current Session — Bản quyền & Dịch vụ
 

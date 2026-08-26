@@ -475,6 +475,14 @@ aside.fixed.inset-y-0 { animation: drawer-in 220ms cubic-bezier(0.23, 1, 0.32, 1
   min-height: auto;
   align-items: center;
   justify-content: flex-end;
+  padding: 1rem max(1.5rem, env(safe-area-inset-right)) calc(1rem + env(safe-area-inset-bottom)) max(1.5rem, env(safe-area-inset-left)) !important;
+}
+
+@media (max-width: 640px) {
+  [data-licenses-services-dialog="assignment"] [data-slot="dialog-footer"] {
+    padding-right: max(1rem, env(safe-area-inset-right)) !important;
+    padding-left: max(1rem, env(safe-area-inset-left)) !important;
+  }
 }
 .form-button-secondary,
 .form-button-primary {

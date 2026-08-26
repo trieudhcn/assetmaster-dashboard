@@ -14,3 +14,4 @@
 - Xác minh không ghi dữ liệu: field Ghi chú nhận và hiển thị đúng chuỗi thử nghiệm; thao tác chưa được xác nhận hoặc lưu.
 - Đã đóng modal Cấp phát bằng Hủy sau khi kiểm tra, không tạo cấp phát mới; một form Tạo tài sản mở ngoài ý muốn trong bước kiểm tra cũng đã được đóng, không thay đổi dữ liệu.
 - Xác minh dữ liệu thực: chọn nhân viên Kiều Lâm Quốc Triều hiển thị lịch sử Autocad, mã CAD, mô hình Tài khoản chủ, trạng thái Đang cấp phát, ngày cấp và thông tin Chưa thu hồi.
+- Desktop sau bản vá footer: nút Hủy và Xác nhận cấp phát nằm trong footer tách biệt, có khoảng đệm rõ ràng ở mép phải và phía dưới; không còn chạm viền modal.

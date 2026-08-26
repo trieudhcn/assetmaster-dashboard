@@ -28,7 +28,7 @@ export function CurrencyInput({ value, onChange, suffix = "VNĐ", showWords = fa
         {...props}
         value={displayValue}
         inputMode="numeric"
-        pattern="[0-9]*"
+        pattern="[0-9.]*"
         enterKeyHint="done"
         onChange={(event) => commit(event.target.value)}
         onKeyDown={(event) => {

@@ -26,6 +26,7 @@ describe("modal presentation contract", () => {
     const supplies = readProjectFile("client/src/pages/SuppliesInventoryView.tsx");
 
     expect(currencyInput).toContain("normalizeVndIntegerInput");
+    expect(currencyInput).toContain('pattern="[0-9.]*"');
     expect(currencyInput).toContain("Đơn giá chỉ nhận chữ số nguyên từ 0–9.");
     expect(currencyInput).toContain("border-[#B44545]");
     expect(supplies).toContain("isInvalidVndInput(form.unitCost)");
@@ -1835,7 +1836,7 @@ describe("currency input and scrollbar contract", () => {
     expect(currencyInput).toContain('text-[10px] font-medium leading-4 text-[#8AA0B6]');
     expect(stylesheet).toContain("scrollbar-color: #8BC9C5 #EEF5F6");
     expect(currencyInput).toContain('inputMode="numeric"');
-    expect(currencyInput).toContain('pattern="[0-9]*"');
+    expect(currencyInput).toContain('pattern="[0-9.]*"');
     expect(currencyInput).toContain('enterKeyHint="done"');
     expect(currencyInput).toContain('<div className="relative w-full">');
     expect(currencyInput).toContain('leading-none text-[#087A6A]');
