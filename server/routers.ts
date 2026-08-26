@@ -818,6 +818,28 @@ export const appRouter = router({
   softwareLicenses: router({
     list: adminProcedure.query(() => listSoftwareLicenses()),
     assignments: adminProcedure.input(z.object({ softwareLicenseId: z.number().int().positive() }).optional()).query(({ input }) => listSoftwareLicenseAssignments(input?.softwareLicenseId)),
+    capacity: adminProcedure.query(async () => {
+      const licenses = await listSoftwareLicenses();
+      return Promise.all(licenses.map(async (license) => {
+        const activationMode = license.activationMode ?? "seat";
+        const assignments = (await listSoftwareLicenseAssignments(license.id)).filter((assignment) => assignment.status === "active");
+        if (activationMode === "product_key") {
+          const keys = await listSoftwareLicenseKeys(license.id);
+          const limit = keys.filter((key) => key.status !== "retired").length;
+          const used = assignments.filter((assignment) => assignment.softwareLicenseKeyId).length;
+          return { softwareLicenseId: license.id, activationMode, used, limit, available: keys.filter((key) => key.status === "available").length };
+        }
+        if (activationMode === "shared_account") {
+          const accounts = (await listSoftwareLicenseActivationAccounts(license.id)).filter((account) => account.status === "active");
+          const limit = accounts.reduce((total, account) => total + account.maxUsers, 0);
+          const used = assignments.filter((assignment) => assignment.softwareLicenseActivationAccountId).length;
+          return { softwareLicenseId: license.id, activationMode, used, limit, available: Math.max(0, limit - used) };
+        }
+        const limit = license.purchasedQuantity;
+        const used = assignments.length;
+        return { softwareLicenseId: license.id, activationMode, used, limit, available: Math.max(0, limit - used) };
+      }));
+    }),
     documents: adminProcedure.input(z.object({ softwareLicenseId: z.number().int().positive() })).query(({ input }) => listSoftwareLicenseDocuments(input.softwareLicenseId)),
     create: adminProcedure.input(z.object({
       licenseCode: z.string().trim().min(2).max(64),

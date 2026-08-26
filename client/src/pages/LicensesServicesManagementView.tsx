@@ -86,6 +86,7 @@ export function LicensesServicesManagementView() {
   const utils = trpc.useUtils();
   const licensesQuery = trpc.softwareLicenses.list.useQuery();
   const assignmentsQuery = trpc.softwareLicenses.assignments.useQuery();
+  const licenseCapacityQuery = trpc.softwareLicenses.capacity.useQuery();
   const servicesQuery = trpc.technologyServices.list.useQuery();
   const technologyVendorsQuery = trpc.technologyVendors.list.useQuery();
   const technologyContractsQuery = trpc.technologyVendorContracts.list.useQuery();
@@ -173,12 +174,26 @@ export function LicensesServicesManagementView() {
     return matchesSearch && (serviceStatusFilter === "all" || getEffectiveStatus(item) === serviceStatusFilter) && (vendorFilter === "all" || String(item.technologyVendorId ?? "") === vendorFilter) && (serviceTypeFilter === "all" || item.serviceType === serviceTypeFilter) && (branchFilter === "all" || String(item.branchId ?? "") === branchFilter) && matchesExpiryFilter(daysUntil(item.expiresAt), expiryFilter);
   }), expirySortDirection), [services, normalizedQuery, serviceStatusFilter, vendorFilter, serviceTypeFilter, branchFilter, expiryFilter, expirySortDirection]);
   const activeAssignments = assignments.filter((item) => item.status === "active");
+  const licenseCapacityById = useMemo(() => new Map((licenseCapacityQuery.data || []).map((capacity) => [capacity.softwareLicenseId, capacity])), [licenseCapacityQuery.data]);
   const employeeLicenseHistory = useMemo(() => historyEmployeeId ? assignments.filter((assignment) => assignment.userId === Number(historyEmployeeId)).map((assignment) => ({ ...assignment, license: licenses.find((license) => license.id === assignment.softwareLicenseId) || null })).sort((left, right) => new Date(right.revokedAt || right.assignedAt).getTime() - new Date(left.revokedAt || left.assignedAt).getTime()) : [], [assignments, historyEmployeeId, licenses]);
   const licenseAssignmentsByDepartment = useMemo(() => buildLicenseAssignmentsByDepartment(assignments, usersQuery.data || [], departments), [assignments, departments, usersQuery.data]);
   const nearDueLicenses = licenses.filter((item) => { const days = daysUntil(item.expiresAt); return days !== null && days <= 30; });
   const nearDueServices = services.filter((item) => { const days = daysUntil(item.expiresAt); return days !== null && days <= 30; });
   const hasActiveFilters = Boolean(query || licenseStatusFilter !== "all" || serviceStatusFilter !== "all" || vendorFilter !== "all" || serviceTypeFilter !== "all" || branchFilter !== "all" || expiryFilter !== "all" || expirySortDirection !== "asc");
   const resetFilters = () => { setQuery(""); setLicenseStatusFilter("all"); setServiceStatusFilter("all"); setVendorFilter("all"); setServiceTypeFilter("all"); setBranchFilter("all"); setExpiryFilter("all"); setExpirySortDirection("asc"); };
+  const handleAssignmentAttempt = (event: React.MouseEvent<HTMLElement>) => {
+    const button = (event.target as HTMLElement).closest("button");
+    if (!button || button.textContent?.trim() !== "Cấp phát") return;
+    const row = button.closest("div.flex.flex-col.gap-3.p-4");
+    const licenseCode = row?.querySelector(".font-mono")?.textContent?.trim();
+    const license = licenses.find((item) => item.licenseCode === licenseCode);
+    const capacity = license ? licenseCapacityById.get(license.id) : null;
+    if (capacity && capacity.available < 1) {
+      event.preventDefault();
+      event.stopPropagation();
+      toast.error(`Bản quyền ${license?.productName || "này"} đã hết chỗ cấp phát.`);
+    }
+  };
   const openingLicense = licenseModal && licenseModal !== "create" ? licenses.find((item) => item.id === licenseModal) : null;
   const openingService = serviceModal && serviceModal !== "create" ? services.find((item) => item.id === serviceModal) : null;
   const assignmentLicense = assignmentLicenseId ? licenses.find((item) => item.id === assignmentLicenseId) : null;
@@ -232,7 +247,7 @@ export function LicensesServicesManagementView() {
 
   if (tab === "directory") return <TechnologyVendorDirectoryPanel onReturn={() => setTab("licenses")} />;
 
-  return <section className="mx-auto max-w-[1500px] px-4 py-7 sm:px-6 lg:px-9 lg:py-8">
+  return <section onClickCapture={handleAssignmentAttempt} className="mx-auto max-w-[1500px] px-4 py-7 sm:px-6 lg:px-9 lg:py-8">
     <LicenseDocumentPortal isOpen={licenseModal !== null} licenseId={typeof licenseModal === "number" ? licenseModal : null} documents={licenseDocumentsQuery.data || []} documentType={licenseDocumentType} pending={pendingLicenseDocument} isBusy={uploadLicenseDocument.isPending} onDocumentTypeChange={setLicenseDocumentType} onSelectFile={(file) => { void selectLicenseDocument(file); }} onClearPending={() => setPendingLicenseDocument(null)} onUpload={uploadPendingLicenseDocument} onRemove={(id) => removeLicenseDocument.mutate({ id })} />
     <LicenseCredentialPortal isOpen={typeof licenseModal === "number" && Boolean(openingLicense)} license={openingLicense} keys={licenseKeysQuery.data || []} accounts={activationAccountsQuery.data || []} assignments={assignments} accessLogs={credentialLogsQuery.data || []} pendingKey={pendingKey} pendingKeyNote={pendingKeyNote} pendingAccount={pendingAccount} revealedCredentials={revealedCredentials} onPendingKeyChange={setPendingKey} onPendingKeyNoteChange={setPendingKeyNote} onPendingAccountChange={setPendingAccount} onAddKey={() => { if (openingLicense && pendingKey.trim()) addLicenseKey.mutate({ softwareLicenseId: openingLicense.id, key: pendingKey, note: nullable(pendingKeyNote) }); }} onCreateAccount={() => { if (openingLicense && pendingAccount.loginEmail.trim() && pendingAccount.password) createActivationAccount.mutate({ softwareLicenseId: openingLicense.id, loginEmail: pendingAccount.loginEmail, password: pendingAccount.password, note: nullable(pendingAccount.note) }); }} onRevealKey={(id, action) => revealLicenseKey.mutate({ id, action })} onRevealPassword={(id, action) => revealActivationPassword.mutate({ id, action })} onRetireKey={(id) => updateLicenseKeyStatus.mutate({ id, status: "retired" })} onRetireAccount={(id) => updateActivationAccount.mutate({ id, status: "retired" })} />
     <LicenseDuplicatePortal isOpen={typeof licenseModal === "number"} onDuplicate={() => { if (openingLicense) duplicateLicense(openingLicense); }} />

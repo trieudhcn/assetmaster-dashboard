@@ -139,6 +139,10 @@ describe("Bản quyền & Dịch vụ", () => {
     expect(view).toContain('<DatePickerField value={String(value ?? "")}');
     expect(view).toContain('<CurrencyInput {...inputProps} value={String(value ?? "")}');
     expect(view).toContain("showWords aria-label=\"Chi phí\"");
+    expect(view).toContain("licenseCapacityQuery");
+    expect(view).toContain("licenseCapacityById");
+    expect(view).toContain("handleAssignmentAttempt");
+    expect(view).toContain("đã hết chỗ cấp phát");
     expect(view).not.toContain("service-currency-input");
     expect(styles).toContain("place-items: center !important");
     expect(styles).toContain('[data-licenses-services-dialog="license"] .form-input');

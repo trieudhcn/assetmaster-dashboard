@@ -150,6 +150,9 @@
 - [x] Kiểm thử nhập/lưu Chi phí Dịch vụ với giá trị đã định dạng.
 - [x] Thêm khoảng đệm ngang và safe-area cho footer modal Cấp phát để nút không sát mép.
 - [x] Xác minh footer Cấp phát trên desktop/mobile sau khi căn chỉnh.
+- [x] Hiển thị tự động số tiền bằng chữ bên dưới trường Chi phí Dịch vụ.
+- [x] Chặn cấp phát Bản quyền khi không còn chỗ trống tại giao diện và API.
+- [x] Kiểm thử số tiền bằng chữ và các trường hợp vượt giới hạn Bản quyền.
 
 ## Current Session — Bản quyền & Dịch vụ
 
