@@ -61,7 +61,7 @@ export function SearchableSelect({ value, onChange, options, placeholder = "Chá»
   };
   const openMenu = () => {
     if (closeTimerRef.current) window.clearTimeout(closeTimerRef.current);
-    setPortalContainer(rootRef.current?.closest<HTMLElement>("[data-licenses-services-dialog]") || null);
+    setPortalContainer(rootRef.current?.closest<HTMLElement>('[data-slot="dialog-content"]') || (typeof document === "undefined" ? null : document.body));
     setMenuReady(false);
     setMenuMounted(true);
     requestAnimationFrame(() => setOpen(true));

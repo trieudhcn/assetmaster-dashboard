@@ -101,7 +101,7 @@ describe("tương tác form Bản quyền", () => {
     window.requestAnimationFrame = originalRaf;
   });
 
-  it("đặt menu dropdown vào lớp modal và vẫn chọn được option", () => {
+  it("đưa menu dropdown Bản quyền vào panel modal và vẫn chọn được option", () => {
     const onChange = vi.fn();
     const originalRaf = window.requestAnimationFrame;
     window.requestAnimationFrame = (callback) => { callback(0); return 1; };
@@ -112,15 +112,14 @@ describe("tương tác form Bản quyền", () => {
     act(() => root?.render(<Dialog open><DialogContent data-licenses-services-dialog="license"><DialogHeader><DialogTitle>Thêm Bản quyền</DialogTitle><DialogDescription>Mô tả</DialogDescription></DialogHeader><StandardDropdown value="subscription" onChange={onChange} options={[{ value: "subscription", label: "Thuê bao" }, { value: "perpetual", label: "Vĩnh viễn" }]} placeholder="Chọn mô hình" searchPlaceholder="Tìm mô hình..." /></DialogContent></Dialog>));
 
     act(() => (document.querySelector<HTMLButtonElement>('button[aria-haspopup="listbox"]')!).click());
-    const modal = document.querySelector<HTMLElement>('[data-licenses-services-dialog="license"]')!;
     const option = Array.from(document.querySelectorAll<HTMLButtonElement>('[role="option"]')).find((button) => button.textContent?.includes("Vĩnh viễn"));
-    expect(option?.closest('[data-licenses-services-dialog="license"]')).toBe(modal);
+    expect(option?.closest('[data-slot="dialog-content"]')).toBe(document.querySelector('[data-licenses-services-dialog="license"] [data-slot="dialog-content"]'));
     act(() => option?.click());
     expect(onChange).toHaveBeenCalledWith("perpetual");
     window.requestAnimationFrame = originalRaf;
   });
 
-  it("đặt menu dropdown Dịch vụ trong lớp modal và vẫn chọn được option", () => {
+  it("đưa menu dropdown Dịch vụ vào panel modal và vẫn chọn được option", () => {
     const onChange = vi.fn();
     const originalRaf = window.requestAnimationFrame;
     window.requestAnimationFrame = (callback) => { callback(0); return 1; };
@@ -131,11 +130,32 @@ describe("tương tác form Bản quyền", () => {
     act(() => root?.render(<Dialog open><DialogContent data-licenses-services-dialog="service"><DialogHeader><DialogTitle>Thêm Dịch vụ</DialogTitle><DialogDescription>Mô tả</DialogDescription></DialogHeader><StandardDropdown value="annual" onChange={onChange} options={[{ value: "monthly", label: "Hàng tháng" }, { value: "annual", label: "Hàng năm" }]} placeholder="Chọn chu kỳ" searchPlaceholder="Tìm chu kỳ..." /></DialogContent></Dialog>));
 
     act(() => (document.querySelector<HTMLButtonElement>('button[aria-haspopup="listbox"]')!).click());
-    const modal = document.querySelector<HTMLElement>('[data-licenses-services-dialog="service"]')!;
     const option = Array.from(document.querySelectorAll<HTMLButtonElement>('[role="option"]')).find((button) => button.textContent?.includes("Hàng tháng"));
-    expect(option?.closest('[data-licenses-services-dialog="service"]')).toBe(modal);
+    expect(option?.closest('[data-slot="dialog-content"]')).toBe(document.querySelector('[data-licenses-services-dialog="service"] [data-slot="dialog-content"]'));
     act(() => option?.click());
     expect(onChange).toHaveBeenCalledWith("monthly");
+    window.requestAnimationFrame = originalRaf;
+  });
+
+  it.each(["license", "service"] as const)("không đóng modal %s khi pointerdown chọn option dropdown", (dialogKind) => {
+    const onChange = vi.fn();
+    const originalRaf = window.requestAnimationFrame;
+    window.requestAnimationFrame = (callback) => { callback(0); return 1; };
+    const host = document.createElement("div");
+    container = host;
+    document.body.append(host);
+    root = createRoot(host);
+    act(() => root?.render(<Dialog open><DialogContent data-licenses-services-dialog={dialogKind}><DialogHeader><DialogTitle>Biểu mẫu</DialogTitle><DialogDescription>Mô tả</DialogDescription></DialogHeader><StandardDropdown value="one" onChange={onChange} options={[{ value: "one", label: "Lựa chọn một" }, { value: "two", label: "Lựa chọn hai" }]} placeholder="Chọn giá trị" searchPlaceholder="Tìm giá trị..." /></DialogContent></Dialog>));
+
+    act(() => (document.querySelector<HTMLButtonElement>('button[aria-haspopup="listbox"]')!).click());
+    const option = Array.from(document.querySelectorAll<HTMLButtonElement>('[role="option"]')).find((button) => button.textContent?.includes("Lựa chọn hai"))!;
+    act(() => {
+      option.dispatchEvent(new MouseEvent("pointerdown", { bubbles: true, cancelable: true }));
+      option.click();
+    });
+
+    expect(onChange).toHaveBeenCalledWith("two");
+    expect(document.querySelector(`[data-licenses-services-dialog="${dialogKind}"]`)).not.toBeNull();
     window.requestAnimationFrame = originalRaf;
   });
 

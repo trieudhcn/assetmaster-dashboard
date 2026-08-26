@@ -148,5 +148,8 @@ describe("Bản quyền & Dịch vụ", () => {
     const dialog = readFileSync(resolve(process.cwd(), "client/src/components/ui/dialog.tsx"), "utf8");
     expect(dialog).toContain('licenseServiceDialog === "license" || licenseServiceDialog === "service" || licenseServiceDialog === "technology"');
     expect(dialog).toContain("license-service-dialog-panel relative flex");
+    expect(readFileSync(resolve(process.cwd(), "client/src/components/SearchableSelect.tsx"), "utf8")).toContain("closest<HTMLElement>('[data-slot=\"dialog-content\"]')");
+    expect(view).toContain('vendorId: license.technologyVendorId ? String(license.technologyVendorId) : "", technologyVendorId: license.technologyVendorId ? String(license.technologyVendorId) : ""');
+    expect(view).toContain('vendorId: service.technologyVendorId ? String(service.technologyVendorId) : "", technologyVendorId: service.technologyVendorId ? String(service.technologyVendorId) : ""');
   });
 });
