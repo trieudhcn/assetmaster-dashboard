@@ -30,11 +30,10 @@ describe("Đồng bộ giao diện License", () => {
   });
 
   it("giữ dialog xác nhận ở giữa viewport trên mobile", () => {
-    const styles = read("client/src/index.css");
-    expect(styles).toContain('[data-slot="alert-dialog-content"]');
-    expect(styles).toContain("max-height: calc(100dvh - 2rem) !important");
-    expect(styles).toContain("transform: translate(-50%, -50%) !important");
-    expect(styles).toContain("@keyframes assetmaster-modal-in { from { opacity: 0; transform: scale(0.97);");
+    const alertDialog = read("client/src/components/ui/alert-dialog.tsx");
+    expect(alertDialog).toContain('data-slot="alert-dialog-viewport"');
+    expect(alertDialog).toContain("fixed inset-0 z-[101] grid place-items-center p-4");
+    expect(alertDialog).toContain("max-h-[calc(100dvh-2rem)]");
   });
 
   it("hiển thị mã và tên tài sản trong danh sách cấp phát", () => {
@@ -42,6 +41,6 @@ describe("Đồng bộ giao diện License", () => {
     const alertDialog = read("client/src/components/ui/alert-dialog.tsx");
     expect(view).toContain("assignmentRecipientLabel(item)");
     expect(view).not.toContain("item.assignedToName || item.deviceName || `Cấp phát #${item.id}`");
-    expect(alertDialog).toContain("-translate-x-1/2 -translate-y-1/2");
+    expect(alertDialog).toContain('data-slot="alert-dialog-viewport"');
   });
 });

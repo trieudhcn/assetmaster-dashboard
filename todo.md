@@ -208,6 +208,8 @@
 - [x] Căn giữa chính xác dialog xác nhận thu hồi License trên mọi viewport.
 - [x] Hiển thị mã tài sản và tên tài sản thay cho “Cấp phát #…” trong danh sách cấp phát License.
 - [x] Kiểm thử dialog thu hồi và danh sách cấp phát trên desktop/mobile.
+- [x] Thay dialog xác nhận thu hồi License bằng cấu trúc căn giữa ổn định trên mobile.
+- [x] Kiểm thử xác nhận thu hồi trên mobile, desktop và hồi quy các dialog License.
 
 ## Current Session — Bản quyền & Dịch vụ
 

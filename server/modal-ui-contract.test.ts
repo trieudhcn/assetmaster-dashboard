@@ -1891,7 +1891,7 @@ describe("currency input and scrollbar contract", () => {
     expect(drawer).toContain("z-50 bg-black/50 backdrop-blur-[3px]");
     expect(sheet).toContain("z-50 bg-black/50 backdrop-blur-[3px]");
     expect(alertDialog).toContain("z-[101] grid");
-    expect(alertDialog).toContain("fixed left-1/2 top-1/2 z-[101] grid h-fit");
+    expect(alertDialog).toContain("fixed inset-0 z-[101] grid place-items-center p-4");
     expect(alertDialog).toContain("max-w-[calc(100%-2rem)]");
     expect(home).toContain("onPointerDownOutside={() => setSupplierReturnConfirmOpen(false)}");
     expect(home).toContain('className="relative z-20 flex flex-col gap-4 border-b');
@@ -2058,7 +2058,7 @@ describe("modal and drawer motion contract", () => {
     expect(stylesheet).toContain(".assetmaster-drawer-motion[data-state=\"closed\"]");
     expect(stylesheet).toContain("@media (prefers-reduced-motion: reduce)");
     expect(dialog).toContain("assetmaster-modal-motion");
-    expect(alertDialog).toContain("assetmaster-modal-motion");
+    expect(alertDialog).toContain('data-slot="alert-dialog-viewport"');
     expect(drawer).toContain("assetmaster-drawer-motion");
     expect(sheet).toContain("assetmaster-drawer-motion");
   });
