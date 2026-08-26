@@ -213,6 +213,10 @@
 - [x] Đồng bộ header Giá trị tài sản theo Chi nhánh theo cấu trúc widget License.
 - [x] Hiển thị lịch sử cấp phát và thu hồi chi tiết cho từng License.
 - [x] Kiểm thử responsive Dashboard và lịch sử License trên desktop/mobile.
+- [x] Đánh giá migration AssetMaster sang máy chủ Ubuntu nội bộ với email/mật khẩu công ty.
+- [x] Thiết kế xác thực, MySQL, lưu trữ tệp, Nginx và sao lưu cho vận hành nội bộ.
+- [x] Lập lộ trình triển khai an toàn, kiểm thử và chuyển đổi người dùng.
+- [x] Thiết kế Entra ID làm SSO chính và AD/LDAP làm cơ chế dự phòng cho môi trường nội bộ qua VPN.
 
 ## Current Session — Bản quyền & Dịch vụ
 
