@@ -14,5 +14,7 @@ describe("Dashboard License còn trống", () => {
     expect(home).toContain("data-dashboard-available-licenses");
     expect(home).toContain("Chưa được cấp phát hoặc gắn với bất kỳ tài sản nào.");
     expect(home).toContain('setActiveNav("Bản quyền & Dịch vụ")');
+    expect(home).toContain("data-dashboard-branch-license-row");
+    expect(home).toContain('document.querySelector<HTMLElement>("[data-dashboard-alert-history-launcher]")?.remove()');
   });
 });

@@ -192,6 +192,15 @@
 - [x] Cập nhật tức thời sức chứa và trạng thái License sau cấp phát hoặc thu hồi, không cần tải lại trang.
 - [x] Đồng bộ input, bo góc, nút Đóng và xác nhận xóa của modal Quản lý Loại License.
 - [x] Kiểm thử các hạng mục License trên desktop/mobile và hồi quy toàn bộ.
+- [x] Bỏ khung Cảnh báo đã xem khỏi phần đầu Dashboard.
+- [x] Đặt widget License còn trống cùng hàng với Giá trị tài sản theo Chi nhánh trên desktop và xếp dọc trên mobile.
+- [x] Kiểm thử responsive và hồi quy bố cục Dashboard.
+- [x] Sửa dialog xác nhận xóa Loại License bị chặn thao tác Hủy/Xác nhận.
+- [x] Đổi nút Đóng header modal Loại License về biểu tượng × theo chuẩn form khác.
+- [x] Kiểm thử dialog Loại License và hồi quy Dashboard sau sửa lỗi.
+- [x] Thêm thao tác thu hồi License riêng lẻ theo nhân sự, không thay đổi tài sản bàn giao.
+- [x] Hiển thị người đang dùng và xác nhận thu hồi để giải phóng key/chỗ dùng khi hết sức chứa.
+- [x] Kiểm thử thu hồi riêng lẻ trả kho đúng và giữ nguyên tài sản của nhân sự.
 
 ## Current Session — Bản quyền & Dịch vụ
 

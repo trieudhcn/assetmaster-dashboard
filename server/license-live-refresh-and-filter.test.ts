@@ -17,7 +17,15 @@ describe("Đồng bộ giao diện License", () => {
   it("làm mới sức chứa sau cấp phát và yêu cầu xác nhận trước khi xóa Loại License", () => {
     const view = read("client/src/pages/LicensesServicesManagementView.tsx");
     expect(view).toContain("utils.softwareLicenses.capacity.invalidate()");
-    expect(view).toContain('aria-label", "Xác nhận xóa Loại License"');
-    expect(view).toContain("chỉ được xóa khi chưa được dùng");
+    expect(view).toContain('window.confirm(`Xóa Loại License');
+    expect(view).toContain("Loại này chỉ được xóa khi chưa được dùng");
+  });
+
+  it("cho phép yêu cầu thu hồi License riêng lẻ mà không thu hồi tài sản", () => {
+    const view = read("client/src/pages/LicensesServicesManagementView.tsx");
+    expect(view).toContain("data-license-individual-reclaim");
+    expect(view).toContain("Tài sản bàn giao vẫn được giữ nguyên");
+    expect(view).toContain("onRequestRevoke(assignment.id)");
+    expect(view).toContain("setPendingRevokeAssignmentId");
   });
 });

@@ -1132,12 +1132,22 @@ export default function Home() {
 
   useEffect(() => {
     if (activeNav !== "Tổng quan") return;
-    const anchor = document.querySelector<HTMLElement>("[data-dashboard-alert-history-launcher]");
-    if (!anchor) return;
+    document.querySelector<HTMLElement>("[data-dashboard-alert-history-launcher]")?.remove();
+    const branchChart = document.querySelector<HTMLElement>("[data-branch-asset-value-chart]");
+    if (!branchChart) return;
+    const existingLayout = document.querySelector<HTMLElement>("[data-dashboard-branch-license-row]");
+    const layout = existingLayout || document.createElement("div");
+    if (!existingLayout) {
+      layout.dataset.dashboardBranchLicenseRow = "true";
+      layout.className = "mt-5 grid gap-5 xl:grid-cols-2";
+      branchChart.classList.remove("mt-5");
+      branchChart.parentElement?.insertBefore(layout, branchChart);
+      layout.append(branchChart);
+    }
     document.querySelector<HTMLElement>("[data-dashboard-available-licenses]")?.remove();
     const widget = document.createElement("section");
     widget.dataset.dashboardAvailableLicenses = "true";
-    widget.className = "mb-5 overflow-hidden rounded-xl border border-[#CDE5E5] bg-white shadow-[0_8px_24px_rgba(16,42,67,0.045)]";
+    widget.className = "min-w-0 overflow-hidden rounded-xl border border-[#CDE5E5] bg-white shadow-[0_8px_24px_rgba(16,42,67,0.045)]";
     const header = document.createElement("div");
     header.className = "flex flex-wrap items-center justify-between gap-3 border-b border-[#DCE9ED] bg-[#F4FBFA] px-4 py-3";
     const heading = document.createElement("div");
@@ -1191,7 +1201,7 @@ export default function Home() {
     open.onclick = () => setActiveNav("Bản quyền & Dịch vụ");
     footer.append(open);
     widget.append(header, body, footer);
-    anchor.parentElement?.insertBefore(widget, anchor.nextSibling);
+    layout.append(widget);
     return () => widget.remove();
   }, [activeNav, dashboardAvailableLicenses, dashboardSoftwareLicenseCapacityQuery.isLoading, dashboardSoftwareLicensesQuery.isLoading]);
 
