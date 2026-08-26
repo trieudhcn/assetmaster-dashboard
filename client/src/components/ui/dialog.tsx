@@ -102,9 +102,17 @@ function AssignmentDialogLayout({ children }: { children: React.ReactNode }) {
     if (!React.isValidElement<{ children?: React.ReactNode; className?: string }>(item)) return false;
     return typeof item.props.className === "string" && item.props.className.includes("justify-end");
   });
-  const bodyFields = formItems.filter((item) => item !== footer);
+  const bodyFields = formItems.filter((item) => {
+    if (item === footer) return false;
+    if (!React.isValidElement<{ label?: string }>(item)) return true;
+    return item.props.label !== "Tên người/đối tượng giữ" && item.props.label !== "Thiết bị";
+  });
+  const footerChildren = React.Children.map(footer?.props.children, (control) => {
+    if (!React.isValidElement<{ type?: string; className?: string; children?: React.ReactNode; "aria-busy"?: boolean }>(control) || control.type !== "button" || control.props.type !== "submit" || control.props.children !== "Đang cấp...") return control;
+    return React.cloneElement(control, { className: `${control.props.className || ""} assignment-submit-loading`, "aria-busy": true }, <><span className="size-3 animate-spin rounded-full border-2 border-white/35 border-t-white" />Đang cấp phát…</>);
+  });
 
-  return <>{header}{React.cloneElement(form, { className: "flex min-h-0 flex-1 flex-col" }, <div data-slot="dialog-body" className="grid min-h-0 flex-1 gap-4 overflow-y-auto px-5 py-4 sm:grid-cols-2">{bodyPrelude}{bodyFields}</div>, <div data-slot="dialog-footer" className="flex justify-end gap-2 border-t border-[#E7EEF3] bg-white px-5 py-4">{footer?.props.children}</div>)}</>;
+  return <>{header}{React.cloneElement(form, { className: "flex min-h-0 flex-1 flex-col" }, <div data-slot="dialog-body" className="grid min-h-0 flex-1 gap-4 overflow-y-auto px-5 py-4 sm:grid-cols-2">{bodyPrelude}{bodyFields}</div>, <div data-slot="dialog-footer" className="flex justify-end gap-2 border-t border-[#E7EEF3] bg-white px-5 py-4">{footerChildren}</div>)}</>;
 }
 
 function DialogContent({

@@ -9,3 +9,4 @@
 - Desktop sau bản vá modal: modal **Cấp phát Bản quyền** có overlay đồng nhất, được căn giữa và đã thu gọn theo nội dung; không còn lệch góc trên-trái hoặc khoảng trắng dư thừa.
 - Desktop sau chuẩn hóa lần cuối: modal Cấp phát dùng cùng bề mặt trắng, header nhận diện, viền/overlay, vùng nội dung và hàng hành động với form Bản quyền/Dịch vụ; kích thước ôm sát nội dung ngắn.
 - Desktop sau refactor cấu trúc: modal Cấp phát có `header`, vùng `body` cuộn nội bộ và `footer` tách biệt bằng đường viền; nút Hủy/Xác nhận luôn nằm trong footer, nền/overlay/căn giữa đồng nhất với form chuẩn.
+- Desktop sau tinh gọn form: chỉ còn chọn Tài sản, Nhân sự, Ngày cấp và Ghi chú; hai trường Tên người/đối tượng giữ và Thiết bị không còn hiển thị, footer vẫn căn phải và đầy đủ thao tác.

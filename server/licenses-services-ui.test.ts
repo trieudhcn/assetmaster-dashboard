@@ -166,6 +166,12 @@ describe("Bản quyền & Dịch vụ", () => {
     expect(dialog).toContain("function AssignmentDialogLayout");
     expect(dialog).toContain('data-slot="dialog-body"');
     expect(dialog).toContain('data-slot="dialog-footer"');
+    expect(dialog).toContain('item.props.label !== "Tên người/đối tượng giữ"');
+    expect(dialog).toContain('item.props.label !== "Thiết bị"');
+    expect(dialog).toContain('Đang cấp phát…');
+    expect(view).toContain('if (!canSubmitLicenseAssignment(assignmentLicenseId, assignLicense.isPending)) return;');
+    expect(view).toContain('import { canSubmitLicenseAssignment } from "@/lib/licenseAssignmentSubmission"');
+    expect(view).toContain('assignLicense.isPending ? "Đang cấp..." : "Xác nhận cấp phát"');
     expect(view).toContain('data-licenses-services-dialog="assignment"');
     expect(readFileSync(resolve(process.cwd(), "client/src/components/SearchableSelect.tsx"), "utf8")).toContain("closest<HTMLElement>('[data-slot=\"dialog-content\"]')");
     expect(view).toContain('vendorId: license.technologyVendorId ? String(license.technologyVendorId) : "", technologyVendorId: license.technologyVendorId ? String(license.technologyVendorId) : ""');

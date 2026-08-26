@@ -11,6 +11,7 @@ import { TechnologyVendorDirectoryPanel } from "@/components/TechnologyVendorDir
 import { DatePickerField } from "@/components/DatePickerField";
 import { CurrencyInput } from "@/components/CurrencyInput";
 import { buildLicenseAssignmentsByDepartment } from "@/lib/licenseAssignmentsByDepartment";
+import { canSubmitLicenseAssignment } from "@/lib/licenseAssignmentSubmission";
 
 type LicenseForm = {
   licenseCode: string;
@@ -220,8 +221,8 @@ export function LicensesServicesManagementView() {
   };
   const saveAssignment = (event: React.FormEvent) => {
     event.preventDefault();
-    if (!assignmentLicenseId) return;
-    assignLicense.mutate({ softwareLicenseId: assignmentLicenseId, assignmentMethod: assignmentLicense?.activationMode, softwareLicenseKeyId: assignmentForm.softwareLicenseKeyId ? Number(assignmentForm.softwareLicenseKeyId) : null, softwareLicenseActivationAccountId: assignmentForm.softwareLicenseActivationAccountId ? Number(assignmentForm.softwareLicenseActivationAccountId) : null, assetId: assignmentForm.assetId ? Number(assignmentForm.assetId) : null, userId: assignmentForm.userId ? Number(assignmentForm.userId) : null, assignedToName: nullable(assignmentForm.assignedToName), deviceName: nullable(assignmentForm.deviceName), assignedAt: toDate(assignmentForm.assignedAt) || new Date(), note: nullable(assignmentForm.note) });
+    if (!canSubmitLicenseAssignment(assignmentLicenseId, assignLicense.isPending)) return;
+    assignLicense.mutate({ softwareLicenseId: assignmentLicenseId, assignmentMethod: assignmentLicense?.activationMode, softwareLicenseKeyId: assignmentForm.softwareLicenseKeyId ? Number(assignmentForm.softwareLicenseKeyId) : null, softwareLicenseActivationAccountId: assignmentForm.softwareLicenseActivationAccountId ? Number(assignmentForm.softwareLicenseActivationAccountId) : null, assetId: assignmentForm.assetId ? Number(assignmentForm.assetId) : null, userId: assignmentForm.userId ? Number(assignmentForm.userId) : null, assignedToName: nullable(assignmentForm.assignedToName), deviceName: null, assignedAt: toDate(assignmentForm.assignedAt) || new Date(), note: nullable(assignmentForm.note) });
   };
 
   if (tab === "directory") return <TechnologyVendorDirectoryPanel onReturn={() => setTab("licenses")} />;

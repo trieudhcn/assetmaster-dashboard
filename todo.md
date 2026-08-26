@@ -136,6 +136,10 @@
 - [x] Bổ sung hồi quy và xác minh desktop/mobile cho modal cấp phát và biểu đồ phòng ban.
 - [x] Thay hẳn modal Cấp phát Bản quyền theo cấu trúc header–body–footer của form chuẩn hệ thống.
 - [x] Xác minh lại tính nhất quán về nền, chiều cao, cuộn nội bộ, nút Đóng/Hủy/Lưu trên desktop và mobile.
+- [x] Thêm trạng thái Đang cấp phát và khóa thao tác gửi lặp khi xác nhận cấp phát Bản quyền.
+- [x] Loại bỏ trường Tên người/đối tượng giữ và Thiết bị khỏi form Cấp phát Bản quyền.
+- [x] Kiểm thử chống gửi lặp và bố cục form Cấp phát sau khi tinh gọn.
+- [x] Bổ sung kiểm thử tương tác cho trạng thái loading và điều kiện chặn gửi lặp của Cấp phát Bản quyền.
 
 ## Current Session — Bản quyền & Dịch vụ
 
