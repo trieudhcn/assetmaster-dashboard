@@ -1,4 +1,4 @@
-import { and, desc, eq, inArray, like, sql } from "drizzle-orm";
+import { and, asc, count, desc, eq, inArray, like, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import {
   activityLogs,
@@ -37,6 +37,7 @@ import {
   softwareLicenseDocuments,
   softwareLicenseKeys,
   softwareLicenses,
+  licenseTypes,
   supplyImportItems,
   supplyImportSessions,
   supplyUnits,
@@ -374,6 +375,44 @@ export async function listSoftwareLicenses() {
   const db = await getDb();
   if (!db) return [];
   return db.select().from(softwareLicenses).orderBy(desc(softwareLicenses.updatedAt));
+}
+
+export async function listLicenseTypes() {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(licenseTypes).orderBy(asc(licenseTypes.name));
+}
+
+export async function getLicenseTypeById(id: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+  return (await db.select().from(licenseTypes).where(eq(licenseTypes.id, id)).limit(1))[0];
+}
+
+export async function createLicenseType(data: typeof licenseTypes.$inferInsert) {
+  const db = await getDb();
+  if (!db) throw new Error("Database unavailable");
+  const result = await db.insert(licenseTypes).values(data);
+  return Number(result[0].insertId);
+}
+
+export async function updateLicenseType(id: number, data: Partial<typeof licenseTypes.$inferInsert>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database unavailable");
+  await db.update(licenseTypes).set(data).where(eq(licenseTypes.id, id));
+}
+
+export async function deleteLicenseType(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database unavailable");
+  await db.delete(licenseTypes).where(eq(licenseTypes.id, id));
+}
+
+export async function countSoftwareLicensesByTypeId(licenseTypeId: number) {
+  const db = await getDb();
+  if (!db) return 0;
+  const result = await db.select({ total: count() }).from(softwareLicenses).where(eq(softwareLicenses.licenseTypeId, licenseTypeId));
+  return Number(result[0]?.total || 0);
 }
 
 export async function getSoftwareLicenseById(id: number) {

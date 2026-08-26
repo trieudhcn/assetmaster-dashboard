@@ -94,10 +94,20 @@ export const technologyVendorContractDocuments = mysqlTable("technologyVendorCon
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 }, (table) => [index("tvcd_contract_idx").on(table.technologyVendorContractId)]);
 
+export const licenseTypes = mysqlTable("licenseTypes", {
+  id: int("id").autoincrement().primaryKey(),
+  name: varchar("name", { length: 160 }).notNull().unique(),
+  isActive: boolean("isActive").default(true).notNull(),
+  note: text("note"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+}, (table) => [index("license_types_active_idx").on(table.isActive)]);
+
 export const softwareLicenses = mysqlTable("softwareLicenses", {
   id: int("id").autoincrement().primaryKey(),
   licenseCode: varchar("licenseCode", { length: 64 }).notNull().unique(),
   productName: varchar("productName", { length: 255 }).notNull(),
+  licenseTypeId: int("licenseTypeId").references(() => licenseTypes.id, { onDelete: "set null", onUpdate: "cascade" }),
   publisher: varchar("publisher", { length: 160 }),
   edition: varchar("edition", { length: 160 }),
   licenseModel: mysqlEnum("licenseModel", ["perpetual", "subscription", "volume", "oem", "other"]).default("subscription").notNull(),
@@ -110,6 +120,7 @@ export const softwareLicenses = mysqlTable("softwareLicenses", {
   technologyVendorContractId: int("technologyVendorContractId").references(() => technologyVendorContracts.id, { onDelete: "set null", onUpdate: "cascade" }),
   purchaseContractId: int("purchaseContractId").references(() => purchaseContracts.id, { onDelete: "set null", onUpdate: "cascade" }),
   purchaseInvoiceId: int("purchaseInvoiceId").references(() => purchaseInvoices.id, { onDelete: "set null", onUpdate: "cascade" }),
+  purchaseInvoiceNumber: varchar("purchaseInvoiceNumber", { length: 96 }),
   purchasedAt: timestamp("purchasedAt"),
   expiresAt: timestamp("expiresAt"),
   autoRenew: boolean("autoRenew").default(false).notNull(),
@@ -119,7 +130,7 @@ export const softwareLicenses = mysqlTable("softwareLicenses", {
   createdByName: varchar("createdByName", { length: 160 }),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
-}, (table) => [index("software_licenses_status_expiry_idx").on(table.status, table.expiresAt), index("software_licenses_vendor_idx").on(table.vendorId), index("software_licenses_technology_vendor_idx").on(table.technologyVendorId), index("software_licenses_technology_contract_idx").on(table.technologyVendorContractId)]);
+}, (table) => [index("software_licenses_status_expiry_idx").on(table.status, table.expiresAt), index("software_licenses_vendor_idx").on(table.vendorId), index("software_licenses_technology_vendor_idx").on(table.technologyVendorId), index("software_licenses_technology_contract_idx").on(table.technologyVendorContractId), index("software_licenses_license_type_idx").on(table.licenseTypeId), index("software_licenses_invoice_number_idx").on(table.purchaseInvoiceNumber)]);
 
 export const softwareLicenseKeys = mysqlTable("softwareLicenseKeys", {
   id: int("id").autoincrement().primaryKey(),

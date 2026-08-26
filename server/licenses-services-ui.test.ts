@@ -25,8 +25,11 @@ describe("Bản quyền & Dịch vụ", () => {
     expect(view).toContain("Tệp đính kèm");
     expect(view).toContain("Tài liệu gia hạn");
     expect(view).toContain("Nhân bản Bản quyền");
-    expect(view).toContain("licenseCode: \"\"");
-    expect(view).toContain("khóa mới");
+    expect(view).toContain("licenseTypeId: \"\"");
+    expect(view).toContain("purchaseInvoiceNumber: \"\"");
+    expect(view).toContain("Quản lý Loại License");
+    expect(view).toContain("Mã hóa đơn mua hàng");
+    expect(view).toContain("Mã hóa đơn mới");
     expect(view).toContain("trpc.technologyServices.list.useQuery");
     expect(view).toContain("trpc.technologyVendors.list.useQuery");
     expect(view).toContain("trpc.technologyVendorContracts.list.useQuery");
@@ -73,7 +76,7 @@ describe("Bản quyền & Dịch vụ", () => {
     expect(view).toContain('from "@/components/SearchableSelect"');
     expect(view).toContain("function StandardDropdown");
     expect(view).toContain("<StandardDropdown");
-    expect((view.match(/<StandardDropdown/g) || []).length).toBe(22);
+    expect((view.match(/<StandardDropdown/g) || []).length).toBe(23);
     expect(view).toContain("Mô hình kích hoạt");
     expect(view).toContain("Key riêng cho từng người");
     expect(view).toContain("Tài khoản email dùng chung");

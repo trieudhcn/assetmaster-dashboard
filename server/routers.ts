@@ -49,6 +49,7 @@ import {
   createSoftwareLicenseDocument,
   createSoftwareLicenseAssignment,
   createSoftwareLicenseKey,
+  createLicenseType,
   createTechnologyService,
   createTechnologyVendor,
   createTechnologyVendorContract,
@@ -66,6 +67,7 @@ import {
   deletePurchaseInvoiceDocument,
   deletePurchaseInvoiceLine,
   deleteSoftwareLicenseDocument,
+  deleteLicenseType,
   deleteVendorDocument,
   getAssetById,
   getAssetImportSessionById,
@@ -118,6 +120,7 @@ import {
   getSoftwareLicenseById,
   getSoftwareLicenseDocumentById,
   getSoftwareLicenseKeyById,
+  getLicenseTypeById,
   getTechnologyVendorContractDocumentById,
   getUserMenuPreference,
   getUserNotificationPreferences,
@@ -150,6 +153,8 @@ import {
   listSoftwareLicenseKeys,
   listTechnologyVendorContractDocuments,
   listSoftwareLicenses,
+  listLicenseTypes,
+  countSoftwareLicensesByTypeId,
   getNextRepairTicketSequence,
   getNextWarrantyRequestSequence,
   listActivityLogsByEntity,
@@ -243,6 +248,7 @@ import {
   updateSoftwareLicenseActivationAccount,
   updateSoftwareLicenseActivationAccountLimits,
   updateSoftwareLicense,
+  updateLicenseType,
   updateSoftwareLicenseKey,
   updateTechnologyService,
   updateTechnologyVendor,
@@ -824,6 +830,31 @@ export const appRouter = router({
       return { success: true };
     }),
   }),
+  licenseTypes: router({
+    list: adminProcedure.query(() => listLicenseTypes()),
+    create: adminProcedure.input(z.object({ name: z.string().trim().min(2).max(160), note: nullableText })).mutation(async ({ input, ctx }) => {
+      const id = await createLicenseType({ name: input.name, note: input.note, isActive: true });
+      await recordActivity({ entityType: "licenseType", entityId: id, action: "created", actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: `Tạo Loại License ${input.name}` });
+      return { id };
+    }),
+    update: adminProcedure.input(z.object({ id: z.number().int().positive(), name: z.string().trim().min(2).max(160).optional(), isActive: z.boolean().optional(), note: nullableText })).mutation(async ({ input, ctx }) => {
+      const existing = await getLicenseTypeById(input.id);
+      if (!existing) throw new TRPCError({ code: "NOT_FOUND", message: "Không tìm thấy Loại License." });
+      const { id, ...changes } = input;
+      await updateLicenseType(id, changes);
+      await recordActivity({ entityType: "licenseType", entityId: id, action: "updated", actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: `Cập nhật Loại License ${changes.name || existing.name}` });
+      return { success: true };
+    }),
+    remove: adminProcedure.input(z.object({ id: z.number().int().positive() })).mutation(async ({ input, ctx }) => {
+      const existing = await getLicenseTypeById(input.id);
+      if (!existing) throw new TRPCError({ code: "NOT_FOUND", message: "Không tìm thấy Loại License." });
+      const used = await countSoftwareLicensesByTypeId(input.id);
+      if (used) throw new TRPCError({ code: "BAD_REQUEST", message: `Loại License đang được ${used} đợt mua sử dụng, hãy ngừng dùng thay vì xóa.` });
+      await deleteLicenseType(input.id);
+      await recordActivity({ entityType: "licenseType", entityId: input.id, action: "removed", actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: `Xóa Loại License ${existing.name}` });
+      return { success: true };
+    }),
+  }),
   softwareLicenses: router({
     list: adminProcedure.query(() => listSoftwareLicenses()),
     assignments: adminProcedure.input(z.object({ softwareLicenseId: z.number().int().positive() }).optional()).query(({ input }) => listSoftwareLicenseAssignments(input?.softwareLicenseId)),
@@ -851,8 +882,9 @@ export const appRouter = router({
     }),
     documents: adminProcedure.input(z.object({ softwareLicenseId: z.number().int().positive() })).query(({ input }) => listSoftwareLicenseDocuments(input.softwareLicenseId)),
     create: adminProcedure.input(z.object({
-      licenseCode: z.string().trim().min(2).max(64),
+      licenseCode: z.string().trim().min(2).max(64).optional(),
       productName: z.string().trim().min(2).max(255),
+      licenseTypeId: z.number().int().positive().nullable().optional(),
       publisher: nullableText,
       edition: nullableText,
       licenseModel: z.enum(["perpetual", "subscription", "volume", "oem", "other"]),
@@ -865,19 +897,23 @@ export const appRouter = router({
       technologyVendorContractId: z.number().int().positive().nullable().optional(),
       purchaseContractId: z.number().int().positive().nullable().optional(),
       purchaseInvoiceId: z.number().int().positive().nullable().optional(),
+      purchaseInvoiceNumber: nullableText,
       purchasedAt: z.coerce.date().nullable().optional(),
       expiresAt: z.coerce.date().nullable().optional(),
       autoRenew: z.boolean(),
       status: z.enum(["active", "expiring", "expired", "suspended", "retired"]),
       note: z.string().trim().max(4000).nullable().optional(),
     })).mutation(async ({ input, ctx }) => {
-      const id = await createSoftwareLicense({ ...input, createdByUserId: ctx.user!.id, createdByName: ctx.user!.name ?? "Quản trị viên" });
-      await recordActivity({ entityType: "softwareLicense", entityId: id, action: "created", actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: `Tạo bản quyền ${input.productName} (${input.licenseCode})` });
+      if (input.licenseTypeId && !(await getLicenseTypeById(input.licenseTypeId))) throw new TRPCError({ code: "NOT_FOUND", message: "Không tìm thấy Loại License đã chọn." });
+      const licenseCode = input.licenseCode || `LIC-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).slice(2, 6).toUpperCase()}`;
+      const id = await createSoftwareLicense({ ...input, licenseCode, createdByUserId: ctx.user!.id, createdByName: ctx.user!.name ?? "Quản trị viên" });
+      await recordActivity({ entityType: "softwareLicense", entityId: id, action: "created", actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: `Thêm đợt mua Bản quyền ${input.productName}${input.purchaseInvoiceNumber ? ` · Hóa đơn ${input.purchaseInvoiceNumber}` : ""}` });
       return { id };
     }),
     update: adminProcedure.input(z.object({
       id: z.number().int().positive(),
       productName: z.string().trim().min(2).max(255).optional(),
+      licenseTypeId: z.number().int().positive().nullable().optional(),
       publisher: nullableText,
       edition: nullableText,
       licenseModel: z.enum(["perpetual", "subscription", "volume", "oem", "other"]).optional(),
@@ -890,6 +926,7 @@ export const appRouter = router({
       technologyVendorContractId: z.number().int().positive().nullable().optional(),
       purchaseContractId: z.number().int().positive().nullable().optional(),
       purchaseInvoiceId: z.number().int().positive().nullable().optional(),
+      purchaseInvoiceNumber: nullableText,
       purchasedAt: z.coerce.date().nullable().optional(),
       expiresAt: z.coerce.date().nullable().optional(),
       autoRenew: z.boolean().optional(),
@@ -899,6 +936,7 @@ export const appRouter = router({
       const existing = await getSoftwareLicenseById(input.id);
       if (!existing) throw new TRPCError({ code: "NOT_FOUND", message: "Không tìm thấy bản quyền phần mềm." });
       const { id, ...changes } = input;
+      if (changes.licenseTypeId && !(await getLicenseTypeById(changes.licenseTypeId))) throw new TRPCError({ code: "NOT_FOUND", message: "Không tìm thấy Loại License đã chọn." });
       const assignments = await listSoftwareLicenseAssignments(id);
       const activeAssignments = assignments.filter((assignment) => assignment.status === "active");
       const keys = await listSoftwareLicenseKeys(id);

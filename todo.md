@@ -169,6 +169,14 @@
 - [x] Hợp nhất hai khu vực Bản quyền trong chi tiết phiếu Bàn giao.
 - [x] Hiển thị rõ Bản quyền nào sẽ thu hồi cùng tài sản trong khu vực hợp nhất.
 - [x] Kiểm thử chi tiết phiếu Bàn giao không còn mâu thuẫn Bản quyền.
+- [x] Phân tích mô hình Danh mục phần mềm, đợt mua License và kho cấp phát.
+- [x] Đề xuất vòng đời nghiệp vụ và lộ trình triển khai License theo giai đoạn.
+- [x] Chốt quy tắc quản lý từng đợt mua License theo mã hóa đơn duy nhất.
+- [x] Đề xuất quy tắc trừ kho, cấp phát và thu hồi License theo từng hóa đơn.
+- [x] Thêm khu vực quản lý Loại License trong menu Bản quyền.
+- [x] Bổ sung Loại License và Mã hóa đơn mua hàng vào dữ liệu Bản quyền.
+- [x] Bỏ Mã bản quyền và bố trí Tên phần mềm, Loại License, Mã hóa đơn theo form mới.
+- [x] Kiểm thử nghiệp vụ, desktop/mobile và phát hành thay đổi Bản quyền.
 
 ## Current Session — Bản quyền & Dịch vụ
 
