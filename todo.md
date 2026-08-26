@@ -210,6 +210,9 @@
 - [x] Kiểm thử dialog thu hồi và danh sách cấp phát trên desktop/mobile.
 - [x] Thay dialog xác nhận thu hồi License bằng cấu trúc căn giữa ổn định trên mobile.
 - [x] Kiểm thử xác nhận thu hồi trên mobile, desktop và hồi quy các dialog License.
+- [x] Đồng bộ header Giá trị tài sản theo Chi nhánh theo cấu trúc widget License.
+- [x] Hiển thị lịch sử cấp phát và thu hồi chi tiết cho từng License.
+- [x] Kiểm thử responsive Dashboard và lịch sử License trên desktop/mobile.
 
 ## Current Session — Bản quyền & Dịch vụ
 

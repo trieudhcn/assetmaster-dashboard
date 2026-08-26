@@ -15,6 +15,9 @@ describe("Dashboard License còn trống", () => {
     expect(home).toContain("Chưa được cấp phát hoặc gắn với bất kỳ tài sản nào.");
     expect(home).toContain('setActiveNav("Bản quyền & Dịch vụ")');
     expect(home).toContain("data-dashboard-branch-license-row");
+    expect(home).toContain('data-branch-asset-value-chart className="mt-5 overflow-hidden');
+    expect(home).toContain("Tổng nguyên giá tài sản đang còn thuộc công ty, phân theo Chi nhánh.");
+    expect(home).toContain("ring-1 ring-[#BFE7E1]");
     expect(home).toContain('document.querySelector<HTMLElement>("[data-dashboard-alert-history-launcher]")?.remove()');
   });
 });
