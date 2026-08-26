@@ -2,6 +2,7 @@
 // This page owns the AssetMaster dashboard composition and local interaction states.
 
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
+import { createRoot } from "react-dom/client";
 import { jsPDF } from "jspdf";
 import * as XLSX from "xlsx";
 import QRCodeGenerator from "qrcode";
@@ -1996,55 +1997,11 @@ function AssignmentsPage({ showComingSoon, companyInfo }: { showComingSoon: (lab
     host.querySelector<HTMLElement>("[data-handover-license-filter]")?.remove();
     const control = document.createElement("div");
     control.dataset.handoverLicenseFilter = "true";
-    control.className = "relative min-w-[184px]";
-    const trigger = document.createElement("button");
-    trigger.type = "button";
-    trigger.className = "field-input flex h-9 w-full items-center justify-between gap-2 text-left text-xs font-bold text-[#60758A]";
-    trigger.setAttribute("aria-label", "Lọc phiếu theo Bản quyền");
-    trigger.setAttribute("aria-haspopup", "listbox");
-    const label = document.createElement("span");
-    label.className = "truncate";
-    label.textContent = handoverLicenseFilter;
-    const caret = document.createElement("span");
-    caret.className = "shrink-0 text-[#8AA0B6]";
-    caret.textContent = "⌄";
-    trigger.append(label, caret);
-    const menu = document.createElement("div");
-    menu.className = "absolute left-0 top-[calc(100%+0.35rem)] z-[95] hidden w-[min(280px,calc(100vw-2rem))] overflow-hidden rounded-xl border border-[#CDE5E5] bg-white shadow-[0_16px_36px_rgba(16,42,67,0.18)]";
-    menu.setAttribute("role", "listbox");
-    const searchWrap = document.createElement("div");
-    searchWrap.className = "border-b border-[#E7EEF3] p-2";
-    const search = document.createElement("input");
-    search.type = "search";
-    search.placeholder = "Tìm trạng thái Bản quyền...";
-    search.className = "h-9 w-full rounded-lg border border-[#DDE7F0] bg-[#FBFCFD] px-3 text-xs font-semibold text-[#193B57] outline-none focus:border-[#0F8C8C]";
-    searchWrap.append(search);
-    const optionsWrap = document.createElement("div");
-    optionsWrap.className = "max-h-64 overflow-y-auto p-1";
-    const options = ["Tất cả Bản quyền", "Có Bản quyền đang cấp", "Không có Bản quyền đang cấp"];
-    const renderOptions = () => {
-      optionsWrap.replaceChildren();
-      const normalized = search.value.trim().toLocaleLowerCase("vi-VN");
-      options.filter((value) => value.toLocaleLowerCase("vi-VN").includes(normalized)).forEach((value) => {
-        const option = document.createElement("button");
-        option.type = "button";
-        option.className = `flex w-full items-center justify-between rounded-lg px-3 py-2.5 text-left text-xs font-semibold text-[#193B57] transition ${value === handoverLicenseFilter ? "bg-[#E6F6F2]" : "hover:bg-[#ECF8F7]"}`;
-        option.textContent = value;
-        option.onclick = () => { setHandoverLicenseFilter(value); menu.classList.add("hidden"); };
-        optionsWrap.append(option);
-      });
-    };
-    let opened = false;
-    const close = () => { opened = false; trigger.setAttribute("aria-expanded", "false"); menu.classList.add("hidden"); };
-    trigger.onclick = () => { opened = !opened; trigger.setAttribute("aria-expanded", String(opened)); menu.classList.toggle("hidden", !opened); if (opened) window.requestAnimationFrame(() => search.focus()); };
-    search.oninput = renderOptions;
-    const closeOnOutside = (event: PointerEvent) => { if (!control.contains(event.target as Node)) close(); };
-    document.addEventListener("pointerdown", closeOnOutside);
-    renderOptions();
-    control.append(trigger, menu);
-    menu.append(searchWrap, optionsWrap);
+    control.className = "min-w-[184px] shrink-0";
+    const root = createRoot(control);
+    root.render(<SearchableSelect value={handoverLicenseFilter} onChange={setHandoverLicenseFilter} className="w-full" placeholder="Tất cả Bản quyền" searchPlaceholder="Tìm trạng thái Bản quyền..." options={[{ value: "Tất cả Bản quyền", label: "Tất cả Bản quyền" }, { value: "Có Bản quyền đang cấp", label: "Có Bản quyền đang cấp" }, { value: "Không có Bản quyền đang cấp", label: "Không có Bản quyền đang cấp" }]} />);
     host.insertBefore(control, resetButton || null);
-    return () => { document.removeEventListener("pointerdown", closeOnOutside); control.remove(); };
+    return () => { queueMicrotask(() => root.unmount()); control.remove(); };
   }, [handoverLicenseFilter]);
   useEffect(() => { setHandoverPage((current) => Math.min(current, handoverTotalPages)); }, [handoverTotalPages]);
   const exportHandovers = async () => {
@@ -2793,6 +2750,8 @@ function AssetModal({ mode, asset, formData, setFormData, isSaving, onClose: dis
   }, [mode, isDetail, branchesQuery.data, persistedAsset?.branchId, formData.branchId]);
   const maintenanceHistoryQuery = trpc.maintenance.byAsset.useQuery({ assetId: persistedAsset?.id || 0 }, { enabled: isDetail && Boolean(persistedAsset?.id) });
   const assetFieldHistoryQuery = trpc.assets.history.useQuery({ assetId: persistedAsset?.id || 0 }, { enabled: isDetail && Boolean(persistedAsset?.id) });
+  const deviceLicenseAssignmentsQuery = trpc.softwareLicenses.assignments.useQuery(undefined, { enabled: isDetail && Boolean(persistedAsset?.id) });
+  const deviceLicenseCatalogQuery = trpc.softwareLicenses.list.useQuery(undefined, { enabled: isDetail && Boolean(persistedAsset?.id) });
   const latestAssetChange = assetFieldHistoryQuery.data?.items?.[0];
   const latestUpdateActorTooltip = assetFieldHistoryQuery.isLoading
     ? "Người thực hiện: Đang tải..."
@@ -3052,6 +3011,37 @@ function AssetModal({ mode, asset, formData, setFormData, isSaving, onClose: dis
     grid.append(block);
     return () => block.remove();
   }, [isDetail, asset?.purchaseInvoiceId, purchaseInvoicesQuery.data]);
+  useEffect(() => {
+    if (!isDetail || !persistedAsset?.id) return;
+    const dialog = document.querySelector<HTMLElement>('[role="dialog"][aria-label="Chi tiết tài sản"]');
+    const invoiceBlock = dialog?.querySelector<HTMLElement>("[data-asset-invoice-detail]");
+    const grid = invoiceBlock?.parentElement;
+    if (!grid) return;
+    grid.querySelector<HTMLElement>("[data-asset-device-license-detail]")?.remove();
+    const activeAssignments = (deviceLicenseAssignmentsQuery.data || []).filter((assignment) => assignment.assetId === persistedAsset.id && assignment.status === "active");
+    if (!activeAssignments.length) return;
+    const licensesById = new Map((deviceLicenseCatalogQuery.data || []).map((license) => [license.id, license]));
+    const uniqueLicenseIds = [...new Set(activeAssignments.map((assignment) => assignment.softwareLicenseId))];
+    const block = document.createElement("div");
+    block.dataset.assetDeviceLicenseDetail = "true";
+    block.className = "min-w-0 rounded-lg border border-[#CDE5E5] bg-[#F4FBFA] px-3.5 py-3";
+    const label = document.createElement("div");
+    label.className = "text-[10px] font-bold uppercase tracking-[0.1em] text-[#4B8884]";
+    label.textContent = "License đang cấp cho thiết bị";
+    const values = document.createElement("div");
+    values.className = "mt-2 flex flex-wrap gap-1.5";
+    uniqueLicenseIds.forEach((licenseId) => {
+      const license = licensesById.get(licenseId);
+      const item = document.createElement("span");
+      item.className = "inline-flex max-w-full truncate rounded-md bg-white px-2 py-1 font-mono text-[10px] font-extrabold text-[#087A6A] ring-1 ring-inset ring-[#B8E9DD]";
+      item.title = license ? `${license.productName}${license.licenseCode ? ` · ${license.licenseCode}` : ""}` : `Bản quyền #${licenseId}`;
+      item.textContent = item.title;
+      values.append(item);
+    });
+    block.append(label, values);
+    grid.append(block);
+    return () => block.remove();
+  }, [isDetail, persistedAsset?.id, deviceLicenseAssignmentsQuery.data, deviceLicenseCatalogQuery.data]);
   useEffect(() => {
     if (isDetail) return;
     const holderLabel = Array.from(document.querySelectorAll("label")).find((label) => label.textContent?.trim().startsWith("Người / Phòng giữ"));

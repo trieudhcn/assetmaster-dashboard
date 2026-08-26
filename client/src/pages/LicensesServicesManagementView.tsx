@@ -121,7 +121,6 @@ export function LicensesServicesManagementView() {
   const [serviceForm, setServiceForm] = useState<ServiceForm>(blankService);
   const [assignmentForm, setAssignmentForm] = useState({ assetId: "", userId: "", assignedToName: "", deviceName: "", softwareLicenseKeyId: "", softwareLicenseActivationAccountId: "", assignedAt: toDateField(new Date()), note: "" });
   const [pendingKey, setPendingKey] = useState("");
-  const [showPendingKey, setShowPendingKey] = useState(true);
   const [pendingKeyNote, setPendingKeyNote] = useState("");
   const [historyRenderNonce, setHistoryRenderNonce] = useState(0);
   const [pendingAccount, setPendingAccount] = useState({ loginEmail: "", password: "", note: "" });
@@ -185,26 +184,30 @@ export function LicensesServicesManagementView() {
   const updateActivationAccount = trpc.softwareLicenses.updateActivationAccount.useMutation({ onSuccess: () => { refreshCredentials(); toast.success("Đã cập nhật tài khoản chủ."); }, onError: (error) => toast.error(error.message || "Không thể cập nhật tài khoản chủ.") });
   const revealLicenseKey = trpc.softwareLicenses.revealKey.useMutation({ onSuccess: (result, variables) => { setRevealedCredentials((current) => ({ ...current, [`key-${variables.id}`]: result.value })); if (variables.action === "copy") void navigator.clipboard.writeText(result.value).then(() => toast.success("Đã sao chép key.")).catch(() => toast.error("Không thể sao chép key.")); } });
   const revealActivationPassword = trpc.softwareLicenses.revealActivationPassword.useMutation({ onSuccess: (result, variables) => { setRevealedCredentials((current) => ({ ...current, [`account-${variables.id}`]: result.value })); if (variables.action === "copy") void navigator.clipboard.writeText(result.value).then(() => toast.success("Đã sao chép mật khẩu.")).catch(() => toast.error("Không thể sao chép mật khẩu.")); } });
-  useEffect(() => { if (licenseModal !== null) setShowPendingKey(true); }, [licenseModal]);
   useEffect(() => {
-    const input = document.querySelector<HTMLInputElement>('[data-license-credential-controls] input[data-license-pending-key], [data-license-credential-controls] input[type="password"]');
-    if (!input) return;
-    input.dataset.licensePendingKey = "true";
-    input.type = showPendingKey ? "text" : "password";
-    input.classList.add("pr-16");
-    const wrapper = input.parentElement;
-    if (!wrapper) return;
-    wrapper.classList.add("relative");
-    const button = wrapper.querySelector<HTMLButtonElement>("[data-license-key-visibility]") || document.createElement("button");
-    button.type = "button";
-    button.dataset.licenseKeyVisibility = "true";
-    button.className = "absolute right-2 top-1/2 -translate-y-1/2 rounded-md px-2 py-1 text-[10px] font-extrabold text-[#087A6A] transition hover:bg-[#E6F6F2]";
-    button.textContent = showPendingKey ? "Ẩn key" : "Hiện key";
-    button.setAttribute("aria-label", showPendingKey ? "Ẩn key đang nhập" : "Hiển thị key đang nhập");
-    button.onclick = () => setShowPendingKey((current) => !current);
-    if (!button.parentElement) wrapper.appendChild(button);
-    return () => { button.remove(); input.classList.remove("pr-16"); };
-  }, [licenseModal, showPendingKey]);
+    const pendingKeyInput = document.querySelector<HTMLInputElement>('[data-license-credential-controls] input[placeholder="Nhập một key kích hoạt"]');
+    if (pendingKeyInput) pendingKeyInput.type = "text";
+    const viewButtons = Array.from(document.querySelectorAll<HTMLButtonElement>("[data-license-credential-controls] button")).filter((button) => button.textContent?.trim() === "Xem");
+    viewButtons.forEach((button) => {
+      button.dataset.licenseKeyRevealIcon = "true";
+      button.className = "grid h-7 w-7 place-items-center rounded-md border border-[#D7E3EB] text-[#527089] transition hover:bg-[#F4F7F9]";
+      button.setAttribute("title", "Xem key");
+      button.setAttribute("aria-label", "Xem key");
+      button.replaceChildren();
+      const icon = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+      icon.setAttribute("viewBox", "0 0 24 24");
+      icon.setAttribute("width", "14");
+      icon.setAttribute("height", "14");
+      icon.setAttribute("fill", "none");
+      icon.setAttribute("stroke", "currentColor");
+      icon.setAttribute("stroke-width", "2");
+      icon.setAttribute("stroke-linecap", "round");
+      icon.setAttribute("stroke-linejoin", "round");
+      icon.setAttribute("aria-hidden", "true");
+      icon.innerHTML = '<path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12Z"/><circle cx="12" cy="12" r="2.5"/>';
+      button.appendChild(icon);
+    });
+  }, [licenseModal, pendingKey, revealedCredentials]);
   const createService = trpc.technologyServices.create.useMutation({ onSuccess: () => { refresh(); setServiceModal(null); toast.success("Đã thêm dịch vụ công nghệ."); }, onError: (error) => toast.error(error.message || "Không thể thêm dịch vụ.") });
   const updateService = trpc.technologyServices.update.useMutation({ onSuccess: () => { refresh(); setServiceModal(null); toast.success("Đã cập nhật dịch vụ."); }, onError: (error) => toast.error(error.message || "Không thể cập nhật dịch vụ.") });
 

@@ -9,8 +9,9 @@ describe("Đồng bộ giao diện License", () => {
   it("dùng bộ lọc Bản quyền tìm kiếm thay cho select native", () => {
     const home = read("client/src/pages/Home.tsx");
     expect(home).toContain('control.dataset.handoverLicenseFilter = "true"');
-    expect(home).toContain('search.placeholder = "Tìm trạng thái Bản quyền..."');
-    expect(home).toContain('menu.setAttribute("role", "listbox")');
+    expect(home).toContain('createRoot(control)');
+    expect(home).toContain('<SearchableSelect value={handoverLicenseFilter}');
+    expect(home).toContain('searchPlaceholder="Tìm trạng thái Bản quyền..."');
     expect(home).not.toContain('const select = existing?.querySelector<HTMLSelectElement>("select")');
   });
 

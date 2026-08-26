@@ -221,6 +221,13 @@
 - [x] Thêm cơ chế xem toàn bộ và phân trang lịch sử dài của License.
 - [x] Kiểm thử lịch sử License ngắn/dài và giao diện responsive.
 - [x] Thêm nút hiện/ẩn key trong form nhập key License để Admin kiểm tra trước khi lưu.
+- [x] Đặt ô nhập key License luôn ở dạng văn bản rõ ràng, không có nút ẩn/hiện.
+- [x] Thay nút Xem key đã lưu bằng biểu tượng con mắt để hiện/ẩn trực tiếp.
+- [x] Kiểm thử luồng hiển thị key và responsive kho key License.
+- [x] Chuẩn hóa dropdown Tất cả Bản quyền theo component chọn chuẩn của hệ thống.
+- [x] Kiểm thử tương tác và responsive cho dropdown Bản quyền đã chuẩn hóa.
+- [x] Hiển thị ô License đang cấp theo thiết bị trong chi tiết tài sản khi có cấp phát hoạt động.
+- [x] Kiểm thử chi tiết tài sản với và không có License theo thiết bị trên desktop/mobile.
 
 ## Current Session — Bản quyền & Dịch vụ
 

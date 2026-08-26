@@ -6,12 +6,14 @@ const root = path.resolve(import.meta.dirname, "..");
 const read = (relativePath: string) => fs.readFileSync(path.join(root, relativePath), "utf8");
 
 describe("Kiểm tra key trước khi lưu", () => {
-  it("mặc định hiển thị key đang nhập và cho phép Admin ẩn lại", () => {
+  it("luôn hiển thị key đang nhập và dùng biểu tượng mắt để xem key đã lưu", () => {
     const view = read("client/src/pages/LicensesServicesManagementView.tsx");
 
-    expect(view).toContain('const [showPendingKey, setShowPendingKey] = useState(true)');
-    expect(view).toContain('input.type = showPendingKey ? "text" : "password"');
-    expect(view).toContain('button.textContent = showPendingKey ? "Ẩn key" : "Hiện key"');
-    expect(view).toContain('button.setAttribute("aria-label", showPendingKey ? "Ẩn key đang nhập" : "Hiển thị key đang nhập")');
+    expect(view).not.toContain("showPendingKey");
+    expect(view).toContain('input[placeholder="Nhập một key kích hoạt"]');
+    expect(view).toContain('pendingKeyInput.type = "text"');
+    expect(view).toContain('button.dataset.licenseKeyRevealIcon = "true"');
+    expect(view).toContain('button.setAttribute("aria-label", "Xem key")');
+    expect(view).toContain('icon.innerHTML = \'<path d="M2 12');
   });
 });
