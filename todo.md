@@ -217,6 +217,10 @@
 - [x] Thiết kế xác thực, MySQL, lưu trữ tệp, Nginx và sao lưu cho vận hành nội bộ.
 - [x] Lập lộ trình triển khai an toàn, kiểm thử và chuyển đổi người dùng.
 - [x] Thiết kế Entra ID làm SSO chính và AD/LDAP làm cơ chế dự phòng cho môi trường nội bộ qua VPN.
+- [x] Tinh gọn timeline cấp phát và thu hồi trong chi tiết từng License.
+- [x] Thêm cơ chế xem toàn bộ và phân trang lịch sử dài của License.
+- [x] Kiểm thử lịch sử License ngắn/dài và giao diện responsive.
+- [x] Thêm nút hiện/ẩn key trong form nhập key License để Admin kiểm tra trước khi lưu.
 
 ## Current Session — Bản quyền & Dịch vụ
 

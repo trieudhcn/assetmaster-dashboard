@@ -121,7 +121,9 @@ export function LicensesServicesManagementView() {
   const [serviceForm, setServiceForm] = useState<ServiceForm>(blankService);
   const [assignmentForm, setAssignmentForm] = useState({ assetId: "", userId: "", assignedToName: "", deviceName: "", softwareLicenseKeyId: "", softwareLicenseActivationAccountId: "", assignedAt: toDateField(new Date()), note: "" });
   const [pendingKey, setPendingKey] = useState("");
+  const [showPendingKey, setShowPendingKey] = useState(true);
   const [pendingKeyNote, setPendingKeyNote] = useState("");
+  const [historyRenderNonce, setHistoryRenderNonce] = useState(0);
   const [pendingAccount, setPendingAccount] = useState({ loginEmail: "", password: "", note: "" });
   const [revealedCredentials, setRevealedCredentials] = useState<Record<string, string>>({});
   const licenseDocumentsQuery = trpc.softwareLicenses.documents.useQuery({ softwareLicenseId: typeof licenseModal === "number" ? licenseModal : 0 }, { enabled: typeof licenseModal === "number" });
@@ -183,6 +185,26 @@ export function LicensesServicesManagementView() {
   const updateActivationAccount = trpc.softwareLicenses.updateActivationAccount.useMutation({ onSuccess: () => { refreshCredentials(); toast.success("Đã cập nhật tài khoản chủ."); }, onError: (error) => toast.error(error.message || "Không thể cập nhật tài khoản chủ.") });
   const revealLicenseKey = trpc.softwareLicenses.revealKey.useMutation({ onSuccess: (result, variables) => { setRevealedCredentials((current) => ({ ...current, [`key-${variables.id}`]: result.value })); if (variables.action === "copy") void navigator.clipboard.writeText(result.value).then(() => toast.success("Đã sao chép key.")).catch(() => toast.error("Không thể sao chép key.")); } });
   const revealActivationPassword = trpc.softwareLicenses.revealActivationPassword.useMutation({ onSuccess: (result, variables) => { setRevealedCredentials((current) => ({ ...current, [`account-${variables.id}`]: result.value })); if (variables.action === "copy") void navigator.clipboard.writeText(result.value).then(() => toast.success("Đã sao chép mật khẩu.")).catch(() => toast.error("Không thể sao chép mật khẩu.")); } });
+  useEffect(() => { if (licenseModal !== null) setShowPendingKey(true); }, [licenseModal]);
+  useEffect(() => {
+    const input = document.querySelector<HTMLInputElement>('[data-license-credential-controls] input[data-license-pending-key], [data-license-credential-controls] input[type="password"]');
+    if (!input) return;
+    input.dataset.licensePendingKey = "true";
+    input.type = showPendingKey ? "text" : "password";
+    input.classList.add("pr-16");
+    const wrapper = input.parentElement;
+    if (!wrapper) return;
+    wrapper.classList.add("relative");
+    const button = wrapper.querySelector<HTMLButtonElement>("[data-license-key-visibility]") || document.createElement("button");
+    button.type = "button";
+    button.dataset.licenseKeyVisibility = "true";
+    button.className = "absolute right-2 top-1/2 -translate-y-1/2 rounded-md px-2 py-1 text-[10px] font-extrabold text-[#087A6A] transition hover:bg-[#E6F6F2]";
+    button.textContent = showPendingKey ? "Ẩn key" : "Hiện key";
+    button.setAttribute("aria-label", showPendingKey ? "Ẩn key đang nhập" : "Hiển thị key đang nhập");
+    button.onclick = () => setShowPendingKey((current) => !current);
+    if (!button.parentElement) wrapper.appendChild(button);
+    return () => { button.remove(); input.classList.remove("pr-16"); };
+  }, [licenseModal, showPendingKey]);
   const createService = trpc.technologyServices.create.useMutation({ onSuccess: () => { refresh(); setServiceModal(null); toast.success("Đã thêm dịch vụ công nghệ."); }, onError: (error) => toast.error(error.message || "Không thể thêm dịch vụ.") });
   const updateService = trpc.technologyServices.update.useMutation({ onSuccess: () => { refresh(); setServiceModal(null); toast.success("Đã cập nhật dịch vụ."); }, onError: (error) => toast.error(error.message || "Không thể cập nhật dịch vụ.") });
 
@@ -234,6 +256,55 @@ export function LicensesServicesManagementView() {
       element.dataset.assignmentRecipientLabel = "true";
     });
   }, [assignments, assetsQuery.data, usersQuery.data]);
+  useEffect(() => {
+    const timeline = document.querySelector<HTMLElement>("[data-license-assignment-history]");
+    const list = timeline?.querySelector<HTMLElement>(":scope > .mt-3.divide-y");
+    const header = timeline?.querySelector<HTMLElement>(":scope > div");
+    if (!timeline || !list || !header) {
+      if (typeof licenseModal !== "number") return;
+      const retry = window.setTimeout(() => setHistoryRenderNonce((current) => current + 1), 32);
+      return () => window.clearTimeout(retry);
+    }
+    const rows = Array.from(list.children).filter((element): element is HTMLElement => element instanceof HTMLElement);
+    rows.forEach((row) => { row.classList.remove("py-3"); row.classList.add("py-2.5"); });
+    const description = header.querySelector<HTMLParagraphElement>("p");
+    if (description) { description.textContent = rows.length > 3 ? "Hiển thị 3 lượt gần nhất; mở toàn bộ khi cần tra cứu." : "Theo dõi các lượt cấp phát và thu hồi gần nhất."; description.className = "mt-0.5 text-[10px] leading-4 text-[#71869A]"; }
+    if (rows.length <= 3) return;
+    let expanded = false;
+    let page = 1;
+    const pageSize = 6;
+    const controls = document.createElement("div");
+    controls.dataset.licenseAssignmentHistoryControls = "true";
+    controls.className = "flex shrink-0 items-center gap-2";
+    const toggle = document.createElement("button");
+    toggle.type = "button";
+    toggle.className = "rounded-md border border-[#CDE5E5] bg-white px-2.5 py-1 text-[10px] font-extrabold text-[#087A6A] transition hover:bg-[#ECF8F7]";
+    const pager = document.createElement("div");
+    pager.dataset.licenseAssignmentHistoryPager = "true";
+    pager.className = "mt-2 hidden items-center justify-between gap-2 rounded-md bg-[#F8FBFC] px-2.5 py-2 text-[10px] text-[#60758A]";
+    const previous = document.createElement("button");
+    const next = document.createElement("button");
+    const indicator = document.createElement("span");
+    previous.type = "button"; next.type = "button";
+    previous.textContent = "Trước"; next.textContent = "Sau";
+    [previous, next].forEach((button) => { button.className = "rounded px-2 py-1 font-extrabold text-[#087A6A] transition hover:bg-[#E6F6F2] disabled:cursor-not-allowed disabled:opacity-40"; });
+    pager.append(previous, indicator, next);
+    header.appendChild(controls); controls.appendChild(toggle); timeline.appendChild(pager);
+    const render = () => {
+      const pages = Math.ceil(rows.length / pageSize);
+      rows.forEach((row, index) => { row.hidden = !expanded ? index > 2 : index < (page - 1) * pageSize || index >= page * pageSize; });
+      toggle.textContent = expanded ? "Thu gọn" : `Xem toàn bộ (${rows.length})`;
+      pager.classList.toggle("hidden", !expanded || pages <= 1);
+      pager.classList.toggle("flex", expanded && pages > 1);
+      indicator.textContent = `Trang ${page}/${pages}`;
+      previous.disabled = page === 1; next.disabled = page === pages;
+    };
+    toggle.onclick = () => { expanded = !expanded; page = 1; render(); };
+    previous.onclick = () => { page = Math.max(1, page - 1); render(); };
+    next.onclick = () => { page = Math.min(Math.ceil(rows.length / pageSize), page + 1); render(); };
+    render();
+    return () => { controls.remove(); pager.remove(); rows.forEach((row) => { row.hidden = false; row.classList.remove("py-2.5"); row.classList.add("py-3"); }); };
+  }, [licenseModal, assignments, historyRenderNonce]);
   useEffect(() => {
     document.querySelectorAll<HTMLElement>("[data-license-inline-reclaim]").forEach((element) => element.remove());
     if (tab !== "licenses") return;
