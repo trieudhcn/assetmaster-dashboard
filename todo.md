@@ -205,6 +205,9 @@
 - [x] Thêm nút Thu hồi cạnh Cấp phát trên từng Bản quyền và chọn người đang giữ trước khi xác nhận.
 - [x] Sửa vị trí dialog xác nhận thu hồi trên mobile để luôn căn giữa trong viewport.
 - [x] Kiểm thử luồng thu hồi theo từng Bản quyền trên desktop/mobile và hồi quy License.
+- [x] Căn giữa chính xác dialog xác nhận thu hồi License trên mọi viewport.
+- [x] Hiển thị mã tài sản và tên tài sản thay cho “Cấp phát #…” trong danh sách cấp phát License.
+- [x] Kiểm thử dialog thu hồi và danh sách cấp phát trên desktop/mobile.
 
 ## Current Session — Bản quyền & Dịch vụ
 

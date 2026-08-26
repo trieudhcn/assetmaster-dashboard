@@ -34,5 +34,14 @@ describe("Đồng bộ giao diện License", () => {
     expect(styles).toContain('[data-slot="alert-dialog-content"]');
     expect(styles).toContain("max-height: calc(100dvh - 2rem) !important");
     expect(styles).toContain("transform: translate(-50%, -50%) !important");
+    expect(styles).toContain("@keyframes assetmaster-modal-in { from { opacity: 0; transform: scale(0.97);");
+  });
+
+  it("hiển thị mã và tên tài sản trong danh sách cấp phát", () => {
+    const view = read("client/src/pages/LicensesServicesManagementView.tsx");
+    const alertDialog = read("client/src/components/ui/alert-dialog.tsx");
+    expect(view).toContain("assignmentRecipientLabel(item)");
+    expect(view).not.toContain("item.assignedToName || item.deviceName || `Cấp phát #${item.id}`");
+    expect(alertDialog).toContain("-translate-x-1/2 -translate-y-1/2");
   });
 });
