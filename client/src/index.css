@@ -1013,3 +1013,15 @@ input[type="date"] {
 
 .service-dialog-panel { width: min(100%, 48rem) !important; }
 @media (max-width: 639px) { .service-dialog-panel { width: calc(100vw - 2rem) !important; max-width: calc(100vw - 2rem) !important; padding: 1rem !important; } }
+@media (max-width: 640px) {
+  [data-slot="alert-dialog-content"] {
+    position: fixed !important;
+    top: 50% !important;
+    left: 50% !important;
+    width: calc(100vw - 2rem) !important;
+    max-height: calc(100dvh - 2rem) !important;
+    margin: 0 !important;
+    overflow-y: auto;
+    transform: translate(-50%, -50%) !important;
+  }
+}

@@ -201,6 +201,10 @@
 - [x] Thêm thao tác thu hồi License riêng lẻ theo nhân sự, không thay đổi tài sản bàn giao.
 - [x] Hiển thị người đang dùng và xác nhận thu hồi để giải phóng key/chỗ dùng khi hết sức chứa.
 - [x] Kiểm thử thu hồi riêng lẻ trả kho đúng và giữ nguyên tài sản của nhân sự.
+- [x] Bỏ khu vực Thu hồi License riêng nằm phía trên danh sách Bản quyền.
+- [x] Thêm nút Thu hồi cạnh Cấp phát trên từng Bản quyền và chọn người đang giữ trước khi xác nhận.
+- [x] Sửa vị trí dialog xác nhận thu hồi trên mobile để luôn căn giữa trong viewport.
+- [x] Kiểm thử luồng thu hồi theo từng Bản quyền trên desktop/mobile và hồi quy License.
 
 ## Current Session — Bản quyền & Dịch vụ
 

@@ -21,11 +21,18 @@ describe("Đồng bộ giao diện License", () => {
     expect(view).toContain("Loại này chỉ được xóa khi chưa được dùng");
   });
 
-  it("cho phép yêu cầu thu hồi License riêng lẻ mà không thu hồi tài sản", () => {
+  it("đặt thu hồi cạnh cấp phát và cho chọn người đang giữ License", () => {
     const view = read("client/src/pages/LicensesServicesManagementView.tsx");
-    expect(view).toContain("data-license-individual-reclaim");
-    expect(view).toContain("Tài sản bàn giao vẫn được giữ nguyên");
-    expect(view).toContain("onRequestRevoke(assignment.id)");
-    expect(view).toContain("setPendingRevokeAssignmentId");
+    expect(view).not.toContain("data-license-individual-reclaim");
+    expect(view).toContain("data-license-inline-reclaim");
+    expect(view).toContain("Chọn người cần thu hồi License");
+    expect(view).toContain("setPendingRevokeAssignmentId(assignment.id)");
+  });
+
+  it("giữ dialog xác nhận ở giữa viewport trên mobile", () => {
+    const styles = read("client/src/index.css");
+    expect(styles).toContain('[data-slot="alert-dialog-content"]');
+    expect(styles).toContain("max-height: calc(100dvh - 2rem) !important");
+    expect(styles).toContain("transform: translate(-50%, -50%) !important");
   });
 });
