@@ -166,6 +166,9 @@
 - [x] Đưa cột Bản quyền sau cột Ngày bàn giao trong bảng Bàn giao & Cấp phát.
 - [x] Đồng bộ danh sách Bản quyền trong chi tiết phiếu với cột Bản quyền của bảng.
 - [x] Kiểm thử bảng và modal Bàn giao có Bản quyền trên desktop/mobile.
+- [x] Hợp nhất hai khu vực Bản quyền trong chi tiết phiếu Bàn giao.
+- [x] Hiển thị rõ Bản quyền nào sẽ thu hồi cùng tài sản trong khu vực hợp nhất.
+- [x] Kiểm thử chi tiết phiếu Bàn giao không còn mâu thuẫn Bản quyền.
 
 ## Current Session — Bản quyền & Dịch vụ
 

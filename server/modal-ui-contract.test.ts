@@ -1424,12 +1424,13 @@ describe("modal presentation contract", () => {
     expect(home).toContain('row.children[row.children.length - 2]');
     expect(home).toContain('data-handover-license-detail');
     expect(home).toContain('licensesForRecipient');
-    expect(home).toContain('Bản quyền đang cấp cho người nhận');
+    expect(home).toContain('Bản quyền liên quan đến phiếu');
+    expect(home).toContain('Sẽ thu hồi cùng tài sản');
+    expect(home).toContain('Cấp theo người nhận');
     expect(home).toContain("handoverLicenseFilter");
     expect(home).toContain("Có Bản quyền đang cấp");
     expect(home).toContain("Không có Bản quyền đang cấp");
     expect(home).toContain('data-handover-license-filter');
-    expect(home).toContain("Bản quyền thu hồi cùng tài sản");
     expect(home).toContain("Đã thu hồi ${returnedLicenseCount} Bản quyền về kho.");
     expect(home).toContain("trả chỗ dùng hoặc key về kho Bản quyền");
     expect(reports).toContain("serviceCostReport");
