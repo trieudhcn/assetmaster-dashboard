@@ -279,6 +279,11 @@
 - [x] Tạo trang đăng nhập self-hosted cho Admin bootstrap local và nhân viên LDAP, không làm thay đổi login Manus đang hoạt động.
 - [x] Bổ sung quản lý người dùng Admin: danh sách, nguồn xác thực, trạng thái và phân quyền sau đăng nhập.
 - [x] Viết kiểm thử và xác minh desktop/mobile cho các UI staging, hợp đồng API và phân quyền.
+- [x] Rà soát và chuẩn hóa modal Tạo/Sửa Hợp đồng mua bán cùng Hóa đơn theo khung header cố định, body cuộn nội bộ và footer ổn định.
+- [x] Tạo trạng thái/API installer self-hosted một lần để kiểm tra kết nối database, khởi tạo schema và tạo Admin bootstrap an toàn.
+- [x] Tạo route và giao diện `/setup` với các bước cấu hình tên website, database và tài khoản quản trị ban đầu.
+- [x] Cải thiện trang đăng nhập với lỗi LDAPS có hướng dẫn xử lý an toàn, không tiết lộ mật khẩu hoặc chi tiết directory nhạy cảm.
+- [x] Bổ sung hồi quy, kiểm tra TypeScript/build và xác minh desktop/mobile cho các thay đổi mới.
 
 ## Current Session — Bản quyền & Dịch vụ
 

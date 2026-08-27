@@ -1,4 +1,5 @@
 import { and, asc, count, desc, eq, inArray, like, sql } from "drizzle-orm";
+import { createHash } from "node:crypto";
 import { drizzle } from "drizzle-orm/mysql2";
 import {
   activityLogs,
@@ -22,6 +23,7 @@ import {
   helpGuideVersions,
   inventoryMovements,
   inventorySupplies,
+  installationSettings,
   maintenanceMonthlyBudgets,
   maintenanceTickets,
   purchaseContractDocuments,
@@ -60,12 +62,46 @@ import {
   vendorDocuments,
 } from "../drizzle/schema";
 import { ENV } from "./_core/env";
+import { readRuntimeDatabaseUrl } from "./selfHostedRuntimeConfig";
 
 let database: ReturnType<typeof drizzle> | null = null;
 
+export function resetDatabaseConnection() {
+  database = null;
+}
+
 export async function getDb() {
-  if (!database && process.env.DATABASE_URL) database = drizzle(process.env.DATABASE_URL);
+  if (!database) {
+    const databaseUrl = await readRuntimeDatabaseUrl();
+    if (databaseUrl) database = drizzle(databaseUrl);
+  }
   return database;
+}
+
+export async function getInstallationSettings() {
+  const db = await getDb();
+  if (!db) return null;
+  return (await db.select().from(installationSettings).where(eq(installationSettings.id, 1)).limit(1))[0] ?? null;
+}
+
+export async function completeInstallation(input: { websiteName: string; websiteUrl: string | null; databaseName: string; bootstrapEmail: string; bootstrapName: string; passwordHash: string }) {
+  const db = await getDb();
+  if (!db) throw new Error("Không thể kết nối cơ sở dữ liệu của AssetMaster.");
+  return db.transaction(async (tx) => {
+    const installed = (await tx.select().from(installationSettings).where(eq(installationSettings.id, 1)).limit(1))[0];
+    if (installed?.status === "installed") throw new Error("AssetMaster đã hoàn tất cài đặt. Không thể chạy lại /setup.");
+    const existingBootstrap = (await tx.select().from(users).where(eq(users.authSource, "bootstrap_local")).limit(1))[0];
+    if (existingBootstrap) throw new Error("Tài khoản quản trị bootstrap đã tồn tại. Vui lòng dùng trang đăng nhập.");
+    const openId = `local:${createHash("sha256").update(input.bootstrapEmail).digest("hex").slice(0, 58)}`;
+    const result = await tx.insert(users).values({ openId, name: input.bootstrapName, email: input.bootstrapEmail, loginMethod: "local", authSource: "bootstrap_local", passwordHash: input.passwordHash, mustChangePassword: false, role: "admin", isActive: true, lastSignedIn: new Date() });
+    const userId = Number(result[0].insertId);
+    const company = (await tx.select().from(companies).orderBy(desc(companies.updatedAt)).limit(1))[0];
+    const companyValues = { name: input.websiteName, websiteTitle: input.websiteName, websiteUrl: input.websiteUrl, brandColor: "#0F8C8C", loginGreeting: "Quản lý tài sản, theo đúng vai trò của bạn." };
+    if (company) await tx.update(companies).set(companyValues).where(eq(companies.id, company.id));
+    else await tx.insert(companies).values(companyValues);
+    await tx.insert(installationSettings).values({ id: 1, status: "installed", websiteName: input.websiteName, websiteUrl: input.websiteUrl, databaseName: input.databaseName, bootstrapEmail: input.bootstrapEmail });
+    return { userId, email: input.bootstrapEmail, websiteName: input.websiteName };
+  });
 }
 
 export async function listUiLabels() {

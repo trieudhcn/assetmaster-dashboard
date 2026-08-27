@@ -10,11 +10,13 @@ import { LegacySectionLabelEnhancer } from "./components/LegacySectionLabelEnhan
 import { MotionSettingsRelocator } from "./components/MotionSettingsRelocator";
 import { SearchClearAffordance } from "./components/SearchClearAffordance";
 import { RecoveryCertificatePdfShortcut } from "./components/RecoveryCertificatePdfShortcut";
+import SetupInstaller from "./pages/SetupInstaller";
 
 function Router() {
   // make sure to consider if you need authentication for certain routes
   return (
     <Switch>
+      <Route path={"/setup"} component={SetupInstaller} />
       <Route path={"/"} component={Home} />
       <Route path={"/404"} component={NotFound} />
       {/* Final fallback route */}

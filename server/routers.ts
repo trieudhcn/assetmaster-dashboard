@@ -7,6 +7,7 @@ import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { adminProcedure, protectedProcedure, publicProcedure, router } from "./_core/trpc";
 import { authenticateBootstrapAdmin, authenticateDirectoryUser, clearSelfHostedLogin, selfHostedAuthEnabled, testLdapsDirectory } from "./selfHostedAuth";
+import { assertSetupAccess, checkSetupDatabase, installerStatus, runSelfHostedInstaller } from "./selfHostedSetup";
 import {
   clearUserDivision,
   createBrand,
@@ -480,6 +481,24 @@ export function canUndoImport(createdAt: Date, now = new Date()) {
 
 export const appRouter = router({
   system: systemRouter,
+  setup: router({
+    status: publicProcedure.query(() => installerStatus()),
+    checkDatabase: publicProcedure.input(z.object({ setupToken: z.string().min(16).max(256), database: z.object({ host: z.string().trim().min(1).max(253), port: z.number().int().min(1).max(65535), databaseName: z.string().trim().min(1).max(64), username: z.string().trim().min(1).max(128), password: z.string().min(1).max(512) }) })).mutation(async ({ input }) => {
+      try {
+        assertSetupAccess(input.setupToken);
+        return await checkSetupDatabase(input.database);
+      } catch (error) {
+        throw new TRPCError({ code: "FORBIDDEN", message: error instanceof Error ? error.message : "Không thể kiểm tra kết nối MySQL." });
+      }
+    }),
+    initialize: publicProcedure.input(z.object({ setupToken: z.string().min(16).max(256), websiteName: z.string().trim().min(1).max(255), websiteUrl: z.string().trim().max(320), adminName: z.string().trim().min(1).max(255), adminEmail: z.string().trim().email().max(320), adminPassword: z.string().min(12).max(256), database: z.object({ host: z.string().trim().min(1).max(253), port: z.number().int().min(1).max(65535), databaseName: z.string().trim().min(1).max(64), username: z.string().trim().min(1).max(128), password: z.string().min(1).max(512) }) })).mutation(async ({ input }) => {
+      try {
+        return await runSelfHostedInstaller(input);
+      } catch (error) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: error instanceof Error ? error.message : "Không thể hoàn tất cài đặt." });
+      }
+    }),
+  }),
   auth: router({
     me: publicProcedure.query(({ ctx }) => ctx.user),
     localLogin: publicProcedure.input(z.object({ email: z.string().trim().email().max(320), password: z.string().min(8).max(256) })).mutation(async ({ input, ctx }) => {

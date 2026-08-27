@@ -363,6 +363,10 @@ export default function Home() {
   // startLogin() during render (no href={startLogin()}) — it mints a one-time
   // nonce cookie and must run only at the moment of navigation.
   let { user, loading, error, isAuthenticated, logout } = useAuth();
+  const setupStatusQuery = trpc.setup.status.useQuery();
+  useEffect(() => {
+    if (setupStatusQuery.data?.selfHosted && !setupStatusQuery.data.installed && window.location.pathname !== "/setup") window.location.replace("/setup");
+  }, [setupStatusQuery.data?.installed, setupStatusQuery.data?.selfHosted]);
 
   const [activeNav, setActiveNav] = useState(() => {
     const view = new URLSearchParams(window.location.search).get("view");

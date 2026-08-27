@@ -76,6 +76,19 @@
 html { font-family: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif; background: #F4F7FB; }
 body { @apply bg-background text-foreground; margin: 0; }
 button, input, select { font: inherit; }
+.setup-input { box-sizing: border-box; display: block; height: 2.75rem; width: 100%; border: 1px solid #D7E3EB; border-radius: 0.75rem; background: #fff; padding: 0 0.8rem; color: #193B57; font-size: 0.875rem; font-weight: 500; outline: none; transition: border-color 160ms cubic-bezier(.23,1,.32,1), box-shadow 160ms cubic-bezier(.23,1,.32,1); }
+.setup-input::placeholder { color: #AAB9C6; }
+.setup-input:focus { border-color: #0F8C8C; box-shadow: 0 0 0 2px #E6F6F2; }
+
+/* Procurement create/edit dialogs use a fixed shell: header and actions remain visible while the form body scrolls. */
+button[aria-label="Đóng form hợp đồng"] + section[role="dialog"],
+button[aria-label="Đóng form Hóa đơn"] + section[role="dialog"] { display: flex; flex-direction: column; overflow: hidden !important; }
+button[aria-label="Đóng form hợp đồng"] + section[role="dialog"] > div:first-child,
+button[aria-label="Đóng form Hóa đơn"] + section[role="dialog"] > div:first-child,
+button[aria-label="Đóng form hợp đồng"] + section[role="dialog"] > div:last-child,
+button[aria-label="Đóng form Hóa đơn"] + section[role="dialog"] > div:last-child { flex: 0 0 auto; }
+button[aria-label="Đóng form hợp đồng"] + section[role="dialog"] > div:nth-child(2),
+button[aria-label="Đóng form Hóa đơn"] + section[role="dialog"] > div:nth-child(2) { min-height: 0; flex: 1 1 auto; overflow-y: auto; overscroll-behavior: contain; }
 .mobile-cost-trend-scroll {
   overflow-y: hidden;
   overscroll-behavior-x: contain;

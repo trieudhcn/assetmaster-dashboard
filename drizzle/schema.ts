@@ -86,6 +86,17 @@ export const selfHostedSessions = mysqlTable("selfHostedSessions", {
   lastSeenAt: timestamp("lastSeenAt").defaultNow().notNull(),
 }, (table) => [index("self_hosted_sessions_user_idx").on(table.userId), index("self_hosted_sessions_expiry_idx").on(table.expiresAt)]);
 
+export const installationSettings = mysqlTable("installationSettings", {
+  id: int("id").primaryKey(),
+  status: mysqlEnum("status", ["installing", "installed"]).default("installing").notNull(),
+  websiteName: varchar("websiteName", { length: 255 }).notNull(),
+  websiteUrl: varchar("websiteUrl", { length: 320 }),
+  databaseName: varchar("databaseName", { length: 128 }).notNull(),
+  bootstrapEmail: varchar("bootstrapEmail", { length: 320 }).notNull(),
+  installedAt: timestamp("installedAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
 export const userNotificationPreferences = mysqlTable("userNotificationPreferences", {
   userId: int("userId").primaryKey(),
   maintenanceEnabled: boolean("maintenanceEnabled").default(true).notNull(),
