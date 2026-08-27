@@ -40,7 +40,11 @@ Tạo các secret riêng biệt dài ít nhất 32 byte: MySQL root password, My
 
 ## 4. Phương án A — Chạy local với Node.js và systemd
 
-### 4.1 Chuẩn bị ứng dụng và vùng dữ liệu
+### 4.1 Hướng dẫn đầy đủ cho người mới
+
+Xem [Phương án A: chạy trực tiếp trên Ubuntu Server](./linux-local-systemd-step-by-step.md) để cài Node.js 22, pnpm, MySQL, Redis, Nginx, UFW, app service systemd và `/setup` theo từng lệnh có kiểm tra kết quả. Tài liệu đó cũng nêu rõ giới hạn LDAPS của local/systemd hiện tại.
+
+### 4.2 Chuẩn bị ứng dụng và vùng dữ liệu
 
 ```bash
 sudo useradd --system --create-home --shell /usr/sbin/nologin assetmaster

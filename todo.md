@@ -3828,3 +3828,10 @@
 - [x] Viết runbook Ubuntu/Docker/Nginx/UFW theo từng lệnh thực thi, gồm cấu hình DNS/TLS và đường dẫn dữ liệu.
 - [x] Bổ sung cấu hình `/setup`, LDAPS, backup/restore, cập nhật source an toàn và checklist cutover.
 - [x] Kiểm thử các lệnh/tài liệu, cập nhật regression và phát hành hướng dẫn hợp nhất.
+
+## Current Session — Runbook Phương án A không Docker
+
+- [x] Rà soát yêu cầu Node.js, pnpm, MySQL, Redis, Nginx và systemd khi chạy ứng dụng trực tiếp trên Ubuntu.
+- [x] Viết hướng dẫn cài đặt từng dịch vụ theo từng lệnh, có bước kiểm tra dành cho người mới.
+- [x] Bổ sung cấu hình database, environment, systemd, Nginx, `/setup` và chẩn đoán cơ bản.
+- [x] Kiểm thử tài liệu và phát hành runbook Phương án A cập nhật.
