@@ -66,12 +66,21 @@ ASSETMASTER_SETUP_ENABLED=true
 Tạo 5 secret bằng PowerShell. Chạy khối sau trong thư mục source:
 
 ```powershell
-$names = "mysql_root_password","mysql_app_password","redis_password","jwt_secret","setup_token"
+$names = @(
+  "mysql_root_password",
+  "mysql_app_password",
+  "redis_password",
+  "jwt_secret",
+  "setup_token"
+)
+$rng = [System.Security.Cryptography.RandomNumberGenerator]::Create()
 foreach ($name in $names) {
   $bytes = New-Object byte[] 48
-  [System.Security.Cryptography.RandomNumberGenerator]::Fill($bytes)
-  [Convert]::ToBase64String($bytes) | Set-Content -NoNewline "secrets\$name.txt"
+  $rng.GetBytes($bytes)
+  $secretPath = Join-Path (Get-Location) ("secrets\{0}.txt" -f $name)
+  [System.IO.File]::WriteAllText($secretPath, [Convert]::ToBase64String($bytes), [System.Text.Encoding]::ASCII)
 }
+$rng.Dispose()
 ```
 
 ### macOS Terminal

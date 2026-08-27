@@ -3769,3 +3769,8 @@
 - [x] Rà soát khác biệt đường dẫn, chia sẻ thư mục và tài nguyên Docker Desktop với Docker Engine trên Ubuntu.
 - [x] Viết hướng dẫn chạy AssetMaster từng bước trên Docker Desktop cho Windows và macOS.
 - [x] Cập nhật runbook hợp nhất, kiểm tra định dạng và bàn giao tài liệu.
+
+## Current Session — Sửa PowerShell Docker Desktop
+
+- [x] Sửa cú pháp tạo Docker secrets để tương thích PowerShell 5.1+ trên Windows.
+- [x] Cập nhật regression tài liệu và kiểm tra định dạng trước khi bàn giao lệnh thay thế.

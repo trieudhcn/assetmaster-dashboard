@@ -12,5 +12,7 @@ describe("Docker Desktop guide", () => {
     expect(guide).toContain("Kho tệp đính kèm");
     expect(guide).toContain("ASSETMASTER_FILES_DIR");
     expect(guide).toContain("Docker Desktop.** Đây là UAT/desktop stack");
+    expect(guide).toContain("$rng.GetBytes($bytes)");
+    expect(guide).not.toContain("RandomNumberGenerator]::Fill");
   });
 });
