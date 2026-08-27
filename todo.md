@@ -3763,3 +3763,9 @@
 - [x] Thêm adapter local-storage và phân phối tệp có kiểm soát, vẫn giữ Forge storage cho hosted.
 - [x] Thêm panel Cài đặt hệ thống để lưu/kiểm tra cấu hình kho tệp chia sẻ.
 - [x] Cập nhật Docker Compose, tài liệu triển khai step-by-step và regression trước phát hành.
+
+## Current Session — Hướng dẫn Docker Desktop
+
+- [x] Rà soát khác biệt đường dẫn, chia sẻ thư mục và tài nguyên Docker Desktop với Docker Engine trên Ubuntu.
+- [x] Viết hướng dẫn chạy AssetMaster từng bước trên Docker Desktop cho Windows và macOS.
+- [x] Cập nhật runbook hợp nhất, kiểm tra định dạng và bàn giao tài liệu.

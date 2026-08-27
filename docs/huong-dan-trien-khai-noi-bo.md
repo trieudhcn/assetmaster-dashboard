@@ -2,6 +2,8 @@
 
 > **Tài liệu chính thức.** Đây là runbook duy nhất dùng để triển khai AssetMaster trong LAN/VPN doanh nghiệp, từ chạy local có kiểm soát đến Docker Compose production. Không dùng tài liệu này cho bản AssetMaster đang được hosting managed. Chỉ Nginx được nhận kết nối từ LAN/VPN; MySQL, Redis, thư mục dữ liệu, Docker secret và LDAPS không được công bố trực tiếp ra Internet.
 
+Để chạy thử trên **Docker Desktop Windows/macOS**, xem hướng dẫn từng bước riêng tại [Docker Desktop: Windows và macOS](./docker-desktop-step-by-step.md). Docker Desktop phù hợp UAT/đào tạo; Ubuntu Server + Docker Engine vẫn là phương án chạy nội bộ liên tục được khuyến nghị.
+
 ## 1. Kết luận nhanh: source đã sẵn sàng đến đâu?
 
 Source hiện tại **đủ để dựng môi trường staging/pilot nội bộ** với Docker Compose, MySQL 8.4, Redis 7.4, Nginx, installer `/setup`, Admin bootstrap, xác thực LDAPS và thư mục tệp chia sẻ được mount vào Docker. Tuy nhiên, **chưa nên mở production cho nhân viên** cho đến khi hoàn tất UAT Docker trên MySQL trống, UAT LDAPS với CA nội bộ, kiểm tra quyền thư mục tệp và một lần restore backup đã kiểm thử.
