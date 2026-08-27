@@ -17,6 +17,7 @@ secrets/
 # and must only be bind-mounted at runtime, never copied into a Docker image.
 .assetmaster-data/
 .assetmaster-files/
+backups/
 
 # Local IDE, logs and test artifacts
 .vscode/

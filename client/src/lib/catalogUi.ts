@@ -28,7 +28,11 @@ export function canCreateCatalogOption(keyword: string, matchedCount: number) {
   return matchedCount === 0 && keyword.trim().length >= 2;
 }
 
-export function getPaginationWindow(totalItems: number, requestedPage: number, pageSize: number) {
+export function getPaginationWindow(
+  totalItems: number,
+  requestedPage: number,
+  pageSize: number
+) {
   const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
   const currentPage = Math.min(Math.max(1, requestedPage), totalPages);
   const startIndex = totalItems === 0 ? 0 : (currentPage - 1) * pageSize;
@@ -37,35 +41,64 @@ export function getPaginationWindow(totalItems: number, requestedPage: number, p
   return { currentPage, totalPages, startIndex, startRecord, endRecord };
 }
 
-export function filterNamedCatalogOptions<T extends NamedCatalogOption>(items: T[], keyword: string) {
-  return items.filter((item) => matchesVietnameseSearch(item.name, keyword));
+export function filterNamedCatalogOptions<T extends NamedCatalogOption>(
+  items: T[],
+  keyword: string
+) {
+  return items.filter(item => matchesVietnameseSearch(item.name, keyword));
 }
 
 export function toggleMaintenanceStatusFilter(currentStatus: string) {
-  return currentStatus === "Bảo hành/Sửa chữa" ? "Tất cả trạng thái" : "Bảo hành/Sửa chữa";
+  return currentStatus === "Bảo hành/Sửa chữa"
+    ? "Tất cả trạng thái"
+    : "Bảo hành/Sửa chữa";
 }
 
-export function getMaintenanceBadgeCount<T extends { statusType: string }>(assets: T[]) {
-  return assets.reduce((count, asset) => count + (asset.statusType === "maintenance" ? 1 : 0), 0);
+export function getMaintenanceBadgeCount<T extends { statusType: string }>(
+  assets: T[]
+) {
+  return assets.reduce(
+    (count, asset) => count + (asset.statusType === "maintenance" ? 1 : 0),
+    0
+  );
 }
 
-export function getAssetStatusFilterCounts<T extends { statusType: string }>(assets: T[]) {
+export function getAssetStatusFilterCounts<T extends { statusType: string }>(
+  assets: T[]
+) {
   return {
     "Tất cả trạng thái": assets.length,
-    "Sẵn có": assets.filter((asset) => asset.statusType === "available").length,
-    "Đang cấp phát": assets.filter((asset) => asset.statusType === "active").length,
-    "Bảo trì": assets.filter((asset) => asset.statusType === "maintenance").length,
-    "Trả nhà cung cấp": assets.filter((asset) => asset.statusType === "returned").length,
-    "Khấu hao/Thanh lý": assets.filter((asset) => asset.statusType === "retired").length,
+    "Sẵn có": assets.filter(asset => asset.statusType === "available").length,
+    "Đang cấp phát": assets.filter(asset => asset.statusType === "active")
+      .length,
+    "Bảo trì": assets.filter(asset => asset.statusType === "maintenance")
+      .length,
+    "Trả nhà cung cấp": assets.filter(asset => asset.statusType === "returned")
+      .length,
+    "Khấu hao/Thanh lý": assets.filter(asset => asset.statusType === "retired")
+      .length,
   };
 }
 
 export type MaintenancePriority = "low" | "medium" | "high" | "critical";
 
-export function getNewMaintenanceRequestBadge<T extends { status: string; priority: MaintenancePriority }>(tickets: T[]) {
-  const priorityOrder: Record<MaintenancePriority, number> = { low: 1, medium: 2, high: 3, critical: 4 };
-  const openTickets = tickets.filter((ticket) => ticket.status === "open");
-  const priority = openTickets.reduce<MaintenancePriority | null>((highest, ticket) => !highest || priorityOrder[ticket.priority] > priorityOrder[highest] ? ticket.priority : highest, null);
+export function getNewMaintenanceRequestBadge<
+  T extends { status: string; priority: MaintenancePriority },
+>(tickets: T[]) {
+  const priorityOrder: Record<MaintenancePriority, number> = {
+    low: 1,
+    medium: 2,
+    high: 3,
+    critical: 4,
+  };
+  const openTickets = tickets.filter(ticket => ticket.status === "open");
+  const priority = openTickets.reduce<MaintenancePriority | null>(
+    (highest, ticket) =>
+      !highest || priorityOrder[ticket.priority] > priorityOrder[highest]
+        ? ticket.priority
+        : highest,
+    null
+  );
   return { count: openTickets.length, priority };
 }
 
@@ -73,8 +106,12 @@ export type MaintenanceExportAsset = {
   statusType: string;
   code: string;
   name: string;
+  branch?: string;
+  branchLabel?: string;
+  invoiceKey?: string | null;
   category: string;
   holder: string;
+  licenseLabels?: string[];
   location?: string;
   serial?: string;
   supplier?: string;
@@ -85,31 +122,45 @@ export type MaintenanceExportAsset = {
   note?: string;
 };
 
-export function buildMaintenanceExportRows<T extends MaintenanceExportAsset>(assets: T[]) {
-  return assets.filter((asset) => asset.statusType === "maintenance").map((asset) => ({
-    "Mã tài sản": asset.code,
-    "Tên tài sản": asset.name,
-    "Phân loại": asset.category || "Chưa phân loại",
-    "Trạng thái": "Bảo hành/Sửa chữa",
-    "Nội dung Bảo hành/Sửa chữa": asset.maintenanceReason?.trim() || "Chưa ghi nhận nội dung",
-    "Người / Phòng giữ": asset.holder || "Bảo hành/Sửa chữa",
-    "Vị trí": asset.location || "Chưa cập nhật",
-    "Serial / IMEI": asset.serial || "Chưa cập nhật",
-    "Nhà cung cấp": asset.supplier || "Chưa cập nhật",
-    "Hãng": asset.brand || "Chưa cập nhật",
-    "Ngày mua": asset.date || "",
-    "Giá trị (VNĐ)": asset.value || "0",
-    "Ghi chú": asset.note || "",
-  }));
+export function buildMaintenanceExportRows<T extends MaintenanceExportAsset>(
+  assets: T[]
+) {
+  return assets
+    .filter(asset => asset.statusType === "maintenance")
+    .map(asset => ({
+      "Mã tài sản": asset.code,
+      "Tên tài sản": asset.name,
+      "Chi nhánh":
+        asset.branch ||
+        asset.branchLabel?.replace(/\s·\s[^·]+$/, "") ||
+        "Chưa gán",
+      "Mã Hóa đơn": asset.invoiceKey || "Chưa liên kết",
+      "Phân loại": asset.category || "Chưa phân loại",
+      "Trạng thái": "Bảo hành/Sửa chữa",
+      "Nội dung Bảo hành/Sửa chữa":
+        asset.maintenanceReason?.trim() || "Chưa ghi nhận nội dung",
+      "Người / Phòng giữ": asset.holder || "Bảo hành/Sửa chữa",
+      "Vị trí": asset.location || "Chưa cập nhật",
+      "Serial / IMEI": asset.serial || "Chưa cập nhật",
+      "Nhà cung cấp": asset.supplier || "Chưa cập nhật",
+      Hãng: asset.brand || "Chưa cập nhật",
+      "Ngày mua": asset.date || "",
+      "Giá trị (VNĐ)": asset.value || "0",
+      License: asset.licenseLabels?.join("; ") || "Chưa cấp",
+      "Ghi chú": asset.note || "",
+    }));
 }
 
 export type FilteredAssetExportAsset = {
   code: string;
   name: string;
+  branch?: string;
+  branchLabel?: string;
   invoiceKey?: string | null;
   category: string;
   holder: string;
   status: string;
+  licenseLabels?: string[];
   location?: string;
   serial?: string;
   supplier?: string;
@@ -121,26 +172,38 @@ export type FilteredAssetExportAsset = {
   note?: string;
 };
 
-export function buildFilteredAssetExportRows<T extends FilteredAssetExportAsset>(assets: T[]) {
-  return assets.map((asset) => ({
+export function buildFilteredAssetExportRows<
+  T extends FilteredAssetExportAsset,
+>(assets: T[]) {
+  return assets.map(asset => ({
     "Mã tài sản": asset.code,
     "Tên tài sản": asset.name,
+    "Chi nhánh":
+      asset.branch ||
+      asset.branchLabel?.replace(/\s·\s[^·]+$/, "") ||
+      "Chưa gán",
     "Mã Hóa đơn": asset.invoiceKey || "Chưa liên kết",
     "Phân loại": asset.category || "Chưa phân loại",
     "Người / Phòng giữ": asset.holder || "Chưa bàn giao",
     "Trạng thái": asset.status,
+    License: asset.licenseLabels?.join("; ") || "Chưa cấp",
     "Vị trí": asset.location || "Chưa cập nhật",
     "Serial / IMEI": asset.serial || "Chưa cập nhật",
     "Nhà cung cấp": asset.supplier || "Chưa cập nhật",
-    "Hãng": asset.brand || "Chưa cập nhật",
+    Hãng: asset.brand || "Chưa cập nhật",
     "Ngày mua": asset.purchaseDate || asset.date || "",
-    "Hạn bảo hành": asset.warrantyUntil ? new Date(asset.warrantyUntil).toLocaleDateString("vi-VN") : "Chưa cập nhật",
-    "Giá trị (VNĐ)": Number(String(asset.value || "0").replace(/[^\d-]/g, "")) || 0,
+    "Hạn bảo hành": asset.warrantyUntil
+      ? new Date(asset.warrantyUntil).toLocaleDateString("vi-VN")
+      : "Chưa cập nhật",
+    "Giá trị (VNĐ)":
+      Number(String(asset.value || "0").replace(/[^\d-]/g, "")) || 0,
     "Ghi chú": asset.note || "",
   }));
 }
 
-export function getHandoverActionTooltip(action: "document" | "print" | "history") {
+export function getHandoverActionTooltip(
+  action: "document" | "print" | "history"
+) {
   const labels = {
     document: "Xem biên bản bàn giao",
     print: "In phiếu bàn giao",

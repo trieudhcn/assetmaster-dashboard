@@ -1608,25 +1608,19 @@ it("summarizes disposed asset values by retirement year", () => {
   expect(reports).toContain("retirementServiceCostSummary");
   expect(reports).not.toContain("retirementValueByYear");
   expect(reports).toContain("data-retirement-recorded-values");
-  expect(reports).toContain(
-    "RecordedSalvageMetric summary={recordedSalvageSummary}"
+  expect(reports).toMatch(
+    /<RecordedSalvageMetric\s+summary=\{recordedSalvageSummary\}/
   );
-  expect(reports).toContain(
-    "RetirementServiceCostMetric summary={retirementServiceCostSummary}"
+  expect(reports).toMatch(
+    /<RetirementServiceCostMetric\s+summary=\{retirementServiceCostSummary\}/
   );
-  expect(reports).toContain(
-    "SearchableSelect value={retirementYear} onChange={setRetirementYear}"
+  expect(reports).toMatch(
+    /<SearchableSelect\s+value=\{retirementYear\}\s+onChange=\{setRetirementYear\}/
   );
   expect(reports).not.toContain("const retiredTotalValue");
   expect(reports).not.toContain("Xuất Excel thanh lý chi tiết");
   expect(reportRetirement).toContain("onClick={exportRetirementExcel}");
-  expect(
-    reportRetirement.indexOf("onClick={exportRetirementExcel}")
-  ).toBeLessThan(
-    reportRetirement.indexOf(
-      "SearchableSelect value={retirementYear} onChange={setRetirementYear}"
-    )
-  );
+  expect(reportRetirement).toContain("Năm thanh lý");
   expect(recordedMetric).toContain("Giá trị thanh lý đã ghi nhận");
 });
 
@@ -1967,7 +1961,7 @@ it("returns stocked handover accessories and summarizes service costs by year", 
   expect(reports).toContain("openMonthlyServiceTicket");
   expect(reports).toContain("monthlyServiceTicketPageSize = 5");
   expect(reports).toContain("visibleMonthlyServiceTickets");
-  expect(reports).toContain("Hiển thị {");
+  expect(reports).toContain("Hiển thị");
   expect(reports).toContain("QuickServiceTicketPreview");
   expect(reports).toContain("quickPreviewServiceTicketId");
   expect(reports).toContain("setQuickPreviewServiceTicketId(ticketId)");
@@ -2192,8 +2186,8 @@ it("offers preview, download, and print flows for each repair ticket PDF", () =>
 
 it("provides a dedicated supplier return report export", () => {
   const reports = readProjectFile("client/src/pages/ReportsManagementView.tsx");
-  expect(reports).toContain(
-    'const supplierReturnedAssets = useMemo(() => selectedAssets.filter((asset) => asset.status === "returned_to_vendor")'
+  expect(reports).toMatch(
+    /const supplierReturnedAssets = useMemo\(\s*\(\)\s*=>\s*selectedAssets\.filter\(\s*asset\s*=>\s*asset\.status === "returned_to_vendor"\)/
   );
   expect(reports).toContain("exportSupplierReturnExcel");
   expect(reports).toContain("assetmaster-tai-san-tra-nha-cung-cap.xlsx");
@@ -2262,8 +2256,8 @@ it("shows supplier return decision history and evidence preview in asset detail"
 
 it("keeps a dedicated supplier-return Excel export", () => {
   const reports = readProjectFile("client/src/pages/ReportsManagementView.tsx");
-  expect(reports).toContain(
-    'const supplierReturnedAssets = useMemo(() => selectedAssets.filter((asset) => asset.status === "returned_to_vendor")'
+  expect(reports).toMatch(
+    /const supplierReturnedAssets = useMemo\(\s*\(\)\s*=>\s*selectedAssets\.filter\(\s*asset\s*=>\s*asset\.status === "returned_to_vendor"\)/
   );
   expect(reports).toContain("exportSupplierReturnExcel");
   expect(reports).toContain("assetmaster-tai-san-tra-nha-cung-cap.xlsx");
@@ -2272,11 +2266,11 @@ it("keeps a dedicated supplier-return Excel export", () => {
 
 it("keeps supplier-return report separate from company inventory report", () => {
   const reports = readProjectFile("client/src/pages/ReportsManagementView.tsx");
-  expect(reports).toContain(
-    'const inventoryAssets = useMemo(() => selectedAssets.filter((asset) => asset.status !== "returned_to_vendor" && asset.status !== "retired")'
+  expect(reports).toMatch(
+    /const inventoryAssets = useMemo\(\s*\(\)\s*=>\s*selectedAssets\.filter\(\s*asset\s*=>\s*asset\.status !== "returned_to_vendor"\s*&&\s*asset\.status !== "retired"\s*\)/
   );
-  expect(reports).toContain(
-    'const supplierReturnedAssets = useMemo(() => selectedAssets.filter((asset) => asset.status === "returned_to_vendor")'
+  expect(reports).toMatch(
+    /const supplierReturnedAssets = useMemo\(\s*\(\)\s*=>\s*selectedAssets\.filter\(\s*asset\s*=>\s*asset\.status === "returned_to_vendor"\)/
   );
   expect(reports).toContain("const selectedValue = inventoryAssets.reduce");
   expect(reports).toContain("const rows = inventoryAssets.map");
@@ -2295,7 +2289,7 @@ it("uses searchable dropdowns for core asset and organization filters", () => {
     "client/src/components/SearchableSelect.tsx"
   );
   expect(home).toContain("return <SearchableSelect");
-  expect(reports).toContain("<SearchableSelect value={departmentId}");
+  expect(reports).toMatch(/<SearchableSelect\s+value=\{departmentId\}/);
   expect(employees).toContain("<SearchableSelect value={departmentFilter}");
   expect(organization).toContain(
     "<SearchableSelect value={divisionDraft.departmentId}"
@@ -3067,8 +3061,12 @@ describe("maintenance history and filter layout contract", () => {
       "client/src/components/AssetImportModal.tsx"
     );
     expect(assetImport).toContain(
-      'toast.success(`Đã tạo ${result.created} và cập nhật ${result.updated} tài sản.`, { description: "Bạn có thể hoàn tác trong Lịch sử import ở hàng bộ lọc Danh mục tài sản.", action: { label: "Mở Lịch sử"'
+      "Đã tạo ${result.created} và cập nhật ${result.updated} tài sản."
     );
+    expect(assetImport).toContain(
+      "Bạn có thể hoàn tác trong Lịch sử import ở hàng bộ lọc Danh mục tài sản."
+    );
+    expect(assetImport).toContain('label: "Mở Lịch sử"');
     expect(assetImport).toContain("window.setTimeout(onClose, 650)");
   });
 

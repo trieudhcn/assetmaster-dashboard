@@ -188,6 +188,63 @@ docker compose -f docker-compose.yml -f docker-compose.desktop.yml up -d --force
 
 Không dùng `docker compose down -v` khi cần giữ dữ liệu. Backup tối thiểu gồm dump MySQL, thư mục `data/runtime`, `files` và bản sao secrets được bảo vệ. Thực hiện restore vào môi trường cô lập trước khi tin cậy bản backup.[5]
 
+### 8.1 Backup MySQL trước khi cập nhật source hoặc rebuild app (Windows PowerShell 5.1+)
+
+Thực hiện các lệnh dưới đây **trước mọi lần cập nhật có thay đổi server hoặc migration**. Lệnh chỉ đọc dữ liệu từ MySQL, tạo một logical dump SQL dưới thư mục `backups`, rồi xóa tệp tạm trong container. Nó không dừng hoặc sửa MySQL, Redis hay `app`.
+
+```powershell
+# Chạy trong thư mục source AssetMaster.
+$compose = @("-f", "docker-compose.yml", "-f", "docker-compose.desktop.yml")
+$backupDir = Join-Path (Get-Location) "backups"
+$stamp = Get-Date -Format "yyyyMMdd-HHmmss"
+$backupFile = Join-Path $backupDir "assetmaster-$stamp.sql"
+New-Item -ItemType Directory -Path $backupDir -Force | Out-Null
+
+# Chỉ tiếp tục khi MySQL container đang healthy.
+$mysqlId = docker compose @compose ps -q mysql
+if (-not $mysqlId) { throw "Không tìm thấy container mysql. Hãy chạy docker compose @compose ps." }
+$mysqlHealth = docker inspect --format '{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}' $mysqlId
+if ($mysqlHealth -ne "healthy") { throw "MySQL chưa healthy: $mysqlHealth. Không backup/rebuild lúc này." }
+
+# Mật khẩu chỉ được đọc bên trong container từ Docker secret, không hiện ở PowerShell history.
+docker compose @compose exec -T mysql sh -ec 'umask 077; mysqldump --single-transaction --routines --events --triggers --set-gtid-purged=OFF -u"$MYSQL_USER" -p"$(cat /run/secrets/mysql_app_password)" "$MYSQL_DATABASE" > /tmp/assetmaster-backup.sql'
+if ($LASTEXITCODE -ne 0) { throw "mysqldump thất bại; không tiếp tục cập nhật." }
+
+docker cp "${mysqlId}:/tmp/assetmaster-backup.sql" $backupFile
+docker compose @compose exec -T mysql sh -ec 'rm -f /tmp/assetmaster-backup.sql'
+if ($LASTEXITCODE -ne 0) { throw "Không thể xóa tệp tạm trong container MySQL." }
+
+# Kiểm tra nhanh nội dung, dung lượng và checksum của dump.
+if ((Get-Item $backupFile).Length -lt 512) { throw "Dump quá nhỏ; hãy kiểm tra trước khi rebuild." }
+if (-not (Select-String -Path $backupFile -Pattern '^-- MySQL dump' -Quiet)) { throw "Không nhận diện được header mysqldump; hãy kiểm tra dump." }
+Get-FileHash -Path $backupFile -Algorithm SHA256
+Get-Item $backupFile | Select-Object FullName, Length, LastWriteTime
+```
+
+Kết quả cuối cùng phải hiển thị file `.sql`, dung lượng lớn hơn 512 byte và checksum SHA-256. Sao chép file dump sang vị trí backup độc lập, được mã hóa theo chính sách doanh nghiệp. Không lưu dump trong Git hoặc gửi tệp qua chat. Backup logical này không thay thế việc sao lưu `.assetmaster-files`, `.assetmaster-data/runtime` và các secrets được bảo vệ.
+
+### 8.2 Kiểm tra app đã cập nhật sau rebuild
+
+Sau khi build app, dùng bộ lệnh dưới đây để kiểm tra ba service, tình trạng health, image ID thực tế của container `app`, log gần nhất và dấu hiệu migration an toàn. Không chỉ dựa vào trạng thái `Up`; `app` phải là `healthy`.
+
+```powershell
+$compose = @("-f", "docker-compose.yml", "-f", "docker-compose.desktop.yml")
+docker compose @compose ps
+
+$appId = docker compose @compose ps -q app
+if (-not $appId) { throw "Không tìm thấy container app." }
+docker inspect --format 'Trạng thái={{.State.Status}} | Health={{if .State.Health}}{{.State.Health.Status}}{{else}}không có healthcheck{{end}} | Image={{.Image}} | Tạo lúc={{.Created}}' $appId
+docker image inspect --format 'Image ID={{.Id}} | Tạo lúc={{.Created}} | Tags={{join .RepoTags ", "}}' "assetmaster:production"
+docker compose @compose logs --tail=100 app
+docker compose @compose exec -T app sh -ec 'grep -q "INFORMATION_SCHEMA.COLUMNS" /app/drizzle/0031_curly_nebula.sql && echo "Migration retiredAt an toàn đã có trong image"'
+```
+
+Nếu `Health=healthy`, image ID của container khớp image `assetmaster:production`, log không có `Error` và dòng cuối cùng xác nhận migration, service `app` đã nhận source mới. Khi cần cập nhật app mà **không động vào MySQL/Redis**, sau khi backup thành công chỉ chạy:
+
+```powershell
+docker compose -f docker-compose.yml -f docker-compose.desktop.yml up -d --build --force-recreate --no-deps app
+```
+
 ## 9. Khi nào chuyển sang Ubuntu Server?
 
 Chuyển trước khi mở cho nhân viên sử dụng liên tục, cần Nginx/HTTPS trong LAN/VPN, lưu dữ liệu trên RAID, backup theo chính sách, monitoring hoặc phân quyền hạ tầng. Làm theo đầy đủ **Phương án B — Docker Compose production** trong [runbook triển khai nội bộ](./huong-dan-trien-khai-noi-bo.md#5-phương-án-b--docker-compose-production-khuyến-nghị).

@@ -919,6 +919,9 @@ export function AuditPage() {
   const branchesQuery = trpc.branches.list.useQuery();
   const departmentsQuery = trpc.departments.list.useQuery();
   const assetCategoriesQuery = trpc.assetCategories.list.useQuery();
+  const purchaseInvoicesQuery = trpc.purchaseInvoices.list.useQuery();
+  const softwareLicensesQuery = trpc.softwareLicenses.list.useQuery();
+  const softwareLicenseAssignmentsQuery = trpc.softwareLicenses.assignments.useQuery();
   const companySettingsQuery = trpc.company.get.useQuery(undefined, { enabled: isAdmin });
   const auditItemsQuery = trpc.audits.getItems.useQuery({ sessionId: selectedSessionId ?? 0 }, { enabled: Boolean(selectedSessionId) });
   const auditImportHistoryQuery = trpc.audits.importHistory.useQuery({ sessionId: selectedSessionId ?? 0 }, { enabled: Boolean(selectedSessionId) });
@@ -999,6 +1002,16 @@ export function AuditPage() {
     if (!asset?.branchId) return "Chưa gán";
     return branchesQuery.data?.find((branch) => branch.id === asset.branchId)?.name || "Chưa gán";
   };
+  const invoiceKeyById = new Map((purchaseInvoicesQuery.data || []).map((invoice) => [invoice.id, invoice.invoiceKey]));
+  const licenseNameById = new Map((softwareLicensesQuery.data || []).map((license) => [license.id, license.productName]));
+  const activeLicenseLabelsByAssetId = new Map<number, string[]>();
+  (softwareLicenseAssignmentsQuery.data || []).filter((assignment) => assignment.status === "active" && assignment.assetId).forEach((assignment) => {
+    const name = licenseNameById.get(assignment.softwareLicenseId)?.trim();
+    if (!assignment.assetId || !name) return;
+    activeLicenseLabelsByAssetId.set(assignment.assetId, [...(activeLicenseLabelsByAssetId.get(assignment.assetId) || []), name]);
+  });
+  const assetInvoiceKey = (asset: (typeof assets)[number] | undefined) => asset?.purchaseInvoiceId ? invoiceKeyById.get(asset.purchaseInvoiceId) || "Chưa liên kết" : "Chưa liên kết";
+  const assetLicenseLabels = (asset: (typeof assets)[number] | undefined) => asset ? Array.from(new Set(activeLicenseLabelsByAssetId.get(asset.id) || [])).sort((left, right) => left.localeCompare(right, "vi")).join("; ") || "Chưa cấp" : "Chưa cấp";
   const auditableAssets = assets.filter((asset) => asset.status !== "returned_to_vendor" && asset.status !== "retired");
   const auditableAssetIds = new Set(auditableAssets.map((asset) => asset.id));
   // Đợt đã chốt là hồ sơ lịch sử, còn đợt mở chỉ hiển thị tài sản vẫn thuộc công ty.
@@ -1183,6 +1196,8 @@ export function AuditPage() {
       "Mã QR để quét": asset?.qrToken ? `ASSETMASTER|${asset.qrToken}` : asset?.assetCode || "",
       "Mã tài sản": asset?.assetCode || `#${item.assetId}`,
       "Tên tài sản": asset?.name || "Tài sản đã bị lưu trữ",
+      "Mã Hóa đơn": assetInvoiceKey(asset),
+      "License": assetLicenseLabels(asset),
       "Chi nhánh": branchNameForAsset(asset),
       "Serial / IMEI": asset?.serialNumber || "",
       "Vị trí hệ thống": asset?.location || "",
@@ -1205,6 +1220,8 @@ export function AuditPage() {
       "STT": index + 1,
       "Mã tài sản": asset?.assetCode || `#${item.assetId}`,
       "Tên tài sản": asset?.name || "Tài sản đã bị lưu trữ",
+      "Mã Hóa đơn": assetInvoiceKey(asset),
+      "License": assetLicenseLabels(asset),
       "Chi nhánh": branchNameForAsset(asset),
       "Phòng ban": department?.name || "Chưa gán",
       "Người / đơn vị đang giữ": asset?.holderName || "Chưa cấp phát",
@@ -1224,6 +1241,8 @@ export function AuditPage() {
       "STT": index + 1,
       "Mã tài sản": asset.assetCode,
       "Tên tài sản": asset.name,
+      "Mã Hóa đơn": assetInvoiceKey(asset),
+      "License": assetLicenseLabels(asset),
       "Chi nhánh": branchNameForAsset(asset),
       "Phòng ban": department?.name || "Chưa gán",
       "Người giữ": asset.holderName || "Chưa cấp phát",
@@ -1248,7 +1267,7 @@ export function AuditPage() {
       try {
         const workbook = XLSX.utils.book_new();
         const sheet = XLSX.utils.json_to_sheet(totalAssetRows);
-        sheet["!cols"] = [{ wch: 7 }, { wch: 18 }, { wch: 34 }, { wch: 24 }, { wch: 22 }, { wch: 24 }, { wch: 20 }, { wch: 16 }, { wch: 22 }, { wch: 20 }, { wch: 18 }, { wch: 18 }, { wch: 22 }, { wch: 22 }, { wch: 38 }, { wch: 24 }];
+        sheet["!cols"] = [{ wch: 7 }, { wch: 18 }, { wch: 34 }, { wch: 24 }, { wch: 28 }, { wch: 24 }, { wch: 22 }, { wch: 24 }, { wch: 20 }, { wch: 16 }, { wch: 22 }, { wch: 20 }, { wch: 18 }, { wch: 18 }, { wch: 22 }, { wch: 22 }, { wch: 38 }, { wch: 24 }];
         sheet["!freeze"] = { xSplit: 0, ySplit: 1 };
         XLSX.utils.book_append_sheet(workbook, sheet, "Tổng tài sản");
         const summarySheet = XLSX.utils.aoa_to_sheet([
@@ -1367,7 +1386,7 @@ export function AuditPage() {
     try {
       const workbook = XLSX.utils.book_new();
       const sheet = XLSX.utils.json_to_sheet(filteredAuditExportRows);
-      sheet["!cols"] = [{ wch: 7 }, { wch: 18 }, { wch: 34 }, { wch: 24 }, { wch: 22 }, { wch: 26 }, { wch: 22 }, { wch: 22 }, { wch: 18 }, { wch: 40 }, { wch: 24 }];
+      sheet["!cols"] = [{ wch: 7 }, { wch: 18 }, { wch: 34 }, { wch: 24 }, { wch: 28 }, { wch: 24 }, { wch: 22 }, { wch: 26 }, { wch: 22 }, { wch: 22 }, { wch: 18 }, { wch: 40 }, { wch: 24 }];
       sheet["!freeze"] = { xSplit: 0, ySplit: 1 };
       XLSX.utils.book_append_sheet(workbook, sheet, "Danh sách kiểm kê");
       const selectedBranchLabel = auditBranchOptions.find((option) => option.value === auditBranchFilter)?.label || "Tất cả Chi nhánh";
@@ -1391,7 +1410,7 @@ export function AuditPage() {
       try {
         const workbook = XLSX.utils.book_new();
         const sheet = XLSX.utils.json_to_sheet(fieldworkRows);
-        sheet["!cols"] = [{ wch: 7 }, { wch: 34 }, { wch: 18 }, { wch: 34 }, { wch: 24 }, { wch: 20 }, { wch: 24 }, { wch: 28 }, { wch: 20 }, { wch: 20 }, { wch: 18 }, { wch: 38 }, { wch: 34 }, { wch: 38 }, { wch: 24 }, { wch: 22 }];
+        sheet["!cols"] = [{ wch: 7 }, { wch: 34 }, { wch: 18 }, { wch: 34 }, { wch: 24 }, { wch: 28 }, { wch: 24 }, { wch: 20 }, { wch: 24 }, { wch: 28 }, { wch: 20 }, { wch: 20 }, { wch: 18 }, { wch: 38 }, { wch: 34 }, { wch: 38 }, { wch: 24 }, { wch: 22 }];
         sheet["!freeze"] = { xSplit: 0, ySplit: 1 };
         XLSX.utils.book_append_sheet(workbook, sheet, "Danh sách kiểm kê");
         const guide = XLSX.utils.aoa_to_sheet([
@@ -1399,7 +1418,7 @@ export function AuditPage() {
           ["Đợt kiểm kê", selectedAudit.name],
           ["Mã đợt", selectedAudit.referenceCode],
           ["Cách sử dụng", "Quét cột Mã QR để quét hoặc đối chiếu Mã tài sản. Ghi rõ Hiện trạng thực tế, Vị trí thực tế / người xác nhận, Ghi chú kiểm kê, Thời điểm kiểm kê và Người kiểm kê."],
-          ["Lưu ý", "Các cột hiện trạng và ghi chú có thể nhập trực tiếp trên Excel hoặc in ra để ghi tay, sau đó cập nhật kết quả vào hệ thống."],
+          ["Lưu ý", "Mã Hóa đơn và License là cột tham chiếu, hệ thống không cập nhật chúng khi import lại. Chỉ các cột hiện trạng và ghi chú có thể nhập trực tiếp trên Excel hoặc in ra để ghi tay."],
           [],
           ["LỰA CHỌN HỢP LỆ - Trạng thái thực tế", "Chưa ghi nhận | Sẵn có | Đang cấp phát | Bảo trì | Trả nhà cung cấp | Ngừng sử dụng | Thất lạc | Hư hỏng"],
           ["LỰA CHỌN HỢP LỆ - Kết quả kiểm kê", "Chưa kiểm | Khớp | Chênh lệch | Không tìm thấy"],
@@ -1421,8 +1440,8 @@ export function AuditPage() {
               cell.alignment = { vertical: "middle", wrapText: true };
             });
             for (let row = 2; row <= fieldworkRows.length + 1; row += 1) {
-              fieldworkSheet.getCell(`J${row}`).dataValidation = { type: "list", allowBlank: true, formulae: [actualStatuses], showErrorMessage: true, errorTitle: "Giá trị không hợp lệ", error: "Chọn Trạng thái thực tế trong danh sách." };
-              fieldworkSheet.getCell(`K${row}`).dataValidation = { type: "list", allowBlank: true, formulae: [auditResults], showErrorMessage: true, errorTitle: "Giá trị không hợp lệ", error: "Chọn Kết quả kiểm kê trong danh sách." };
+              fieldworkSheet.getCell(`L${row}`).dataValidation = { type: "list", allowBlank: true, formulae: [actualStatuses], showErrorMessage: true, errorTitle: "Giá trị không hợp lệ", error: "Chọn Trạng thái thực tế trong danh sách." };
+              fieldworkSheet.getCell(`M${row}`).dataValidation = { type: "list", allowBlank: true, formulae: [auditResults], showErrorMessage: true, errorTitle: "Giá trị không hợp lệ", error: "Chọn Kết quả kiểm kê trong danh sách." };
             }
           },
         });

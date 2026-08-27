@@ -912,6 +912,14 @@ export default function Home() {
     return new Map(Array.from(labelsByCode, ([assetCode, labels]) => [assetCode, Array.from(new Set(labels)).sort((left, right) => left.localeCompare(right, "vi"))]));
   }, [assetLicenseAssignmentsQuery.data, assetQuery.data, dashboardSoftwareLicensesQuery.data]);
   const assetRowsWithLicenses = useMemo(() => assetRows.map((asset) => ({ ...asset, licenseLabels: assetLicenseLabelsByAssetCode.get(asset.code) || [] })), [assetRows, assetLicenseLabelsByAssetCode]);
+  useEffect(() => {
+    setAssetRows((current) => current.map((asset) => {
+      const nextLabels = assetLicenseLabelsByAssetCode.get(asset.code) || [];
+      const currentLabels = asset.licenseLabels || [];
+      const unchanged = currentLabels.length === nextLabels.length && currentLabels.every((label, index) => label === nextLabels[index]);
+      return unchanged ? asset : { ...asset, licenseLabels: nextLabels };
+    }));
+  }, [assetLicenseLabelsByAssetCode]);
   const licenseFilterOptions = useMemo(() => ["Tất cả Bản quyền", ...Array.from(new Set(Array.from(assetLicenseLabelsByAssetCode.values()).flat())).sort((left, right) => left.localeCompare(right, "vi"))], [assetLicenseLabelsByAssetCode]);
   const licenseFilterCounts = useMemo(() => Object.fromEntries(licenseFilterOptions.map((licenseName) => [licenseName, licenseName === "Tất cả Bản quyền" ? assetRowsWithLicenses.length : assetRowsWithLicenses.filter((asset) => asset.licenseLabels?.includes(licenseName)).length])), [assetRowsWithLicenses, licenseFilterOptions]);
   assetCatalogLicenseFilterState = { value: licenseFilter, options: licenseFilterOptions, counts: licenseFilterCounts, loading: assetFilterDataLoading, onChange: (value) => applyAssetFilter(setLicenseFilter, value), onOpenImportHistory: () => window.dispatchEvent(new Event("assetmaster:open-import-history")) };

@@ -3810,3 +3810,14 @@
 - [x] Chuẩn hóa bố cục, ẩn mặc định và thêm icon mở/đóng ba panel tại rail phải.
 - [x] Bổ sung kiểm thử responsive/hồi quy và hướng dẫn cập nhật source self-hosted.
 - [x] Xác minh desktop/mobile: trang Cài đặt hiển thị gọn khi các panel self-hosted chưa được mở; rail cố định không nằm trong ảnh full-page theo hành vi preview.
+
+## Current Session — Backup MySQL và xác minh cập nhật Docker
+
+- [x] Soạn lệnh backup MySQL nhất quán và không làm gián đoạn Docker Desktop trước khi rebuild app.
+- [x] Soạn lệnh kiểm tra tệp backup và xác minh image/container app đang chạy.
+
+## Current Session — Rà soát đồng bộ import/export Excel
+
+- [x] Lập danh mục mọi template nhập và xuất Excel cùng các cột dữ liệu hiện tại.
+- [x] Đối chiếu cột template/export với schema, danh sách giao diện và các liên kết Hóa đơn/Bản quyền.
+- [x] Chuẩn hóa các template hoặc luồng Excel sai lệch, rồi kiểm thử import/export theo bộ lọc.
