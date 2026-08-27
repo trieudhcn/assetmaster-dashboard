@@ -6,6 +6,7 @@ import { findActiveDeviceLicenseDuplicate } from "@shared/licenseDeviceAssignmen
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { adminProcedure, protectedProcedure, publicProcedure, router } from "./_core/trpc";
+import { authenticateBootstrapAdmin, authenticateDirectoryUser, clearSelfHostedLogin, selfHostedAuthEnabled, testLdapsDirectory } from "./selfHostedAuth";
 import {
   clearUserDivision,
   createBrand,
@@ -91,6 +92,7 @@ import {
   getDivisionById,
   getDivisionByCode,
   getCompany,
+  getDirectorySettings,
   getHandoverById,
   getInventorySupplyByCode,
   getInventorySupplyById,
@@ -184,6 +186,7 @@ import {
   listAllDepartments,
   listAllDivisions,
   listDepartments,
+  listDirectorySettingAudits,
   listDivisions,
   listHandovers,
   listHandoversByRecipient,
@@ -221,6 +224,7 @@ import {
   runPurchaseContractTransaction,
   runPurchaseInvoiceTransaction,
   saveCompany,
+  saveDirectorySettings,
   saveMaintenanceMonthlyBudget,
   saveHelpGuide,
   saveUserMenuPreference,
@@ -264,6 +268,8 @@ import {
   updateUserBranch,
   updateUserDepartment,
   updateUserDivision,
+  updateDirectoryTestResult,
+  setDirectoryStatus,
   updateAuditItem,
   updateAuditSession,
   transitionHandoverStatus,
@@ -275,6 +281,24 @@ import { storagePut } from "./storage";
 const nullableText = z.string().trim().max(1000).optional().nullable();
 const nullableEmail = z.string().trim().email().max(320).optional().nullable();
 const nullableWebsiteUrl = z.string().trim().max(320).url("Website công ty phải là URL hợp lệ, ví dụ https://congty.vn").optional().nullable();
+const nullableDirectoryText = z.string().trim().max(8_000).optional().nullable();
+const directorySettingsInput = z.object({
+  ldapUrl: z.string().trim().url().max(320).refine((value) => value.startsWith("ldaps://"), "Chỉ chấp nhận URL bắt đầu bằng ldaps://"),
+  usersDn: z.string().trim().min(3).max(2_000),
+  groupsDn: nullableDirectoryText,
+  bindDn: nullableDirectoryText,
+  bindSecretRef: z.string().trim().max(255).regex(/^\/run\/secrets\/[A-Za-z0-9._-]{1,128}$/, "Tham chiếu secret phải nằm trong /run/secrets/").optional().nullable(),
+  loginAttribute: z.string().trim().regex(/^[A-Za-z][A-Za-z0-9-]{0,63}$/),
+  emailAttribute: z.string().trim().regex(/^[A-Za-z][A-Za-z0-9-]{0,63}$/),
+  displayNameAttribute: z.string().trim().regex(/^[A-Za-z][A-Za-z0-9-]{0,63}$/),
+  directoryIdAttribute: z.string().trim().regex(/^[A-Za-z][A-Za-z0-9-]{0,63}$/),
+  departmentAttribute: z.string().trim().regex(/^[A-Za-z][A-Za-z0-9-]{0,63}$/),
+  jobTitleAttribute: z.string().trim().regex(/^[A-Za-z][A-Za-z0-9-]{0,63}$/),
+  adminGroupDn: nullableDirectoryText,
+  userGroupDn: nullableDirectoryText,
+  allowNestedGroups: z.boolean(),
+  caCertificatePem: z.string().trim().max(32_000).optional().nullable(),
+});
 const sidebarMenuLabels = ["Tổng quan", "Danh mục tài sản", "Phân loại tài sản", "Nhà cung cấp & Hãng", "Hợp đồng & Hóa đơn", "Bản quyền & Dịch vụ", "Phụ kiện", "Bàn giao & Cấp phát", "Bảo hành & Sửa chữa", "Phòng Ban & Bộ Phận", "Quản lý nhân viên", "Khấu hao & Thanh lý", "Kiểm kê", "Báo Cáo"] as const;
 const emailDomain = (email?: string | null) => email?.trim().split("@")[1]?.toLocaleLowerCase("en-US") || null;
 async function ensureInternalBranchEmail(email?: string | null) {
@@ -458,7 +482,66 @@ export const appRouter = router({
   system: systemRouter,
   auth: router({
     me: publicProcedure.query(({ ctx }) => ctx.user),
-    logout: publicProcedure.mutation(({ ctx }) => { ctx.res.clearCookie(COOKIE_NAME, { ...getSessionCookieOptions(ctx.req), maxAge: -1 }); return { success: true } as const; }),
+    localLogin: publicProcedure.input(z.object({ email: z.string().trim().email().max(320), password: z.string().min(8).max(256) })).mutation(async ({ input, ctx }) => {
+      try {
+        const user = await authenticateBootstrapAdmin(input.email, input.password, ctx.req, ctx.res);
+        return { id: user.id, name: user.name, role: user.role, authSource: user.authSource };
+      } catch (error) {
+        throw new TRPCError({ code: "UNAUTHORIZED", message: error instanceof Error ? error.message : "Không thể đăng nhập." });
+      }
+    }),
+    directoryLogin: publicProcedure.input(z.object({ email: z.string().trim().email().max(320), password: z.string().min(1).max(256) })).mutation(async ({ input, ctx }) => {
+      try {
+        const user = await authenticateDirectoryUser(input.email, input.password, ctx.req, ctx.res);
+        return { id: user.id, name: user.name, role: user.role, authSource: user.authSource };
+      } catch (error) {
+        throw new TRPCError({ code: "UNAUTHORIZED", message: error instanceof Error ? error.message : "Không thể đăng nhập." });
+      }
+    }),
+    logout: publicProcedure.mutation(async ({ ctx }) => {
+      if (selfHostedAuthEnabled()) await clearSelfHostedLogin(ctx.req, ctx.res);
+      ctx.res.clearCookie(COOKIE_NAME, { ...getSessionCookieOptions(ctx.req), maxAge: -1 });
+      return { success: true } as const;
+    }),
+  }),
+  directory: router({
+    publicStatus: publicProcedure.query(async () => {
+      const settings = await getDirectorySettings();
+      return { selfHosted: selfHostedAuthEnabled(), configured: Boolean(settings), enabled: selfHostedAuthEnabled() && settings?.status === "active" && settings.lastTestStatus === "success", lastTestStatus: settings?.lastTestStatus ?? "not_tested" };
+    }),
+    get: adminProcedure.query(async () => {
+      const settings = await getDirectorySettings();
+      if (!settings) return null;
+      return { ...settings, caCertificatePem: settings.caCertificatePem || null };
+    }),
+    audit: adminProcedure.input(z.object({ limit: z.number().int().min(1).max(50).default(12) })).query(({ input }) => listDirectorySettingAudits(input.limit)),
+    save: adminProcedure.input(directorySettingsInput).mutation(async ({ input, ctx }) => {
+      const settings = await saveDirectorySettings({ ...input, groupsDn: input.groupsDn ?? null, bindDn: input.bindDn ?? null, bindSecretRef: input.bindSecretRef ?? null, adminGroupDn: input.adminGroupDn ?? null, userGroupDn: input.userGroupDn ?? null, caCertificatePem: input.caCertificatePem ?? null }, { userId: ctx.user.id, name: ctx.user.name });
+      await recordActivity({ entityType: "directory_setting", entityId: 1, action: "saved", actorUserId: ctx.user.id, actorName: ctx.user.name, summary: "Lưu cấu hình Directory LDAP/AD" });
+      return settings;
+    }),
+    test: adminProcedure.mutation(async ({ ctx }) => {
+      if (!selfHostedAuthEnabled()) throw new TRPCError({ code: "PRECONDITION_FAILED", message: "Chỉ kiểm tra LDAPS từ máy chủ self-hosted đã bật SELF_HOSTED_AUTH_ENABLED=true." });
+      try {
+        const message = await testLdapsDirectory();
+        await updateDirectoryTestResult({ status: "success", message, actor: { userId: ctx.user.id, name: ctx.user.name } });
+        await recordActivity({ entityType: "directory_setting", entityId: 1, action: "tested", actorUserId: ctx.user.id, actorName: ctx.user.name, summary: "Kiểm tra kết nối LDAPS thành công" });
+        return { success: true, message };
+      } catch (error) {
+        const message = error instanceof Error ? error.message : "Không thể kiểm tra LDAPS.";
+        await updateDirectoryTestResult({ status: "failed", message, actor: { userId: ctx.user.id, name: ctx.user.name } }).catch(() => undefined);
+        return { success: false, message };
+      }
+    }),
+    setStatus: adminProcedure.input(z.object({ status: z.enum(["active", "disabled"]) })).mutation(async ({ input, ctx }) => {
+      const settings = await getDirectorySettings();
+      if (!selfHostedAuthEnabled()) throw new TRPCError({ code: "PRECONDITION_FAILED", message: "Chỉ kích hoạt LDAPS từ máy chủ self-hosted." });
+      if (!settings) throw new TRPCError({ code: "PRECONDITION_FAILED", message: "Hãy lưu cấu hình Directory trước khi kích hoạt." });
+      if (input.status === "active" && settings.lastTestStatus !== "success") throw new TRPCError({ code: "PRECONDITION_FAILED", message: "Hãy kiểm tra kết nối LDAPS thành công trước khi kích hoạt." });
+      const saved = await setDirectoryStatus(input.status, { userId: ctx.user.id, name: ctx.user.name });
+      await recordActivity({ entityType: "directory_setting", entityId: 1, action: input.status, actorUserId: ctx.user.id, actorName: ctx.user.name, summary: input.status === "active" ? "Kích hoạt xác thực LDAP/LDAPS" : "Tắt xác thực LDAP/LDAPS" });
+      return saved;
+    }),
   }),
   menuPreferences: router({
     get: protectedProcedure.query(async ({ ctx }) => {

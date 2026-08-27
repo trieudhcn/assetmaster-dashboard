@@ -1,7 +1,8 @@
-import { Building2, GripVertical, Palette, Tags } from "lucide-react";
+import { Building2, GripVertical, Network, Palette, Tags } from "lucide-react";
 
 const settingLinks = [
   { href: "#settings-brand", label: "Thương hiệu", icon: Palette },
+  { href: "#settings-directory", label: "Directory", icon: Network },
   { href: "#settings-branches", label: "Chi nhánh", icon: Building2 },
   { href: "#settings-menu", label: "Thứ tự menu", icon: GripVertical },
   { href: "#settings-enhancements", label: "Nhận diện", icon: Tags },

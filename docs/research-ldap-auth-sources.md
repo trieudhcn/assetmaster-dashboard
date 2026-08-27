@@ -11,6 +11,7 @@
 - Snipe-IT minh họa cách tách cấu hình môi trường, database, storage, session và backup ra khỏi mã nguồn. Thiết kế installer AssetMaster kế thừa nguyên tắc tách cấu hình này, nhưng không sao chép nguyên xi cơ chế của Snipe-IT.[7]
 - Password của Admin bootstrap cục bộ phải lưu dưới dạng hash, không phải plaintext hay encryption có thể giải mã. OWASP ưu tiên Argon2id với work factor phù hợp hạ tầng.[8]
 - RAID tăng khả năng chịu lỗi ổ đĩa nhưng backup vẫn cần là bản sao logical, có kiểm tra khôi phục. CISA khuyến nghị tự động hóa backup, bảo vệ bằng encryption/offline copy và thực hành restore.[9]
+- `ldapts` hỗ trợ client `ldaps://`, TLS options, bind/search/unbind và `escapeFilter` để ngăn input người dùng bị diễn giải thành LDAP filter. Mỗi client xác thực phải được unbind sau khi dùng, vì bind credential chỉ nên tồn tại trong bộ nhớ của client trong thời gian ngắn.[10]
 
 ## Sources
 
@@ -31,3 +32,5 @@
 [8] [OWASP — Password Storage Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html)
 
 [9] [CISA — Back Up Business Data](https://www.cisa.gov/audiences/small-and-medium-businesses/secure-your-business/back-up-business-data)
+
+[10] [ldapts — Node.js LDAP TypeScript client](https://www.npmjs.com/package/ldapts)

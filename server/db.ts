@@ -13,6 +13,8 @@ import {
   branches,
   companies,
   departments,
+  directorySettingAudits,
+  directorySettings,
   divisions,
   handovers,
   handoverSupplyItems,
@@ -31,6 +33,7 @@ import {
   purchaseInvoices,
   retirementCertificateAssets,
   retirementCertificates,
+  selfHostedSessions,
   softwareLicenseActivationAccounts,
   softwareLicenseAssignments,
   softwareLicenseCredentialAccessLogs,
@@ -88,6 +91,149 @@ export async function getUserByOpenId(openId: string) {
   const db = await getDb();
   if (!db) return undefined;
   return (await db.select().from(users).where(eq(users.openId, openId)).limit(1))[0];
+}
+
+export async function getUserByEmail(email: string) {
+  const db = await getDb();
+  if (!db) return undefined;
+  return (await db.select().from(users).where(eq(users.email, email)).limit(1))[0];
+}
+
+export async function getBootstrapUserByEmail(email: string) {
+  const db = await getDb();
+  if (!db) return undefined;
+  return (await db.select().from(users).where(and(eq(users.email, email), eq(users.authSource, "bootstrap_local"), eq(users.isActive, true))).limit(1))[0];
+}
+
+export async function getUserByDirectorySessionTokenHash(tokenHash: string) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const rows = await db.select({ user: users }).from(selfHostedSessions)
+    .innerJoin(users, eq(selfHostedSessions.userId, users.id))
+    .where(and(eq(selfHostedSessions.tokenHash, tokenHash), sql`${selfHostedSessions.expiresAt} > NOW()`, eq(users.isActive, true)))
+    .limit(1);
+  return rows[0]?.user;
+}
+
+export async function createSelfHostedSession(input: { userId: number; tokenHash: string; expiresAt: Date }) {
+  const db = await getDb();
+  if (!db) throw new Error("Database unavailable");
+  await db.insert(selfHostedSessions).values(input);
+}
+
+export async function deleteSelfHostedSession(tokenHash: string) {
+  const db = await getDb();
+  if (!db) return;
+  await db.delete(selfHostedSessions).where(eq(selfHostedSessions.tokenHash, tokenHash));
+}
+
+export type DirectorySettingsInput = {
+  ldapUrl: string;
+  usersDn: string;
+  groupsDn: string | null;
+  bindDn: string | null;
+  bindSecretRef: string | null;
+  loginAttribute: string;
+  emailAttribute: string;
+  displayNameAttribute: string;
+  directoryIdAttribute: string;
+  departmentAttribute: string;
+  jobTitleAttribute: string;
+  adminGroupDn: string | null;
+  userGroupDn: string | null;
+  allowNestedGroups: boolean;
+  caCertificatePem: string | null;
+};
+
+function directorySnapshot(settings: DirectorySettingsInput) {
+  return {
+    ldapUrl: settings.ldapUrl,
+    usersDn: settings.usersDn,
+    groupsDn: settings.groupsDn,
+    bindDn: settings.bindDn,
+    bindSecretRef: settings.bindSecretRef,
+    loginAttribute: settings.loginAttribute,
+    emailAttribute: settings.emailAttribute,
+    displayNameAttribute: settings.displayNameAttribute,
+    directoryIdAttribute: settings.directoryIdAttribute,
+    departmentAttribute: settings.departmentAttribute,
+    jobTitleAttribute: settings.jobTitleAttribute,
+    adminGroupDn: settings.adminGroupDn,
+    userGroupDn: settings.userGroupDn,
+    allowNestedGroups: settings.allowNestedGroups,
+    hasCaCertificate: Boolean(settings.caCertificatePem),
+  };
+}
+
+export async function getDirectorySettings() {
+  const db = await getDb();
+  if (!db) return undefined;
+  return (await db.select().from(directorySettings).where(eq(directorySettings.id, 1)).limit(1))[0];
+}
+
+export async function listDirectorySettingAudits(limit = 12) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(directorySettingAudits).where(eq(directorySettingAudits.directorySettingsId, 1)).orderBy(desc(directorySettingAudits.createdAt)).limit(limit);
+}
+
+export async function saveDirectorySettings(input: DirectorySettingsInput, actor: { userId: number; name: string | null }) {
+  const db = await getDb();
+  if (!db) throw new Error("Database unavailable");
+  const existing = await getDirectorySettings();
+  const version = (existing?.version ?? 0) + 1;
+  const values = {
+    id: 1,
+    version,
+    status: existing?.status === "active" ? "disabled" as const : existing?.status ?? "draft" as const,
+    ...input,
+    bindSecretConfigured: Boolean(input.bindSecretRef),
+    lastTestStatus: "not_tested" as const,
+    lastTestMessage: null,
+    lastTestedAt: null,
+    createdByUserId: existing?.createdByUserId ?? actor.userId,
+    updatedByUserId: actor.userId,
+  };
+  await db.insert(directorySettings).values(values).onDuplicateKeyUpdate({ set: { ...values, createdAt: existing?.createdAt } });
+  await db.insert(directorySettingAudits).values({ directorySettingsId: 1, version, action: "saved", summary: "Lưu bản nháp cấu hình Directory LDAP/AD", snapshot: directorySnapshot(input), actorUserId: actor.userId, actorName: actor.name });
+  return getDirectorySettings();
+}
+
+export async function updateDirectoryTestResult(input: { status: "success" | "failed"; message: string; actor: { userId: number; name: string | null } }) {
+  const db = await getDb();
+  if (!db) throw new Error("Database unavailable");
+  const current = await getDirectorySettings();
+  if (!current) throw new Error("Chưa có cấu hình Directory LDAP/AD.");
+  await db.update(directorySettings).set({ lastTestStatus: input.status, lastTestMessage: input.message, lastTestedAt: new Date(), updatedByUserId: input.actor.userId }).where(eq(directorySettings.id, 1));
+  await db.insert(directorySettingAudits).values({ directorySettingsId: 1, version: current.version, action: "tested", summary: input.message, snapshot: directorySnapshot(current), actorUserId: input.actor.userId, actorName: input.actor.name });
+  return getDirectorySettings();
+}
+
+export async function setDirectoryStatus(status: "active" | "disabled", actor: { userId: number; name: string | null }) {
+  const db = await getDb();
+  if (!db) throw new Error("Database unavailable");
+  const current = await getDirectorySettings();
+  if (!current) throw new Error("Chưa có cấu hình Directory LDAP/AD.");
+  await db.update(directorySettings).set({ status, updatedByUserId: actor.userId }).where(eq(directorySettings.id, 1));
+  await db.insert(directorySettingAudits).values({ directorySettingsId: 1, version: current.version, action: status === "active" ? "activated" : "disabled", summary: status === "active" ? "Kích hoạt xác thực LDAP/LDAPS" : "Tắt xác thực LDAP/LDAPS", snapshot: directorySnapshot(current), actorUserId: actor.userId, actorName: actor.name });
+  return getDirectorySettings();
+}
+
+export async function upsertDirectoryUser(input: { openId: string; directoryObjectId: string; directoryUsername: string; name: string | null; email: string; department: string | null; jobTitle: string | null; role: "admin" | "user" }) {
+  const db = await getDb();
+  if (!db) throw new Error("Database unavailable");
+  const byDirectoryId = (await db.select().from(users).where(eq(users.directoryObjectId, input.directoryObjectId)).limit(1))[0];
+  const byEmail = byDirectoryId ? undefined : await getUserByEmail(input.email);
+  const current = byDirectoryId ?? byEmail;
+  const role = current && input.role === "user" ? current.role : input.role;
+  const values = { name: input.name, email: input.email, directoryObjectId: input.directoryObjectId, directoryUsername: input.directoryUsername, jobTitle: input.jobTitle, authSource: "ldap" as const, loginMethod: "ldap", lastDirectorySyncAt: new Date(), lastSignedIn: new Date(), role };
+  if (current) {
+    await db.update(users).set(values).where(eq(users.id, current.id));
+    return { ...current, ...values };
+  }
+  const result = await db.insert(users).values({ openId: input.openId, ...values, isActive: true });
+  const id = Number(result[0].insertId);
+  return (await db.select().from(users).where(eq(users.id, id)).limit(1))[0]!;
 }
 
 export async function getUserMenuPreference(userId: number) {

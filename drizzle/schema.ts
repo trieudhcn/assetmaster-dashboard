@@ -20,6 +20,12 @@ export const users = mysqlTable("users", {
   employeeCode: varchar("employeeCode", { length: 64 }).unique(),
   jobTitle: varchar("jobTitle", { length: 160 }),
   loginMethod: varchar("loginMethod", { length: 64 }),
+  authSource: mysqlEnum("authSource", ["manus", "bootstrap_local", "ldap"]).default("manus").notNull(),
+  passwordHash: varchar("passwordHash", { length: 512 }),
+  mustChangePassword: boolean("mustChangePassword").default(false).notNull(),
+  directoryObjectId: varchar("directoryObjectId", { length: 192 }).unique(),
+  directoryUsername: varchar("directoryUsername", { length: 320 }),
+  lastDirectorySyncAt: timestamp("lastDirectorySyncAt"),
   role: mysqlEnum("role", ["user", "admin"]).default("user").notNull(),
   branchId: int("branchId").references(() => branches.id, { onDelete: "set null", onUpdate: "cascade" }),
   departmentId: int("departmentId"),
@@ -28,7 +34,57 @@ export const users = mysqlTable("users", {
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
   lastSignedIn: timestamp("lastSignedIn").defaultNow().notNull(),
-}, (table) => [index("users_branch_idx").on(table.branchId), index("users_division_idx").on(table.divisionId)]);
+}, (table) => [index("users_branch_idx").on(table.branchId), index("users_division_idx").on(table.divisionId), index("users_auth_source_idx").on(table.authSource), index("users_directory_username_idx").on(table.directoryUsername)]);
+
+export const directorySettings = mysqlTable("directorySettings", {
+  id: int("id").primaryKey(),
+  version: int("version").default(1).notNull(),
+  status: mysqlEnum("status", ["draft", "active", "disabled"]).default("draft").notNull(),
+  ldapUrl: varchar("ldapUrl", { length: 320 }).notNull(),
+  usersDn: text("usersDn").notNull(),
+  groupsDn: text("groupsDn"),
+  bindDn: text("bindDn"),
+  bindSecretRef: varchar("bindSecretRef", { length: 255 }),
+  loginAttribute: varchar("loginAttribute", { length: 64 }).default("mail").notNull(),
+  emailAttribute: varchar("emailAttribute", { length: 64 }).default("mail").notNull(),
+  displayNameAttribute: varchar("displayNameAttribute", { length: 64 }).default("displayName").notNull(),
+  directoryIdAttribute: varchar("directoryIdAttribute", { length: 64 }).default("objectGUID").notNull(),
+  departmentAttribute: varchar("departmentAttribute", { length: 64 }).default("department").notNull(),
+  jobTitleAttribute: varchar("jobTitleAttribute", { length: 64 }).default("title").notNull(),
+  adminGroupDn: text("adminGroupDn"),
+  userGroupDn: text("userGroupDn"),
+  allowNestedGroups: boolean("allowNestedGroups").default(false).notNull(),
+  caCertificatePem: text("caCertificatePem"),
+  bindSecretConfigured: boolean("bindSecretConfigured").default(false).notNull(),
+  lastTestStatus: mysqlEnum("lastTestStatus", ["not_tested", "success", "failed"]).default("not_tested").notNull(),
+  lastTestMessage: varchar("lastTestMessage", { length: 300 }),
+  lastTestedAt: timestamp("lastTestedAt"),
+  createdByUserId: int("createdByUserId").references(() => users.id, { onDelete: "set null", onUpdate: "cascade" }),
+  updatedByUserId: int("updatedByUserId").references(() => users.id, { onDelete: "set null", onUpdate: "cascade" }),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+}, (table) => [index("directory_settings_status_idx").on(table.status)]);
+
+export const directorySettingAudits = mysqlTable("directorySettingAudits", {
+  id: int("id").autoincrement().primaryKey(),
+  directorySettingsId: int("directorySettingsId").notNull().references(() => directorySettings.id, { onDelete: "cascade", onUpdate: "cascade" }),
+  version: int("version").notNull(),
+  action: mysqlEnum("action", ["saved", "activated", "disabled", "tested"]).notNull(),
+  summary: varchar("summary", { length: 300 }).notNull(),
+  snapshot: json("snapshot").notNull(),
+  actorUserId: int("actorUserId").references(() => users.id, { onDelete: "set null", onUpdate: "cascade" }),
+  actorName: varchar("actorName", { length: 160 }),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+}, (table) => [index("directory_setting_audits_setting_created_idx").on(table.directorySettingsId, table.createdAt)]);
+
+export const selfHostedSessions = mysqlTable("selfHostedSessions", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull().references(() => users.id, { onDelete: "cascade", onUpdate: "cascade" }),
+  tokenHash: varchar("tokenHash", { length: 128 }).notNull().unique(),
+  expiresAt: timestamp("expiresAt").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  lastSeenAt: timestamp("lastSeenAt").defaultNow().notNull(),
+}, (table) => [index("self_hosted_sessions_user_idx").on(table.userId), index("self_hosted_sessions_expiry_idx").on(table.expiresAt)]);
 
 export const userNotificationPreferences = mysqlTable("userNotificationPreferences", {
   userId: int("userId").primaryKey(),

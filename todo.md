@@ -273,6 +273,12 @@
 - [x] Cập nhật installer để email khai báo đầu tiên trở thành tài khoản Admin local break-glass.
 - [x] Cập nhật luồng sau cài đặt để nhân viên đăng nhập bằng email nội bộ được xác thực tại LDAP/LDAPS.
 - [x] Điều chỉnh runbook backup theo cơ chế RAID của máy chủ, không yêu cầu xác nhận hạ tầng trước installer.
+- [x] Rà soát và bảo toàn các luồng xác thực, Cài đặt hệ thống và quản lý nhân sự hiện có trước khi thêm staging self-hosted.
+- [x] Thiết kế schema/API cho cấu hình Directory LDAP/AD có version, trạng thái và audit không chứa secret.
+- [x] Bổ sung khu vực Directory LDAP/AD chỉ dành cho Admin trong Cài đặt hệ thống, gồm kết nối, mapping, nhóm quyền, CA và kiểm tra an toàn.
+- [x] Tạo trang đăng nhập self-hosted cho Admin bootstrap local và nhân viên LDAP, không làm thay đổi login Manus đang hoạt động.
+- [x] Bổ sung quản lý người dùng Admin: danh sách, nguồn xác thực, trạng thái và phân quyền sau đăng nhập.
+- [x] Viết kiểm thử và xác minh desktop/mobile cho các UI staging, hợp đồng API và phân quyền.
 
 ## Current Session — Bản quyền & Dịch vụ
 

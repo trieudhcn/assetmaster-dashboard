@@ -235,7 +235,7 @@ describe("modal presentation contract", () => {
     expect(home).toContain('title="Lịch sử import thành công"');
     expect(home).toContain("onOpenImportHistory");
     expect(employees).toContain("EMPLOYEE_PAGE_SIZE = 10");
-    expect(employees).toContain('aria-label="Trang nhân sự sau"');
+    expect(employees).toContain('aria-label="Trang tài khoản sau"');
     expect(employees).toContain('data-search-clear-managed="true"');
     expect(employees).toContain('aria-label="Xóa từ khóa tìm kiếm nhân sự"');
     expect(employees).toContain('className="relative min-w-0"');

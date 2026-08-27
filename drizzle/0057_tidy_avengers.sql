@@ -1,0 +1,1 @@
+ALTER TABLE `directorySettings` ADD `bindSecretRef` varchar(255);
