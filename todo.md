@@ -235,6 +235,12 @@
 - [x] Chặn cấp trùng cùng loại License cho một thiết bị đang có cấp phát hoạt động.
 - [x] Tự gộp các License trùng trong chi tiết tài sản và chỉ hiển thị tên phần mềm, ngày cấp.
 - [x] Kiểm thử cấp phát trùng, dữ liệu cũ và chi tiết tài sản responsive.
+- [x] Thêm cột License sau Trạng thái trong Danh mục tài sản và mặc định ẩn.
+- [x] Bổ sung bộ lọc License ở cuối dải bộ lọc bằng dropdown chuẩn có tìm kiếm.
+- [x] Đưa nút mở lịch sử import lên cạnh nút Đặt lại bộ lọc.
+- [x] Kiểm thử cột, bộ lọc License và responsive Danh mục tài sản.
+- [x] Đổi trực tiếp thuộc tính JSX type="password" thành type="text" cho ô nhập key License.
+- [x] Kiểm thử DOM trường nhập key để xác nhận thuộc tính type là text.
 
 ## Current Session — Bản quyền & Dịch vụ
 
