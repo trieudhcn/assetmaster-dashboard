@@ -3,6 +3,8 @@
 // Downloads return /manus-storage/{key} paths served via 307 redirect.
 
 import { ENV } from "./_core/env";
+import { getFileStorageSettings } from "./db";
+import { isSharedFileStorageEnabled, putSharedFile } from "./localSharedStorage";
 
 function getForgeConfig() {
   const forgeUrl = ENV.forgeApiUrl;
@@ -33,6 +35,14 @@ export async function storagePut(
   data: Buffer | Uint8Array | string,
   contentType = "application/octet-stream",
 ): Promise<{ key: string; url: string }> {
+  if (isSharedFileStorageEnabled()) {
+    const settings = await getFileStorageSettings();
+    if (!settings) throw new Error("Admin chưa cấu hình thư mục lưu tệp self-hosted trong Cài đặt hệ thống.");
+    const directory = settings.relativeDirectory;
+    const key = appendHashSuffix(`${directory}/${normalizeKey(relKey)}`);
+    const stored = await putSharedFile(key, data, contentType);
+    return { key: stored.key, url: stored.url };
+  }
   const { forgeUrl, forgeKey } = getForgeConfig();
   const key = appendHashSuffix(normalizeKey(relKey));
 
@@ -73,10 +83,12 @@ export async function storagePut(
 
 export async function storageGet(relKey: string): Promise<{ key: string; url: string }> {
   const key = normalizeKey(relKey);
+  if (isSharedFileStorageEnabled()) return { key, url: `/api/files/${key.split("/").map(encodeURIComponent).join("/")}` };
   return { key, url: `/manus-storage/${key}` };
 }
 
 export async function storageGetSignedUrl(relKey: string): Promise<string> {
+  if (isSharedFileStorageEnabled()) return `/api/files/${normalizeKey(relKey).split("/").map(encodeURIComponent).join("/")}`;
   const { forgeUrl, forgeKey } = getForgeConfig();
   const key = normalizeKey(relKey);
 

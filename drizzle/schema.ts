@@ -195,6 +195,19 @@ export const installationSettings = mysqlTable("installationSettings", {
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
 
+export const fileStorageSettings = mysqlTable("fileStorageSettings", {
+  id: int("id").primaryKey(),
+  mode: mysqlEnum("mode", ["shared_directory"]).default("shared_directory").notNull(),
+  relativeDirectory: varchar("relativeDirectory", { length: 160 }).default("attachments").notNull(),
+  lastTestStatus: mysqlEnum("lastTestStatus", ["not_tested", "success", "failed"]).default("not_tested").notNull(),
+  lastTestMessage: varchar("lastTestMessage", { length: 300 }),
+  lastTestedAt: timestamp("lastTestedAt"),
+  updatedByUserId: int("updatedByUserId").references(() => users.id, { onDelete: "set null", onUpdate: "cascade" }),
+  updatedByName: varchar("updatedByName", { length: 160 }),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
 export const backupRecords = mysqlTable(
   "backupRecords",
   {

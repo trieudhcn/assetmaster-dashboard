@@ -22,6 +22,7 @@ import {
   testLdapsDirectoryDraft,
 } from "./selfHostedAuth";
 import { getSelfHostedServiceHealth } from "./selfHostedServiceHealth";
+import { isSharedFileStorageEnabled, testSharedDirectory } from "./localSharedStorage";
 import {
   assertSetupAccess,
   checkSetupDatabase,
@@ -116,6 +117,7 @@ import {
   getDivisionByCode,
   getCompany,
   getDirectorySettings,
+  getFileStorageSettings,
   getHandoverById,
   getInventorySupplyByCode,
   getInventorySupplyById,
@@ -250,6 +252,7 @@ import {
   runPurchaseInvoiceTransaction,
   saveCompany,
   saveDirectorySettings,
+  saveFileStorageSettings,
   saveMaintenanceMonthlyBudget,
   saveHelpGuide,
   saveUserMenuPreference,
@@ -261,6 +264,7 @@ import {
   updateBranch,
   updateDepartment,
   updateDivision,
+  updateFileStorageTestResult,
   updateVendor,
   updateHandover,
   updateHandoverSupplyItem,
@@ -1013,6 +1017,24 @@ export const appRouter = router({
   }),
   selfHostedHealth: router({
     status: adminProcedure.query(() => getSelfHostedServiceHealth()),
+  }),
+  fileStorage: router({
+    status: adminProcedure.query(async () => {
+      if (!selfHostedAuthEnabled()) return { selfHosted: false, mounted: false, settings: null };
+      return { selfHosted: true, mounted: isSharedFileStorageEnabled(), settings: await getFileStorageSettings() };
+    }),
+    save: adminProcedure.input(z.object({ relativeDirectory: z.string().trim().min(1).max(160).regex(/^[A-Za-z0-9][A-Za-z0-9._/-]*$/, "Chỉ dùng chữ, số, dấu gạch ngang, gạch dưới, dấu chấm và dấu gạch chéo.").refine(value => !value.split("/").includes(".."), "Không được dùng đường dẫn đi ngược.") })).mutation(async ({ input, ctx }) => {
+      if (!selfHostedAuthEnabled()) throw new TRPCError({ code: "FORBIDDEN", message: "Chỉ khả dụng trong môi trường self-hosted." });
+      return saveFileStorageSettings({ relativeDirectory: input.relativeDirectory.replace(/^\/+|\/+$/g, ""), actor: { userId: ctx.user!.id, name: ctx.user!.name } });
+    }),
+    test: adminProcedure.mutation(async ({ ctx }) => {
+      if (!selfHostedAuthEnabled()) throw new TRPCError({ code: "FORBIDDEN", message: "Chỉ khả dụng trong môi trường self-hosted." });
+      const settings = await getFileStorageSettings();
+      if (!settings) throw new TRPCError({ code: "BAD_REQUEST", message: "Hãy lưu cấu hình kho tệp trước khi kiểm tra." });
+      const result = await testSharedDirectory(settings.relativeDirectory);
+      await updateFileStorageTestResult({ ...result, actor: { userId: ctx.user!.id, name: ctx.user!.name } });
+      return result;
+    }),
   }),
   backupMonitoring: router({
     summary: adminProcedure.query(async () => {

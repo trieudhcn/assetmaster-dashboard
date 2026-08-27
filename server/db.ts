@@ -18,6 +18,7 @@ import {
   departments,
   directorySettingAudits,
   directorySettings,
+  fileStorageSettings,
   divisions,
   handovers,
   handoverSupplyItems,
@@ -84,6 +85,39 @@ export async function getInstallationSettings() {
   const db = await getDb();
   if (!db) return null;
   return (await db.select().from(installationSettings).where(eq(installationSettings.id, 1)).limit(1))[0] ?? null;
+}
+
+export async function getFileStorageSettings() {
+  const db = await getDb();
+  if (!db) return null;
+  return (await db.select().from(fileStorageSettings).where(eq(fileStorageSettings.id, 1)).limit(1))[0] ?? null;
+}
+
+export async function saveFileStorageSettings(input: { relativeDirectory: string; actor: { userId: number; name: string | null } }) {
+  const db = await getDb();
+  if (!db) throw new Error("Không thể kết nối cơ sở dữ liệu của AssetMaster.");
+  const existing = await getFileStorageSettings();
+  const values = {
+    id: 1,
+    mode: "shared_directory" as const,
+    relativeDirectory: input.relativeDirectory,
+    lastTestStatus: "not_tested" as const,
+    lastTestMessage: null,
+    lastTestedAt: null,
+    updatedByUserId: input.actor.userId,
+    updatedByName: input.actor.name,
+  };
+  await db.insert(fileStorageSettings).values(values).onDuplicateKeyUpdate({ set: { ...values, createdAt: existing?.createdAt } });
+  return getFileStorageSettings();
+}
+
+export async function updateFileStorageTestResult(input: { status: "success" | "failed"; message: string; actor: { userId: number; name: string | null } }) {
+  const db = await getDb();
+  if (!db) throw new Error("Không thể kết nối cơ sở dữ liệu của AssetMaster.");
+  const existing = await getFileStorageSettings();
+  if (!existing) throw new Error("Hãy lưu cấu hình kho tệp trước khi kiểm tra.");
+  await db.update(fileStorageSettings).set({ lastTestStatus: input.status, lastTestMessage: input.message.slice(0, 300), lastTestedAt: new Date(), updatedByUserId: input.actor.userId, updatedByName: input.actor.name }).where(eq(fileStorageSettings.id, 1));
+  return getFileStorageSettings();
 }
 
 export async function listBackupRecords(limit = 20) {

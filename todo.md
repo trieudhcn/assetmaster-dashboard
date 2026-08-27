@@ -3755,3 +3755,11 @@
 - [x] Thêm bảng điều khiển sao lưu/phục hồi, lịch sử thao tác và xác nhận rủi ro cho Admin.
 - [x] Bổ sung metadata backup/restore drill và API Admin, không thực thi lệnh host từ web.
 - [x] Cập nhật runbook hợp nhất cùng hồi quy, build và xác minh luồng quản trị.
+
+## Current Session — Lưu tệp self-hosted và hướng dẫn từng bước
+
+- [x] Rà soát upload hiện có, hợp đồng URL và mount thư mục dùng chung trên Docker.
+- [x] Thiết kế cấu hình Admin cho thư mục lưu tệp self-hosted với allowlist path và kiểm tra quyền ghi.
+- [x] Thêm adapter local-storage và phân phối tệp có kiểm soát, vẫn giữ Forge storage cho hosted.
+- [x] Thêm panel Cài đặt hệ thống để lưu/kiểm tra cấu hình kho tệp chia sẻ.
+- [x] Cập nhật Docker Compose, tài liệu triển khai step-by-step và regression trước phát hành.

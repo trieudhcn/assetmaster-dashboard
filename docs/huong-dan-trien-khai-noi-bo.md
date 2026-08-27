@@ -4,16 +4,16 @@
 
 ## 1. Kết luận nhanh: source đã sẵn sàng đến đâu?
 
-Source hiện tại **đủ để dựng môi trường staging/pilot nội bộ** với Docker Compose, MySQL 8.4, Redis 7.4, Nginx, installer `/setup`, Admin bootstrap và xác thực LDAPS. Tuy nhiên, **chưa nên mở production cho nhân viên** cho đến khi hoàn tất adapter lưu tệp nội bộ/MinIO, UAT Docker trên MySQL trống, UAT LDAPS với CA nội bộ và một lần restore backup đã kiểm thử.
+Source hiện tại **đủ để dựng môi trường staging/pilot nội bộ** với Docker Compose, MySQL 8.4, Redis 7.4, Nginx, installer `/setup`, Admin bootstrap, xác thực LDAPS và thư mục tệp chia sẻ được mount vào Docker. Tuy nhiên, **chưa nên mở production cho nhân viên** cho đến khi hoàn tất UAT Docker trên MySQL trống, UAT LDAPS với CA nội bộ, kiểm tra quyền thư mục tệp và một lần restore backup đã kiểm thử.
 
-| Thành phần                | Trạng thái trong source                                                  | Điều kiện trước khi mở production                                  |
-| ------------------------- | ------------------------------------------------------------------------ | ------------------------------------------------------------------ |
-| AssetMaster, MySQL, Redis | Có Docker Compose, volume, healthcheck và restart policy                 | UAT trên Ubuntu staging với chính Docker Engine của doanh nghiệp   |
-| Installer `/setup`        | Có wizard 3 bước, preflight MySQL, migration và Admin bootstrap Argon2id | Tắt feature flag installer sau lần cài thành công                  |
-| Đăng nhập LDAPS           | Có cấu hình Admin, TLS/CA, mapping nhóm và đồng bộ phân trang            | Dùng CA/bind secret thật; thử user trong/ngoài nhóm                |
-| Trạng thái MySQL/Redis    | Có panel Admin tự làm mới 30 giây ở **Cài đặt hệ thống**                 | Chỉ xuất hiện khi `SELF_HOSTED_AUTH_ENABLED=true`                  |
-| Tệp đính kèm              | **Chưa sẵn sàng cho self-hosted**                                        | Thay Forge bằng MinIO/S3 nội bộ hoặc storage adapter có phân quyền |
-| Backup/rollback           | Có quy trình logical backup và rollback source                           | Thực hiện restore drill trên môi trường cô lập                     |
+| Thành phần                | Trạng thái trong source                                                    | Điều kiện trước khi mở production                                |
+| ------------------------- | -------------------------------------------------------------------------- | ---------------------------------------------------------------- |
+| AssetMaster, MySQL, Redis | Có Docker Compose, volume, healthcheck và restart policy                   | UAT trên Ubuntu staging với chính Docker Engine của doanh nghiệp |
+| Installer `/setup`        | Có wizard 3 bước, preflight MySQL, migration và Admin bootstrap Argon2id   | Tắt feature flag installer sau lần cài thành công                |
+| Đăng nhập LDAPS           | Có cấu hình Admin, TLS/CA, mapping nhóm và đồng bộ phân trang              | Dùng CA/bind secret thật; thử user trong/ngoài nhóm              |
+| Trạng thái MySQL/Redis    | Có panel Admin tự làm mới 30 giây ở **Cài đặt hệ thống**                   | Chỉ xuất hiện khi `SELF_HOSTED_AUTH_ENABLED=true`                |
+| Tệp đính kèm              | Có adapter thư mục chia sẻ, URL nội bộ có xác thực và panel kiểm tra quyền | Mount vùng RAID, lưu cấu hình và kiểm tra tạo/xóa tệp probe      |
+| Backup/rollback           | Có quy trình logical backup và rollback source                             | Thực hiện restore drill trên môi trường cô lập                   |
 
 ## 2. Kiến trúc mục tiêu và nguyên tắc bắt buộc
 
@@ -109,6 +109,7 @@ sudo install -d -m 0750 -o root -g 10001 /etc/assetmaster/secrets
 sudo install -d -m 0750 -o 10001 -g 10001 /srv/assetmaster/data/runtime
 sudo install -d -m 0750 -o 999 -g 999 \
   /srv/assetmaster/data/mysql /srv/assetmaster/data/redis
+sudo install -d -m 0750 -o 10001 -g 10001 /srv/assetmaster/files
 
 sudo sh -c 'openssl rand -base64 48 > /etc/assetmaster/secrets/mysql_root_password.txt'
 sudo sh -c 'openssl rand -base64 48 > /etc/assetmaster/secrets/mysql_app_password.txt'
@@ -119,7 +120,7 @@ sudo chown root:10001 /etc/assetmaster/secrets/*.txt
 sudo chmod 640 /etc/assetmaster/secrets/*.txt
 ```
 
-Trong `.env`, chỉ đặt thông số không nhạy cảm: `ASSETMASTER_BIND_IP=127.0.0.1`, `ASSETMASTER_PORT=3000`, `ASSETMASTER_DATA_DIR=/srv/assetmaster/data`, `ASSETMASTER_SECRETS_DIR=/etc/assetmaster/secrets`, database name/user và giới hạn memory. Không đặt password/token trong `.env`.
+Trong `.env`, chỉ đặt thông số không nhạy cảm: `ASSETMASTER_BIND_IP=127.0.0.1`, `ASSETMASTER_PORT=3000`, `ASSETMASTER_DATA_DIR=/srv/assetmaster/data`, `ASSETMASTER_FILES_DIR=/srv/assetmaster/files`, `ASSETMASTER_SECRETS_DIR=/etc/assetmaster/secrets`, database name/user và giới hạn memory. Không đặt password/token trong `.env`. Nếu dùng RAID khác, đổi duy nhất `ASSETMASTER_FILES_DIR` sang thư mục mount RAID đã được chuẩn bị quyền `10001:10001`.
 
 ### 5.2 Khởi động và kiểm tra
 
@@ -192,6 +193,16 @@ Kiểm tra bằng `sudo nginx -t && sudo systemctl reload nginx`. Giới hạn c
 
 Sau khi thành công, đổi `ASSETMASTER_SETUP_ENABLED=false` trong `.env` rồi `docker compose up -d --force-recreate app` hoặc đổi environment file + restart systemd. Lưu Setup Token trong password manager để audit và xoay token nếu từng lộ. Không dùng `/setup` để sửa cấu hình sau cài đặt.
 
+### 7.1 Cấu hình kho tệp dùng chung
+
+1. Trên host, tạo/mount thư mục RAID rồi đặt `ASSETMASTER_FILES_DIR` trong `.env`; không đặt đường dẫn host này vào giao diện web.
+2. Chạy `docker compose up -d --force-recreate app` sau khi đổi `.env`, rồi kiểm tra `docker compose ps`.
+3. Đăng nhập Admin bootstrap, mở **Cài đặt hệ thống → Kho tệp đính kèm** và nhập **thư mục con** như `attachments` hoặc `documents/2026`.
+4. Bấm **Lưu cấu hình**, sau đó **Kiểm tra thư mục**. Hệ thống chỉ tạo/xóa một file probe; trạng thái phải đạt trước khi upload chứng từ.
+5. Tải thử PDF hoặc ảnh đính kèm, mở lại qua ứng dụng và xác nhận tệp đang nằm trong thư mục RAID. Không công bố trực tiếp thư mục này bằng Nginx hoặc SMB không xác thực.
+
+> **Bảo vệ dữ liệu.** Khi container đã mount vùng `/data/files` nhưng Admin chưa lưu cấu hình tại bảng này, AssetMaster sẽ từ chối upload thay vì tự ghi vào thư mục mặc định. URL tệp nội bộ cần đăng nhập self-hosted và có `no-store`; nếu chứng từ có phân loại mật cao, cần bổ sung ACL theo từng tài sản/hợp đồng/hóa đơn trước khi mở rộng quyền cho toàn bộ nhân viên.
+
 ## 8. Cấu hình LDAPS, nhóm quyền và đồng bộ người dùng
 
 Đăng nhập bằng Admin bootstrap, mở **Cài đặt hệ thống → icon Directory LDAP/AD**. Panel Directory chỉ hiện khi mở icon và chỉ Admin có quyền thao tác. Thiết lập theo thứ tự: mount secret bind → nhập URL/CA/DN/attributes → **Kiểm tra bản nháp** → lưu nháp → **Kiểm tra LDAPS** → tìm nhóm → gán Admin/User → bật Directory.
@@ -243,7 +254,7 @@ Quy trình nâng cấp là: thông báo maintenance → dump database và backup
 | `app` chưa healthy                      | `docker compose ps`, `docker compose logs app`                       | Chờ MySQL/Redis healthy, kiểm tra secret file và quyền runtime volume                                             |
 | `/setup` không mở                       | `SELF_HOSTED_AUTH_ENABLED`, `SELF_HOSTED_SETUP_ENABLED`, Setup Token | Chỉ bật trong lần cài đầu; không bypass bằng sửa database thủ công                                                |
 | LDAPS lỗi TLS                           | CA, FQDN/SAN certificate, URL `ldaps://`                             | Mount CA đúng và kiểm tra test draft; không tắt xác minh certificate                                              |
-| Không upload/xem được file              | `server/storage.ts` còn Forge                                        | Không đưa vào production upload trước khi có storage adapter nội bộ                                               |
+| Không upload/xem được file              | `ASSETMASTER_FILES_DIR`, quyền `10001:10001`, panel Kho tệp đính kèm | Mount lại volume, lưu thư mục con, chạy kiểm tra tệp probe rồi tải thử từ ứng dụng                                |
 | Cần quay lui                            | Dump gần nhất, migration release                                     | Restore thử ở môi trường cô lập; không xóa thủ công table/volume                                                  |
 
 ## References

@@ -30,6 +30,7 @@ services:
       SELF_HOSTED_AUTH_ENABLED: "true"
       SELF_HOSTED_SETUP_ENABLED: "${ASSETMASTER_SETUP_ENABLED:-true}"
       SELF_HOSTED_RUNTIME_CONFIG_PATH: /data/assetmaster/runtime.json
+      SELF_HOSTED_FILE_STORAGE_ROOT: /data/files
       ASSETMASTER_DB_HOST: mysql
       ASSETMASTER_DB_PORT: "3306"
       ASSETMASTER_DB_NAME: ${ASSETMASTER_DB_NAME:-assetmaster}
@@ -42,6 +43,7 @@ services:
       REDIS_PASSWORD_FILE: /run/secrets/redis_password
     volumes:
       - assetmaster_runtime:/data/assetmaster
+      - assetmaster_files:/data/files
     secrets:
       - mysql_app_password
       - jwt_secret
@@ -151,6 +153,12 @@ volumes:
       type: none
       o: bind
       device: ${ASSETMASTER_DATA_DIR:-/srv/assetmaster/data}/runtime
+  assetmaster_files:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ${ASSETMASTER_FILES_DIR:-/srv/assetmaster/files}
   mysql_data:
     driver: local
     driver_opts:
