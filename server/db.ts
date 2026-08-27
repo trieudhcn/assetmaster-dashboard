@@ -513,8 +513,8 @@ export async function getSoftwareLicenseAssignmentById(id: number) {
   return (await db.select().from(softwareLicenseAssignments).where(eq(softwareLicenseAssignments.id, id)).limit(1))[0];
 }
 
-export async function listSoftwareLicenseKeys(softwareLicenseId: number) {
-  const db = await getDb();
+export async function listSoftwareLicenseKeys(softwareLicenseId: number, executor?: any): Promise<Array<typeof softwareLicenseKeys.$inferSelect>> {
+  const db = executor ?? await getDb();
   if (!db) return [];
   return db.select().from(softwareLicenseKeys).where(eq(softwareLicenseKeys.softwareLicenseId, softwareLicenseId)).orderBy(desc(softwareLicenseKeys.createdAt));
 }
@@ -538,8 +538,8 @@ export async function updateSoftwareLicenseKey(id: number, data: Partial<typeof 
   await db.update(softwareLicenseKeys).set(data).where(eq(softwareLicenseKeys.id, id));
 }
 
-export async function listSoftwareLicenseActivationAccounts(softwareLicenseId: number) {
-  const db = await getDb();
+export async function listSoftwareLicenseActivationAccounts(softwareLicenseId: number, executor?: any): Promise<Array<typeof softwareLicenseActivationAccounts.$inferSelect>> {
+  const db = executor ?? await getDb();
   if (!db) return [];
   return db.select().from(softwareLicenseActivationAccounts).where(eq(softwareLicenseActivationAccounts.softwareLicenseId, softwareLicenseId)).orderBy(desc(softwareLicenseActivationAccounts.createdAt));
 }
@@ -593,6 +593,12 @@ export async function revokeSoftwareLicenseAssignment(id: number, executor?: any
   const db = executor ?? await getDb();
   if (!db) throw new Error("Database unavailable");
   await db.update(softwareLicenseAssignments).set({ status: "revoked", revokedAt: new Date() }).where(eq(softwareLicenseAssignments.id, id));
+}
+
+export async function restoreSoftwareLicenseAssignment(id: number, executor?: any) {
+  const db = executor ?? await getDb();
+  if (!db) throw new Error("Database unavailable");
+  await db.update(softwareLicenseAssignments).set({ status: "active", revokedAt: null }).where(eq(softwareLicenseAssignments.id, id));
 }
 
 export async function listTechnologyServices() {

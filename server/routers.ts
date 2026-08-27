@@ -213,6 +213,7 @@ import {
   countInventorySuppliesByUnit,
   recordActivity,
   revokeSoftwareLicenseAssignment,
+  restoreSoftwareLicenseAssignment,
   runAssetImportTransaction,
   runInventoryTransaction,
   runSoftwareLicenseTransaction,
@@ -1163,6 +1164,42 @@ export const appRouter = router({
       await revokeSoftwareLicenseAssignment(input.id);
       if (assignment.status === "active" && assignment.softwareLicenseKeyId) await updateSoftwareLicenseKey(assignment.softwareLicenseKeyId, { status: "available" });
       await recordActivity({ entityType: "softwareLicenseAssignment", entityId: input.id, action: "revoked", actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: "Thu hồi cấp phát bản quyền" });
+      return { success: true };
+    }),
+    restoreAssignment: adminProcedure.input(z.object({ id: z.number().int().positive() })).mutation(async ({ input, ctx }) => {
+      await runSoftwareLicenseTransaction(async (transaction) => {
+        const [licenses, assignments] = await Promise.all([
+          listSoftwareLicenses(transaction),
+          listSoftwareLicenseAssignments(undefined, transaction),
+        ]);
+        const assignment = assignments.find((item) => item.id === input.id);
+        if (!assignment) throw new TRPCError({ code: "NOT_FOUND", message: "Không tìm thấy cấp phát Bản quyền." });
+        if (assignment.status !== "revoked") throw new TRPCError({ code: "BAD_REQUEST", message: "Chỉ có thể hoàn tác cấp phát vừa thu hồi." });
+        const license = licenses.find((item) => item.id === assignment.softwareLicenseId);
+        if (!license || license.status === "retired") throw new TRPCError({ code: "BAD_REQUEST", message: "Bản quyền không còn khả dụng để hoàn tác." });
+        if (assignment.assetId) {
+          const duplicate = findActiveDeviceLicenseDuplicate({ assetId: assignment.assetId, candidateLicense: license, assignments, licenses });
+          if (duplicate) throw new TRPCError({ code: "CONFLICT", message: "Thiết bị đã có License cùng loại; không thể hoàn tác cấp phát này." });
+        }
+        const activeAssignments = assignments.filter((item) => item.status === "active" && item.softwareLicenseId === license.id);
+        const activationMode = license.activationMode ?? "seat";
+        if (activationMode === "seat") {
+          if (activeAssignments.length >= license.purchasedQuantity) throw new TRPCError({ code: "CONFLICT", message: "Bản quyền đã được cấp hết; không thể hoàn tác." });
+        } else if (activationMode === "product_key") {
+          if (!assignment.softwareLicenseKeyId) throw new TRPCError({ code: "BAD_REQUEST", message: "Không tìm thấy key của cấp phát cần hoàn tác." });
+          const key = (await listSoftwareLicenseKeys(license.id, transaction)).find((item) => item.id === assignment.softwareLicenseKeyId);
+          if (!key || key.status !== "available") throw new TRPCError({ code: "CONFLICT", message: "Key này không còn khả dụng để hoàn tác." });
+          await updateSoftwareLicenseKey(key.id, { status: "assigned" }, transaction);
+        } else {
+          if (!assignment.softwareLicenseActivationAccountId) throw new TRPCError({ code: "BAD_REQUEST", message: "Không tìm thấy tài khoản chủ của cấp phát cần hoàn tác." });
+          const account = (await listSoftwareLicenseActivationAccounts(license.id, transaction)).find((item) => item.id === assignment.softwareLicenseActivationAccountId);
+          if (!account || account.status !== "active") throw new TRPCError({ code: "CONFLICT", message: "Tài khoản chủ không còn khả dụng để hoàn tác." });
+          const activeSlots = activeAssignments.filter((item) => item.softwareLicenseActivationAccountId === account.id).length;
+          if (activeSlots >= account.maxUsers) throw new TRPCError({ code: "CONFLICT", message: "Tài khoản chủ đã dùng hết chỗ; không thể hoàn tác." });
+        }
+        await restoreSoftwareLicenseAssignment(assignment.id, transaction);
+        await recordActivity({ entityType: "softwareLicenseAssignment", entityId: assignment.id, action: "restored", actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: `Hoàn tác thu hồi ${license.productName}` }, transaction);
+      });
       return { success: true };
     }),
   }),

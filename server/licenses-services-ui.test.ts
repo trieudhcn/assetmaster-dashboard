@@ -76,7 +76,7 @@ describe("Bản quyền & Dịch vụ", () => {
     expect(view).toContain('from "@/components/SearchableSelect"');
     expect(view).toContain("function StandardDropdown");
     expect(view).toContain("<StandardDropdown");
-    expect((view.match(/<StandardDropdown/g) || []).length).toBe(23);
+    expect((view.match(/<StandardDropdown/g) || []).length).toBe(24);
     expect(view).toContain("Mô hình kích hoạt");
     expect(view).toContain("Key riêng cho từng người");
     expect(view).toContain("Tài khoản email dùng chung");
@@ -150,7 +150,7 @@ describe("Bản quyền & Dịch vụ", () => {
     expect(view).toContain('"Đã hết chỗ"');
     expect(view).toContain("assignmentUnavailable");
     expect(view).toContain("tab === \"licenses\" ?");
-    expect(view.indexOf("data-license-available-badge")).toBeLessThan(view.indexOf("filteredServices.map"));
+    expect(view.indexOf("data-license-available-badge")).toBeGreaterThan(view.indexOf("pagedLicenses.map"));
     expect(view).toContain("assignmentRecipientLabel");
     expect(view).toContain("deviceName: nullable(assignmentForm.deviceName)");
     expect(view).toContain("Chưa gán nhân sự hoặc thiết bị");

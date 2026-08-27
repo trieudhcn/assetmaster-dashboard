@@ -244,6 +244,18 @@
 - [x] Thêm icon thu hồi cho License đang cấp trong lịch sử License theo nhân viên.
 - [x] Mở xác nhận trước khi thu hồi License từ lịch sử nhân viên và làm mới dữ liệu sau thao tác.
 - [x] Kiểm thử thao tác thu hồi License theo nhân viên trên desktop/mobile.
+- [x] Thêm bộ lọc Đang cấp phát/Đã thu hồi cho lịch sử License theo nhân viên.
+- [x] Thêm API hoàn tác an toàn cho một cấp phát License vừa thu hồi.
+- [x] Hiển thị toast Hoàn tác trong 5 giây sau khi thu hồi License.
+- [x] Kiểm thử bộ lọc trạng thái, hoàn tác, quyền và responsive lịch sử License.
+- [x] Thêm biểu tượng sao chép và toast phản hồi cho trường Tên công ty trong Cài đặt hệ thống.
+- [x] Kiểm thử thao tác sao chép Tên công ty trên desktop/mobile.
+- [x] Thêm phân trang 5 dòng mỗi trang cho danh sách Bản quyền.
+- [x] Thêm phân trang 5 dòng mỗi trang cho danh sách Dịch vụ.
+- [x] Giữ bộ lọc, tìm kiếm và sắp xếp hoạt động trên toàn bộ dữ liệu trước phân trang.
+- [x] Kiểm thử phân trang Bản quyền/Dịch vụ trên desktop/mobile.
+- [x] Cho phép nhấp đúp để chỉnh sửa và lưu nhãn Hạ tầng số theo cơ chế tiêu đề chung.
+- [x] Kiểm thử chỉnh sửa nhãn Hạ tầng số trên desktop/mobile.
 
 ## Current Session — Bản quyền & Dịch vụ
 
