@@ -2,7 +2,9 @@
 
 ## 1. Phạm vi và quyết định kiến trúc
 
-AssetMaster sẽ vận hành hoàn toàn trong mạng LAN/VPN của công ty trên máy chủ Linux hiện có. **Active Directory/LDAP là nguồn duy nhất xác thực mật khẩu**. Microsoft Entra ID, Google và Manus OAuth sẽ không được sử dụng cho môi trường mới.
+AssetMaster sẽ vận hành hoàn toàn trong mạng LAN/VPN của công ty trên máy chủ Linux hiện có. **Active Directory/LDAP là nguồn duy nhất xác thực mật khẩu** sau khi được bật. Microsoft Entra ID, Google và Manus OAuth sẽ không được sử dụng cho môi trường mới.
+
+Lần triển khai đầu tiên được thiết kế theo hướng trình cài đặt của Snipe-IT: bản phát hành self-hosted có cấu hình nền tảng tối thiểu, rồi đưa người cài đến wizard `/setup` để kiểm tra môi trường, đặt tên hệ thống, khởi tạo MySQL schema và tạo tài khoản quản trị ban đầu. Snipe-IT cũng tách cấu hình môi trường như database, URL, ngôn ngữ và storage khỏi mã nguồn; AssetMaster sẽ giữ nguyên nguyên tắc tách cấu hình/secret này nhưng có thêm khóa installer một lần.[7]
 
 Ứng dụng không được nhận, ghi log, mã hóa hay lưu mật khẩu của nhân viên. Thay vào đó, người dùng đăng nhập vào **Keycloak nội bộ**; Keycloak kiểm tra thông tin đó với AD/LDAP qua **LDAPS**. AssetMaster chỉ nhận mã ủy quyền, token đã ký và các thuộc tính danh tính. Keycloak hỗ trợ kết nối LDAP/Active Directory, tạo phiên SSO và phát hành OpenID Connect (OIDC); nhờ cơ chế chuyển hướng, mật khẩu không đi qua AssetMaster.[1] [2]
 
@@ -132,7 +134,7 @@ Tài khoản triển khai riêng, Docker Engine/Compose plugin, cập nhật b�
 
 ### 6.2 Compose tham chiếu
 
-Đây là cấu trúc tham chiếu, **chưa được chạy trên production** vì AssetMaster hiện còn phải được migration khỏi xác thực và file storage của nền tảng cũ.
+Đây là cấu trúc tham chiếu, **chưa được chạy trên production** vì AssetMaster hiện còn phải được migration khỏi xác thực và file storage của nền tảng cũ. Bản release tự triển khai sẽ bao gồm `install.sh`, `.env.example`, image application đã build và wizard `/setup`; không yêu cầu người dùng đặt từng table SQL thủ công.
 
 ```yaml
 services:
@@ -182,9 +184,15 @@ networks:
 
 Trong cấu hình Nginx, `/` được proxy đến AssetMaster, còn `/sso/` được proxy đến Keycloak. Nginx phải chuyển `Host`, `X-Forwarded-Proto`, `X-Forwarded-For` và `X-Real-IP`, giới hạn tải lên theo quy định công ty và đặt header chống cache cho response nhạy cảm. HTTPS chỉ dùng TLS 1.3, hoặc TLS 1.2 khi cần tương thích; TLS 1.0/1.1 bị tắt.[6]
 
+### 6.3 Trình cài đặt lần đầu
+
+Sau khi người vận hành giải nén release vào `/opt/assetmaster` và chạy **một lệnh bootstrap trên server** để sinh secret/đưa Docker Compose lên, truy cập đầu tiên sẽ đi thẳng đến `/setup`, không vào trang đăng nhập. Wizard thu thập tên website, URL nội bộ, timezone, tên database, tài khoản quản trị break-glass và mật khẩu mạnh. Nó kiểm tra điều kiện trước, kiểm tra kết nối MySQL, chạy migration theo version, tạo các bảng và dữ liệu nền tảng trong transaction/bước có thể retry, rồi ghi cờ `installationComplete`.
+
+Không nhập MySQL root password, bind password LDAP hay private key chứng chỉ trong browser wizard. `install.sh` tạo Docker secret một lần để khởi tạo MySQL và một database user quyền tối thiểu; wizard chỉ nhận database name đã validate và dùng user ứng dụng đó để tạo table. Sau khi hoàn tất, `/setup` trả `404` cho mọi request, setup token bị vô hiệu hóa, container bootstrap có đặc quyền dừng, và chỉ còn ứng dụng chạy với database user hạn chế. Chi tiết quy trình có tại [Thiết kế installer lần đầu](./self-hosted-first-run-installer.md).
+
 ## 7. Cấu hình Keycloak LDAP-only
 
-1. Khởi tạo Keycloak admin bằng một tài khoản break-glass riêng; console chỉ mở từ localhost hoặc subnet quản trị.
+1. Sau khi wizard AssetMaster đã hoàn thành, khởi tạo Keycloak admin bằng một tài khoản break-glass riêng; console chỉ mở từ localhost hoặc subnet quản trị.
 2. Tạo realm `assetmaster`; Require SSL = `All requests`; tắt public registration, reset password và identity provider bên ngoài.
 3. Tạo client confidential `assetmaster-web`; redirect URI duy nhất là `https://assetmaster.noibo.company.vn/auth/callback`; bật Authorization Code và bắt buộc PKCE S256; tắt Direct Access Grants.
 4. Trong User Federation, tạo LDAP provider với URL LDAPS, CA chain, Base DN, Users DN, Bind DN và mật khẩu service account. Test connection và test authentication phải đạt trước khi tiếp tục.
@@ -198,14 +206,14 @@ Trong cấu hình Nginx, `/` được proxy đến AssetMaster, còn `/sso/` đ�
 | Phần hiện tại | Thay đổi khi self-hosted | Điều kiện nghiệm thu |
 |---|---|---|
 | `server/_core/context.ts` và SDK xác thực | Adapter session nội bộ đọc opaque cookie, tải user local và áp dụng `protectedProcedure`/`adminProcedure` | Không gọi Manus SDK ở runtime |
-| Client login/logout | Nút login mở `/auth/login`; callback OIDC xử lý ở backend; logout xóa session local rồi logout Keycloak | Không còn portal OAuth cũ |
+| Client login/logout | Trước LDAPS: chỉ local break-glass Admin được phép đăng nhập để hoàn tất cấu hình. Sau LDAPS: nút login mở `/auth/login`; callback OIDC xử lý ở backend; logout xóa session local rồi logout Keycloak | Không còn portal OAuth cũ; không bị khóa ngoài trong lúc cấu hình LDAP |
 | User schema | Thêm `directoryObjectId`, `directoryUsername`, `identityProvider`; map một lần bằng email/mã nhân viên đã đối soát | Email đổi không tạo user mới |
 | Phân quyền | Lấy `assetmaster.*` roles từ token Keycloak và map sang role nội bộ | Quyền admin không suy diễn từ tên/email |
 | `server/storage.ts` | Adapter MinIO S3-compatible; private bucket; URL tải ngắn hạn sau kiểm tra quyền | Không có link `/manus-storage/` ở dữ liệu mới |
 | Tệp hiện hữu | Manifest tải/copy từ storage cũ sang MinIO; thay URL bằng `fileKey` nội bộ | Đối chiếu count và checksum |
 | Secrets | `DATABASE_URL`, OIDC issuer/client secret, MinIO credentials, session secret trong Docker secrets/.env `0600` | Không có secret ở client/Git |
 
-Lớp xác thực mới nên dùng library OIDC phía server, không viết thủ công JWT parser. Session ID phải ngẫu nhiên, lưu hash trong MySQL, có TTL tối đa 8 giờ, cookie `HttpOnly; Secure; SameSite=Lax; Path=/`, xoay session sau đăng nhập và xóa khi logout. Không trả email “không tồn tại” hoặc “sai mật khẩu” riêng lẻ; trả thông báo chung để giảm lộ thông tin tài khoản.
+Lớp xác thực mới nên dùng library OIDC phía server, không viết thủ công JWT parser. Session ID phải ngẫu nhiên, lưu hash trong MySQL, có TTL tối đa 8 giờ, cookie `HttpOnly; Secure; SameSite=Lax; Path=/`, xoay session sau đăng nhập và xóa khi logout. Tài khoản quản trị tạo lúc installer là **break-glass account**: local-only, không dùng cho nhân viên thường ngày, phải đổi mật khẩu ở lần đăng nhập đầu và chỉ vô hiệu hóa sau khi có ít nhất hai Admin LDAP hoạt động đã được UAT. Không trả email “không tồn tại” hoặc “sai mật khẩu” riêng lẻ; trả thông báo chung để giảm lộ thông tin tài khoản.
 
 ## 9. Migration dữ liệu và tệp
 
@@ -266,7 +274,7 @@ Giữ môi trường hiện tại chỉ đọc trong thời gian song song đã 
 3. Địa chỉ LDAPS/FQDN Domain Controller, CA chain, Base DN, Users DN, username attribute và stable ID attribute.
 4. Tài khoản service read-only, nhóm LDAP User/Admin, chính sách tài khoản disabled và quy tắc nhân sự ngoài OU.
 5. Thời gian session mong muốn, giới hạn upload, thời gian RPO/RTO và danh sách người tham gia UAT.
-6. Xác nhận dùng **Keycloak + LDAP/LDAPS-only** như cổng đăng nhập nội bộ, thay vì để AssetMaster nhận mật khẩu trực tiếp.
+6. Xác nhận dùng **Keycloak + LDAP/LDAPS-only** như cổng đăng nhập nội bộ sau khi staging installer và local break-glass Admin đã hoạt động; AssetMaster không nhận mật khẩu nhân viên trực tiếp.
 
 Sau khi nhận đủ sáu nhóm thông tin này, bước tiếp theo là tạo nhánh migration/staging riêng, cấu hình secrets an toàn, xây adapter session OIDC, adapter MinIO, schema identity mapping, script nhập file và bộ test trước khi chạm môi trường production.
 
@@ -283,3 +291,5 @@ Sau khi nhận đủ sáu nhóm thông tin này, bước tiếp theo là tạo n
 [5] [OWASP — LDAP Injection Prevention Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/LDAP_Injection_Prevention_Cheat_Sheet.html)
 
 [6] [OWASP — Transport Layer Security Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Transport_Layer_Security_Cheat_Sheet.html)
+
+[7] [Snipe-IT Documentation — Environment Configuration](https://snipe-it.readme.io/docs/configuration)

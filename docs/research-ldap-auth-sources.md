@@ -8,6 +8,7 @@
 - Keycloak khuyến nghị Authorization Code flow cho ứng dụng web. Direct Grant/Resource Owner Password Credentials làm ứng dụng tiếp xúc credential và không nên dùng.[4]
 - Khi xây dựng LDAP search, mọi biến đầu vào phải được escape đúng theo filter/DN encoding; đồng thời cần allow-list và tài khoản bind tối thiểu quyền.[5]
 - TLS nên có trên mọi trang; cookie phiên phải đặt `Secure`. TLS 1.3 là mặc định khuyến nghị, TLS 1.2 được giữ khi cần tương thích; TLS 1.0/1.1 phải tắt.[6]
+- Snipe-IT minh họa cách tách cấu hình môi trường, database, storage, session và backup ra khỏi mã nguồn. Thiết kế installer AssetMaster kế thừa nguyên tắc tách cấu hình này, nhưng không sao chép nguyên xi cơ chế của Snipe-IT.[7]
 
 ## Sources
 
@@ -22,3 +23,5 @@
 [5] [OWASP — LDAP Injection Prevention Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/LDAP_Injection_Prevention_Cheat_Sheet.html)
 
 [6] [OWASP — Transport Layer Security Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Transport_Layer_Security_Cheat_Sheet.html)
+
+[7] [Snipe-IT Documentation — Environment Configuration](https://snipe-it.readme.io/docs/configuration)

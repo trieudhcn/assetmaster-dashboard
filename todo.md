@@ -267,6 +267,8 @@
 - [ ] Thu thập thông tin hạ tầng bắt buộc trước khi bắt đầu triển khai self-hosted.
 - [x] Thiết kế khu vực Cài đặt hệ thống để Admin quản trị cấu hình LDAP/LDAPS theo cơ chế bảo mật và phân quyền.
 - [x] Cập nhật runbook backup MySQL, MinIO và cấu hình ra ổ cứng máy chủ cùng quy trình khôi phục đã kiểm thử.
+- [x] Thiết kế trình cài đặt lần đầu có kiểm tra môi trường, tạo schema và khóa installer sau khi khởi tạo.
+- [x] Cập nhật runbook để cấu hình LDAPS là bước sau cài đặt, không cản trở vận hành ban đầu.
 
 ## Current Session — Bản quyền & Dịch vụ
 
