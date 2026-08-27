@@ -228,6 +228,10 @@
 - [x] Kiểm thử tương tác và responsive cho dropdown Bản quyền đã chuẩn hóa.
 - [x] Hiển thị ô License đang cấp theo thiết bị trong chi tiết tài sản khi có cấp phát hoạt động.
 - [x] Kiểm thử chi tiết tài sản với và không có License theo thiết bị trên desktop/mobile.
+- [x] Đổi trực tiếp trường nhập key License thành input văn bản trong component gốc.
+- [x] Hiển thị thời gian cấp phát cho từng License theo thiết bị trong chi tiết tài sản.
+- [x] Mở nhanh popup chi tiết License khi bấm tên License trong chi tiết tài sản.
+- [x] Kiểm thử trường key và thao tác License theo thiết bị trên desktop/mobile.
 
 ## Current Session — Bản quyền & Dịch vụ
 

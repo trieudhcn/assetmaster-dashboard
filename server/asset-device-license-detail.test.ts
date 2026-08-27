@@ -14,5 +14,8 @@ describe("License theo thiết bị trong chi tiết tài sản", () => {
     expect(home).toContain("if (!activeAssignments.length) return;");
     expect(home).toContain('label.textContent = "License đang cấp cho thiết bị"');
     expect(home).toContain("data-asset-device-license-detail");
+    expect(home).toContain('assignedAt.textContent = `Cấp: ${dateFormatter.format(new Date(assignment.assignedAt))}`');
+    expect(home).toContain("item.dataset.assetDeviceLicenseLink");
+    expect(home).toContain("openLicenseDetail(assignment)");
   });
 });

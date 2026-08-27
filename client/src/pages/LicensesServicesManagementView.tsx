@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useLayoutEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import { toast } from "sonner";
 import { Building2, CalendarDays, CheckCircle2, Copy, Globe2, KeyRound, Laptop, Network, Paperclip, Plus, RotateCcw, Search, ShieldCheck, UserRound, X } from "lucide-react";
@@ -483,6 +483,10 @@ function LicenseCredentialPortal({ isOpen, license, keys, accounts, assignments,
     const frame = window.requestAnimationFrame(() => setTarget(document.querySelector<HTMLFormElement>('[data-licenses-services-dialog="license"] form')));
     return () => window.cancelAnimationFrame(frame);
   }, [isOpen, license?.id]);
+  useLayoutEffect(() => {
+    const pendingKeyInput = target?.querySelector<HTMLInputElement>('input[placeholder="Nhập một key kích hoạt"]');
+    if (pendingKeyInput) pendingKeyInput.type = "text";
+  }, [target, pendingKey]);
   if (!target || !license) return null;
   const licenseAssignments = assignments.filter((assignment) => assignment.softwareLicenseId === license.id && assignment.status === "active");
   const licenseAssignmentHistory = assignments.filter((assignment) => assignment.softwareLicenseId === license.id).sort((left, right) => new Date(right.revokedAt || right.assignedAt).getTime() - new Date(left.revokedAt || left.assignedAt).getTime());
