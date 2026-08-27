@@ -16,7 +16,7 @@ describe("branch settings", () => {
     const supplyPreview = readProjectFile("client/src/components/SupplyIssueSlipManager.tsx");
     const supplyPdf = readProjectFile("client/src/lib/supplyIssueSlipPdf.ts");
 
-    expect(schema).toContain('mysqlTable("branches"');
+    expect(schema).toMatch(/mysqlTable\(\s*"branches"/);
     expect(schema).toContain('branchId: int("branchId")');
     expect(database).toContain("getBranchUsageCounts");
     expect(database).toContain("deleteBranch");

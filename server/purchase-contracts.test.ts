@@ -192,8 +192,8 @@ describe("purchase contract management", () => {
     expect(schema).toContain(
       'purchaseInvoiceLineId: int("purchaseInvoiceLineId")'
     );
-    expect(schema).toContain(
-      'purchaseContractId: int("purchaseContractId").references(() => purchaseContracts.id, { onDelete: "set null"'
+    expect(schema).toMatch(
+      /purchaseContractId:\s*int\("purchaseContractId"\)\.references\(\s*\(\)\s*=>\s*purchaseContracts\.id,\s*\{\s*onDelete:\s*"set null"/
     );
     expect(schema).toContain(
       'uniqueIndex("purchase_invoice_lines_invoice_number_unique")'

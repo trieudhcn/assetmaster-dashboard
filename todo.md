@@ -3747,3 +3747,11 @@
 - [x] Hiển thị tiến trình/kết quả kiểm tra TLS, bind và Users DN mà không lộ secret.
 - [x] Cập nhật hướng dẫn kiểm tra LDAPS trong runbook hợp nhất.
 - [x] Bổ sung hồi quy, TypeScript, build và xác minh giao diện trước phát hành.
+
+## Current Session — Quản trị sao lưu và phục hồi self-hosted
+
+- [x] Đánh giá phương án sao lưu/phục hồi phù hợp với Docker, quyền host và dữ liệu AssetMaster.
+- [x] Xác nhận phương án B: dashboard giám sát/hướng dẫn, đội hạ tầng thực thi backup/restore trên host.
+- [x] Thêm bảng điều khiển sao lưu/phục hồi, lịch sử thao tác và xác nhận rủi ro cho Admin.
+- [x] Bổ sung metadata backup/restore drill và API Admin, không thực thi lệnh host từ web.
+- [x] Cập nhật runbook hợp nhất cùng hồi quy, build và xác minh luồng quản trị.

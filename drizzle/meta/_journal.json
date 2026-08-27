@@ -414,6 +414,13 @@
       "when": 1787802961658,
       "tag": "0058_sharp_starjammers",
       "breakpoints": true
+    },
+    {
+      "idx": 59,
+      "version": "5",
+      "when": 1787809149949,
+      "tag": "0059_broad_pyro",
+      "breakpoints": true
     }
   ]
 }

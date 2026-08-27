@@ -1,94 +1,192 @@
-import { boolean, decimal, index, int, json, mysqlEnum, mysqlTable, text, timestamp, uniqueIndex, varchar } from "drizzle-orm/mysql-core";
+import {
+  boolean,
+  decimal,
+  index,
+  int,
+  json,
+  mysqlEnum,
+  mysqlTable,
+  text,
+  timestamp,
+  uniqueIndex,
+  varchar,
+} from "drizzle-orm/mysql-core";
 
-export const branches = mysqlTable("branches", {
-  id: int("id").autoincrement().primaryKey(),
-  code: varchar("code", { length: 40 }).notNull().unique(),
-  name: varchar("name", { length: 160 }).notNull().unique(),
-  address: text("address"),
-  phone: varchar("phone", { length: 32 }),
-  email: varchar("email", { length: 320 }),
-  isActive: boolean("isActive").default(true).notNull(),
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
-  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
-}, (table) => [index("branches_active_idx").on(table.isActive)]);
+export const branches = mysqlTable(
+  "branches",
+  {
+    id: int("id").autoincrement().primaryKey(),
+    code: varchar("code", { length: 40 }).notNull().unique(),
+    name: varchar("name", { length: 160 }).notNull().unique(),
+    address: text("address"),
+    phone: varchar("phone", { length: 32 }),
+    email: varchar("email", { length: 320 }),
+    isActive: boolean("isActive").default(true).notNull(),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+    updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  },
+  table => [index("branches_active_idx").on(table.isActive)]
+);
 
-export const users = mysqlTable("users", {
-  id: int("id").autoincrement().primaryKey(),
-  openId: varchar("openId", { length: 64 }).notNull().unique(),
-  name: text("name"),
-  email: varchar("email", { length: 320 }),
-  employeeCode: varchar("employeeCode", { length: 64 }).unique(),
-  jobTitle: varchar("jobTitle", { length: 160 }),
-  loginMethod: varchar("loginMethod", { length: 64 }),
-  authSource: mysqlEnum("authSource", ["manus", "bootstrap_local", "ldap"]).default("manus").notNull(),
-  passwordHash: varchar("passwordHash", { length: 512 }),
-  mustChangePassword: boolean("mustChangePassword").default(false).notNull(),
-  directoryObjectId: varchar("directoryObjectId", { length: 192 }).unique(),
-  directoryUsername: varchar("directoryUsername", { length: 320 }),
-  lastDirectorySyncAt: timestamp("lastDirectorySyncAt"),
-  role: mysqlEnum("role", ["user", "admin"]).default("user").notNull(),
-  branchId: int("branchId").references(() => branches.id, { onDelete: "set null", onUpdate: "cascade" }),
-  departmentId: int("departmentId"),
-  divisionId: int("divisionId").references(() => divisions.id, { onDelete: "set null", onUpdate: "cascade" }),
-  isActive: boolean("isActive").default(true).notNull(),
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
-  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
-  lastSignedIn: timestamp("lastSignedIn").defaultNow().notNull(),
-}, (table) => [index("users_branch_idx").on(table.branchId), index("users_division_idx").on(table.divisionId), index("users_auth_source_idx").on(table.authSource), index("users_directory_username_idx").on(table.directoryUsername)]);
+export const users = mysqlTable(
+  "users",
+  {
+    id: int("id").autoincrement().primaryKey(),
+    openId: varchar("openId", { length: 64 }).notNull().unique(),
+    name: text("name"),
+    email: varchar("email", { length: 320 }),
+    employeeCode: varchar("employeeCode", { length: 64 }).unique(),
+    jobTitle: varchar("jobTitle", { length: 160 }),
+    loginMethod: varchar("loginMethod", { length: 64 }),
+    authSource: mysqlEnum("authSource", ["manus", "bootstrap_local", "ldap"])
+      .default("manus")
+      .notNull(),
+    passwordHash: varchar("passwordHash", { length: 512 }),
+    mustChangePassword: boolean("mustChangePassword").default(false).notNull(),
+    directoryObjectId: varchar("directoryObjectId", { length: 192 }).unique(),
+    directoryUsername: varchar("directoryUsername", { length: 320 }),
+    lastDirectorySyncAt: timestamp("lastDirectorySyncAt"),
+    role: mysqlEnum("role", ["user", "admin"]).default("user").notNull(),
+    branchId: int("branchId").references(() => branches.id, {
+      onDelete: "set null",
+      onUpdate: "cascade",
+    }),
+    departmentId: int("departmentId"),
+    divisionId: int("divisionId").references(() => divisions.id, {
+      onDelete: "set null",
+      onUpdate: "cascade",
+    }),
+    isActive: boolean("isActive").default(true).notNull(),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+    updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+    lastSignedIn: timestamp("lastSignedIn").defaultNow().notNull(),
+  },
+  table => [
+    index("users_branch_idx").on(table.branchId),
+    index("users_division_idx").on(table.divisionId),
+    index("users_auth_source_idx").on(table.authSource),
+    index("users_directory_username_idx").on(table.directoryUsername),
+  ]
+);
 
-export const directorySettings = mysqlTable("directorySettings", {
-  id: int("id").primaryKey(),
-  version: int("version").default(1).notNull(),
-  status: mysqlEnum("status", ["draft", "active", "disabled"]).default("draft").notNull(),
-  ldapUrl: varchar("ldapUrl", { length: 320 }).notNull(),
-  usersDn: text("usersDn").notNull(),
-  groupsDn: text("groupsDn"),
-  bindDn: text("bindDn"),
-  bindSecretRef: varchar("bindSecretRef", { length: 255 }),
-  loginAttribute: varchar("loginAttribute", { length: 64 }).default("mail").notNull(),
-  emailAttribute: varchar("emailAttribute", { length: 64 }).default("mail").notNull(),
-  displayNameAttribute: varchar("displayNameAttribute", { length: 64 }).default("displayName").notNull(),
-  directoryIdAttribute: varchar("directoryIdAttribute", { length: 64 }).default("objectGUID").notNull(),
-  departmentAttribute: varchar("departmentAttribute", { length: 64 }).default("department").notNull(),
-  jobTitleAttribute: varchar("jobTitleAttribute", { length: 64 }).default("title").notNull(),
-  adminGroupDn: text("adminGroupDn"),
-  userGroupDn: text("userGroupDn"),
-  allowNestedGroups: boolean("allowNestedGroups").default(false).notNull(),
-  caCertificatePem: text("caCertificatePem"),
-  bindSecretConfigured: boolean("bindSecretConfigured").default(false).notNull(),
-  lastTestStatus: mysqlEnum("lastTestStatus", ["not_tested", "success", "failed"]).default("not_tested").notNull(),
-  lastTestMessage: varchar("lastTestMessage", { length: 300 }),
-  lastTestedAt: timestamp("lastTestedAt"),
-  createdByUserId: int("createdByUserId").references(() => users.id, { onDelete: "set null", onUpdate: "cascade" }),
-  updatedByUserId: int("updatedByUserId").references(() => users.id, { onDelete: "set null", onUpdate: "cascade" }),
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
-  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
-}, (table) => [index("directory_settings_status_idx").on(table.status)]);
+export const directorySettings = mysqlTable(
+  "directorySettings",
+  {
+    id: int("id").primaryKey(),
+    version: int("version").default(1).notNull(),
+    status: mysqlEnum("status", ["draft", "active", "disabled"])
+      .default("draft")
+      .notNull(),
+    ldapUrl: varchar("ldapUrl", { length: 320 }).notNull(),
+    usersDn: text("usersDn").notNull(),
+    groupsDn: text("groupsDn"),
+    bindDn: text("bindDn"),
+    bindSecretRef: varchar("bindSecretRef", { length: 255 }),
+    loginAttribute: varchar("loginAttribute", { length: 64 })
+      .default("mail")
+      .notNull(),
+    emailAttribute: varchar("emailAttribute", { length: 64 })
+      .default("mail")
+      .notNull(),
+    displayNameAttribute: varchar("displayNameAttribute", { length: 64 })
+      .default("displayName")
+      .notNull(),
+    directoryIdAttribute: varchar("directoryIdAttribute", { length: 64 })
+      .default("objectGUID")
+      .notNull(),
+    departmentAttribute: varchar("departmentAttribute", { length: 64 })
+      .default("department")
+      .notNull(),
+    jobTitleAttribute: varchar("jobTitleAttribute", { length: 64 })
+      .default("title")
+      .notNull(),
+    adminGroupDn: text("adminGroupDn"),
+    userGroupDn: text("userGroupDn"),
+    allowNestedGroups: boolean("allowNestedGroups").default(false).notNull(),
+    caCertificatePem: text("caCertificatePem"),
+    bindSecretConfigured: boolean("bindSecretConfigured")
+      .default(false)
+      .notNull(),
+    lastTestStatus: mysqlEnum("lastTestStatus", [
+      "not_tested",
+      "success",
+      "failed",
+    ])
+      .default("not_tested")
+      .notNull(),
+    lastTestMessage: varchar("lastTestMessage", { length: 300 }),
+    lastTestedAt: timestamp("lastTestedAt"),
+    createdByUserId: int("createdByUserId").references(() => users.id, {
+      onDelete: "set null",
+      onUpdate: "cascade",
+    }),
+    updatedByUserId: int("updatedByUserId").references(() => users.id, {
+      onDelete: "set null",
+      onUpdate: "cascade",
+    }),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+    updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  },
+  table => [index("directory_settings_status_idx").on(table.status)]
+);
 
-export const directorySettingAudits = mysqlTable("directorySettingAudits", {
-  id: int("id").autoincrement().primaryKey(),
-  directorySettingsId: int("directorySettingsId").notNull().references(() => directorySettings.id, { onDelete: "cascade", onUpdate: "cascade" }),
-  version: int("version").notNull(),
-  action: mysqlEnum("action", ["saved", "activated", "disabled", "tested"]).notNull(),
-  summary: varchar("summary", { length: 300 }).notNull(),
-  snapshot: json("snapshot").notNull(),
-  actorUserId: int("actorUserId").references(() => users.id, { onDelete: "set null", onUpdate: "cascade" }),
-  actorName: varchar("actorName", { length: 160 }),
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
-}, (table) => [index("directory_setting_audits_setting_created_idx").on(table.directorySettingsId, table.createdAt)]);
+export const directorySettingAudits = mysqlTable(
+  "directorySettingAudits",
+  {
+    id: int("id").autoincrement().primaryKey(),
+    directorySettingsId: int("directorySettingsId")
+      .notNull()
+      .references(() => directorySettings.id, {
+        onDelete: "cascade",
+        onUpdate: "cascade",
+      }),
+    version: int("version").notNull(),
+    action: mysqlEnum("action", [
+      "saved",
+      "activated",
+      "disabled",
+      "tested",
+    ]).notNull(),
+    summary: varchar("summary", { length: 300 }).notNull(),
+    snapshot: json("snapshot").notNull(),
+    actorUserId: int("actorUserId").references(() => users.id, {
+      onDelete: "set null",
+      onUpdate: "cascade",
+    }),
+    actorName: varchar("actorName", { length: 160 }),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+  },
+  table => [
+    index("directory_setting_audits_setting_created_idx").on(
+      table.directorySettingsId,
+      table.createdAt
+    ),
+  ]
+);
 
-export const selfHostedSessions = mysqlTable("selfHostedSessions", {
-  id: int("id").autoincrement().primaryKey(),
-  userId: int("userId").notNull().references(() => users.id, { onDelete: "cascade", onUpdate: "cascade" }),
-  tokenHash: varchar("tokenHash", { length: 128 }).notNull().unique(),
-  expiresAt: timestamp("expiresAt").notNull(),
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
-  lastSeenAt: timestamp("lastSeenAt").defaultNow().notNull(),
-}, (table) => [index("self_hosted_sessions_user_idx").on(table.userId), index("self_hosted_sessions_expiry_idx").on(table.expiresAt)]);
+export const selfHostedSessions = mysqlTable(
+  "selfHostedSessions",
+  {
+    id: int("id").autoincrement().primaryKey(),
+    userId: int("userId")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade", onUpdate: "cascade" }),
+    tokenHash: varchar("tokenHash", { length: 128 }).notNull().unique(),
+    expiresAt: timestamp("expiresAt").notNull(),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+    lastSeenAt: timestamp("lastSeenAt").defaultNow().notNull(),
+  },
+  table => [
+    index("self_hosted_sessions_user_idx").on(table.userId),
+    index("self_hosted_sessions_expiry_idx").on(table.expiresAt),
+  ]
+);
 
 export const installationSettings = mysqlTable("installationSettings", {
   id: int("id").primaryKey(),
-  status: mysqlEnum("status", ["installing", "installed"]).default("installing").notNull(),
+  status: mysqlEnum("status", ["installing", "installed"])
+    .default("installing")
+    .notNull(),
   websiteName: varchar("websiteName", { length: 255 }).notNull(),
   websiteUrl: varchar("websiteUrl", { length: 320 }),
   databaseName: varchar("databaseName", { length: 128 }).notNull(),
@@ -97,205 +195,576 @@ export const installationSettings = mysqlTable("installationSettings", {
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
 
-export const userNotificationPreferences = mysqlTable("userNotificationPreferences", {
-  userId: int("userId").primaryKey(),
-  maintenanceEnabled: boolean("maintenanceEnabled").default(true).notNull(),
-  handoverEnabled: boolean("handoverEnabled").default(true).notNull(),
-  returnRequestEnabled: boolean("returnRequestEnabled").default(true).notNull(),
-  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
-});
+export const backupRecords = mysqlTable(
+  "backupRecords",
+  {
+    id: int("id").autoincrement().primaryKey(),
+    backupType: mysqlEnum("backupType", [
+      "mysql_logical",
+      "runtime",
+      "file_storage",
+      "full",
+    ]).notNull(),
+    status: mysqlEnum("status", ["completed", "failed"]).notNull(),
+    verificationStatus: mysqlEnum("verificationStatus", [
+      "not_verified",
+      "verified",
+      "failed",
+    ])
+      .default("not_verified")
+      .notNull(),
+    storageReference: varchar("storageReference", { length: 255 }).notNull(),
+    completedAt: timestamp("completedAt").notNull(),
+    note: text("note"),
+    recordedByUserId: int("recordedByUserId").references(() => users.id, {
+      onDelete: "set null",
+      onUpdate: "cascade",
+    }),
+    recordedByName: varchar("recordedByName", { length: 160 }),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+  },
+  table => [
+    index("backup_records_completed_idx").on(table.completedAt),
+    index("backup_records_status_idx").on(table.status),
+  ]
+);
+
+export const backupRestoreDrills = mysqlTable(
+  "backupRestoreDrills",
+  {
+    id: int("id").autoincrement().primaryKey(),
+    backupRecordId: int("backupRecordId").references(() => backupRecords.id, {
+      onDelete: "set null",
+      onUpdate: "cascade",
+    }),
+    status: mysqlEnum("status", ["successful", "failed"]).notNull(),
+    environment: varchar("environment", { length: 160 }).notNull(),
+    completedAt: timestamp("completedAt").notNull(),
+    note: text("note"),
+    recordedByUserId: int("recordedByUserId").references(() => users.id, {
+      onDelete: "set null",
+      onUpdate: "cascade",
+    }),
+    recordedByName: varchar("recordedByName", { length: 160 }),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+  },
+  table => [
+    index("backup_restore_drills_completed_idx").on(table.completedAt),
+    index("backup_restore_drills_backup_idx").on(table.backupRecordId),
+  ]
+);
+
+export const userNotificationPreferences = mysqlTable(
+  "userNotificationPreferences",
+  {
+    userId: int("userId").primaryKey(),
+    maintenanceEnabled: boolean("maintenanceEnabled").default(true).notNull(),
+    handoverEnabled: boolean("handoverEnabled").default(true).notNull(),
+    returnRequestEnabled: boolean("returnRequestEnabled")
+      .default(true)
+      .notNull(),
+    updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  }
+);
 
 export const userMenuPreferences = mysqlTable("userMenuPreferences", {
-  userId: int("userId").primaryKey().references(() => users.id, { onDelete: "cascade", onUpdate: "cascade" }),
+  userId: int("userId")
+    .primaryKey()
+    .references(() => users.id, { onDelete: "cascade", onUpdate: "cascade" }),
   menuOrder: json("menuOrder").notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
 
-export const userDashboardAlertStates = mysqlTable("userDashboardAlertStates", {
-  id: int("id").autoincrement().primaryKey(),
-  userId: int("userId").notNull().references(() => users.id, { onDelete: "cascade", onUpdate: "cascade" }),
-  alertId: varchar("alertId", { length: 160 }).notNull(),
-  dismissedAt: timestamp("dismissedAt").defaultNow().notNull(),
-}, (table) => [uniqueIndex("user_dashboard_alert_state_unique").on(table.userId, table.alertId), index("user_dashboard_alert_state_user_idx").on(table.userId)]);
+export const userDashboardAlertStates = mysqlTable(
+  "userDashboardAlertStates",
+  {
+    id: int("id").autoincrement().primaryKey(),
+    userId: int("userId")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade", onUpdate: "cascade" }),
+    alertId: varchar("alertId", { length: 160 }).notNull(),
+    dismissedAt: timestamp("dismissedAt").defaultNow().notNull(),
+  },
+  table => [
+    uniqueIndex("user_dashboard_alert_state_unique").on(
+      table.userId,
+      table.alertId
+    ),
+    index("user_dashboard_alert_state_user_idx").on(table.userId),
+  ]
+);
 
-export const technologyVendors = mysqlTable("technologyVendors", {
-  id: int("id").autoincrement().primaryKey(),
-  name: varchar("name", { length: 160 }).notNull().unique(),
-  contactName: varchar("contactName", { length: 160 }),
-  phone: varchar("phone", { length: 32 }),
-  email: varchar("email", { length: 320 }),
-  website: varchar("website", { length: 320 }),
-  address: text("address"),
-  isActive: boolean("isActive").default(true).notNull(),
-  note: text("note"),
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
-  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
-}, (table) => [index("technology_vendors_active_idx").on(table.isActive)]);
+export const technologyVendors = mysqlTable(
+  "technologyVendors",
+  {
+    id: int("id").autoincrement().primaryKey(),
+    name: varchar("name", { length: 160 }).notNull().unique(),
+    contactName: varchar("contactName", { length: 160 }),
+    phone: varchar("phone", { length: 32 }),
+    email: varchar("email", { length: 320 }),
+    website: varchar("website", { length: 320 }),
+    address: text("address"),
+    isActive: boolean("isActive").default(true).notNull(),
+    note: text("note"),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+    updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  },
+  table => [index("technology_vendors_active_idx").on(table.isActive)]
+);
 
-export const technologyVendorContracts = mysqlTable("technologyVendorContracts", {
-  id: int("id").autoincrement().primaryKey(),
-  contractCode: varchar("contractCode", { length: 64 }).notNull().unique(),
-  title: varchar("title", { length: 255 }).notNull(),
-  technologyVendorId: int("technologyVendorId").notNull().references(() => technologyVendors.id, { onDelete: "restrict", onUpdate: "cascade" }),
-  contractType: mysqlEnum("contractType", ["license", "service", "framework", "other"]).default("framework").notNull(),
-  signedAt: timestamp("signedAt"),
-  effectiveFrom: timestamp("effectiveFrom"),
-  effectiveTo: timestamp("effectiveTo"),
-  autoRenew: boolean("autoRenew").default(false).notNull(),
-  status: mysqlEnum("status", ["draft", "active", "expiring", "expired", "cancelled"]).default("draft").notNull(),
-  note: text("note"),
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
-  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
-}, (table) => [index("technology_vendor_contracts_vendor_idx").on(table.technologyVendorId), index("technology_vendor_contracts_status_expiry_idx").on(table.status, table.effectiveTo)]);
+export const technologyVendorContracts = mysqlTable(
+  "technologyVendorContracts",
+  {
+    id: int("id").autoincrement().primaryKey(),
+    contractCode: varchar("contractCode", { length: 64 }).notNull().unique(),
+    title: varchar("title", { length: 255 }).notNull(),
+    technologyVendorId: int("technologyVendorId")
+      .notNull()
+      .references(() => technologyVendors.id, {
+        onDelete: "restrict",
+        onUpdate: "cascade",
+      }),
+    contractType: mysqlEnum("contractType", [
+      "license",
+      "service",
+      "framework",
+      "other",
+    ])
+      .default("framework")
+      .notNull(),
+    signedAt: timestamp("signedAt"),
+    effectiveFrom: timestamp("effectiveFrom"),
+    effectiveTo: timestamp("effectiveTo"),
+    autoRenew: boolean("autoRenew").default(false).notNull(),
+    status: mysqlEnum("status", [
+      "draft",
+      "active",
+      "expiring",
+      "expired",
+      "cancelled",
+    ])
+      .default("draft")
+      .notNull(),
+    note: text("note"),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+    updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  },
+  table => [
+    index("technology_vendor_contracts_vendor_idx").on(
+      table.technologyVendorId
+    ),
+    index("technology_vendor_contracts_status_expiry_idx").on(
+      table.status,
+      table.effectiveTo
+    ),
+  ]
+);
 
-export const technologyVendorContractDocuments = mysqlTable("technologyVendorContractDocuments", {
-  id: int("id").autoincrement().primaryKey(),
-  technologyVendorContractId: int("technologyVendorContractId").notNull().references(() => technologyVendorContracts.id, { onDelete: "cascade", onUpdate: "cascade" }),
-  fileName: varchar("fileName", { length: 255 }).notNull(),
-  contentType: varchar("contentType", { length: 128 }).notNull(),
-  fileSize: int("fileSize").notNull(),
-  storageKey: text("storageKey").notNull(),
-  url: text("url").notNull(),
-  uploadedByUserId: int("uploadedByUserId"),
-  uploadedByName: varchar("uploadedByName", { length: 160 }),
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
-}, (table) => [index("tvcd_contract_idx").on(table.technologyVendorContractId)]);
+export const technologyVendorContractDocuments = mysqlTable(
+  "technologyVendorContractDocuments",
+  {
+    id: int("id").autoincrement().primaryKey(),
+    technologyVendorContractId: int("technologyVendorContractId")
+      .notNull()
+      .references(() => technologyVendorContracts.id, {
+        onDelete: "cascade",
+        onUpdate: "cascade",
+      }),
+    fileName: varchar("fileName", { length: 255 }).notNull(),
+    contentType: varchar("contentType", { length: 128 }).notNull(),
+    fileSize: int("fileSize").notNull(),
+    storageKey: text("storageKey").notNull(),
+    url: text("url").notNull(),
+    uploadedByUserId: int("uploadedByUserId"),
+    uploadedByName: varchar("uploadedByName", { length: 160 }),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+  },
+  table => [index("tvcd_contract_idx").on(table.technologyVendorContractId)]
+);
 
-export const licenseTypes = mysqlTable("licenseTypes", {
-  id: int("id").autoincrement().primaryKey(),
-  name: varchar("name", { length: 160 }).notNull().unique(),
-  isActive: boolean("isActive").default(true).notNull(),
-  note: text("note"),
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
-  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
-}, (table) => [index("license_types_active_idx").on(table.isActive)]);
+export const licenseTypes = mysqlTable(
+  "licenseTypes",
+  {
+    id: int("id").autoincrement().primaryKey(),
+    name: varchar("name", { length: 160 }).notNull().unique(),
+    isActive: boolean("isActive").default(true).notNull(),
+    note: text("note"),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+    updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  },
+  table => [index("license_types_active_idx").on(table.isActive)]
+);
 
-export const softwareLicenses = mysqlTable("softwareLicenses", {
-  id: int("id").autoincrement().primaryKey(),
-  licenseCode: varchar("licenseCode", { length: 64 }).notNull().unique(),
-  productName: varchar("productName", { length: 255 }).notNull(),
-  licenseTypeId: int("licenseTypeId").references(() => licenseTypes.id, { onDelete: "set null", onUpdate: "cascade" }),
-  publisher: varchar("publisher", { length: 160 }),
-  edition: varchar("edition", { length: 160 }),
-  licenseModel: mysqlEnum("licenseModel", ["perpetual", "subscription", "volume", "oem", "other"]).default("subscription").notNull(),
-  activationMode: mysqlEnum("activationMode", ["seat", "product_key", "shared_account"]).default("seat").notNull(),
-  sharedAccountMaxUsers: int("sharedAccountMaxUsers").default(1).notNull(),
-  licenseKey: text("licenseKey"),
-  purchasedQuantity: int("purchasedQuantity").default(1).notNull(),
-  vendorId: int("vendorId").references(() => vendors.id, { onDelete: "set null", onUpdate: "cascade" }),
-  technologyVendorId: int("technologyVendorId").references(() => technologyVendors.id, { onDelete: "set null", onUpdate: "cascade" }),
-  technologyVendorContractId: int("technologyVendorContractId").references(() => technologyVendorContracts.id, { onDelete: "set null", onUpdate: "cascade" }),
-  purchaseContractId: int("purchaseContractId").references(() => purchaseContracts.id, { onDelete: "set null", onUpdate: "cascade" }),
-  purchaseInvoiceId: int("purchaseInvoiceId").references(() => purchaseInvoices.id, { onDelete: "set null", onUpdate: "cascade" }),
-  purchaseInvoiceNumber: varchar("purchaseInvoiceNumber", { length: 96 }),
-  purchasedAt: timestamp("purchasedAt"),
-  expiresAt: timestamp("expiresAt"),
-  autoRenew: boolean("autoRenew").default(false).notNull(),
-  status: mysqlEnum("status", ["active", "expiring", "expired", "suspended", "retired"]).default("active").notNull(),
-  note: text("note"),
-  createdByUserId: int("createdByUserId"),
-  createdByName: varchar("createdByName", { length: 160 }),
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
-  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
-}, (table) => [index("software_licenses_status_expiry_idx").on(table.status, table.expiresAt), index("software_licenses_vendor_idx").on(table.vendorId), index("software_licenses_technology_vendor_idx").on(table.technologyVendorId), index("software_licenses_technology_contract_idx").on(table.technologyVendorContractId), index("software_licenses_license_type_idx").on(table.licenseTypeId), index("software_licenses_invoice_number_idx").on(table.purchaseInvoiceNumber)]);
+export const softwareLicenses = mysqlTable(
+  "softwareLicenses",
+  {
+    id: int("id").autoincrement().primaryKey(),
+    licenseCode: varchar("licenseCode", { length: 64 }).notNull().unique(),
+    productName: varchar("productName", { length: 255 }).notNull(),
+    licenseTypeId: int("licenseTypeId").references(() => licenseTypes.id, {
+      onDelete: "set null",
+      onUpdate: "cascade",
+    }),
+    publisher: varchar("publisher", { length: 160 }),
+    edition: varchar("edition", { length: 160 }),
+    licenseModel: mysqlEnum("licenseModel", [
+      "perpetual",
+      "subscription",
+      "volume",
+      "oem",
+      "other",
+    ])
+      .default("subscription")
+      .notNull(),
+    activationMode: mysqlEnum("activationMode", [
+      "seat",
+      "product_key",
+      "shared_account",
+    ])
+      .default("seat")
+      .notNull(),
+    sharedAccountMaxUsers: int("sharedAccountMaxUsers").default(1).notNull(),
+    licenseKey: text("licenseKey"),
+    purchasedQuantity: int("purchasedQuantity").default(1).notNull(),
+    vendorId: int("vendorId").references(() => vendors.id, {
+      onDelete: "set null",
+      onUpdate: "cascade",
+    }),
+    technologyVendorId: int("technologyVendorId").references(
+      () => technologyVendors.id,
+      { onDelete: "set null", onUpdate: "cascade" }
+    ),
+    technologyVendorContractId: int("technologyVendorContractId").references(
+      () => technologyVendorContracts.id,
+      { onDelete: "set null", onUpdate: "cascade" }
+    ),
+    purchaseContractId: int("purchaseContractId").references(
+      () => purchaseContracts.id,
+      { onDelete: "set null", onUpdate: "cascade" }
+    ),
+    purchaseInvoiceId: int("purchaseInvoiceId").references(
+      () => purchaseInvoices.id,
+      { onDelete: "set null", onUpdate: "cascade" }
+    ),
+    purchaseInvoiceNumber: varchar("purchaseInvoiceNumber", { length: 96 }),
+    purchasedAt: timestamp("purchasedAt"),
+    expiresAt: timestamp("expiresAt"),
+    autoRenew: boolean("autoRenew").default(false).notNull(),
+    status: mysqlEnum("status", [
+      "active",
+      "expiring",
+      "expired",
+      "suspended",
+      "retired",
+    ])
+      .default("active")
+      .notNull(),
+    note: text("note"),
+    createdByUserId: int("createdByUserId"),
+    createdByName: varchar("createdByName", { length: 160 }),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+    updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  },
+  table => [
+    index("software_licenses_status_expiry_idx").on(
+      table.status,
+      table.expiresAt
+    ),
+    index("software_licenses_vendor_idx").on(table.vendorId),
+    index("software_licenses_technology_vendor_idx").on(
+      table.technologyVendorId
+    ),
+    index("software_licenses_technology_contract_idx").on(
+      table.technologyVendorContractId
+    ),
+    index("software_licenses_license_type_idx").on(table.licenseTypeId),
+    index("software_licenses_invoice_number_idx").on(
+      table.purchaseInvoiceNumber
+    ),
+  ]
+);
 
-export const softwareLicenseKeys = mysqlTable("softwareLicenseKeys", {
-  id: int("id").autoincrement().primaryKey(),
-  softwareLicenseId: int("softwareLicenseId").notNull().references(() => softwareLicenses.id, { onDelete: "cascade", onUpdate: "cascade" }),
-  encryptedKey: text("encryptedKey").notNull(),
-  keyFingerprint: varchar("keyFingerprint", { length: 64 }).notNull(),
-  maskedKey: varchar("maskedKey", { length: 96 }).notNull(),
-  status: mysqlEnum("status", ["available", "assigned", "revoked", "retired"]).default("available").notNull(),
-  note: text("note"),
-  createdByUserId: int("createdByUserId"),
-  createdByName: varchar("createdByName", { length: 160 }),
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
-  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
-}, (table) => [uniqueIndex("software_license_keys_license_fingerprint_unique").on(table.softwareLicenseId, table.keyFingerprint), index("software_license_keys_license_status_idx").on(table.softwareLicenseId, table.status)]);
+export const softwareLicenseKeys = mysqlTable(
+  "softwareLicenseKeys",
+  {
+    id: int("id").autoincrement().primaryKey(),
+    softwareLicenseId: int("softwareLicenseId")
+      .notNull()
+      .references(() => softwareLicenses.id, {
+        onDelete: "cascade",
+        onUpdate: "cascade",
+      }),
+    encryptedKey: text("encryptedKey").notNull(),
+    keyFingerprint: varchar("keyFingerprint", { length: 64 }).notNull(),
+    maskedKey: varchar("maskedKey", { length: 96 }).notNull(),
+    status: mysqlEnum("status", ["available", "assigned", "revoked", "retired"])
+      .default("available")
+      .notNull(),
+    note: text("note"),
+    createdByUserId: int("createdByUserId"),
+    createdByName: varchar("createdByName", { length: 160 }),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+    updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  },
+  table => [
+    uniqueIndex("software_license_keys_license_fingerprint_unique").on(
+      table.softwareLicenseId,
+      table.keyFingerprint
+    ),
+    index("software_license_keys_license_status_idx").on(
+      table.softwareLicenseId,
+      table.status
+    ),
+  ]
+);
 
-export const softwareLicenseActivationAccounts = mysqlTable("softwareLicenseActivationAccounts", {
-  id: int("id").autoincrement().primaryKey(),
-  softwareLicenseId: int("softwareLicenseId").notNull().references(() => softwareLicenses.id, { onDelete: "cascade", onUpdate: "cascade" }),
-  loginEmail: varchar("loginEmail", { length: 320 }).notNull(),
-  encryptedPassword: text("encryptedPassword").notNull(),
-  maxUsers: int("maxUsers").notNull(),
-  status: mysqlEnum("status", ["active", "suspended", "retired"]).default("active").notNull(),
-  note: text("note"),
-  createdByUserId: int("createdByUserId"),
-  createdByName: varchar("createdByName", { length: 160 }),
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
-  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
-}, (table) => [uniqueIndex("software_license_activation_account_license_email_unique").on(table.softwareLicenseId, table.loginEmail), index("software_license_activation_account_license_status_idx").on(table.softwareLicenseId, table.status)]);
+export const softwareLicenseActivationAccounts = mysqlTable(
+  "softwareLicenseActivationAccounts",
+  {
+    id: int("id").autoincrement().primaryKey(),
+    softwareLicenseId: int("softwareLicenseId")
+      .notNull()
+      .references(() => softwareLicenses.id, {
+        onDelete: "cascade",
+        onUpdate: "cascade",
+      }),
+    loginEmail: varchar("loginEmail", { length: 320 }).notNull(),
+    encryptedPassword: text("encryptedPassword").notNull(),
+    maxUsers: int("maxUsers").notNull(),
+    status: mysqlEnum("status", ["active", "suspended", "retired"])
+      .default("active")
+      .notNull(),
+    note: text("note"),
+    createdByUserId: int("createdByUserId"),
+    createdByName: varchar("createdByName", { length: 160 }),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+    updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  },
+  table => [
+    uniqueIndex("software_license_activation_account_license_email_unique").on(
+      table.softwareLicenseId,
+      table.loginEmail
+    ),
+    index("software_license_activation_account_license_status_idx").on(
+      table.softwareLicenseId,
+      table.status
+    ),
+  ]
+);
 
-export const softwareLicenseDocuments = mysqlTable("softwareLicenseDocuments", {
-  id: int("id").autoincrement().primaryKey(),
-  softwareLicenseId: int("softwareLicenseId").notNull().references(() => softwareLicenses.id, { onDelete: "cascade", onUpdate: "cascade" }),
-  documentType: mysqlEnum("documentType", ["contract", "renewal", "other"]).default("other").notNull(),
-  fileName: varchar("fileName", { length: 255 }).notNull(),
-  contentType: varchar("contentType", { length: 128 }).notNull(),
-  fileSize: int("fileSize").notNull(),
-  storageKey: text("storageKey").notNull(),
-  url: text("url").notNull(),
-  uploadedByUserId: int("uploadedByUserId"),
-  uploadedByName: varchar("uploadedByName", { length: 160 }),
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
-}, (table) => [index("software_license_documents_license_idx").on(table.softwareLicenseId)]);
+export const softwareLicenseDocuments = mysqlTable(
+  "softwareLicenseDocuments",
+  {
+    id: int("id").autoincrement().primaryKey(),
+    softwareLicenseId: int("softwareLicenseId")
+      .notNull()
+      .references(() => softwareLicenses.id, {
+        onDelete: "cascade",
+        onUpdate: "cascade",
+      }),
+    documentType: mysqlEnum("documentType", ["contract", "renewal", "other"])
+      .default("other")
+      .notNull(),
+    fileName: varchar("fileName", { length: 255 }).notNull(),
+    contentType: varchar("contentType", { length: 128 }).notNull(),
+    fileSize: int("fileSize").notNull(),
+    storageKey: text("storageKey").notNull(),
+    url: text("url").notNull(),
+    uploadedByUserId: int("uploadedByUserId"),
+    uploadedByName: varchar("uploadedByName", { length: 160 }),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+  },
+  table => [
+    index("software_license_documents_license_idx").on(table.softwareLicenseId),
+  ]
+);
 
-export const softwareLicenseAssignments = mysqlTable("softwareLicenseAssignments", {
-  id: int("id").autoincrement().primaryKey(),
-  softwareLicenseId: int("softwareLicenseId").notNull().references(() => softwareLicenses.id, { onDelete: "cascade", onUpdate: "cascade" }),
-  assignmentMethod: mysqlEnum("assignmentMethod", ["seat", "product_key", "shared_account"]).default("seat").notNull(),
-  softwareLicenseKeyId: int("softwareLicenseKeyId").references(() => softwareLicenseKeys.id, { onDelete: "set null", onUpdate: "cascade" }),
-  softwareLicenseActivationAccountId: int("softwareLicenseActivationAccountId").references(() => softwareLicenseActivationAccounts.id, { onDelete: "set null", onUpdate: "cascade" }),
-  assetId: int("assetId").references(() => assets.id, { onDelete: "set null", onUpdate: "cascade" }),
-  userId: int("userId").references(() => users.id, { onDelete: "set null", onUpdate: "cascade" }),
-  assignedToName: varchar("assignedToName", { length: 160 }),
-  deviceName: varchar("deviceName", { length: 160 }),
-  status: mysqlEnum("status", ["active", "revoked"]).default("active").notNull(),
-  assignedAt: timestamp("assignedAt").defaultNow().notNull(),
-  revokedAt: timestamp("revokedAt"),
-  note: text("note"),
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
-  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
-}, (table) => [index("software_license_assignments_license_status_idx").on(table.softwareLicenseId, table.status), index("software_license_assignments_key_status_idx").on(table.softwareLicenseKeyId, table.status), index("software_license_assignments_account_status_idx").on(table.softwareLicenseActivationAccountId, table.status), index("software_license_assignments_asset_idx").on(table.assetId), index("software_license_assignments_user_idx").on(table.userId)]);
+export const softwareLicenseAssignments = mysqlTable(
+  "softwareLicenseAssignments",
+  {
+    id: int("id").autoincrement().primaryKey(),
+    softwareLicenseId: int("softwareLicenseId")
+      .notNull()
+      .references(() => softwareLicenses.id, {
+        onDelete: "cascade",
+        onUpdate: "cascade",
+      }),
+    assignmentMethod: mysqlEnum("assignmentMethod", [
+      "seat",
+      "product_key",
+      "shared_account",
+    ])
+      .default("seat")
+      .notNull(),
+    softwareLicenseKeyId: int("softwareLicenseKeyId").references(
+      () => softwareLicenseKeys.id,
+      { onDelete: "set null", onUpdate: "cascade" }
+    ),
+    softwareLicenseActivationAccountId: int(
+      "softwareLicenseActivationAccountId"
+    ).references(() => softwareLicenseActivationAccounts.id, {
+      onDelete: "set null",
+      onUpdate: "cascade",
+    }),
+    assetId: int("assetId").references(() => assets.id, {
+      onDelete: "set null",
+      onUpdate: "cascade",
+    }),
+    userId: int("userId").references(() => users.id, {
+      onDelete: "set null",
+      onUpdate: "cascade",
+    }),
+    assignedToName: varchar("assignedToName", { length: 160 }),
+    deviceName: varchar("deviceName", { length: 160 }),
+    status: mysqlEnum("status", ["active", "revoked"])
+      .default("active")
+      .notNull(),
+    assignedAt: timestamp("assignedAt").defaultNow().notNull(),
+    revokedAt: timestamp("revokedAt"),
+    note: text("note"),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+    updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  },
+  table => [
+    index("software_license_assignments_license_status_idx").on(
+      table.softwareLicenseId,
+      table.status
+    ),
+    index("software_license_assignments_key_status_idx").on(
+      table.softwareLicenseKeyId,
+      table.status
+    ),
+    index("software_license_assignments_account_status_idx").on(
+      table.softwareLicenseActivationAccountId,
+      table.status
+    ),
+    index("software_license_assignments_asset_idx").on(table.assetId),
+    index("software_license_assignments_user_idx").on(table.userId),
+  ]
+);
 
-export const softwareLicenseCredentialAccessLogs = mysqlTable("softwareLicenseCredentialAccessLogs", {
-  id: int("id").autoincrement().primaryKey(),
-  softwareLicenseId: int("softwareLicenseId").notNull().references(() => softwareLicenses.id, { onDelete: "cascade", onUpdate: "cascade" }),
-  softwareLicenseKeyId: int("softwareLicenseKeyId").references(() => softwareLicenseKeys.id, { onDelete: "set null", onUpdate: "cascade" }),
-  softwareLicenseActivationAccountId: int("softwareLicenseActivationAccountId").references(() => softwareLicenseActivationAccounts.id, { onDelete: "set null", onUpdate: "cascade" }),
-  accessType: mysqlEnum("accessType", ["view_key", "copy_key", "view_password", "copy_password"]).notNull(),
-  actorUserId: int("actorUserId").notNull().references(() => users.id, { onDelete: "restrict", onUpdate: "cascade" }),
-  actorName: varchar("actorName", { length: 160 }),
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
-}, (table) => [index("software_license_credential_access_license_idx").on(table.softwareLicenseId, table.createdAt), index("software_license_credential_access_account_idx").on(table.softwareLicenseActivationAccountId, table.createdAt)]);
+export const softwareLicenseCredentialAccessLogs = mysqlTable(
+  "softwareLicenseCredentialAccessLogs",
+  {
+    id: int("id").autoincrement().primaryKey(),
+    softwareLicenseId: int("softwareLicenseId")
+      .notNull()
+      .references(() => softwareLicenses.id, {
+        onDelete: "cascade",
+        onUpdate: "cascade",
+      }),
+    softwareLicenseKeyId: int("softwareLicenseKeyId").references(
+      () => softwareLicenseKeys.id,
+      { onDelete: "set null", onUpdate: "cascade" }
+    ),
+    softwareLicenseActivationAccountId: int(
+      "softwareLicenseActivationAccountId"
+    ).references(() => softwareLicenseActivationAccounts.id, {
+      onDelete: "set null",
+      onUpdate: "cascade",
+    }),
+    accessType: mysqlEnum("accessType", [
+      "view_key",
+      "copy_key",
+      "view_password",
+      "copy_password",
+    ]).notNull(),
+    actorUserId: int("actorUserId")
+      .notNull()
+      .references(() => users.id, {
+        onDelete: "restrict",
+        onUpdate: "cascade",
+      }),
+    actorName: varchar("actorName", { length: 160 }),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+  },
+  table => [
+    index("software_license_credential_access_license_idx").on(
+      table.softwareLicenseId,
+      table.createdAt
+    ),
+    index("software_license_credential_access_account_idx").on(
+      table.softwareLicenseActivationAccountId,
+      table.createdAt
+    ),
+  ]
+);
 
-export const technologyServices = mysqlTable("technologyServices", {
-  id: int("id").autoincrement().primaryKey(),
-  serviceCode: varchar("serviceCode", { length: 64 }).notNull().unique(),
-  serviceType: mysqlEnum("serviceType", ["internet", "domain", "ssl"]).notNull(),
-  name: varchar("name", { length: 255 }).notNull(),
-  vendorId: int("vendorId").references(() => vendors.id, { onDelete: "set null", onUpdate: "cascade" }),
-  technologyVendorId: int("technologyVendorId").references(() => technologyVendors.id, { onDelete: "set null", onUpdate: "cascade" }),
-  technologyVendorContractId: int("technologyVendorContractId").references(() => technologyVendorContracts.id, { onDelete: "set null", onUpdate: "cascade" }),
-  branchId: int("branchId").references(() => branches.id, { onDelete: "set null", onUpdate: "cascade" }),
-  accountReference: varchar("accountReference", { length: 160 }),
-  billingReference: varchar("billingReference", { length: 160 }),
-  domainName: varchar("domainName", { length: 255 }),
-  serviceEndpoint: varchar("serviceEndpoint", { length: 255 }),
-  startedAt: timestamp("startedAt"),
-  renewalAt: timestamp("renewalAt"),
-  expiresAt: timestamp("expiresAt"),
-  autoRenew: boolean("autoRenew").default(false).notNull(),
-  billingCycle: mysqlEnum("billingCycle", ["monthly", "quarterly", "annual", "other"]).default("annual").notNull(),
-  costAmount: decimal("costAmount", { precision: 15, scale: 2 }),
-  status: mysqlEnum("status", ["active", "expiring", "expired", "suspended", "cancelled"]).default("active").notNull(),
-  note: text("note"),
-  createdByUserId: int("createdByUserId"),
-  createdByName: varchar("createdByName", { length: 160 }),
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
-  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
-}, (table) => [index("technology_services_type_status_expiry_idx").on(table.serviceType, table.status, table.expiresAt), index("technology_services_vendor_idx").on(table.vendorId), index("technology_services_technology_vendor_idx").on(table.technologyVendorId), index("technology_services_technology_contract_idx").on(table.technologyVendorContractId), index("technology_services_branch_idx").on(table.branchId)]);
+export const technologyServices = mysqlTable(
+  "technologyServices",
+  {
+    id: int("id").autoincrement().primaryKey(),
+    serviceCode: varchar("serviceCode", { length: 64 }).notNull().unique(),
+    serviceType: mysqlEnum("serviceType", [
+      "internet",
+      "domain",
+      "ssl",
+    ]).notNull(),
+    name: varchar("name", { length: 255 }).notNull(),
+    vendorId: int("vendorId").references(() => vendors.id, {
+      onDelete: "set null",
+      onUpdate: "cascade",
+    }),
+    technologyVendorId: int("technologyVendorId").references(
+      () => technologyVendors.id,
+      { onDelete: "set null", onUpdate: "cascade" }
+    ),
+    technologyVendorContractId: int("technologyVendorContractId").references(
+      () => technologyVendorContracts.id,
+      { onDelete: "set null", onUpdate: "cascade" }
+    ),
+    branchId: int("branchId").references(() => branches.id, {
+      onDelete: "set null",
+      onUpdate: "cascade",
+    }),
+    accountReference: varchar("accountReference", { length: 160 }),
+    billingReference: varchar("billingReference", { length: 160 }),
+    domainName: varchar("domainName", { length: 255 }),
+    serviceEndpoint: varchar("serviceEndpoint", { length: 255 }),
+    startedAt: timestamp("startedAt"),
+    renewalAt: timestamp("renewalAt"),
+    expiresAt: timestamp("expiresAt"),
+    autoRenew: boolean("autoRenew").default(false).notNull(),
+    billingCycle: mysqlEnum("billingCycle", [
+      "monthly",
+      "quarterly",
+      "annual",
+      "other",
+    ])
+      .default("annual")
+      .notNull(),
+    costAmount: decimal("costAmount", { precision: 15, scale: 2 }),
+    status: mysqlEnum("status", [
+      "active",
+      "expiring",
+      "expired",
+      "suspended",
+      "cancelled",
+    ])
+      .default("active")
+      .notNull(),
+    note: text("note"),
+    createdByUserId: int("createdByUserId"),
+    createdByName: varchar("createdByName", { length: 160 }),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+    updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  },
+  table => [
+    index("technology_services_type_status_expiry_idx").on(
+      table.serviceType,
+      table.status,
+      table.expiresAt
+    ),
+    index("technology_services_vendor_idx").on(table.vendorId),
+    index("technology_services_technology_vendor_idx").on(
+      table.technologyVendorId
+    ),
+    index("technology_services_technology_contract_idx").on(
+      table.technologyVendorContractId
+    ),
+    index("technology_services_branch_idx").on(table.branchId),
+  ]
+);
 
 export const companies = mysqlTable("companies", {
   id: int("id").autoincrement().primaryKey(),
@@ -305,7 +774,9 @@ export const companies = mysqlTable("companies", {
   phone: varchar("phone", { length: 32 }),
   email: varchar("email", { length: 320 }),
   websiteUrl: varchar("websiteUrl", { length: 320 }),
-  hideWebsiteOnInternalPdf: boolean("hideWebsiteOnInternalPdf").default(false).notNull(),
+  hideWebsiteOnInternalPdf: boolean("hideWebsiteOnInternalPdf")
+    .default(false)
+    .notNull(),
   logoUrl: text("logoUrl"),
   websiteTitle: varchar("websiteTitle", { length: 120 }),
   brandColor: varchar("brandColor", { length: 9 }),
@@ -317,40 +788,55 @@ export const companies = mysqlTable("companies", {
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
 
-export const uiLabels = mysqlTable("uiLabels", {
-  id: int("id").autoincrement().primaryKey(),
-  labelKey: varchar("labelKey", { length: 96 }).notNull().unique(),
-  value: varchar("value", { length: 255 }).notNull(),
-  updatedByUserId: int("updatedByUserId"),
-  updatedByName: varchar("updatedByName", { length: 160 }),
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
-  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
-}, (table) => [index("ui_labels_updated_idx").on(table.updatedAt)]);
+export const uiLabels = mysqlTable(
+  "uiLabels",
+  {
+    id: int("id").autoincrement().primaryKey(),
+    labelKey: varchar("labelKey", { length: 96 }).notNull().unique(),
+    value: varchar("value", { length: 255 }).notNull(),
+    updatedByUserId: int("updatedByUserId"),
+    updatedByName: varchar("updatedByName", { length: 160 }),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+    updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  },
+  table => [index("ui_labels_updated_idx").on(table.updatedAt)]
+);
 
-export const helpGuides = mysqlTable("helpGuides", {
-  id: int("id").autoincrement().primaryKey(),
-  guideKey: varchar("guideKey", { length: 96 }).notNull().unique(),
-  audience: mysqlEnum("audience", ["admin", "user"]).notNull(),
-  title: varchar("title", { length: 255 }).notNull(),
-  description: text("description").notNull(),
-  steps: json("steps").notNull(),
-  updatedByUserId: int("updatedByUserId"),
-  updatedByName: varchar("updatedByName", { length: 160 }),
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
-  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
-}, (table) => [index("help_guides_audience_idx").on(table.audience)]);
+export const helpGuides = mysqlTable(
+  "helpGuides",
+  {
+    id: int("id").autoincrement().primaryKey(),
+    guideKey: varchar("guideKey", { length: 96 }).notNull().unique(),
+    audience: mysqlEnum("audience", ["admin", "user"]).notNull(),
+    title: varchar("title", { length: 255 }).notNull(),
+    description: text("description").notNull(),
+    steps: json("steps").notNull(),
+    updatedByUserId: int("updatedByUserId"),
+    updatedByName: varchar("updatedByName", { length: 160 }),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+    updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  },
+  table => [index("help_guides_audience_idx").on(table.audience)]
+);
 
-export const helpGuideVersions = mysqlTable("helpGuideVersions", {
-  id: int("id").autoincrement().primaryKey(),
-  guideKey: varchar("guideKey", { length: 96 }).notNull(),
-  audience: mysqlEnum("audience", ["admin", "user"]).notNull(),
-  title: varchar("title", { length: 255 }).notNull(),
-  description: text("description").notNull(),
-  steps: json("steps").notNull(),
-  changedByUserId: int("changedByUserId"),
-  changedByName: varchar("changedByName", { length: 160 }),
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
-}, (table) => [index("help_guide_versions_key_idx").on(table.guideKey), index("help_guide_versions_created_idx").on(table.createdAt)]);
+export const helpGuideVersions = mysqlTable(
+  "helpGuideVersions",
+  {
+    id: int("id").autoincrement().primaryKey(),
+    guideKey: varchar("guideKey", { length: 96 }).notNull(),
+    audience: mysqlEnum("audience", ["admin", "user"]).notNull(),
+    title: varchar("title", { length: 255 }).notNull(),
+    description: text("description").notNull(),
+    steps: json("steps").notNull(),
+    changedByUserId: int("changedByUserId"),
+    changedByName: varchar("changedByName", { length: 160 }),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+  },
+  table => [
+    index("help_guide_versions_key_idx").on(table.guideKey),
+    index("help_guide_versions_created_idx").on(table.createdAt),
+  ]
+);
 
 export const departments = mysqlTable("departments", {
   id: int("id").autoincrement().primaryKey(),
@@ -362,16 +848,25 @@ export const departments = mysqlTable("departments", {
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
 
-export const divisions = mysqlTable("divisions", {
-  id: int("id").autoincrement().primaryKey(),
-  departmentId: int("departmentId").notNull().references(() => departments.id, { onDelete: "restrict", onUpdate: "cascade" }),
-  code: varchar("code", { length: 40 }).notNull().unique(),
-  name: varchar("name", { length: 160 }).notNull(),
-  managerUserId: int("managerUserId"),
-  isActive: boolean("isActive").default(true).notNull(),
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
-  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
-}, (table) => [index("divisions_department_idx").on(table.departmentId)]);
+export const divisions = mysqlTable(
+  "divisions",
+  {
+    id: int("id").autoincrement().primaryKey(),
+    departmentId: int("departmentId")
+      .notNull()
+      .references(() => departments.id, {
+        onDelete: "restrict",
+        onUpdate: "cascade",
+      }),
+    code: varchar("code", { length: 40 }).notNull().unique(),
+    name: varchar("name", { length: 160 }).notNull(),
+    managerUserId: int("managerUserId"),
+    isActive: boolean("isActive").default(true).notNull(),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+    updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  },
+  table => [index("divisions_department_idx").on(table.departmentId)]
+);
 
 export const assetCategories = mysqlTable("assetCategories", {
   id: int("id").autoincrement().primaryKey(),
@@ -394,118 +889,249 @@ export const vendors = mysqlTable("vendors", {
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
 
-export const vendorDocuments = mysqlTable("vendorDocuments", {
-  id: int("id").autoincrement().primaryKey(),
-  vendorId: int("vendorId").notNull().references(() => vendors.id, { onDelete: "restrict", onUpdate: "cascade" }),
-  documentType: mysqlEnum("documentType", ["contract", "quotation", "other"]).default("other").notNull(),
-  fileName: varchar("fileName", { length: 255 }).notNull(),
-  contentType: varchar("contentType", { length: 128 }).notNull(),
-  fileSize: int("fileSize").notNull(),
-  storageKey: text("storageKey").notNull(),
-  url: text("url").notNull(),
-  uploadedByUserId: int("uploadedByUserId"),
-  uploadedByName: varchar("uploadedByName", { length: 160 }),
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
-}, (table) => [index("vendor_documents_vendor_idx").on(table.vendorId)]);
+export const vendorDocuments = mysqlTable(
+  "vendorDocuments",
+  {
+    id: int("id").autoincrement().primaryKey(),
+    vendorId: int("vendorId")
+      .notNull()
+      .references(() => vendors.id, {
+        onDelete: "restrict",
+        onUpdate: "cascade",
+      }),
+    documentType: mysqlEnum("documentType", ["contract", "quotation", "other"])
+      .default("other")
+      .notNull(),
+    fileName: varchar("fileName", { length: 255 }).notNull(),
+    contentType: varchar("contentType", { length: 128 }).notNull(),
+    fileSize: int("fileSize").notNull(),
+    storageKey: text("storageKey").notNull(),
+    url: text("url").notNull(),
+    uploadedByUserId: int("uploadedByUserId"),
+    uploadedByName: varchar("uploadedByName", { length: 160 }),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+  },
+  table => [index("vendor_documents_vendor_idx").on(table.vendorId)]
+);
 
-export const purchaseContracts = mysqlTable("purchaseContracts", {
-  id: int("id").autoincrement().primaryKey(),
-  referenceCode: varchar("referenceCode", { length: 64 }).notNull().unique(),
-  title: varchar("title", { length: 255 }).notNull(),
-  vendorId: int("vendorId").references(() => vendors.id, { onDelete: "set null", onUpdate: "cascade" }),
-  signedAt: timestamp("signedAt"),
-  effectiveFrom: timestamp("effectiveFrom"),
-  effectiveTo: timestamp("effectiveTo"),
-  totalValue: decimal("totalValue", { precision: 15, scale: 2 }),
-  status: mysqlEnum("status", ["draft", "active", "expired", "cancelled"]).default("draft").notNull(),
-  note: text("note"),
-  createdByUserId: int("createdByUserId"),
-  createdByName: varchar("createdByName", { length: 160 }),
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
-  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
-}, (table) => [index("purchase_contracts_vendor_idx").on(table.vendorId), index("purchase_contracts_status_idx").on(table.status), index("purchase_contracts_signed_at_idx").on(table.signedAt)]);
+export const purchaseContracts = mysqlTable(
+  "purchaseContracts",
+  {
+    id: int("id").autoincrement().primaryKey(),
+    referenceCode: varchar("referenceCode", { length: 64 }).notNull().unique(),
+    title: varchar("title", { length: 255 }).notNull(),
+    vendorId: int("vendorId").references(() => vendors.id, {
+      onDelete: "set null",
+      onUpdate: "cascade",
+    }),
+    signedAt: timestamp("signedAt"),
+    effectiveFrom: timestamp("effectiveFrom"),
+    effectiveTo: timestamp("effectiveTo"),
+    totalValue: decimal("totalValue", { precision: 15, scale: 2 }),
+    status: mysqlEnum("status", ["draft", "active", "expired", "cancelled"])
+      .default("draft")
+      .notNull(),
+    note: text("note"),
+    createdByUserId: int("createdByUserId"),
+    createdByName: varchar("createdByName", { length: 160 }),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+    updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  },
+  table => [
+    index("purchase_contracts_vendor_idx").on(table.vendorId),
+    index("purchase_contracts_status_idx").on(table.status),
+    index("purchase_contracts_signed_at_idx").on(table.signedAt),
+  ]
+);
 
-export const purchaseContractDocuments = mysqlTable("purchaseContractDocuments", {
-  id: int("id").autoincrement().primaryKey(),
-  purchaseContractId: int("purchaseContractId").notNull().references(() => purchaseContracts.id, { onDelete: "cascade", onUpdate: "cascade" }),
-  documentType: mysqlEnum("documentType", ["signed_contract", "appendix", "quotation", "other"]).default("other").notNull(),
-  fileName: varchar("fileName", { length: 255 }).notNull(),
-  contentType: varchar("contentType", { length: 128 }).notNull(),
-  fileSize: int("fileSize").notNull(),
-  storageKey: text("storageKey").notNull(),
-  url: text("url").notNull(),
-  uploadedByUserId: int("uploadedByUserId"),
-  uploadedByName: varchar("uploadedByName", { length: 160 }),
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
-}, (table) => [index("purchase_contract_documents_contract_idx").on(table.purchaseContractId)]);
+export const purchaseContractDocuments = mysqlTable(
+  "purchaseContractDocuments",
+  {
+    id: int("id").autoincrement().primaryKey(),
+    purchaseContractId: int("purchaseContractId")
+      .notNull()
+      .references(() => purchaseContracts.id, {
+        onDelete: "cascade",
+        onUpdate: "cascade",
+      }),
+    documentType: mysqlEnum("documentType", [
+      "signed_contract",
+      "appendix",
+      "quotation",
+      "other",
+    ])
+      .default("other")
+      .notNull(),
+    fileName: varchar("fileName", { length: 255 }).notNull(),
+    contentType: varchar("contentType", { length: 128 }).notNull(),
+    fileSize: int("fileSize").notNull(),
+    storageKey: text("storageKey").notNull(),
+    url: text("url").notNull(),
+    uploadedByUserId: int("uploadedByUserId"),
+    uploadedByName: varchar("uploadedByName", { length: 160 }),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+  },
+  table => [
+    index("purchase_contract_documents_contract_idx").on(
+      table.purchaseContractId
+    ),
+  ]
+);
 
-export const purchaseInvoices = mysqlTable("purchaseInvoices", {
-  id: int("id").autoincrement().primaryKey(),
-  invoiceKey: varchar("invoiceKey", { length: 160 }).notNull().unique(),
-  invoiceNumber: varchar("invoiceNumber", { length: 64 }).notNull(),
-  invoiceSeries: varchar("invoiceSeries", { length: 64 }),
-  invoiceTemplate: varchar("invoiceTemplate", { length: 64 }),
-  invoiceType: mysqlEnum("invoiceType", ["vat", "electronic", "retail", "adjustment", "replacement", "other"]).default("vat").notNull(),
-  status: mysqlEnum("status", ["draft", "issued", "adjusted", "replaced", "cancelled"]).default("draft").notNull(),
-  vendorId: int("vendorId").notNull().references(() => vendors.id, { onDelete: "restrict", onUpdate: "cascade" }),
-  purchaseContractId: int("purchaseContractId").references(() => purchaseContracts.id, { onDelete: "set null", onUpdate: "cascade" }),
-  issuedAt: timestamp("issuedAt").notNull(),
-  receivedAt: timestamp("receivedAt"),
-  currencyCode: varchar("currencyCode", { length: 3 }).default("VND").notNull(),
-  exchangeRate: decimal("exchangeRate", { precision: 18, scale: 6 }),
-  subtotalAmount: decimal("subtotalAmount", { precision: 15, scale: 2 }).default("0").notNull(),
-  taxAmount: decimal("taxAmount", { precision: 15, scale: 2 }).default("0").notNull(),
-  totalAmount: decimal("totalAmount", { precision: 15, scale: 2 }).notNull(),
-  sourceInvoiceId: int("sourceInvoiceId"),
-  note: text("note"),
-  createdByUserId: int("createdByUserId"),
-  createdByName: varchar("createdByName", { length: 160 }),
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
-  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
-}, (table) => [
-  index("purchase_invoices_vendor_issued_idx").on(table.vendorId, table.issuedAt),
-  index("purchase_invoices_contract_idx").on(table.purchaseContractId),
-  index("purchase_invoices_status_issued_idx").on(table.status, table.issuedAt),
-  index("purchase_invoices_source_idx").on(table.sourceInvoiceId),
-]);
+export const purchaseInvoices = mysqlTable(
+  "purchaseInvoices",
+  {
+    id: int("id").autoincrement().primaryKey(),
+    invoiceKey: varchar("invoiceKey", { length: 160 }).notNull().unique(),
+    invoiceNumber: varchar("invoiceNumber", { length: 64 }).notNull(),
+    invoiceSeries: varchar("invoiceSeries", { length: 64 }),
+    invoiceTemplate: varchar("invoiceTemplate", { length: 64 }),
+    invoiceType: mysqlEnum("invoiceType", [
+      "vat",
+      "electronic",
+      "retail",
+      "adjustment",
+      "replacement",
+      "other",
+    ])
+      .default("vat")
+      .notNull(),
+    status: mysqlEnum("status", [
+      "draft",
+      "issued",
+      "adjusted",
+      "replaced",
+      "cancelled",
+    ])
+      .default("draft")
+      .notNull(),
+    vendorId: int("vendorId")
+      .notNull()
+      .references(() => vendors.id, {
+        onDelete: "restrict",
+        onUpdate: "cascade",
+      }),
+    purchaseContractId: int("purchaseContractId").references(
+      () => purchaseContracts.id,
+      { onDelete: "set null", onUpdate: "cascade" }
+    ),
+    issuedAt: timestamp("issuedAt").notNull(),
+    receivedAt: timestamp("receivedAt"),
+    currencyCode: varchar("currencyCode", { length: 3 })
+      .default("VND")
+      .notNull(),
+    exchangeRate: decimal("exchangeRate", { precision: 18, scale: 6 }),
+    subtotalAmount: decimal("subtotalAmount", { precision: 15, scale: 2 })
+      .default("0")
+      .notNull(),
+    taxAmount: decimal("taxAmount", { precision: 15, scale: 2 })
+      .default("0")
+      .notNull(),
+    totalAmount: decimal("totalAmount", { precision: 15, scale: 2 }).notNull(),
+    sourceInvoiceId: int("sourceInvoiceId"),
+    note: text("note"),
+    createdByUserId: int("createdByUserId"),
+    createdByName: varchar("createdByName", { length: 160 }),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+    updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  },
+  table => [
+    index("purchase_invoices_vendor_issued_idx").on(
+      table.vendorId,
+      table.issuedAt
+    ),
+    index("purchase_invoices_contract_idx").on(table.purchaseContractId),
+    index("purchase_invoices_status_issued_idx").on(
+      table.status,
+      table.issuedAt
+    ),
+    index("purchase_invoices_source_idx").on(table.sourceInvoiceId),
+  ]
+);
 
-export const purchaseInvoiceLines = mysqlTable("purchaseInvoiceLines", {
-  id: int("id").autoincrement().primaryKey(),
-  purchaseInvoiceId: int("purchaseInvoiceId").notNull().references(() => purchaseInvoices.id, { onDelete: "cascade", onUpdate: "cascade" }),
-  lineNumber: int("lineNumber").notNull(),
-  itemType: mysqlEnum("itemType", ["asset", "supply", "service", "other"]).notNull(),
-  itemCode: varchar("itemCode", { length: 64 }),
-  itemName: varchar("itemName", { length: 255 }).notNull(),
-  description: text("description"),
-  quantity: decimal("quantity", { precision: 15, scale: 2 }).notNull(),
-  unit: varchar("unit", { length: 32 }),
-  unitPrice: decimal("unitPrice", { precision: 15, scale: 2 }).notNull(),
-  discountAmount: decimal("discountAmount", { precision: 15, scale: 2 }).default("0").notNull(),
-  taxRate: decimal("taxRate", { precision: 5, scale: 2 }).default("0").notNull(),
-  taxAmount: decimal("taxAmount", { precision: 15, scale: 2 }).default("0").notNull(),
-  lineTotal: decimal("lineTotal", { precision: 15, scale: 2 }).notNull(),
-  note: text("note"),
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
-  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
-}, (table) => [
-  uniqueIndex("purchase_invoice_lines_invoice_number_unique").on(table.purchaseInvoiceId, table.lineNumber),
-  index("purchase_invoice_lines_invoice_idx").on(table.purchaseInvoiceId),
-  index("purchase_invoice_lines_type_idx").on(table.itemType),
-]);
+export const purchaseInvoiceLines = mysqlTable(
+  "purchaseInvoiceLines",
+  {
+    id: int("id").autoincrement().primaryKey(),
+    purchaseInvoiceId: int("purchaseInvoiceId")
+      .notNull()
+      .references(() => purchaseInvoices.id, {
+        onDelete: "cascade",
+        onUpdate: "cascade",
+      }),
+    lineNumber: int("lineNumber").notNull(),
+    itemType: mysqlEnum("itemType", [
+      "asset",
+      "supply",
+      "service",
+      "other",
+    ]).notNull(),
+    itemCode: varchar("itemCode", { length: 64 }),
+    itemName: varchar("itemName", { length: 255 }).notNull(),
+    description: text("description"),
+    quantity: decimal("quantity", { precision: 15, scale: 2 }).notNull(),
+    unit: varchar("unit", { length: 32 }),
+    unitPrice: decimal("unitPrice", { precision: 15, scale: 2 }).notNull(),
+    discountAmount: decimal("discountAmount", { precision: 15, scale: 2 })
+      .default("0")
+      .notNull(),
+    taxRate: decimal("taxRate", { precision: 5, scale: 2 })
+      .default("0")
+      .notNull(),
+    taxAmount: decimal("taxAmount", { precision: 15, scale: 2 })
+      .default("0")
+      .notNull(),
+    lineTotal: decimal("lineTotal", { precision: 15, scale: 2 }).notNull(),
+    note: text("note"),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+    updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  },
+  table => [
+    uniqueIndex("purchase_invoice_lines_invoice_number_unique").on(
+      table.purchaseInvoiceId,
+      table.lineNumber
+    ),
+    index("purchase_invoice_lines_invoice_idx").on(table.purchaseInvoiceId),
+    index("purchase_invoice_lines_type_idx").on(table.itemType),
+  ]
+);
 
-export const purchaseInvoiceDocuments = mysqlTable("purchaseInvoiceDocuments", {
-  id: int("id").autoincrement().primaryKey(),
-  purchaseInvoiceId: int("purchaseInvoiceId").notNull().references(() => purchaseInvoices.id, { onDelete: "cascade", onUpdate: "cascade" }),
-  documentType: mysqlEnum("documentType", ["invoice_pdf", "invoice_xml", "scan", "delivery_note", "adjustment", "other"]).default("invoice_pdf").notNull(),
-  fileName: varchar("fileName", { length: 255 }).notNull(),
-  contentType: varchar("contentType", { length: 128 }).notNull(),
-  fileSize: int("fileSize").notNull(),
-  storageKey: text("storageKey").notNull(),
-  url: text("url").notNull(),
-  uploadedByUserId: int("uploadedByUserId"),
-  uploadedByName: varchar("uploadedByName", { length: 160 }),
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
-}, (table) => [index("purchase_invoice_documents_invoice_type_idx").on(table.purchaseInvoiceId, table.documentType)]);
+export const purchaseInvoiceDocuments = mysqlTable(
+  "purchaseInvoiceDocuments",
+  {
+    id: int("id").autoincrement().primaryKey(),
+    purchaseInvoiceId: int("purchaseInvoiceId")
+      .notNull()
+      .references(() => purchaseInvoices.id, {
+        onDelete: "cascade",
+        onUpdate: "cascade",
+      }),
+    documentType: mysqlEnum("documentType", [
+      "invoice_pdf",
+      "invoice_xml",
+      "scan",
+      "delivery_note",
+      "adjustment",
+      "other",
+    ])
+      .default("invoice_pdf")
+      .notNull(),
+    fileName: varchar("fileName", { length: 255 }).notNull(),
+    contentType: varchar("contentType", { length: 128 }).notNull(),
+    fileSize: int("fileSize").notNull(),
+    storageKey: text("storageKey").notNull(),
+    url: text("url").notNull(),
+    uploadedByUserId: int("uploadedByUserId"),
+    uploadedByName: varchar("uploadedByName", { length: 160 }),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+  },
+  table => [
+    index("purchase_invoice_documents_invoice_type_idx").on(
+      table.purchaseInvoiceId,
+      table.documentType
+    ),
+  ]
+);
 
 export const brands = mysqlTable("brands", {
   id: int("id").autoincrement().primaryKey(),
@@ -515,346 +1141,690 @@ export const brands = mysqlTable("brands", {
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
 
-export const retirementCertificates = mysqlTable("retirementCertificates", {
-  id: int("id").autoincrement().primaryKey(),
-  referenceCode: varchar("referenceCode", { length: 64 }).notNull().unique(),
-  retirementYear: int("retirementYear").notNull(),
-  sequence: int("sequence").notNull(),
-  status: mysqlEnum("status", ["draft", "awaiting_signed_copy", "closed"]).default("draft").notNull(),
-  retiredAt: timestamp("retiredAt").notNull(),
-  signedDocumentKey: text("signedDocumentKey"),
-  signedDocumentUrl: text("signedDocumentUrl"),
-  signedDocumentName: varchar("signedDocumentName", { length: 255 }),
-  signedDocumentContentType: varchar("signedDocumentContentType", { length: 128 }),
-  signedDocumentUploadedAt: timestamp("signedDocumentUploadedAt"),
-  signedDocumentUploadedByUserId: int("signedDocumentUploadedByUserId"),
-  closedAt: timestamp("closedAt"),
-  closedByUserId: int("closedByUserId"),
-  createdByUserId: int("createdByUserId"),
-  createdByName: varchar("createdByName", { length: 160 }),
-  note: text("note"),
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
-  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
-}, (table) => [
-  uniqueIndex("retirement_certificates_year_sequence_unique").on(table.retirementYear, table.sequence),
-  index("retirement_certificates_status_idx").on(table.status),
-  index("retirement_certificates_retired_at_idx").on(table.retiredAt),
-]);
+export const retirementCertificates = mysqlTable(
+  "retirementCertificates",
+  {
+    id: int("id").autoincrement().primaryKey(),
+    referenceCode: varchar("referenceCode", { length: 64 }).notNull().unique(),
+    retirementYear: int("retirementYear").notNull(),
+    sequence: int("sequence").notNull(),
+    status: mysqlEnum("status", ["draft", "awaiting_signed_copy", "closed"])
+      .default("draft")
+      .notNull(),
+    retiredAt: timestamp("retiredAt").notNull(),
+    signedDocumentKey: text("signedDocumentKey"),
+    signedDocumentUrl: text("signedDocumentUrl"),
+    signedDocumentName: varchar("signedDocumentName", { length: 255 }),
+    signedDocumentContentType: varchar("signedDocumentContentType", {
+      length: 128,
+    }),
+    signedDocumentUploadedAt: timestamp("signedDocumentUploadedAt"),
+    signedDocumentUploadedByUserId: int("signedDocumentUploadedByUserId"),
+    closedAt: timestamp("closedAt"),
+    closedByUserId: int("closedByUserId"),
+    createdByUserId: int("createdByUserId"),
+    createdByName: varchar("createdByName", { length: 160 }),
+    note: text("note"),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+    updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  },
+  table => [
+    uniqueIndex("retirement_certificates_year_sequence_unique").on(
+      table.retirementYear,
+      table.sequence
+    ),
+    index("retirement_certificates_status_idx").on(table.status),
+    index("retirement_certificates_retired_at_idx").on(table.retiredAt),
+  ]
+);
 
-export const assets = mysqlTable("assets", {
-  id: int("id").autoincrement().primaryKey(),
-  assetCode: varchar("assetCode", { length: 64 }).notNull().unique(),
-  name: varchar("name", { length: 255 }).notNull(),
-  categoryId: int("categoryId"),
-  branchId: int("branchId").references(() => branches.id, { onDelete: "set null", onUpdate: "cascade" }),
-  departmentId: int("departmentId"),
-  holderUserId: int("holderUserId"),
-  holderName: varchar("holderName", { length: 160 }),
-  status: mysqlEnum("status", ["available", "assigned", "maintenance", "retired", "lost", "returned_to_vendor"]).default("available").notNull(),
-  condition: mysqlEnum("condition", ["good", "fair", "needs_inspection", "damaged"]).default("good").notNull(),
-  purchaseDate: timestamp("purchaseDate"),
-  purchaseValue: decimal("purchaseValue", { precision: 15, scale: 2 }),
-  purchaseContractId: int("purchaseContractId").references(() => purchaseContracts.id, { onDelete: "restrict", onUpdate: "cascade" }),
-  purchaseInvoiceId: int("purchaseInvoiceId").references(() => purchaseInvoices.id, { onDelete: "restrict", onUpdate: "cascade" }),
-  purchaseInvoiceLineId: int("purchaseInvoiceLineId").references(() => purchaseInvoiceLines.id, { onDelete: "restrict", onUpdate: "cascade" }),
-  vendor: varchar("vendor", { length: 255 }),
-  vendorId: int("vendorId").references(() => vendors.id, { onDelete: "set null", onUpdate: "cascade" }),
-  brandId: int("brandId").references(() => brands.id, { onDelete: "set null", onUpdate: "cascade" }),
-  serialNumber: varchar("serialNumber", { length: 160 }),
-  location: varchar("location", { length: 255 }),
-  warrantyUntil: timestamp("warrantyUntil"),
-  supplierReturnedAt: timestamp("supplierReturnedAt"),
-  supplierReturnReason: text("supplierReturnReason"),
-  retiredAt: timestamp("retiredAt"),
-  retirementReason: text("retirementReason"),
-  retirementCertificateNumber: varchar("retirementCertificateNumber", { length: 64 }),
-  retirementCertificateYear: int("retirementCertificateYear"),
-  retirementCertificateSequence: int("retirementCertificateSequence"),
-  retirementCertificateId: int("retirementCertificateId").references(() => retirementCertificates.id, { onDelete: "set null", onUpdate: "cascade" }),
-  retirementAttachmentUrl: text("retirementAttachmentUrl"),
-  retirementAttachmentName: varchar("retirementAttachmentName", { length: 255 }),
-  retirementAttachmentContentType: varchar("retirementAttachmentContentType", { length: 100 }),
-  supplierReturnAttachmentUrl: text("supplierReturnAttachmentUrl"),
-  supplierReturnAttachmentName: varchar("supplierReturnAttachmentName", { length: 255 }),
-  supplierReturnAttachmentContentType: varchar("supplierReturnAttachmentContentType", { length: 100 }),
-  qrToken: varchar("qrToken", { length: 96 }).notNull().unique(),
-  metadata: json("metadata"),
-  note: text("note"),
-  maintenanceReason: text("maintenanceReason"),
-  isArchived: boolean("isArchived").default(false).notNull(),
-  createdByUserId: int("createdByUserId"),
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
-  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
-}, (table) => [
-  index("assets_status_idx").on(table.status),
-  index("assets_category_idx").on(table.categoryId),
-  index("assets_branch_idx").on(table.branchId),
-  index("assets_department_idx").on(table.departmentId),
-  index("assets_vendor_idx").on(table.vendorId),
-  index("assets_purchase_contract_idx").on(table.purchaseContractId),
-  index("assets_purchase_invoice_idx").on(table.purchaseInvoiceId),
-  index("assets_purchase_invoice_line_idx").on(table.purchaseInvoiceLineId),
-  index("assets_brand_idx").on(table.brandId),
-  index("assets_retirement_certificate_idx").on(table.retirementCertificateId),
-]);
+export const assets = mysqlTable(
+  "assets",
+  {
+    id: int("id").autoincrement().primaryKey(),
+    assetCode: varchar("assetCode", { length: 64 }).notNull().unique(),
+    name: varchar("name", { length: 255 }).notNull(),
+    categoryId: int("categoryId"),
+    branchId: int("branchId").references(() => branches.id, {
+      onDelete: "set null",
+      onUpdate: "cascade",
+    }),
+    departmentId: int("departmentId"),
+    holderUserId: int("holderUserId"),
+    holderName: varchar("holderName", { length: 160 }),
+    status: mysqlEnum("status", [
+      "available",
+      "assigned",
+      "maintenance",
+      "retired",
+      "lost",
+      "returned_to_vendor",
+    ])
+      .default("available")
+      .notNull(),
+    condition: mysqlEnum("condition", [
+      "good",
+      "fair",
+      "needs_inspection",
+      "damaged",
+    ])
+      .default("good")
+      .notNull(),
+    purchaseDate: timestamp("purchaseDate"),
+    purchaseValue: decimal("purchaseValue", { precision: 15, scale: 2 }),
+    purchaseContractId: int("purchaseContractId").references(
+      () => purchaseContracts.id,
+      { onDelete: "restrict", onUpdate: "cascade" }
+    ),
+    purchaseInvoiceId: int("purchaseInvoiceId").references(
+      () => purchaseInvoices.id,
+      { onDelete: "restrict", onUpdate: "cascade" }
+    ),
+    purchaseInvoiceLineId: int("purchaseInvoiceLineId").references(
+      () => purchaseInvoiceLines.id,
+      { onDelete: "restrict", onUpdate: "cascade" }
+    ),
+    vendor: varchar("vendor", { length: 255 }),
+    vendorId: int("vendorId").references(() => vendors.id, {
+      onDelete: "set null",
+      onUpdate: "cascade",
+    }),
+    brandId: int("brandId").references(() => brands.id, {
+      onDelete: "set null",
+      onUpdate: "cascade",
+    }),
+    serialNumber: varchar("serialNumber", { length: 160 }),
+    location: varchar("location", { length: 255 }),
+    warrantyUntil: timestamp("warrantyUntil"),
+    supplierReturnedAt: timestamp("supplierReturnedAt"),
+    supplierReturnReason: text("supplierReturnReason"),
+    retiredAt: timestamp("retiredAt"),
+    retirementReason: text("retirementReason"),
+    retirementCertificateNumber: varchar("retirementCertificateNumber", {
+      length: 64,
+    }),
+    retirementCertificateYear: int("retirementCertificateYear"),
+    retirementCertificateSequence: int("retirementCertificateSequence"),
+    retirementCertificateId: int("retirementCertificateId").references(
+      () => retirementCertificates.id,
+      { onDelete: "set null", onUpdate: "cascade" }
+    ),
+    retirementAttachmentUrl: text("retirementAttachmentUrl"),
+    retirementAttachmentName: varchar("retirementAttachmentName", {
+      length: 255,
+    }),
+    retirementAttachmentContentType: varchar(
+      "retirementAttachmentContentType",
+      { length: 100 }
+    ),
+    supplierReturnAttachmentUrl: text("supplierReturnAttachmentUrl"),
+    supplierReturnAttachmentName: varchar("supplierReturnAttachmentName", {
+      length: 255,
+    }),
+    supplierReturnAttachmentContentType: varchar(
+      "supplierReturnAttachmentContentType",
+      { length: 100 }
+    ),
+    qrToken: varchar("qrToken", { length: 96 }).notNull().unique(),
+    metadata: json("metadata"),
+    note: text("note"),
+    maintenanceReason: text("maintenanceReason"),
+    isArchived: boolean("isArchived").default(false).notNull(),
+    createdByUserId: int("createdByUserId"),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+    updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  },
+  table => [
+    index("assets_status_idx").on(table.status),
+    index("assets_category_idx").on(table.categoryId),
+    index("assets_branch_idx").on(table.branchId),
+    index("assets_department_idx").on(table.departmentId),
+    index("assets_vendor_idx").on(table.vendorId),
+    index("assets_purchase_contract_idx").on(table.purchaseContractId),
+    index("assets_purchase_invoice_idx").on(table.purchaseInvoiceId),
+    index("assets_purchase_invoice_line_idx").on(table.purchaseInvoiceLineId),
+    index("assets_brand_idx").on(table.brandId),
+    index("assets_retirement_certificate_idx").on(
+      table.retirementCertificateId
+    ),
+  ]
+);
 
-export const retirementCertificateAssets = mysqlTable("retirementCertificateAssets", {
-  id: int("id").autoincrement().primaryKey(),
-  retirementCertificateId: int("retirementCertificateId").notNull().references(() => retirementCertificates.id, { onDelete: "cascade", onUpdate: "cascade" }),
-  assetId: int("assetId").notNull().references(() => assets.id, { onDelete: "restrict", onUpdate: "cascade" }),
-  retirementReason: text("retirementReason").notNull(),
-  salvageValue: decimal("salvageValue", { precision: 15, scale: 2 }),
-  note: text("note"),
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
-  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
-}, (table) => [
-  uniqueIndex("retirement_certificate_assets_certificate_asset_unique").on(table.retirementCertificateId, table.assetId),
-  uniqueIndex("retirement_certificate_assets_asset_unique").on(table.assetId),
-  index("retirement_certificate_assets_certificate_idx").on(table.retirementCertificateId),
-]);
+export const retirementCertificateAssets = mysqlTable(
+  "retirementCertificateAssets",
+  {
+    id: int("id").autoincrement().primaryKey(),
+    retirementCertificateId: int("retirementCertificateId")
+      .notNull()
+      .references(() => retirementCertificates.id, {
+        onDelete: "cascade",
+        onUpdate: "cascade",
+      }),
+    assetId: int("assetId")
+      .notNull()
+      .references(() => assets.id, {
+        onDelete: "restrict",
+        onUpdate: "cascade",
+      }),
+    retirementReason: text("retirementReason").notNull(),
+    salvageValue: decimal("salvageValue", { precision: 15, scale: 2 }),
+    note: text("note"),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+    updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  },
+  table => [
+    uniqueIndex("retirement_certificate_assets_certificate_asset_unique").on(
+      table.retirementCertificateId,
+      table.assetId
+    ),
+    uniqueIndex("retirement_certificate_assets_asset_unique").on(table.assetId),
+    index("retirement_certificate_assets_certificate_idx").on(
+      table.retirementCertificateId
+    ),
+  ]
+);
 
-export const inventorySupplies = mysqlTable("inventorySupplies", {
-  id: int("id").autoincrement().primaryKey(),
-  code: varchar("code", { length: 64 }).notNull().unique(),
-  name: varchar("name", { length: 255 }).notNull(),
-  categoryId: int("categoryId").references(() => assetCategories.id, { onDelete: "set null", onUpdate: "cascade" }),
-  vendorId: int("vendorId").references(() => vendors.id, { onDelete: "set null", onUpdate: "cascade" }),
-  brandId: int("brandId").references(() => brands.id, { onDelete: "set null", onUpdate: "cascade" }),
-  unit: varchar("unit", { length: 32 }).default("Cái").notNull(),
-  stockQuantity: decimal("stockQuantity", { precision: 15, scale: 2 }).default("0").notNull(),
-  minimumQuantity: decimal("minimumQuantity", { precision: 15, scale: 2 }).default("0").notNull(),
-  unitCost: decimal("unitCost", { precision: 15, scale: 2 }),
-  purchaseContractId: int("purchaseContractId").references(() => purchaseContracts.id, { onDelete: "restrict", onUpdate: "cascade" }),
-  location: varchar("location", { length: 255 }),
-  note: text("note"),
-  isActive: boolean("isActive").default(true).notNull(),
-  createdByUserId: int("createdByUserId"),
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
-  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
-}, (table) => [index("inventory_supplies_category_idx").on(table.categoryId), index("inventory_supplies_purchase_contract_idx").on(table.purchaseContractId), index("inventory_supplies_active_idx").on(table.isActive)]);
+export const inventorySupplies = mysqlTable(
+  "inventorySupplies",
+  {
+    id: int("id").autoincrement().primaryKey(),
+    code: varchar("code", { length: 64 }).notNull().unique(),
+    name: varchar("name", { length: 255 }).notNull(),
+    categoryId: int("categoryId").references(() => assetCategories.id, {
+      onDelete: "set null",
+      onUpdate: "cascade",
+    }),
+    vendorId: int("vendorId").references(() => vendors.id, {
+      onDelete: "set null",
+      onUpdate: "cascade",
+    }),
+    brandId: int("brandId").references(() => brands.id, {
+      onDelete: "set null",
+      onUpdate: "cascade",
+    }),
+    unit: varchar("unit", { length: 32 }).default("Cái").notNull(),
+    stockQuantity: decimal("stockQuantity", { precision: 15, scale: 2 })
+      .default("0")
+      .notNull(),
+    minimumQuantity: decimal("minimumQuantity", { precision: 15, scale: 2 })
+      .default("0")
+      .notNull(),
+    unitCost: decimal("unitCost", { precision: 15, scale: 2 }),
+    purchaseContractId: int("purchaseContractId").references(
+      () => purchaseContracts.id,
+      { onDelete: "restrict", onUpdate: "cascade" }
+    ),
+    location: varchar("location", { length: 255 }),
+    note: text("note"),
+    isActive: boolean("isActive").default(true).notNull(),
+    createdByUserId: int("createdByUserId"),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+    updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  },
+  table => [
+    index("inventory_supplies_category_idx").on(table.categoryId),
+    index("inventory_supplies_purchase_contract_idx").on(
+      table.purchaseContractId
+    ),
+    index("inventory_supplies_active_idx").on(table.isActive),
+  ]
+);
 
-export const supplyUnits = mysqlTable("supplyUnits", {
-  id: int("id").autoincrement().primaryKey(),
-  name: varchar("name", { length: 32 }).notNull().unique(),
-  isActive: boolean("isActive").default(true).notNull(),
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
-  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
-}, (table) => [index("supply_units_active_idx").on(table.isActive)]);
+export const supplyUnits = mysqlTable(
+  "supplyUnits",
+  {
+    id: int("id").autoincrement().primaryKey(),
+    name: varchar("name", { length: 32 }).notNull().unique(),
+    isActive: boolean("isActive").default(true).notNull(),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+    updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  },
+  table => [index("supply_units_active_idx").on(table.isActive)]
+);
 
-export const purchaseContractItems = mysqlTable("purchaseContractItems", {
-  id: int("id").autoincrement().primaryKey(),
-  purchaseContractId: int("purchaseContractId").notNull().references(() => purchaseContracts.id, { onDelete: "cascade", onUpdate: "cascade" }),
-  itemType: mysqlEnum("itemType", ["asset", "supply"]).notNull(),
-  assetId: int("assetId").references(() => assets.id, { onDelete: "restrict", onUpdate: "cascade" }),
-  supplyId: int("supplyId").references(() => inventorySupplies.id, { onDelete: "restrict", onUpdate: "cascade" }),
-  itemCode: varchar("itemCode", { length: 64 }).notNull(),
-  itemName: varchar("itemName", { length: 255 }).notNull(),
-  quantity: decimal("quantity", { precision: 15, scale: 2 }).default("1").notNull(),
-  unit: varchar("unit", { length: 32 }),
-  unitPrice: decimal("unitPrice", { precision: 15, scale: 2 }),
-  warrantyUntil: timestamp("warrantyUntil"),
-  note: text("note"),
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
-  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
-}, (table) => [index("purchase_contract_items_contract_idx").on(table.purchaseContractId), index("purchase_contract_items_asset_idx").on(table.assetId), index("purchase_contract_items_supply_idx").on(table.supplyId)]);
+export const purchaseContractItems = mysqlTable(
+  "purchaseContractItems",
+  {
+    id: int("id").autoincrement().primaryKey(),
+    purchaseContractId: int("purchaseContractId")
+      .notNull()
+      .references(() => purchaseContracts.id, {
+        onDelete: "cascade",
+        onUpdate: "cascade",
+      }),
+    itemType: mysqlEnum("itemType", ["asset", "supply"]).notNull(),
+    assetId: int("assetId").references(() => assets.id, {
+      onDelete: "restrict",
+      onUpdate: "cascade",
+    }),
+    supplyId: int("supplyId").references(() => inventorySupplies.id, {
+      onDelete: "restrict",
+      onUpdate: "cascade",
+    }),
+    itemCode: varchar("itemCode", { length: 64 }).notNull(),
+    itemName: varchar("itemName", { length: 255 }).notNull(),
+    quantity: decimal("quantity", { precision: 15, scale: 2 })
+      .default("1")
+      .notNull(),
+    unit: varchar("unit", { length: 32 }),
+    unitPrice: decimal("unitPrice", { precision: 15, scale: 2 }),
+    warrantyUntil: timestamp("warrantyUntil"),
+    note: text("note"),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+    updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  },
+  table => [
+    index("purchase_contract_items_contract_idx").on(table.purchaseContractId),
+    index("purchase_contract_items_asset_idx").on(table.assetId),
+    index("purchase_contract_items_supply_idx").on(table.supplyId),
+  ]
+);
 
-export const supplyIssueSlips = mysqlTable("supplyIssueSlips", {
-  id: int("id").autoincrement().primaryKey(),
-  referenceCode: varchar("referenceCode", { length: 64 }).notNull().unique(),
-  recipientUserId: int("recipientUserId").references(() => users.id, { onDelete: "set null", onUpdate: "cascade" }),
-  recipientName: varchar("recipientName", { length: 160 }).notNull(),
-  recipientDepartmentId: int("recipientDepartmentId"),
-  status: mysqlEnum("status", ["active", "returned"]).default("active").notNull(),
-  note: text("note"),
-  issuedByUserId: int("issuedByUserId"),
-  issuedByName: varchar("issuedByName", { length: 160 }),
-  issuedAt: timestamp("issuedAt").defaultNow().notNull(),
-  returnedAt: timestamp("returnedAt"),
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
-  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
-}, (table) => [index("supply_issue_slips_issued_idx").on(table.issuedAt), index("supply_issue_slips_recipient_idx").on(table.recipientUserId)]);
+export const supplyIssueSlips = mysqlTable(
+  "supplyIssueSlips",
+  {
+    id: int("id").autoincrement().primaryKey(),
+    referenceCode: varchar("referenceCode", { length: 64 }).notNull().unique(),
+    recipientUserId: int("recipientUserId").references(() => users.id, {
+      onDelete: "set null",
+      onUpdate: "cascade",
+    }),
+    recipientName: varchar("recipientName", { length: 160 }).notNull(),
+    recipientDepartmentId: int("recipientDepartmentId"),
+    status: mysqlEnum("status", ["active", "returned"])
+      .default("active")
+      .notNull(),
+    note: text("note"),
+    issuedByUserId: int("issuedByUserId"),
+    issuedByName: varchar("issuedByName", { length: 160 }),
+    issuedAt: timestamp("issuedAt").defaultNow().notNull(),
+    returnedAt: timestamp("returnedAt"),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+    updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  },
+  table => [
+    index("supply_issue_slips_issued_idx").on(table.issuedAt),
+    index("supply_issue_slips_recipient_idx").on(table.recipientUserId),
+  ]
+);
 
-export const supplyIssueSlipItems = mysqlTable("supplyIssueSlipItems", {
-  id: int("id").autoincrement().primaryKey(),
-  issueSlipId: int("issueSlipId").notNull().references(() => supplyIssueSlips.id, { onDelete: "restrict", onUpdate: "cascade" }),
-  supplyId: int("supplyId").notNull().references(() => inventorySupplies.id, { onDelete: "restrict", onUpdate: "cascade" }),
-  supplyCode: varchar("supplyCode", { length: 64 }).notNull(),
-  supplyName: varchar("supplyName", { length: 255 }).notNull(),
-  unit: varchar("unit", { length: 32 }).notNull(),
-  issuedQuantity: decimal("issuedQuantity", { precision: 15, scale: 2 }).notNull(),
-  returnedQuantity: decimal("returnedQuantity", { precision: 15, scale: 2 }).default("0").notNull(),
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
-  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
-}, (table) => [index("supply_issue_slip_items_slip_idx").on(table.issueSlipId), index("supply_issue_slip_items_supply_idx").on(table.supplyId)]);
+export const supplyIssueSlipItems = mysqlTable(
+  "supplyIssueSlipItems",
+  {
+    id: int("id").autoincrement().primaryKey(),
+    issueSlipId: int("issueSlipId")
+      .notNull()
+      .references(() => supplyIssueSlips.id, {
+        onDelete: "restrict",
+        onUpdate: "cascade",
+      }),
+    supplyId: int("supplyId")
+      .notNull()
+      .references(() => inventorySupplies.id, {
+        onDelete: "restrict",
+        onUpdate: "cascade",
+      }),
+    supplyCode: varchar("supplyCode", { length: 64 }).notNull(),
+    supplyName: varchar("supplyName", { length: 255 }).notNull(),
+    unit: varchar("unit", { length: 32 }).notNull(),
+    issuedQuantity: decimal("issuedQuantity", {
+      precision: 15,
+      scale: 2,
+    }).notNull(),
+    returnedQuantity: decimal("returnedQuantity", { precision: 15, scale: 2 })
+      .default("0")
+      .notNull(),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+    updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  },
+  table => [
+    index("supply_issue_slip_items_slip_idx").on(table.issueSlipId),
+    index("supply_issue_slip_items_supply_idx").on(table.supplyId),
+  ]
+);
 
-export const inventoryMovements = mysqlTable("inventoryMovements", {
-  id: int("id").autoincrement().primaryKey(),
-  supplyId: int("supplyId").notNull().references(() => inventorySupplies.id, { onDelete: "restrict", onUpdate: "cascade" }),
-  movementType: mysqlEnum("movementType", ["receipt", "issue", "adjustment", "return"]).notNull(),
-  quantity: decimal("quantity", { precision: 15, scale: 2 }).notNull(),
-  quantityBefore: decimal("quantityBefore", { precision: 15, scale: 2 }).notNull(),
-  quantityAfter: decimal("quantityAfter", { precision: 15, scale: 2 }).notNull(),
-  handoverId: int("handoverId"),
-  issueSlipId: int("issueSlipId").references(() => supplyIssueSlips.id, { onDelete: "set null", onUpdate: "cascade" }),
-  issueSlipItemId: int("issueSlipItemId").references(() => supplyIssueSlipItems.id, { onDelete: "set null", onUpdate: "cascade" }),
-  recipientUserId: int("recipientUserId").references(() => users.id, { onDelete: "set null", onUpdate: "cascade" }),
-  recipientName: varchar("recipientName", { length: 160 }),
-  recipientDepartmentId: int("recipientDepartmentId"),
-  note: text("note"),
-  createdByUserId: int("createdByUserId"),
-  createdByName: varchar("createdByName", { length: 160 }),
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
-}, (table) => [index("inventory_movements_supply_idx").on(table.supplyId), index("inventory_movements_created_idx").on(table.createdAt), index("inventory_movements_slip_idx").on(table.issueSlipId), index("inventory_movements_handover_idx").on(table.handoverId)]);
+export const inventoryMovements = mysqlTable(
+  "inventoryMovements",
+  {
+    id: int("id").autoincrement().primaryKey(),
+    supplyId: int("supplyId")
+      .notNull()
+      .references(() => inventorySupplies.id, {
+        onDelete: "restrict",
+        onUpdate: "cascade",
+      }),
+    movementType: mysqlEnum("movementType", [
+      "receipt",
+      "issue",
+      "adjustment",
+      "return",
+    ]).notNull(),
+    quantity: decimal("quantity", { precision: 15, scale: 2 }).notNull(),
+    quantityBefore: decimal("quantityBefore", {
+      precision: 15,
+      scale: 2,
+    }).notNull(),
+    quantityAfter: decimal("quantityAfter", {
+      precision: 15,
+      scale: 2,
+    }).notNull(),
+    handoverId: int("handoverId"),
+    issueSlipId: int("issueSlipId").references(() => supplyIssueSlips.id, {
+      onDelete: "set null",
+      onUpdate: "cascade",
+    }),
+    issueSlipItemId: int("issueSlipItemId").references(
+      () => supplyIssueSlipItems.id,
+      { onDelete: "set null", onUpdate: "cascade" }
+    ),
+    recipientUserId: int("recipientUserId").references(() => users.id, {
+      onDelete: "set null",
+      onUpdate: "cascade",
+    }),
+    recipientName: varchar("recipientName", { length: 160 }),
+    recipientDepartmentId: int("recipientDepartmentId"),
+    note: text("note"),
+    createdByUserId: int("createdByUserId"),
+    createdByName: varchar("createdByName", { length: 160 }),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+  },
+  table => [
+    index("inventory_movements_supply_idx").on(table.supplyId),
+    index("inventory_movements_created_idx").on(table.createdAt),
+    index("inventory_movements_slip_idx").on(table.issueSlipId),
+    index("inventory_movements_handover_idx").on(table.handoverId),
+  ]
+);
 
-export const purchaseInvoiceSupplyReceipts = mysqlTable("purchaseInvoiceSupplyReceipts", {
-  id: int("id").autoincrement().primaryKey(),
-  purchaseInvoiceLineId: int("purchaseInvoiceLineId").notNull().references(() => purchaseInvoiceLines.id, { onDelete: "restrict", onUpdate: "cascade" }),
-  supplyId: int("supplyId").notNull().references(() => inventorySupplies.id, { onDelete: "restrict", onUpdate: "cascade" }),
-  receivedQuantity: decimal("receivedQuantity", { precision: 15, scale: 2 }).notNull(),
-  unitCost: decimal("unitCost", { precision: 15, scale: 2 }),
-  taxRate: decimal("taxRate", { precision: 5, scale: 2 }).default("0").notNull(),
-  taxAmount: decimal("taxAmount", { precision: 15, scale: 2 }).default("0").notNull(),
-  totalAmount: decimal("totalAmount", { precision: 15, scale: 2 }).notNull(),
-  inventoryMovementId: int("inventoryMovementId"),
-  status: mysqlEnum("status", ["draft", "received", "reversed"]).default("draft").notNull(),
-  receivedAt: timestamp("receivedAt"),
-  note: text("note"),
-  createdByUserId: int("createdByUserId"),
-  createdByName: varchar("createdByName", { length: 160 }),
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
-  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
-}, (table) => [
-  index("purchase_invoice_supply_receipts_line_idx").on(table.purchaseInvoiceLineId),
-  index("purchase_invoice_supply_receipts_supply_received_idx").on(table.supplyId, table.receivedAt),
-  uniqueIndex("purchase_invoice_supply_receipts_movement_unique").on(table.inventoryMovementId),
-]);
+export const purchaseInvoiceSupplyReceipts = mysqlTable(
+  "purchaseInvoiceSupplyReceipts",
+  {
+    id: int("id").autoincrement().primaryKey(),
+    purchaseInvoiceLineId: int("purchaseInvoiceLineId")
+      .notNull()
+      .references(() => purchaseInvoiceLines.id, {
+        onDelete: "restrict",
+        onUpdate: "cascade",
+      }),
+    supplyId: int("supplyId")
+      .notNull()
+      .references(() => inventorySupplies.id, {
+        onDelete: "restrict",
+        onUpdate: "cascade",
+      }),
+    receivedQuantity: decimal("receivedQuantity", {
+      precision: 15,
+      scale: 2,
+    }).notNull(),
+    unitCost: decimal("unitCost", { precision: 15, scale: 2 }),
+    taxRate: decimal("taxRate", { precision: 5, scale: 2 })
+      .default("0")
+      .notNull(),
+    taxAmount: decimal("taxAmount", { precision: 15, scale: 2 })
+      .default("0")
+      .notNull(),
+    totalAmount: decimal("totalAmount", { precision: 15, scale: 2 }).notNull(),
+    inventoryMovementId: int("inventoryMovementId"),
+    status: mysqlEnum("status", ["draft", "received", "reversed"])
+      .default("draft")
+      .notNull(),
+    receivedAt: timestamp("receivedAt"),
+    note: text("note"),
+    createdByUserId: int("createdByUserId"),
+    createdByName: varchar("createdByName", { length: 160 }),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+    updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  },
+  table => [
+    index("purchase_invoice_supply_receipts_line_idx").on(
+      table.purchaseInvoiceLineId
+    ),
+    index("purchase_invoice_supply_receipts_supply_received_idx").on(
+      table.supplyId,
+      table.receivedAt
+    ),
+    uniqueIndex("purchase_invoice_supply_receipts_movement_unique").on(
+      table.inventoryMovementId
+    ),
+  ]
+);
 
-export const supplyImportSessions = mysqlTable("supplyImportSessions", {
-  id: int("id").autoincrement().primaryKey(),
-  referenceCode: varchar("referenceCode", { length: 64 }).notNull().unique(),
-  createdByUserId: int("createdByUserId"),
-  createdByName: varchar("createdByName", { length: 160 }),
-  createdCount: int("createdCount").default(0).notNull(),
-  updatedCount: int("updatedCount").default(0).notNull(),
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
-}, (table) => [index("supply_import_sessions_created_idx").on(table.createdAt)]);
+export const supplyImportSessions = mysqlTable(
+  "supplyImportSessions",
+  {
+    id: int("id").autoincrement().primaryKey(),
+    referenceCode: varchar("referenceCode", { length: 64 }).notNull().unique(),
+    createdByUserId: int("createdByUserId"),
+    createdByName: varchar("createdByName", { length: 160 }),
+    createdCount: int("createdCount").default(0).notNull(),
+    updatedCount: int("updatedCount").default(0).notNull(),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+  },
+  table => [index("supply_import_sessions_created_idx").on(table.createdAt)]
+);
 
-export const supplyImportItems = mysqlTable("supplyImportItems", {
-  id: int("id").autoincrement().primaryKey(),
-  importSessionId: int("importSessionId").notNull().references(() => supplyImportSessions.id, { onDelete: "restrict", onUpdate: "cascade" }),
-  supplyId: int("supplyId").notNull().references(() => inventorySupplies.id, { onDelete: "restrict", onUpdate: "cascade" }),
-  action: mysqlEnum("action", ["created", "updated"]).notNull(),
-  beforeSnapshot: json("beforeSnapshot"),
-  afterSnapshot: json("afterSnapshot"),
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
-}, (table) => [index("supply_import_items_session_idx").on(table.importSessionId), index("supply_import_items_supply_idx").on(table.supplyId)]);
+export const supplyImportItems = mysqlTable(
+  "supplyImportItems",
+  {
+    id: int("id").autoincrement().primaryKey(),
+    importSessionId: int("importSessionId")
+      .notNull()
+      .references(() => supplyImportSessions.id, {
+        onDelete: "restrict",
+        onUpdate: "cascade",
+      }),
+    supplyId: int("supplyId")
+      .notNull()
+      .references(() => inventorySupplies.id, {
+        onDelete: "restrict",
+        onUpdate: "cascade",
+      }),
+    action: mysqlEnum("action", ["created", "updated"]).notNull(),
+    beforeSnapshot: json("beforeSnapshot"),
+    afterSnapshot: json("afterSnapshot"),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+  },
+  table => [
+    index("supply_import_items_session_idx").on(table.importSessionId),
+    index("supply_import_items_supply_idx").on(table.supplyId),
+  ]
+);
 
-export const handovers = mysqlTable("handovers", {
-  id: int("id").autoincrement().primaryKey(),
-  referenceCode: varchar("referenceCode", { length: 64 }).notNull().unique(),
-  assetId: int("assetId").notNull(),
-  recipientUserId: int("recipientUserId"),
-  recipientName: varchar("recipientName", { length: 160 }).notNull(),
-  recipientDepartmentId: int("recipientDepartmentId"),
-  recipientDepartmentName: varchar("recipientDepartmentName", { length: 160 }),
-  handoverByUserId: int("handoverByUserId"),
-  handoverByName: varchar("handoverByName", { length: 160 }),
-  handedOverAt: timestamp("handedOverAt").notNull(),
-  dueBackAt: timestamp("dueBackAt"),
-  returnedAt: timestamp("returnedAt"),
-  recoveryCertificateNumber: varchar("recoveryCertificateNumber", { length: 64 }).unique(),
-  recoveryCertificateYear: int("recoveryCertificateYear"),
-  recoveryCertificateMonth: int("recoveryCertificateMonth"),
-  recoveryCertificateSequence: int("recoveryCertificateSequence"),
-  status: mysqlEnum("status", ["draft", "pending_signature", "active", "returned", "cancelled"]).default("draft").notNull(),
-  returnRequestStatus: mysqlEnum("returnRequestStatus", ["none", "pending", "approved", "rejected"]).default("none").notNull(),
-  returnRequestedAt: timestamp("returnRequestedAt"),
-  returnRequestNote: text("returnRequestNote"),
-  returnRequestResolvedAt: timestamp("returnRequestResolvedAt"),
-  returnRequestResolvedByUserId: int("returnRequestResolvedByUserId"),
-  returnRequestResolution: text("returnRequestResolution"),
-  returnFollowUpNote: text("returnFollowUpNote"),
-  returnFollowUpAt: timestamp("returnFollowUpAt"),
-  returnResultSeenAt: timestamp("returnResultSeenAt"),
-  returnConditionPhotoKey: varchar("returnConditionPhotoKey", { length: 512 }),
-  returnConditionPhotoUrl: text("returnConditionPhotoUrl"),
-  returnConditionPhotoName: varchar("returnConditionPhotoName", { length: 255 }),
-  returnConditionPhotoContentType: varchar("returnConditionPhotoContentType", { length: 128 }),
-  conditionOut: varchar("conditionOut", { length: 120 }),
-  conditionIn: varchar("conditionIn", { length: 120 }),
-  accessories: text("accessories"),
-  note: text("note"),
-  recipientSignatureUrl: text("recipientSignatureUrl"),
-  handoverSignatureUrl: text("handoverSignatureUrl"),
-  signedAt: timestamp("signedAt"),
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
-  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
-}, (table) => [
-  index("handovers_asset_idx").on(table.assetId),
-  index("handovers_recipient_idx").on(table.recipientUserId),
-  index("handovers_status_idx").on(table.status),
-]);
+export const handovers = mysqlTable(
+  "handovers",
+  {
+    id: int("id").autoincrement().primaryKey(),
+    referenceCode: varchar("referenceCode", { length: 64 }).notNull().unique(),
+    assetId: int("assetId").notNull(),
+    recipientUserId: int("recipientUserId"),
+    recipientName: varchar("recipientName", { length: 160 }).notNull(),
+    recipientDepartmentId: int("recipientDepartmentId"),
+    recipientDepartmentName: varchar("recipientDepartmentName", {
+      length: 160,
+    }),
+    handoverByUserId: int("handoverByUserId"),
+    handoverByName: varchar("handoverByName", { length: 160 }),
+    handedOverAt: timestamp("handedOverAt").notNull(),
+    dueBackAt: timestamp("dueBackAt"),
+    returnedAt: timestamp("returnedAt"),
+    recoveryCertificateNumber: varchar("recoveryCertificateNumber", {
+      length: 64,
+    }).unique(),
+    recoveryCertificateYear: int("recoveryCertificateYear"),
+    recoveryCertificateMonth: int("recoveryCertificateMonth"),
+    recoveryCertificateSequence: int("recoveryCertificateSequence"),
+    status: mysqlEnum("status", [
+      "draft",
+      "pending_signature",
+      "active",
+      "returned",
+      "cancelled",
+    ])
+      .default("draft")
+      .notNull(),
+    returnRequestStatus: mysqlEnum("returnRequestStatus", [
+      "none",
+      "pending",
+      "approved",
+      "rejected",
+    ])
+      .default("none")
+      .notNull(),
+    returnRequestedAt: timestamp("returnRequestedAt"),
+    returnRequestNote: text("returnRequestNote"),
+    returnRequestResolvedAt: timestamp("returnRequestResolvedAt"),
+    returnRequestResolvedByUserId: int("returnRequestResolvedByUserId"),
+    returnRequestResolution: text("returnRequestResolution"),
+    returnFollowUpNote: text("returnFollowUpNote"),
+    returnFollowUpAt: timestamp("returnFollowUpAt"),
+    returnResultSeenAt: timestamp("returnResultSeenAt"),
+    returnConditionPhotoKey: varchar("returnConditionPhotoKey", {
+      length: 512,
+    }),
+    returnConditionPhotoUrl: text("returnConditionPhotoUrl"),
+    returnConditionPhotoName: varchar("returnConditionPhotoName", {
+      length: 255,
+    }),
+    returnConditionPhotoContentType: varchar(
+      "returnConditionPhotoContentType",
+      { length: 128 }
+    ),
+    conditionOut: varchar("conditionOut", { length: 120 }),
+    conditionIn: varchar("conditionIn", { length: 120 }),
+    accessories: text("accessories"),
+    note: text("note"),
+    recipientSignatureUrl: text("recipientSignatureUrl"),
+    handoverSignatureUrl: text("handoverSignatureUrl"),
+    signedAt: timestamp("signedAt"),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+    updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  },
+  table => [
+    index("handovers_asset_idx").on(table.assetId),
+    index("handovers_recipient_idx").on(table.recipientUserId),
+    index("handovers_status_idx").on(table.status),
+  ]
+);
 
-export const handoverSupplyItems = mysqlTable("handoverSupplyItems", {
-  id: int("id").autoincrement().primaryKey(),
-  handoverId: int("handoverId").notNull().references(() => handovers.id, { onDelete: "restrict", onUpdate: "cascade" }),
-  supplyId: int("supplyId").notNull().references(() => inventorySupplies.id, { onDelete: "restrict", onUpdate: "cascade" }),
-  supplyCode: varchar("supplyCode", { length: 64 }).notNull(),
-  supplyName: varchar("supplyName", { length: 255 }).notNull(),
-  unit: varchar("unit", { length: 32 }).notNull(),
-  issuedQuantity: decimal("issuedQuantity", { precision: 15, scale: 2 }).notNull(),
-  returnedQuantity: decimal("returnedQuantity", { precision: 15, scale: 2 }).default("0").notNull(),
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
-  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
-}, (table) => [index("handover_supply_items_handover_idx").on(table.handoverId), index("handover_supply_items_supply_idx").on(table.supplyId)]);
+export const handoverSupplyItems = mysqlTable(
+  "handoverSupplyItems",
+  {
+    id: int("id").autoincrement().primaryKey(),
+    handoverId: int("handoverId")
+      .notNull()
+      .references(() => handovers.id, {
+        onDelete: "restrict",
+        onUpdate: "cascade",
+      }),
+    supplyId: int("supplyId")
+      .notNull()
+      .references(() => inventorySupplies.id, {
+        onDelete: "restrict",
+        onUpdate: "cascade",
+      }),
+    supplyCode: varchar("supplyCode", { length: 64 }).notNull(),
+    supplyName: varchar("supplyName", { length: 255 }).notNull(),
+    unit: varchar("unit", { length: 32 }).notNull(),
+    issuedQuantity: decimal("issuedQuantity", {
+      precision: 15,
+      scale: 2,
+    }).notNull(),
+    returnedQuantity: decimal("returnedQuantity", { precision: 15, scale: 2 })
+      .default("0")
+      .notNull(),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+    updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  },
+  table => [
+    index("handover_supply_items_handover_idx").on(table.handoverId),
+    index("handover_supply_items_supply_idx").on(table.supplyId),
+  ]
+);
 
-export const maintenanceTickets = mysqlTable("maintenanceTickets", {
-  id: int("id").autoincrement().primaryKey(),
-  ticketCode: varchar("ticketCode", { length: 64 }).notNull().unique(),
-  ticketYear: int("ticketYear"),
-  ticketSequence: int("ticketSequence"),
-  assetId: int("assetId").notNull(),
-  reporterUserId: int("reporterUserId"),
-  reporterName: varchar("reporterName", { length: 160 }),
-  assigneeUserId: int("assigneeUserId"),
-  issueType: mysqlEnum("issueType", ["maintenance", "incident", "damage"]).notNull(),
-  serviceChannel: mysqlEnum("serviceChannel", ["warranty", "repair"]).default("repair").notNull(),
-  priority: mysqlEnum("priority", ["low", "medium", "high", "critical"]).default("medium").notNull(),
-  status: mysqlEnum("status", ["open", "in_progress", "resolved", "closed"]).default("open").notNull(),
-  description: text("description").notNull(),
-  warrantyBrand: varchar("warrantyBrand", { length: 160 }),
-  warrantyVendor: varchar("warrantyVendor", { length: 255 }),
-  warrantyRequestCode: varchar("warrantyRequestCode", { length: 128 }),
-  resolution: text("resolution"),
-  estimatedCost: decimal("estimatedCost", { precision: 15, scale: 2 }),
-  actualCost: decimal("actualCost", { precision: 15, scale: 2 }),
-  attachmentUrl: text("attachmentUrl"),
-  attachmentName: varchar("attachmentName", { length: 255 }),
-  attachmentContentType: varchar("attachmentContentType", { length: 128 }),
-  openedAt: timestamp("openedAt").defaultNow().notNull(),
-  dueAt: timestamp("dueAt"),
-  recurrenceDays: int("recurrenceDays"),
-  resolvedAt: timestamp("resolvedAt"),
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
-  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
-}, (table) => [index("maintenance_asset_idx").on(table.assetId), index("maintenance_status_idx").on(table.status), index("maintenance_channel_idx").on(table.serviceChannel), index("maintenance_year_sequence_idx").on(table.ticketYear, table.ticketSequence), uniqueIndex("maintenance_warranty_request_code_unique").on(table.warrantyRequestCode)]);
+export const maintenanceTickets = mysqlTable(
+  "maintenanceTickets",
+  {
+    id: int("id").autoincrement().primaryKey(),
+    ticketCode: varchar("ticketCode", { length: 64 }).notNull().unique(),
+    ticketYear: int("ticketYear"),
+    ticketSequence: int("ticketSequence"),
+    assetId: int("assetId").notNull(),
+    reporterUserId: int("reporterUserId"),
+    reporterName: varchar("reporterName", { length: 160 }),
+    assigneeUserId: int("assigneeUserId"),
+    issueType: mysqlEnum("issueType", [
+      "maintenance",
+      "incident",
+      "damage",
+    ]).notNull(),
+    serviceChannel: mysqlEnum("serviceChannel", ["warranty", "repair"])
+      .default("repair")
+      .notNull(),
+    priority: mysqlEnum("priority", ["low", "medium", "high", "critical"])
+      .default("medium")
+      .notNull(),
+    status: mysqlEnum("status", ["open", "in_progress", "resolved", "closed"])
+      .default("open")
+      .notNull(),
+    description: text("description").notNull(),
+    warrantyBrand: varchar("warrantyBrand", { length: 160 }),
+    warrantyVendor: varchar("warrantyVendor", { length: 255 }),
+    warrantyRequestCode: varchar("warrantyRequestCode", { length: 128 }),
+    resolution: text("resolution"),
+    estimatedCost: decimal("estimatedCost", { precision: 15, scale: 2 }),
+    actualCost: decimal("actualCost", { precision: 15, scale: 2 }),
+    attachmentUrl: text("attachmentUrl"),
+    attachmentName: varchar("attachmentName", { length: 255 }),
+    attachmentContentType: varchar("attachmentContentType", { length: 128 }),
+    openedAt: timestamp("openedAt").defaultNow().notNull(),
+    dueAt: timestamp("dueAt"),
+    recurrenceDays: int("recurrenceDays"),
+    resolvedAt: timestamp("resolvedAt"),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+    updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  },
+  table => [
+    index("maintenance_asset_idx").on(table.assetId),
+    index("maintenance_status_idx").on(table.status),
+    index("maintenance_channel_idx").on(table.serviceChannel),
+    index("maintenance_year_sequence_idx").on(
+      table.ticketYear,
+      table.ticketSequence
+    ),
+    uniqueIndex("maintenance_warranty_request_code_unique").on(
+      table.warrantyRequestCode
+    ),
+  ]
+);
 
-export const maintenanceMonthlyBudgets = mysqlTable("maintenanceMonthlyBudgets", {
-  id: int("id").autoincrement().primaryKey(),
-  year: int("year").notNull(),
-  month: int("month").notNull(),
-  amount: decimal("amount", { precision: 15, scale: 2 }).notNull(),
-  updatedByUserId: int("updatedByUserId"),
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
-  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
-}, (table) => [uniqueIndex("maintenance_budget_year_month_unique").on(table.year, table.month), index("maintenance_budget_year_idx").on(table.year)]);
+export const maintenanceMonthlyBudgets = mysqlTable(
+  "maintenanceMonthlyBudgets",
+  {
+    id: int("id").autoincrement().primaryKey(),
+    year: int("year").notNull(),
+    month: int("month").notNull(),
+    amount: decimal("amount", { precision: 15, scale: 2 }).notNull(),
+    updatedByUserId: int("updatedByUserId"),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+    updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  },
+  table => [
+    uniqueIndex("maintenance_budget_year_month_unique").on(
+      table.year,
+      table.month
+    ),
+    index("maintenance_budget_year_idx").on(table.year),
+  ]
+);
 
 export const auditSessions = mysqlTable("auditSessions", {
   id: int("id").autoincrement().primaryKey(),
   referenceCode: varchar("referenceCode", { length: 64 }).notNull().unique(),
   name: varchar("name", { length: 255 }).notNull(),
   departmentId: int("departmentId"),
-  status: mysqlEnum("status", ["draft", "active", "completed", "cancelled"]).default("draft").notNull(),
+  status: mysqlEnum("status", ["draft", "active", "completed", "cancelled"])
+    .default("draft")
+    .notNull(),
   scheduledAt: timestamp("scheduledAt"),
   recurrenceDays: int("recurrenceDays"),
   startedAt: timestamp("startedAt"),
@@ -864,68 +1834,99 @@ export const auditSessions = mysqlTable("auditSessions", {
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
 
-export const auditItems = mysqlTable("auditItems", {
-  id: int("id").autoincrement().primaryKey(),
-  auditSessionId: int("auditSessionId").notNull(),
-  assetId: int("assetId").notNull(),
-  expectedStatus: varchar("expectedStatus", { length: 64 }),
-  actualStatus: varchar("actualStatus", { length: 64 }),
-  result: mysqlEnum("result", ["pending", "matched", "missing", "mismatch"]).default("pending").notNull(),
-  checkedByUserId: int("checkedByUserId"),
-  checkedAt: timestamp("checkedAt"),
-  note: text("note"),
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
-  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
-}, (table) => [index("audit_items_session_idx").on(table.auditSessionId), index("audit_items_asset_idx").on(table.assetId)]);
+export const auditItems = mysqlTable(
+  "auditItems",
+  {
+    id: int("id").autoincrement().primaryKey(),
+    auditSessionId: int("auditSessionId").notNull(),
+    assetId: int("assetId").notNull(),
+    expectedStatus: varchar("expectedStatus", { length: 64 }),
+    actualStatus: varchar("actualStatus", { length: 64 }),
+    result: mysqlEnum("result", ["pending", "matched", "missing", "mismatch"])
+      .default("pending")
+      .notNull(),
+    checkedByUserId: int("checkedByUserId"),
+    checkedAt: timestamp("checkedAt"),
+    note: text("note"),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+    updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  },
+  table => [
+    index("audit_items_session_idx").on(table.auditSessionId),
+    index("audit_items_asset_idx").on(table.assetId),
+  ]
+);
 
-export const assetImportSessions = mysqlTable("assetImportSessions", {
-  id: int("id").autoincrement().primaryKey(),
-  referenceCode: varchar("referenceCode", { length: 64 }).notNull().unique(),
-  createdByUserId: int("createdByUserId"),
-  createdByName: varchar("createdByName", { length: 160 }),
-  createdCount: int("createdCount").default(0).notNull(),
-  updatedCount: int("updatedCount").default(0).notNull(),
-  isUndone: boolean("isUndone").default(false).notNull(),
-  undoneAt: timestamp("undoneAt"),
-  undoneByUserId: int("undoneByUserId"),
-  undoReason: text("undoReason"),
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
-}, (table) => [index("asset_import_sessions_created_idx").on(table.createdAt)]);
+export const assetImportSessions = mysqlTable(
+  "assetImportSessions",
+  {
+    id: int("id").autoincrement().primaryKey(),
+    referenceCode: varchar("referenceCode", { length: 64 }).notNull().unique(),
+    createdByUserId: int("createdByUserId"),
+    createdByName: varchar("createdByName", { length: 160 }),
+    createdCount: int("createdCount").default(0).notNull(),
+    updatedCount: int("updatedCount").default(0).notNull(),
+    isUndone: boolean("isUndone").default(false).notNull(),
+    undoneAt: timestamp("undoneAt"),
+    undoneByUserId: int("undoneByUserId"),
+    undoReason: text("undoReason"),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+  },
+  table => [index("asset_import_sessions_created_idx").on(table.createdAt)]
+);
 
-export const assetImportItems = mysqlTable("assetImportItems", {
-  id: int("id").autoincrement().primaryKey(),
-  importSessionId: int("importSessionId").notNull(),
-  assetId: int("assetId").notNull(),
-  action: mysqlEnum("action", ["created", "updated"]).notNull(),
-  beforeSnapshot: json("beforeSnapshot"),
-  afterSnapshot: json("afterSnapshot"),
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
-}, (table) => [index("asset_import_items_session_idx").on(table.importSessionId), index("asset_import_items_asset_idx").on(table.assetId)]);
+export const assetImportItems = mysqlTable(
+  "assetImportItems",
+  {
+    id: int("id").autoincrement().primaryKey(),
+    importSessionId: int("importSessionId").notNull(),
+    assetId: int("assetId").notNull(),
+    action: mysqlEnum("action", ["created", "updated"]).notNull(),
+    beforeSnapshot: json("beforeSnapshot"),
+    afterSnapshot: json("afterSnapshot"),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+  },
+  table => [
+    index("asset_import_items_session_idx").on(table.importSessionId),
+    index("asset_import_items_asset_idx").on(table.assetId),
+  ]
+);
 
-export const assetFieldChanges = mysqlTable("assetFieldChanges", {
-  id: int("id").autoincrement().primaryKey(),
-  assetId: int("assetId").notNull(),
-  importSessionId: int("importSessionId"),
-  fieldName: varchar("fieldName", { length: 96 }).notNull(),
-  previousValue: text("previousValue"),
-  nextValue: text("nextValue"),
-  source: mysqlEnum("source", ["import", "manual", "undo"]).notNull(),
-  actorUserId: int("actorUserId"),
-  actorName: varchar("actorName", { length: 160 }),
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
-}, (table) => [index("asset_field_changes_asset_idx").on(table.assetId), index("asset_field_changes_session_idx").on(table.importSessionId)]);
+export const assetFieldChanges = mysqlTable(
+  "assetFieldChanges",
+  {
+    id: int("id").autoincrement().primaryKey(),
+    assetId: int("assetId").notNull(),
+    importSessionId: int("importSessionId"),
+    fieldName: varchar("fieldName", { length: 96 }).notNull(),
+    previousValue: text("previousValue"),
+    nextValue: text("nextValue"),
+    source: mysqlEnum("source", ["import", "manual", "undo"]).notNull(),
+    actorUserId: int("actorUserId"),
+    actorName: varchar("actorName", { length: 160 }),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+  },
+  table => [
+    index("asset_field_changes_asset_idx").on(table.assetId),
+    index("asset_field_changes_session_idx").on(table.importSessionId),
+  ]
+);
 
-export const activityLogs = mysqlTable("activityLogs", {
-  id: int("id").autoincrement().primaryKey(),
-  entityType: varchar("entityType", { length: 64 }).notNull(),
-  entityId: int("entityId").notNull(),
-  action: varchar("action", { length: 96 }).notNull(),
-  actorUserId: int("actorUserId"),
-  actorName: varchar("actorName", { length: 160 }),
-  summary: text("summary"),
-  metadata: json("metadata"),
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
-}, (table) => [index("activity_entity_idx").on(table.entityType, table.entityId)]);
+export const activityLogs = mysqlTable(
+  "activityLogs",
+  {
+    id: int("id").autoincrement().primaryKey(),
+    entityType: varchar("entityType", { length: 64 }).notNull(),
+    entityId: int("entityId").notNull(),
+    action: varchar("action", { length: 96 }).notNull(),
+    actorUserId: int("actorUserId"),
+    actorName: varchar("actorName", { length: 160 }),
+    summary: text("summary"),
+    metadata: json("metadata"),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+  },
+  table => [index("activity_entity_idx").on(table.entityType, table.entityId)]
+);
 
 export type User = typeof users.$inferSelect;
 export type InsertUser = typeof users.$inferInsert;

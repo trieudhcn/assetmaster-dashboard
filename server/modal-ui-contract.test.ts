@@ -1491,8 +1491,8 @@ it("captures retirement date and reason and can export a disposal record as PDF"
   expect(router).toContain("assets/${asset.id}/retirement/");
   expect(schema).toContain('retiredAt: timestamp("retiredAt")');
   expect(schema).toContain('retirementReason: text("retirementReason")');
-  expect(schema).toContain(
-    'retirementCertificateNumber: varchar("retirementCertificateNumber", { length: 64 })'
+  expect(schema).toMatch(
+    /retirementCertificateNumber:\s*varchar\(\s*"retirementCertificateNumber",\s*\{\s*length:\s*64,?\s*\}\s*\)/
   );
   expect(schema).toContain(
     'retirementAttachmentUrl: text("retirementAttachmentUrl")'

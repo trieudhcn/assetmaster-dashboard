@@ -10,6 +10,8 @@ import {
   assets,
   auditItems,
   auditSessions,
+  backupRecords,
+  backupRestoreDrills,
   brands,
   branches,
   companies,
@@ -82,6 +84,51 @@ export async function getInstallationSettings() {
   const db = await getDb();
   if (!db) return null;
   return (await db.select().from(installationSettings).where(eq(installationSettings.id, 1)).limit(1))[0] ?? null;
+}
+
+export async function listBackupRecords(limit = 20) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(backupRecords).orderBy(desc(backupRecords.completedAt)).limit(limit);
+}
+
+export async function createBackupRecord(input: {
+  backupType: "mysql_logical" | "runtime" | "file_storage" | "full";
+  status: "completed" | "failed";
+  verificationStatus: "not_verified" | "verified" | "failed";
+  storageReference: string;
+  completedAt: Date;
+  note?: string | null;
+  recordedByUserId: number;
+  recordedByName: string | null;
+}) {
+  const db = await getDb();
+  if (!db) throw new Error("Không thể kết nối cơ sở dữ liệu của AssetMaster.");
+  const result = await db.insert(backupRecords).values(input);
+  const id = Number(result[0].insertId);
+  return (await db.select().from(backupRecords).where(eq(backupRecords.id, id)).limit(1))[0];
+}
+
+export async function listBackupRestoreDrills(limit = 20) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(backupRestoreDrills).orderBy(desc(backupRestoreDrills.completedAt)).limit(limit);
+}
+
+export async function createBackupRestoreDrill(input: {
+  backupRecordId?: number | null;
+  status: "successful" | "failed";
+  environment: string;
+  completedAt: Date;
+  note?: string | null;
+  recordedByUserId: number;
+  recordedByName: string | null;
+}) {
+  const db = await getDb();
+  if (!db) throw new Error("Không thể kết nối cơ sở dữ liệu của AssetMaster.");
+  const result = await db.insert(backupRestoreDrills).values(input);
+  const id = Number(result[0].insertId);
+  return (await db.select().from(backupRestoreDrills).where(eq(backupRestoreDrills.id, id)).limit(1))[0];
 }
 
 export async function completeInstallation(input: { websiteName: string; websiteUrl: string | null; databaseName: string; bootstrapEmail: string; bootstrapName: string; passwordHash: string }) {

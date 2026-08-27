@@ -44,6 +44,8 @@ import {
   deleteAuditItemsBySession,
   deleteAuditSession,
   createAuditItem,
+  createBackupRecord,
+  createBackupRestoreDrill,
   createBranch,
   createDepartment,
   createDivision,
@@ -200,6 +202,8 @@ import {
   listAllVendors,
   listAuditItems,
   listAuditSessions,
+  listBackupRecords,
+  listBackupRestoreDrills,
   listAssetImportItems,
   listAssetImportSessions,
   listActivityLogs,
@@ -1009,6 +1013,27 @@ export const appRouter = router({
   }),
   selfHostedHealth: router({
     status: adminProcedure.query(() => getSelfHostedServiceHealth()),
+  }),
+  backupMonitoring: router({
+    summary: adminProcedure.query(async () => {
+      if (!selfHostedAuthEnabled()) return { selfHosted: false, backupRecords: [], restoreDrills: [] };
+      const [backupRecords, restoreDrills] = await Promise.all([listBackupRecords(20), listBackupRestoreDrills(20)]);
+      return { selfHosted: true, backupRecords, restoreDrills };
+    }),
+    recordBackup: adminProcedure.input(z.object({ backupType: z.enum(["mysql_logical", "runtime", "file_storage", "full"]), status: z.enum(["completed", "failed"]), verificationStatus: z.enum(["not_verified", "verified", "failed"]), storageReference: z.string().trim().min(3).max(255), completedAt: z.date(), note: z.string().trim().max(2000).nullable().optional() })).mutation(async ({ input, ctx }) => {
+      if (!selfHostedAuthEnabled()) throw new TRPCError({ code: "FORBIDDEN", message: "Chỉ khả dụng trong môi trường self-hosted." });
+      const record = await createBackupRecord({ ...input, recordedByUserId: ctx.user!.id, recordedByName: ctx.user!.name });
+      if (!record) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Không thể ghi nhận sao lưu." });
+      await recordActivity({ entityType: "backupRecord", entityId: record.id, action: "created", actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: `Ghi nhận sao lưu ${input.backupType}: ${input.status === "completed" ? "hoàn tất" : "thất bại"}` });
+      return record;
+    }),
+    recordRestoreDrill: adminProcedure.input(z.object({ backupRecordId: z.number().int().positive().nullable().optional(), status: z.enum(["successful", "failed"]), environment: z.string().trim().min(3).max(160), completedAt: z.date(), note: z.string().trim().max(2000).nullable().optional() })).mutation(async ({ input, ctx }) => {
+      if (!selfHostedAuthEnabled()) throw new TRPCError({ code: "FORBIDDEN", message: "Chỉ khả dụng trong môi trường self-hosted." });
+      const drill = await createBackupRestoreDrill({ ...input, recordedByUserId: ctx.user!.id, recordedByName: ctx.user!.name });
+      if (!drill) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Không thể ghi nhận restore drill." });
+      await recordActivity({ entityType: "backupRestoreDrill", entityId: drill.id, action: "created", actorUserId: ctx.user!.id, actorName: ctx.user!.name, summary: `Ghi nhận restore drill: ${input.status === "successful" ? "thành công" : "thất bại"}` });
+      return drill;
+    }),
   }),
   auth: router({
     me: publicProcedure.query(({ ctx }) => ctx.user),
