@@ -3779,3 +3779,9 @@
 
 - [x] Sửa mẫu `.env` và hướng dẫn để Docker Desktop Windows không dùng đường dẫn `/srv` của Linux.
 - [x] Bổ sung kiểm tra hồi quy cấu hình đường dẫn Windows/macOS và hướng dẫn xử lý volume đã lỗi.
+
+## Current Session — Sửa migration installer `retiredAt`
+
+- [x] Phân tích lỗi `ALTER TABLE assets ADD retiredAt` khi khởi tạo qua `/setup` trên MySQL Docker.
+- [x] Làm migration installer tương thích khi cột hoặc trạng thái schema đã tồn tại, không xóa dữ liệu.
+- [x] Bổ sung regression và hướng dẫn chạy lại `/setup` an toàn.

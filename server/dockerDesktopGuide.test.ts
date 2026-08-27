@@ -13,7 +13,7 @@ describe("Docker Desktop guide", () => {
     expect(guide).toContain("Đừng copy `docker/compose.env.template`");
     expect(guide).toContain("http://localhost:3000/setup");
     expect(guide).toContain("Kho tệp đính kèm");
-    expect(guide).toContain("ASSETMASTER_FILES_DIR");
+    expect(guide).toContain("ASSETMASTER_DESKTOP_FILES_DIR");
     expect(guide).toContain("Docker Desktop.** Đây là UAT/desktop stack");
     expect(guide).toContain("$rng.GetBytes($bytes)");
     expect(guide).not.toContain("RandomNumberGenerator]::Fill");

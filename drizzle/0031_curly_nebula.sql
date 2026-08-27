@@ -1,3 +1,2 @@
-ALTER TABLE `assets` ADD `retiredAt` timestamp;--> statement-breakpoint
-ALTER TABLE `assets` ADD `retirementReason` text;--> statement-breakpoint
-ALTER TABLE `assets` ADD `retiredAt` timestamp;
+ALTER TABLE `assets` ADD COLUMN IF NOT EXISTS `retiredAt` timestamp;--> statement-breakpoint
+ALTER TABLE `assets` ADD COLUMN IF NOT EXISTS `retirementReason` text;

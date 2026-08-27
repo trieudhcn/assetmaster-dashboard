@@ -126,15 +126,28 @@ docker compose -f docker-compose.yml -f docker-compose.desktop.yml logs -f mysql
 Khi wizard thành công, sửa `.env` thành `ASSETMASTER_SETUP_ENABLED=false`, rồi chạy:
 
 ```bash
-docker compose up -d --force-recreate app
+docker compose -f docker-compose.yml -f docker-compose.desktop.yml up -d --force-recreate app
 ```
 
 Giữ Setup Token trong password manager. Không để `/setup` hoạt động sau khi đã cài xong.
 
+### Nếu `/setup` báo lỗi migration `retiredAt`
+
+Lỗi dạng `Failed query: ALTER TABLE assets ADD retiredAt timestamp` xuất hiện ở bản source cũ do migration đã khai báo cột `retiredAt` hai lần. Bản source hiện tại đã chuyển migration này sang dạng có thể chạy lại an toàn. **Không xóa database, `.assetmaster-data` hay Docker volume** để xử lý lỗi này.
+
+Trước hết, cập nhật source để file `drizzle/0031_curly_nebula.sql` chứa `ADD COLUMN IF NOT EXISTS`. Sau đó, từ thư mục AssetMaster, build lại riêng container ứng dụng và xem log:
+
+```powershell
+docker compose -f docker-compose.yml -f docker-compose.desktop.yml up -d --build --force-recreate app
+docker compose -f docker-compose.yml -f docker-compose.desktop.yml logs --tail=100 app
+```
+
+Khi log xác nhận ứng dụng đã lắng nghe cổng 3000, tải lại `/setup` và dùng lại cùng thông tin. Migration tiếp tục từ trạng thái hiện có; dữ liệu MySQL không bị xóa.
+
 ## 6. Cấu hình kho tệp chia sẻ và kiểm tra upload
 
 1. Đăng nhập bằng Admin bootstrap, mở **Cài đặt hệ thống → Kho tệp đính kèm**.
-2. Xác nhận nhãn **Đã mount thư mục chia sẻ**. Nếu chưa có, kiểm tra `ASSETMASTER_FILES_DIR` trong `.env`, thư mục host và chạy lại `docker compose up -d --force-recreate app`.
+2. Xác nhận nhãn **Đã mount thư mục chia sẻ**. Nếu chưa có, kiểm tra `ASSETMASTER_DESKTOP_FILES_DIR` trong `.env`, thư mục host và chạy lại `docker compose -f docker-compose.yml -f docker-compose.desktop.yml up -d --force-recreate app`.
 3. Chọn thư mục con, ví dụ `attachments`, bấm **Lưu cấu hình**, rồi bấm **Kiểm tra thư mục**.
 4. Chỉ upload tài liệu sau khi kiểm tra đạt. Hệ thống tạo/xóa file probe vô hại và chặn đường dẫn đi ngược (`..`).
 5. Tải thử PDF hoặc ảnh, mở lại từ AssetMaster và kiểm tra tệp nằm dưới `files/attachments` trên máy host. Không share trực tiếp thư mục `files` bằng web server không xác thực.
