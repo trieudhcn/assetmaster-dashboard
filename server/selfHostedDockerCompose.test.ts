@@ -46,7 +46,8 @@ describe("Docker Compose self-hosted bundle", () => {
 
     expect(dockerfile).toContain("corepack pnpm install --frozen-lockfile");
     expect(dockerfile).toContain("corepack pnpm run build");
-    expect(dockerfile).toContain("corepack pnpm prune --prod");
+    expect(dockerfile).not.toContain("corepack pnpm prune --prod");
+    expect(dockerfile).toContain("Keep the complete install");
     expect(dockerfile).toContain('CMD ["node", "dist/index.js"]');
     expect(dockerfile).toContain("COPY . .");
     expect(dockerfile).toContain("USER assetmaster");

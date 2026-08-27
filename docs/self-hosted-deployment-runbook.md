@@ -1,5 +1,7 @@
 # Runbook tự triển khai AssetMaster nội bộ
 
+> **Đã hợp nhất.** Dùng [Hướng dẫn triển khai AssetMaster nội bộ: Local đến Docker Compose](./huong-dan-trien-khai-noi-bo.md) làm tài liệu chính thức duy nhất. Tài liệu này được giữ lại để tham chiếu lịch sử thay đổi.
+
 > **Phạm vi.** Tài liệu này áp dụng cho bản AssetMaster self-hosted chạy trong LAN/VPN doanh nghiệp. Đây là trình tự triển khai và vận hành; không áp dụng để cấu hình bản Manus đang phát hành. Chỉ mở cổng HTTPS của Nginx cho mạng nội bộ/VPN. MySQL, kho tệp và LDAPS không được mở ra Internet.
 
 ## 1. Mô hình vận hành và nguyên tắc an toàn

@@ -12,8 +12,7 @@ COPY . .
 RUN npm install -g corepack@latest \
     && corepack enable \
     && corepack pnpm install --frozen-lockfile \
-    && corepack pnpm run build \
-    && corepack pnpm prune --prod
+    && corepack pnpm run build
 
 FROM node:22-bookworm-slim AS runtime
 
@@ -23,6 +22,8 @@ RUN groupadd --system --gid 10001 assetmaster \
 
 WORKDIR /app
 COPY --from=build --chown=assetmaster:assetmaster /app/package.json ./package.json
+# server/_core/vite.ts is resolved at Node.js module-load time even in production.
+# Keep the complete install: pruning dev dependencies removes Vite and prevents boot.
 COPY --from=build --chown=assetmaster:assetmaster /app/node_modules ./node_modules
 COPY --from=build --chown=assetmaster:assetmaster /app/dist ./dist
 COPY --from=build --chown=assetmaster:assetmaster /app/drizzle ./drizzle

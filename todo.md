@@ -3731,3 +3731,11 @@
 - [x] Chuẩn hóa Dockerfile/entrypoint để chạy ứng dụng ít đặc quyền mà vẫn ghi được runtime volume.
 - [x] Cập nhật hướng dẫn triển khai production, backup và quy trình UAT container.
 - [x] Bổ sung hồi quy, kiểm tra cú pháp, TypeScript và production build trước phát hành.
+
+## Current Session — Khắc phục deployment và runbook hợp nhất
+
+- [x] Khắc phục Dockerfile đã prune nhầm dependency runtime khiến deployment không khởi động được.
+- [x] Bổ sung regression bảo đảm Vite và dependency server runtime còn đầy đủ trong image.
+- [x] Hợp nhất hướng dẫn local, Docker Compose, `/setup`, LDAPS, Nginx, backup và cutover vào một tài liệu duy nhất.
+- [x] Đánh giá rõ source hiện tại có thể triển khai nội bộ ở mức nào và các hạng mục còn chặn production.
+- [x] Chạy hồi quy, TypeScript, build và xác minh deployment sau khi khắc phục.

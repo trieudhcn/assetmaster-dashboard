@@ -1,5 +1,7 @@
 # Triển khai production AssetMaster với Docker Compose
 
+> **Đã hợp nhất.** Dùng [Hướng dẫn triển khai AssetMaster nội bộ: Local đến Docker Compose](./huong-dan-trien-khai-noi-bo.md) làm tài liệu chính thức duy nhất. Tài liệu này được giữ lại để tham chiếu lịch sử thay đổi.
+
 > **Phạm vi.** Gói này chạy ba dịch vụ: AssetMaster, MySQL 8.4 và Redis 7.4. Cổng ứng dụng mặc định chỉ bind vào `127.0.0.1:3000`, vì vậy Nginx trên cùng máy chủ là lớp duy nhất cần công bố HTTPS cho LAN/VPN. MySQL và Redis không được publish cổng ra host.
 
 ## 1. Thành phần và giới hạn hiện tại
