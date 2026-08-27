@@ -213,7 +213,10 @@ export async function searchLdapsGroups(settings: DirectoryConnectionInput, quer
   }
 }
 
-export async function syncLdapsUsers(limit = 100) {
+export const DIRECTORY_SYNC_PAGE_SIZE = 100;
+export const DIRECTORY_SYNC_MAX_USERS = 500;
+
+export async function syncLdapsUsers(limit = 200) {
   const settings = await getDirectorySettings();
   if (!settings || settings.lastTestStatus !== "success") throw new Error("Hãy lưu và kiểm tra LDAPS thành công trước khi đồng bộ.");
   const validation = validateDirectorySettings(settings);
@@ -224,10 +227,14 @@ export async function syncLdapsUsers(limit = 100) {
     if (!settings.bindDn || !secret) throw new Error("Thiếu tài khoản bind LDAPS.");
     await client.bind(settings.bindDn, secret);
     const attributes = [settings.loginAttribute, settings.emailAttribute, settings.displayNameAttribute, settings.directoryIdAttribute, settings.departmentAttribute, settings.jobTitleAttribute, "memberOf"];
-    const result = await client.search(settings.usersDn, { scope: "sub", filter: `(&(objectClass=person)(${settings.emailAttribute}=*))`, attributes, sizeLimit: limit, timeLimit: 20 });
+    const entries: Array<Record<string, unknown> & { dn?: string }> = [];
+    const pages = client.searchPaginated(settings.usersDn, { scope: "sub", filter: `(&(objectClass=person)(${settings.emailAttribute}=*))`, attributes, sizeLimit: limit, timeLimit: 20, paged: { pageSize: DIRECTORY_SYNC_PAGE_SIZE } });
+    for await (const page of pages) {
+      entries.push(...page.searchEntries.map((entry) => entry as Record<string, unknown> & { dn?: string }));
+      if (entries.length >= limit) break;
+    }
     const outcome: Array<{ email: string; name: string | null; role: "admin" | "user"; status: "synced" | "skipped"; reason?: string }> = [];
-    for (const rawEntry of result.searchEntries) {
-      const entry = rawEntry as Record<string, unknown> & { dn?: string };
+    for (const entry of entries.slice(0, limit)) {
       const directoryObjectId = entryValue(entry, settings.directoryIdAttribute);
       const emailRaw = entryValue(entry, settings.emailAttribute);
       if (!entry.dn || !directoryObjectId || !emailRaw) { outcome.push({ email: emailRaw || "—", name: entryValue(entry, settings.displayNameAttribute), role: "user", status: "skipped", reason: "Thiếu DN, email hoặc ID bất biến." }); continue; }
@@ -237,7 +244,7 @@ export async function syncLdapsUsers(limit = 100) {
       await upsertDirectoryUser({ openId, directoryObjectId, directoryUsername: entryValue(entry, settings.loginAttribute) || normalizeLoginEmail(emailRaw), name: entryValue(entry, settings.displayNameAttribute), email: normalizeLoginEmail(emailRaw), department: entryValue(entry, settings.departmentAttribute), jobTitle: entryValue(entry, settings.jobTitleAttribute), role });
       outcome.push({ email: normalizeLoginEmail(emailRaw), name: entryValue(entry, settings.displayNameAttribute), role, status: "synced" });
     }
-    return { scanned: result.searchEntries.length, synced: outcome.filter((entry) => entry.status === "synced").length, skipped: outcome.filter((entry) => entry.status === "skipped").length, users: outcome };
+    return { scanned: entries.length, synced: outcome.filter((entry) => entry.status === "synced").length, skipped: outcome.filter((entry) => entry.status === "skipped").length, pageSize: DIRECTORY_SYNC_PAGE_SIZE, reachedLimit: entries.length >= limit, users: outcome };
   } catch (error) {
     throw new Error(safeDirectoryMessage(error));
   } finally {

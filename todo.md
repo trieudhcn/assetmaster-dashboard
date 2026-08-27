@@ -292,6 +292,10 @@
 - [x] Thêm đồng bộ thủ công danh sách tài khoản LDAPS có giới hạn, kết quả rõ ràng và audit quản trị.
 - [x] Bổ sung tìm kiếm/lọc nhóm LDAPS để chọn ánh xạ quyền khi directory có nhiều nhóm.
 - [x] Viết hồi quy, kiểm thử phân quyền và xác minh responsive cho các thao tác Directory mới.
+- [x] Mở rộng đồng bộ LDAPS theo phân trang/tải thêm để xử lý hơn 100 tài khoản mà không quá tải.
+- [x] Hiển thị loading và trạng thái từng bước cho kiểm tra kết nối cùng đồng bộ LDAPS.
+- [x] Hoàn thiện hướng dẫn trình tự triển khai self-hosted từ Docker, `/setup`, backup đến kích hoạt LDAPS.
+- [x] Bổ sung hồi quy, TypeScript/build và xác minh responsive cho các thay đổi Directory mới.
 
 ## Current Session — Bản quyền & Dịch vụ
 

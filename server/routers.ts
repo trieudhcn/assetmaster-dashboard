@@ -571,7 +571,7 @@ export const appRouter = router({
       await recordActivity({ entityType: "directory_setting", entityId: 1, action: input.status, actorUserId: ctx.user.id, actorName: ctx.user.name, summary: input.status === "active" ? "Kích hoạt xác thực LDAP/LDAPS" : "Tắt xác thực LDAP/LDAPS" });
       return saved;
     }),
-    syncUsers: adminProcedure.input(z.object({ limit: z.number().int().min(1).max(200).default(100) })).mutation(async ({ input, ctx }) => {
+    syncUsers: adminProcedure.input(z.object({ limit: z.number().int().min(1).max(500).default(200) })).mutation(async ({ input, ctx }) => {
       if (!selfHostedAuthEnabled()) throw new TRPCError({ code: "PRECONDITION_FAILED", message: "Chỉ đồng bộ Directory từ máy chủ self-hosted." });
       try {
         const result = await syncLdapsUsers(input.limit);
