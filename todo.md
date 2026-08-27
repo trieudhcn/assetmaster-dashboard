@@ -265,6 +265,8 @@
 - [x] Soạn hướng dẫn cài đặt, bảo mật, sao lưu và vận hành nội bộ chi tiết.
 - [x] Lập kế hoạch migration thay Manus OAuth/Forge bằng LDAP session và lưu trữ tệp nội bộ.
 - [ ] Thu thập thông tin hạ tầng bắt buộc trước khi bắt đầu triển khai self-hosted.
+- [x] Thiết kế khu vực Cài đặt hệ thống để Admin quản trị cấu hình LDAP/LDAPS theo cơ chế bảo mật và phân quyền.
+- [x] Cập nhật runbook backup MySQL, MinIO và cấu hình ra ổ cứng máy chủ cùng quy trình khôi phục đã kiểm thử.
 
 ## Current Session — Bản quyền & Dịch vụ
 

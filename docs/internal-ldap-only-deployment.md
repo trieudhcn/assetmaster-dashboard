@@ -16,7 +16,7 @@ AssetMaster sẽ vận hành hoàn toàn trong mạng LAN/VPN của công ty tr�
 | Dữ liệu nghiệp vụ | MySQL 8.4 LTS | Docker network riêng; không mở cổng ra LAN/VPN |
 | Tệp đính kèm | MinIO private bucket | Chỉ AssetMaster truy cập API S3 nội bộ |
 | Reverse proxy | Nginx | Cổng 443 là cổng ứng dụng duy nhất cho người dùng |
-| Sao lưu | Restic/Borg đến NAS hoặc object storage khác máy | Chạy bằng systemd timer trên Linux |
+| Sao lưu | Repository mã hóa trên **ổ cứng vật lý riêng** gắn vào máy chủ | Chạy bằng systemd timer trên Linux; không dùng cùng ổ với dữ liệu vận hành |
 
 ## 2. Hai lựa chọn xác thực LDAP
 
@@ -41,7 +41,7 @@ flowchart LR
   T[systemd timer / backup host] --> M
   T --> O
   T --> K
-  T --> B[Kho backup tách máy]
+  T --> B[Ổ cứng backup vật lý riêng]
 ```
 
 Nginx là điểm vào duy nhất cho người dùng. MySQL, MinIO và Keycloak không công khai port host. Tên truy cập đề xuất là `https://assetmaster.noibo.company.vn`; nếu dùng CA nội bộ, root CA phải được cài tin cậy trên các máy trong domain/VPN. HTTPS được áp dụng cho toàn bộ ứng dụng và cookie phiên luôn phải dùng cờ `Secure`.[6]
@@ -88,11 +88,27 @@ Tạo một tài khoản LDAP read-only chuyên dụng, ví dụ `svc_assetmaste
 
 Trong Keycloak, chọn vendor **Active Directory** nếu nguồn là AD; đặt `Edit Mode = READ_ONLY`; tắt self-registration, quên mật khẩu và cập nhật mật khẩu trong Keycloak. Các chức năng đó phải do Active Directory quản lý. User federation chỉ tìm kiếm trong `Users DN` đã chốt; kết quả search và DN được xử lý qua provider chuẩn, không tự nối chuỗi filter từ đầu vào người dùng. OWASP yêu cầu escape dữ liệu không tin cậy trong LDAP filter/DN và áp dụng least privilege.[5]
 
+### 5.3 Quản trị cấu hình Directory từ Cài đặt hệ thống
+
+Có thể đưa cấu hình AD/LDAP vào **Cài đặt hệ thống → Directory LDAP/AD**, nhưng đây phải là một khu vực chỉ dành cho `admin` và tách hẳn khỏi trang cài đặt thương hiệu thông thường. Phần này sẽ tạo một bản cấu hình **nháp/candidate** có version, người sửa, thời điểm sửa, lý do thay đổi, kết quả kiểm tra và khả năng quay lại bản active trước đó. Chỉ có một cấu hình được đánh dấu active; việc sửa không được tự động ngắt đăng nhập đang có.
+
+| Nhóm thông tin | Cho phép quản trị trong giao diện | Bắt buộc giữ ngoài giao diện và ngoài MySQL |
+|---|---|---|
+| Kết nối | FQDN LDAPS, port **cố định 636**, Base DN, Users DN, Groups DN, timeout | Mật khẩu tài khoản bind |
+| Thuộc tính | Username attribute, stable ID attribute, email, tên, phòng ban, chức danh | Không có |
+| Phân quyền | DN nhóm User/Admin/Auditor, quy tắc nested group và mapping role | Keycloak administration credential |
+| Chứng chỉ | Upload **chỉ CA public PEM**, hash/expiry và trạng thái trust | Private key hoặc certificate có private key |
+| Vận hành | Bật/tắt directory sau khi có xác nhận, giới hạn session, xem audit, thử kết nối | Session signing key, OIDC client secret, MySQL/MinIO credentials |
+
+Mật khẩu bind LDAP không có ô nhập, không có API đọc và không có endpoint ghi từ browser. Màn hình chỉ hiển thị trạng thái `Đã cấp secret`/`Chưa cấp secret` và thời điểm xoay secret gần nhất. Secret được đội vận hành tạo trong file quyền `0600` hoặc Docker secret trên máy chủ; chỉ Keycloak có quyền đọc. Khóa dùng để ứng dụng gọi Keycloak Administration API, nếu cần kích hoạt cấu hình từ giao diện trong giai đoạn sau, cũng phải là Docker secret tách biệt, được cấp quyền tối thiểu cho realm `assetmaster`.
+
+Quy trình an toàn là **Lưu nháp → Kiểm tra TLS/DN/nhóm → Phê duyệt → Áp dụng → Theo dõi → Có thể rollback**. Kiểm tra phải xác nhận FQDN, CA chain, LDAPS handshake, khả năng tìm user/group và mapping role; tuyệt đối không nhận hoặc lưu mật khẩu nhân viên. Thay đổi endpoint, Base DN, CA hoặc nhóm Admin cần xác nhận lại bằng tài khoản Admin thứ hai và được ghi audit không sửa được. Ban đầu, thao tác “Áp dụng” nên được thực hiện từ console Keycloak của máy chủ theo cấu hình đã phê duyệt; chỉ tự động hóa qua Keycloak Administration API khi migration đã có bộ kiểm thử, phân quyền service account tối thiểu và rollback đã được diễn tập.
+
 ## 6. Triển khai máy chủ Linux
 
 ### 6.1 Cấu hình khởi điểm và cấu trúc thư mục
 
-Với một máy chủ chạy đồng thời ứng dụng, MySQL, MinIO và Keycloak, mốc khởi điểm nên là **4 vCPU, 8 GB RAM, SSD 200 GB**; cần tăng SSD theo tốc độ phát sinh PDF, ảnh scan và thời hạn lưu giữ. Server đơn không loại bỏ nhu cầu backup off-host: NAS hoặc object storage backup phải ở máy khác.
+Với một máy chủ chạy đồng thời ứng dụng, MySQL, MinIO và Keycloak, mốc khởi điểm nên là **4 vCPU, 8 GB RAM, SSD 200 GB**; cần tăng SSD theo tốc độ phát sinh PDF, ảnh scan và thời hạn lưu giữ. Backup sẽ đặt trên ổ cứng gắn vào chính máy chủ theo yêu cầu hiện tại, nhưng phải là **ổ cứng vật lý hoặc volume độc lập** với ổ chứa `/opt/assetmaster/data`. Sao lưu trên cùng một ổ chỉ giúp phục hồi khi xóa nhầm; không bảo vệ được khi ổ hỏng, ransomware hoặc máy chủ mất.
 
 ```text
 /opt/assetmaster/
@@ -103,8 +119,13 @@ Với một máy chủ chạy đồng thời ứng dụng, MySQL, MinIO và Keyc
 ├── keycloak/realm-import/       # realm template không chứa password
 ├── data/mysql/
 ├── data/minio/
-├── backups/staging/
+├── backups/staging/             # chỉ dùng để tạo tạm, không phải đích lưu giữ
 └── scripts/
+
+/srv/assetmaster-backup/         # mount từ ổ cứng backup vật lý riêng
+├── repository/                  # repository backup được mã hóa
+├── manifests/                   # checksum và nhật ký backup
+└── restore-drills/              # bằng chứng kiểm thử khôi phục
 ```
 
 Tài khoản triển khai riêng, Docker Engine/Compose plugin, cập nhật bảo mật Ubuntu và firewall phải được hoàn thành trước. UFW chỉ cho phép TCP 443 từ subnet LAN/VPN đã duyệt và SSH từ subnet quản trị; Docker network nội bộ không publish `3306`, `9000`, `9001`, `8080` hoặc console Keycloak.
@@ -202,15 +223,26 @@ Tạo staging có schema MySQL độc lập và bản sao dữ liệu đã ẩn 
 6. Chạy UAT LDAP; đối chiếu mapping role, upload/download chứng từ, PDF/Excel và 5 quy trình nghiệp vụ quan trọng.
 7. Chỉ sau khi UAT ký xác nhận mới đóng băng dữ liệu ngắn hạn, chạy delta migration và chuyển DNS nội bộ.
 
-## 10. Sao lưu, giám sát và khôi phục
+## 10. Sao lưu, giám sát và khôi phục trên ổ cứng máy chủ
 
 | Cách chạy | Phù hợp | Chi phí | Độ phức tạp |
 |---|---|---:|---:|
-| **systemd timer trên Linux** *(khuyến nghị)* | Backup MySQL/MinIO/config định kỳ, có log và trạng thái service | Không thêm nền tảng | Trung bình |
+| **systemd timer trên Linux → ổ cứng vật lý riêng** *(khuyến nghị)* | Backup MySQL/MinIO/config định kỳ, có log và trạng thái service | Không thêm nền tảng | Trung bình |
 | Cron truyền thống | Môi trường nhỏ, đội vận hành quen dùng cron | Không thêm nền tảng | Thấp |
 | Chạy thủ công | Chỉ dùng trước thay đổi lớn | Chi phí nhân sự cao, dễ quên | Thấp nhưng rủi ro cao |
 
-Mỗi đêm, export logical MySQL với `--single-transaction`, sao chép dữ liệu MinIO và backup cấu hình Nginx/Compose/realm template đã mã hóa đến NAS hoặc object storage **khác server**. Giữ ít nhất 30 daily, 12 monthly backup theo chính sách lưu trữ. Kiểm thử restore MySQL, MinIO và một tài khoản LDAP trên môi trường riêng tối thiểu mỗi quý. Không coi `Keycloak Admin Console export` là backup chính; dùng backup database hoặc boot-time export theo hướng dẫn Keycloak.[1]
+Đích sao lưu đề xuất là `/srv/assetmaster-backup`, được mount từ ổ cứng backup riêng theo UUID trong `/etc/fstab`, sở hữu bởi tài khoản backup và không được mount read-write cho container ứng dụng. Trước khi bật lịch, đội vận hành phải kiểm tra `findmnt /opt/assetmaster/data` và `findmnt /srv/assetmaster-backup`: hai đường dẫn phải thuộc hai device/volume khác nhau. Ổ backup cần mã hóa toàn bộ volume (LUKS hoặc cơ chế tương đương), quyền mount giới hạn và dung lượng đủ cho retention.
+
+| Thành phần | Cách tạo backup nhất quán | Tần suất/retention tối thiểu | Điều không được làm |
+|---|---|---|---|
+| MySQL AssetMaster + Keycloak | `mysqldump --single-transaction --routines --events --triggers` từ tài khoản backup read-only phù hợp | Hằng đêm; 30 bản ngày, 12 bản tháng | Không copy thô thư mục MySQL khi DB đang chạy |
+| MinIO | Mirror ở mức S3 bằng tài khoản backup chỉ đọc hoặc backup snapshot nhất quán | Hằng đêm; cùng chu kỳ với DB | Không coi URL presigned là backup |
+| Cấu hình | Lưu Compose, Nginx, realm template, CA public và script, kèm checksum | Sau mỗi thay đổi + hằng đêm | Không để secret rõ trong manifest hoặc Git |
+| Docker secrets | Archive mã hóa riêng, quyền chỉ đội vận hành | Sau khi xoay secret | Không đặt `.env`/secret bản rõ trong bucket hay thư mục public |
+
+Mỗi backup cần chạy qua công cụ repository có mã hóa và kiểm tra integrity, tạo manifest gồm timestamp, version ứng dụng, dump ID, object count và checksum. Timer chỉ chạy khi ổ backup đã mount đúng device; nếu thiếu mount, script phải dừng và báo lỗi thay vì ghi nhầm vào filesystem gốc. Kiểm thử restore MySQL, MinIO, Keycloak configuration và đăng nhập một tài khoản LDAP vào môi trường cô lập tối thiểu mỗi quý. Không coi Keycloak Admin Console export là backup chính; dùng backup database hoặc boot-time export theo hướng dẫn Keycloak.[1]
+
+Backup trên ổ cứng cùng máy là bước khởi đầu thực tế, nhưng vẫn có điểm mù khi server mất, cháy, trộm cắp hoặc lỗi nguồn. Sau khi vận hành ổn định, nên bổ sung một bản mã hóa được tháo rời/lưu ở vị trí khác theo chu kỳ tuần hoặc tháng. Điều này không làm thay đổi yêu cầu hiện tại, mà giảm rủi ro một sự cố vật lý làm mất cả dữ liệu lẫn bản backup.
 
 Theo dõi: trạng thái container, lỗi LDAP bind, tỷ lệ đăng nhập thất bại, dung lượng disk, lỗi upload MinIO, thất bại backup và tuổi chứng chỉ TLS/LDAPS. Không ghi username/password thô, token, cookie hay private key vào log.
 
@@ -229,7 +261,7 @@ Giữ môi trường hiện tại chỉ đọc trong thời gian song song đã 
 
 ## 12. Thông tin cần chốt trước khi bắt đầu lập trình migration
 
-1. CPU, RAM, SSD trống của Ubuntu; IP/subnet, version Ubuntu và có NAS/kho backup độc lập hay không.
+1. CPU, RAM, SSD trống của Ubuntu; IP/subnet, version Ubuntu; dung lượng, mount path và device riêng của ổ cứng backup.
 2. FQDN nội bộ chính, đội quản lý DNS và CA phát hành chứng chỉ cho Nginx/Keycloak.
 3. Địa chỉ LDAPS/FQDN Domain Controller, CA chain, Base DN, Users DN, username attribute và stable ID attribute.
 4. Tài khoản service read-only, nhóm LDAP User/Admin, chính sách tài khoản disabled và quy tắc nhân sự ngoài OU.
