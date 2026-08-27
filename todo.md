@@ -284,6 +284,10 @@
 - [x] Tạo route và giao diện `/setup` với các bước cấu hình tên website, database và tài khoản quản trị ban đầu.
 - [x] Cải thiện trang đăng nhập với lỗi LDAPS có hướng dẫn xử lý an toàn, không tiết lộ mật khẩu hoặc chi tiết directory nhạy cảm.
 - [x] Bổ sung hồi quy, kiểm tra TypeScript/build và xác minh desktop/mobile cho các thay đổi mới.
+- [x] Ẩn panel Directory LDAP/AD mặc định và chỉ mở ở cuối trang Cài đặt hệ thống qua icon điều hướng bên phải.
+- [x] Chuyển `/setup` thành wizard từng bước có tiến trình, kiểm tra MySQL và trạng thái hoàn tất rõ ràng.
+- [x] Bổ sung giao diện ánh xạ nhóm LDAPS sang quyền website và đồng bộ hợp đồng backend hiện có.
+- [x] Bổ sung hồi quy, TypeScript/build và xác minh responsive cho điều hướng Directory, wizard và mapping quyền.
 
 ## Current Session — Bản quyền & Dịch vụ
 
