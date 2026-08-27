@@ -6,11 +6,29 @@ const root = process.cwd();
 
 describe("self-hosted service status UI", () => {
   it("chỉ hiển thị trạng thái MySQL và Redis trong Settings mà không render secret", async () => {
-    const [panel, home, health] = await Promise.all([
+    const [panel, storage, backup, frame, home, health] = await Promise.all([
       readFile(
         path.join(
           root,
           "client/src/components/SelfHostedServiceStatusPanel.tsx"
+        ),
+        "utf8"
+      ),
+      readFile(
+        path.join(root, "client/src/components/FileStorageSettingsPanel.tsx"),
+        "utf8"
+      ),
+      readFile(
+        path.join(
+          root,
+          "client/src/components/SelfHostedBackupRecoveryPanel.tsx"
+        ),
+        "utf8"
+      ),
+      readFile(
+        path.join(
+          root,
+          "client/src/components/SelfHostedSettingsPanelFrame.tsx"
         ),
         "utf8"
       ),
@@ -28,6 +46,15 @@ describe("self-hosted service status UI", () => {
     expect(panel).toContain("Users Base DN");
     expect(panel).toContain("trpc.directory.test.useMutation");
     expect(panel).toContain("assetmaster:open-directory-settings");
+    expect(panel).toContain("assetmaster:open-self-hosted-service-status");
+    expect(panel).toContain("SelfHostedSettingsPanelFrame");
+    expect(storage).toContain("assetmaster:open-self-hosted-file-storage");
+    expect(backup).toContain("assetmaster:open-self-hosted-backup-recovery");
+    expect(storage).toContain("SelfHostedSettingsPanelFrame");
+    expect(backup).toContain("SelfHostedSettingsPanelFrame");
+    expect(frame).toContain("useHiddenSelfHostedSettingsPanel");
+    expect(frame).toContain("scrollIntoView");
+    expect(frame).toContain("Ẩn ${title}");
     expect(home).toContain("<SelfHostedServiceStatusPanel />");
     expect(health).toContain("selfHosted: false");
     expect(health).not.toContain("console.log");

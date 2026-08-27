@@ -3803,3 +3803,10 @@
 - [x] Thay cú pháp `ADD COLUMN IF NOT EXISTS` không tương thích bằng migration idempotent cho MySQL.
 - [x] Xác minh migration xử lý được cột đã thêm dở và tiếp tục chuỗi migration an toàn.
 - [x] Bổ sung regression, kiểm thử và hướng dẫn chạy lại `/setup` không xóa dữ liệu.
+
+## Current Session — Chuẩn hóa panel self-hosted trong Cài đặt
+
+- [x] Rà soát bố cục Quản lý thương hiệu và ba panel Trạng thái hạ tầng, Kho tệp, Sao lưu & phục hồi.
+- [x] Chuẩn hóa bố cục, ẩn mặc định và thêm icon mở/đóng ba panel tại rail phải.
+- [x] Bổ sung kiểm thử responsive/hồi quy và hướng dẫn cập nhật source self-hosted.
+- [x] Xác minh desktop/mobile: trang Cài đặt hiển thị gọn khi các panel self-hosted chưa được mở; rail cố định không nằm trong ảnh full-page theo hành vi preview.
