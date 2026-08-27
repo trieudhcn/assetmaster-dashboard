@@ -2,6 +2,7 @@ import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { COOKIE_NAME } from "@shared/const";
 import { isInvalidWholeQuantity } from "@shared/quantity";
+import { findActiveDeviceLicenseDuplicate } from "@shared/licenseDeviceAssignment";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { adminProcedure, protectedProcedure, publicProcedure, router } from "./_core/trpc";
@@ -1122,6 +1123,14 @@ export const appRouter = router({
       const license = await getSoftwareLicenseById(input.softwareLicenseId);
       if (!license) throw new TRPCError({ code: "NOT_FOUND", message: "Không tìm thấy bản quyền phần mềm." });
       const activeCount = (await listSoftwareLicenseAssignments(license.id)).filter((assignment) => assignment.status === "active").length;
+      if (input.assetId) {
+        const [assignments, licenses] = await Promise.all([listSoftwareLicenseAssignments(), listSoftwareLicenses()]);
+        const duplicate = findActiveDeviceLicenseDuplicate({ assetId: input.assetId, candidateLicense: license, assignments, licenses });
+        if (duplicate) {
+          const duplicateLicense = licenses.find((item) => item.id === duplicate.softwareLicenseId);
+          throw new TRPCError({ code: "BAD_REQUEST", message: `Thiết bị này đã được cấp ${duplicateLicense?.productName || "một License"} thuộc cùng loại. Hãy thu hồi License hiện có trước khi cấp lại.` });
+        }
+      }
       const licenseActivationMode = license.activationMode ?? "seat";
       const assignmentMethod = input.assignmentMethod ?? licenseActivationMode;
       if (assignmentMethod !== licenseActivationMode) throw new TRPCError({ code: "BAD_REQUEST", message: "Hình thức cấp phát không khớp với mô hình kích hoạt của Bản quyền." });

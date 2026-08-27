@@ -232,6 +232,9 @@
 - [x] Hiển thị thời gian cấp phát cho từng License theo thiết bị trong chi tiết tài sản.
 - [x] Mở nhanh popup chi tiết License khi bấm tên License trong chi tiết tài sản.
 - [x] Kiểm thử trường key và thao tác License theo thiết bị trên desktop/mobile.
+- [x] Chặn cấp trùng cùng loại License cho một thiết bị đang có cấp phát hoạt động.
+- [x] Tự gộp các License trùng trong chi tiết tài sản và chỉ hiển thị tên phần mềm, ngày cấp.
+- [x] Kiểm thử cấp phát trùng, dữ liệu cũ và chi tiết tài sản responsive.
 
 ## Current Session — Bản quyền & Dịch vụ
 

@@ -3021,7 +3021,7 @@ function AssetModal({ mode, asset, formData, setFormData, isSaving, onClose: dis
     const activeAssignments = (deviceLicenseAssignmentsQuery.data || []).filter((assignment) => assignment.assetId === persistedAsset.id && assignment.status === "active");
     if (!activeAssignments.length) return;
     const licensesById = new Map((deviceLicenseCatalogQuery.data || []).map((license) => [license.id, license]));
-    const dateFormatter = new Intl.DateTimeFormat("vi-VN", { dateStyle: "medium", timeStyle: "short" });
+    const dateFormatter = new Intl.DateTimeFormat("vi-VN", { dateStyle: "medium" });
     const openLicenseDetail = (assignment: typeof activeAssignments[number]) => {
       document.querySelector<HTMLElement>("[data-asset-license-quick-view]")?.remove();
       const license = licensesById.get(assignment.softwareLicenseId);
@@ -3081,13 +3081,22 @@ function AssetModal({ mode, asset, formData, setFormData, isSaving, onClose: dis
     label.textContent = "License đang cấp cho thiết bị";
     const values = document.createElement("div");
     values.className = "mt-2 flex flex-wrap gap-1.5";
-    activeAssignments.forEach((assignment) => {
+    const uniqueAssignments = [...activeAssignments].sort((left, right) => new Date(right.assignedAt).getTime() - new Date(left.assignedAt).getTime()).filter((assignment, index, collection) => {
+      const license = licensesById.get(assignment.softwareLicenseId);
+      const licenseGroup = license?.licenseTypeId ? `type-${license.licenseTypeId}` : `software-${assignment.softwareLicenseId}`;
+      return collection.findIndex((item) => {
+        const itemLicense = licensesById.get(item.softwareLicenseId);
+        const itemGroup = itemLicense?.licenseTypeId ? `type-${itemLicense.licenseTypeId}` : `software-${item.softwareLicenseId}`;
+        return itemGroup === licenseGroup;
+      }) === index;
+    });
+    uniqueAssignments.forEach((assignment) => {
       const license = licensesById.get(assignment.softwareLicenseId);
       const item = document.createElement("button");
       item.type = "button";
       item.dataset.assetDeviceLicenseLink = "true";
       item.className = "inline-flex max-w-full flex-col items-start rounded-md bg-white px-2 py-1 text-left font-mono text-[10px] font-extrabold text-[#087A6A] ring-1 ring-inset ring-[#B8E9DD] transition hover:bg-[#E6F6F2] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0F8C8C]";
-      const licenseName = license ? `${license.productName}${license.licenseCode ? ` · ${license.licenseCode}` : ""}` : `Bản quyền #${assignment.softwareLicenseId}`;
+      const licenseName = license?.productName || `Bản quyền #${assignment.softwareLicenseId}`;
       item.title = `Mở chi tiết ${licenseName}`;
       const name = document.createElement("span");
       name.className = "max-w-full truncate";
