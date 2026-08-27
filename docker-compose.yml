@@ -1,0 +1,124 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: assetmaster:local
+    restart: unless-stopped
+    init: true
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    ports:
+      - "${ASSETMASTER_BIND_IP:-127.0.0.1}:${ASSETMASTER_PORT:-3000}:3000"
+    environment:
+      TZ: ${TZ:-Asia/Ho_Chi_Minh}
+      NODE_ENV: production
+      PORT: "3000"
+      SELF_HOSTED_AUTH_ENABLED: "true"
+      SELF_HOSTED_SETUP_ENABLED: "${ASSETMASTER_SETUP_ENABLED:-true}"
+      SELF_HOSTED_RUNTIME_CONFIG_PATH: /data/assetmaster/runtime.json
+      ASSETMASTER_DB_HOST: mysql
+      ASSETMASTER_DB_PORT: "3306"
+      ASSETMASTER_DB_NAME: ${ASSETMASTER_DB_NAME:-assetmaster}
+      ASSETMASTER_DB_USER: ${ASSETMASTER_DB_USER:-assetmaster}
+      MYSQL_APP_PASSWORD_FILE: /run/secrets/mysql_app_password
+      JWT_SECRET_FILE: /run/secrets/jwt_secret
+      SELF_HOSTED_SETUP_TOKEN_FILE: /run/secrets/setup_token
+      REDIS_HOST: redis
+      REDIS_PORT: "6379"
+      REDIS_PASSWORD_FILE: /run/secrets/redis_password
+    volumes:
+      - assetmaster_runtime:/data/assetmaster
+    secrets:
+      - mysql_app_password
+      - jwt_secret
+      - setup_token
+      - redis_password
+    networks:
+      - assetmaster_private
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    read_only: true
+    tmpfs:
+      - /tmp:mode=1777,size=64m
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - 'node -e "fetch(\"http://127.0.0.1:\" + (process.env.PORT || 3000) + \"/\").then((response) => process.exit(response.ok ? 0 : 1)).catch(() => process.exit(1))"'
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 45s
+
+  mysql:
+    image: mysql:8.4
+    restart: unless-stopped
+    environment:
+      TZ: ${TZ:-Asia/Ho_Chi_Minh}
+      MYSQL_DATABASE: ${ASSETMASTER_DB_NAME:-assetmaster}
+      MYSQL_USER: ${ASSETMASTER_DB_USER:-assetmaster}
+      MYSQL_PASSWORD_FILE: /run/secrets/mysql_app_password
+      MYSQL_ROOT_PASSWORD_FILE: /run/secrets/mysql_root_password
+    volumes:
+      - mysql_data:/var/lib/mysql
+    secrets:
+      - mysql_app_password
+      - mysql_root_password
+    networks:
+      - assetmaster_private
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - 'mysqladmin ping -h 127.0.0.1 -u root -p"$$(cat /run/secrets/mysql_root_password)" --silent'
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 40s
+
+  redis:
+    image: redis:7.4-alpine
+    restart: unless-stopped
+    command:
+      - sh
+      - -ec
+      - 'exec redis-server --appendonly yes --appendfsync everysec --requirepass "$$(cat /run/secrets/redis_password)"'
+    volumes:
+      - redis_data:/data
+    secrets:
+      - redis_password
+    networks:
+      - assetmaster_private
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - 'redis-cli --no-auth-warning -a "$$(cat /run/secrets/redis_password)" ping | grep -q PONG'
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+volumes:
+  assetmaster_runtime:
+  mysql_data:
+  redis_data:
+
+networks:
+  assetmaster_private:
+    driver: bridge
+
+secrets:
+  mysql_root_password:
+    file: ${ASSETMASTER_SECRETS_DIR:-./secrets}/mysql_root_password.txt
+  mysql_app_password:
+    file: ${ASSETMASTER_SECRETS_DIR:-./secrets}/mysql_app_password.txt
+  redis_password:
+    file: ${ASSETMASTER_SECRETS_DIR:-./secrets}/redis_password.txt
+  jwt_secret:
+    file: ${ASSETMASTER_SECRETS_DIR:-./secrets}/jwt_secret.txt
+  setup_token:
+    file: ${ASSETMASTER_SECRETS_DIR:-./secrets}/setup_token.txt

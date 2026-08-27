@@ -3705,3 +3705,12 @@
 - [x] Ổn định Mã Hóa đơn trên bảng khi thay đổi bộ lọc Tài sản.
 - [x] Giữ danh sách tùy chọn Mã Hóa đơn sẵn sàng và nhất quán khi lọc.
 - [x] Bổ sung hồi quy, kiểm thử giao diện, TypeScript và production build trước khi phát hành.
+
+## Current Session — Docker Compose self-hosted
+
+- [x] Rà soát điểm khởi động ứng dụng, biến môi trường và phụ thuộc runtime cho Docker.
+- [x] Tạo Dockerfile production tương thích Node 22, pnpm, Argon2 và server Express.
+- [x] Tạo Docker Compose gồm AssetMaster, MySQL 8 và Redis với healthcheck, volume và network nội bộ.
+- [x] Cung cấp mẫu biến môi trường và secrets không chứa thông tin nhạy cảm.
+- [x] Viết hướng dẫn khởi động, kiểm tra, backup và dừng stack self-hosted.
+- [x] Xác thực cú pháp Compose, kiểm thử hồi quy, TypeScript và production build trước khi phát hành.

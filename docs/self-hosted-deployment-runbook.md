@@ -18,7 +18,7 @@ LDAPS thiết lập TLS ngay khi kết nối qua cổng 636; certificate Domain 
 
 ## 2. Chuẩn bị gói source và thư mục vận hành
 
-Sao chép source từ GitHub hoặc một bản release đã kiểm thử vào thư mục cố định, ví dụ `/opt/assetmaster/app`. Không để `.env`, secret, database dump hay file upload trong repository. Tạo riêng các thư mục có quyền tối thiểu cho runtime, log, cấu hình và backup:
+Sao chép source từ GitHub hoặc một bản release đã kiểm thử vào thư mục cố định, ví dụ `/opt/assetmaster/app`. Không để `.env`, secret, database dump hay file upload trong repository. Khi dùng gói container đã chuẩn bị, thực hiện theo [hướng dẫn Docker Compose](./docker-compose-self-hosted.md) thay cho chạy `pnpm` trực tiếp. Tạo riêng các thư mục có quyền tối thiểu cho runtime, log, cấu hình và backup:
 
 ```bash
 sudo install -d -m 0750 -o assetmaster -g assetmaster \
@@ -40,8 +40,7 @@ NODE_ENV=production
 SELF_HOSTED_AUTH_ENABLED=true
 SELF_HOSTED_SETUP_ENABLED=true
 SELF_HOSTED_SETUP_TOKEN=<chuoi-ngau-nhien-32-byte-hoac-dai-hon>
-ASSETMASTER_RUNTIME_CONFIG=/opt/assetmaster/runtime/runtime-config.json
-RUNTIME_CONFIG_ENCRYPTION_KEY=<chuoi-ngau-nhien-32-byte-hoac-dai-hon>
+SELF_HOSTED_RUNTIME_CONFIG_PATH=/opt/assetmaster/runtime/runtime.json
 JWT_SECRET=<chuoi-ngau-nhien-32-byte-hoac-dai-hon>
 ```
 
@@ -59,7 +58,7 @@ Khởi động ứng dụng phía sau Nginx, sau đó mở `https://assetmaster.
 | **2. MySQL** | Host, port, tên database, user/password cài đặt | Kết nối `SELECT 1` thành công | Có thể tiếp tục sang rà soát |
 | **3. Rà soát & khởi tạo** | Mã cài đặt một lần | Xác nhận lại dữ liệu | Tạo database nếu chưa có, chạy Drizzle migrations, ghi cấu hình runtime và khóa installer |
 
-Tài khoản MySQL dùng ở bước cài đặt cần quyền tạo database/schema. Sau đó nên đổi sang tài khoản runtime chỉ có quyền cần thiết đối với database AssetMaster. Mọi migration phải chạy một lần trong maintenance window, theo dõi log và có database dump trước khi nâng version.
+Với cài đặt thủ công, tài khoản MySQL dùng ở bước cài đặt cần quyền tạo database/schema. Với Docker Compose, database đã được service `mysql` tạo trước và installer có thể tiếp tục khi tài khoản ứng dụng chỉ có quyền trên database AssetMaster. Mọi migration phải chạy một lần trong maintenance window, theo dõi log và có database dump trước khi nâng version.
 
 ## 5. Reverse proxy và phiên đăng nhập
 
