@@ -9,6 +9,8 @@
 - Khi xây dựng LDAP search, mọi biến đầu vào phải được escape đúng theo filter/DN encoding; đồng thời cần allow-list và tài khoản bind tối thiểu quyền.[5]
 - TLS nên có trên mọi trang; cookie phiên phải đặt `Secure`. TLS 1.3 là mặc định khuyến nghị, TLS 1.2 được giữ khi cần tương thích; TLS 1.0/1.1 phải tắt.[6]
 - Snipe-IT minh họa cách tách cấu hình môi trường, database, storage, session và backup ra khỏi mã nguồn. Thiết kế installer AssetMaster kế thừa nguyên tắc tách cấu hình này, nhưng không sao chép nguyên xi cơ chế của Snipe-IT.[7]
+- Password của Admin bootstrap cục bộ phải lưu dưới dạng hash, không phải plaintext hay encryption có thể giải mã. OWASP ưu tiên Argon2id với work factor phù hợp hạ tầng.[8]
+- RAID tăng khả năng chịu lỗi ổ đĩa nhưng backup vẫn cần là bản sao logical, có kiểm tra khôi phục. CISA khuyến nghị tự động hóa backup, bảo vệ bằng encryption/offline copy và thực hành restore.[9]
 
 ## Sources
 
@@ -25,3 +27,7 @@
 [6] [OWASP — Transport Layer Security Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Transport_Layer_Security_Cheat_Sheet.html)
 
 [7] [Snipe-IT Documentation — Environment Configuration](https://snipe-it.readme.io/docs/configuration)
+
+[8] [OWASP — Password Storage Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html)
+
+[9] [CISA — Back Up Business Data](https://www.cisa.gov/audiences/small-and-medium-businesses/secure-your-business/back-up-business-data)

@@ -18,7 +18,7 @@ Lần triển khai đầu tiên được thiết kế theo hướng trình cài 
 | Dữ liệu nghiệp vụ | MySQL 8.4 LTS | Docker network riêng; không mở cổng ra LAN/VPN |
 | Tệp đính kèm | MinIO private bucket | Chỉ AssetMaster truy cập API S3 nội bộ |
 | Reverse proxy | Nginx | Cổng 443 là cổng ứng dụng duy nhất cho người dùng |
-| Sao lưu | Repository mã hóa trên **ổ cứng vật lý riêng** gắn vào máy chủ | Chạy bằng systemd timer trên Linux; không dùng cùng ổ với dữ liệu vận hành |
+| Sao lưu | Repository mã hóa trên volume/thư mục backup được bảo vệ bởi **RAID của máy chủ** | Chạy bằng systemd timer trên Linux; RAID tăng khả năng chịu lỗi ổ đĩa |
 
 ## 2. Hai lựa chọn xác thực LDAP
 
@@ -43,7 +43,7 @@ flowchart LR
   T[systemd timer / backup host] --> M
   T --> O
   T --> K
-  T --> B[Ổ cứng backup vật lý riêng]
+  T --> B[Repository backup trên RAID]
 ```
 
 Nginx là điểm vào duy nhất cho người dùng. MySQL, MinIO và Keycloak không công khai port host. Tên truy cập đề xuất là `https://assetmaster.noibo.company.vn`; nếu dùng CA nội bộ, root CA phải được cài tin cậy trên các máy trong domain/VPN. HTTPS được áp dụng cho toàn bộ ứng dụng và cookie phiên luôn phải dùng cờ `Secure`.[6]
@@ -52,7 +52,7 @@ Nginx là điểm vào duy nhất cho người dùng. MySQL, MinIO và Keycloak 
 
 | Bước | Xử lý | Dữ liệu được phép đi qua AssetMaster |
 |---|---|---|
-| 1 | Người dùng mở AssetMaster và chọn Đăng nhập | Không có mật khẩu |
+| 1 | Trước khi bật LDAP: chỉ Admin bootstrap mở đăng nhập local. Sau khi bật LDAP: nhân viên mở Đăng nhập bằng email nội bộ | Chỉ Admin bootstrap nhập password local; employee password không qua AssetMaster |
 | 2 | AssetMaster tạo `state`, `nonce`, PKCE verifier rồi chuyển browser sang Keycloak | URL authorization; state/nonce |
 | 3 | Keycloak tìm người dùng bằng tài khoản AD và xác minh với LDAP qua LDAPS | Chỉ Keycloak nhận password |
 | 4 | Keycloak trả Authorization Code về callback của AssetMaster | Code ngắn hạn + state |
@@ -60,7 +60,7 @@ Nginx là điểm vào duy nhất cho người dùng. MySQL, MinIO và Keycloak 
 | 6 | Backend tạo session nội bộ opaque, lưu hash session trong MySQL và đặt cookie an toàn | `session_id` ngẫu nhiên, không lưu token dài hạn ở browser |
 | 7 | Các tRPC protected procedure đọc session, ánh xạ quyền rồi xử lý nghiệp vụ | User ID nội bộ, role |
 
-Khóa danh tính ổn định phải là `objectGUID` của Active Directory hoặc `entryUUID` của LDAP, **không phải email**. Email, tên, chức danh, mã nhân viên và phòng ban là thuộc tính có thể thay đổi. Bảng `users` sẽ được mở rộng bằng `identityProvider = 'ldap'`, `directoryObjectId`, `directoryUsername`, `lastDirectorySyncAt` và trạng thái hoạt động.
+Khóa danh tính ổn định phải là `objectGUID` của Active Directory hoặc `entryUUID` của LDAP, **không phải email**. Email nội bộ là định danh đăng nhập thân thiện (`mail`/`userPrincipalName`) và có thể thay đổi; tên, chức danh, mã nhân viên và phòng ban cũng là thuộc tính đồng bộ. Schema mục tiêu của bảng `users` bổ sung `authSource`, `directoryObjectId`, `directoryUsername`, `passwordHash`, `mustChangePassword`, `lastDirectorySyncAt` và trạng thái hoạt động. `passwordHash` chỉ có giá trị cho tài khoản Admin bootstrap local, luôn `NULL` cho mọi tài khoản LDAP.
 
 Phân quyền tiếp tục dùng các quyền nghiệp vụ hiện tại của AssetMaster. Cấu hình Keycloak mapper nhóm LDAP sang realm role `assetmaster.admin`, `assetmaster.user` và sau này có thể có `assetmaster.auditor`. Backend chỉ ánh xạ role đã phát hành; quyền xem key License và thao tác quản trị vẫn bắt buộc `admin`.
 
@@ -110,7 +110,7 @@ Quy trình an toàn là **Lưu nháp → Kiểm tra TLS/DN/nhóm → Phê duyệ
 
 ### 6.1 Cấu hình khởi điểm và cấu trúc thư mục
 
-Với một máy chủ chạy đồng thời ứng dụng, MySQL, MinIO và Keycloak, mốc khởi điểm nên là **4 vCPU, 8 GB RAM, SSD 200 GB**; cần tăng SSD theo tốc độ phát sinh PDF, ảnh scan và thời hạn lưu giữ. Backup sẽ đặt trên ổ cứng gắn vào chính máy chủ theo yêu cầu hiện tại, nhưng phải là **ổ cứng vật lý hoặc volume độc lập** với ổ chứa `/opt/assetmaster/data`. Sao lưu trên cùng một ổ chỉ giúp phục hồi khi xóa nhầm; không bảo vệ được khi ổ hỏng, ransomware hoặc máy chủ mất.
+Máy chủ Linux, database, file storage và backup sẽ do đội hạ tầng quản lý theo cơ chế RAID đã có; installer không bắt buộc hỏi CPU, RAM, layout ổ đĩa hoặc kiểu RAID. Cấu hình vận hành chỉ cần khai báo đường dẫn repository backup đã được quản trị sẵn. RAID tăng khả năng chịu lỗi ổ, nhưng không thay thế logical backup trước xóa nhầm, malware hay lỗi ứng dụng; CISA định nghĩa backup là bản sao dữ liệu quan trọng được lưu tách khỏi primary system và yêu cầu kiểm thử phục hồi định kỳ.[8]
 
 ```text
 /opt/assetmaster/
@@ -124,7 +124,7 @@ Với một máy chủ chạy đồng thời ứng dụng, MySQL, MinIO và Keyc
 ├── backups/staging/             # chỉ dùng để tạo tạm, không phải đích lưu giữ
 └── scripts/
 
-/srv/assetmaster-backup/         # mount từ ổ cứng backup vật lý riêng
+/srv/assetmaster-backup/         # repository backup trên volume RAID do hạ tầng quản lý
 ├── repository/                  # repository backup được mã hóa
 ├── manifests/                   # checksum và nhật ký backup
 └── restore-drills/              # bằng chứng kiểm thử khôi phục
@@ -206,14 +206,14 @@ Không nhập MySQL root password, bind password LDAP hay private key chứng ch
 | Phần hiện tại | Thay đổi khi self-hosted | Điều kiện nghiệm thu |
 |---|---|---|
 | `server/_core/context.ts` và SDK xác thực | Adapter session nội bộ đọc opaque cookie, tải user local và áp dụng `protectedProcedure`/`adminProcedure` | Không gọi Manus SDK ở runtime |
-| Client login/logout | Trước LDAPS: chỉ local break-glass Admin được phép đăng nhập để hoàn tất cấu hình. Sau LDAPS: nút login mở `/auth/login`; callback OIDC xử lý ở backend; logout xóa session local rồi logout Keycloak | Không còn portal OAuth cũ; không bị khóa ngoài trong lúc cấu hình LDAP |
-| User schema | Thêm `directoryObjectId`, `directoryUsername`, `identityProvider`; map một lần bằng email/mã nhân viên đã đối soát | Email đổi không tạo user mới |
+| Client login/logout | Trước LDAPS: email Admin bootstrap và password local hash đăng nhập để hoàn tất cấu hình. Sau LDAPS: nhân viên nhập email nội bộ tại Keycloak; callback OIDC xử lý ở backend; logout xóa session local rồi logout Keycloak | Không còn portal OAuth cũ; nhân viên không có local password AssetMaster |
+| User schema | Thêm `authSource`, `directoryObjectId`, `directoryUsername`, `passwordHash`, `mustChangePassword`; map LDAP một lần bằng email/mã nhân viên đã đối soát | `passwordHash` luôn NULL với LDAP; email đổi không tạo user mới |
 | Phân quyền | Lấy `assetmaster.*` roles từ token Keycloak và map sang role nội bộ | Quyền admin không suy diễn từ tên/email |
 | `server/storage.ts` | Adapter MinIO S3-compatible; private bucket; URL tải ngắn hạn sau kiểm tra quyền | Không có link `/manus-storage/` ở dữ liệu mới |
 | Tệp hiện hữu | Manifest tải/copy từ storage cũ sang MinIO; thay URL bằng `fileKey` nội bộ | Đối chiếu count và checksum |
 | Secrets | `DATABASE_URL`, OIDC issuer/client secret, MinIO credentials, session secret trong Docker secrets/.env `0600` | Không có secret ở client/Git |
 
-Lớp xác thực mới nên dùng library OIDC phía server, không viết thủ công JWT parser. Session ID phải ngẫu nhiên, lưu hash trong MySQL, có TTL tối đa 8 giờ, cookie `HttpOnly; Secure; SameSite=Lax; Path=/`, xoay session sau đăng nhập và xóa khi logout. Tài khoản quản trị tạo lúc installer là **break-glass account**: local-only, không dùng cho nhân viên thường ngày, phải đổi mật khẩu ở lần đăng nhập đầu và chỉ vô hiệu hóa sau khi có ít nhất hai Admin LDAP hoạt động đã được UAT. Không trả email “không tồn tại” hoặc “sai mật khẩu” riêng lẻ; trả thông báo chung để giảm lộ thông tin tài khoản.
+Lớp xác thực mới nên dùng library OIDC phía server, không viết thủ công JWT parser. Session ID phải ngẫu nhiên, lưu hash trong MySQL, có TTL tối đa 8 giờ, cookie `HttpOnly; Secure; SameSite=Lax; Path=/`, xoay session sau đăng nhập và xóa khi logout. Tài khoản quản trị tạo lúc installer là **break-glass account**: email nhập trong setup, `authSource='bootstrap_local'`, role `admin`, password hash Argon2id với salt riêng và `mustChangePassword=true`; không lưu field `password` nguyên văn. OWASP khuyến nghị password không được lưu plaintext mà dùng hash chậm/memory-hard như Argon2id.[9] Tài khoản này không dành cho nhân viên thường ngày và chỉ vô hiệu hóa sau khi có ít nhất hai Admin LDAP hoạt động đã được UAT. Không trả email “không tồn tại” hoặc “sai mật khẩu” riêng lẻ; trả thông báo chung để giảm lộ thông tin tài khoản.
 
 ## 9. Migration dữ liệu và tệp
 
@@ -239,7 +239,7 @@ Tạo staging có schema MySQL độc lập và bản sao dữ liệu đã ẩn 
 | Cron truyền thống | Môi trường nhỏ, đội vận hành quen dùng cron | Không thêm nền tảng | Thấp |
 | Chạy thủ công | Chỉ dùng trước thay đổi lớn | Chi phí nhân sự cao, dễ quên | Thấp nhưng rủi ro cao |
 
-Đích sao lưu đề xuất là `/srv/assetmaster-backup`, được mount từ ổ cứng backup riêng theo UUID trong `/etc/fstab`, sở hữu bởi tài khoản backup và không được mount read-write cho container ứng dụng. Trước khi bật lịch, đội vận hành phải kiểm tra `findmnt /opt/assetmaster/data` và `findmnt /srv/assetmaster-backup`: hai đường dẫn phải thuộc hai device/volume khác nhau. Ổ backup cần mã hóa toàn bộ volume (LUKS hoặc cơ chế tương đương), quyền mount giới hạn và dung lượng đủ cho retention.
+Đích sao lưu được đội hạ tầng cấu hình trước, ví dụ `/srv/assetmaster-backup` trên volume RAID. Installer chỉ kiểm tra đường dẫn có ghi được và repository hoạt động; không bắt người cài khai báo RAID, device hay CPU/RAM. Repository cần mã hóa, quyền mount giới hạn và dung lượng đủ retention. Container ứng dụng không có quyền ghi trực tiếp vào repository; chỉ service backup được quyền tạo bản sao.
 
 | Thành phần | Cách tạo backup nhất quán | Tần suất/retention tối thiểu | Điều không được làm |
 |---|---|---|---|
@@ -250,7 +250,7 @@ Tạo staging có schema MySQL độc lập và bản sao dữ liệu đã ẩn 
 
 Mỗi backup cần chạy qua công cụ repository có mã hóa và kiểm tra integrity, tạo manifest gồm timestamp, version ứng dụng, dump ID, object count và checksum. Timer chỉ chạy khi ổ backup đã mount đúng device; nếu thiếu mount, script phải dừng và báo lỗi thay vì ghi nhầm vào filesystem gốc. Kiểm thử restore MySQL, MinIO, Keycloak configuration và đăng nhập một tài khoản LDAP vào môi trường cô lập tối thiểu mỗi quý. Không coi Keycloak Admin Console export là backup chính; dùng backup database hoặc boot-time export theo hướng dẫn Keycloak.[1]
 
-Backup trên ổ cứng cùng máy là bước khởi đầu thực tế, nhưng vẫn có điểm mù khi server mất, cháy, trộm cắp hoặc lỗi nguồn. Sau khi vận hành ổn định, nên bổ sung một bản mã hóa được tháo rời/lưu ở vị trí khác theo chu kỳ tuần hoặc tháng. Điều này không làm thay đổi yêu cầu hiện tại, mà giảm rủi ro một sự cố vật lý làm mất cả dữ liệu lẫn bản backup.
+RAID không thay thế backup: nó có thể duy trì dịch vụ khi một ổ hỏng, nhưng có thể sao chép cả xóa nhầm, lỗi ứng dụng hoặc ransomware sang các disk trong array. Phương án hiện tại vẫn hợp lệ: backup định kỳ có version vào repository RAID và restore drill. Khi có điều kiện, một bản mã hóa được tháo rời/lưu ngoài máy theo chu kỳ tuần hoặc tháng sẽ bổ sung lớp chống sự cố vật lý.[8]
 
 Theo dõi: trạng thái container, lỗi LDAP bind, tỷ lệ đăng nhập thất bại, dung lượng disk, lỗi upload MinIO, thất bại backup và tuổi chứng chỉ TLS/LDAPS. Không ghi username/password thô, token, cookie hay private key vào log.
 
@@ -269,7 +269,7 @@ Giữ môi trường hiện tại chỉ đọc trong thời gian song song đã 
 
 ## 12. Thông tin cần chốt trước khi bắt đầu lập trình migration
 
-1. CPU, RAM, SSD trống của Ubuntu; IP/subnet, version Ubuntu; dung lượng, mount path và device riêng của ổ cứng backup.
+1. URL/FQDN nội bộ dự kiến và đường dẫn repository RAID dành cho backup (nếu đội hạ tầng cần hiển thị trạng thái backup trong installer).
 2. FQDN nội bộ chính, đội quản lý DNS và CA phát hành chứng chỉ cho Nginx/Keycloak.
 3. Địa chỉ LDAPS/FQDN Domain Controller, CA chain, Base DN, Users DN, username attribute và stable ID attribute.
 4. Tài khoản service read-only, nhóm LDAP User/Admin, chính sách tài khoản disabled và quy tắc nhân sự ngoài OU.
@@ -293,3 +293,7 @@ Sau khi nhận đủ sáu nhóm thông tin này, bước tiếp theo là tạo n
 [6] [OWASP — Transport Layer Security Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Transport_Layer_Security_Cheat_Sheet.html)
 
 [7] [Snipe-IT Documentation — Environment Configuration](https://snipe-it.readme.io/docs/configuration)
+
+[8] [CISA — Back Up Business Data](https://www.cisa.gov/audiences/small-and-medium-businesses/secure-your-business/back-up-business-data)
+
+[9] [OWASP — Password Storage Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html)

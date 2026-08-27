@@ -264,11 +264,15 @@
 - [x] Lập kiến trúc triển khai AssetMaster nội bộ trên Linux với LDAP/LDAPS, MySQL, lưu trữ tệp và Nginx.
 - [x] Soạn hướng dẫn cài đặt, bảo mật, sao lưu và vận hành nội bộ chi tiết.
 - [x] Lập kế hoạch migration thay Manus OAuth/Forge bằng LDAP session và lưu trữ tệp nội bộ.
-- [ ] Thu thập thông tin hạ tầng bắt buộc trước khi bắt đầu triển khai self-hosted.
+- [x] Rà soát thông tin hạ tầng bắt buộc; đưa CPU/RAM/RAID ra khỏi yêu cầu installer và để LDAPS cấu hình sau cài đặt.
 - [x] Thiết kế khu vực Cài đặt hệ thống để Admin quản trị cấu hình LDAP/LDAPS theo cơ chế bảo mật và phân quyền.
 - [x] Cập nhật runbook backup MySQL, MinIO và cấu hình ra ổ cứng máy chủ cùng quy trình khôi phục đã kiểm thử.
 - [x] Thiết kế trình cài đặt lần đầu có kiểm tra môi trường, tạo schema và khóa installer sau khi khởi tạo.
 - [x] Cập nhật runbook để cấu hình LDAPS là bước sau cài đặt, không cản trở vận hành ban đầu.
+- [x] Cập nhật schema mục tiêu với password hash chỉ dành cho Admin bootstrap, không lưu mật khẩu rõ hoặc mật khẩu nhân viên.
+- [x] Cập nhật installer để email khai báo đầu tiên trở thành tài khoản Admin local break-glass.
+- [x] Cập nhật luồng sau cài đặt để nhân viên đăng nhập bằng email nội bộ được xác thực tại LDAP/LDAPS.
+- [x] Điều chỉnh runbook backup theo cơ chế RAID của máy chủ, không yêu cầu xác nhận hạ tầng trước installer.
 
 ## Current Session — Bản quyền & Dịch vụ
 
