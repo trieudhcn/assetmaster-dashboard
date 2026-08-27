@@ -3774,3 +3774,8 @@
 
 - [x] Sửa cú pháp tạo Docker secrets để tương thích PowerShell 5.1+ trên Windows.
 - [x] Cập nhật regression tài liệu và kiểm tra định dạng trước khi bàn giao lệnh thay thế.
+
+## Current Session — Sửa mount Docker Desktop Windows
+
+- [x] Sửa mẫu `.env` và hướng dẫn để Docker Desktop Windows không dùng đường dẫn `/srv` của Linux.
+- [x] Bổ sung kiểm tra hồi quy cấu hình đường dẫn Windows/macOS và hướng dẫn xử lý volume đã lỗi.

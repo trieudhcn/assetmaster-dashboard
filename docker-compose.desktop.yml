@@ -1,0 +1,39 @@
+services:
+  app:
+    volumes:
+      - type: bind
+        source: ${ASSETMASTER_DESKTOP_DATA_DIR:-./.assetmaster-data}/runtime
+        target: /data/assetmaster
+        bind:
+          create_host_path: true
+      - type: bind
+        source: ${ASSETMASTER_DESKTOP_FILES_DIR:-./.assetmaster-files}
+        target: /data/files
+        bind:
+          create_host_path: true
+  mysql:
+    volumes:
+      - type: bind
+        source: ${ASSETMASTER_DESKTOP_DATA_DIR:-./.assetmaster-data}/mysql
+        target: /var/lib/mysql
+        bind:
+          create_host_path: true
+  redis:
+    volumes:
+      - type: bind
+        source: ${ASSETMASTER_DESKTOP_DATA_DIR:-./.assetmaster-data}/redis
+        target: /data
+        bind:
+          create_host_path: true
+
+secrets:
+  mysql_root_password:
+    file: ${ASSETMASTER_DESKTOP_SECRETS_DIR:-./secrets}/mysql_root_password.txt
+  mysql_app_password:
+    file: ${ASSETMASTER_DESKTOP_SECRETS_DIR:-./secrets}/mysql_app_password.txt
+  redis_password:
+    file: ${ASSETMASTER_DESKTOP_SECRETS_DIR:-./secrets}/redis_password.txt
+  jwt_secret:
+    file: ${ASSETMASTER_DESKTOP_SECRETS_DIR:-./secrets}/jwt_secret.txt
+  setup_token:
+    file: ${ASSETMASTER_DESKTOP_SECRETS_DIR:-./secrets}/setup_token.txt

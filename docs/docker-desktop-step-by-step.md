@@ -47,21 +47,12 @@ Không chạy Compose trong thư mục Downloads hoặc Desktop dùng chung. T�
 
 ```powershell
 $root = "$env:USERPROFILE\AssetMaster"
-New-Item -ItemType Directory -Force -Path "$root\data\runtime", "$root\data\mysql", "$root\data\redis", "$root\files", "$root\secrets"
+New-Item -ItemType Directory -Force -Path "$root\secrets"
 Set-Location $root
-Copy-Item docker\compose.env.template .env
+Copy-Item docker\compose.env.desktop.template .env -Force
 ```
 
-Mở `.env` bằng Notepad hoặc VS Code và đặt các đường dẫn bằng dấu gạch chéo:
-
-```dotenv
-ASSETMASTER_DATA_DIR=C:/Users/<ten-nguoi-dung>/AssetMaster/data
-ASSETMASTER_FILES_DIR=C:/Users/<ten-nguoi-dung>/AssetMaster/files
-ASSETMASTER_SECRETS_DIR=C:/Users/<ten-nguoi-dung>/AssetMaster/secrets
-ASSETMASTER_BIND_IP=127.0.0.1
-ASSETMASTER_PORT=3000
-ASSETMASTER_SETUP_ENABLED=true
-```
+> **Quan trọng.** Trên Windows/macOS, dùng `docker-compose.desktop.yml` cùng file Compose chính. Đừng copy `docker/compose.env.template` vào `.env` cho Docker Desktop vì mẫu đó dùng đường dẫn Linux `/srv/assetmaster/...`, gây lỗi mount `no such file or directory`.
 
 Tạo 5 secret bằng PowerShell. Chạy khối sau trong thư mục source:
 
@@ -86,20 +77,9 @@ $rng.Dispose()
 ### macOS Terminal
 
 ```bash
-mkdir -p ~/AssetMaster/{data/runtime,data/mysql,data/redis,files,secrets}
+mkdir -p ~/AssetMaster/secrets
 cd ~/AssetMaster
-cp docker/compose.env.template .env
-```
-
-Sửa `.env` như sau, thay `<user>` bằng tên user macOS:
-
-```dotenv
-ASSETMASTER_DATA_DIR=/Users/<user>/AssetMaster/data
-ASSETMASTER_FILES_DIR=/Users/<user>/AssetMaster/files
-ASSETMASTER_SECRETS_DIR=/Users/<user>/AssetMaster/secrets
-ASSETMASTER_BIND_IP=127.0.0.1
-ASSETMASTER_PORT=3000
-ASSETMASTER_SETUP_ENABLED=true
+cp docker/compose.env.desktop.template .env
 ```
 
 Tạo secrets, không đưa các file này lên Git hoặc gửi qua chat/email:
@@ -116,21 +96,21 @@ done
 1. Trong thư mục source, kiểm tra cấu hình trước khi tạo container:
 
 ```bash
-docker compose config --quiet
+docker compose -f docker-compose.yml -f docker-compose.desktop.yml config --quiet
 ```
 
 2. Build và khởi động AssetMaster, MySQL, Redis:
 
 ```bash
-docker compose up -d --build
-docker compose ps
+docker compose -f docker-compose.yml -f docker-compose.desktop.yml up -d --build
+docker compose -f docker-compose.yml -f docker-compose.desktop.yml ps
 ```
 
 3. Chờ đến khi ba service có trạng thái **healthy**. Nếu chưa đạt, xem log:
 
 ```bash
-docker compose logs -f app
-docker compose logs -f mysql
+docker compose -f docker-compose.yml -f docker-compose.desktop.yml logs -f app
+docker compose -f docker-compose.yml -f docker-compose.desktop.yml logs -f mysql
 ```
 
 4. Mở [http://localhost:3000/setup](http://localhost:3000/setup). `127.0.0.1` chỉ mở trên chính máy Docker Desktop; đây là cấu hình an toàn cho UAT. Không đặt `ASSETMASTER_BIND_IP=0.0.0.0` trừ khi có firewall, HTTPS reverse proxy và phạm vi mạng đã được đội hạ tầng phê duyệt.
@@ -170,13 +150,13 @@ Giữ Setup Token trong password manager. Không để `/setup` hoạt động s
 
 ## 8. Dừng, sao lưu và dọn UAT
 
-| Mục tiêu                                        | Lệnh                                 |
-| ----------------------------------------------- | ------------------------------------ |
-| Tạm dừng nhưng giữ dữ liệu                      | `docker compose stop`                |
-| Chạy lại                                        | `docker compose start`               |
-| Dừng/xóa container nhưng giữ dữ liệu bind mount | `docker compose down`                |
-| Xem trạng thái                                  | `docker compose ps`                  |
-| Xem log ứng dụng                                | `docker compose logs --tail=200 app` |
+| Mục tiêu                                        | Lệnh                                                                                     |
+| ----------------------------------------------- | ---------------------------------------------------------------------------------------- |
+| Tạm dừng nhưng giữ dữ liệu                      | `docker compose -f docker-compose.yml -f docker-compose.desktop.yml stop`                |
+| Chạy lại                                        | `docker compose -f docker-compose.yml -f docker-compose.desktop.yml start`               |
+| Dừng/xóa container nhưng giữ dữ liệu bind mount | `docker compose -f docker-compose.yml -f docker-compose.desktop.yml down`                |
+| Xem trạng thái                                  | `docker compose -f docker-compose.yml -f docker-compose.desktop.yml ps`                  |
+| Xem log ứng dụng                                | `docker compose -f docker-compose.yml -f docker-compose.desktop.yml logs --tail=200 app` |
 
 Không dùng `docker compose down -v` khi cần giữ dữ liệu. Backup tối thiểu gồm dump MySQL, thư mục `data/runtime`, `files` và bản sao secrets được bảo vệ. Thực hiện restore vào môi trường cô lập trước khi tin cậy bản backup.[5]
 

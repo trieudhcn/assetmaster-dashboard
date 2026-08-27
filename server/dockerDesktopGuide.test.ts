@@ -7,7 +7,10 @@ describe("Docker Desktop guide", () => {
     const guide = await readFile(path.join(process.cwd(), "docs/docker-desktop-step-by-step.md"), "utf8");
     expect(guide).toContain("Windows 10/11");
     expect(guide).toContain("macOS");
-    expect(guide).toContain("docker compose up -d --build");
+    expect(guide).toContain("docker compose -f docker-compose.yml -f docker-compose.desktop.yml up -d --build");
+    expect(guide).toContain("docker-compose.desktop.yml");
+    expect(guide).toContain("compose.env.desktop.template");
+    expect(guide).toContain("Đừng copy `docker/compose.env.template`");
     expect(guide).toContain("http://localhost:3000/setup");
     expect(guide).toContain("Kho tệp đính kèm");
     expect(guide).toContain("ASSETMASTER_FILES_DIR");
