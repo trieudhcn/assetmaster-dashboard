@@ -241,6 +241,9 @@
 - [x] Kiểm thử cột, bộ lọc License và responsive Danh mục tài sản.
 - [x] Đổi trực tiếp thuộc tính JSX type="password" thành type="text" cho ô nhập key License.
 - [x] Kiểm thử DOM trường nhập key để xác nhận thuộc tính type là text.
+- [x] Thêm icon thu hồi cho License đang cấp trong lịch sử License theo nhân viên.
+- [x] Mở xác nhận trước khi thu hồi License từ lịch sử nhân viên và làm mới dữ liệu sau thao tác.
+- [x] Kiểm thử thao tác thu hồi License theo nhân viên trên desktop/mobile.
 
 ## Current Session — Bản quyền & Dịch vụ
 
