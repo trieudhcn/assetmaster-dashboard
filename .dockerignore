@@ -1,0 +1,27 @@
+# Dependencies and generated build output
+node_modules/
+.pnpm-store/
+dist/
+build/
+coverage/
+*.tsbuildinfo
+
+# Source-control and local configuration
+.git/
+.github/
+.env
+.env.*
+secrets/
+
+# Self-hosted runtime data. These directories may contain MySQL socket files
+# and must only be bind-mounted at runtime, never copied into a Docker image.
+.assetmaster-data/
+.assetmaster-files/
+
+# Local IDE, logs and test artifacts
+.vscode/
+.idea/
+*.log
+*.pid
+tmp/
+temp/

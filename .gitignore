@@ -17,6 +17,8 @@ build/
 # Docker Compose deployment secrets and local runtime files
 secrets/
 docker-compose.override.yml
+.assetmaster-data/
+.assetmaster-files/
 
 # IDE and editor files
 .vscode/

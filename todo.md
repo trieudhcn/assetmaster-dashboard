@@ -3791,3 +3791,9 @@
 - [x] Phân tích placeholder Analytics và cảnh báo OAuth xuất hiện trong log Docker self-hosted.
 - [x] Ngăn route static xử lý URL Analytics chưa được inject, đồng thời giữ luồng xác thực self-hosted hoạt động độc lập OAuth.
 - [x] Bổ sung regression, kiểm thử build và hướng dẫn khởi động lại container ứng dụng.
+
+## Current Session — Loại trừ Docker build context runtime
+
+- [x] Xác định và loại trừ socket/thư mục MySQL runtime khỏi Docker build context trên Docker Desktop.
+- [x] Bổ sung regression cho `.dockerignore` và hướng dẫn rebuild không xóa dữ liệu.
+- [x] Kiểm thử định dạng/gói source và phát hành bản sửa.

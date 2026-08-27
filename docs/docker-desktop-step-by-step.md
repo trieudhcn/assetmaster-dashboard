@@ -148,6 +148,17 @@ Khi log xác nhận ứng dụng đã lắng nghe cổng 3000, tải lại `/set
 
 Không cần cấu hình Manus OAuth hay Umami Analytics cho bản self-hosted. Các dòng này thuộc bản source cũ: OAuth hosted đã bị nạp dù self-hosted không dùng nó, còn URL Analytics chưa có biến build nên bị Express hiểu nhầm là URL có ký tự `%`. Hãy cập nhật source, rồi build lại **chỉ** service app bằng lệnh ở trên. Nếu log mới chỉ còn `Server running on http://localhost:3000/`, ứng dụng đã sẵn sàng mở `/setup`.
 
+### Nếu Docker build báo `mysql.sock` hoặc `failed to solve: invalid file request`
+
+Lỗi này có nghĩa Docker đang cố copy thư mục runtime `.assetmaster-data` vào build context, trong khi thư mục đó chứa socket MySQL chỉ hợp lệ khi container đang chạy. Bản source hiện tại có file `.dockerignore` để loại trừ `.assetmaster-data`, `.assetmaster-files`, `.env` và `secrets` khỏi image build.
+
+Sau khi cập nhật source, **giữ nguyên** `.assetmaster-data`, `.assetmaster-files`, `.env` và `secrets`, rồi chạy lại lệnh sau. Không xóa thư mục runtime và không dùng `down -v`.
+
+```powershell
+docker compose -f docker-compose.yml -f docker-compose.desktop.yml build --no-cache app
+docker compose -f docker-compose.yml -f docker-compose.desktop.yml up -d --force-recreate app
+```
+
 ## 6. Cấu hình kho tệp chia sẻ và kiểm tra upload
 
 1. Đăng nhập bằng Admin bootstrap, mở **Cài đặt hệ thống → Kho tệp đính kèm**.
