@@ -28,6 +28,6 @@ describe("Directory admin controls", () => {
     expect(source).toContain("Đồng bộ 500 tài khoản");
     expect(source).toContain("Tải thêm 20 tài khoản");
     expect(source).toContain("Tiến trình Directory");
-    expect(source).toContain("Không đồng bộ mật khẩu nhân viên.");
+    expect(source).toContain("không lưu mật khẩu");
   });
 });

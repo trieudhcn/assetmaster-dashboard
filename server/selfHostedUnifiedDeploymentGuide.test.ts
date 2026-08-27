@@ -60,7 +60,7 @@ describe("unified self-hosted deployment guide", () => {
     expect(localGuide).toContain("Redis Server");
     expect(localGuide).toContain("Tạo service systemd");
     expect(localGuide).toContain("Hoàn tất `/setup`");
-    expect(localGuide).toContain("LDAPS chưa hỗ trợ chạy trực tiếp");
+    expect(localGuide).toContain("LDAPS native");
     expect(localGuide).toContain("không dùng container");
   });
 });

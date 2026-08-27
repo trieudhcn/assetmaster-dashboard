@@ -3835,3 +3835,9 @@
 - [x] Viết hướng dẫn cài đặt từng dịch vụ theo từng lệnh, có bước kiểm tra dành cho người mới.
 - [x] Bổ sung cấu hình database, environment, systemd, Nginx, `/setup` và chẩn đoán cơ bản.
 - [x] Kiểm thử tài liệu và phát hành runbook Phương án A cập nhật.
+
+## Current Session — Installer native, Let’s Encrypt và LDAPS local
+
+- [x] Rà soát điều kiện an toàn cho Bash installer, HTTP-01 Let’s Encrypt và bind secret LDAPS trên systemd.
+- [x] Cho phép self-hosted local đọc LDAPS bind secret từ thư mục `/etc/assetmaster/secrets/` giới hạn quyền.
+- [x] Tạo Bash installer tương tác, bổ sung runbook SSL/LDAPS native và kiểm thử script/mã nguồn.

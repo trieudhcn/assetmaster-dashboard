@@ -2,7 +2,20 @@
 
 > **Khi nào dùng.** Phương án A chạy AssetMaster, MySQL và Redis trực tiếp trên Ubuntu; không dùng container. Cách này dễ quan sát từng service nhưng bạn phải tự cập nhật, phân quyền và sao lưu từng thành phần. Với hệ thống nội bộ vận hành dài hạn, Docker Compose vẫn là phương án được khuyến nghị vì cô lập dependency và Docker secrets tốt hơn. Hướng dẫn Docker xem tại [Linux Server với Docker](./linux-server-step-by-step.md).
 
-> **Giới hạn hiện tại.** Luồng đăng nhập Admin local, `/setup`, MySQL, Redis, Nginx và kho tệp dùng chung hoạt động ở Phương án A. Tuy nhiên, **LDAPS chưa hỗ trợ chạy trực tiếp** trong source hiện tại vì bind password chỉ được phép đọc từ Docker secret dưới `/run/secrets/`. Nếu doanh nghiệp cần nhân viên đăng nhập LDAPS, dùng Phương án B Docker Compose.
+> **Phạm vi LDAPS.** Luồng đăng nhập Admin local, `/setup`, MySQL, Redis, Nginx, kho tệp và **LDAPS native** đều hoạt động ở Phương án A. Bind password LDAPS phải nằm trong `/etc/assetmaster/secrets/`, là tệp thường thuộc `root:assetmaster`, mode `0640`, không phải symlink và không được cho group/other ghi. Docker Compose vẫn dùng `/run/secrets/`.
+
+## 0. Chọn cách thực hiện: script hay từng bước thủ công
+
+Bạn có thể chạy script `scripts/install-self-hosted-linux.sh` để thực hiện các bước cài package, tạo user/thư mục/secret, cấu hình MySQL, Redis, systemd, Nginx và UFW. Script luôn hỏi xác nhận, **không** chạy `DROP DATABASE`, `rm -rf` hoặc lệnh xóa volume/dữ liệu. Nó vẫn yêu cầu bạn tự kiểm tra FQDN/DNS và mở wizard `/setup`, vì đây là các bước cần xác nhận thông tin doanh nghiệp.
+
+| Cách làm           | Khi nên dùng                                                                         | Lệnh bắt đầu                                                                                                                            |
+| ------------------ | ------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------- |
+| Bash installer     | Server mới, FQDN/DNS đã sẵn sàng, muốn giảm thao tác lặp lại                         | `sudo bash scripts/install-self-hosted-linux.sh --source-dir "$PWD" --domain assetmaster.congty.vn --letsencrypt-email admin@congty.vn` |
+| Từng bước thủ công | Muốn kiểm tra từng command, dùng Internal PKI hoặc quy trình change-management riêng | Bắt đầu từ Bước 0 bên dưới                                                                                                              |
+
+Trước khi chạy script, download/clone source vào một thư mục tạm, kiểm tra checksum/release nội bộ và đọc phần [Điều kiện Let’s Encrypt](#10a-lets-encrypt-https-qua-nginx) nếu dùng tùy chọn `--letsencrypt-email`. Với Internal PKI, dùng `--no-letsencrypt` hoặc bỏ tùy chọn email.
+
+Nếu đã có tệp password bind LDAPS trong nơi lưu tạm an toàn, có thể thêm `--ldap-bind-password-file /root/assetmaster-ldap-bind-password`. Script chỉ sao chép **tệp thường**, sau đó đặt file đích tại `/etc/assetmaster/secrets/assetmaster_ldap_bind_password` với owner `root:assetmaster` và mode `0640`. Không truyền password trực tiếp trên command line hoặc commit tệp này vào Git.
 
 ## 1. Bạn cần cài những gì?
 
@@ -329,6 +342,53 @@ Chọn **một** cơ chế TLS. Với mạng chỉ LAN/VPN, Internal PKI là l�
 
 Sau khi có certificate, thêm HTTPS server block và đổi block port 80 thành `return 301 https://$host$request_uri;`. Mẫu cấu hình hoàn chỉnh nằm trong [hướng dẫn Linux Docker — Bước 7](./linux-server-step-by-step.md#9-bước-7--bật-tls-chọn-internal-pki-hoặc-lets-encrypt).
 
+### 10a. Let’s Encrypt HTTPS qua Nginx
+
+Let’s Encrypt chỉ phù hợp khi FQDN có thể được Internet truy cập. Với HTTP-01, máy chủ Let’s Encrypt lấy tệp xác minh tại URL HTTP trên **port 80**; cổng này phải công khai và FQDN phải phân giải tới IP public/NAT của server. HTTP-01 không cấp wildcard certificate; mạng LAN/VPN chỉ dùng DNS nội bộ nên cần Internal PKI hoặc DNS-01 thay vì phần này.[5] [7]
+
+Trước hết, ở **máy bên ngoài mạng nội bộ**, kiểm tra `http://assetmaster.congty.vn` tới được server. Trên Ubuntu, xác nhận Nginx đang có block HTTP với đúng `server_name`, sau đó mở tạm port 80. Không chuyển redirect HTTPS trước khi Certbot cấp certificate.
+
+```bash
+sudo nginx -t
+sudo systemctl reload nginx
+sudo ufw allow 80/tcp
+sudo ss -lntp | grep ':80'
+```
+
+Cài bản Certbot Snap theo hướng dẫn chính thức. Nếu đã cài Certbot bằng APT trước đó, cần gỡ package đó để tránh hai bản `certbot` cùng tồn tại.[5]
+
+```bash
+sudo apt remove -y certbot
+sudo apt install -y snapd
+sudo snap install core || true
+sudo snap refresh core
+sudo snap install --classic certbot
+sudo ln -sf /snap/bin/certbot /usr/local/bin/certbot
+certbot --version
+```
+
+Yêu cầu certificate và để Certbot tự chèn HTTPS/redirect vào block Nginx. Thay FQDN/email bằng giá trị doanh nghiệp. Certbot sẽ yêu cầu chấp nhận điều khoản ở lần đầu nếu không dùng `--non-interactive`.
+
+```bash
+sudo certbot --nginx \
+  -d assetmaster.congty.vn \
+  --email admin@congty.vn \
+  --agree-tos \
+  --redirect
+```
+
+Xác minh certificate và renewal. Certbot cài timer/cron để gia hạn tự động; `--dry-run` phải hoàn tất trước khi xem HTTPS là sẵn sàng.[5]
+
+```bash
+sudo certbot certificates
+sudo certbot renew --dry-run
+sudo systemctl list-timers --all | grep -i certbot || true
+sudo nginx -t
+curl -fsSI https://assetmaster.congty.vn/ | head
+```
+
+Sau khi HTTP-01 và renewal test thành công, nếu chính sách chỉ cho HTTPS, thay rule UFW port 80 bằng giới hạn theo thiết kế certificate hoặc giữ port 80 chỉ cho redirect/renewal HTTP-01. Không xóa port 80 nếu bạn tiếp tục dùng HTTP-01 renewal. Nếu DNS/cổng 80 không thể công khai, dừng ở đây và dùng Internal PKI hoặc DNS-01; không cố tắt kiểm tra certificate của ứng dụng.[7]
+
 ## 11. Bước 9 — Bật UFW mà không tự khóa SSH
 
 Mở **một phiên SSH thứ hai** và xác nhận vẫn login được trước khi bật UFW. Thay `10.20.0.0/16` bằng subnet LAN/VPN thật.
@@ -374,6 +434,49 @@ sudo systemctl status assetmaster --no-pager
 
 Đăng nhập bằng Admin local vừa tạo. Trong **Cài đặt hệ thống → Kho tệp đính kèm**, nhập thư mục con `attachments`, lưu cấu hình rồi bấm **Kiểm tra thư mục**. Không nhập `/srv/assetmaster/files` vào giao diện; đây là đường dẫn host đã được đặt sẵn trong environment file.
 
+## 12a. Bước 10a — Cấu hình LDAPS native, không dùng Docker secret
+
+Phần này chỉ thực hiện **sau** khi Admin local, HTTPS và backup đầu tiên đã hoạt động. Bạn cần một service account AD/LDAP chỉ có quyền đọc Users/Groups, URL `ldaps://...:636`, Base DN và CA chain nội bộ nếu Ubuntu chưa trust certificate của Domain Controller. Không dùng LDAP port 389 hoặc bind bằng tài khoản Domain Admin.
+
+Tạo bind password qua prompt ẩn. Tệp tuyệt đối không được đặt ở `/tmp`, home directory hoặc trong source. Source hiện tại chỉ chấp nhận `/run/secrets/<tên>` (Docker) hoặc `/etc/assetmaster/secrets/<tên>` (Linux native).
+
+```bash
+sudo install -d -m 0750 -o root -g assetmaster /etc/assetmaster/secrets
+read -r -s -p 'Nhập LDAPS bind password: ' LDAP_BIND_PASSWORD; echo
+printf '%s' "$LDAP_BIND_PASSWORD" | sudo tee /etc/assetmaster/secrets/assetmaster_ldap_bind_password > /dev/null
+unset LDAP_BIND_PASSWORD
+sudo chown root:assetmaster /etc/assetmaster/secrets/assetmaster_ldap_bind_password
+sudo chmod 0640 /etc/assetmaster/secrets/assetmaster_ldap_bind_password
+sudo stat -c '%A %U:%G %n' /etc/assetmaster/secrets/assetmaster_ldap_bind_password
+sudo -u assetmaster cat /etc/assetmaster/secrets/assetmaster_ldap_bind_password > /dev/null && echo 'Ứng dụng có thể đọc secret'
+```
+
+Kết quả `stat` phải là `-rw-r----- root:assetmaster ...`. Không dùng symlink, `chmod 644/666` hoặc đưa password vào environment variable. Trong **Cài đặt hệ thống → icon Directory**, nhập các trường sau và bấm **Kiểm tra bản nháp** trước khi lưu/kích hoạt.
+
+| Trường UI          | Ví dụ / nguyên tắc                                                              |
+| ------------------ | ------------------------------------------------------------------------------- |
+| URL LDAPS          | `ldaps://dc01.congty.local:636` — chỉ `ldaps://`, không kèm username/password.  |
+| Users Base DN      | `OU=Users,DC=congty,DC=local`                                                   |
+| Groups Base DN     | `OU=Groups,DC=congty,DC=local`                                                  |
+| Bind DN            | `CN=svc-assetmaster,OU=Service Accounts,DC=congty,DC=local`                     |
+| Tệp secret LDAP    | `/etc/assetmaster/secrets/assetmaster_ldap_bind_password`                       |
+| CA certificate PEM | Dán chain CA nội bộ khi Ubuntu chưa trust issuer; không dán password.           |
+| Nhóm Admin/User    | DN đầy đủ của group AD được phép vào AssetMaster; Admin được ưu tiên nếu trùng. |
+
+Sau khi kiểm tra draft trả thành công, lưu nháp, tìm nhóm, ánh xạ Admin/User rồi đồng bộ thử với một nhóm pilot. Chỉ khi danh sách preview và quyền đúng mới kích hoạt LDAPS. Mật khẩu nhân viên luôn được kiểm tra ở AD/LDAP và không được ghi vào MySQL.
+
+Khi đổi bind password trong AD, thay tệp theo cách atomic, restart service, rồi kiểm tra kết nối lại trong UI:
+
+```bash
+read -r -s -p 'Nhập bind password mới: ' LDAP_BIND_PASSWORD; echo
+printf '%s' "$LDAP_BIND_PASSWORD" | sudo tee /etc/assetmaster/secrets/assetmaster_ldap_bind_password.new > /dev/null
+unset LDAP_BIND_PASSWORD
+sudo chown root:assetmaster /etc/assetmaster/secrets/assetmaster_ldap_bind_password.new
+sudo chmod 0640 /etc/assetmaster/secrets/assetmaster_ldap_bind_password.new
+sudo mv -f /etc/assetmaster/secrets/assetmaster_ldap_bind_password.new /etc/assetmaster/secrets/assetmaster_ldap_bind_password
+sudo systemctl restart assetmaster
+```
+
 ## 13. Bước 11 — Backup, cập nhật source và kiểm tra sau reboot
 
 Tạo backup database trước mọi cập nhật. Lệnh này không dừng MySQL:
@@ -418,15 +521,15 @@ df -hT /srv
 
 ## 14. Chẩn đoán nhanh
 
-| Vấn đề                          | Kiểm tra                                                      | Hướng xử lý                                                                                      |
-| ------------------------------- | ------------------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
-| `node --version` không phải v22 | `node --version`; `apt-cache policy nodejs`                   | Chạy lại Bước 2; không dùng Node từ Ubuntu repo cũ.                                              |
-| App `failed`                    | `sudo journalctl -u assetmaster -n 150 --no-pager`            | Kiểm tra source đã build, file env `640`, MySQL/Redis active.                                    |
-| `/setup` không mở               | `sudo systemctl status assetmaster`; `curl -I 127.0.0.1:3000` | Kiểm tra `SELF_HOSTED_AUTH_ENABLED=true` và `SELF_HOSTED_SETUP_ENABLED=true` trước lần cài đầu.  |
-| MySQL access denied             | `sudo mysql -u root`; kiểm tra `assetmaster@localhost`        | Tạo lại database user ở Bước 3, không dùng root cho app.                                         |
-| Redis không trả PONG            | `sudo journalctl -u redis-server -n 100 --no-pager`           | Kiểm tra syntax `redis.conf` và password secret; khôi phục file `.assetmaster-original` nếu cần. |
-| Nginx 502                       | `curl -I 127.0.0.1:3000`; `sudo nginx -t`                     | Khởi động app trước; proxy phải là `127.0.0.1:3000`.                                             |
-| Cần LDAPS                       | Directory panel báo secret path không hợp lệ                  | Đây là giới hạn Phương án A hiện tại; chuyển sang Docker Compose để dùng `/run/secrets/`.        |
+| Vấn đề                          | Kiểm tra                                                      | Hướng xử lý                                                                                                                            |
+| ------------------------------- | ------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
+| `node --version` không phải v22 | `node --version`; `apt-cache policy nodejs`                   | Chạy lại Bước 2; không dùng Node từ Ubuntu repo cũ.                                                                                    |
+| App `failed`                    | `sudo journalctl -u assetmaster -n 150 --no-pager`            | Kiểm tra source đã build, file env `640`, MySQL/Redis active.                                                                          |
+| `/setup` không mở               | `sudo systemctl status assetmaster`; `curl -I 127.0.0.1:3000` | Kiểm tra `SELF_HOSTED_AUTH_ENABLED=true` và `SELF_HOSTED_SETUP_ENABLED=true` trước lần cài đầu.                                        |
+| MySQL access denied             | `sudo mysql -u root`; kiểm tra `assetmaster@localhost`        | Tạo lại database user ở Bước 3, không dùng root cho app.                                                                               |
+| Redis không trả PONG            | `sudo journalctl -u redis-server -n 100 --no-pager`           | Kiểm tra syntax `redis.conf` và password secret; khôi phục file `.assetmaster-original` nếu cần.                                       |
+| Nginx 502                       | `curl -I 127.0.0.1:3000`; `sudo nginx -t`                     | Khởi động app trước; proxy phải là `127.0.0.1:3000`.                                                                                   |
+| Cần LDAPS                       | Directory panel báo secret path không hợp lệ                  | Dùng đúng `/etc/assetmaster/secrets/assetmaster_ldap_bind_password`, là tệp thường `root:assetmaster` mode `0640`; không dùng symlink. |
 
 ## References
 
@@ -441,3 +544,5 @@ df -hT /srv
 [5] [Certbot — Nginx deployment instructions](https://certbot.eff.org/instructions?ws=nginx&os=ubuntufocal)
 
 [6] [OWASP — Password Storage Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html)
+
+[7] [Let’s Encrypt — Challenge Types](https://letsencrypt.org/docs/challenge-types/)
