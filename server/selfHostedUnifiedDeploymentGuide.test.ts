@@ -19,4 +19,26 @@ describe("unified self-hosted deployment guide", () => {
     expect(guide).toContain("Storage nội bộ");
     expect(guide).toContain("ERR_MODULE_NOT_FOUND: vite");
   });
+
+  it("liên kết đến runbook Ubuntu từng bước với các kiểm soát vận hành cần thiết", async () => {
+    const unifiedGuide = await readFile(
+      path.join(root, "docs/huong-dan-trien-khai-noi-bo.md"),
+      "utf8"
+    );
+    const linuxGuide = await readFile(
+      path.join(root, "docs/linux-server-step-by-step.md"),
+      "utf8"
+    );
+
+    expect(unifiedGuide).toContain("hướng dẫn Linux Server từng bước");
+    expect(linuxGuide).toContain("Ubuntu Server 24.04 LTS");
+    expect(linuxGuide).toContain("docker-compose-plugin");
+    expect(linuxGuide).toContain("Nginx reverse proxy");
+    expect(linuxGuide).toContain("Thiết lập firewall UFW");
+    expect(linuxGuide).toContain("Hoàn tất wizard `/setup`");
+    expect(linuxGuide).toContain("Cấu hình LDAPS");
+    expect(linuxGuide).toContain("assetmaster-backup.timer");
+    expect(linuxGuide).toContain("--no-deps app");
+    expect(linuxGuide).toContain("docker compose down -v");
+  });
 });

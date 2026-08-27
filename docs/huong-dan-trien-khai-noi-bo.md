@@ -2,7 +2,7 @@
 
 > **Tài liệu chính thức.** Đây là runbook duy nhất dùng để triển khai AssetMaster trong LAN/VPN doanh nghiệp, từ chạy local có kiểm soát đến Docker Compose production. Không dùng tài liệu này cho bản AssetMaster đang được hosting managed. Chỉ Nginx được nhận kết nối từ LAN/VPN; MySQL, Redis, thư mục dữ liệu, Docker secret và LDAPS không được công bố trực tiếp ra Internet.
 
-Để chạy thử trên **Docker Desktop Windows/macOS**, xem hướng dẫn từng bước riêng tại [Docker Desktop: Windows và macOS](./docker-desktop-step-by-step.md). Docker Desktop phù hợp UAT/đào tạo; Ubuntu Server + Docker Engine vẫn là phương án chạy nội bộ liên tục được khuyến nghị.
+Để chạy thử trên **Docker Desktop Windows/macOS**, xem hướng dẫn từng bước riêng tại [Docker Desktop: Windows và macOS](./docker-desktop-step-by-step.md). Để triển khai vận hành trên **Ubuntu Server**, dùng [hướng dẫn Linux Server từng bước](./linux-server-step-by-step.md). Docker Desktop phù hợp UAT/đào tạo; Ubuntu Server + Docker Engine vẫn là phương án chạy nội bộ liên tục được khuyến nghị.
 
 ## 1. Kết luận nhanh: source đã sẵn sàng đến đâu?
 
@@ -19,14 +19,14 @@ Source hiện tại **đủ để dựng môi trường staging/pilot nội bộ
 
 ## 2. Kiến trúc mục tiêu và nguyên tắc bắt buộc
 
-| Lớp             | Thành phần                                | Chỉ cho phép kết nối                         |
-| --------------- | ----------------------------------------- | -------------------------------------------- |
-| Edge            | Nginx                                     | HTTPS 443 từ LAN/VPN                         |
-| Ứng dụng        | AssetMaster Node.js                       | Từ Nginx; kết nối MySQL, Redis, LDAPS        |
-| Dữ liệu         | MySQL 8.4                                 | Chỉ từ AssetMaster qua mạng backend          |
-| Hạ tầng phụ trợ | Redis 7.4                                 | Chỉ từ AssetMaster qua mạng backend          |
-| Danh tính       | Active Directory/LDAP                     | LDAPS TCP 636 đi ra từ AssetMaster           |
-| Tệp đính kèm    | MinIO/S3 nội bộ hoặc volume có phân quyền | Chỉ từ ứng dụng sau khi adapter được bổ sung |
+| Lớp             | Thành phần                              | Chỉ cho phép kết nối                                              |
+| --------------- | --------------------------------------- | ----------------------------------------------------------------- |
+| Edge            | Nginx                                   | HTTPS 443 từ LAN/VPN                                              |
+| Ứng dụng        | AssetMaster Node.js                     | Từ Nginx; kết nối MySQL, Redis, LDAPS                             |
+| Dữ liệu         | MySQL 8.4                               | Chỉ từ AssetMaster qua mạng backend                               |
+| Hạ tầng phụ trợ | Redis 7.4                               | Chỉ từ AssetMaster qua mạng backend                               |
+| Danh tính       | Active Directory/LDAP                   | LDAPS TCP 636 đi ra từ AssetMaster                                |
+| Tệp đính kèm    | Thư mục dùng chung/volume có phân quyền | Chỉ từ ứng dụng; mount vào `/data/files` và kiểm tra quyền qua UI |
 
 AssetMaster dùng **Admin bootstrap local** như lối vào break-glass. Mật khẩu Admin chỉ được lưu bằng Argon2id hash; mật khẩu nhân viên chỉ được xác minh trực tiếp ở AD/LDAP, không được ghi vào database hay log.[1] Kết nối Directory bắt buộc dùng `ldaps://` với TLS, CA tin cậy và FQDN đúng certificate.[2]
 

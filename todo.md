@@ -3821,3 +3821,10 @@
 - [x] Lập danh mục mọi template nhập và xuất Excel cùng các cột dữ liệu hiện tại.
 - [x] Đối chiếu cột template/export với schema, danh sách giao diện và các liên kết Hóa đơn/Bản quyền.
 - [x] Chuẩn hóa các template hoặc luồng Excel sai lệch, rồi kiểm thử import/export theo bộ lọc.
+
+## Current Session — Runbook self-hosted Linux
+
+- [x] Rà soát Docker Compose, biến môi trường, secrets và hướng dẫn self-hosted hiện có cho Linux.
+- [x] Viết runbook Ubuntu/Docker/Nginx/UFW theo từng lệnh thực thi, gồm cấu hình DNS/TLS và đường dẫn dữ liệu.
+- [x] Bổ sung cấu hình `/setup`, LDAPS, backup/restore, cập nhật source an toàn và checklist cutover.
+- [x] Kiểm thử các lệnh/tài liệu, cập nhật regression và phát hành hướng dẫn hợp nhất.
