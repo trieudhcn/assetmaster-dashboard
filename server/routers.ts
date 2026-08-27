@@ -6,7 +6,7 @@ import { findActiveDeviceLicenseDuplicate } from "@shared/licenseDeviceAssignmen
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { adminProcedure, protectedProcedure, publicProcedure, router } from "./_core/trpc";
-import { authenticateBootstrapAdmin, authenticateDirectoryUser, clearSelfHostedLogin, selfHostedAuthEnabled, testLdapsDirectory } from "./selfHostedAuth";
+import { authenticateBootstrapAdmin, authenticateDirectoryUser, clearSelfHostedLogin, searchLdapsGroups, selfHostedAuthEnabled, syncLdapsUsers, testLdapsDirectory, testLdapsDirectoryDraft } from "./selfHostedAuth";
 import { assertSetupAccess, checkSetupDatabase, installerStatus, runSelfHostedInstaller } from "./selfHostedSetup";
 import {
   clearUserDivision,
@@ -539,6 +539,16 @@ export const appRouter = router({
       await recordActivity({ entityType: "directory_setting", entityId: 1, action: "saved", actorUserId: ctx.user.id, actorName: ctx.user.name, summary: "Lưu cấu hình Directory LDAP/AD" });
       return settings;
     }),
+    testDraft: adminProcedure.input(directorySettingsInput).mutation(async ({ input }) => {
+      if (!selfHostedAuthEnabled()) throw new TRPCError({ code: "PRECONDITION_FAILED", message: "Chỉ kiểm tra LDAPS từ máy chủ self-hosted đã bật SELF_HOSTED_AUTH_ENABLED=true." });
+      try {
+        return { success: true, message: await testLdapsDirectoryDraft({ ...input, groupsDn: input.groupsDn ?? null, bindDn: input.bindDn ?? null, bindSecretRef: input.bindSecretRef ?? null, adminGroupDn: input.adminGroupDn ?? null, userGroupDn: input.userGroupDn ?? null, caCertificatePem: input.caCertificatePem ?? null }) };
+      } catch (error) { return { success: false, message: error instanceof Error ? error.message : "Không thể kiểm tra LDAPS." }; }
+    }),
+    searchGroups: adminProcedure.input(z.object({ settings: directorySettingsInput, query: z.string().trim().max(128).default("") })).mutation(async ({ input }) => {
+      if (!selfHostedAuthEnabled()) throw new TRPCError({ code: "PRECONDITION_FAILED", message: "Chỉ tìm kiếm nhóm từ máy chủ self-hosted." });
+      try { return await searchLdapsGroups({ ...input.settings, groupsDn: input.settings.groupsDn ?? null, bindDn: input.settings.bindDn ?? null, bindSecretRef: input.settings.bindSecretRef ?? null, adminGroupDn: input.settings.adminGroupDn ?? null, userGroupDn: input.settings.userGroupDn ?? null, caCertificatePem: input.settings.caCertificatePem ?? null }, input.query); } catch (error) { throw new TRPCError({ code: "BAD_REQUEST", message: error instanceof Error ? error.message : "Không thể tìm kiếm nhóm Directory." }); }
+    }),
     test: adminProcedure.mutation(async ({ ctx }) => {
       if (!selfHostedAuthEnabled()) throw new TRPCError({ code: "PRECONDITION_FAILED", message: "Chỉ kiểm tra LDAPS từ máy chủ self-hosted đã bật SELF_HOSTED_AUTH_ENABLED=true." });
       try {
@@ -560,6 +570,14 @@ export const appRouter = router({
       const saved = await setDirectoryStatus(input.status, { userId: ctx.user.id, name: ctx.user.name });
       await recordActivity({ entityType: "directory_setting", entityId: 1, action: input.status, actorUserId: ctx.user.id, actorName: ctx.user.name, summary: input.status === "active" ? "Kích hoạt xác thực LDAP/LDAPS" : "Tắt xác thực LDAP/LDAPS" });
       return saved;
+    }),
+    syncUsers: adminProcedure.input(z.object({ limit: z.number().int().min(1).max(200).default(100) })).mutation(async ({ input, ctx }) => {
+      if (!selfHostedAuthEnabled()) throw new TRPCError({ code: "PRECONDITION_FAILED", message: "Chỉ đồng bộ Directory từ máy chủ self-hosted." });
+      try {
+        const result = await syncLdapsUsers(input.limit);
+        await recordActivity({ entityType: "directory_setting", entityId: 1, action: "users_synced", actorUserId: ctx.user.id, actorName: ctx.user.name, summary: `Đồng bộ LDAPS: ${result.synced} tài khoản, bỏ qua ${result.skipped}` });
+        return result;
+      } catch (error) { throw new TRPCError({ code: "BAD_REQUEST", message: error instanceof Error ? error.message : "Không thể đồng bộ tài khoản Directory." }); }
     }),
   }),
   menuPreferences: router({

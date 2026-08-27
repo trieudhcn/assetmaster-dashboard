@@ -19,6 +19,7 @@ const ATTRIBUTE_NAME = /^[A-Za-z][A-Za-z0-9-]{0,63}$/;
 const failedAttempts = new Map<string, { count: number; resetAt: number }>();
 
 type DirectorySettings = NonNullable<Awaited<ReturnType<typeof getDirectorySettings>>>;
+type DirectoryConnectionInput = Pick<DirectorySettings, "ldapUrl" | "usersDn" | "groupsDn" | "bindDn" | "bindSecretRef" | "loginAttribute" | "emailAttribute" | "displayNameAttribute" | "directoryIdAttribute" | "departmentAttribute" | "jobTitleAttribute" | "adminGroupDn" | "userGroupDn" | "allowNestedGroups" | "caCertificatePem">;
 
 export function selfHostedAuthEnabled() {
   return process.env.SELF_HOSTED_AUTH_ENABLED === "true";
@@ -101,7 +102,7 @@ export async function clearSelfHostedLogin(request: Request, response: Response)
   response.clearCookie(SELF_HOSTED_SESSION_COOKIE, sessionCookieOptions(request));
 }
 
-async function readBindSecret(settings: DirectorySettings) {
+async function readBindSecret(settings: Pick<DirectorySettings, "bindDn" | "bindSecretRef">) {
   if (!settings.bindDn || !settings.bindSecretRef) return null;
   if (!DIRECTORY_SECRET_PATH.test(settings.bindSecretRef)) throw new Error("Tham chiếu Docker secret LDAP không hợp lệ.");
   const secret = (await readFile(settings.bindSecretRef, "utf8")).trim();
@@ -126,7 +127,7 @@ function groupMatches(groups: string[], groupDn: string | null) {
   return Boolean(groupDn && groups.some((group) => group.localeCompare(groupDn, undefined, { sensitivity: "accent" }) === 0));
 }
 
-async function resolveDirectoryRole(client: Client, settings: DirectorySettings, entryDn: string, groups: string[]) {
+async function resolveDirectoryRole(client: Client, settings: Pick<DirectorySettings, "adminGroupDn" | "userGroupDn" | "allowNestedGroups" | "groupsDn">, entryDn: string, groups: string[]) {
   if (groupMatches(groups, settings.adminGroupDn)) return "admin" as const;
   if (groupMatches(groups, settings.userGroupDn)) return "user" as const;
   if (!settings.allowNestedGroups || !settings.groupsDn) return null;
@@ -153,7 +154,7 @@ function safeDirectoryMessage(error: unknown) {
   return "Không thể xác thực với Directory. Vui lòng kiểm tra cấu hình hoặc thông tin đăng nhập.";
 }
 
-function ldapClient(settings: DirectorySettings) {
+function ldapClient(settings: Pick<DirectorySettings, "ldapUrl" | "caCertificatePem">) {
   return new Client({
     url: settings.ldapUrl,
     timeout: 10_000,
@@ -163,9 +164,7 @@ function ldapClient(settings: DirectorySettings) {
   });
 }
 
-export async function testLdapsDirectory() {
-  const settings = await getDirectorySettings();
-  if (!settings) throw new Error("Chưa có cấu hình Directory LDAP/AD.");
+async function testDirectoryConnection(settings: DirectoryConnectionInput) {
   const validation = validateDirectorySettings(settings);
   if (validation) throw new Error(validation);
   const client = ldapClient(settings);
@@ -174,7 +173,71 @@ export async function testLdapsDirectory() {
     if (!settings.bindDn || !secret) throw new Error("Cần cấu hình tài khoản bind và Docker secret trước khi kiểm tra kết nối.");
     await client.bind(settings.bindDn, secret);
     await client.search(settings.usersDn, { scope: "base", filter: "(objectClass=*)", attributes: ["objectClass"], sizeLimit: 1, timeLimit: 5 });
-    return "Kết nối LDAPS và tài khoản bind hợp lệ.";
+    return "Kết nối LDAPS, chứng chỉ TLS và tài khoản bind hợp lệ.";
+  } catch (error) {
+    throw new Error(safeDirectoryMessage(error));
+  } finally {
+    await client.unbind().catch(() => undefined);
+  }
+}
+
+export async function testLdapsDirectoryDraft(settings: DirectoryConnectionInput) {
+  return testDirectoryConnection(settings);
+}
+
+export async function testLdapsDirectory() {
+  const settings = await getDirectorySettings();
+  if (!settings) throw new Error("Chưa có cấu hình Directory LDAP/AD.");
+  return testDirectoryConnection(settings);
+}
+
+export async function searchLdapsGroups(settings: DirectoryConnectionInput, query = "") {
+  if (!settings.groupsDn?.trim()) throw new Error("Cần khai báo Groups Base DN để tìm kiếm nhóm.");
+  await testDirectoryConnection(settings);
+  const client = ldapClient(settings);
+  try {
+    const secret = await readBindSecret(settings);
+    if (!settings.bindDn || !secret) throw new Error("Cần cấu hình tài khoản bind và Docker secret trước khi tìm kiếm nhóm.");
+    await client.bind(settings.bindDn, secret);
+    const keyword = query.trim();
+    const filter = keyword ? escapeFilter`(&(|(objectClass=group)(objectClass=groupOfNames)(objectClass=groupOfUniqueNames))(cn=*${keyword}*))` : "(|(objectClass=group)(objectClass=groupOfNames)(objectClass=groupOfUniqueNames))";
+    const result = await client.search(settings.groupsDn, { scope: "sub", filter, attributes: ["cn", "description"], sizeLimit: 50, timeLimit: 8 });
+    return result.searchEntries.map((entry) => {
+      const raw = entry as Record<string, unknown> & { dn?: string };
+      return { dn: raw.dn || "", name: entryValue(raw, "cn") || raw.dn || "Nhóm chưa có tên", description: entryValue(raw, "description") };
+    }).filter((group) => Boolean(group.dn));
+  } catch (error) {
+    throw new Error(safeDirectoryMessage(error));
+  } finally {
+    await client.unbind().catch(() => undefined);
+  }
+}
+
+export async function syncLdapsUsers(limit = 100) {
+  const settings = await getDirectorySettings();
+  if (!settings || settings.lastTestStatus !== "success") throw new Error("Hãy lưu và kiểm tra LDAPS thành công trước khi đồng bộ.");
+  const validation = validateDirectorySettings(settings);
+  if (validation) throw new Error(validation);
+  const client = ldapClient(settings);
+  try {
+    const secret = await readBindSecret(settings);
+    if (!settings.bindDn || !secret) throw new Error("Thiếu tài khoản bind LDAPS.");
+    await client.bind(settings.bindDn, secret);
+    const attributes = [settings.loginAttribute, settings.emailAttribute, settings.displayNameAttribute, settings.directoryIdAttribute, settings.departmentAttribute, settings.jobTitleAttribute, "memberOf"];
+    const result = await client.search(settings.usersDn, { scope: "sub", filter: `(&(objectClass=person)(${settings.emailAttribute}=*))`, attributes, sizeLimit: limit, timeLimit: 20 });
+    const outcome: Array<{ email: string; name: string | null; role: "admin" | "user"; status: "synced" | "skipped"; reason?: string }> = [];
+    for (const rawEntry of result.searchEntries) {
+      const entry = rawEntry as Record<string, unknown> & { dn?: string };
+      const directoryObjectId = entryValue(entry, settings.directoryIdAttribute);
+      const emailRaw = entryValue(entry, settings.emailAttribute);
+      if (!entry.dn || !directoryObjectId || !emailRaw) { outcome.push({ email: emailRaw || "—", name: entryValue(entry, settings.displayNameAttribute), role: "user", status: "skipped", reason: "Thiếu DN, email hoặc ID bất biến." }); continue; }
+      const role = await resolveDirectoryRole(client, settings, entry.dn, entryValues(entry, "memberOf"));
+      if (!role) { outcome.push({ email: normalizeLoginEmail(emailRaw), name: entryValue(entry, settings.displayNameAttribute), role: "user", status: "skipped", reason: "Ngoài nhóm được ánh xạ." }); continue; }
+      const openId = `ldap:${crypto.createHash("sha256").update(directoryObjectId).digest("hex").slice(0, 58)}`;
+      await upsertDirectoryUser({ openId, directoryObjectId, directoryUsername: entryValue(entry, settings.loginAttribute) || normalizeLoginEmail(emailRaw), name: entryValue(entry, settings.displayNameAttribute), email: normalizeLoginEmail(emailRaw), department: entryValue(entry, settings.departmentAttribute), jobTitle: entryValue(entry, settings.jobTitleAttribute), role });
+      outcome.push({ email: normalizeLoginEmail(emailRaw), name: entryValue(entry, settings.displayNameAttribute), role, status: "synced" });
+    }
+    return { scanned: result.searchEntries.length, synced: outcome.filter((entry) => entry.status === "synced").length, skipped: outcome.filter((entry) => entry.status === "skipped").length, users: outcome };
   } catch (error) {
     throw new Error(safeDirectoryMessage(error));
   } finally {

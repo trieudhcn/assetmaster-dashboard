@@ -288,6 +288,10 @@
 - [x] Chuyển `/setup` thành wizard từng bước có tiến trình, kiểm tra MySQL và trạng thái hoàn tất rõ ràng.
 - [x] Bổ sung giao diện ánh xạ nhóm LDAPS sang quyền website và đồng bộ hợp đồng backend hiện có.
 - [x] Bổ sung hồi quy, TypeScript/build và xác minh responsive cho điều hướng Directory, wizard và mapping quyền.
+- [x] Bổ sung kiểm tra kết nối LDAPS trực tiếp từ thông số bản nháp trước khi lưu cấu hình.
+- [x] Thêm đồng bộ thủ công danh sách tài khoản LDAPS có giới hạn, kết quả rõ ràng và audit quản trị.
+- [x] Bổ sung tìm kiếm/lọc nhóm LDAPS để chọn ánh xạ quyền khi directory có nhiều nhóm.
+- [x] Viết hồi quy, kiểm thử phân quyền và xác minh responsive cho các thao tác Directory mới.
 
 ## Current Session — Bản quyền & Dịch vụ
 
