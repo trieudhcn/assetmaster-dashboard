@@ -133,9 +133,9 @@ Giữ Setup Token trong password manager. Không để `/setup` hoạt động s
 
 ### Nếu `/setup` báo lỗi migration `retiredAt`
 
-Lỗi dạng `Failed query: ALTER TABLE assets ADD retiredAt timestamp` xuất hiện ở bản source cũ do migration đã khai báo cột `retiredAt` hai lần. Bản source hiện tại đã chuyển migration này sang dạng có thể chạy lại an toàn. **Không xóa database, `.assetmaster-data` hay Docker volume** để xử lý lỗi này.
+Lỗi dạng `Failed query: ALTER TABLE assets ADD retiredAt timestamp` xuất hiện ở bản source cũ do migration đã khai báo cột `retiredAt` hai lần. Bản source hiện tại kiểm tra `INFORMATION_SCHEMA` trước khi thêm từng cột, nên có thể chạy lại trên MySQL Docker kể cả khi lần trước đã thêm dở một cột. **Không xóa database, `.assetmaster-data` hay Docker volume** để xử lý lỗi này.
 
-Trước hết, cập nhật source để file `drizzle/0031_curly_nebula.sql` chứa `ADD COLUMN IF NOT EXISTS`. Sau đó, từ thư mục AssetMaster, build lại riêng container ứng dụng và xem log:
+Trước hết, cập nhật source để file `drizzle/0031_curly_nebula.sql` chứa `INFORMATION_SCHEMA.COLUMNS`. Sau đó, từ thư mục AssetMaster, build lại riêng container ứng dụng và xem log:
 
 ```powershell
 docker compose -f docker-compose.yml -f docker-compose.desktop.yml up -d --build --force-recreate app

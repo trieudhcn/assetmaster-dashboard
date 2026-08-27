@@ -9,12 +9,20 @@ describe("self-hosted migration safety", () => {
       "utf8"
     );
 
+    expect(migration).toContain("INFORMATION_SCHEMA.COLUMNS");
     expect(migration).toContain(
-      "ADD COLUMN IF NOT EXISTS `retiredAt` timestamp"
+      "PREPARE assetmaster_0031_retired_at_statement"
     );
     expect(migration).toContain(
-      "ADD COLUMN IF NOT EXISTS `retirementReason` text"
+      "PREPARE assetmaster_0031_retirement_reason_statement"
     );
+    expect(migration).toContain(
+      "'ALTER TABLE `assets` ADD `retiredAt` timestamp'"
+    );
+    expect(migration).toContain(
+      "'ALTER TABLE `assets` ADD `retirementReason` text'"
+    );
+    expect(migration).not.toContain("ADD COLUMN IF NOT EXISTS");
     expect(migration.match(/`retiredAt`/g) ?? []).toHaveLength(1);
   });
 });

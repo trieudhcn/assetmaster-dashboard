@@ -3797,3 +3797,9 @@
 - [x] Xác định và loại trừ socket/thư mục MySQL runtime khỏi Docker build context trên Docker Desktop.
 - [x] Bổ sung regression cho `.dockerignore` và hướng dẫn rebuild không xóa dữ liệu.
 - [x] Kiểm thử định dạng/gói source và phát hành bản sửa.
+
+## Current Session — Tương thích migration `retiredAt` với MySQL Docker
+
+- [x] Thay cú pháp `ADD COLUMN IF NOT EXISTS` không tương thích bằng migration idempotent cho MySQL.
+- [x] Xác minh migration xử lý được cột đã thêm dở và tiếp tục chuỗi migration an toàn.
+- [x] Bổ sung regression, kiểm thử và hướng dẫn chạy lại `/setup` không xóa dữ liệu.
