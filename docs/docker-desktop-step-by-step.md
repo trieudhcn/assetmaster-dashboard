@@ -144,6 +144,10 @@ docker compose -f docker-compose.yml -f docker-compose.desktop.yml logs --tail=1
 
 Khi log xác nhận ứng dụng đã lắng nghe cổng 3000, tải lại `/setup` và dùng lại cùng thông tin. Migration tiếp tục từ trạng thái hiện có; dữ liệu MySQL không bị xóa.
 
+### Nếu log cũ báo `OAUTH_SERVER_URL` hoặc `%VITE_ANALYTICS_ENDPOINT%`
+
+Không cần cấu hình Manus OAuth hay Umami Analytics cho bản self-hosted. Các dòng này thuộc bản source cũ: OAuth hosted đã bị nạp dù self-hosted không dùng nó, còn URL Analytics chưa có biến build nên bị Express hiểu nhầm là URL có ký tự `%`. Hãy cập nhật source, rồi build lại **chỉ** service app bằng lệnh ở trên. Nếu log mới chỉ còn `Server running on http://localhost:3000/`, ứng dụng đã sẵn sàng mở `/setup`.
+
 ## 6. Cấu hình kho tệp chia sẻ và kiểm tra upload
 
 1. Đăng nhập bằng Admin bootstrap, mở **Cài đặt hệ thống → Kho tệp đính kèm**.

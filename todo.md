@@ -3785,3 +3785,9 @@
 - [x] Phân tích lỗi `ALTER TABLE assets ADD retiredAt` khi khởi tạo qua `/setup` trên MySQL Docker.
 - [x] Làm migration installer tương thích khi cột hoặc trạng thái schema đã tồn tại, không xóa dữ liệu.
 - [x] Bổ sung regression và hướng dẫn chạy lại `/setup` an toàn.
+
+## Current Session — Sửa OAuth và Analytics Docker self-hosted
+
+- [x] Phân tích placeholder Analytics và cảnh báo OAuth xuất hiện trong log Docker self-hosted.
+- [x] Ngăn route static xử lý URL Analytics chưa được inject, đồng thời giữ luồng xác thực self-hosted hoạt động độc lập OAuth.
+- [x] Bổ sung regression, kiểm thử build và hướng dẫn khởi động lại container ứng dụng.

@@ -1,6 +1,5 @@
 import type { CreateExpressContextOptions } from "@trpc/server/adapters/express";
 import type { User } from "../../drizzle/schema";
-import { sdk } from "./sdk";
 import { getSelfHostedUser, selfHostedAuthEnabled } from "../selfHostedAuth";
 
 export type TrpcContext = {
@@ -18,6 +17,7 @@ export async function createContext(
     user = await getSelfHostedUser(opts.req);
   } else {
     try {
+      const { sdk } = await import("./sdk");
       user = await sdk.authenticateRequest(opts.req);
     } catch (error) {
       // Authentication is optional for public procedures.
