@@ -256,6 +256,15 @@
 - [x] Kiểm thử phân trang Bản quyền/Dịch vụ trên desktop/mobile.
 - [x] Cho phép nhấp đúp để chỉnh sửa và lưu nhãn Hạ tầng số theo cơ chế tiêu đề chung.
 - [x] Kiểm thử chỉnh sửa nhãn Hạ tầng số trên desktop/mobile.
+- [x] Loại bỏ dropdown Loại tài sản không còn tồn tại khỏi bộ lọc Danh mục tài sản.
+- [x] Gỡ trạng thái và điều kiện lọc Loại tài sản không còn dùng.
+- [x] Kiểm thử các bộ lọc Danh mục tài sản còn lại trên desktop/mobile.
+- [x] Đưa bộ lọc Hóa đơn xuống sau bộ lọc Bảo hành trong Danh mục tài sản.
+- [x] Kiểm thử thứ tự bộ lọc Danh mục tài sản trên desktop/mobile.
+- [x] Lập kiến trúc triển khai AssetMaster nội bộ trên Linux với LDAP/LDAPS, MySQL, lưu trữ tệp và Nginx.
+- [x] Soạn hướng dẫn cài đặt, bảo mật, sao lưu và vận hành nội bộ chi tiết.
+- [x] Lập kế hoạch migration thay Manus OAuth/Forge bằng LDAP session và lưu trữ tệp nội bộ.
+- [ ] Thu thập thông tin hạ tầng bắt buộc trước khi bắt đầu triển khai self-hosted.
 
 ## Current Session — Bản quyền & Dịch vụ
 
