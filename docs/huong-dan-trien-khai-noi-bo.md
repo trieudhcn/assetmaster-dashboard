@@ -208,7 +208,7 @@ Sau khi thành công, đổi `ASSETMASTER_SETUP_ENABLED=false` trong `.env` rồ
 
 ## 9. Theo dõi vận hành, backup, upgrade và rollback
 
-Sau khi self-hosted, Admin xem **Cài đặt hệ thống → Trạng thái hạ tầng** để kiểm tra MySQL/Redis theo chu kỳ 30 giây; panel chỉ trả trạng thái, latency và hướng dẫn khắc phục, không trả host/password/secret. Redis hiện được chuẩn bị cho cache/queue; session ứng dụng vẫn ở MySQL, không tự thay đổi kiến trúc session.
+Sau khi self-hosted, Admin xem **Cài đặt hệ thống → Trạng thái hạ tầng** để kiểm tra MySQL/Redis theo chu kỳ 30 giây; panel chỉ trả trạng thái, latency và hướng dẫn khắc phục, không trả host/password/secret. Tại cùng bảng điều khiển, bấm **Kiểm tra LDAPS** để dùng cấu hình Directory đã lưu, xác minh TLS/CA, Docker secret bind và Users Base DN; kết quả chỉ trả trạng thái an toàn. Nếu chưa có cấu hình, bấm **Mở cấu hình Directory** để lưu nháp trước. Redis hiện được chuẩn bị cho cache/queue; session ứng dụng vẫn ở MySQL, không tự thay đổi kiến trúc session.
 
 Trước mọi nâng cấp, tạo dump logical và thử restore định kỳ. RAID giúp chịu lỗi đĩa, nhưng không thay thế một bản logical backup/restore drill.[8]
 

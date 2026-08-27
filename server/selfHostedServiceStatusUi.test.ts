@@ -22,6 +22,12 @@ describe("self-hosted service status UI", () => {
     expect(panel).toContain("Tự làm mới mỗi 30 giây");
     expect(panel).toContain("MySQL");
     expect(panel).toContain("Redis");
+    expect(panel).toContain("Kiểm tra LDAPS đã lưu");
+    expect(panel).toContain("TLS và CA");
+    expect(panel).toContain("Tài khoản bind");
+    expect(panel).toContain("Users Base DN");
+    expect(panel).toContain("trpc.directory.test.useMutation");
+    expect(panel).toContain("assetmaster:open-directory-settings");
     expect(home).toContain("<SelfHostedServiceStatusPanel />");
     expect(health).toContain("selfHosted: false");
     expect(health).not.toContain("console.log");

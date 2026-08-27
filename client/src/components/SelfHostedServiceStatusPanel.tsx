@@ -4,13 +4,22 @@ import {
   CircleAlert,
   Database,
   Loader2,
+  Network,
   RefreshCw,
   ServerCog,
 } from "lucide-react";
+import { useState } from "react";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { trpc } from "@/lib/trpc";
 
 type ServiceState = "ready" | "unavailable" | "not_configured";
+type LdapsStepState = "waiting" | "active" | "done" | "error";
+
+const initialLdapsSteps: Array<{ label: string; state: LdapsStepState }> = [
+  { label: "TLS và CA", state: "waiting" },
+  { label: "Tài khoản bind", state: "waiting" },
+  { label: "Users Base DN", state: "waiting" },
+];
 
 const stateMeta: Record<
   ServiceState,
@@ -88,6 +97,38 @@ export function SelfHostedServiceStatusPanel() {
     refetchInterval: 30_000,
     refetchIntervalInBackground: false,
   });
+  const directoryQuery = trpc.directory.get.useQuery(undefined, {
+    enabled: isAdmin && healthQuery.data?.selfHosted === true,
+  });
+  const utils = trpc.useUtils();
+  const [ldapsSteps, setLdapsSteps] = useState(initialLdapsSteps);
+  const [ldapsMessage, setLdapsMessage] = useState<string | null>(null);
+  const testLdapsMutation = trpc.directory.test.useMutation({
+    onMutate: () => {
+      setLdapsMessage(null);
+      setLdapsSteps([
+        { label: "TLS và CA", state: "active" },
+        { label: "Tài khoản bind", state: "waiting" },
+        { label: "Users Base DN", state: "waiting" },
+      ]);
+    },
+    onSuccess: result => {
+      setLdapsSteps(
+        initialLdapsSteps.map(step => ({ ...step, state: "done" }))
+      );
+      setLdapsMessage(result.message);
+      void utils.directory.get.invalidate();
+      void utils.directory.audit.invalidate();
+    },
+    onError: error => {
+      setLdapsSteps([
+        { label: "Không hoàn tất kiểm tra LDAPS", state: "error" },
+      ]);
+      setLdapsMessage(error.message || "Không thể kiểm tra LDAPS đã lưu.");
+      void utils.directory.get.invalidate();
+      void utils.directory.audit.invalidate();
+    },
+  });
 
   if (!isAdmin || (healthQuery.isSuccess && !healthQuery.data.selfHosted))
     return null;
@@ -161,6 +202,103 @@ export function SelfHostedServiceStatusPanel() {
                 message={healthQuery.data.redis.message}
               />
             </div>
+            <section className="mt-4 rounded-xl border border-[#DCE7F0] bg-[#FBFDFF] p-4">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                <div className="flex min-w-0 gap-3">
+                  <div className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-[#F1ECFF] text-[#6841C6]">
+                    <Network size={17} />
+                  </div>
+                  <div>
+                    <div className="text-xs font-extrabold text-[#193B57]">
+                      Kiểm tra LDAPS đã lưu
+                    </div>
+                    <p className="mt-0.5 text-[10px] leading-4 text-[#71869A]">
+                      Xác minh TLS/CA, Docker secret bind và Users Base DN. Mật
+                      khẩu không được gửi về trình duyệt.
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => testLdapsMutation.mutate()}
+                  disabled={!directoryQuery.data || testLdapsMutation.isPending}
+                  title={
+                    directoryQuery.data
+                      ? undefined
+                      : "Cần lưu cấu hình Directory trước khi kiểm tra"
+                  }
+                  className="inline-flex h-9 shrink-0 items-center justify-center gap-2 rounded-lg border border-[#D5C8F3] bg-white px-3 text-xs font-extrabold text-[#6841C6] transition hover:bg-[#F5F1FF] disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {testLdapsMutation.isPending ? (
+                    <Loader2 className="animate-spin" size={14} />
+                  ) : (
+                    <Network size={14} />
+                  )}
+                  {testLdapsMutation.isPending
+                    ? "Đang kiểm tra…"
+                    : "Kiểm tra LDAPS"}
+                </button>
+              </div>
+              {!directoryQuery.data && !directoryQuery.isLoading ? (
+                <div className="mt-3 flex flex-wrap items-center justify-between gap-2 rounded-lg border border-[#F2D596] bg-[#FFF9EB] px-3 py-2 text-[11px] leading-5 text-[#8F5A00]">
+                  <span>Chưa có cấu hình Directory được lưu để kiểm tra.</span>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      window.dispatchEvent(
+                        new Event("assetmaster:open-directory-settings")
+                      )
+                    }
+                    className="font-extrabold text-[#6841C6] hover:text-[#4F2EA4]"
+                  >
+                    Mở cấu hình Directory
+                  </button>
+                </div>
+              ) : null}
+              {ldapsSteps.some(step => step.state !== "waiting") ? (
+                <ol className="mt-3 grid gap-2 sm:grid-cols-3">
+                  {ldapsSteps.map(step => {
+                    const active = step.state === "active";
+                    const done = step.state === "done";
+                    const error = step.state === "error";
+                    return (
+                      <li
+                        key={step.label}
+                        className={`flex items-center gap-2 rounded-lg border px-2.5 py-2 text-[10px] font-bold ${
+                          active
+                            ? "border-[#C9DDF5] bg-[#F4F9FF] text-[#2666A8]"
+                            : done
+                              ? "border-[#B8E3DA] bg-[#F2FCF9] text-[#087A6A]"
+                              : error
+                                ? "border-[#F3C7C7] bg-[#FFF6F6] text-[#B44545]"
+                                : "border-[#E7EEF3] bg-white text-[#71869A]"
+                        }`}
+                      >
+                        {active ? (
+                          <Loader2 className="animate-spin" size={12} />
+                        ) : done ? (
+                          <CheckCircle2 size={12} />
+                        ) : (
+                          <CircleAlert size={12} />
+                        )}
+                        {step.label}
+                      </li>
+                    );
+                  })}
+                </ol>
+              ) : null}
+              {ldapsMessage ? (
+                <p
+                  className={`mt-3 rounded-lg px-3 py-2 text-[11px] leading-5 ${
+                    testLdapsMutation.isError
+                      ? "bg-[#FFF6F6] text-[#B44545]"
+                      : "bg-[#F2FCF9] text-[#087A6A]"
+                  }`}
+                >
+                  {ldapsMessage}
+                </p>
+              ) : null}
+            </section>
             <div className="mt-4 flex items-center gap-2 border-t border-[#E7EEF3] pt-4 text-[10px] font-semibold text-[#8AA0B6]">
               <Activity size={13} className="text-[#0F8C8C]" />
               Tự làm mới mỗi 30 giây khi đang mở trang Cài đặt.

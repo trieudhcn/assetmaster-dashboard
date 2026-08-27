@@ -3739,3 +3739,11 @@
 - [x] Hợp nhất hướng dẫn local, Docker Compose, `/setup`, LDAPS, Nginx, backup và cutover vào một tài liệu duy nhất.
 - [x] Đánh giá rõ source hiện tại có thể triển khai nội bộ ở mức nào và các hạng mục còn chặn production.
 - [x] Chạy hồi quy, TypeScript, build và xác minh deployment sau khi khắc phục.
+
+## Current Session — Kiểm tra LDAPS trong bảng điều khiển
+
+- [x] Rà soát contract kiểm tra LDAPS đã lưu cùng panel Directory hiện có.
+- [x] Bổ sung nút kiểm tra trực tiếp cấu hình LDAPS đã lưu trong bảng trạng thái hạ tầng cho Admin.
+- [x] Hiển thị tiến trình/kết quả kiểm tra TLS, bind và Users DN mà không lộ secret.
+- [x] Cập nhật hướng dẫn kiểm tra LDAPS trong runbook hợp nhất.
+- [x] Bổ sung hồi quy, TypeScript, build và xác minh giao diện trước phát hành.
