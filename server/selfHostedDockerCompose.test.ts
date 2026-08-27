@@ -18,6 +18,13 @@ describe("Docker Compose self-hosted bundle", () => {
     expect(compose).toContain("mysql_data:");
     expect(compose).toContain("redis_data:");
     expect(compose).toContain("127.0.0.1");
+    expect(compose).toContain("assetmaster_backend:");
+    expect(compose).toContain("internal: true");
+    expect(compose).toContain("driver: local");
+    expect(compose).toContain('max-size: "10m"');
+    expect(compose).toContain("ASSETMASTER_DATA_DIR");
+    expect(compose).toContain('user: "999:999"');
+    expect(compose).toContain("read_only: true");
   });
 
   it("dùng Docker secrets thay vì đưa password vào cấu hình mẫu", () => {
@@ -39,7 +46,16 @@ describe("Docker Compose self-hosted bundle", () => {
 
     expect(dockerfile).toContain("corepack pnpm install --frozen-lockfile");
     expect(dockerfile).toContain("corepack pnpm run build");
+    expect(dockerfile).toContain("corepack pnpm prune --prod");
     expect(dockerfile).toContain('CMD ["node", "dist/index.js"]');
     expect(dockerfile).toContain("COPY . .");
+    expect(dockerfile).toContain("USER assetmaster");
+    expect(dockerfile).toContain("FROM node:22-bookworm-slim AS runtime");
+
+    const deploymentGuide = readProjectFile(
+      "docs/docker-compose-self-hosted.md"
+    );
+    expect(deploymentGuide).toContain("root:10001");
+    expect(deploymentGuide).toContain("chmod 640");
   });
 });

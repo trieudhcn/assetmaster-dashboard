@@ -3714,3 +3714,20 @@
 - [x] Cung cấp mẫu biến môi trường và secrets không chứa thông tin nhạy cảm.
 - [x] Viết hướng dẫn khởi động, kiểm tra, backup và dừng stack self-hosted.
 - [x] Xác thực cú pháp Compose, kiểm thử hồi quy, TypeScript và production build trước khi phát hành.
+
+## Current Session — Installer và trạng thái dịch vụ self-hosted
+
+- [x] Rà soát luồng `/setup`, kết nối MySQL/Redis và các điểm cần hoàn thiện trước triển khai thực tế.
+- [x] Tối ưu wizard `/setup` với hướng dẫn từng bước, preflight và trạng thái đang cấu hình rõ ràng.
+- [x] Bổ sung API healthcheck an toàn cho MySQL và Redis trong chế độ self-hosted.
+- [x] Hiển thị bảng trạng thái MySQL/Redis có tự làm mới trong Cài đặt hệ thống cho Admin.
+- [x] Cập nhật runbook nêu rõ thay đổi còn cần thiết trước triển khai nội bộ thực tế.
+- [x] Bổ sung hồi quy, TypeScript, build và xác minh desktop/mobile trước phát hành.
+
+## Current Session — Docker Compose production hardening
+
+- [x] Rà soát Docker Compose hiện tại theo luồng runtime, installer và kho dữ liệu thực tế.
+- [x] Tăng cường mạng, secrets, healthcheck, tài nguyên, log rotation và persistence cho production.
+- [x] Chuẩn hóa Dockerfile/entrypoint để chạy ứng dụng ít đặc quyền mà vẫn ghi được runtime volume.
+- [x] Cập nhật hướng dẫn triển khai production, backup và quy trình UAT container.
+- [x] Bổ sung hồi quy, kiểm tra cú pháp, TypeScript và production build trước phát hành.

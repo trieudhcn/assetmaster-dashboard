@@ -6,13 +6,13 @@
 
 Máy chủ chạy Nginx ở lớp ngoài, ứng dụng Node.js AssetMaster ở mạng nội bộ, MySQL và kho tệp riêng. `/setup` chỉ có hiệu lực khi các feature flag self-hosted được bật và có mã cài đặt một lần. Sau khi hoàn tất, installer tự khóa ở tầng ứng dụng; không sử dụng nó như một trang quản trị thông thường.
 
-| Thành phần | Vai trò | Kết nối được phép |
-|---|---|---|
-| Nginx | Kết thúc TLS, giới hạn truy cập LAN/VPN, reverse proxy | HTTPS 443 từ LAN/VPN; HTTP 80 chỉ chuyển hướng nội bộ nếu cần |
-| AssetMaster Node.js | UI, tRPC API, session, `/setup`, LDAPS adapter | Chỉ nhận từ Nginx |
-| MySQL 8 | Dữ liệu nghiệp vụ, cấu hình Directory, session, audit | Chỉ nhận từ ứng dụng qua mạng Docker/private host |
-| Kho tệp | MinIO S3-compatible hoặc volume tệp giới hạn quyền | Chỉ nhận từ ứng dụng; không public bucket |
-| Active Directory/LDAP | Nguồn xác thực nhân viên | LDAPS TCP 636 từ ứng dụng đến Domain Controller |
+| Thành phần            | Vai trò                                                | Kết nối được phép                                             |
+| --------------------- | ------------------------------------------------------ | ------------------------------------------------------------- |
+| Nginx                 | Kết thúc TLS, giới hạn truy cập LAN/VPN, reverse proxy | HTTPS 443 từ LAN/VPN; HTTP 80 chỉ chuyển hướng nội bộ nếu cần |
+| AssetMaster Node.js   | UI, tRPC API, session, `/setup`, LDAPS adapter         | Chỉ nhận từ Nginx                                             |
+| MySQL 8               | Dữ liệu nghiệp vụ, cấu hình Directory, session, audit  | Chỉ nhận từ ứng dụng qua mạng Docker/private host             |
+| Kho tệp               | MinIO S3-compatible hoặc volume tệp giới hạn quyền     | Chỉ nhận từ ứng dụng; không public bucket                     |
+| Active Directory/LDAP | Nguồn xác thực nhân viên                               | LDAPS TCP 636 từ ứng dụng đến Domain Controller               |
 
 LDAPS thiết lập TLS ngay khi kết nối qua cổng 636; certificate Domain Controller phải có Server Authentication, FQDN đúng trong Subject/SAN và chuỗi CA được máy chủ ứng dụng tin cậy.[1] [2] AssetMaster vẫn giữ Admin bootstrap local như lối vào break-glass, nhưng password chỉ tồn tại dưới dạng Argon2id hash; mật khẩu nhân viên chỉ được xác thực tại AD/LDAP.[3]
 
@@ -52,11 +52,11 @@ Sinh mỗi secret độc lập bằng password manager hoặc `openssl rand -bas
 
 Khởi động ứng dụng phía sau Nginx, sau đó mở `https://assetmaster.noi-bo.example/setup`. Wizard chỉ khả dụng trong self-hosted và cần mã cài đặt. Không gửi mã cài đặt qua email/chat không mã hóa.
 
-| Bước wizard | Nhập | Kiểm tra phải đạt | Kết quả |
-|---|---|---|---|
-| **1. Website & Admin** | Tên website, URL nội bộ, họ tên/email/mật khẩu Admin bootstrap | Password tối thiểu 12 ký tự | Tạo tài khoản break-glass có `passwordHash` Argon2id |
-| **2. MySQL** | Host, port, tên database, user/password cài đặt | Kết nối `SELECT 1` thành công | Có thể tiếp tục sang rà soát |
-| **3. Rà soát & khởi tạo** | Mã cài đặt một lần | Xác nhận lại dữ liệu | Tạo database nếu chưa có, chạy Drizzle migrations, ghi cấu hình runtime và khóa installer |
+| Bước wizard               | Nhập                                                           | Kiểm tra phải đạt             | Kết quả                                                                                   |
+| ------------------------- | -------------------------------------------------------------- | ----------------------------- | ----------------------------------------------------------------------------------------- |
+| **1. Website & Admin**    | Tên website, URL nội bộ, họ tên/email/mật khẩu Admin bootstrap | Password tối thiểu 12 ký tự   | Tạo tài khoản break-glass có `passwordHash` Argon2id                                      |
+| **2. MySQL**              | Host, port, tên database, user/password cài đặt                | Kết nối `SELECT 1` thành công | Có thể tiếp tục sang rà soát                                                              |
+| **3. Rà soát & khởi tạo** | Mã cài đặt một lần                                             | Xác nhận lại dữ liệu          | Tạo database nếu chưa có, chạy Drizzle migrations, ghi cấu hình runtime và khóa installer |
 
 Với cài đặt thủ công, tài khoản MySQL dùng ở bước cài đặt cần quyền tạo database/schema. Với Docker Compose, database đã được service `mysql` tạo trước và installer có thể tiếp tục khi tài khoản ứng dụng chỉ có quyền trên database AssetMaster. Mọi migration phải chạy một lần trong maintenance window, theo dõi log và có database dump trước khi nâng version.
 
@@ -95,14 +95,14 @@ Thiết lập HTTPS với TLS 1.2 trở lên (ưu tiên TLS 1.3) và cookie `Htt
 
 Thứ tự thực hiện là: tạo Docker secret chứa password bind → mount read-only tại `/run/secrets/...` → nhập URL `ldaps://dc01.noi-bo.example:636`, Users Base DN, Groups Base DN, Bind DN, đường dẫn secret, thuộc tính Directory và CA PEM → bấm **Kiểm tra bản nháp** → lưu nháp → bấm **Kiểm tra LDAPS** → chọn nhóm quyền → kích hoạt LDAPS.
 
-| Trường | Ví dụ AD | Nguyên tắc |
-|---|---|---|
-| URL LDAPS | `ldaps://dc01.noi-bo.example:636` | Không dùng `ldap://`/389 |
-| Users Base DN | `OU=Users,DC=noi-bo,DC=example` | Thu hẹp phạm vi đọc |
-| ID bất biến | `objectGUID` | Dùng cho liên kết lâu dài, không dựa duy nhất vào email |
-| Login/Email | `userPrincipalName` hoặc `mail` | Email là định danh đăng nhập của nhân viên |
-| Admin Group DN | `CN=AssetMaster-Admins,...` | Toàn quyền AssetMaster |
-| User Group DN | `CN=AssetMaster-Users,...` | Quyền người dùng được cấp trong website |
+| Trường         | Ví dụ AD                          | Nguyên tắc                                              |
+| -------------- | --------------------------------- | ------------------------------------------------------- |
+| URL LDAPS      | `ldaps://dc01.noi-bo.example:636` | Không dùng `ldap://`/389                                |
+| Users Base DN  | `OU=Users,DC=noi-bo,DC=example`   | Thu hẹp phạm vi đọc                                     |
+| ID bất biến    | `objectGUID`                      | Dùng cho liên kết lâu dài, không dựa duy nhất vào email |
+| Login/Email    | `userPrincipalName` hoặc `mail`   | Email là định danh đăng nhập của nhân viên              |
+| Admin Group DN | `CN=AssetMaster-Admins,...`       | Toàn quyền AssetMaster                                  |
+| User Group DN  | `CN=AssetMaster-Users,...`        | Quyền người dùng được cấp trong website                 |
 
 Mật khẩu nhân viên không được ghi log hoặc lưu tại AssetMaster. Khi đăng nhập, ứng dụng tìm DN bằng account bind read-only, kiểm tra membership, rồi bind LDAPS bằng DN người dùng và password vừa nhập để xác thực. Input LDAP được escape và mọi thuộc tính filter được allow-list để phòng LDAP injection.[6]
 
@@ -131,15 +131,31 @@ Khi rollback code, chỉ quay lại version có migration tương thích. Không
 
 ## 9. Checklist nghiệm thu trước khi mở cho nhân viên
 
-| Hạng mục | Tiêu chí đạt |
-|---|---|
-| `/setup` | Chạy đúng một lần; database, migration và Admin bootstrap được tạo |
-| Nginx | Chỉ LAN/VPN vào được; HTTPS, header proxy và no-cache cho API/login đúng |
-| LDAPS | Certificate CA/FQDN hợp lệ; bind read-only và Users Base DN kiểm tra thành công |
-| Nhóm quyền | Một Admin group và một User group được ánh xạ, thử tài khoản trong/ngoài nhóm |
-| Đồng bộ | Kết quả phân trang, role và record bị bỏ qua được Admin kiểm tra |
-| Backup | Có dump mới nhất trên RAID và thực hiện được restore thử ở môi trường cô lập |
-| Break-glass | Admin bootstrap đăng nhập được khi LDAPS tắt hoặc AD không sẵn sàng |
+| Hạng mục    | Tiêu chí đạt                                                                    |
+| ----------- | ------------------------------------------------------------------------------- |
+| `/setup`    | Chạy đúng một lần; database, migration và Admin bootstrap được tạo              |
+| Nginx       | Chỉ LAN/VPN vào được; HTTPS, header proxy và no-cache cho API/login đúng        |
+| LDAPS       | Certificate CA/FQDN hợp lệ; bind read-only và Users Base DN kiểm tra thành công |
+| Nhóm quyền  | Một Admin group và một User group được ánh xạ, thử tài khoản trong/ngoài nhóm   |
+| Đồng bộ     | Kết quả phân trang, role và record bị bỏ qua được Admin kiểm tra                |
+| Backup      | Có dump mới nhất trên RAID và thực hiện được restore thử ở môi trường cô lập    |
+| Break-glass | Admin bootstrap đăng nhập được khi LDAPS tắt hoặc AD không sẵn sàng             |
+
+## 10. Việc cần hoàn tất trước khi triển khai thực tế
+
+> **Kết luận triển khai.** Có thể tải source sau khi dùng bản release hiện tại, nhưng chưa nên mở cho người dùng nội bộ ngay. Docker Compose, `/setup`, LDAPS, healthcheck MySQL/Redis và Admin bootstrap đã được chuẩn bị; các hạng mục dưới đây cần được chốt hoặc UAT trên hạ tầng doanh nghiệp trước cutover.
+
+| Mức độ                   | Hạng mục cần hoàn tất       | Lý do và hành động cụ thể                                                                                                                                                                                                                                                         |
+| ------------------------ | --------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Chặn production**      | Adapter lưu tệp self-hosted | `server/storage.ts` và proxy hiện còn dùng Manus Forge. Cần thay bằng MinIO/S3 nội bộ hoặc storage volume có phân quyền trước khi cho phép upload/xem hợp đồng, hóa đơn và tài liệu trong production.                                                                             |
+| **Chặn production**      | UAT Docker trên MySQL trống | Dựng Compose trên Ubuntu staging, kiểm tra `docker compose ps`, hoàn tất `/setup`, restart toàn bộ stack, đăng nhập Admin bootstrap và xác nhận migration/version trong database. Preview hiện hành không mô phỏng Docker thật.                                                   |
+| **Chặn production**      | UAT LDAPS                   | Mount CA nội bộ và Docker secret bind, thử user thuộc/ngoài group ánh xạ, nested group nếu dùng, login sai password, bind lỗi và fallback Admin bootstrap. Không dùng account đặc quyền Domain Admin cho bind.                                                                    |
+| **Chặn production**      | Reverse proxy và network    | Chỉ Nginx công bố HTTPS cho LAN/VPN; giữ port MySQL/Redis không public, truyền `X-Forwarded-Proto`, giới hạn request body và đặt rate limit cho `/login`, `/setup`, `/api/trpc`.                                                                                                  |
+| **Bắt buộc khi cutover** | Secrets và installer        | Lưu source secret ở host ngoài Git, kiểm soát quyền đọc; sau `/setup` đặt `ASSETMASTER_SETUP_ENABLED=false` và xoay `setup_token` nếu từng chia sẻ. Compose tránh ghi `DATABASE_URL` vào runtime volume, nhưng không dùng chế độ cài thủ công nếu chưa có secret manager phù hợp. |
+| **Bắt buộc khi cutover** | Backup/restore drill        | Backup logical MySQL, runtime directory, kho tệp sau khi có adapter, các Docker secret và bản release. Khôi phục thử vào môi trường cô lập trước khi mở nhân viên.[4]                                                                                                             |
+| **Khuyến nghị**          | Quan sát vận hành           | Dùng bảng **Cài đặt hệ thống → Trạng thái hạ tầng** để xem MySQL/Redis. Tích hợp log Docker/Nginx và cảnh báo hạ tầng doanh nghiệp; Redis đã sẵn trong Compose nhưng chưa thay session MySQL hiện tại.                                                                            |
+
+Không re-run raw SQL migration 0056 trực tiếp trên database từng được khởi tạo thủ công. Khi nâng cấp source, backup trước, kiểm tra bảng bookkeeping migration của Drizzle, rồi chạy migration versioned một lần trong maintenance window. Không rollback database bằng cách xóa table; dùng restore từ dump đã kiểm thử hoặc migration forward-fix.
 
 ## References
 

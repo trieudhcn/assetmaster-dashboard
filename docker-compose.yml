@@ -1,11 +1,21 @@
+name: assetmaster
+
+x-production-logging: &production-logging
+  driver: local
+  options:
+    max-size: "10m"
+    max-file: "5"
+    compress: "true"
+
 services:
   app:
     build:
       context: .
       dockerfile: Dockerfile
-    image: assetmaster:local
+    image: ${ASSETMASTER_APP_IMAGE:-assetmaster:production}
     restart: unless-stopped
     init: true
+    stop_grace_period: 30s
     depends_on:
       mysql:
         condition: service_healthy
@@ -38,14 +48,18 @@ services:
       - setup_token
       - redis_password
     networks:
-      - assetmaster_private
+      - assetmaster_edge
+      - assetmaster_backend
     security_opt:
       - no-new-privileges:true
     cap_drop:
       - ALL
     read_only: true
+    pids_limit: 200
+    mem_limit: ${ASSETMASTER_APP_MEMORY_LIMIT:-768m}
     tmpfs:
       - /tmp:mode=1777,size=64m
+    logging: *production-logging
     healthcheck:
       test:
         - CMD-SHELL
@@ -58,6 +72,15 @@ services:
   mysql:
     image: mysql:8.4
     restart: unless-stopped
+    stop_grace_period: 1m
+    user: "999:999"
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+      - --skip-name-resolve
+      - --max-connections=${ASSETMASTER_MYSQL_MAX_CONNECTIONS:-200}
+      - --innodb-buffer-pool-size=${ASSETMASTER_MYSQL_BUFFER_POOL:-512M}
+      - --max-allowed-packet=64M
     environment:
       TZ: ${TZ:-Asia/Ho_Chi_Minh}
       MYSQL_DATABASE: ${ASSETMASTER_DB_NAME:-assetmaster}
@@ -70,7 +93,11 @@ services:
       - mysql_app_password
       - mysql_root_password
     networks:
-      - assetmaster_private
+      - assetmaster_backend
+    security_opt:
+      - no-new-privileges:true
+    mem_limit: ${ASSETMASTER_MYSQL_MEMORY_LIMIT:-1024m}
+    logging: *production-logging
     healthcheck:
       test:
         - CMD-SHELL
@@ -83,16 +110,31 @@ services:
   redis:
     image: redis:7.4-alpine
     restart: unless-stopped
+    stop_grace_period: 20s
+    user: "999:999"
     command:
       - sh
       - -ec
-      - 'exec redis-server --appendonly yes --appendfsync everysec --requirepass "$$(cat /run/secrets/redis_password)"'
+      - 'exec redis-server --appendonly yes --appendfsync everysec --aof-use-rdb-preamble yes --protected-mode yes --maxmemory "$${REDIS_MAXMEMORY}" --maxmemory-policy noeviction --requirepass "$$(cat /run/secrets/redis_password)"'
+    environment:
+      TZ: ${TZ:-Asia/Ho_Chi_Minh}
+      REDIS_MAXMEMORY: ${ASSETMASTER_REDIS_MAX_MEMORY:-192mb}
     volumes:
       - redis_data:/data
     secrets:
       - redis_password
     networks:
-      - assetmaster_private
+      - assetmaster_backend
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    pids_limit: 100
+    mem_limit: ${ASSETMASTER_REDIS_MEMORY_LIMIT:-256m}
+    read_only: true
+    tmpfs:
+      - /tmp:mode=1777,size=32m
+    logging: *production-logging
     healthcheck:
       test:
         - CMD-SHELL
@@ -104,12 +146,30 @@ services:
 
 volumes:
   assetmaster_runtime:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ${ASSETMASTER_DATA_DIR:-/srv/assetmaster/data}/runtime
   mysql_data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ${ASSETMASTER_DATA_DIR:-/srv/assetmaster/data}/mysql
   redis_data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ${ASSETMASTER_DATA_DIR:-/srv/assetmaster/data}/redis
 
 networks:
-  assetmaster_private:
+  assetmaster_edge:
     driver: bridge
+  assetmaster_backend:
+    driver: bridge
+    internal: true
 
 secrets:
   mysql_root_password:

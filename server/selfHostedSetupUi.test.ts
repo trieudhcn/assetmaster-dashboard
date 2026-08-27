@@ -6,20 +6,34 @@ const root = process.cwd();
 
 describe("self-hosted wizard and Directory access UI", () => {
   it("trình bày installer dưới dạng wizard ba bước với kiểm tra MySQL trước khi khởi tạo", async () => {
-    const source = await readFile(path.join(root, "client/src/pages/SetupInstaller.tsx"), "utf8");
+    const source = await readFile(
+      path.join(root, "client/src/pages/SetupInstaller.tsx"),
+      "utf8"
+    );
     expect(source).toContain("Bước {step}/3");
     expect(source).toContain("Website & Admin");
     expect(source).toContain("Kiểm tra MySQL");
     expect(source).toContain("Rà soát và khởi tạo");
     expect(source).toContain("!databaseStepValid");
+    expect(source).toContain("Trước khi bắt đầu");
+    expect(source).toContain("Các bước máy chủ sẽ thực hiện");
+    expect(source).toContain("Đang cấu hình hệ thống");
   });
 
   it("ẩn Directory đến khi icon điều hướng phát sự kiện mở và mô tả hai quyền LDAP", async () => {
     const [panel, nav] = await Promise.all([
-      readFile(path.join(root, "client/src/components/DirectorySettingsPanel.tsx"), "utf8"),
-      readFile(path.join(root, "client/src/components/SettingsQuickNav.tsx"), "utf8"),
+      readFile(
+        path.join(root, "client/src/components/DirectorySettingsPanel.tsx"),
+        "utf8"
+      ),
+      readFile(
+        path.join(root, "client/src/components/SettingsQuickNav.tsx"),
+        "utf8"
+      ),
     ]);
-    expect(panel).toContain("const [isVisible, setIsVisible] = useState(false)");
+    expect(panel).toContain(
+      "const [isVisible, setIsVisible] = useState(false)"
+    );
     expect(panel).toContain("assetmaster:open-directory-settings");
     expect(panel).toContain("DN nhóm Admin");
     expect(panel).toContain("DN nhóm User");
