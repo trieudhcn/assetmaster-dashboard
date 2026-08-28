@@ -3853,3 +3853,9 @@
 - [x] Cho phép đổi chữ hoa/chữ thường của chính Hãng khi chỉnh sửa.
 - [x] Vẫn chặn tên Hãng trùng với bản ghi Hãng khác khi cập nhật.
 - [x] Bổ sung regression test, chạy full test/typecheck/build và phát hành bản sửa Docker-safe.
+
+## Current Session — Tên Hãng tiếng Việt và khoảng trắng thừa
+
+- [x] Kiểm tra cập nhật tên Hãng có dấu tiếng Việt, không báo trùng sai khi chỉ đổi hoa/thường.
+- [x] Tự động loại bỏ khoảng trắng đầu/cuối tên Hãng khi tạo và chỉnh sửa.
+- [x] Bổ sung regression test, chạy full test/typecheck/build và phát hành bản sửa Docker-safe.

@@ -483,6 +483,28 @@ describe("employee administration", () => {
     expect(mocks.updateBrand).not.toHaveBeenCalled();
   });
 
+  it("normalizes Vietnamese brand names and allows casing changes without a false duplicate", async () => {
+    const caller = appRouter.createCaller(adminContext);
+    mocks.getBrandById.mockResolvedValueOnce({ id: 51, name: "Đồ họa Việt", isActive: true });
+
+    await expect(caller.brands.update({ id: 51, name: "  ĐỒ HỌA VIỆT  " })).resolves.toEqual({ success: true });
+    expect(mocks.getBrandByName).not.toHaveBeenCalled();
+    expect(mocks.updateBrand).toHaveBeenCalledWith(51, { name: "ĐỒ HỌA VIỆT" });
+  });
+
+  it("trims Vietnamese brand names before creating and still rejects another matching brand", async () => {
+    const caller = appRouter.createCaller(adminContext);
+
+    await expect(caller.brands.create({ name: "  Thiết bị Việt  " })).resolves.toEqual({ id: 51 });
+    expect(mocks.getBrandByName).toHaveBeenCalledWith("Thiết bị Việt");
+    expect(mocks.createBrand).toHaveBeenCalledWith({ name: "Thiết bị Việt", isActive: true });
+
+    mocks.getBrandById.mockResolvedValueOnce({ id: 51, name: "Đồ họa Việt", isActive: true });
+    mocks.getBrandByName.mockResolvedValueOnce({ id: 52, name: "Máy in Việt", isActive: true });
+    await expect(caller.brands.update({ id: 51, name: "  Máy in Việt  " })).rejects.toMatchObject({ code: "BAD_REQUEST", message: "Tên Hãng đã tồn tại." });
+    expect(mocks.updateBrand).not.toHaveBeenCalled();
+  });
+
   it("rejects the department list for a non-administrator", async () => {
     const adminCaller = appRouter.createCaller(adminContext);
     await expect(adminCaller.vendors.documents({ vendorId: 41 })).resolves.toEqual([]);
