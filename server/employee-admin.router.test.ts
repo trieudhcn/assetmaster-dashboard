@@ -464,6 +464,25 @@ describe("employee administration", () => {
     expect(mocks.recordActivity).toHaveBeenCalledWith(expect.objectContaining({ entityType: "brand", entityId: 51, action: "deactivated" }));
   });
 
+  it("allows changing only the brand casing without a false duplicate error", async () => {
+    const caller = appRouter.createCaller(adminContext);
+
+    await expect(caller.brands.update({ id: 51, name: "DELL" })).resolves.toEqual({ success: true });
+    expect(mocks.getBrandByName).not.toHaveBeenCalled();
+    expect(mocks.updateBrand).toHaveBeenCalledWith(51, { name: "DELL" });
+  });
+
+  it("rejects a brand name that belongs to another brand", async () => {
+    mocks.getBrandByName.mockResolvedValueOnce({ id: 52, name: "Lenovo" });
+    const caller = appRouter.createCaller(adminContext);
+
+    await expect(caller.brands.update({ id: 51, name: "Lenovo" })).rejects.toMatchObject({
+      code: "BAD_REQUEST",
+      message: "Tên Hãng đã tồn tại.",
+    });
+    expect(mocks.updateBrand).not.toHaveBeenCalled();
+  });
+
   it("rejects the department list for a non-administrator", async () => {
     const adminCaller = appRouter.createCaller(adminContext);
     await expect(adminCaller.vendors.documents({ vendorId: 41 })).resolves.toEqual([]);

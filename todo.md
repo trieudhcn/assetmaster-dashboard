@@ -3847,3 +3847,9 @@
 - [x] Đưa số phiếu vào giữa ngay dưới tiêu đề biên bản và giảm cỡ chữ.
 - [x] Căn chỉnh khu vực chữ ký, chữ ký và tên người nhận/giao cân đối theo hai cột.
 - [x] Bổ sung regression test cho bố cục PDF, chạy test/typecheck/build và lưu checkpoint.
+
+## Current Session — Sửa lỗi cập nhật Hãng không phân biệt hoa thường
+
+- [x] Cho phép đổi chữ hoa/chữ thường của chính Hãng khi chỉnh sửa.
+- [x] Vẫn chặn tên Hãng trùng với bản ghi Hãng khác khi cập nhật.
+- [x] Bổ sung regression test, chạy full test/typecheck/build và phát hành bản sửa Docker-safe.

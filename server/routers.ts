@@ -5123,11 +5123,12 @@ export const appRouter = router({
             code: "NOT_FOUND",
             message: "Không tìm thấy Hãng.",
           });
-        if (
+        const isBrandNameChanged = Boolean(
           input.name &&
-          input.name !== existing.name &&
-          (await getBrandByName(input.name))
-        )
+            input.name.toLocaleLowerCase("vi-VN") !==
+              existing.name.toLocaleLowerCase("vi-VN")
+        );
+        if (isBrandNameChanged && input.name && (await getBrandByName(input.name)))
           throw new TRPCError({
             code: "BAD_REQUEST",
             message: "Tên Hãng đã tồn tại.",
