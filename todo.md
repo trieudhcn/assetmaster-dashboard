@@ -3841,3 +3841,9 @@
 - [x] Rà soát điều kiện an toàn cho Bash installer, HTTP-01 Let’s Encrypt và bind secret LDAPS trên systemd.
 - [x] Cho phép self-hosted local đọc LDAPS bind secret từ thư mục `/etc/assetmaster/secrets/` giới hạn quyền.
 - [x] Tạo Bash installer tương tác, bổ sung runbook SSL/LDAPS native và kiểm thử script/mã nguồn.
+
+## Current Session — Căn chỉnh PDF biên bản bàn giao
+
+- [x] Đưa số phiếu vào giữa ngay dưới tiêu đề biên bản và giảm cỡ chữ.
+- [x] Căn chỉnh khu vực chữ ký, chữ ký và tên người nhận/giao cân đối theo hai cột.
+- [x] Bổ sung regression test cho bố cục PDF, chạy test/typecheck/build và lưu checkpoint.

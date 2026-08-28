@@ -2375,11 +2375,11 @@ async function downloadHandoverPdf(item: Handover, signature: string | undefined
   let y = header.contentY + 4;
   doc.setFontSize(15);
   doc.text("BIÊN BẢN BÀN GIAO TÀI SẢN", 105, y, { align: "center" });
-  y += 12;
+  y += 8;
   doc.setTextColor(16, 42, 67);
-  doc.setFontSize(14);
-  doc.text(`Số phiếu: ${item.referenceCode}`, left, y);
-  y += 12;
+  doc.setFontSize(10);
+  doc.text(`Số phiếu: ${item.referenceCode}`, 105, y, { align: "center" });
+  y += 10;
   doc.setFontSize(10);
   const rows = [
     ["Tài sản", `${item.assetName} (${item.assetCode})`],
@@ -2408,11 +2408,12 @@ async function downloadHandoverPdf(item: Handover, signature: string | undefined
   doc.setFontSize(11);
   doc.text("XÁC NHẬN CỦA CÁC BÊN", left, y);
   y += 8;
-  const recipientSignatureCenter = 150;
+  const handoverSignatureCenter = 61.5;
+  const recipientSignatureCenter = 148.5;
   const recipientSignatureWidth = 52;
   doc.setFontSize(9);
   doc.setTextColor(112, 134, 154);
-  doc.text("Người giao", left + 18, y);
+  doc.text("Người giao", handoverSignatureCenter, y, { align: "center" });
   doc.text("Người nhận", recipientSignatureCenter, y, { align: "center" });
   if (signature) {
     try {
@@ -2423,7 +2424,7 @@ async function downloadHandoverPdf(item: Handover, signature: string | undefined
     }
   }
   doc.setTextColor(25, 59, 87);
-  doc.text(item.handoverBy, left + 12, y + 39);
+  doc.text(item.handoverBy, handoverSignatureCenter, y + 39, { align: "center" });
   doc.text(item.recipient, recipientSignatureCenter, y + 39, { align: "center" });
   doc.setFontSize(8);
   doc.setTextColor(138, 160, 182);

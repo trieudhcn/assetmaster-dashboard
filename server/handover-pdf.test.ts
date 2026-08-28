@@ -135,11 +135,16 @@ describe("Vietnamese handover PDF", () => {
     consumers.forEach((file) => expect(readFileSync(file, "utf8")).toContain("drawPdfCorporateHeader"));
   });
 
-  it("keeps the recipient label, signature image, and name on one centered axis", () => {
+  it("keeps the handover number below the title and both signers on centered axes", () => {
     const source = readFileSync("client/src/pages/Home.tsx", "utf8");
-    expect(source).toContain("const recipientSignatureCenter = 150");
+    expect(source).toContain("doc.text(`Số phiếu: ${item.referenceCode}`, 105, y, { align: \"center\" })");
+    expect(source).toContain("doc.setFontSize(10);");
+    expect(source).toContain("const handoverSignatureCenter = 61.5");
+    expect(source).toContain("const recipientSignatureCenter = 148.5");
+    expect(source).toContain('doc.text("Người giao", handoverSignatureCenter, y, { align: "center" })');
     expect(source).toContain('doc.text("Người nhận", recipientSignatureCenter, y, { align: "center" })');
     expect(source).toContain("recipientSignatureCenter - recipientSignatureWidth / 2");
+    expect(source).toContain("doc.text(item.handoverBy, handoverSignatureCenter, y + 39, { align: \"center\" })");
     expect(source).toContain('doc.text(item.recipient, recipientSignatureCenter, y + 39, { align: "center" })');
   });
 
