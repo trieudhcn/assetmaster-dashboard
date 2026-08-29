@@ -2768,13 +2768,15 @@ describe("modal loading and empty motion contract", () => {
 });
 
 describe("empty illustration, modal skeleton and motion preference", () => {
-  it("uses dedicated illustrations for maintenance, handover and audit empty states", () => {
+  it("uses a Docker-safe inline illustration for maintenance, handover and audit empty states", () => {
     const source = readProjectFile(
       "client/src/components/ModuleEmptyState.tsx"
     );
-    expect(source).toContain("empty-maintenance_83a5137a.png");
-    expect(source).toContain("empty-handover_4fa5a517.png");
-    expect(source).toContain("empty-audit_439c511b.png");
+    expect(source).toContain("function EmptyIllustration");
+    expect(source).toContain('viewBox="0 0 160 128"');
+    expect(source).toContain('module === "maintenance"');
+    expect(source).toContain('module === "handover"');
+    expect(source).not.toContain("/manus-storage/");
   });
 
   it("provides reusable table skeleton and motion preference toggle", () => {

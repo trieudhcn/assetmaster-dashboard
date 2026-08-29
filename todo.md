@@ -3859,3 +3859,15 @@
 - [x] Kiểm tra cập nhật tên Hãng có dấu tiếng Việt, không báo trùng sai khi chỉ đổi hoa/thường.
 - [x] Tự động loại bỏ khoảng trắng đầu/cuối tên Hãng khi tạo và chỉnh sửa.
 - [x] Bổ sung regression test, chạy full test/typecheck/build và phát hành bản sửa Docker-safe.
+
+## Current Session — Ảnh trạng thái rỗng tương thích Docker
+
+- [x] Tìm toàn bộ nơi dùng `/manus-storage/empty-maintenance_83a5137a.png` trong trạng thái không có kết quả.
+- [x] Thay asset phụ thuộc Manus bằng ảnh/cơ chế hiển thị tương thích self-hosted Docker.
+- [x] Bổ sung regression test, chạy full test/typecheck/build và phát hành bản sửa Docker-safe.
+
+## Current Session — Runbook Docker Desktop kết nối AD/LDAPS
+
+- [x] Soạn hướng dẫn kết nối Docker Desktop với Active Directory Windows Server 2022 qua LDAPS.
+- [x] Bao phủ certificate, DNS/firewall, Docker secret, mapping thuộc tính/nhóm và kiểm tra đăng nhập.
+- [x] Bổ sung regression nội dung, chạy full test/typecheck/build và phát hành tài liệu.

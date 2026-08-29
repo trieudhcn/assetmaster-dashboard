@@ -32,4 +32,22 @@ describe("Docker Desktop guide", () => {
     expect(guide).toContain("$rng.GetBytes($bytes)");
     expect(guide).not.toContain("RandomNumberGenerator]::Fill");
   });
+
+  it("hướng dẫn kết nối Docker Desktop với AD Windows Server 2022 qua LDAPS", async () => {
+    const guide = await readFile(
+      path.join(process.cwd(), "docs/docker-desktop-ldaps-ad-windows-server-2022.md"),
+      "utf8"
+    );
+    expect(guide).toContain("Active Directory Windows Server 2022");
+    expect(guide).toContain("ldaps://dc01.corp.example.local:636");
+    expect(guide).toContain("ldap_bind_password.txt");
+    expect(guide).toContain("/run/secrets/ldap_bind_password");
+    expect(guide).toContain("Server Authentication");
+    expect(guide).toContain("Test-NetConnection dc01.corp.example.local -Port 636");
+    expect(guide).toContain("userPrincipalName");
+    expect(guide).toContain("objectGUID");
+    expect(guide).toContain("Giữ Admin cục bộ");
+    expect(guide).toContain("không dùng `ldap://` hoặc port `389` cho đăng nhập");
+    expect(guide).toContain("Microsoft Learn");
+  });
 });

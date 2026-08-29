@@ -171,7 +171,9 @@ docker compose -f docker-compose.yml -f docker-compose.desktop.yml up -d --force
 
 ## 7. Cấu hình LDAPS và kiểm tra
 
-1. Mount thêm secret bind password vào Compose theo [runbook chính](./huong-dan-trien-khai-noi-bo.md#8-cấu-hình-ldaps-nhóm-quyền-và-đồng-bộ-người-dùng).
+Để kết nối Docker Desktop tới Active Directory Windows Server 2022, xem runbook chuyên biệt [Kết nối Docker Desktop với AD Windows Server 2022 qua LDAPS](./docker-desktop-ldaps-ad-windows-server-2022.md). Tài liệu dưới đây là tóm tắt nhanh.
+
+1. Mount thêm secret bind password vào Compose theo [runbook chuyên biệt](./docker-desktop-ldaps-ad-windows-server-2022.md) hoặc [runbook chính](./huong-dan-trien-khai-noi-bo.md#8-cấu-hình-ldaps-nhóm-quyền-và-đồng-bộ-người-dùng).
 2. Vào **Cài đặt hệ thống → Directory LDAP/AD**, nhập URL `ldaps://`, CA, Users Base DN, attribute và `/run/secrets/ldap_bind_password`.
 3. Bấm **Kiểm tra bản nháp**, lưu cấu hình, sau đó dùng **Kiểm tra LDAPS** trong **Trạng thái hạ tầng**.
 4. Chỉ bật Directory sau khi TLS/CA, bind, Users Base DN, mapping nhóm Admin/User và tài khoản thử nghiệm đều đạt.
