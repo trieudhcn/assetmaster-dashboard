@@ -282,13 +282,40 @@ async function resolveDirectoryRole(
   return null;
 }
 
-function safeDirectoryMessage(error: unknown) {
+export function safeDirectoryMessage(
+  error: unknown,
+  stage: "bind" | "search" | "user" | "directory" = "directory"
+) {
   const message = error instanceof Error ? error.message : "Lỗi không xác định";
+  const code =
+    typeof error === "object" && error !== null && "code" in error &&
+    typeof error.code === "number"
+      ? error.code
+      : undefined;
   if (/certificate|self.?signed|unable to verify|hostname/i.test(message))
     return "Không xác thực được chứng chỉ TLS của máy chủ LDAPS.";
   if (/timeout|connect|socket|ECONN/i.test(message))
     return "Không thể kết nối máy chủ LDAPS.";
-  return "Không thể xác thực với Directory. Vui lòng kiểm tra cấu hình hoặc thông tin đăng nhập.";
+  if (code === 49 || /invalid credentials|data 52e|ldap.*49/i.test(message))
+    return stage === "bind"
+      ? "Tài khoản bind hoặc mật khẩu bind không đúng (LDAP 49)."
+      : stage === "user"
+        ? "Email hoặc mật khẩu Active Directory không đúng (LDAP 49)."
+        : "Active Directory từ chối thông tin xác thực (LDAP 49).";
+  if (code === 32 || /no such object/i.test(message))
+    return stage === "search"
+      ? "Không tìm thấy Users Base DN hoặc tài khoản bind không có quyền truy cập DN này (LDAP 32)."
+      : "Không tìm thấy đối tượng trong Active Directory (LDAP 32).";
+  if (code === 50 || /insufficient access/i.test(message))
+    return "Tài khoản bind không đủ quyền đọc người dùng hoặc nhóm trong Active Directory (LDAP 50).";
+  if (/^Directory không tìm thấy tài khoản hợp lệ\.$/.test(message))
+    return message;
+  if (/^Directory không trả về DN tài khoản\.$/.test(message))
+    return message;
+  if (/^Directory thiếu định danh bất biến hoặc email/.test(message))
+    return message;
+  if (/^Tài khoản chưa thuộc nhóm/.test(message)) return message;
+  return "Không thể xác thực với Directory. Vui lòng kiểm tra cấu hình, thuộc tính tìm kiếm và thông tin đăng nhập.";
 }
 
 function ldapClient(
@@ -311,6 +338,7 @@ async function testDirectoryConnection(settings: DirectoryConnectionInput) {
   const validation = validateDirectorySettings(settings);
   if (validation) throw new Error(validation);
   const client = ldapClient(settings);
+  let stage: "bind" | "search" = "bind";
   try {
     const secret = await readBindSecret(settings);
     if (!settings.bindDn || !secret)
@@ -318,6 +346,7 @@ async function testDirectoryConnection(settings: DirectoryConnectionInput) {
         "Cần cấu hình tài khoản bind và Docker secret trước khi kiểm tra kết nối."
       );
     await client.bind(settings.bindDn, secret);
+    stage = "search";
     await client.search(settings.usersDn, {
       scope: "base",
       filter: "(objectClass=*)",
@@ -327,7 +356,7 @@ async function testDirectoryConnection(settings: DirectoryConnectionInput) {
     });
     return "Kết nối LDAPS, chứng chỉ TLS và tài khoản bind hợp lệ.";
   } catch (error) {
-    throw new Error(safeDirectoryMessage(error));
+    throw new Error(safeDirectoryMessage(error, stage));
   } finally {
     await client.unbind().catch(() => undefined);
   }
@@ -546,6 +575,7 @@ export async function authenticateDirectoryUser(
   const validation = validateDirectorySettings(settings);
   if (validation) throw new Error(validation);
   const client = ldapClient(settings);
+  let stage: "bind" | "search" | "user" = "bind";
   try {
     const bindSecret = await readBindSecret(settings);
     if (!settings.bindDn || !bindSecret)
@@ -560,6 +590,7 @@ export async function authenticateDirectoryUser(
       settings.jobTitleAttribute,
       "memberOf",
     ];
+    stage = "search";
     const result = await client.search(settings.usersDn, {
       scope: "sub",
       filter: escapeFilter`(${settings.loginAttribute}=${email})`,
@@ -582,6 +613,7 @@ export async function authenticateDirectoryUser(
     await client.unbind().catch(() => undefined);
     const passwordClient = ldapClient(settings);
     try {
+      stage = "user";
       await passwordClient.bind(entry.dn, password);
     } finally {
       await passwordClient.unbind().catch(() => undefined);
@@ -613,7 +645,7 @@ export async function authenticateDirectoryUser(
       /chưa thuộc nhóm|thiếu định danh|chưa được kích hoạt/.test(error.message)
     )
       throw error;
-    throw new Error(safeDirectoryMessage(error));
+    throw new Error(safeDirectoryMessage(error, stage));
   } finally {
     await client.unbind().catch(() => undefined);
   }

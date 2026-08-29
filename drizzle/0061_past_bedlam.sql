@@ -1,0 +1,1 @@
+ALTER TABLE `users` ADD `directoryDepartment` varchar(160);

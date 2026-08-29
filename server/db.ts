@@ -66,6 +66,10 @@ import {
 } from "../drizzle/schema";
 import { ENV } from "./_core/env";
 import { readRuntimeDatabaseUrl } from "./selfHostedRuntimeConfig";
+import {
+  normalizeDirectoryProfile,
+  resolveDirectoryDepartmentId,
+} from "../shared/directoryProfile";
 
 let database: ReturnType<typeof drizzle> | null = null;
 
@@ -336,14 +340,25 @@ export async function setDirectoryStatus(status: "active" | "disabled", actor: {
   return getDirectorySettings();
 }
 
+export async function getDepartmentIdByDirectoryName(
+  departmentName: string | null
+) {
+  if (!departmentName) return undefined;
+  const departmentRows = await listAllDepartments();
+  return resolveDirectoryDepartmentId(departmentName, departmentRows);
+}
+
 export async function upsertDirectoryUser(input: { openId: string; directoryObjectId: string; directoryUsername: string; name: string | null; email: string; department: string | null; jobTitle: string | null; role: "admin" | "user" }) {
   const db = await getDb();
   if (!db) throw new Error("Database unavailable");
+  const profile = normalizeDirectoryProfile(input);
   const byDirectoryId = (await db.select().from(users).where(eq(users.directoryObjectId, input.directoryObjectId)).limit(1))[0];
-  const byEmail = byDirectoryId ? undefined : await getUserByEmail(input.email);
+  const byEmail = byDirectoryId ? undefined : await getUserByEmail(profile.email);
   const current = byDirectoryId ?? byEmail;
   const role = current && input.role === "user" ? current.role : input.role;
-  const values = { name: input.name, email: input.email, directoryObjectId: input.directoryObjectId, directoryUsername: input.directoryUsername, jobTitle: input.jobTitle, authSource: "ldap" as const, loginMethod: "ldap", lastDirectorySyncAt: new Date(), lastSignedIn: new Date(), role };
+  const matchedDepartmentId = await getDepartmentIdByDirectoryName(profile.department);
+  const departmentId = matchedDepartmentId ?? current?.departmentId ?? null;
+  const values = { name: profile.name, email: profile.email, directoryObjectId: input.directoryObjectId, directoryUsername: profile.directoryUsername, directoryDepartment: profile.department, departmentId, jobTitle: profile.jobTitle, authSource: "ldap" as const, loginMethod: "ldap", lastDirectorySyncAt: new Date(), lastSignedIn: new Date(), role };
   if (current) {
     await db.update(users).set(values).where(eq(users.id, current.id));
     return { ...current, ...values };

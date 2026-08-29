@@ -52,5 +52,10 @@ describe("Docker Desktop guide", () => {
     expect(guide).toContain("build --no-cache app");
     expect(guide).toContain("Không chạy `down -v`");
     expect(guide).toContain("không còn request tới `/manus-storage/empty-maintenance_83a5137a.png`");
+    expect(guide).toContain("`LDAP 49` ở bước user");
+    expect(guide).toContain("`LDAP 49` ở bước bind");
+    expect(guide).toContain("`LDAP 32` ở bước search");
+    expect(guide).toContain("`LDAP 50`");
+    expect(guide).toContain("Ba bước hạ tầng đạt nhưng đăng nhập vẫn lỗi chung");
   });
 });

@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it } from "vitest";
 import {
   normalizeLoginEmail,
+  safeDirectoryMessage,
   selfHostedAuthEnabled,
   validateDirectorySettings,
 } from "./selfHostedAuth";
@@ -56,6 +57,14 @@ describe("self-hosted directory authentication safeguards", () => {
     expect(normalizeLoginEmail("  NGUYEN.VAN.A@CONGTY.VN  ")).toBe(
       "nguyen.van.a@congty.vn"
     );
+  });
+
+  it("phân biệt lỗi bind, tìm kiếm và mật khẩu người dùng mà không lộ secret", () => {
+    expect(safeDirectoryMessage(Object.assign(new Error("bind failed"), { code: 49 }), "bind")).toMatch(/tài khoản bind/i);
+    expect(safeDirectoryMessage(Object.assign(new Error("bind failed"), { code: 49 }), "user")).toContain("mật khẩu Active Directory");
+    expect(safeDirectoryMessage(Object.assign(new Error("missing"), { code: 32 }), "search")).toContain("Users Base DN");
+    expect(safeDirectoryMessage(Object.assign(new Error("denied"), { code: 50 }), "search")).toContain("không đủ quyền");
+    expect(safeDirectoryMessage(new Error("Directory không tìm thấy tài khoản hợp lệ."), "search")).toContain("không tìm thấy tài khoản");
   });
 
   it("chỉ chuyển sang session cục bộ khi self-hosted được bật rõ ràng", () => {

@@ -3877,3 +3877,15 @@
 - [x] Xác minh source và các tham chiếu còn sót tới `/manus-storage/empty-maintenance_83a5137a.png`.
 - [x] Kiểm tra cơ chế fallback inline và khả năng container đang chạy image cũ.
 - [x] Chạy regression/full validation và cập nhật hướng dẫn rebuild Docker nếu cần.
+
+## Current Session — Đồng bộ hồ sơ người dùng từ Active Directory
+
+- [x] Rà soát luồng LDAPS login và mapping hồ sơ hiện tại.
+- [x] Đồng bộ họ tên, email, phòng ban và trường AD liên quan sau đăng nhập thành công, không đổi định danh/phân quyền ngoài mapping nhóm.
+- [x] Bổ sung regression test, chạy full test/typecheck/build và phát hành bản cập nhật.
+
+## Current Session — Chẩn đoán xác thực LDAPS Docker
+
+- [x] Phân biệt lỗi bind tài khoản, tìm kiếm người dùng và xác thực mật khẩu người dùng.
+- [x] Hiển thị thông báo chẩn đoán an toàn, không lộ mật khẩu hoặc dữ liệu nhạy cảm.
+- [x] Cập nhật hướng dẫn UAT Docker và regression cho mapping AD/LDAPS; kiểm thử AD thật còn cần thực hiện trên môi trường doanh nghiệp.

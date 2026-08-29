@@ -52,6 +52,7 @@ export const users = mysqlTable(
       onUpdate: "cascade",
     }),
     departmentId: int("departmentId"),
+    directoryDepartment: varchar("directoryDepartment", { length: 160 }),
     divisionId: int("divisionId").references(() => divisions.id, {
       onDelete: "set null",
       onUpdate: "cascade",
