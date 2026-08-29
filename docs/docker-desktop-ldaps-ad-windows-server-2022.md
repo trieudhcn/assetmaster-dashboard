@@ -10,13 +10,12 @@ Trong mô hình phổ biến, Docker Desktop chạy trên máy Windows client, c
 
 ```mermaid
 flowchart LR
-  U[Trình duyệt người dùng] --> A[AssetMaster app :3000]
-  A -->|LDAPS TCP 636| DC[Windows Server 2022
-Domain Controller]
-  DC --> CA[Enterprise CA / Root CA]
-  A --> DB[(MySQL)]
-  A --> R[(Redis)]
-  A --> S[/run/secrets/ldap_bind_password]
+  U["Trình duyệt người dùng"] --> A["AssetMaster app :3000"]
+  A -->|"LDAPS TCP 636"| DC["Windows Server 2022<br/>Domain Controller"]
+  DC --> CA["Enterprise CA / Root CA"]
+  A --> DB[("MySQL")]
+  A --> R[("Redis")]
+  A --> S["/run/secrets/ldap_bind_password"]
 ```
 
 | Thành phần | Ví dụ | Vai trò |

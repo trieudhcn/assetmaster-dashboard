@@ -3889,3 +3889,8 @@
 - [x] Phân biệt lỗi bind tài khoản, tìm kiếm người dùng và xác thực mật khẩu người dùng.
 - [x] Hiển thị thông báo chẩn đoán an toàn, không lộ mật khẩu hoặc dữ liệu nhạy cảm.
 - [x] Cập nhật hướng dẫn UAT Docker và regression cho mapping AD/LDAPS; kiểm thử AD thật còn cần thực hiện trên môi trường doanh nghiệp.
+
+## Current Session — Sửa sơ đồ Mermaid Docker–LDAPS
+
+- [x] Sửa cú pháp Mermaid để đường dẫn Docker secret và nhãn node render hợp lệ.
+- [x] Kiểm tra regression tài liệu và render sơ đồ sau khi sửa.
