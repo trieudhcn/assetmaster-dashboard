@@ -49,5 +49,8 @@ describe("Docker Desktop guide", () => {
     expect(guide).toContain("Giữ Admin cục bộ");
     expect(guide).toContain("không dùng `ldap://` hoặc port `389` cho đăng nhập");
     expect(guide).toContain("Microsoft Learn");
+    expect(guide).toContain("build --no-cache app");
+    expect(guide).toContain("Không chạy `down -v`");
+    expect(guide).toContain("không còn request tới `/manus-storage/empty-maintenance_83a5137a.png`");
   });
 });

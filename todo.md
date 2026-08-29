@@ -3871,3 +3871,9 @@
 - [x] Soạn hướng dẫn kết nối Docker Desktop với Active Directory Windows Server 2022 qua LDAPS.
 - [x] Bao phủ certificate, DNS/firewall, Docker secret, mapping thuộc tính/nhóm và kiểm tra đăng nhập.
 - [x] Bổ sung regression nội dung, chạy full test/typecheck/build và phát hành tài liệu.
+
+## Current Session — Xác minh lại ảnh trạng thái rỗng trên Docker
+
+- [x] Xác minh source và các tham chiếu còn sót tới `/manus-storage/empty-maintenance_83a5137a.png`.
+- [x] Kiểm tra cơ chế fallback inline và khả năng container đang chạy image cũ.
+- [x] Chạy regression/full validation và cập nhật hướng dẫn rebuild Docker nếu cần.

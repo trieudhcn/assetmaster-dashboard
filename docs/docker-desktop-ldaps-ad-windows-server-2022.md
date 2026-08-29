@@ -306,7 +306,22 @@ docker compose -f docker-compose.yml -f docker-compose.desktop.yml logs --tail=1
 
 Khi certificate DC được gia hạn, kiểm tra lại FQDN/SAN, Server Authentication EKU và chain. Nếu Root/intermediate CA không thay đổi, thường không cần sửa AssetMaster. Nếu CA thay đổi, dán CA PEM mới, lưu bản nháp, chạy lại kiểm tra LDAPS rồi mới kích hoạt. Không tắt kiểm tra chứng chỉ bằng cách dùng `rejectUnauthorized:false` trong ứng dụng.
 
-## 10. Xử lý lỗi thường gặp
+## 10. Nếu Docker vẫn gọi `/manus-storage/empty-maintenance_83a5137a.png`
+
+Bản source hiện tại không còn dùng đường dẫn `/manus-storage/` cho trạng thái rỗng. Minh họa được vẽ bằng SVG nội tuyến nên Docker Desktop không cần truy cập Manus storage hoặc S3. Nếu Developer Tools vẫn hiển thị request tới `empty-maintenance_83a5137a.png`, container đang chạy image hoặc bundle frontend cũ, chưa phải lỗi kết nối Active Directory.
+
+Từ thư mục gốc source mới, chạy lần lượt:
+
+```powershell
+git pull
+docker compose -f docker-compose.yml -f docker-compose.desktop.yml build --no-cache app
+docker compose -f docker-compose.yml -f docker-compose.desktop.yml up -d --force-recreate app
+docker compose -f docker-compose.yml -f docker-compose.desktop.yml logs --tail=100 app
+```
+
+Không chạy `down -v`, không xóa `.assetmaster-data`, `.assetmaster-files` hoặc thư mục `secrets`. Sau khi app khởi động, tải lại trình duyệt bằng `Ctrl+F5` hoặc mở cửa sổ ẩn danh. Có thể kiểm tra bundle mới bằng cách tìm request/HTML: khi lọc danh sách không có kết quả, không còn request tới `/manus-storage/empty-maintenance_83a5137a.png`.
+
+## 11. Xử lý lỗi thường gặp
 
 | Triệu chứng | Nguyên nhân thường gặp | Cách xử lý |
 |---|---|---|
