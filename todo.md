@@ -3894,3 +3894,15 @@
 
 - [x] Sửa cú pháp Mermaid để đường dẫn Docker secret và nhãn node render hợp lệ.
 - [x] Kiểm tra regression tài liệu và render sơ đồ sau khi sửa.
+
+## Current Session — Chẩn đoán tiếp LDAPS sau khi TCP 636 đạt
+
+- [ ] Xác minh TLS/certificate thực tế từ container app, không chỉ TCP connectivity.
+- [ ] Đối chiếu bind DN/secret, Users Base DN, Login attribute và DN nhóm quyền.
+- [ ] Hướng dẫn đọc mã lỗi xác thực và xác định bước còn thất bại.
+
+## Current Session — Khắc phục đăng nhập Admin local Docker
+
+- [x] Đối chiếu truy vấn `bootstrap_local`, schema users và migration với database/container hiện tại.
+- [x] Xác định và sửa nguyên nhân Admin local không được tìm thấy hoặc truy vấn thất bại.
+- [x] Bổ sung regression test, full validation và hướng dẫn phục hồi an toàn không xóa dữ liệu.

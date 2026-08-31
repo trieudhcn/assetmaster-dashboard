@@ -206,6 +206,21 @@ docker compose -f docker-compose.yml -f docker-compose.desktop.yml logs --tail=1
 
 Không dùng `docker compose down -v`. Lệnh đó có thể xóa volume dữ liệu nếu stack đang dùng volume thay vì bind mount.
 
+### 4.5. Migration tự động trước khi app khởi động
+
+Compose self-hosted đặt `ASSETMASTER_AUTO_MIGRATE=true` mặc định. Entrypoint sẽ nạp mật khẩu MySQL từ Docker secret, chạy các migration đã được ghi nhận trong thư mục `drizzle/`, rồi mới khởi động app. Cơ chế này xử lý các database đã có dữ liệu nhưng còn thiếu cột mới như `directoryDepartment`; migration không xóa bảng hoặc dữ liệu.
+
+Sau khi cập nhật source, rebuild và recreate app:
+
+```powershell
+git pull
+docker compose -f docker-compose.yml -f docker-compose.desktop.yml build --no-cache app
+docker compose -f docker-compose.yml -f docker-compose.desktop.yml up -d --force-recreate app
+docker compose -f docker-compose.yml -f docker-compose.desktop.yml logs --tail=200 app
+```
+
+Log cần có dòng `AssetMaster: database migrations are up to date.`. Nếu migration thất bại, app sẽ không khởi động để tránh chạy trên schema không tương thích; đọc lỗi SQL trong log và không xóa volume. Trường hợp database được tạo thủ công trước khi có bảng theo dõi migration, hãy backup MySQL rồi dừng lại để đội vận hành đối chiếu schema trước khi đánh dấu migration; không tự ý chạy `down -v` hoặc xóa `mysql_data`.
+
 ## 5. Kiểm tra mạng từ máy Docker Desktop và container
 
 ### 5.1. Kiểm tra DNS và TCP từ Windows host

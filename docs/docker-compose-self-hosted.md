@@ -86,7 +86,18 @@ Lưu dump, `${ASSETMASTER_DATA_DIR}/mysql`, `${ASSETMASTER_DATA_DIR}/runtime` v�
 
 ## 6. Bảo trì và giới hạn xác thực
 
-Để cập nhật code, lấy release đã kiểm thử, backup, sau đó chạy `docker compose up -d --build`. Chỉ đưa traffic trở lại sau khi `docker compose ps`, log ứng dụng và smoke test đạt. Docker Compose secrets được mount chỉ đọc vào service; secret file nguồn vẫn phải giữ ngoài Git và giới hạn quyền ở máy chủ.[3]
+Để cập nhật code, lấy release đã kiểm thử, backup, sau đó chạy `docker compose up -d --build`. Compose self-hosted mặc định bật `ASSETMASTER_AUTO_MIGRATE=true`: entrypoint sẽ chạy các migration trong thư mục `drizzle/` trước khi app nhận request. Vì vậy các cột mới của `users`, chẳng hạn `directoryDepartment`, sẽ được áp dụng trước khi truy vấn đăng nhập Admin local. Nếu migration thất bại, app chủ động không khởi động để tránh chạy trên schema không tương thích.
+
+Khi cập nhật trên Docker Desktop, nên rebuild rõ ràng và recreate riêng service app:
+
+```powershell
+git pull
+docker compose -f docker-compose.yml -f docker-compose.desktop.yml build --no-cache app
+docker compose -f docker-compose.yml -f docker-compose.desktop.yml up -d --force-recreate app
+docker compose -f docker-compose.yml -f docker-compose.desktop.yml logs --tail=200 app
+```
+
+Log thành công cần có `AssetMaster: database migrations are up to date.`. Không chạy `docker compose down -v`, không xóa thư mục `.assetmaster-data\\mysql` và không tạo lại database nếu chỉ gặp lỗi `Failed query` trên bảng `users`; trước hết backup và kiểm tra log migration. Docker Compose secrets được mount chỉ đọc vào service; secret file nguồn vẫn phải giữ ngoài Git và giới hạn quyền ở máy chủ.[3]
 
 `docker compose config --quiet` kiểm tra cú pháp/các biến thay thế, nhưng **không thay thế UAT**: cần thử lại trên MySQL trống và Active Directory staging với CA/bind secret thật trước production.
 

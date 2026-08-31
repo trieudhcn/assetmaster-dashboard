@@ -47,4 +47,8 @@ fi
 
 unset MYSQL_APP_PASSWORD REDIS_PASSWORD
 
+if [ "${ASSETMASTER_AUTO_MIGRATE:-false}" = "true" ]; then
+  node /app/docker/migrate.mjs
+fi
+
 exec "$@"

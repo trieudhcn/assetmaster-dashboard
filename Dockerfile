@@ -28,6 +28,7 @@ COPY --from=build --chown=assetmaster:assetmaster /app/node_modules ./node_modul
 COPY --from=build --chown=assetmaster:assetmaster /app/dist ./dist
 COPY --from=build --chown=assetmaster:assetmaster /app/drizzle ./drizzle
 COPY --from=build --chown=assetmaster:assetmaster /app/docker/entrypoint.sh ./docker/entrypoint.sh
+COPY --from=build --chown=assetmaster:assetmaster /app/docker/migrate.mjs ./docker/migrate.mjs
 
 RUN chmod 0755 /app/docker/entrypoint.sh
 

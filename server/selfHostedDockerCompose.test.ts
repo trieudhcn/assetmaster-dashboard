@@ -25,11 +25,15 @@ describe("Docker Compose self-hosted bundle", () => {
     expect(compose).toContain("ASSETMASTER_DATA_DIR");
     expect(compose).toContain('user: "999:999"');
     expect(compose).toContain("read_only: true");
+    expect(compose).toContain('ASSETMASTER_AUTO_MIGRATE: "${ASSETMASTER_AUTO_MIGRATE:-true}"');
   });
 
   it("dùng Docker secrets thay vì đưa password vào cấu hình mẫu", () => {
     const compose = readProjectFile("docker-compose.yml");
     const envTemplate = readProjectFile("docker/compose.env.template");
+    const desktopEnvTemplate = readProjectFile(
+      "docker/compose.env.desktop.template"
+    );
     const entrypoint = readProjectFile("docker/entrypoint.sh");
 
     expect(compose).toContain("mysql_root_password:");
@@ -38,6 +42,10 @@ describe("Docker Compose self-hosted bundle", () => {
     expect(compose).toContain("setup_token:");
     expect(entrypoint).toContain("load_secret MYSQL_APP_PASSWORD");
     expect(entrypoint).toContain("load_secret SELF_HOSTED_SETUP_TOKEN");
+    expect(entrypoint).toContain('ASSETMASTER_AUTO_MIGRATE:-false');
+    expect(entrypoint).toContain("node /app/docker/migrate.mjs");
+    expect(envTemplate).toContain("ASSETMASTER_AUTO_MIGRATE=true");
+    expect(desktopEnvTemplate).toContain("ASSETMASTER_AUTO_MIGRATE=true");
     expect(envTemplate).not.toMatch(/PASSWORD=|TOKEN=|SECRET=/);
   });
 
@@ -49,6 +57,7 @@ describe("Docker Compose self-hosted bundle", () => {
     expect(dockerfile).not.toContain("corepack pnpm prune --prod");
     expect(dockerfile).toContain("Keep the complete install");
     expect(dockerfile).toContain('CMD ["node", "dist/index.js"]');
+    expect(dockerfile).toContain("/app/docker/migrate.mjs");
     expect(dockerfile).toContain("COPY . .");
     expect(dockerfile).toContain("USER assetmaster");
     expect(dockerfile).toContain("FROM node:22-bookworm-slim AS runtime");
