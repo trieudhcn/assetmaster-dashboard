@@ -3897,9 +3897,9 @@
 
 ## Current Session — Chẩn đoán tiếp LDAPS sau khi TCP 636 đạt
 
-- [ ] Xác minh TLS/certificate thực tế từ container app, không chỉ TCP connectivity.
-- [ ] Đối chiếu bind DN/secret, Users Base DN, Login attribute và DN nhóm quyền.
-- [ ] Hướng dẫn đọc mã lỗi xác thực và xác định bước còn thất bại.
+- [x] Bổ sung kiểm tra TLS/certificate từ app container qua nút Kiểm tra LDAPS; UAT certificate thật cần thực hiện trên Docker doanh nghiệp.
+- [x] Cập nhật đối chiếu bind DN/secret, Users Base DN, Login attribute và DN nhóm quyền trong runbook Docker–AD/LDAPS.
+- [x] Bổ sung hướng dẫn đọc mã lỗi xác thực LDAP 49/32/50 và phân biệt bind/search/user-bind.
 
 ## Current Session — Khắc phục đăng nhập Admin local Docker
 
