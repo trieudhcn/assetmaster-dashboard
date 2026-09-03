@@ -3906,3 +3906,21 @@
 - [x] Đối chiếu truy vấn `bootstrap_local`, schema users và migration với database/container hiện tại.
 - [x] Xác định và sửa nguyên nhân Admin local không được tìm thấy hoặc truy vấn thất bại.
 - [x] Bổ sung regression test, full validation và hướng dẫn phục hồi an toàn không xóa dữ liệu.
+
+## Current Session — Khắc phục ERR_EMPTY_RESPONSE Docker Desktop
+
+- [x] Rà soát log app, entrypoint, healthcheck và port mapping để xác định process không lắng nghe cổng 3000.
+- [x] Sửa nguyên nhân khởi động/migration tương thích Docker Desktop mà không xóa volume dữ liệu.
+- [x] Bổ sung regression, cập nhật hướng dẫn phục hồi và chạy full validation.
+
+## Current Session — Ổn định auto-migration Docker Desktop
+
+- [x] Ghi nhận và chẩn đoán lỗi migration làm app không lắng nghe cổng 3000 khi auto-migration bật.
+- [x] Điều chỉnh mặc định/chiến lược migration để không làm gián đoạn app đang có dữ liệu.
+- [x] Bổ sung hướng dẫn migrate thủ công an toàn, regression và full validation.
+
+## Current Session — Phân biệt migration one-off và app startup
+
+- [x] Đối chiếu command, environment và user của migration one-off với entrypoint container app.
+- [x] Sửa startup để auto-migration không làm app mất phản hồi khi migration đã up-to-date.
+- [x] Bổ sung regression/hướng dẫn và chạy full validation.

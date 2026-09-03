@@ -711,9 +711,12 @@ describe("employee administration", () => {
 
   it("delegates a returned handover to the database transition helper", async () => {
     const caller = appRouter.createCaller(adminContext);
+    const now = new Date();
+    const expectedYear = now.getFullYear();
+    const expectedMonth = now.getMonth() + 1;
 
     await expect(caller.handovers.updateStatus({ id: 99, status: "returned", recipientSignatureUrl: null, handoverSignatureUrl: null })).resolves.toMatchObject({ success: true, returnedAccessoryCount: 0, outstandingAccessoryCount: 0, recoveryCertificateNumber: expect.stringMatching(/^TH-\d{6}-001$/) });
-    expect(mocks.transitionHandoverStatus).toHaveBeenCalledWith(99, "returned", expect.objectContaining({ recipientSignatureUrl: null, handoverSignatureUrl: null, recoveryCertificateNumber: expect.stringMatching(/^TH-\d{6}-001$/), recoveryCertificateYear: 2026, recoveryCertificateMonth: 8, recoveryCertificateSequence: 1 }), expect.anything());
+    expect(mocks.transitionHandoverStatus).toHaveBeenCalledWith(99, "returned", expect.objectContaining({ recipientSignatureUrl: null, handoverSignatureUrl: null, recoveryCertificateNumber: expect.stringMatching(/^TH-\d{6}-001$/), recoveryCertificateYear: expectedYear, recoveryCertificateMonth: expectedMonth, recoveryCertificateSequence: 1 }), expect.anything());
     expect(mocks.recordActivity).toHaveBeenCalledWith(expect.objectContaining({ entityType: "handover", entityId: 99, action: "returned" }));
   });
 

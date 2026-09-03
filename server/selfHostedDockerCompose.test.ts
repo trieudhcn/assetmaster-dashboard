@@ -49,6 +49,17 @@ describe("Docker Compose self-hosted bundle", () => {
     expect(envTemplate).not.toMatch(/PASSWORD=|TOKEN=|SECRET=/);
   });
 
+  it("retry khi MySQL chưa sẵn sàng nhưng không che lỗi migration thực sự", () => {
+    const migrationRunner = readProjectFile("docker/migrate.mjs");
+
+    expect(migrationRunner).toContain('ASSETMASTER_MIGRATION_ATTEMPTS || "12"');
+    expect(migrationRunner).toContain('ASSETMASTER_MIGRATION_RETRY_DELAY_MS || "5000"');
+    expect(migrationRunner).toContain('"ECONNREFUSED"');
+    expect(migrationRunner).toContain('"PROTOCOL_CONNECTION_LOST"');
+    expect(migrationRunner).toContain("if (!retryable || attempt >= Math.max(1, maxAttempts))");
+    expect(migrationRunner).toContain("database migration failed. The application will not start.");
+  });
+
   it("build đầy đủ frontend/server và giữ migration cho wizard /setup", () => {
     const dockerfile = readProjectFile("Dockerfile");
 
