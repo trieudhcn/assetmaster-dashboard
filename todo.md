@@ -3966,3 +3966,9 @@
 - [x] Kiểm tra luồng truy vấn và đồng bộ LDAP hiện tại.
 - [x] Đối chiếu bộ lọc, Base DN, thuộc tính user/group và quyền đọc AD.
 - [x] Sửa lỗi đồng bộ nếu nguyên nhân nằm trong mã nguồn, bổ sung test và hướng dẫn Docker UAT.
+
+## Current Session — Directory mapping đúng nhưng xác thực vẫn thất bại
+
+- [x] Đối chiếu filter tìm user bằng userPrincipalName và bước user bind.
+- [x] Kiểm tra log để phân biệt lỗi search, user bind, nhóm quyền hoặc trạng thái kích hoạt.
+- [x] Bổ sung chẩn đoán/sửa code và regression nếu nguyên nhân nằm trong ứng dụng.

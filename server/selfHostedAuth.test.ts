@@ -93,6 +93,8 @@ describe("self-hosted directory authentication safeguards", () => {
     expect(safeDirectoryMessage(Object.assign(new Error("missing"), { code: 32 }), "search")).toContain("Users Base DN");
     expect(safeDirectoryMessage(Object.assign(new Error("denied"), { code: 50 }), "search")).toContain("không đủ quyền");
     expect(safeDirectoryMessage(new Error("Directory không tìm thấy tài khoản hợp lệ."), "search")).toContain("không tìm thấy tài khoản");
+    expect(safeDirectoryMessage(new Error("LDAP search failed"), "search")).toContain("Login attribute");
+    expect(safeDirectoryMessage(new Error("LDAP user bind failed"), "user")).toContain("UPN/DN đăng nhập");
   });
 
   it("chỉ chuyển sang session cục bộ khi self-hosted được bật rõ ràng", () => {

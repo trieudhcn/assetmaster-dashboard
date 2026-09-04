@@ -334,6 +334,10 @@ export function safeDirectoryMessage(
   if (/^Directory thiếu định danh bất biến hoặc email/.test(message))
     return message;
   if (/^Tài khoản chưa thuộc nhóm/.test(message)) return message;
+  if (stage === "search")
+    return "Không thể tìm tài khoản trong Directory. Kiểm tra Login attribute, Users Base DN và quyền đọc của bind account.";
+  if (stage === "user")
+    return "Tìm thấy tài khoản nhưng không thể xác thực mật khẩu Active Directory. Kiểm tra UPN/DN đăng nhập, mật khẩu và trạng thái tài khoản.";
   return "Không thể xác thực với Directory. Vui lòng kiểm tra cấu hình, thuộc tính tìm kiếm và thông tin đăng nhập.";
 }
 
@@ -639,7 +643,9 @@ export async function authenticateDirectoryUser(
     const passwordClient = ldapClient(settings);
     try {
       stage = "user";
-      await passwordClient.bind(entry.dn, password);
+      const userBindIdentity =
+        entryValue(entry, DIRECTORY_EMAIL_FALLBACK_ATTRIBUTE) || entry.dn;
+      await passwordClient.bind(userBindIdentity, password);
     } finally {
       await passwordClient.unbind().catch(() => undefined);
     }
@@ -665,6 +671,17 @@ export async function authenticateDirectoryUser(
     return user;
   } catch (error) {
     markFailedAttempt(email);
+    const errorCode =
+      typeof error === "object" && error !== null && "code" in error
+        ? (error as { code?: unknown }).code
+        : undefined;
+    console.warn("[AssetMaster][LDAP] authentication failed", {
+      stage,
+      code: errorCode,
+      message: error instanceof Error ? error.message : "Unknown LDAP error",
+      loginAttribute: settings.loginAttribute,
+      usersDn: settings.usersDn,
+    });
     if (
       error instanceof Error &&
       /chưa thuộc nhóm|thiếu định danh|chưa được kích hoạt/.test(error.message)
