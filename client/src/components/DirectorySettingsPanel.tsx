@@ -39,8 +39,8 @@ const initialDraft: DirectoryDraft = {
   groupsDn: "",
   bindDn: "",
   bindSecretRef: "/run/secrets/assetmaster_ldap_bind_password",
-  loginAttribute: "mail",
-  emailAttribute: "mail",
+  loginAttribute: "userPrincipalName",
+  emailAttribute: "userPrincipalName",
   displayNameAttribute: "displayName",
   directoryIdAttribute: "objectGUID",
   departmentAttribute: "department",
@@ -60,8 +60,8 @@ function normalizeSettings(value: any): DirectoryDraft {
     bindDn: value.bindDn || "",
     bindSecretRef:
       value.bindSecretRef || "/run/secrets/assetmaster_ldap_bind_password",
-    loginAttribute: value.loginAttribute || "mail",
-    emailAttribute: value.emailAttribute || "mail",
+    loginAttribute: value.loginAttribute || "userPrincipalName",
+    emailAttribute: value.emailAttribute || "userPrincipalName",
     displayNameAttribute: value.displayNameAttribute || "displayName",
     directoryIdAttribute: value.directoryIdAttribute || "objectGUID",
     departmentAttribute: value.departmentAttribute || "department",
@@ -481,6 +481,7 @@ export function DirectorySettingsPanel({
                   label="Email"
                   value={draft.emailAttribute}
                   onChange={value => update("emailAttribute", value)}
+                  help="AD Windows Server thường để trống mail; dùng userPrincipalName nếu nhân viên đăng nhập bằng email nội bộ."
                 />
                 <InputField
                   label="Tên hiển thị"

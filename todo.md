@@ -3924,3 +3924,45 @@
 - [x] Đối chiếu command, environment và user của migration one-off với entrypoint container app.
 - [x] Sửa startup để auto-migration không làm app mất phản hồi khi migration đã up-to-date.
 - [x] Bổ sung regression/hướng dẫn và chạy full validation.
+
+## Current Session — LDAPS không xác thực với DN nhóm trùng
+
+- [ ] Đối chiếu thuộc tính tìm kiếm user, bind user và cách kiểm tra DN nhóm Admin/User.
+- [ ] Xác định lỗi cấu hình hoặc logic khi Admin/User cùng là `Domain Users`.
+- [ ] Bổ sung regression/hướng dẫn UAT và xác minh Docker không hồi quy.
+
+## Current Session — Xác minh Base DN và Bind DN LDAPS
+
+- [ ] Đối chiếu Users Base DN, Groups Base DN và Bind DN với Distinguished Name thực tế trên AD.
+- [ ] Kiểm tra Login/Email attribute và quyền đọc của bind account.
+- [ ] Hướng dẫn cấu hình đúng và xác minh bằng tài khoản pilot.
+
+## Current Session — Kiểm tra Docker secret và certificate LDAPS
+
+- [ ] Đối chiếu tên file `ldap_bind_password` với secret mount `/run/secrets/ldap_bind_password`.
+- [ ] Hướng dẫn kiểm tra TLS/SAN/CA và phân biệt lỗi certificate với lỗi bind/user.
+- [ ] Không vô hiệu hóa certificate verification trong cấu hình production; cập nhật tài liệu nếu cần.
+
+## Current Session — Test LDAPS tạm thời bỏ qua CA
+
+- [ ] Cung cấp phương án test tạm thời để tách lỗi certificate khỏi lỗi bind/search/user.
+- [ ] Nêu rõ giới hạn an toàn và quy trình bật lại xác minh certificate.
+- [ ] Ghi nhận kết quả test cần gửi lại mà không chứa mật khẩu hoặc secret.
+
+## Current Session — Xác nhận user bind LDAPS thành công
+
+- [ ] Đối chiếu kết quả `ldapsearch`/`ldapwhoami` với cấu hình AssetMaster.
+- [ ] Xác nhận lỗi còn lại là CA trust strict hoặc cấu hình runtime, không phải mật khẩu user.
+- [ ] Hoàn tất hướng dẫn CA PEM và checklist UAT, không bypass production.
+
+## Current Session — Sửa lỗi LDAPS certificate chain
+
+- [ ] Phân biệt certificate máy chủ với Root CA/Intermediate CA đang được tin cậy.
+- [ ] Hướng dẫn xuất và ghép CA PEM đúng chuỗi, không dùng private key.
+- [ ] Kiểm tra lại strict TLS trong container và cập nhật checklist UAT.
+
+## Current Session — Khắc phục đồng bộ LDAP sau bind
+
+- [x] Kiểm tra luồng truy vấn và đồng bộ LDAP hiện tại.
+- [x] Đối chiếu bộ lọc, Base DN, thuộc tính user/group và quyền đọc AD.
+- [x] Sửa lỗi đồng bộ nếu nguyên nhân nằm trong mã nguồn, bổ sung test và hướng dẫn Docker UAT.

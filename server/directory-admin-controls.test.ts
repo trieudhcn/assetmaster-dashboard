@@ -15,6 +15,9 @@ describe("Directory admin controls", () => {
     expect(auth).toContain("syncLdapsUsers(limit = 200)");
     expect(auth).toContain("searchPaginated");
     expect(auth).toContain("DIRECTORY_SYNC_PAGE_SIZE");
+    expect(auth).toContain('filter: "(objectClass=person)"');
+    expect(auth).toContain('DIRECTORY_EMAIL_FALLBACK_ATTRIBUTE = "userPrincipalName"');
+    expect(auth).toContain("resolveDirectoryEmail");
     expect(router).toContain("testDraft:");
     expect(router).toContain("searchGroups:");
     expect(router).toContain("syncUsers:");
@@ -29,5 +32,7 @@ describe("Directory admin controls", () => {
     expect(source).toContain("Tải thêm 20 tài khoản");
     expect(source).toContain("Tiến trình Directory");
     expect(source).toContain("không lưu mật khẩu");
+    expect(source).toContain('emailAttribute: "userPrincipalName"');
+    expect(source).toContain("AD Windows Server thường để trống mail");
   });
 });

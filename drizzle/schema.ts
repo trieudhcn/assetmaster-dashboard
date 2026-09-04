@@ -84,10 +84,10 @@ export const directorySettings = mysqlTable(
     bindDn: text("bindDn"),
     bindSecretRef: varchar("bindSecretRef", { length: 255 }),
     loginAttribute: varchar("loginAttribute", { length: 64 })
-      .default("mail")
+      .default("userPrincipalName")
       .notNull(),
     emailAttribute: varchar("emailAttribute", { length: 64 })
-      .default("mail")
+      .default("userPrincipalName")
       .notNull(),
     displayNameAttribute: varchar("displayNameAttribute", { length: 64 })
       .default("displayName")

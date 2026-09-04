@@ -243,6 +243,25 @@ function entryValues(entry: Record<string, unknown>, attribute: string) {
   ).map(String);
 }
 
+const DIRECTORY_EMAIL_FALLBACK_ATTRIBUTE = "userPrincipalName";
+
+export function resolveDirectoryEmail(
+  entry: Record<string, unknown>,
+  settings: Pick<DirectorySettings, "emailAttribute" | "loginAttribute">
+) {
+  const configuredEmail = entryValue(entry, settings.emailAttribute);
+  if (configuredEmail) return configuredEmail;
+
+  const userPrincipalName = entryValue(
+    entry,
+    DIRECTORY_EMAIL_FALLBACK_ATTRIBUTE
+  );
+  if (userPrincipalName) return userPrincipalName;
+
+  const loginValue = entryValue(entry, settings.loginAttribute);
+  return loginValue?.includes("@") ? loginValue : null;
+}
+
 function groupMatches(groups: string[], groupDn: string | null) {
   return Boolean(
     groupDn &&
@@ -432,19 +451,24 @@ export async function syncLdapsUsers(limit = 200) {
     if (!settings.bindDn || !secret)
       throw new Error("Thiếu tài khoản bind LDAPS.");
     await client.bind(settings.bindDn, secret);
-    const attributes = [
-      settings.loginAttribute,
-      settings.emailAttribute,
-      settings.displayNameAttribute,
-      settings.directoryIdAttribute,
-      settings.departmentAttribute,
-      settings.jobTitleAttribute,
-      "memberOf",
-    ];
+    const attributes = Array.from(
+      new Set([
+        settings.loginAttribute,
+        settings.emailAttribute,
+        settings.displayNameAttribute,
+        settings.directoryIdAttribute,
+        settings.departmentAttribute,
+        settings.jobTitleAttribute,
+        DIRECTORY_EMAIL_FALLBACK_ATTRIBUTE,
+        "memberOf",
+      ])
+    );
     const entries: Array<Record<string, unknown> & { dn?: string }> = [];
     const pages = client.searchPaginated(settings.usersDn, {
       scope: "sub",
-      filter: `(&(objectClass=person)(${settings.emailAttribute}=*))`,
+      // AD may leave `mail` empty while userPrincipalName is populated. Do not
+      // filter those users out before the fallback email mapping runs.
+      filter: "(objectClass=person)",
       attributes,
       sizeLimit: limit,
       timeLimit: 20,
@@ -470,7 +494,7 @@ export async function syncLdapsUsers(limit = 200) {
         entry,
         settings.directoryIdAttribute
       );
-      const emailRaw = entryValue(entry, settings.emailAttribute);
+      const emailRaw = resolveDirectoryEmail(entry, settings);
       if (!entry.dn || !directoryObjectId || !emailRaw) {
         outcome.push({
           email: emailRaw || "—",
@@ -588,6 +612,7 @@ export async function authenticateDirectoryUser(
       settings.directoryIdAttribute,
       settings.departmentAttribute,
       settings.jobTitleAttribute,
+      DIRECTORY_EMAIL_FALLBACK_ATTRIBUTE,
       "memberOf",
     ];
     stage = "search";
@@ -619,10 +644,10 @@ export async function authenticateDirectoryUser(
       await passwordClient.unbind().catch(() => undefined);
     }
     const directoryObjectId = entryValue(entry, settings.directoryIdAttribute);
-    const directoryEmail = entryValue(entry, settings.emailAttribute);
+    const directoryEmail = resolveDirectoryEmail(entry, settings);
     if (!directoryObjectId || !directoryEmail)
       throw new Error(
-        "Directory thiếu định danh bất biến hoặc email của người dùng."
+        "Directory thiếu định danh bất biến hoặc email/userPrincipalName của người dùng."
       );
     const openId = `ldap:${crypto.createHash("sha256").update(directoryObjectId).digest("hex").slice(0, 58)}`;
     const user = await upsertDirectoryUser({

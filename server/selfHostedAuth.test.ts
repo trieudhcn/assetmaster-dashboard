@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it } from "vitest";
 import {
   normalizeLoginEmail,
+  resolveDirectoryEmail,
   safeDirectoryMessage,
   selfHostedAuthEnabled,
   validateDirectorySettings,
@@ -57,6 +58,33 @@ describe("self-hosted directory authentication safeguards", () => {
     expect(normalizeLoginEmail("  NGUYEN.VAN.A@CONGTY.VN  ")).toBe(
       "nguyen.van.a@congty.vn"
     );
+  });
+
+  it("dùng userPrincipalName khi AD không có giá trị mail", () => {
+    expect(
+      resolveDirectoryEmail(
+        {
+          mail: "",
+          userPrincipalName: "asset@thaithinh.local",
+          sAMAccountName: "asset",
+        },
+        { emailAttribute: "mail", loginAttribute: "userPrincipalName" }
+      )
+    ).toBe("asset@thaithinh.local");
+
+    expect(
+      resolveDirectoryEmail(
+        { mail: null, userPrincipalName: "asset@thaithinh.local" },
+        { emailAttribute: "userPrincipalName", loginAttribute: "userPrincipalName" }
+      )
+    ).toBe("asset@thaithinh.local");
+
+    expect(
+      resolveDirectoryEmail(
+        { mail: null, userPrincipalName: null, sAMAccountName: "asset" },
+        { emailAttribute: "mail", loginAttribute: "sAMAccountName" }
+      )
+    ).toBeNull();
   });
 
   it("phân biệt lỗi bind, tìm kiếm và mật khẩu người dùng mà không lộ secret", () => {

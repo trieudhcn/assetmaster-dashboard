@@ -1,0 +1,2 @@
+ALTER TABLE `directorySettings` MODIFY COLUMN `loginAttribute` varchar(64) NOT NULL DEFAULT 'userPrincipalName';--> statement-breakpoint
+ALTER TABLE `directorySettings` MODIFY COLUMN `emailAttribute` varchar(64) NOT NULL DEFAULT 'userPrincipalName';

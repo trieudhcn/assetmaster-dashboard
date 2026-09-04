@@ -275,7 +275,7 @@ Giữ Admin cục bộ trong password manager. Không xóa tài khoản này sau
 | **Tệp secret LDAP** | `/run/secrets/ldap_bind_password` |
 | **CA certificate PEM** | Root/intermediate CA nội bộ; có thể để trống nếu chain công khai đã được tin cậy |
 | **Login** | `userPrincipalName` nếu nhân viên đăng nhập bằng email; `sAMAccountName` nếu đăng nhập bằng username ngắn |
-| **Email** | `mail` |
+| **Email** | `userPrincipalName` nếu AD không điền `mail`; có thể dùng `mail` khi thuộc tính này được quản trị đầy đủ |
 | **Tên hiển thị** | `displayName` |
 | **ID bất biến** | `objectGUID` |
 | **Phòng ban** | `department` |
@@ -284,7 +284,7 @@ Giữ Admin cục bộ trong password manager. Không xóa tài khoản này sau
 | **DN nhóm User** | DN đầy đủ của `AssetMaster-Users` |
 | **Có nhóm lồng nhau** | Chỉ bật khi AD thực sự dùng nested groups và đội hạ tầng đã kiểm tra rule tương ứng |
 
-Nếu muốn người dùng nhập địa chỉ email như `nguyenvana@corp.example.local`, chọn `userPrincipalName` cho trường **Login**. Backend tìm đúng thuộc tính Login bằng giá trị người dùng nhập; vì vậy nếu chọn `sAMAccountName`, người dùng phải nhập username ngắn như `nguyenvana`, không nhập email.
+Nếu muốn người dùng nhập địa chỉ email như `nguyenvana@corp.example.local`, chọn `userPrincipalName` cho trường **Login** và **Email**. Trên nhiều AD Windows Server, thuộc tính `mail` có thể để trống dù `userPrincipalName` có giá trị; AssetMaster không còn loại bỏ các tài khoản đó khi đồng bộ và sẽ dùng UPN làm email dự phòng. Nếu chọn `sAMAccountName` cho Login, người dùng phải nhập username ngắn như `nguyenvana`, không nhập email.
 
 Thực hiện đúng thứ tự sau:
 
