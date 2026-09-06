@@ -196,10 +196,8 @@ export async function clearSelfHostedLogin(
 ) {
   const token = parseCookie(request, SELF_HOSTED_SESSION_COOKIE);
   if (token) await deleteSelfHostedSession(hashToken(token));
-  response.clearCookie(
-    SELF_HOSTED_SESSION_COOKIE,
-    sessionCookieOptions(request)
-  );
+  const { maxAge: _maxAge, ...clearOptions } = sessionCookieOptions(request);
+  response.clearCookie(SELF_HOSTED_SESSION_COOKIE, clearOptions);
 }
 
 async function readBindSecret(

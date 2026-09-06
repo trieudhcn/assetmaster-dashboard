@@ -3972,3 +3972,15 @@
 - [x] Đối chiếu filter tìm user bằng userPrincipalName và bước user bind.
 - [x] Kiểm tra log để phân biệt lỗi search, user bind, nhóm quyền hoặc trạng thái kích hoạt.
 - [x] Bổ sung chẩn đoán/sửa code và regression nếu nguyên nhân nằm trong ứng dụng.
+
+## Current Session — Cảnh báo clearCookie và thiếu log LDAP trong Docker
+
+- [x] Sửa `res.clearCookie` để không truyền `maxAge` khi xóa cookie theo cảnh báo Express.
+- [x] Rà soát đường đi request đăng nhập và bổ sung dấu vết an toàn nếu cần để xác nhận request vào container mới.
+- [x] Chạy regression, build và xác minh Docker runtime sau bản sửa.
+
+## Current Session — TLS/bind thành công nhưng đăng nhập Directory thất bại
+
+- [x] Đối chiếu procedure `directoryLogin` với payload từ `LoginGateway`.
+- [x] Phân biệt lỗi tìm user, nhóm quyền và bind mật khẩu người dùng trong runtime.
+- [x] Sửa luồng đăng nhập nếu cần, bổ sung regression và hướng dẫn rebuild Docker.

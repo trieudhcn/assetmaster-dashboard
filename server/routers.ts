@@ -1119,10 +1119,7 @@ export const appRouter = router({
       }),
     logout: publicProcedure.mutation(async ({ ctx }) => {
       if (selfHostedAuthEnabled()) await clearSelfHostedLogin(ctx.req, ctx.res);
-      ctx.res.clearCookie(COOKIE_NAME, {
-        ...getSessionCookieOptions(ctx.req),
-        maxAge: -1,
-      });
+      ctx.res.clearCookie(COOKIE_NAME, getSessionCookieOptions(ctx.req));
       return { success: true } as const;
     }),
   }),
