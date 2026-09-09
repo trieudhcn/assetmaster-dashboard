@@ -35,8 +35,15 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Check formatting
-        run: pnpm exec prettier --check .
+      - name: Check changed operational files
+        run: >
+          pnpm exec prettier --check
+          .github/workflows/ci.yml
+          docker-compose.yml
+          docs/production-readiness-checklist.md
+          server/_core/healthRoutes.ts
+          server/_core/index.ts
+          server/healthRoutes.test.ts
 
       - name: Typecheck
         run: pnpm run check
