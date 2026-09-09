@@ -107,8 +107,9 @@ async function startServer() {
       clearTimeout(forceExit);
       if (error) {
         console.error("Failed to close HTTP server", error);
-        process.exitCode = 1;
+        process.exit(1);
       }
+      process.exit(0);
     });
   };
 
