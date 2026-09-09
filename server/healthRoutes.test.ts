@@ -1,7 +1,5 @@
 import { describe, expect, it } from "vitest";
-import {
-  isRuntimeReady,
-} from "./_core/healthRoutes";
+import { isRuntimeReady } from "./_core/healthRoutes";
 import type {
   ServiceHealth,
   ServiceHealthStatus,
