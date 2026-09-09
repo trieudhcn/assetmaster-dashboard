@@ -45,11 +45,41 @@ jobs:
           server/_core/index.ts
           server/healthRoutes.test.ts
 
+      - name: Install PDF test dependency
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes --no-install-recommends poppler-utils
+
       - name: Typecheck
         run: pnpm run check
 
-      - name: Run tests
-        run: pnpm run test
+      - name: Run tests with local application
+        env:
+          VITE_APP_TITLE: AssetMaster – Hệ thống Quản lý Tài sản
+        run: |
+          pnpm run dev > /tmp/assetmaster-dev.log 2>&1 &
+          app_pid=$!
+          trap 'kill "$app_pid" 2>/dev/null || true' EXIT
+
+          for attempt in {1..60}; do
+            if curl --fail --silent http://127.0.0.1:3000/healthz > /dev/null; then
+              break
+            fi
+            if ! kill -0 "$app_pid" 2>/dev/null; then
+              cat /tmp/assetmaster-dev.log
+              exit 1
+            fi
+            if [ "$attempt" -eq 60 ]; then
+              cat /tmp/assetmaster-dev.log
+              exit 1
+            fi
+            sleep 1
+          done
+
+          if ! pnpm run test; then
+            cat /tmp/assetmaster-dev.log
+            exit 1
+          fi
 
       - name: Build production bundle
         run: pnpm run build
