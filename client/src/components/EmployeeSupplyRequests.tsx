@@ -9,7 +9,7 @@ import {
   Trash2,
   XCircle,
 } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { trpc } from "@/lib/trpc";
 import { SearchableSelect } from "@/components/SearchableSelect";
@@ -78,6 +78,30 @@ export function EmployeeSupplyRequests() {
   const [expandedRequestId, setExpandedRequestId] = useState<number | null>(
     null
   );
+
+  useEffect(() => {
+    const requestId = Number(
+      sessionStorage.getItem("assetmaster-open-employee-supply-request-id")
+    );
+    if (!Number.isInteger(requestId) || requestId <= 0 || !requestsQuery.data)
+      return;
+    sessionStorage.removeItem("assetmaster-open-employee-supply-request-id");
+    const target = requestsQuery.data.find(request => request.id === requestId);
+    if (!target) {
+      toast.error("Không tìm thấy yêu cầu phụ kiện cần mở.");
+      return;
+    }
+    setShowHistory(true);
+    setExpandedRequestId(requestId);
+    const frame = window.requestAnimationFrame(() =>
+      document
+        .querySelector<HTMLElement>(
+          `[data-employee-supply-request-id="${requestId}"]`
+        )
+        ?.scrollIntoView({ behavior: "smooth", block: "center" })
+    );
+    return () => window.cancelAnimationFrame(frame);
+  }, [requestsQuery.data]);
 
   const createRequest = trpc.supplies.createRequest.useMutation({
     onSuccess: result => {
@@ -326,6 +350,7 @@ export function EmployeeSupplyRequests() {
               return (
                 <article
                   key={request.id}
+                  data-employee-supply-request-id={request.id}
                   className={`overflow-hidden rounded-xl border bg-white transition ${expanded ? "border-[#B8DCD8] shadow-[0_6px_16px_rgba(16,42,67,.05)]" : "border-[#E3EDF2]"}`}
                 >
                   <button
