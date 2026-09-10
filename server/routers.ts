@@ -59,6 +59,8 @@ import {
   createSupplyUnit,
   createSupplyIssueSlip,
   createSupplyIssueSlipItem,
+  createSupplyRequest,
+  createSupplyRequestItem,
   createMaintenanceTicket,
   createPurchaseContract,
   createPurchaseContractDocument,
@@ -122,7 +124,9 @@ import {
   getInventorySupplyByCode,
   getInventorySupplyById,
   getNextSupplyIssueSequence,
+  getNextSupplyRequestSequence,
   getSupplyIssueSlipById,
+  getSupplyRequestById,
   getSupplyIssueSlipItemById,
   getSupplyUnitById,
   getSupplyUnitByName,
@@ -220,11 +224,14 @@ import {
   listHandoverSupplyItems,
   listInventoryMovements,
   listInventorySupplies,
+  listRequestableInventorySupplies,
   listInventoryMovementReport,
   listActiveHandoverSupplyHoldingsByRecipientUserId,
   listSupplyIssueHistoryByRecipientUserId,
   listSupplyIssueSlipItems,
   listSupplyIssueSlips,
+  listSupplyRequestItems,
+  listSupplyRequests,
   listSupplyImportItems,
   listSupplyImportSessions,
   listSupplyUnits,
@@ -272,6 +279,7 @@ import {
   updateSupplyImportSession,
   updateSupplyIssueSlip,
   updateSupplyIssueSlipItem,
+  transitionSupplyRequestStatus,
   updateSupplyUnit,
   updateMaintenanceTicket,
   updatePurchaseContract,
@@ -5586,6 +5594,391 @@ export const appRouter = router({
       }),
   }),
   supplies: router({
+    requestable: protectedProcedure.query(() =>
+      listRequestableInventorySupplies()
+    ),
+    myRequests: protectedProcedure.query(({ ctx }) =>
+      listSupplyRequests(ctx.user.id)
+    ),
+    adminRequests: adminProcedure.query(() => listSupplyRequests()),
+    createRequest: protectedProcedure
+      .input(
+        z
+          .object({
+            reason: z.string().trim().min(3).max(1000),
+            items: z
+              .array(
+                z.object({
+                  supplyId: z.number().int().positive(),
+                  quantity: z.number().finite().positive(),
+                })
+              )
+              .min(1)
+              .max(20),
+          })
+          .superRefine((input, issue) => {
+            if (
+              new Set(input.items.map(item => item.supplyId)).size !==
+              input.items.length
+            )
+              issue.addIssue({
+                code: z.ZodIssueCode.custom,
+                path: ["items"],
+                message: "Một phụ kiện chỉ được yêu cầu một lần.",
+              });
+          })
+      )
+      .mutation(async ({ input, ctx }) => {
+        const requestYear = new Date().getFullYear();
+        for (let attempt = 0; attempt < 5; attempt += 1) {
+          try {
+            return await runInventoryTransaction(async transaction => {
+              const requestSupplies = [];
+              for (const item of input.items) {
+                const supply = await getInventorySupplyById(
+                  item.supplyId,
+                  transaction
+                );
+                if (!supply || !supply.isActive)
+                  throw new TRPCError({
+                    code: "NOT_FOUND",
+                    message: "Phụ kiện được chọn không còn hoạt động.",
+                  });
+                requireWholeQuantity(
+                  supply.unit,
+                  item.quantity,
+                  "Số lượng yêu cầu"
+                );
+                if (item.quantity > Number(supply.stockQuantity))
+                  throw new TRPCError({
+                    code: "BAD_REQUEST",
+                    message: `Tồn kho ${supply.name} chỉ còn ${Number(supply.stockQuantity)} ${supply.unit}.`,
+                  });
+                requestSupplies.push({ item, supply });
+              }
+              const sequence = await getNextSupplyRequestSequence(
+                requestYear,
+                transaction
+              );
+              const requestCode = `YCPK-${requestYear}-${String(sequence).padStart(4, "0")}`;
+              const requestId = await createSupplyRequest(
+                {
+                  requestCode,
+                  requesterUserId: ctx.user.id,
+                  requesterName:
+                    ctx.user.name || ctx.user.email || "Nhân viên",
+                  requesterDepartmentId: ctx.user.departmentId ?? null,
+                  status: "pending",
+                  reason: input.reason,
+                },
+                transaction
+              );
+              for (const { item, supply } of requestSupplies)
+                await createSupplyRequestItem(
+                  {
+                    requestId,
+                    supplyId: supply.id,
+                    supplyCode: supply.code,
+                    supplyName: supply.name,
+                    unit: supply.unit,
+                    requestedQuantity: String(item.quantity),
+                  },
+                  transaction
+                );
+              await recordActivity(
+                {
+                  entityType: "supply_request",
+                  entityId: requestId,
+                  action: "created",
+                  actorUserId: ctx.user.id,
+                  actorName: ctx.user.name,
+                  summary: `Tạo yêu cầu cấp phụ kiện ${requestCode}`,
+                },
+                transaction
+              );
+              return { id: requestId, requestCode };
+            });
+          } catch (error) {
+            const duplicateCode =
+              typeof error === "object" &&
+              error !== null &&
+              (("code" in error && error.code === "ER_DUP_ENTRY") ||
+                ("errno" in error && Number(error.errno) === 1062));
+            if (!duplicateCode || attempt === 4) throw error;
+          }
+        }
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Không thể tạo mã yêu cầu duy nhất.",
+        });
+      }),
+    cancelRequest: protectedProcedure
+      .input(z.object({ id: z.number().int().positive() }))
+      .mutation(({ input, ctx }) =>
+        runInventoryTransaction(async transaction => {
+          const request = await getSupplyRequestById(input.id, transaction);
+          if (!request || request.requesterUserId !== ctx.user.id)
+            throw new TRPCError({
+              code: "NOT_FOUND",
+              message: "Không tìm thấy yêu cầu của bạn.",
+            });
+          const changed = await transitionSupplyRequestStatus(
+            request.id,
+            "pending",
+            { status: "cancelled" },
+            transaction
+          );
+          if (!changed)
+            throw new TRPCError({
+              code: "CONFLICT",
+              message: "Chỉ có thể hủy yêu cầu đang chờ duyệt.",
+            });
+          await recordActivity(
+            {
+              entityType: "supply_request",
+              entityId: request.id,
+              action: "cancelled",
+              actorUserId: ctx.user.id,
+              actorName: ctx.user.name,
+              summary: `Nhân viên hủy yêu cầu ${request.requestCode}`,
+            },
+            transaction
+          );
+          return { success: true };
+        })
+      ),
+    rejectRequest: adminProcedure
+      .input(
+        z.object({
+          id: z.number().int().positive(),
+          reviewNote: z.string().trim().min(3).max(1000),
+        })
+      )
+      .mutation(({ input, ctx }) =>
+        runInventoryTransaction(async transaction => {
+          const request = await getSupplyRequestById(input.id, transaction);
+          if (!request)
+            throw new TRPCError({
+              code: "NOT_FOUND",
+              message: "Không tìm thấy yêu cầu cấp phụ kiện.",
+            });
+          const changed = await transitionSupplyRequestStatus(
+            request.id,
+            "pending",
+            {
+              status: "rejected",
+              reviewNote: input.reviewNote,
+              reviewedByUserId: ctx.user!.id,
+              reviewedByName: ctx.user!.name ?? "Quản trị viên",
+              reviewedAt: new Date(),
+            },
+            transaction
+          );
+          if (!changed)
+            throw new TRPCError({
+              code: "CONFLICT",
+              message: "Yêu cầu này đã được xử lý.",
+            });
+          await recordActivity(
+            {
+              entityType: "supply_request",
+              entityId: request.id,
+              action: "rejected",
+              actorUserId: ctx.user!.id,
+              actorName: ctx.user!.name,
+              summary: `Từ chối yêu cầu cấp phụ kiện ${request.requestCode}`,
+            },
+            transaction
+          );
+          return { success: true };
+        })
+      ),
+    fulfillRequest: adminProcedure
+      .input(
+        z.object({
+          id: z.number().int().positive(),
+          reviewNote: nullableText,
+        })
+      )
+      .mutation(async ({ input, ctx }) => {
+        const issueYear = new Date().getFullYear();
+        for (let attempt = 0; attempt < 5; attempt += 1) {
+          try {
+            return await runInventoryTransaction(async transaction => {
+              const request = await getSupplyRequestById(
+                input.id,
+                transaction
+              );
+              if (!request)
+                throw new TRPCError({
+                  code: "NOT_FOUND",
+                  message: "Không tìm thấy yêu cầu cấp phụ kiện.",
+                });
+              const requestItems = await listSupplyRequestItems(
+                request.id,
+                transaction
+              );
+              if (!requestItems.length)
+                throw new TRPCError({
+                  code: "BAD_REQUEST",
+                  message: "Yêu cầu không có phụ kiện để cấp phát.",
+                });
+              const reviewedAt = new Date();
+              const claimed = await transitionSupplyRequestStatus(
+                request.id,
+                "pending",
+                {
+                  status: "approved",
+                  reviewNote: input.reviewNote ?? null,
+                  reviewedByUserId: ctx.user!.id,
+                  reviewedByName: ctx.user!.name ?? "Quản trị viên",
+                  reviewedAt,
+                },
+                transaction
+              );
+              if (!claimed)
+                throw new TRPCError({
+                  code: "CONFLICT",
+                  message: "Yêu cầu này đã được xử lý.",
+                });
+
+              const sequence = await getNextSupplyIssueSequence(
+                issueYear,
+                transaction
+              );
+              const referenceCode = `PK-${issueYear}-${String(sequence).padStart(3, "0")}`;
+              const issueSlipId = await createSupplyIssueSlip(
+                {
+                  referenceCode,
+                  recipientUserId: request.requesterUserId,
+                  recipientName: request.requesterName,
+                  recipientDepartmentId:
+                    request.requesterDepartmentId ?? null,
+                  status: "active",
+                  note: `Từ yêu cầu ${request.requestCode}: ${request.reason}`,
+                  issuedByUserId: ctx.user!.id,
+                  issuedByName: ctx.user!.name ?? "Quản trị viên",
+                },
+                transaction
+              );
+
+              for (const requestItem of requestItems) {
+                const supply = await getInventorySupplyById(
+                  requestItem.supplyId,
+                  transaction
+                );
+                if (!supply || !supply.isActive)
+                  throw new TRPCError({
+                    code: "NOT_FOUND",
+                    message: `${requestItem.supplyName} không còn hoạt động.`,
+                  });
+                const quantity = Number(requestItem.requestedQuantity);
+                requireWholeQuantity(
+                  supply.unit,
+                  quantity,
+                  "Số lượng cấp phát"
+                );
+                const before = Number(supply.stockQuantity);
+                const after = before - quantity;
+                if (after < 0)
+                  throw new TRPCError({
+                    code: "BAD_REQUEST",
+                    message: `Tồn kho ${supply.name} không đủ. Hiện còn ${before} ${supply.unit}.`,
+                  });
+                await updateInventorySupply(
+                  supply.id,
+                  { stockQuantity: String(after) },
+                  transaction
+                );
+                const issueSlipItemId = await createSupplyIssueSlipItem(
+                  {
+                    issueSlipId,
+                    supplyId: supply.id,
+                    supplyCode: supply.code,
+                    supplyName: supply.name,
+                    unit: supply.unit,
+                    issuedQuantity: String(quantity),
+                    returnedQuantity: "0",
+                  },
+                  transaction
+                );
+                await createInventoryMovement(
+                  {
+                    supplyId: supply.id,
+                    movementType: "issue",
+                    quantity: String(-quantity),
+                    quantityBefore: String(before),
+                    quantityAfter: String(after),
+                    issueSlipId,
+                    issueSlipItemId,
+                    recipientUserId: request.requesterUserId,
+                    recipientName: request.requesterName,
+                    recipientDepartmentId:
+                      request.requesterDepartmentId ?? null,
+                    note: `Cấp theo yêu cầu ${request.requestCode}, phiếu ${referenceCode}`,
+                    createdByUserId: ctx.user!.id,
+                    createdByName: ctx.user!.name ?? "Quản trị viên",
+                  },
+                  transaction
+                );
+              }
+              const fulfilled = await transitionSupplyRequestStatus(
+                request.id,
+                "approved",
+                {
+                  status: "fulfilled",
+                  issueSlipId,
+                  fulfilledAt: new Date(),
+                },
+                transaction
+              );
+              if (!fulfilled)
+                throw new TRPCError({
+                  code: "CONFLICT",
+                  message: "Không thể hoàn tất trạng thái yêu cầu.",
+                });
+              await recordActivity(
+                {
+                  entityType: "supply_request",
+                  entityId: request.id,
+                  action: "fulfilled",
+                  actorUserId: ctx.user!.id,
+                  actorName: ctx.user!.name,
+                  summary: `Duyệt ${request.requestCode} và tạo phiếu ${referenceCode}`,
+                },
+                transaction
+              );
+              await recordActivity(
+                {
+                  entityType: "supply_issue_slip",
+                  entityId: issueSlipId,
+                  action: "created_from_request",
+                  actorUserId: ctx.user!.id,
+                  actorName: ctx.user!.name,
+                  summary: `Tạo phiếu cấp phát ${referenceCode} từ ${request.requestCode}`,
+                },
+                transaction
+              );
+              return {
+                id: issueSlipId,
+                referenceCode,
+                requestCode: request.requestCode,
+              };
+            });
+          } catch (error) {
+            const duplicateCode =
+              typeof error === "object" &&
+              error !== null &&
+              (("code" in error && error.code === "ER_DUP_ENTRY") ||
+                ("errno" in error && Number(error.errno) === 1062));
+            if (!duplicateCode || attempt === 4) throw error;
+          }
+        }
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Không thể tạo mã phiếu cấp phát duy nhất.",
+        });
+      }),
     list: adminProcedure.query(() => listInventorySupplies()),
     history: adminProcedure
       .input(
