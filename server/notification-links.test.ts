@@ -9,4 +9,10 @@ describe("Notification links", () => {
   it("uses the correct destination label for a handover notification", () => {
     expect(getNotificationTargetLabel({ type: "handover", handoverId: 42 })).toBe("Mở phiếu bàn giao");
   });
+
+  it("uses the correct destination label for a supply request notification", () => {
+    expect(
+      getNotificationTargetLabel({ type: "supplyRequest", requestId: 24 })
+    ).toBe("Mở yêu cầu cấp phát");
+  });
 });
