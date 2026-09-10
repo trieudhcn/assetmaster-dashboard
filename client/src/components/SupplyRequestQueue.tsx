@@ -34,6 +34,10 @@ const statusPresentation = {
     label: "Đã tạo phiếu",
     className: "border-[#B8E9DD] bg-[#ECF8F7] text-[#087A6A]",
   },
+  partially_fulfilled: {
+    label: "Cấp một phần",
+    className: "border-[#F0DCA4] bg-[#FFF7E2] text-[#9A6800]",
+  },
   rejected: {
     label: "Đã từ chối",
     className: "border-[#F2B7B7] bg-[#FDEDEE] text-[#B44545]",
@@ -57,6 +61,9 @@ export function SupplyRequestQueue() {
   });
   const suppliesQuery = trpc.supplies.list.useQuery();
   const [fulfillTargetId, setFulfillTargetId] = useState<number | null>(null);
+  const [fulfillQuantities, setFulfillQuantities] = useState<
+    Record<number, string>
+  >({});
   const [rejectTargetId, setRejectTargetId] = useState<number | null>(null);
   const [rejectNote, setRejectNote] = useState("");
   const [showProcessed, setShowProcessed] = useState(false);
@@ -65,8 +72,11 @@ export function SupplyRequestQueue() {
   const fulfill = trpc.supplies.fulfillRequest.useMutation({
     onSuccess: result => {
       setFulfillTargetId(null);
+      setFulfillQuantities({});
       toast.success(
-        `Đã duyệt ${result.requestCode} và tạo phiếu ${result.referenceCode}.`
+        result.status === "partially_fulfilled"
+          ? `Đã cấp một phần ${result.requestCode} và tạo phiếu ${result.referenceCode}.`
+          : `Đã duyệt ${result.requestCode} và tạo phiếu ${result.referenceCode}.`
       );
       void utils.supplies.adminRequests.invalidate();
       void utils.supplies.issueSlips.invalidate();
@@ -133,6 +143,26 @@ export function SupplyRequestQueue() {
     requests.find(request => request.id === fulfillTargetId) || null;
   const rejectTarget =
     requests.find(request => request.id === rejectTargetId) || null;
+  const fulfillmentRows = (fulfillTarget?.items || []).map(item => {
+    const requested = Number(item.requestedQuantity);
+    const stock = stockBySupplyId.get(item.supplyId) ?? 0;
+    const rawQuantity = fulfillQuantities[item.id] ?? "";
+    const approved =
+      rawQuantity.trim() === "" ? Number.NaN : Number(rawQuantity);
+    const valid =
+      Number.isFinite(approved) &&
+      approved >= 0 &&
+      approved <= requested &&
+      approved <= stock;
+    return { item, requested, stock, approved, valid };
+  });
+  const canFulfill =
+    fulfillmentRows.length > 0 &&
+    fulfillmentRows.every(row => row.valid) &&
+    fulfillmentRows.some(row => row.approved > 0);
+  const isPartialFulfillment =
+    canFulfill &&
+    fulfillmentRows.some(row => row.approved < row.requested);
 
   const RequestCard = ({
     request,
@@ -192,8 +222,26 @@ export function SupplyRequestQueue() {
               </button>
               <button
                 type="button"
-                disabled={fulfill.isPending || hasShortage}
-                onClick={() => setFulfillTargetId(request.id)}
+                disabled={fulfill.isPending}
+                onClick={() => {
+                  setFulfillTargetId(request.id);
+                  setFulfillQuantities(
+                    Object.fromEntries(
+                      request.items.map(item => {
+                        const requested = Number(item.requestedQuantity);
+                        const stock = stockBySupplyId.get(item.supplyId);
+                        return [
+                          item.id,
+                          String(
+                            stock === undefined
+                              ? requested
+                              : Math.min(requested, Math.max(0, stock))
+                          ),
+                        ];
+                      })
+                    )
+                  );
+                }}
                 className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-[#0F8C8C] px-3 text-[11px] font-extrabold text-white hover:bg-[#087A6A] disabled:cursor-not-allowed disabled:opacity-45"
               >
                 <FilePlus2 size={14} />
@@ -225,7 +273,10 @@ export function SupplyRequestQueue() {
                         : "font-extrabold text-[#087A6A]"
                     }
                   >
-                    Yêu cầu {numberText(item.requestedQuantity)} {item.unit}
+                    {request.status === "fulfilled" ||
+                    request.status === "partially_fulfilled"
+                      ? `Thực cấp ${numberText(item.approvedQuantity ?? 0)} / yêu cầu ${numberText(item.requestedQuantity)} ${item.unit}`
+                      : `Yêu cầu ${numberText(item.requestedQuantity)} ${item.unit}`}
                     {stock !== undefined &&
                       ` · Kho ${numberText(stock)}`}
                   </span>
@@ -329,7 +380,10 @@ export function SupplyRequestQueue() {
       <AlertDialog
         open={Boolean(fulfillTarget)}
         onOpenChange={open => {
-          if (!open && !fulfill.isPending) setFulfillTargetId(null);
+          if (!open && !fulfill.isPending) {
+            setFulfillTargetId(null);
+            setFulfillQuantities({});
+          }
         }}
       >
         <AlertDialogContent className="rounded-2xl border-[#CDE5E5] bg-white p-0 shadow-[0_24px_70px_rgba(16,42,67,.24)]">
@@ -349,37 +403,71 @@ export function SupplyRequestQueue() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <div className="space-y-2 px-5">
-            {(fulfillTarget?.items || []).map(item => (
+            {fulfillmentRows.map(({ item, requested, stock, approved, valid }) => (
               <div
                 key={item.id}
-                className="flex items-center justify-between gap-3 rounded-lg border border-[#E3EDF2] bg-[#F8FBFC] px-3 py-2"
+                className={`grid gap-3 rounded-lg border bg-[#F8FBFC] px-3 py-3 sm:grid-cols-[minmax(0,1fr)_130px] sm:items-end ${valid ? "border-[#E3EDF2]" : "border-[#F2B7B7]"}`}
               >
                 <div className="min-w-0">
                   <div className="truncate text-xs font-extrabold text-[#193B57]">
                     {item.supplyName}
                   </div>
-                  <div className="mt-0.5 text-[10px] text-[#71869A]">
-                    {item.supplyCode}
+                  <div className="mt-1 text-[10px] text-[#71869A]">
+                    {item.supplyCode} · Yêu cầu {numberText(requested)}{" "}
+                    {item.unit} · Kho {numberText(stock)}
                   </div>
+                  {!valid && (
+                    <div className="mt-1 text-[10px] font-bold text-[#B44545]">
+                      Số lượng phải từ 0 đến{" "}
+                      {numberText(Math.min(requested, stock))} {item.unit}.
+                    </div>
+                  )}
                 </div>
-                <span className="shrink-0 text-xs font-extrabold text-[#087A6A]">
-                  {numberText(item.requestedQuantity)} {item.unit}
-                </span>
+                <label className="block">
+                  <span className="field-label">Số lượng thực cấp</span>
+                  <input
+                    type="number"
+                    min="0"
+                    max={Math.min(requested, stock)}
+                    step="any"
+                    inputMode="decimal"
+                    value={fulfillQuantities[item.id] ?? ""}
+                    onChange={event =>
+                      setFulfillQuantities(current => ({
+                        ...current,
+                        [item.id]: event.target.value,
+                      }))
+                    }
+                    className={`field-input mt-1 text-right font-extrabold ${valid ? "text-[#087A6A]" : "border-[#E2A5A5] text-[#B44545]"}`}
+                    aria-invalid={!valid}
+                  />
+                </label>
               </div>
             ))}
+            {fulfillmentRows.length > 0 &&
+              !fulfillmentRows.some(row => row.approved > 0) && (
+                <p className="rounded-lg border border-[#F2D596] bg-[#FFF9EB] px-3 py-2 text-[11px] font-semibold text-[#A86B00]">
+                  Cần thực cấp ít nhất một phụ kiện. Nếu không cấp dòng nào,
+                  hãy dùng thao tác Từ chối.
+                </p>
+              )}
           </div>
           <AlertDialogFooter className="border-t border-[#E7EEF3] px-5 py-4">
             <AlertDialogCancel disabled={fulfill.isPending}>
               Quay lại
             </AlertDialogCancel>
             <AlertDialogAction
-              disabled={fulfill.isPending || !fulfillTarget}
+              disabled={fulfill.isPending || !fulfillTarget || !canFulfill}
               onClick={event => {
                 event.preventDefault();
-                if (fulfillTarget)
+                if (fulfillTarget && canFulfill)
                   fulfill.mutate({
                     id: fulfillTarget.id,
                     reviewNote: null,
+                    items: fulfillmentRows.map(row => ({
+                      requestItemId: row.item.id,
+                      approvedQuantity: row.approved,
+                    })),
                   });
               }}
               className="bg-[#0F8C8C] text-white hover:bg-[#087A6A]"
@@ -387,7 +475,9 @@ export function SupplyRequestQueue() {
               <FilePlus2 size={15} />
               {fulfill.isPending
                 ? "Đang tạo phiếu..."
-                : "Xác nhận duyệt & tạo phiếu"}
+                : isPartialFulfillment
+                  ? "Xác nhận cấp một phần"
+                  : "Xác nhận duyệt & tạo phiếu"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
