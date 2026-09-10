@@ -11,7 +11,7 @@ import { startLogin } from "@/const";
 import { trpc } from "@/lib/trpc";
 import { buildFilteredAssetExportRows, buildMaintenanceExportRows, canCreateCatalogOption, filterNamedCatalogOptions, getAssetStatusFilterCounts, getHandoverActionTooltip, getMaintenanceBadgeCount, getNewMaintenanceRequestBadge, getPaginationWindow, matchesVietnameseSearch, toggleMaintenanceStatusFilter } from "@/lib/catalogUi";
 import { buildDigitalExpiryAlertUrl, createDigitalExpiryAlertId } from "@/lib/digitalExpiryAlerts";
-import { getNotificationTargetLabel, type NotificationTarget } from "@/lib/notificationLinks";
+import { getNotificationDestination, getNotificationTargetLabel, type NotificationTarget } from "@/lib/notificationLinks";
 import { drawPdfCorporateFooter, drawPdfCorporateHeader, handoverPdfFontUrl, loadPdfImageData, registerVietnamesePdfFont } from "@/lib/handoverPdf";
 import { formatVnd } from "@/lib/formatters";
 import { writeBrandedWorkbook } from "@/lib/brandedWorkbook";
@@ -1012,7 +1012,7 @@ export default function Home() {
       description: asset.maintenanceReason?.trim() || `Theo dõi tiến độ xử lý cho ${asset.name}.`,
       createdAt: assetQuery.data?.find((item) => item.assetCode === asset.code)?.updatedAt || new Date(),
       kind: "maintenance" as const,
-      target: { type: "asset" as const, assetCode: asset.code },
+      target: { type: "maintenance" as const, assetCode: asset.code },
     })) : [];
     const warrantyExpiryNotifications = notificationPreferences.maintenanceEnabled ? assetRows.filter((asset) => getWarrantyState(asset.warrantyUntil) === "expiring").slice(0, 3).map((asset) => {
       const warrantyUntil = normalizePurchaseDate(asset.warrantyUntil);
@@ -1023,7 +1023,7 @@ export default function Home() {
         description: `${asset.name} còn ${remainingDays} ngày bảo hành (đến ${warrantyUntil ? new Date(warrantyUntil).toLocaleDateString("vi-VN") : "chưa xác định"}).`,
         createdAt: assetQuery.data?.find((item) => item.assetCode === asset.code)?.updatedAt || new Date(),
         kind: "maintenance" as const,
-        target: { type: "asset" as const, assetCode: asset.code },
+        target: { type: "maintenance" as const, assetCode: asset.code },
       };
     }) : [];
     const handoverNotifications = notificationPreferences.handoverEnabled ? (notificationHandoversQuery.data || []).filter((handover) => handover.status !== "returned" && handover.status !== "cancelled" && handover.returnRequestStatus !== "pending").slice(0, 3).map((handover) => {
@@ -1069,7 +1069,7 @@ export default function Home() {
         description: `${asset?.assetCode || `Tài sản #${ticket.assetId}`} · ${ticket.description}`,
         createdAt: ticket.openedAt,
         kind: "maintenance" as const,
-        target: { type: "asset" as const, assetCode: asset?.assetCode || "" },
+        target: { type: "maintenance" as const, ticketId: ticket.id },
       };
     }) : [];
     return [...supplyRequestNotifications, ...warrantyExpiryNotifications, ...returnRequestNotifications, ...maintenanceRequestNotifications, ...maintenanceNotifications, ...handoverNotifications].sort((left, right) => right.createdAt.getTime() - left.createdAt.getTime());
@@ -1108,13 +1108,13 @@ export default function Home() {
       openDetailModal(asset);
       return;
     }
-    if (target.type === "supplyRequest") {
-      sessionStorage.setItem("assetmaster-open-supply-request-id", String(target.requestId));
-      navigateTo("Bàn giao & Cấp phát");
-      return;
-    }
-    sessionStorage.setItem("assetmaster-open-handover-id", String(target.handoverId));
-    navigateTo("Bàn giao & Cấp phát");
+    const destination = getNotificationDestination(target);
+    if (destination.storageEntry)
+      sessionStorage.setItem(
+        destination.storageEntry.key,
+        destination.storageEntry.value
+      );
+    navigateTo(destination.navigationLabel);
   };
   const maintenanceAssetCount = inventoryAssetRows.filter((asset) => asset.statusType === "maintenance").length;
   const dashboardKpis = [
@@ -1456,10 +1456,10 @@ export default function Home() {
                 {hasUnreadNotifications && <span aria-label={`${unreadNotifications.length} thông báo chưa đọc`} className="notification-pulse absolute -right-1 -top-1 grid min-w-4 h-4 place-items-center rounded-full bg-[#F0A516] px-1 text-[9px] font-extrabold leading-none text-[#102A43] ring-2 ring-white">{unreadNotifications.length > 99 ? "99+" : unreadNotifications.length}</span>}
               </button>
               {notificationsOpen && <div className={`absolute right-0 top-[calc(100%+10px)] z-[130] w-[min(320px,calc(100vw-2rem))] overflow-hidden rounded-xl border border-[#DDE7F0] bg-white shadow-[0_18px_42px_rgba(16,42,67,0.18)] ${notificationsClosing ? "popup-surface--closing" : ""}`}>
-                <div className="flex items-center justify-between gap-3 border-b border-[#E7EEF3] px-4 py-3"><div><div className="text-xs font-extrabold text-[#193B57]">Thông báo</div><div className="mt-0.5 text-[10px] text-[#8AA0B6]">{hasUnreadNotifications ? `${unreadNotifications.length} thông báo chưa đọc` : "Tất cả đã được đọc"}</div></div><div className="flex items-center gap-1"><button aria-label="Tùy chọn thông báo" onClick={() => setNotificationSettingsOpen((current) => !current)} className={`grid h-7 w-7 place-items-center rounded-md text-[#527089] transition hover:bg-[#EEF5F8] hover:text-[#193B57] ${notificationSettingsOpen ? "bg-[#EAF3FF] text-[#2666A8]" : ""}`}><Settings2 size={15} /></button><button aria-label="Đánh dấu tất cả đã đọc" disabled={!hasUnreadNotifications} onClick={markAllNotificationsRead} className="grid h-7 w-7 place-items-center rounded-md text-[#087A6A] transition hover:bg-[#E6F6F2] disabled:text-[#9BAEC0]"><CheckCheck size={16} /></button></div></div>
+                <div className="flex items-center justify-between gap-3 border-b border-[#E7EEF3] px-4 py-3"><div><div className="text-xs font-extrabold text-[#193B57]">Thông báo</div><div className="mt-0.5 text-[10px] text-[#8AA0B6]">{hasUnreadNotifications ? `${unreadNotifications.length} thông báo chưa đọc` : "Chưa có thông báo mới"}</div></div><div className="flex items-center gap-1"><button aria-label="Tùy chọn thông báo" onClick={() => setNotificationSettingsOpen((current) => !current)} className={`grid h-7 w-7 place-items-center rounded-md text-[#527089] transition hover:bg-[#EEF5F8] hover:text-[#193B57] ${notificationSettingsOpen ? "bg-[#EAF3FF] text-[#2666A8]" : ""}`}><Settings2 size={15} /></button><button aria-label="Đánh dấu tất cả đã đọc" disabled={!hasUnreadNotifications} onClick={markAllNotificationsRead} className="grid h-7 w-7 place-items-center rounded-md text-[#087A6A] transition hover:bg-[#E6F6F2] disabled:text-[#9BAEC0]"><CheckCheck size={16} /></button></div></div>
                 {notificationSettingsOpen && <div className="border-b border-[#E7EEF3] bg-[#F8FBFC] px-4 py-3"><div className="text-[10px] font-extrabold uppercase tracking-[0.08em] text-[#527089]">Loại thông báo nhận</div><div className="mt-2 space-y-1">{([{ key: "returnRequestEnabled", label: "Yêu cầu hoàn trả" }, { key: "maintenanceEnabled", label: "Bảo trì" }, { key: "handoverEnabled", label: "Bàn giao & cấp phát" }] as Array<{ key: keyof NotificationPreferences; label: string }>).map((option) => <button key={option.key} type="button" role="switch" aria-checked={notificationPreferences[option.key]} disabled={saveNotificationPreferencesMutation.isPending} onClick={() => updateNotificationPreference(option.key)} className="flex w-full items-center justify-between rounded-md px-1 py-1.5 text-left text-[11px] font-semibold text-[#527089] hover:bg-white disabled:cursor-not-allowed"><span>{option.label}</span><span className={`relative h-4 w-7 rounded-full transition ${notificationPreferences[option.key] ? "bg-[#0F8C8C]" : "bg-[#C9D5DF]"}`}><span className={`absolute top-0.5 h-3 w-3 rounded-full bg-white shadow-sm transition-transform ${notificationPreferences[option.key] ? "translate-x-3.5" : "translate-x-0.5"}`} /></span></button>)}</div></div>}
                 <div className="max-h-[360px] overflow-y-auto p-2">
-                  {headerNotifications.length > 0 ? headerNotifications.map((notification) => {
+                  {unreadNotifications.length > 0 ? unreadNotifications.map((notification) => {
                     const isRead = readNotificationIds.includes(notification.id);
                     const Icon = notification.kind === "maintenance" ? Wrench : notification.kind === "return" ? Undo2 : notification.kind === "supplyRequest" ? PackagePlus : PackageCheck;
                     const targetLabel = getNotificationTargetLabel(notification.target);
