@@ -1,5 +1,6 @@
 import {
   CheckCircle2,
+  ChevronDown,
   Clock3,
   History,
   PackagePlus,
@@ -69,6 +70,9 @@ export function EmployeeSupplyRequests() {
   const [reason, setReason] = useState("");
   const [items, setItems] = useState<DraftItem[]>([]);
   const [showHistory, setShowHistory] = useState(true);
+  const [expandedRequestId, setExpandedRequestId] = useState<number | null>(
+    null
+  );
 
   const createRequest = trpc.supplies.createRequest.useMutation({
     onSuccess: result => {
@@ -77,6 +81,7 @@ export function EmployeeSupplyRequests() {
       setReason("");
       setSelectedSupplyId("");
       setQuantity("1");
+      setExpandedRequestId(result.id);
       void utils.supplies.myRequests.invalidate();
       void utils.supplies.requestable.invalidate();
     },
@@ -302,73 +307,104 @@ export function EmployeeSupplyRequests() {
               const presentation =
                 requestStatus[request.status as keyof typeof requestStatus];
               const StatusIcon = presentation.icon;
+              const expanded = expandedRequestId === request.id;
+              const itemSummary = request.items
+                .map(
+                  item =>
+                    `${item.supplyName} × ${numberText(item.requestedQuantity)} ${item.unit}`
+                )
+                .join(" · ");
               return (
                 <article
                   key={request.id}
-                  className="rounded-xl border border-[#E3EDF2] bg-[#FBFDFE] p-4"
+                  className={`overflow-hidden rounded-xl border bg-white transition ${expanded ? "border-[#B8DCD8] shadow-[0_6px_16px_rgba(16,42,67,.05)]" : "border-[#E3EDF2]"}`}
                 >
-                  <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                    <div>
+                  <button
+                    type="button"
+                    aria-expanded={expanded}
+                    aria-controls={`supply-request-history-${request.id}`}
+                    onClick={() =>
+                      setExpandedRequestId(current =>
+                        current === request.id ? null : request.id
+                      )
+                    }
+                    className="grid w-full gap-2 px-3 py-3 text-left transition hover:bg-[#F8FBFC] sm:grid-cols-[minmax(150px,.7fr)_minmax(0,1.3fr)_auto] sm:items-center sm:px-4"
+                  >
+                    <div className="min-w-0">
                       <div className="font-mono text-xs font-extrabold text-[#193B57]">
                         {request.requestCode}
                       </div>
-                      <div className="mt-1 text-[11px] text-[#71869A]">
-                        Gửi lúc{" "}
+                      <div className="mt-0.5 text-[10px] text-[#8AA0B6]">
                         {new Date(request.createdAt).toLocaleString("vi-VN")}
                       </div>
                     </div>
-                    <span
-                      className={`inline-flex w-fit items-center gap-1.5 rounded-full border px-2.5 py-1 text-[10px] font-extrabold ${presentation.className}`}
+                    <div className="min-w-0 text-[11px] text-[#60758A] sm:truncate">
+                      {itemSummary || "Không có phụ kiện"}
+                    </div>
+                    <div className="flex items-center justify-between gap-2 sm:justify-end">
+                      <span
+                        className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[10px] font-extrabold ${presentation.className}`}
+                      >
+                        <StatusIcon size={12} /> {presentation.label}
+                      </span>
+                      <ChevronDown
+                        size={15}
+                        className={`text-[#8AA0B6] transition-transform ${expanded ? "rotate-180" : ""}`}
+                      />
+                    </div>
+                  </button>
+                  {expanded && (
+                    <div
+                      id={`supply-request-history-${request.id}`}
+                      className="border-t border-[#E7EEF3] bg-[#FBFDFE] px-3 py-3 sm:px-4"
                     >
-                      <StatusIcon size={12} /> {presentation.label}
-                    </span>
-                  </div>
-                  <div className="mt-3 grid gap-2 sm:grid-cols-2">
-                    {request.items.map(item => (
-                      <div
-                        key={item.id}
-                        className="rounded-lg border border-[#EDF2F5] bg-white px-3 py-2"
-                      >
-                        <div className="truncate text-xs font-bold text-[#193B57]">
-                          {item.supplyName}
-                        </div>
-                        <div className="mt-1 text-[10px] text-[#71869A]">
-                          {item.supplyCode} ·{" "}
-                          {numberText(item.requestedQuantity)} {item.unit}
-                        </div>
+                      <div className="flex flex-wrap gap-2">
+                        {request.items.map(item => (
+                          <span
+                            key={item.id}
+                            className="rounded-lg border border-[#DFE9F0] bg-white px-2.5 py-1.5 text-[10px] text-[#60758A]"
+                          >
+                            <b className="text-[#193B57]">
+                              {item.supplyName}
+                            </b>{" "}
+                            · {numberText(item.requestedQuantity)} {item.unit}
+                          </span>
+                        ))}
                       </div>
-                    ))}
-                  </div>
-                  <p className="mt-3 text-xs leading-5 text-[#526779]">
-                    <b>Mục đích:</b> {request.reason}
-                  </p>
-                  {request.reviewNote && (
-                    <p className="mt-2 rounded-lg bg-[#F4F7FB] px-3 py-2 text-xs leading-5 text-[#60758A]">
-                      <b>Phản hồi QLTS:</b> {request.reviewNote}
-                    </p>
-                  )}
-                  {request.issueSlipId && (
-                    <p className="mt-2 text-[11px] font-bold text-[#087A6A]">
-                      Đã tạo phiếu cấp phát #{request.issueSlipId}
-                    </p>
-                  )}
-                  {request.status === "pending" && (
-                    <div className="mt-3 flex justify-end">
-                      <button
-                        type="button"
-                        disabled={cancelRequest.isPending}
-                        onClick={() => {
-                          if (
-                            window.confirm(
-                              `Hủy yêu cầu ${request.requestCode}?`
-                            )
-                          )
-                            cancelRequest.mutate({ id: request.id });
-                        }}
-                        className="rounded-lg border border-[#F1CCCC] px-3 py-2 text-[11px] font-extrabold text-[#B44545] hover:bg-[#FFF4F4] disabled:opacity-50"
-                      >
-                        Hủy yêu cầu
-                      </button>
+                      <p className="mt-3 text-xs leading-5 text-[#526779]">
+                        <b>Mục đích:</b> {request.reason}
+                      </p>
+                      {request.reviewNote && (
+                        <p className="mt-2 rounded-lg bg-[#F0F5F8] px-3 py-2 text-xs leading-5 text-[#60758A]">
+                          <b>Phản hồi QLTS:</b> {request.reviewNote}
+                        </p>
+                      )}
+                      <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
+                        {request.issueSlipId ? (
+                          <span className="text-[11px] font-bold text-[#087A6A]">
+                            Đã tạo phiếu cấp phát #{request.issueSlipId}
+                          </span>
+                        ) : (
+                          <span />
+                        )}
+                        {request.status === "pending" && (
+                          <button
+                            type="button"
+                            disabled={cancelRequest.isPending}
+                            onClick={() => {
+                              if (
+                                window.confirm(
+                                  `Hủy yêu cầu ${request.requestCode}?`
+                                )
+                              )
+                                cancelRequest.mutate({ id: request.id });
+                            }}
+                            className="rounded-lg border border-[#F1CCCC] px-3 py-1.5 text-[10px] font-extrabold text-[#B44545] hover:bg-[#FFF4F4] disabled:opacity-50"
+                          >
+                            Hủy yêu cầu
+                          </button>
+                        )}
+                      </div>
                     </div>
                   )}
                 </article>
