@@ -1,8 +1,7 @@
 import { Box, CalendarDays, CheckCircle2, CircleHelp, CircleUserRound, Clock3, History, LogOut, PackageCheck, PackagePlus, RotateCcw, Send, ShieldCheck, X, XCircle } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { trpc } from "@/lib/trpc";
-import { getReturnDecisionNotification } from "@/lib/returnDecisionNotification";
 import { UserHelpDialog } from "./HelpCenter";
 import { EmployeeSupplyRequests } from "@/components/EmployeeSupplyRequests";
 import { EmployeeNotificationBell } from "@/components/EmployeeNotificationBell";
@@ -31,11 +30,9 @@ export function UserDashboard({ user, onLogout, companyInfo }: { user: CurrentUs
   const historyQuery = trpc.employees.myAssetHistory.useQuery(undefined, { refetchInterval: 30_000 });
   const supplyHistoryQuery = trpc.employees.mySupplyHistory.useQuery(undefined, { refetchInterval: 30_000 });
   const companyQuery = trpc.company.get.useQuery();
-  const notificationPreferencesQuery = trpc.notifications.preferences.useQuery();
   const [returnTarget, setReturnTarget] = useState<{ id: number; assetName: string; assetCode: string } | null>(null);
   const [helpOpen, setHelpOpen] = useState(false);
   const [supplyRequestOpen, setSupplyRequestOpen] = useState(false);
-  const lastReturnDecisionKey = useRef<string | null>(null);
   const utils = trpc.useUtils();
   const requestReturn = trpc.handovers.requestReturn.useMutation({
     onSuccess: () => { void utils.employees.myAssetHistory.invalidate(); setReturnTarget(null); toast.success("Đã gửi yêu cầu hoàn trả cho quản trị viên."); },
@@ -45,15 +42,10 @@ export function UserDashboard({ user, onLogout, companyInfo }: { user: CurrentUs
     onSuccess: () => { void utils.employees.myAssetHistory.invalidate(); toast.success("Đã gửi giải trình cho quản trị viên."); },
     onError: (error) => toast.error(error.message || "Không thể gửi giải trình."),
   });
-  const markReturnResultSeen = trpc.handovers.markReturnResultSeen.useMutation({
-    onSuccess: () => { void utils.employees.myAssetHistory.invalidate(); },
-    onError: (error) => toast.error(error.message || "Không thể xác nhận thông báo đã xem."),
-  });
   const history = historyQuery.data || [];
   const supplyHistory = supplyHistoryQuery.data || [];
   const activeAssets = history.filter((item) => item.status === "active");
   const returnedAssets = history.filter((item) => item.status === "returned");
-  const latestResolvedReturn = history.filter((item) => (item.returnRequestStatus === "approved" || item.returnRequestStatus === "rejected") && item.returnRequestResolvedAt && !item.returnResultSeenAt).sort((left, right) => new Date(right.returnRequestResolvedAt!).getTime() - new Date(left.returnRequestResolvedAt!).getTime())[0];
   const rejectedReturns = history.filter((item) => item.returnRequestStatus === "rejected");
   const initials = (user.name || user.email || "AM").split(" ").filter(Boolean).slice(-2).map((part) => part[0]).join("").toUpperCase();
   const signedInAt = user.lastSignedIn ? new Date(user.lastSignedIn).toLocaleString("vi-VN") : "Chưa cập nhật";
@@ -86,49 +78,6 @@ export function UserDashboard({ user, onLogout, companyInfo }: { user: CurrentUs
     if (title) { title.textContent = activeCompanyInfo.websiteTitle || "AssetMaster"; title.title = activeCompanyInfo.websiteTitle || "AssetMaster"; }
     if (subtitle) { subtitle.textContent = activeCompanyInfo.name || "Cổng nhân viên"; subtitle.title = activeCompanyInfo.name || "Cổng nhân viên"; }
   });
-
-  useEffect(() => {
-    document.getElementById("assetmaster-return-decision-notice")?.remove();
-    if (notificationPreferencesQuery.data?.returnRequestEnabled === false || !latestResolvedReturn?.returnRequestResolvedAt) return;
-    const resolvedAt = new Date(latestResolvedReturn.returnRequestResolvedAt).getTime();
-    if (Number.isNaN(resolvedAt) || Date.now() - resolvedAt > 7 * 24 * 60 * 60 * 1000) return;
-    const decision = latestResolvedReturn.returnRequestStatus === "approved" ? "approved" : "rejected";
-    const decisionNotification = getReturnDecisionNotification(decision, latestResolvedReturn.assetName);
-    const decisionKey = `${latestResolvedReturn.id}-${decision}-${resolvedAt}`;
-    if (lastReturnDecisionKey.current !== decisionKey) {
-      if (decisionNotification.tone === "success") toast.success(decisionNotification.title, { description: `${decisionNotification.description} Cập nhật lúc ${new Date(resolvedAt).toLocaleString("vi-VN")}.` });
-      else toast.error(decisionNotification.title, { description: `${decisionNotification.description} Cập nhật lúc ${new Date(resolvedAt).toLocaleString("vi-VN")}.` });
-      lastReturnDecisionKey.current = decisionKey;
-    }
-    const content = document.querySelector("main > div");
-    if (!content) return;
-    const approved = decision === "approved";
-    const notice = document.createElement("aside");
-    notice.id = "assetmaster-return-decision-notice";
-    notice.className = `mb-5 flex items-start gap-3 rounded-xl border p-4 shadow-[0_8px_24px_rgba(16,42,67,.05)] ${approved ? "border-[#B8E9DD] bg-[#ECF8F7]" : "border-[#F2B7B7] bg-[#FDEDEE]"}`;
-    const icon = document.createElement("div");
-    icon.className = `grid h-9 w-9 shrink-0 place-items-center rounded-lg text-sm font-extrabold ${approved ? "bg-white text-[#087A6A]" : "bg-white text-[#B44545]"}`;
-    icon.textContent = approved ? "✓" : "!";
-    const copy = document.createElement("div");
-    const title = document.createElement("div");
-    title.className = approved ? "text-sm font-extrabold text-[#087A6A]" : "text-sm font-extrabold text-[#B44545]";
-    title.textContent = decisionNotification.title;
-    const detail = document.createElement("p");
-    detail.className = "mt-1 text-xs leading-5 text-[#60758A]";
-    detail.textContent = `${decisionNotification.description} Cập nhật lúc ${new Date(resolvedAt).toLocaleString("vi-VN")}. Xem chi tiết trong tài sản đang giữ hoặc Lịch sử hoàn trả.`;
-    const actions = document.createElement("div");
-    actions.className = "mt-3";
-    const seenButton = document.createElement("button");
-    seenButton.type = "button";
-    seenButton.className = approved ? "rounded-md border border-[#9DDACF] bg-white px-3 py-1.5 text-[11px] font-extrabold text-[#087A6A] hover:bg-[#F7FFFD]" : "rounded-md border border-[#F0B6B6] bg-white px-3 py-1.5 text-[11px] font-extrabold text-[#B44545] hover:bg-[#FFF8F8]";
-    seenButton.textContent = "Đã xem";
-    seenButton.onclick = () => markReturnResultSeen.mutate({ id: latestResolvedReturn.id });
-    actions.appendChild(seenButton);
-    copy.append(title, detail, actions);
-    notice.append(icon, copy);
-    content.prepend(notice);
-    return () => notice.remove();
-  }, [latestResolvedReturn?.id, latestResolvedReturn?.returnRequestStatus, latestResolvedReturn?.returnRequestResolvedAt, latestResolvedReturn?.assetName, notificationPreferencesQuery.data?.returnRequestEnabled, markReturnResultSeen]);
 
   useEffect(() => {
     document.getElementById("assetmaster-return-follow-up")?.remove();
