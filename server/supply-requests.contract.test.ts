@@ -60,8 +60,19 @@ describe("employee supply request workflow", () => {
     expect(fulfill).toContain("runInventoryTransaction");
     expect(fulfill).toContain('"pending"');
     expect(fulfill).toContain('status: "approved"');
+    const database = await source("server/db.ts");
+
     expect(fulfill).toContain("getInventorySupplyById");
-    expect(fulfill).toContain("if (after < 0)");
+    expect(fulfill).toContain("decrementInventorySupplyStock");
+    expect(database).toContain(
+      "export async function decrementInventorySupplyStock"
+    );
+    expect(database).toContain(
+      "stockQuantity: sql\`\${inventorySupplies.stockQuantity} - \${amount}\`"
+    );
+    expect(database).toContain(
+      "sql\`\${inventorySupplies.stockQuantity} >= \${amount}\`"
+    );
     expect(fulfill).toContain("createSupplyIssueSlip");
     expect(fulfill).toContain("createInventoryMovement");
     expect(fulfill).toContain('status: "fulfilled"');
