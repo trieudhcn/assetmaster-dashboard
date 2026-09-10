@@ -279,6 +279,7 @@ import {
   updateSupplyImportSession,
   updateSupplyIssueSlip,
   updateSupplyIssueSlipItem,
+  updateSupplyRequestItem,
   transitionSupplyRequestStatus,
   updateSupplyUnit,
   updateMaintenanceTicket,
@@ -5796,10 +5797,45 @@ export const appRouter = router({
       ),
     fulfillRequest: adminProcedure
       .input(
-        z.object({
-          id: z.number().int().positive(),
-          reviewNote: nullableText,
-        })
+        z
+          .object({
+            id: z.number().int().positive(),
+            reviewNote: nullableText,
+            items: z
+              .array(
+                z.object({
+                  requestItemId: z.number().int().positive(),
+                  approvedQuantity: z
+                    .number()
+                    .finite()
+                    .min(0)
+                    .max(1_000_000)
+                    .refine(
+                      value => Number.isInteger(value * 100),
+                      "Số lượng thực cấp tối đa 2 chữ số thập phân."
+                    ),
+                })
+              )
+              .min(1)
+              .max(20),
+          })
+          .superRefine((input, issue) => {
+            if (
+              new Set(input.items.map(item => item.requestItemId)).size !==
+              input.items.length
+            )
+              issue.addIssue({
+                code: z.ZodIssueCode.custom,
+                path: ["items"],
+                message: "Mỗi dòng yêu cầu chỉ được duyệt một lần.",
+              });
+            if (!input.items.some(item => item.approvedQuantity > 0))
+              issue.addIssue({
+                code: z.ZodIssueCode.custom,
+                path: ["items"],
+                message: "Cần cấp ít nhất một phụ kiện. Nếu không cấp, hãy từ chối yêu cầu.",
+              });
+          })
       )
       .mutation(async ({ input, ctx }) => {
         const issueYear = new Date().getFullYear();
@@ -5824,6 +5860,41 @@ export const appRouter = router({
                   code: "BAD_REQUEST",
                   message: "Yêu cầu không có phụ kiện để cấp phát.",
                 });
+              const approvedByItemId = new Map(
+                input.items.map(item => [
+                  item.requestItemId,
+                  item.approvedQuantity,
+                ])
+              );
+              if (
+                approvedByItemId.size !== requestItems.length ||
+                requestItems.some(item => !approvedByItemId.has(item.id))
+              )
+                throw new TRPCError({
+                  code: "BAD_REQUEST",
+                  message: "Danh sách số lượng duyệt không khớp với yêu cầu.",
+                });
+              const isPartial = requestItems.some(item => {
+                const approvedQuantity = approvedByItemId.get(item.id) ?? 0;
+                return approvedQuantity < Number(item.requestedQuantity);
+              });
+              for (const requestItem of requestItems) {
+                const approvedQuantity =
+                  approvedByItemId.get(requestItem.id) ?? 0;
+                if (
+                  approvedQuantity > Number(requestItem.requestedQuantity)
+                )
+                  throw new TRPCError({
+                    code: "BAD_REQUEST",
+                    message: `Số lượng duyệt của ${requestItem.supplyName} không được vượt quá số lượng yêu cầu.`,
+                  });
+                requireWholeQuantity(
+                  requestItem.unit,
+                  approvedQuantity,
+                  "Số lượng thực cấp"
+                );
+              }
+
               const reviewedAt = new Date();
               const claimed = await transitionSupplyRequestStatus(
                 request.id,
@@ -5864,6 +5935,13 @@ export const appRouter = router({
               );
 
               for (const requestItem of requestItems) {
+                const quantity = approvedByItemId.get(requestItem.id) ?? 0;
+                await updateSupplyRequestItem(
+                  requestItem.id,
+                  { approvedQuantity: String(quantity) },
+                  transaction
+                );
+                if (quantity === 0) continue;
                 const supply = await getInventorySupplyById(
                   requestItem.supplyId,
                   transaction
@@ -5873,11 +5951,10 @@ export const appRouter = router({
                     code: "NOT_FOUND",
                     message: `${requestItem.supplyName} không còn hoạt động.`,
                   });
-                const quantity = Number(requestItem.requestedQuantity);
                 requireWholeQuantity(
                   supply.unit,
                   quantity,
-                  "Số lượng cấp phát"
+                  "Số lượng thực cấp"
                 );
                 const deducted = await decrementInventorySupplyStock(
                   supply.id,
@@ -5937,11 +6014,14 @@ export const appRouter = router({
                   transaction
                 );
               }
+              const finalStatus = isPartial
+                ? "partially_fulfilled"
+                : "fulfilled";
               const fulfilled = await transitionSupplyRequestStatus(
                 request.id,
                 "approved",
                 {
-                  status: "fulfilled",
+                  status: finalStatus,
                   issueSlipId,
                   fulfilledAt: new Date(),
                 },
@@ -5956,10 +6036,10 @@ export const appRouter = router({
                 {
                   entityType: "supply_request",
                   entityId: request.id,
-                  action: "fulfilled",
+                  action: finalStatus,
                   actorUserId: ctx.user!.id,
                   actorName: ctx.user!.name,
-                  summary: `Duyệt ${request.requestCode} và tạo phiếu ${referenceCode}`,
+                  summary: `${isPartial ? "Cấp một phần" : "Duyệt"} ${request.requestCode} và tạo phiếu ${referenceCode}`,
                 },
                 transaction
               );
@@ -5978,6 +6058,7 @@ export const appRouter = router({
                 id: issueSlipId,
                 referenceCode,
                 requestCode: request.requestCode,
+                status: finalStatus,
               };
             });
           } catch (error) {
