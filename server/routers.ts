@@ -311,6 +311,7 @@ import {
   updateAuditSession,
   transitionHandoverStatus,
   deleteSupplyUnit,
+  decrementInventorySupplyStock,
 } from "./db";
 import {
   credentialFingerprint,
@@ -5878,18 +5879,32 @@ export const appRouter = router({
                   quantity,
                   "Số lượng cấp phát"
                 );
-                const before = Number(supply.stockQuantity);
-                const after = before - quantity;
-                if (after < 0)
-                  throw new TRPCError({
-                    code: "BAD_REQUEST",
-                    message: `Tồn kho ${supply.name} không đủ. Hiện còn ${before} ${supply.unit}.`,
-                  });
-                await updateInventorySupply(
+                const deducted = await decrementInventorySupplyStock(
                   supply.id,
-                  { stockQuantity: String(after) },
+                  quantity,
                   transaction
                 );
+                if (!deducted) {
+                  const currentSupply = await getInventorySupplyById(
+                    supply.id,
+                    transaction
+                  );
+                  throw new TRPCError({
+                    code: "BAD_REQUEST",
+                    message: `Tồn kho ${supply.name} không đủ. Hiện còn ${Number(currentSupply?.stockQuantity ?? 0)} ${supply.unit}.`,
+                  });
+                }
+                const updatedSupply = await getInventorySupplyById(
+                  supply.id,
+                  transaction
+                );
+                if (!updatedSupply)
+                  throw new TRPCError({
+                    code: "NOT_FOUND",
+                    message: `${supply.name} không còn trong kho.`,
+                  });
+                const after = Number(updatedSupply.stockQuantity);
+                const before = after + quantity;
                 const issueSlipItemId = await createSupplyIssueSlipItem(
                   {
                     issueSlipId,
