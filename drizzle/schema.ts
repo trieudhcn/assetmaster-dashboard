@@ -1518,6 +1518,7 @@ export const supplyRequests = mysqlTable(
       "approved",
       "rejected",
       "fulfilled",
+      "partially_fulfilled",
       "cancelled",
     ])
       .default("pending")
@@ -1571,6 +1572,10 @@ export const supplyRequestItems = mysqlTable(
       precision: 15,
       scale: 2,
     }).notNull(),
+    approvedQuantity: decimal("approvedQuantity", {
+      precision: 15,
+      scale: 2,
+    }),
     createdAt: timestamp("createdAt").defaultNow().notNull(),
   },
   table => [
