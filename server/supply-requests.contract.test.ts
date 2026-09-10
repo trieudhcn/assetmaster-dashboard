@@ -10,21 +10,30 @@ async function source(filePath: string) {
 
 describe("employee supply request workflow", () => {
   it("persists request headers, items, status history and issue-slip linkage", async () => {
-    const [schema, migration, journal] = await Promise.all([
-      source("drizzle/schema.ts"),
-      source("drizzle/0063_supply_requests.sql"),
-      source("drizzle/meta/_journal.json"),
-    ]);
+    const [schema, migration, partialMigration, journal] =
+      await Promise.all([
+        source("drizzle/schema.ts"),
+        source("drizzle/0063_supply_requests.sql"),
+        source("drizzle/0064_partial_supply_request_fulfillment.sql"),
+        source("drizzle/meta/_journal.json"),
+      ]);
 
     expect(schema).toContain("export const supplyRequests = mysqlTable(");
     expect(schema).toContain("export const supplyRequestItems = mysqlTable(");
     expect(schema).toContain('"pending"');
     expect(schema).toContain('"fulfilled"');
+    expect(schema).toContain('"partially_fulfilled"');
+    expect(schema).toContain("approvedQuantity");
     expect(schema).toContain("issueSlipId");
     expect(migration).toContain("CREATE TABLE `supplyRequests`");
     expect(migration).toContain("CREATE TABLE `supplyRequestItems`");
     expect(migration).toContain("supply_requests_issue_slip_unique");
+    expect(partialMigration).toContain("partially_fulfilled");
+    expect(partialMigration).toContain("approvedQuantity");
     expect(journal).toContain('"tag": "0063_supply_requests"');
+    expect(journal).toContain(
+      '"tag": "0064_partial_supply_request_fulfillment"'
+    );
   });
 
   it("separates employee and administrator permissions", async () => {
@@ -75,7 +84,9 @@ describe("employee supply request workflow", () => {
     );
     expect(fulfill).toContain("createSupplyIssueSlip");
     expect(fulfill).toContain("createInventoryMovement");
-    expect(fulfill).toContain('status: "fulfilled"');
+    expect(fulfill).toContain('"partially_fulfilled"');
+    expect(fulfill).toContain("approvedQuantity");
+    expect(fulfill).toContain("updateSupplyRequestItem");
     expect(fulfill).toContain("issueSlipId");
   });
 
@@ -97,6 +108,9 @@ describe("employee supply request workflow", () => {
     expect(queue).toContain("trpc.supplies.rejectRequest");
     expect(queue).toContain("<AlertDialog");
     expect(queue).toContain("Xác nhận duyệt & tạo phiếu");
+    expect(queue).toContain("Số lượng thực cấp");
+    expect(queue).toContain("Xác nhận cấp một phần");
+    expect(portal).toContain("Thực cấp");
     expect(queue).not.toContain("window.confirm");
     expect(dashboard).toContain(
       "const [supplyRequestOpen, setSupplyRequestOpen] = useState(false)"
@@ -111,6 +125,6 @@ describe("employee supply request workflow", () => {
     expect(home).toContain('kind: "supplyRequest" as const');
     expect(home).toContain("assetmaster-open-supply-request-id");
     expect(queue).toContain("data-supply-request-id");
-        expect(manager).toContain("<SupplyRequestQueue />");
+    expect(manager).toContain("<SupplyRequestQueue />");
   });
 });
