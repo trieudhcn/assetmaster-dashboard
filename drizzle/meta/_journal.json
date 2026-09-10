@@ -449,6 +449,13 @@
       "when": 1789031410000,
       "tag": "0063_supply_requests",
       "breakpoints": true
+    },
+    {
+      "idx": 64,
+      "version": "5",
+      "when": 1789035000000,
+      "tag": "0064_partial_supply_request_fulfillment",
+      "breakpoints": true
     }
   ]
 }
