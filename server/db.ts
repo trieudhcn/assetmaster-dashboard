@@ -1721,6 +1721,19 @@ export async function createSupplyRequestItem(
   return Number(result[0].insertId);
 }
 
+export async function updateSupplyRequestItem(
+  id: number,
+  data: Partial<typeof supplyRequestItems.$inferInsert>,
+  executor?: any
+) {
+  const db = executor ?? (await getDb());
+  if (!db) throw new Error("Database unavailable");
+  await db
+    .update(supplyRequestItems)
+    .set(data)
+    .where(eq(supplyRequestItems.id, id));
+}
+
 export async function getSupplyRequestById(id: number, executor?: any) {
   const db = executor ?? (await getDb());
   if (!db) return undefined;
@@ -1790,6 +1803,7 @@ export async function transitionSupplyRequestStatus(
     | "approved"
     | "rejected"
     | "fulfilled"
+    | "partially_fulfilled"
     | "cancelled",
   data: Partial<typeof supplyRequests.$inferInsert>,
   executor?: any
