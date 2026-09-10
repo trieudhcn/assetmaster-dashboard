@@ -5851,10 +5851,16 @@ export const appRouter = router({
                   code: "NOT_FOUND",
                   message: "Không tìm thấy yêu cầu cấp phụ kiện.",
                 });
-              const requestItems = await listSupplyRequestItems(
+              const requestItems = (await listSupplyRequestItems(
                 request.id,
                 transaction
-              );
+              )) as Array<{
+                id: number;
+                supplyId: number;
+                supplyName: string;
+                unit: string;
+                requestedQuantity: string;
+              }>;
               if (!requestItems.length)
                 throw new TRPCError({
                   code: "BAD_REQUEST",
