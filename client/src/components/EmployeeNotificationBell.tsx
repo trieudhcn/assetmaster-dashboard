@@ -75,7 +75,7 @@ export function EmployeeNotificationBell({
     const assetNotifications = (historyQuery.data || []).flatMap(item => {
       const events: EmployeeNotification[] = [];
       if (item.status === "active") {
-        const createdAt = asDate(item.handedOverAt || item.updatedAt);
+        const createdAt = asDate(item.handedOverAt);
         if (createdAt && createdAt.getTime() >= cutoff)
           events.push({
             id: `employee-handover-${item.id}-active-${createdAt.getTime()}`,
@@ -87,7 +87,7 @@ export function EmployeeNotificationBell({
           });
       }
       if (item.status === "returned") {
-        const createdAt = asDate(item.returnedAt || item.updatedAt);
+        const createdAt = asDate(item.returnedAt || item.handedOverAt);
         if (createdAt && createdAt.getTime() >= cutoff)
           events.push({
             id: `employee-handover-${item.id}-returned-${createdAt.getTime()}`,
