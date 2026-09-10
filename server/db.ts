@@ -1619,6 +1619,29 @@ export async function updateInventorySupply(id: number, data: Partial<typeof inv
   await db.update(inventorySupplies).set(data).where(eq(inventorySupplies.id, id));
 }
 
+export async function decrementInventorySupplyStock(
+  id: number,
+  quantity: number,
+  executor?: any
+) {
+  const db = executor ?? (await getDb());
+  if (!db) throw new Error("Database unavailable");
+  const amount = String(quantity);
+  const result = await db
+    .update(inventorySupplies)
+    .set({
+      stockQuantity: sql`${inventorySupplies.stockQuantity} - ${amount}`,
+    })
+    .where(
+      and(
+        eq(inventorySupplies.id, id),
+        eq(inventorySupplies.isActive, true),
+        sql`${inventorySupplies.stockQuantity} >= ${amount}`
+      )
+    );
+  return Number(result[0].affectedRows) > 0;
+}
+
 export async function createInventoryMovement(data: typeof inventoryMovements.$inferInsert, executor?: any) {
   const db = executor ?? await getDb();
   if (!db) throw new Error("Database unavailable");
