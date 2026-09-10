@@ -17,7 +17,7 @@ const validSettings = {
   departmentAttribute: "department",
   jobTitleAttribute: "title",
   bindDn: "CN=svc-assetmaster,OU=Service Accounts,DC=congty,DC=local",
-  bindSecretRef: "/run/secrets/assetmaster_ldap_bind_password",
+  bindSecretRef: "/run/secrets/ldap_bind_password",
 };
 
 afterEach(() => {
@@ -31,7 +31,7 @@ describe("self-hosted directory authentication safeguards", () => {
       validateDirectorySettings({
         ...validSettings,
         bindSecretRef:
-          "/etc/assetmaster/secrets/assetmaster_ldap_bind_password",
+          "/etc/assetmaster/secrets/ldap_bind_password",
       })
     ).toBeNull();
     expect(

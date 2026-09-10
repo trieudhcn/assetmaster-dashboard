@@ -7,6 +7,7 @@ import { matchesVietnameseSearch } from "@/lib/catalogUi";
 export type SearchableSelectOption = { value: string; label: string; searchText?: string };
 
 const normalizeForSearch = (value: string) => value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+const MAX_VISIBLE_OPTIONS = 120;
 
 function HighlightedLabel({ text, query }: { text: string; query: string }) {
   const normalizedQuery = normalizeForSearch(query.trim());
@@ -47,11 +48,13 @@ export function SearchableSelect({ value, onChange, options, placeholder = "Ch�
   const [portalContainer, setPortalContainer] = useState<HTMLElement | null>(null);
   const closeTimerRef = useRef<number | null>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
-  const isAssetStatusOptions = options.some((option) => option.value === "returned") && options.some((option) => option.value === "maintenance") && options.some((option) => option.value === "active");
-  const displayOptions = isAssetStatusOptions && !options.some((option) => option.value === "retired") ? [...options, { value: "retired", label: "Khấu hao/Thanh lý" }] : options;
-  const presentedOptions = displayOptions.map((option) => option.value === "maintenance" && option.label === "Bảo trì" ? { ...option, label: "Bảo hành/Sửa chữa", searchText: `${option.searchText || ""} Bảo trì Bảo hành Sửa chữa` } : option);
-  const selected = presentedOptions.find((option) => option.value === value);
-  const filteredOptions = useMemo(() => presentedOptions.filter((option) => matchesVietnameseSearch(`${option.label} ${option.searchText || ""}`, query)), [presentedOptions, query]);
+  const presentedOptions = useMemo(() => {
+    const isAssetStatusOptions = options.some((option) => option.value === "returned") && options.some((option) => option.value === "maintenance") && options.some((option) => option.value === "active");
+    const displayOptions = isAssetStatusOptions && !options.some((option) => option.value === "retired") ? [...options, { value: "retired", label: "Khấu hao/Thanh lý" }] : options;
+    return displayOptions.map((option) => option.value === "maintenance" && option.label === "Bảo trì" ? { ...option, label: "Bảo hành/Sửa chữa", searchText: `${option.searchText || ""} Bảo trì Bảo hành Sửa chữa` } : option);
+  }, [options]);
+  const selected = useMemo(() => presentedOptions.find((option) => option.value === value), [presentedOptions, value]);
+  const filteredOptions = useMemo(() => presentedOptions.filter((option) => matchesVietnameseSearch(`${option.label} ${option.searchText || ""}`, query)).slice(0, MAX_VISIBLE_OPTIONS), [presentedOptions, query]);
 
   const closeMenu = () => {
     setOpen(false);
@@ -83,12 +86,16 @@ export function SearchableSelect({ value, onChange, options, placeholder = "Ch�
       const rect = rootRef.current?.getBoundingClientRect();
       if (!rect) return;
       const width = Math.min(280, Math.max(240, rect.width));
+      const viewportWidth = Math.max(180, window.innerWidth - 16);
+      const boundedWidth = Math.min(width, viewportWidth);
       const estimatedMenuHeight = 340;
-      const alignRight = rect.right + width > window.innerWidth - 12;
+      const alignRight = rect.right + boundedWidth > window.innerWidth - 12;
       const openUpward = rect.bottom + 6 + estimatedMenuHeight > window.innerHeight - 8 && rect.top > estimatedMenuHeight;
+      const rawLeft = alignRight ? rect.right - boundedWidth : rect.left;
+      const left = Math.min(Math.max(8, rawLeft), Math.max(8, window.innerWidth - boundedWidth - 8));
       setMenuAlign(alignRight ? "right" : "left");
       setMenuPlacement(openUpward ? "top" : "bottom");
-      setMenuPosition({ top: openUpward ? rect.top - 6 : rect.bottom + 6, left: Math.max(8, alignRight ? rect.right - width : rect.left), width });
+      setMenuPosition({ top: openUpward ? rect.top - 6 : rect.bottom + 6, left, width: boundedWidth });
       setMenuReady(true);
     };
     requestAnimationFrame(() => { measureMenu(); searchInputRef.current?.focus(); });
@@ -121,6 +128,7 @@ export function SearchableSelect({ value, onChange, options, placeholder = "Ch�
         <span className="min-w-0 truncate"><HighlightedLabel text={option.label} query={query} /></span>
         {option.value === value && <Check size={15} className="shrink-0 text-[#0F8C8C]" />}
       </button>)}
+      {filteredOptions.length === MAX_VISIBLE_OPTIONS && <div className="px-3 py-1 text-[10px] font-semibold text-[#8AA0B6]">Hiển thị {MAX_VISIBLE_OPTIONS} kết quả đầu tiên · nhập thêm từ khóa để lọc</div>}
       {filteredOptions.length === 0 && <div className="px-3 py-5 text-center text-xs font-semibold text-[#8AA0B6]"><div>{emptyText}</div>{onEmptyAction && <button type="button" onClick={() => onEmptyAction(query.trim())} className="mt-3 inline-flex items-center gap-1.5 rounded-lg border border-dashed border-[#8BCDC6] bg-[#F4FBFA] px-3 py-2 text-[11px] font-extrabold text-[#087A6A] transition hover:bg-[#ECF8F7]"><Plus size={13} />{emptyActionLabel || "Tạo mới"}</button>}</div>}
     </div>
   </div> : null;

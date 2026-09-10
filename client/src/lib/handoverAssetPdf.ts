@@ -1,18 +1,11 @@
 import { jsPDF } from "jspdf";
 import { applyPdfLogoWatermark, createPdfLogoWatermark, openPdfPreview } from "@/lib/pdfExport";
-import { drawPdfCorporateFooter, drawPdfCorporateHeader, handoverPdfFontUrl, registerVietnamesePdfFont } from "@/lib/handoverPdf";
+import { drawPdfCorporateFooter, drawPdfCorporateHeader, handoverPdfFontUrl, loadPdfImageData, registerVietnamesePdfFont } from "@/lib/handoverPdf";
 import { formatQuantity } from "@shared/quantity";
 
 export type HandoverPdfCompany = { name?: string | null; address?: string | null; taxCode?: string | null; phone?: string | null;
   email?: string | null; websiteUrl?: string | null; hideWebsiteOnInternalPdf?: boolean | null; logoUrl?: string | null };
 export type HandoverPdfInput = { referenceCode: string; assetCode: string; assetName: string; branchName?: string | null; recipientName: string; recipientDepartmentName?: string | null; handoverByName?: string | null; handedOverAt: Date; conditionOut?: string | null; accessories?: string | null; note?: string | null; status?: string | null; supplyItems: Array<{ supplyCode: string; supplyName: string; unit: string; issuedQuantity: string; returnedQuantity?: string | null }> };
-
-async function loadImageData(url: string) {
-  const response = await fetch(url);
-  if (!response.ok) throw new Error("Không thể tải ảnh dùng cho biên bản.");
-  const blob = await response.blob();
-  return new Promise<string>((resolve, reject) => { const reader = new FileReader(); reader.onloadend = () => resolve(String(reader.result)); reader.onerror = reject; reader.readAsDataURL(blob); });
-}
 
 function drawBrandMark(doc: jsPDF, x: number, y: number, logoDataUrl?: string) {
   if (logoDataUrl) { try { doc.addImage(logoDataUrl, "PNG", x, y - 12, 18, 18, undefined, "FAST"); return; } catch { /* Use brand fallback. */ } }
@@ -24,7 +17,7 @@ export async function openHandoverAssetPdf(input: HandoverPdfInput, company: Han
   const fontResponse = await fetch(handoverPdfFontUrl);
   if (!fontResponse.ok) throw new Error("Không thể tải phông chữ tiếng Việt cho biên bản.");
   registerVietnamesePdfFont(doc, await fontResponse.arrayBuffer());
-  const logoDataUrl = company.logoUrl ? await loadImageData(company.logoUrl).catch(() => undefined) : undefined;
+  const logoDataUrl = company.logoUrl ? await loadPdfImageData(company.logoUrl).catch(() => undefined) : undefined;
   const left = 18;
   const header = drawPdfCorporateHeader(doc, company, { logoDataUrl, left, right: 192 });
   let y = header.contentY + 4;

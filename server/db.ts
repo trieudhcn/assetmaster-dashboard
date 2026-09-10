@@ -1,4 +1,4 @@
-import { and, asc, count, desc, eq, inArray, like, sql } from "drizzle-orm";
+import { and, asc, count, desc, eq, inArray, isNull, like, sql } from "drizzle-orm";
 import { createHash } from "node:crypto";
 import { drizzle } from "drizzle-orm/mysql2";
 import {
@@ -1713,9 +1713,26 @@ export async function listSupplyIssueHistoryByRecipientUserId(recipientUserId: n
     issuedQuantity: handoverSupplyItems.issuedQuantity,
     returnedQuantity: handoverSupplyItems.returnedQuantity,
   }).from(handoverSupplyItems).innerJoin(handovers, eq(handoverSupplyItems.handoverId, handovers.id)).where(and(eq(handovers.recipientUserId, recipientUserId), inArray(handovers.status, ["active", "returned"]))).orderBy(desc(handovers.handedOverAt), desc(handoverSupplyItems.id));
+  const directMovementRows = await db.select({
+    issueSlipId: inventoryMovements.id,
+    recipientUserId: inventoryMovements.recipientUserId,
+    referenceCode: sql<string>`concat('XK-', ${inventoryMovements.id})`,
+    recipientName: sql<string>`coalesce(${inventoryMovements.recipientName}, '')`,
+    issuedByName: inventoryMovements.createdByName,
+    status: sql<string>`'active'`,
+    issuedAt: inventoryMovements.createdAt,
+    returnedAt: sql<Date | null>`null`,
+    note: inventoryMovements.note,
+    supplyCode: inventorySupplies.code,
+    supplyName: inventorySupplies.name,
+    unit: inventorySupplies.unit,
+    issuedQuantity: sql<string>`abs(${inventoryMovements.quantity})`,
+    returnedQuantity: sql<string>`0`,
+  }).from(inventoryMovements).innerJoin(inventorySupplies, eq(inventoryMovements.supplyId, inventorySupplies.id)).where(and(eq(inventoryMovements.movementType, "issue"), eq(inventoryMovements.recipientUserId, recipientUserId), isNull(inventoryMovements.issueSlipId), isNull(inventoryMovements.handoverId))).orderBy(desc(inventoryMovements.createdAt));
   return [
     ...issueSlipRows.map((row) => ({ ...row, source: "issue-slip" as const })),
     ...handoverRows.map((row) => ({ ...row, source: "handover" as const })),
+    ...directMovementRows.map((row) => ({ ...row, source: "issue-slip" as const })),
   ].sort((left, right) => new Date(right.issuedAt).getTime() - new Date(left.issuedAt).getTime());
 }
 

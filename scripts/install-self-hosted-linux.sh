@@ -37,7 +37,7 @@ Options:
   --letsencrypt-email MAIL Email for Let’s Encrypt expiry notices; enables issuance.
   --ldap-bind-password-file PATH
                            Optional regular file containing the LDAPS bind password. It is copied
-                           as /etc/assetmaster/secrets/assetmaster_ldap_bind_password (root:assetmaster, 0640).
+                           as /etc/assetmaster/secrets/ldap_bind_password (root:assetmaster, 0640).
   --no-letsencrypt         Keep Nginx HTTP-only so an internal PKI certificate can be installed later.
   --help                   Show this help text.
 

@@ -8,7 +8,7 @@ describe("asset catalog invoice code", () => {
   it("maps invoice keys and filters assets by the visual invoice code", () => {
     expect(home).toContain("invoiceKeyById");
     expect(home).toContain("invoiceFilterOptions");
-    expect(home).toContain('const [invoiceFilter, setInvoiceFilter] = useState("Tất cả Hóa đơn")');
+    expect(home).toContain('usePersistedState("assetmaster.filters.assets.invoice", "Tất cả Hóa đơn")');
     expect(home).toContain('matchesVietnameseSearch(asset.invoiceKey || "", invoiceFilter)');
     expect(home).toContain('setInvoiceFilter("Tất cả Hóa đơn")');
   });
