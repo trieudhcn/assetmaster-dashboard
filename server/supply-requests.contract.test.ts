@@ -91,14 +91,22 @@ describe("employee supply request workflow", () => {
   });
 
   it("shows creation and history in the employee portal and approval in QLTS", async () => {
-    const [portal, queue, dashboard, manager, home, notificationLinks] =
-      await Promise.all([
+    const [
+      portal,
+      queue,
+      dashboard,
+      manager,
+      home,
+      notificationLinks,
+      employeeBell,
+    ] = await Promise.all([
         source("client/src/components/EmployeeSupplyRequests.tsx"),
         source("client/src/components/SupplyRequestQueue.tsx"),
         source("client/src/pages/UserDashboard.tsx"),
         source("client/src/components/SupplyIssueSlipManager.tsx"),
         source("client/src/pages/Home.tsx"),
         source("client/src/lib/notificationLinks.ts"),
+        source("client/src/components/EmployeeNotificationBell.tsx"),
       ]);
 
     expect(portal).toContain("Đề nghị cấp phụ kiện từ kho");
@@ -123,6 +131,16 @@ describe("employee supply request workflow", () => {
     );
     expect(portal).toContain("expandedRequestId");
     expect(portal).toContain("aria-expanded={expanded}");
+    expect(portal).toContain(
+      "assetmaster-open-employee-supply-request-id"
+    );
+    expect(portal).toContain("data-employee-supply-request-id");
+    expect(dashboard).toContain("<EmployeeNotificationBell");
+    expect(employeeBell).toContain("trpc.employees.myAssetHistory");
+    expect(employeeBell).toContain("trpc.supplies.myRequests");
+    expect(employeeBell).toContain('"partially_fulfilled"');
+    expect(employeeBell).toContain('"Chưa có thông báo mới"');
+    expect(employeeBell).toContain("unread.map(notification");
     expect(home).toContain("supplyRequestNotificationsQuery");
     expect(home).toContain('kind: "supplyRequest" as const');
     expect(notificationLinks).toContain(
