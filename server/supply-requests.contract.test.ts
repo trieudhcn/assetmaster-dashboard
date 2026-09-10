@@ -94,7 +94,16 @@ describe("employee supply request workflow", () => {
     expect(queue).toContain("Duyệt & tạo phiếu");
     expect(queue).toContain("trpc.supplies.fulfillRequest");
     expect(queue).toContain("trpc.supplies.rejectRequest");
-    expect(dashboard).toContain("<EmployeeSupplyRequests />");
+    expect(queue).toContain("<AlertDialog");
+    expect(queue).toContain("Xác nhận duyệt & tạo phiếu");
+    expect(queue).not.toContain("window.confirm");
+    expect(dashboard).toContain(
+      "const [supplyRequestOpen, setSupplyRequestOpen] = useState(false)"
+    );
+    expect(dashboard).toContain("Yêu cầu phụ kiện");
+    expect(dashboard).toContain(
+      "supplyRequestOpen ? <div id=\"employee-supply-request-panel\""
+    );
     expect(manager).toContain("<SupplyRequestQueue />");
   });
 });
