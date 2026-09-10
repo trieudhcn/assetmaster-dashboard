@@ -1497,6 +1497,92 @@ export const supplyIssueSlipItems = mysqlTable(
   ]
 );
 
+export const supplyRequests = mysqlTable(
+  "supplyRequests",
+  {
+    id: int("id").autoincrement().primaryKey(),
+    requestCode: varchar("requestCode", { length: 64 }).notNull().unique(),
+    requesterUserId: int("requesterUserId")
+      .notNull()
+      .references(() => users.id, {
+        onDelete: "restrict",
+        onUpdate: "cascade",
+      }),
+    requesterName: varchar("requesterName", { length: 160 }).notNull(),
+    requesterDepartmentId: int("requesterDepartmentId").references(
+      () => departments.id,
+      { onDelete: "set null", onUpdate: "cascade" }
+    ),
+    status: mysqlEnum("status", [
+      "pending",
+      "approved",
+      "rejected",
+      "fulfilled",
+      "cancelled",
+    ])
+      .default("pending")
+      .notNull(),
+    reason: text("reason").notNull(),
+    reviewNote: text("reviewNote"),
+    reviewedByUserId: int("reviewedByUserId").references(() => users.id, {
+      onDelete: "set null",
+      onUpdate: "cascade",
+    }),
+    reviewedByName: varchar("reviewedByName", { length: 160 }),
+    reviewedAt: timestamp("reviewedAt"),
+    issueSlipId: int("issueSlipId").references(() => supplyIssueSlips.id, {
+      onDelete: "set null",
+      onUpdate: "cascade",
+    }),
+    fulfilledAt: timestamp("fulfilledAt"),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+    updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  },
+  table => [
+    index("supply_requests_status_idx").on(table.status),
+    index("supply_requests_requester_created_idx").on(
+      table.requesterUserId,
+      table.createdAt
+    ),
+    uniqueIndex("supply_requests_issue_slip_unique").on(table.issueSlipId),
+  ]
+);
+
+export const supplyRequestItems = mysqlTable(
+  "supplyRequestItems",
+  {
+    id: int("id").autoincrement().primaryKey(),
+    requestId: int("requestId")
+      .notNull()
+      .references(() => supplyRequests.id, {
+        onDelete: "cascade",
+        onUpdate: "cascade",
+      }),
+    supplyId: int("supplyId")
+      .notNull()
+      .references(() => inventorySupplies.id, {
+        onDelete: "restrict",
+        onUpdate: "cascade",
+      }),
+    supplyCode: varchar("supplyCode", { length: 64 }).notNull(),
+    supplyName: varchar("supplyName", { length: 255 }).notNull(),
+    unit: varchar("unit", { length: 32 }).notNull(),
+    requestedQuantity: decimal("requestedQuantity", {
+      precision: 15,
+      scale: 2,
+    }).notNull(),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+  },
+  table => [
+    index("supply_request_items_request_idx").on(table.requestId),
+    index("supply_request_items_supply_idx").on(table.supplyId),
+    uniqueIndex("supply_request_items_request_supply_unique").on(
+      table.requestId,
+      table.supplyId
+    ),
+  ]
+);
+
 export const inventoryMovements = mysqlTable(
   "inventoryMovements",
   {
