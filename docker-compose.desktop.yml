@@ -1,6 +1,14 @@
 services:
   app:
+    secrets:
+      - ldap_bind_password
+    environment:
+      - NODE_EXTRA_CA_CERTS=/etc/ssl/certs/ca.cer
     volumes:
+      - type: bind
+        source: ./ca.cer
+        target: /etc/ssl/certs/ca.cer
+        read_only: true
       - type: bind
         source: ${ASSETMASTER_DESKTOP_DATA_DIR:-./.assetmaster-data}/runtime
         target: /data/assetmaster
@@ -37,3 +45,5 @@ secrets:
     file: ${ASSETMASTER_DESKTOP_SECRETS_DIR:-./secrets}/jwt_secret.txt
   setup_token:
     file: ${ASSETMASTER_DESKTOP_SECRETS_DIR:-./secrets}/setup_token.txt
+  ldap_bind_password:
+    file: ${ASSETMASTER_DESKTOP_SECRETS_DIR:-./secrets}/ldap_bind_password.txt

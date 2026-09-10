@@ -1,6 +1,6 @@
 import { jsPDF } from "jspdf";
 import { formatVnd } from "@/lib/formatters";
-import { drawPdfCorporateFooter, drawPdfCorporateHeader, handoverPdfFontUrl, registerVietnamesePdfFont } from "@/lib/handoverPdf";
+import { drawPdfCorporateFooter, drawPdfCorporateHeader, handoverPdfFontUrl, loadPdfImageData, registerVietnamesePdfFont } from "@/lib/handoverPdf";
 import { applyPdfLogoWatermark, createPdfLogoWatermark, openPdfPreview } from "@/lib/pdfExport";
 
 export type RetirementPdfCompany = { name?: string | null; address?: string | null; taxCode?: string | null; phone?: string | null;
@@ -27,13 +27,6 @@ const columns = [
   { key: "salvageValue", label: "Giá thanh lý", width: 30 },
   { key: "retirementReason", label: "Lý do thanh lý", width: 83 },
 ] as const;
-
-async function loadImageData(url: string) {
-  const response = await fetch(url);
-  if (!response.ok) throw new Error("Không thể tải ảnh dùng cho biên bản.");
-  const blob = await response.blob();
-  return new Promise<string>((resolve, reject) => { const reader = new FileReader(); reader.onloadend = () => resolve(String(reader.result)); reader.onerror = reject; reader.readAsDataURL(blob); });
-}
 
 async function loadPdfFont() {
   const response = await fetch(handoverPdfFontUrl);
@@ -159,7 +152,7 @@ export async function openRetirementPdf(assets: RetirementPdfAsset[], company: R
   const certificateCode = assets[0].retirementCertificateNumber || "TL-DRAFT";
   const doc = new jsPDF({ unit: "mm", format: "a4", orientation: "landscape" });
   registerVietnamesePdfFont(doc, await loadPdfFont());
-  const logoDataUrl = company.logoUrl ? await loadImageData(company.logoUrl).catch(() => undefined) : undefined;
+  const logoDataUrl = company.logoUrl ? await loadPdfImageData(company.logoUrl).catch(() => undefined) : undefined;
   let y = drawTableHeader(doc, drawPageHeading(doc, certificateCode, company, logoDataUrl));
   assets.forEach((asset) => {
     const estimatedHeight = Math.max(11, ...columns.map((column) => doc.splitTextToSize(String(cellValue(asset, column.key)), column.width - 3).length * 3.15 + 4));

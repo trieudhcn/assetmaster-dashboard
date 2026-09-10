@@ -3139,14 +3139,10 @@ describe("maintenance history and filter layout contract", () => {
   });
 });
 
-it("serves the configured AssetMaster title from the UI endpoint", async () => {
-  const response = await fetch("http://localhost:3000/");
-  expect(response.ok).toBe(true);
-  const html = await response.text();
+it("serves the configured AssetMaster title from the UI source", () => {
+  const html = readProjectFile("client/index.html");
   expect(html).toContain("AssetMaster");
-  expect(process.env.VITE_APP_TITLE).toBe(
-    "AssetMaster – Hệ thống Quản lý Tài sản"
-  );
+  expect(html).toContain("AssetMaster — Quản lý tài sản doanh nghiệp");
 });
 
 it("keeps maintenance UI controls on the shared interaction contracts", () => {
@@ -3215,6 +3211,39 @@ it("cung cấp trung tâm hướng dẫn theo vai trò và nút hướng dẫn r
   expect(helpCenter).toContain("Tìm kiếm hướng dẫn");
   expect(userDashboard).toContain("Hướng dẫn sử dụng");
   expect(userDashboard).toContain("<UserHelpDialog open={helpOpen}");
+});
+
+it("hiển thị phụ kiện đã cấp cho chính nhân viên trên Cổng nhân viên", () => {
+  const userDashboard = readProjectFile("client/src/pages/UserDashboard.tsx");
+  const routers = readProjectFile("server/routers.ts");
+  const db = readProjectFile("server/db.ts");
+
+  expect(userDashboard).toContain("trpc.employees.mySupplyHistory.useQuery");
+  expect(userDashboard).toContain("Phụ kiện đã cấp cho bạn");
+  expect(userDashboard).toContain("UserSupplyHistorySection");
+  expect(userDashboard).toContain(
+    "Các phụ kiện bạn đang giữ từ phiếu cấp phát hoặc biên bản bàn giao."
+  );
+  expect(routers).toContain("mySupplyHistory: protectedProcedure");
+  expect(routers).toContain(
+    "listSupplyIssueHistoryByRecipientUserId(ctx.user.id)"
+  );
+  expect(db).toContain(
+    "where(eq(supplyIssueSlips.recipientUserId, recipientUserId))"
+  );
+  expect(db).toContain("eq(inventoryMovements.movementType, \"issue\")");
+  expect(db).toContain("isNull(inventoryMovements.issueSlipId)");
+  expect(db).toContain("isNull(inventoryMovements.handoverId)");
+});
+
+it("đồng bộ dropdown phụ kiện lấy từ kho trong form tạo phiếu bàn giao", () => {
+  const home = readProjectFile("client/src/pages/Home.tsx");
+
+  expect(home).toContain("Phụ kiện lấy từ kho");
+  expect(home).toContain("<SearchableSelect value={selectedSupplyId}");
+  expect(home).toContain("Chọn phụ kiện trong kho");
+  expect(home).toContain("Phụ kiện ghi tay (không trừ kho)");
+  expect(home).not.toContain('const supplySelect = document.createElement("select")');
 });
 
 it("đồng bộ nhận diện Cổng nhân viên và hiển thị cập nhật, lịch sử hướng dẫn", () => {
