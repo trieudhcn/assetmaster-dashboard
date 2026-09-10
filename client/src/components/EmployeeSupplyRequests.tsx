@@ -39,6 +39,11 @@ const requestStatus = {
     className: "border-[#B8E9DD] bg-[#ECF8F7] text-[#087A6A]",
     icon: CheckCircle2,
   },
+  partially_fulfilled: {
+    label: "Cấp một phần",
+    className: "border-[#F0DCA4] bg-[#FFF7E2] text-[#9A6800]",
+    icon: CheckCircle2,
+  },
   rejected: {
     label: "Bị từ chối",
     className: "border-[#F2B7B7] bg-[#FDEDEE] text-[#B44545]",
@@ -308,10 +313,14 @@ export function EmployeeSupplyRequests() {
                 requestStatus[request.status as keyof typeof requestStatus];
               const StatusIcon = presentation.icon;
               const expanded = expandedRequestId === request.id;
+              const completed =
+                request.status === "fulfilled" ||
+                request.status === "partially_fulfilled";
               const itemSummary = request.items
-                .map(
-                  item =>
-                    `${item.supplyName} × ${numberText(item.requestedQuantity)} ${item.unit}`
+                .map(item =>
+                  completed
+                    ? `${item.supplyName}: ${numberText(item.approvedQuantity ?? 0)}/${numberText(item.requestedQuantity)} ${item.unit}`
+                    : `${item.supplyName} × ${numberText(item.requestedQuantity)} ${item.unit}`
                 )
                 .join(" · ");
               return (
@@ -367,7 +376,10 @@ export function EmployeeSupplyRequests() {
                             <b className="text-[#193B57]">
                               {item.supplyName}
                             </b>{" "}
-                            · {numberText(item.requestedQuantity)} {item.unit}
+                            · Yêu cầu {numberText(item.requestedQuantity)}{" "}
+                            {item.unit}
+                            {completed &&
+                              ` · Thực cấp ${numberText(item.approvedQuantity ?? 0)} ${item.unit}`}
                           </span>
                         ))}
                       </div>
