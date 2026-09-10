@@ -80,11 +80,12 @@ describe("employee supply request workflow", () => {
   });
 
   it("shows creation and history in the employee portal and approval in QLTS", async () => {
-    const [portal, queue, dashboard, manager] = await Promise.all([
+    const [portal, queue, dashboard, manager, home] = await Promise.all([
       source("client/src/components/EmployeeSupplyRequests.tsx"),
       source("client/src/components/SupplyRequestQueue.tsx"),
       source("client/src/pages/UserDashboard.tsx"),
       source("client/src/components/SupplyIssueSlipManager.tsx"),
+      source("client/src/pages/Home.tsx"),
     ]);
 
     expect(portal).toContain("Đề nghị cấp phụ kiện từ kho");
@@ -104,6 +105,12 @@ describe("employee supply request workflow", () => {
     expect(dashboard).toContain(
       "supplyRequestOpen ? <div id=\"employee-supply-request-panel\""
     );
-    expect(manager).toContain("<SupplyRequestQueue />");
+    expect(portal).toContain("expandedRequestId");
+    expect(portal).toContain("aria-expanded={expanded}");
+    expect(home).toContain("supplyRequestNotificationsQuery");
+    expect(home).toContain('kind: "supplyRequest" as const');
+    expect(home).toContain("assetmaster-open-supply-request-id");
+    expect(queue).toContain("data-supply-request-id");
+        expect(manager).toContain("<SupplyRequestQueue />");
   });
 });
