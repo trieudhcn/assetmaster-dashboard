@@ -3,6 +3,7 @@ import express from "express";
 import { createServer } from "http";
 import net from "net";
 import { createExpressMiddleware } from "@trpc/server/adapters/express";
+import { registerHealthRoutes } from "./healthRoutes";
 import { registerStorageProxy } from "./storageProxy";
 import { appRouter } from "../routers";
 import { createContext } from "./context";
@@ -29,9 +30,35 @@ async function findAvailablePort(startPort: number = 3000): Promise<number> {
   throw new Error(`No available port found starting from ${startPort}`);
 }
 
+function configuredPort() {
+  const port = Number.parseInt(process.env.PORT || "3000", 10);
+  if (!Number.isInteger(port) || port < 1 || port > 65_535) {
+    throw new Error("PORT must be an integer between 1 and 65535");
+  }
+  return port;
+}
+
+async function resolveListenPort(preferredPort: number) {
+  if (process.env.NODE_ENV !== "production") {
+    return findAvailablePort(preferredPort);
+  }
+
+  if (!(await isPortAvailable(preferredPort))) {
+    throw new Error(
+      `Production port ${preferredPort} is unavailable; refusing to listen on an unexpected port`
+    );
+  }
+
+  return preferredPort;
+}
+
 async function startServer() {
   const app = express();
   const server = createServer(app);
+
+  app.disable("x-powered-by");
+  registerHealthRoutes(app);
+
   // Configure body parser with larger size limit for file uploads
   app.use(express.json({ limit: "50mb" }));
   app.use(express.urlencoded({ limit: "50mb", extended: true }));
@@ -56,16 +83,45 @@ async function startServer() {
     serveStatic(app);
   }
 
-  const preferredPort = parseInt(process.env.PORT || "3000");
-  const port = await findAvailablePort(preferredPort);
+  const preferredPort = configuredPort();
+  const port = await resolveListenPort(preferredPort);
 
   if (port !== preferredPort) {
     console.log(`Port ${preferredPort} is busy, using port ${port} instead`);
   }
+
+  let shuttingDown = false;
+  const shutdown = (signal: NodeJS.Signals) => {
+    if (shuttingDown) return;
+    shuttingDown = true;
+    console.log(`Received ${signal}; stopping AssetMaster gracefully`);
+
+    const forceExit = setTimeout(() => {
+      console.error("Graceful shutdown timed out");
+      server.closeAllConnections();
+      process.exit(1);
+    }, 25_000);
+    forceExit.unref();
+
+    server.close(error => {
+      clearTimeout(forceExit);
+      if (error) {
+        console.error("Failed to close HTTP server", error);
+        process.exit(1);
+      }
+      process.exit(0);
+    });
+  };
+
+  process.once("SIGTERM", () => shutdown("SIGTERM"));
+  process.once("SIGINT", () => shutdown("SIGINT"));
 
   server.listen(port, () => {
     console.log(`Server running on http://localhost:${port}/`);
   });
 }
 
-startServer().catch(console.error);
+startServer().catch(error => {
+  console.error("AssetMaster failed to start", error);
+  process.exitCode = 1;
+});

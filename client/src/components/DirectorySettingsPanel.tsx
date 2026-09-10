@@ -38,7 +38,7 @@ const initialDraft: DirectoryDraft = {
   usersDn: "",
   groupsDn: "",
   bindDn: "",
-  bindSecretRef: "/run/secrets/assetmaster_ldap_bind_password",
+  bindSecretRef: "/run/secrets/ldap_bind_password",
   loginAttribute: "userPrincipalName",
   emailAttribute: "userPrincipalName",
   displayNameAttribute: "displayName",
@@ -59,7 +59,7 @@ function normalizeSettings(value: any): DirectoryDraft {
     groupsDn: value.groupsDn || "",
     bindDn: value.bindDn || "",
     bindSecretRef:
-      value.bindSecretRef || "/run/secrets/assetmaster_ldap_bind_password",
+      value.bindSecretRef || "/run/secrets/ldap_bind_password",
     loginAttribute: value.loginAttribute || "userPrincipalName",
     emailAttribute: value.emailAttribute || "userPrincipalName",
     displayNameAttribute: value.displayNameAttribute || "displayName",

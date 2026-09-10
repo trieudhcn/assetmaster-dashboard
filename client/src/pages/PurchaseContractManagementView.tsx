@@ -3,6 +3,7 @@ import { FileCheck2, FileText, Link2, Loader2, Paperclip, Pencil, Plus, Search, 
 import { toast } from "sonner";
 import { trpc } from "@/lib/trpc";
 import { SearchableSelect } from "@/components/SearchableSelect";
+import { usePersistedState } from "@/hooks/usePersistedState";
 import { CurrencyInput } from "@/components/CurrencyInput";
 import { DatePickerField } from "@/components/DatePickerField";
 
@@ -35,8 +36,8 @@ export function PurchaseContractManagementView({ sharedQuery = "" }: { sharedQue
   const vendorsQuery = trpc.vendors.listAll.useQuery();
   const [query, setQuery] = useState(sharedQuery);
   useEffect(() => { setQuery(sharedQuery); }, [sharedQuery]);
-  const [statusFilter, setStatusFilter] = useState<"all" | ContractStatus>("all");
-  const [vendorFilter, setVendorFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = usePersistedState<"all" | ContractStatus>("assetmaster.filters.purchaseContracts.status", "all");
+  const [vendorFilter, setVendorFilter] = usePersistedState("assetmaster.filters.purchaseContracts.vendor", "all");
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [formOpen, setFormOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);

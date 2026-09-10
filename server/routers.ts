@@ -1681,6 +1681,9 @@ export const appRouter = router({
     myAssetHistory: protectedProcedure.query(({ ctx }) =>
       listHandoversByRecipient(ctx.user.id)
     ),
+    mySupplyHistory: protectedProcedure.query(({ ctx }) =>
+      listSupplyIssueHistoryByRecipientUserId(ctx.user.id)
+    ),
     updateRole: adminProcedure
       .input(
         z.object({

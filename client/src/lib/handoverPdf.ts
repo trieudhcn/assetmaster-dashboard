@@ -1,6 +1,10 @@
 import type { jsPDF } from "jspdf";
+import vietnameseFontUrl from "@/assets/DejaVuSans.ttf?url";
 
-export const handoverPdfFontUrl = "/manus-storage/DejaVuSans-Vietnamese-full_d828ad5d.ttf";
+// Keep the font inside the application bundle. The old Manus storage URL is
+// not available in self-hosted/Docker deployments, which made every PDF flow
+// fail before jsPDF could generate the document.
+export const handoverPdfFontUrl = vietnameseFontUrl;
 export const vietnamesePdfFontFamily = "DejaVuSansVietnamese";
 
 export type PdfCorporateIdentity = {
@@ -13,6 +17,39 @@ export type PdfCorporateIdentity = {
   hideWebsiteOnInternalPdf?: boolean | null;
 };
 
+/**
+ * jsPDF's PNG decoder can render transparent pixels as black in some browser
+ * and PDF viewer combinations. Composite uploaded logos onto white first so
+ * their transparent background remains visually transparent on a white PDF.
+ */
+export async function loadPdfImageData(url: string) {
+  const response = await fetch(url);
+  if (!response.ok) throw new Error("Không thể tải logo công ty dùng cho PDF.");
+  const blob = await response.blob();
+  const dataUrl = await new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onloadend = () => resolve(String(reader.result));
+    reader.onerror = reject;
+    reader.readAsDataURL(blob);
+  });
+  return new Promise<string>((resolve, reject) => {
+    const image = new Image();
+    image.onload = () => {
+      const canvas = document.createElement("canvas");
+      canvas.width = image.naturalWidth || image.width;
+      canvas.height = image.naturalHeight || image.height;
+      const context = canvas.getContext("2d");
+      if (!context) { reject(new Error("Không thể xử lý logo công ty cho PDF.")); return; }
+      context.fillStyle = "#ffffff";
+      context.fillRect(0, 0, canvas.width, canvas.height);
+      context.drawImage(image, 0, 0);
+      resolve(canvas.toDataURL("image/png"));
+    };
+    image.onerror = () => reject(new Error("Không thể đọc logo công ty cho PDF."));
+    image.src = dataUrl;
+  });
+}
+
 function arrayBufferToBase64(buffer: ArrayBuffer) {
   let binary = "";
   const bytes = new Uint8Array(buffer);
@@ -21,13 +58,20 @@ function arrayBufferToBase64(buffer: ArrayBuffer) {
 }
 
 export function registerVietnamesePdfFont(doc: jsPDF, fontBuffer: ArrayBuffer) {
-  const filename = "DejaVuSans-Vietnamese-full.ttf";
-  doc.addFileToVFS(filename, arrayBufferToBase64(fontBuffer));
-  doc.addFont(filename, vietnamesePdfFontFamily, "normal");
-  // The same complete Unicode face is intentionally registered for bold so
-  // every PDF heading retains Vietnamese diacritics instead of falling back.
-  doc.addFont(filename, vietnamesePdfFontFamily, "bold");
-  doc.setFont(vietnamesePdfFontFamily, "normal");
+  try {
+    const filename = "DejaVuSans.ttf";
+    doc.addFileToVFS(filename, arrayBufferToBase64(fontBuffer));
+    doc.addFont(filename, vietnamesePdfFontFamily, "normal");
+    // The same face is registered for bold so headings retain Vietnamese
+    // diacritics instead of silently falling back to a missing font.
+    doc.addFont(filename, vietnamesePdfFontFamily, "bold");
+    doc.setFont(vietnamesePdfFontFamily, "normal");
+  } catch (error) {
+    // A malformed/cached font must not prevent the document itself from being
+    // generated. jsPDF's built-in Helvetica remains a valid last-resort font.
+    console.warn("AssetMaster: Vietnamese PDF font unavailable; using fallback font.", error);
+    doc.setFont("helvetica", "normal");
+  }
 }
 
 /** A consistent corporate header for all printable AssetMaster records. */

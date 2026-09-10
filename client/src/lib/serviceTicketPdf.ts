@@ -1,5 +1,5 @@
 import { jsPDF } from "jspdf";
-import { drawPdfCorporateFooter, drawPdfCorporateHeader, handoverPdfFontUrl, registerVietnamesePdfFont, vietnamesePdfFontFamily } from "@/lib/handoverPdf";
+import { drawPdfCorporateFooter, drawPdfCorporateHeader, handoverPdfFontUrl, loadPdfImageData, registerVietnamesePdfFont, vietnamesePdfFontFamily } from "@/lib/handoverPdf";
 import { applyPdfLogoWatermark, createPdfLogoWatermark, openPdfPreview } from "@/lib/pdfExport";
 
 export type ServiceTicketPdfCompany = {
@@ -21,18 +21,6 @@ type ServiceTicketPdfArgs = {
   autoPrint?: boolean;
 };
 
-async function loadPdfImage(url: string) {
-  const response = await fetch(url);
-  if (!response.ok) throw new Error("Không thể tải logo công ty dùng cho phiếu.");
-  const blob = await response.blob();
-  return await new Promise<string>((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onloadend = () => resolve(String(reader.result));
-    reader.onerror = reject;
-    reader.readAsDataURL(blob);
-  });
-}
-
 function pdfImageFormat(dataUrl: string) {
   if (dataUrl.startsWith("data:image/jpeg")) return "JPEG" as const;
   if (dataUrl.startsWith("data:image/webp")) return "WEBP" as const;
@@ -50,7 +38,7 @@ export async function previewServiceTicketPdf({ ticket, asset, assigneeName, rep
   const fontResponse = await fetch(handoverPdfFontUrl);
   if (!fontResponse.ok) throw new Error("Không thể tải phông chữ tiếng Việt.");
   registerVietnamesePdfFont(doc, await fontResponse.arrayBuffer());
-  const logoDataUrl = company.logoUrl ? await loadPdfImage(company.logoUrl).catch(() => undefined) : undefined;
+  const logoDataUrl = company.logoUrl ? await loadPdfImageData(company.logoUrl).catch(() => undefined) : undefined;
   const left = 16;
   const right = 194;
   const width = right - left;

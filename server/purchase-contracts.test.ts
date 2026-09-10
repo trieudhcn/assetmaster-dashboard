@@ -125,12 +125,15 @@ describe("purchase contract management", () => {
     expect(home).toContain(
       "purchaseContractId: formData.purchaseContractId ?? null"
     );
-    expect(home).toContain("data-asset-purchase-invoice");
+    expect(home).toContain("<AssetPurchaseInvoiceField");
+    expect(home).toContain("onChange={selectPurchaseInvoice}");
     expect(supplies).toContain(
       "purchaseContractId: form.purchaseContractId ? Number(form.purchaseContractId) : null"
     );
-    expect(supplies).toContain("data-supply-purchase-contract");
-    expect(supplies).toContain("data-edit-supply-contract");
+    expect(supplies).toContain("purchaseContractOptions");
+    expect(supplies).toContain('label="Hợp đồng mua bán"');
+    expect(supplies).toContain("SearchableSelect value={editPurchaseContractId}");
+    expect(supplies).toContain("purchaseContractId: editPurchaseContractIdRef.current");
     expect(contractsView).toContain("Hợp đồng mua bán");
     expect(contractsView).not.toContain("Tài sản & phụ kiện thuộc hợp đồng");
     expect(contractsView).toContain("Tải chứng từ");
@@ -145,9 +148,7 @@ describe("purchase contract management", () => {
     expect(contractsView).toContain("paperContractFile");
     expect(contractsView).toContain('documentType: "signed_contract"');
     expect(contractsView).toContain("Đã tạo Hợp đồng và lưu bản giấy đã ký.");
-    expect(home).toContain('input[placeholder="Nhập số serial"]');
-    expect(home).toContain("serialField.after(field)");
-    expect(home).toContain('field.dataset.assetPurchaseInvoice = "true"');
+    expect(home).toContain("<AssetPurchaseInvoiceField");
   });
 
   it("uses the vendor profile as a contract index instead of a second contract upload flow", () => {
@@ -237,8 +238,8 @@ describe("purchase contract management", () => {
     expect(home).toContain(
       "purchaseInvoiceLineId: formData.purchaseInvoiceLineId ?? null"
     );
-    expect(home).toContain('label.textContent = "Hóa đơn mua bán"');
-    expect(home).toContain('field.dataset.assetPurchaseInvoice = "true"');
+    expect(home).toContain("<AssetPurchaseInvoiceField");
+    expect(home).toContain("function AssetPurchaseInvoiceField");
     expect(invoicesView).toContain("Hóa đơn mua bán");
     expect(invoicesView).toContain(
       "trpc.purchaseInvoices.page.useQuery(invoicePageInput)"
