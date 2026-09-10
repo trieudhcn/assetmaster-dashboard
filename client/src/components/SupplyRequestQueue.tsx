@@ -7,7 +7,7 @@ import {
   X,
   XCircle,
 } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { trpc } from "@/lib/trpc";
 import {
@@ -60,6 +60,7 @@ export function SupplyRequestQueue() {
   const [rejectTargetId, setRejectTargetId] = useState<number | null>(null);
   const [rejectNote, setRejectNote] = useState("");
   const [showProcessed, setShowProcessed] = useState(false);
+  const [highlightedRequestId, setHighlightedRequestId] = useState<number | null>(null);
 
   const fulfill = trpc.supplies.fulfillRequest.useMutation({
     onSuccess: result => {
@@ -91,6 +92,33 @@ export function SupplyRequestQueue() {
   const requests = requestsQuery.data || [];
   const pending = requests.filter(request => request.status === "pending");
   const processed = requests.filter(request => request.status !== "pending");
+  useEffect(() => {
+    const storedId = Number(
+      sessionStorage.getItem("assetmaster-open-supply-request-id")
+    );
+    if (!Number.isInteger(storedId) || storedId <= 0 || !requests.length)
+      return;
+    const target = requests.find(request => request.id === storedId);
+    sessionStorage.removeItem("assetmaster-open-supply-request-id");
+    if (!target) return;
+    if (target.status !== "pending") setShowProcessed(true);
+    setHighlightedRequestId(storedId);
+    const frame = window.requestAnimationFrame(() => {
+      document
+        .querySelector<HTMLElement>(
+          `[data-supply-request-id="${storedId}"]`
+        )
+        ?.scrollIntoView({ behavior: "smooth", block: "center" });
+    });
+    const timer = window.setTimeout(
+      () => setHighlightedRequestId(null),
+      3_500
+    );
+    return () => {
+      window.cancelAnimationFrame(frame);
+      window.clearTimeout(timer);
+    };
+  }, [requests]);
   const stockBySupplyId = useMemo(
     () =>
       new Map(
@@ -121,7 +149,11 @@ export function SupplyRequestQueue() {
         Number(item.requestedQuantity)
     );
     return (
-      <article className="rounded-xl border border-[#E3EDF2] bg-[#FBFDFE] p-4">
+      <article
+        data-supply-request-id={request.id}
+        tabIndex={-1}
+        className={`rounded-xl border bg-[#FBFDFE] p-4 outline-none transition ${highlightedRequestId === request.id ? "border-[#0F8C8C] ring-2 ring-[#8BCDC6]/60" : "border-[#E3EDF2]"}`}
+      >
         <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
           <div>
             <div className="flex flex-wrap items-center gap-2">
