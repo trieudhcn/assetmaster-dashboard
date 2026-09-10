@@ -10,6 +10,16 @@ import {
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { trpc } from "@/lib/trpc";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 const statusPresentation = {
   pending: {
@@ -46,12 +56,14 @@ export function SupplyRequestQueue() {
     refetchInterval: 20_000,
   });
   const suppliesQuery = trpc.supplies.list.useQuery();
+  const [fulfillTargetId, setFulfillTargetId] = useState<number | null>(null);
   const [rejectTargetId, setRejectTargetId] = useState<number | null>(null);
   const [rejectNote, setRejectNote] = useState("");
   const [showProcessed, setShowProcessed] = useState(false);
 
   const fulfill = trpc.supplies.fulfillRequest.useMutation({
     onSuccess: result => {
+      setFulfillTargetId(null);
       toast.success(
         `Đã duyệt ${result.requestCode} và tạo phiếu ${result.referenceCode}.`
       );
@@ -89,6 +101,8 @@ export function SupplyRequestQueue() {
       ),
     [suppliesQuery.data]
   );
+  const fulfillTarget =
+    requests.find(request => request.id === fulfillTargetId) || null;
   const rejectTarget =
     requests.find(request => request.id === rejectTargetId) || null;
 
@@ -147,14 +161,7 @@ export function SupplyRequestQueue() {
               <button
                 type="button"
                 disabled={fulfill.isPending || hasShortage}
-                onClick={() => {
-                  if (
-                    window.confirm(
-                      `Duyệt ${request.requestCode} và tạo phiếu cấp phát ngay?`
-                    )
-                  )
-                    fulfill.mutate({ id: request.id, reviewNote: null });
-                }}
+                onClick={() => setFulfillTargetId(request.id)}
                 className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-[#0F8C8C] px-3 text-[11px] font-extrabold text-white hover:bg-[#087A6A] disabled:cursor-not-allowed disabled:opacity-45"
               >
                 <FilePlus2 size={14} />
@@ -286,6 +293,73 @@ export function SupplyRequestQueue() {
           </div>
         )}
       </section>
+
+      <AlertDialog
+        open={Boolean(fulfillTarget)}
+        onOpenChange={open => {
+          if (!open && !fulfill.isPending) setFulfillTargetId(null);
+        }}
+      >
+        <AlertDialogContent className="rounded-2xl border-[#CDE5E5] bg-white p-0 shadow-[0_24px_70px_rgba(16,42,67,.24)]">
+          <AlertDialogHeader className="border-b border-[#E7EEF3] px-5 py-5 pr-12">
+            <div className="flex items-center gap-2 text-[10px] font-extrabold uppercase tracking-[.14em] text-[#0F8C8C]">
+              <ClipboardCheck size={14} /> Xác nhận duyệt yêu cầu
+            </div>
+            <AlertDialogTitle className="font-display text-lg font-extrabold text-[#193B57]">
+              {fulfillTarget?.requestCode}
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-xs leading-5 text-[#71869A]">
+              Hệ thống sẽ trừ tồn kho và tạo phiếu cấp phát cho{" "}
+              <b className="text-[#193B57]">
+                {fulfillTarget?.requesterName}
+              </b>
+              . Thao tác này không thể hoàn tác từ màn hình yêu cầu.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="space-y-2 px-5">
+            {(fulfillTarget?.items || []).map(item => (
+              <div
+                key={item.id}
+                className="flex items-center justify-between gap-3 rounded-lg border border-[#E3EDF2] bg-[#F8FBFC] px-3 py-2"
+              >
+                <div className="min-w-0">
+                  <div className="truncate text-xs font-extrabold text-[#193B57]">
+                    {item.supplyName}
+                  </div>
+                  <div className="mt-0.5 text-[10px] text-[#71869A]">
+                    {item.supplyCode}
+                  </div>
+                </div>
+                <span className="shrink-0 text-xs font-extrabold text-[#087A6A]">
+                  {numberText(item.requestedQuantity)} {item.unit}
+                </span>
+              </div>
+            ))}
+          </div>
+          <AlertDialogFooter className="border-t border-[#E7EEF3] px-5 py-4">
+            <AlertDialogCancel disabled={fulfill.isPending}>
+              Quay lại
+            </AlertDialogCancel>
+            <AlertDialogAction
+              disabled={fulfill.isPending || !fulfillTarget}
+              onClick={event => {
+                event.preventDefault();
+                if (fulfillTarget)
+                  fulfill.mutate({
+                    id: fulfillTarget.id,
+                    reviewNote: null,
+                  });
+              }}
+              className="bg-[#0F8C8C] text-white hover:bg-[#087A6A]"
+            >
+              <FilePlus2 size={15} />
+              {fulfill.isPending
+                ? "Đang tạo phiếu..."
+                : "Xác nhận duyệt & tạo phiếu"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {rejectTarget && (
         <>
