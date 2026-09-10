@@ -246,7 +246,7 @@ type HeaderNotification = {
   title: string;
   description: string;
   createdAt: Date;
-  kind: "assignment" | "maintenance" | "return";
+  kind: "assignment" | "maintenance" | "return" | "supplyRequest";
   target: NotificationTarget;
 };
 
@@ -470,6 +470,7 @@ export default function Home() {
   const assetQuery = trpc.assets.list.useQuery(undefined, { enabled: isAuthenticated && isAdmin });
   const dashboardInvoicesQuery = trpc.purchaseInvoices.list.useQuery(undefined, { enabled: isAuthenticated && isAdmin });
   const suppliesQuery = trpc.supplies.list.useQuery(undefined, { enabled: isAuthenticated && isAdmin });
+  const supplyRequestNotificationsQuery = trpc.supplies.adminRequests.useQuery(undefined, { enabled: isAuthenticated && isAdmin, refetchInterval: 20_000 });
   const dashboardSoftwareLicensesQuery = trpc.softwareLicenses.list.useQuery(undefined, { enabled: isAuthenticated && isAdmin });
   const assetLicenseAssignmentsQuery = trpc.softwareLicenses.assignments.useQuery(undefined, { enabled: isAuthenticated && isAdmin });
   const dashboardSoftwareLicenseCapacityQuery = trpc.softwareLicenses.capacity.useQuery(undefined, { enabled: isAuthenticated && isAdmin });
@@ -1048,6 +1049,18 @@ export default function Home() {
         target: { type: "handover" as const, handoverId: handover.id },
       };
     }) : [];
+    const supplyRequestNotifications = notificationPreferences.handoverEnabled ? (supplyRequestNotificationsQuery.data || []).filter((request) => request.status === "pending").map((request) => {
+      const itemNames = request.items.slice(0, 2).map((item) => item.supplyName).join(", ");
+      const remainingItems = Math.max(0, request.items.length - 2);
+      return {
+        id: `supply-request-${request.id}`,
+        title: `${request.requestCode} đang chờ duyệt`,
+        description: `${request.requesterName} yêu cầu ${request.items.length} loại phụ kiện: ${itemNames}${remainingItems ? ` và ${remainingItems} loại khác` : ""}.`,
+        createdAt: request.createdAt,
+        kind: "supplyRequest" as const,
+        target: { type: "supplyRequest" as const, requestId: request.id },
+      };
+    }) : [];
     const maintenanceRequestNotifications = notificationPreferences.maintenanceEnabled ? (maintenanceTicketsQuery.data || []).filter((ticket) => ticket.status === "open").slice(0, 3).map((ticket) => {
       const asset = assetQuery.data?.find((item) => item.id === ticket.assetId);
       return {
@@ -1059,8 +1072,8 @@ export default function Home() {
         target: { type: "asset" as const, assetCode: asset?.assetCode || "" },
       };
     }) : [];
-    return [...warrantyExpiryNotifications, ...returnRequestNotifications, ...maintenanceRequestNotifications, ...maintenanceNotifications, ...handoverNotifications].sort((left, right) => right.createdAt.getTime() - left.createdAt.getTime());
-  }, [assetQuery.data, assetRows, maintenanceTicketsQuery.data, notificationHandoversQuery.data, notificationPreferences]);
+    return [...supplyRequestNotifications, ...warrantyExpiryNotifications, ...returnRequestNotifications, ...maintenanceRequestNotifications, ...maintenanceNotifications, ...handoverNotifications].sort((left, right) => right.createdAt.getTime() - left.createdAt.getTime());
+  }, [assetQuery.data, assetRows, maintenanceTicketsQuery.data, notificationHandoversQuery.data, notificationPreferences, supplyRequestNotificationsQuery.data]);
   const unreadNotifications = headerNotifications.filter((notification) => !readNotificationIds.includes(notification.id));
   const hasUnreadNotifications = unreadNotifications.length > 0;
   const markNotificationRead = (notificationId: string) => {
@@ -1093,6 +1106,11 @@ export default function Home() {
       }
       navigateTo("Danh mục tài sản");
       openDetailModal(asset);
+      return;
+    }
+    if (target.type === "supplyRequest") {
+      sessionStorage.setItem("assetmaster-open-supply-request-id", String(target.requestId));
+      navigateTo("Bàn giao & Cấp phát");
       return;
     }
     sessionStorage.setItem("assetmaster-open-handover-id", String(target.handoverId));
@@ -1439,14 +1457,14 @@ export default function Home() {
               </button>
               {notificationsOpen && <div className={`absolute right-0 top-[calc(100%+10px)] z-[130] w-[min(320px,calc(100vw-2rem))] overflow-hidden rounded-xl border border-[#DDE7F0] bg-white shadow-[0_18px_42px_rgba(16,42,67,0.18)] ${notificationsClosing ? "popup-surface--closing" : ""}`}>
                 <div className="flex items-center justify-between gap-3 border-b border-[#E7EEF3] px-4 py-3"><div><div className="text-xs font-extrabold text-[#193B57]">Thông báo</div><div className="mt-0.5 text-[10px] text-[#8AA0B6]">{hasUnreadNotifications ? `${unreadNotifications.length} thông báo chưa đọc` : "Tất cả đã được đọc"}</div></div><div className="flex items-center gap-1"><button aria-label="Tùy chọn thông báo" onClick={() => setNotificationSettingsOpen((current) => !current)} className={`grid h-7 w-7 place-items-center rounded-md text-[#527089] transition hover:bg-[#EEF5F8] hover:text-[#193B57] ${notificationSettingsOpen ? "bg-[#EAF3FF] text-[#2666A8]" : ""}`}><Settings2 size={15} /></button><button aria-label="Đánh dấu tất cả đã đọc" disabled={!hasUnreadNotifications} onClick={markAllNotificationsRead} className="grid h-7 w-7 place-items-center rounded-md text-[#087A6A] transition hover:bg-[#E6F6F2] disabled:text-[#9BAEC0]"><CheckCheck size={16} /></button></div></div>
-                {notificationSettingsOpen && <div className="border-b border-[#E7EEF3] bg-[#F8FBFC] px-4 py-3"><div className="text-[10px] font-extrabold uppercase tracking-[0.08em] text-[#527089]">Loại thông báo nhận</div><div className="mt-2 space-y-1">{([{ key: "returnRequestEnabled", label: "Yêu cầu hoàn trả" }, { key: "maintenanceEnabled", label: "Bảo trì" }, { key: "handoverEnabled", label: "Bàn giao" }] as Array<{ key: keyof NotificationPreferences; label: string }>).map((option) => <button key={option.key} type="button" role="switch" aria-checked={notificationPreferences[option.key]} disabled={saveNotificationPreferencesMutation.isPending} onClick={() => updateNotificationPreference(option.key)} className="flex w-full items-center justify-between rounded-md px-1 py-1.5 text-left text-[11px] font-semibold text-[#527089] hover:bg-white disabled:cursor-not-allowed"><span>{option.label}</span><span className={`relative h-4 w-7 rounded-full transition ${notificationPreferences[option.key] ? "bg-[#0F8C8C]" : "bg-[#C9D5DF]"}`}><span className={`absolute top-0.5 h-3 w-3 rounded-full bg-white shadow-sm transition-transform ${notificationPreferences[option.key] ? "translate-x-3.5" : "translate-x-0.5"}`} /></span></button>)}</div></div>}
+                {notificationSettingsOpen && <div className="border-b border-[#E7EEF3] bg-[#F8FBFC] px-4 py-3"><div className="text-[10px] font-extrabold uppercase tracking-[0.08em] text-[#527089]">Loại thông báo nhận</div><div className="mt-2 space-y-1">{([{ key: "returnRequestEnabled", label: "Yêu cầu hoàn trả" }, { key: "maintenanceEnabled", label: "Bảo trì" }, { key: "handoverEnabled", label: "Bàn giao & cấp phát" }] as Array<{ key: keyof NotificationPreferences; label: string }>).map((option) => <button key={option.key} type="button" role="switch" aria-checked={notificationPreferences[option.key]} disabled={saveNotificationPreferencesMutation.isPending} onClick={() => updateNotificationPreference(option.key)} className="flex w-full items-center justify-between rounded-md px-1 py-1.5 text-left text-[11px] font-semibold text-[#527089] hover:bg-white disabled:cursor-not-allowed"><span>{option.label}</span><span className={`relative h-4 w-7 rounded-full transition ${notificationPreferences[option.key] ? "bg-[#0F8C8C]" : "bg-[#C9D5DF]"}`}><span className={`absolute top-0.5 h-3 w-3 rounded-full bg-white shadow-sm transition-transform ${notificationPreferences[option.key] ? "translate-x-3.5" : "translate-x-0.5"}`} /></span></button>)}</div></div>}
                 <div className="max-h-[360px] overflow-y-auto p-2">
                   {headerNotifications.length > 0 ? headerNotifications.map((notification) => {
                     const isRead = readNotificationIds.includes(notification.id);
-                    const Icon = notification.kind === "maintenance" ? Wrench : notification.kind === "return" ? Undo2 : PackageCheck;
+                    const Icon = notification.kind === "maintenance" ? Wrench : notification.kind === "return" ? Undo2 : notification.kind === "supplyRequest" ? PackagePlus : PackageCheck;
                     const targetLabel = getNotificationTargetLabel(notification.target);
-                    return <div key={notification.id} className={`flex gap-3 rounded-lg p-3 transition ${isRead ? "bg-white" : "bg-[#F2FAF8]"}`}><div className={`grid h-8 w-8 shrink-0 place-items-center rounded-lg ${notification.kind === "maintenance" ? "bg-[#FFF5DC] text-[#A86B00]" : notification.kind === "return" ? "bg-[#EAF3FF] text-[#2666A8]" : "bg-[#E6F6F2] text-[#087A6A]"}`}><Icon size={15} /></div><div className="min-w-0 flex-1"><div className="flex items-start justify-between gap-2"><div className={`text-xs ${isRead ? "font-semibold text-[#527089]" : "font-extrabold text-[#193B57]"}`}>{notification.title}</div>{!isRead && <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-[#0F8C8C]" aria-label="Chưa đọc" />}</div><p className="mt-1 text-[11px] leading-5 text-[#71869A]">{notification.description}</p><div className="mt-1 flex items-center gap-1.5 text-[10px] font-medium text-[#8AA0B6]"><Clock3 size={11} />{formatNotificationTime(notification.createdAt)}</div><div className="mt-2 flex items-center gap-2 whitespace-nowrap"><button aria-label={targetLabel} onClick={() => openNotificationTarget(notification)} className="inline-flex items-center gap-1 text-[9px] font-bold leading-none text-[#2666A8] hover:text-[#1E5084]">{targetLabel}<span aria-hidden="true">→</span></button>{!isRead && <button aria-label="Đánh dấu đã đọc" onClick={() => markNotificationRead(notification.id)} className="inline-flex items-center gap-1 text-[9px] font-bold leading-none text-[#087A6A] hover:text-[#066254]"><Check size={12} aria-hidden="true" />Đã đọc</button>}</div></div></div>;
-                  }) : <div className="p-4 text-center"><div className="text-xs font-bold text-[#193B57]">Chưa có thông báo mới</div><p className="mt-1 text-[11px] leading-5 text-[#71869A]">Các cập nhật bàn giao và bảo trì sẽ xuất hiện tại đây.</p></div>}
+                    return <div key={notification.id} className={`flex gap-3 rounded-lg p-3 transition ${isRead ? "bg-white" : "bg-[#F2FAF8]"}`}><div className={`grid h-8 w-8 shrink-0 place-items-center rounded-lg ${notification.kind === "maintenance" ? "bg-[#FFF5DC] text-[#A86B00]" : notification.kind === "return" ? "bg-[#EAF3FF] text-[#2666A8]" : notification.kind === "supplyRequest" ? "bg-[#FFF1C7] text-[#A86B00]" : "bg-[#E6F6F2] text-[#087A6A]"}`}><Icon size={15} /></div><div className="min-w-0 flex-1"><div className="flex items-start justify-between gap-2"><div className={`text-xs ${isRead ? "font-semibold text-[#527089]" : "font-extrabold text-[#193B57]"}`}>{notification.title}</div>{!isRead && <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-[#0F8C8C]" aria-label="Chưa đọc" />}</div><p className="mt-1 text-[11px] leading-5 text-[#71869A]">{notification.description}</p><div className="mt-1 flex items-center gap-1.5 text-[10px] font-medium text-[#8AA0B6]"><Clock3 size={11} />{formatNotificationTime(notification.createdAt)}</div><div className="mt-2 flex items-center gap-2 whitespace-nowrap"><button aria-label={targetLabel} onClick={() => openNotificationTarget(notification)} className="inline-flex items-center gap-1 text-[9px] font-bold leading-none text-[#2666A8] hover:text-[#1E5084]">{targetLabel}<span aria-hidden="true">→</span></button>{!isRead && <button aria-label="Đánh dấu đã đọc" onClick={() => markNotificationRead(notification.id)} className="inline-flex items-center gap-1 text-[9px] font-bold leading-none text-[#087A6A] hover:text-[#066254]"><Check size={12} aria-hidden="true" />Đã đọc</button>}</div></div></div>;
+                  }) : <div className="p-4 text-center"><div className="text-xs font-bold text-[#193B57]">Chưa có thông báo mới</div><p className="mt-1 text-[11px] leading-5 text-[#71869A]">Các cập nhật bàn giao, cấp phát và bảo trì sẽ xuất hiện tại đây.</p></div>}
                 </div>
               </div>}
             </div>
