@@ -322,6 +322,7 @@ import {
   transitionHandoverStatus,
   deleteSupplyUnit,
   decrementInventorySupplyStock,
+  incrementInventorySupplyStock,
 } from "./db";
 import {
   credentialFingerprint,
