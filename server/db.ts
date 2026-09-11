@@ -2399,8 +2399,8 @@ export async function listHandovers() {
   return db.select().from(handovers).orderBy(desc(handovers.handedOverAt));
 }
 
-export async function getHandoverById(id: number) {
-  const db = await getDb();
+export async function getHandoverById(id: number, executor?: any) {
+  const db = executor ?? (await getDb());
   if (!db) return undefined;
   return (await db.select({
     id: handovers.id,
