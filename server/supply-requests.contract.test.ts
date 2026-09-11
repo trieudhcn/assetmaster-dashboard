@@ -176,7 +176,7 @@ describe("employee supply request workflow", () => {
     expect(schema).toContain('"handover"');
     expect(migration).toContain("CREATE TABLE \`supplyReturnRequests\`");
     expect(migration).toContain("CREATE TABLE \`supplyReturnRequestItems\`");
-    expect(migration).toContain("supply_return_request_source_status_idx");
+    expect(migration).toContain("supply_return_requests_source_idx");
     expect(journal).toContain('"tag": "0065_supply_return_requests"');
   });
 
