@@ -189,7 +189,7 @@ function UserSupplyHistorySection({
     group.items.push({ ...entry, outstanding });
     grouped.set(key, group);
   });
-  const slips = Array.from(grouped.values());
+  const slips: any[] = Array.from(grouped.values());
   const totalOutstanding = slips.reduce(
     (total, slip) =>
       total +
@@ -199,20 +199,28 @@ function UserSupplyHistorySection({
       ),
     0
   );
-  const supplyTotals = Array.from(
-    slips.reduce((totals, slip) => {
-      slip.items.forEach((item: any) => {
-        const current = totals.get(item.supplyCode) || {
-          supplyCode: item.supplyCode,
-          supplyName: item.supplyName,
-          unit: item.unit,
-          quantity: 0,
-        };
-        current.quantity += item.outstanding;
-        totals.set(item.supplyCode, current);
-      });
-      return totals;
-    }, new Map<string, any>()).values()
+  type SupplyTotal = {
+    supplyCode: string;
+    supplyName: string;
+    unit: string;
+    quantity: number;
+  };
+  const supplyTotals: SupplyTotal[] = Array.from(
+    slips
+      .reduce<Map<string, SupplyTotal>>((totals, slip: any) => {
+        slip.items.forEach((item: any) => {
+          const current = totals.get(item.supplyCode) || {
+            supplyCode: item.supplyCode,
+            supplyName: item.supplyName,
+            unit: item.unit,
+            quantity: 0,
+          };
+          current.quantity += item.outstanding;
+          totals.set(item.supplyCode, current);
+        });
+        return totals;
+      }, new Map<string, SupplyTotal>())
+      .values()
   );
   const returnRequests = returnRequestsQuery.data || [];
   const requestFor = (slip: any) =>
@@ -460,7 +468,11 @@ function SupplyReturnRequestDialog({
     )
   );
   const [note, setNote] = useState("");
-  const rows = returnableItems.map((item: any) => {
+  const rows: Array<{
+    item: any;
+    quantity: number;
+    valid: boolean;
+  }> = returnableItems.map((item: any) => {
     const quantity = Number(quantities[item.sourceItemId] || 0);
     const valid =
       Number.isFinite(quantity) &&
