@@ -3215,14 +3215,18 @@ it("cung cấp trung tâm hướng dẫn theo vai trò và nút hướng dẫn r
 
 it("hiển thị phụ kiện đã cấp cho chính nhân viên trên Cổng nhân viên", () => {
   const userDashboard = readProjectFile("client/src/pages/UserDashboard.tsx");
+  const supplyPanel = readProjectFile(
+    "client/src/components/EmployeeSupplyHoldingsPanel.tsx"
+  );
   const routers = readProjectFile("server/routers.ts");
   const db = readProjectFile("server/db.ts");
 
   expect(userDashboard).toContain("trpc.employees.mySupplyHistory.useQuery");
-  expect(userDashboard).toContain("Phụ kiện đã cấp cho bạn");
-  expect(userDashboard).toContain("UserSupplyHistorySection");
-  expect(userDashboard).toContain(
-    "Các phụ kiện bạn đang giữ từ phiếu cấp phát hoặc biên bản bàn giao."
+  expect(userDashboard).toContain("<EmployeeSupplyHoldingsPanel");
+  expect(supplyPanel).toContain("Phụ kiện của bạn");
+  expect(supplyPanel).toContain('role="tablist"');
+  expect(supplyPanel).toContain(
+    "Theo dõi số lượng đang giữ và toàn bộ yêu cầu hoàn trả"
   );
   expect(routers).toContain("mySupplyHistory: protectedProcedure");
   expect(routers).toContain(
