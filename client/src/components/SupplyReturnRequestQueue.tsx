@@ -8,6 +8,7 @@ import {
   Clock3,
   Download,
   RotateCcw,
+  Search,
   Wrench,
   XCircle,
 } from "lucide-react";
@@ -54,6 +55,13 @@ type InspectionDraft = {
   note: string;
 };
 
+type ReturnConditionFilter =
+  | "all"
+  | "good"
+  | "damaged"
+  | "missing"
+  | "repair";
+
 function numberText(value: number | string) {
   return Number(value).toLocaleString("vi-VN", {
     maximumFractionDigits: 2,
@@ -63,6 +71,15 @@ function numberText(value: number | string) {
 function quantity(value: string) {
   if (value.trim() === "") return Number.NaN;
   return Number(value);
+}
+
+function normalizeSearch(value: unknown) {
+  return String(value || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/đ/g, "d")
+    .replace(/Đ/g, "D")
+    .toLocaleLowerCase("vi-VN");
 }
 
 export function SupplyReturnRequestQueue() {
@@ -79,6 +96,9 @@ export function SupplyReturnRequestQueue() {
   >({});
   const [showProcessed, setShowProcessed] = useState(false);
   const [processedPage, setProcessedPage] = useState(1);
+  const [processedSearch, setProcessedSearch] = useState("");
+  const [processedConditionFilter, setProcessedConditionFilter] =
+    useState<ReturnConditionFilter>("all");
   const [expandedProcessedRequestId, setExpandedProcessedRequestId] =
     useState<number | null>(null);
   const [highlightedRequestId, setHighlightedRequestId] = useState<
@@ -89,7 +109,27 @@ export function SupplyReturnRequestQueue() {
   );
   const requests = requestsQuery.data || [];
   const pending = requests.filter(request => request.status === "pending");
-  const processed = requests.filter(request => request.status !== "pending");
+  const allProcessed = requests.filter(request => request.status !== "pending");
+  const normalizedProcessedSearch = normalizeSearch(processedSearch.trim());
+  const processed = allProcessed.filter(request => {
+    const matchesSearch =
+      !normalizedProcessedSearch ||
+      [request.requestCode, request.returnReceiptCode, request.requesterName]
+        .map(normalizeSearch)
+        .some(value => value.includes(normalizedProcessedSearch));
+    const matchesCondition =
+      processedConditionFilter === "all" ||
+      request.items.some(item => {
+        if (processedConditionFilter === "good")
+          return Number(item.goodQuantity) > 0;
+        if (processedConditionFilter === "damaged")
+          return Number(item.damagedQuantity) > 0;
+        if (processedConditionFilter === "missing")
+          return Number(item.missingQuantity) > 0;
+        return Number(item.repairQuantity) > 0;
+      });
+    return matchesSearch && matchesCondition;
+  });
   const processedPageSize = 5;
   const processedPageCount = Math.max(
     1,
@@ -108,6 +148,11 @@ export function SupplyReturnRequestQueue() {
   }, [processedPageCount]);
 
   useEffect(() => {
+    setProcessedPage(1);
+    setExpandedProcessedRequestId(null);
+  }, [processedSearch, processedConditionFilter]);
+
+  useEffect(() => {
     const storedId = Number(
       sessionStorage.getItem("assetmaster-open-supply-return-request-id")
     );
@@ -117,7 +162,11 @@ export function SupplyReturnRequestQueue() {
     sessionStorage.removeItem("assetmaster-open-supply-return-request-id");
     if (!target) return;
     if (target.status !== "pending") {
-      const targetIndex = processed.findIndex(request => request.id === storedId);
+      setProcessedSearch("");
+      setProcessedConditionFilter("all");
+      const targetIndex = allProcessed.findIndex(
+        request => request.id === storedId
+      );
       setShowProcessed(true);
       setProcessedPage(
         Math.max(1, Math.floor(targetIndex / processedPageSize) + 1)
@@ -598,7 +647,7 @@ export function SupplyReturnRequestQueue() {
             </div>
           ) : null}
         </div>
-        {processed.length ? (
+        {allProcessed.length ? (
           <div className="mt-4 border-t border-[#DDE7F0] pt-4">
             <button
               type="button"
@@ -608,57 +657,122 @@ export function SupplyReturnRequestQueue() {
               <CheckCircle2 size={14} />
               {showProcessed
                 ? "Ẩn yêu cầu đã xử lý"
-                : `Xem ${processed.length} yêu cầu đã xử lý`}
+                : `Xem ${allProcessed.length} yêu cầu đã xử lý`}
             </button>
             {showProcessed ? (
               <div className="mt-3 overflow-hidden rounded-xl border border-[#DCEBE9] bg-white">
-                <div className="divide-y divide-[#EDF2F5] p-2">
-                  {pagedProcessed.map(request => (
-                    <ProcessedRequestRow key={request.id} request={request} />
-                  ))}
-                </div>
-                <div className="flex flex-col gap-3 border-t border-[#E7EEF3] bg-[#FBFCFD] px-3 py-3 sm:flex-row sm:items-center sm:justify-between">
-                  <span className="text-xs font-semibold text-[#60758A]">
-                    Hiển thị{" "}
-                    {(activeProcessedPage - 1) * processedPageSize + 1}–
-                    {Math.min(
-                      activeProcessedPage * processedPageSize,
-                      processed.length
-                    )}{" "}
-                    / {processed.length} yêu cầu
-                  </span>
-                  <div className="flex items-center gap-2">
-                    <button
-                      type="button"
-                      aria-label="Trang yêu cầu hoàn trả đã xử lý trước"
-                      disabled={activeProcessedPage <= 1}
-                      onClick={() => {
-                        setExpandedProcessedRequestId(null);
-                        setProcessedPage(page => Math.max(1, page - 1));
-                      }}
-                      className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-[#DDE7F0] bg-white text-[#60758A] transition hover:border-[#8BCDC6] hover:text-[#087A6A] disabled:cursor-not-allowed disabled:opacity-40"
-                    >
-                      <ChevronLeft size={16} />
-                    </button>
-                    <span className="min-w-[82px] text-center text-xs font-bold text-[#193B57]">
-                      Trang {activeProcessedPage}/{processedPageCount}
+                <div className="grid gap-2 border-b border-[#E7EEF3] bg-[#FBFCFD] p-3 md:grid-cols-[minmax(0,1fr)_220px_auto]">
+                  <label className="relative block">
+                    <span className="sr-only">
+                      Tìm theo mã yêu cầu, mã biên bản hoặc tên nhân viên
                     </span>
+                    <Search
+                      size={15}
+                      className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[#8AA0B6]"
+                    />
+                    <input
+                      type="search"
+                      value={processedSearch}
+                      onChange={event => setProcessedSearch(event.target.value)}
+                      placeholder="Mã yêu cầu, biên bản hoặc nhân viên..."
+                      className="h-9 w-full rounded-lg border border-[#DDE7F0] bg-white pl-9 pr-3 text-xs text-[#193B57] outline-none transition placeholder:text-[#9BAEC0] focus:border-[#8BCDC6] focus:ring-2 focus:ring-[#8BCDC6]/20"
+                    />
+                  </label>
+                  <label>
+                    <span className="sr-only">Lọc theo kết quả kiểm đếm</span>
+                    <select
+                      value={processedConditionFilter}
+                      onChange={event =>
+                        setProcessedConditionFilter(
+                          event.target.value as ReturnConditionFilter
+                        )
+                      }
+                      className="h-9 w-full rounded-lg border border-[#DDE7F0] bg-white px-3 text-xs font-bold text-[#526779] outline-none transition focus:border-[#8BCDC6] focus:ring-2 focus:ring-[#8BCDC6]/20"
+                    >
+                      <option value="all">Tất cả tình trạng</option>
+                      <option value="good">Có hàng tốt</option>
+                      <option value="damaged">Có hàng hỏng</option>
+                      <option value="missing">Có hàng thiếu</option>
+                      <option value="repair">Có hàng cần sửa</option>
+                    </select>
+                  </label>
+                  {processedSearch || processedConditionFilter !== "all" ? (
                     <button
                       type="button"
-                      aria-label="Trang yêu cầu hoàn trả đã xử lý sau"
-                      disabled={activeProcessedPage >= processedPageCount}
                       onClick={() => {
-                        setExpandedProcessedRequestId(null);
-                        setProcessedPage(page =>
-                          Math.min(processedPageCount, page + 1)
-                        );
+                        setProcessedSearch("");
+                        setProcessedConditionFilter("all");
                       }}
-                      className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-[#DDE7F0] bg-white text-[#60758A] transition hover:border-[#8BCDC6] hover:text-[#087A6A] disabled:cursor-not-allowed disabled:opacity-40"
+                      className="inline-flex h-9 items-center justify-center gap-1.5 rounded-lg border border-[#DDE7F0] bg-white px-3 text-[11px] font-extrabold text-[#60758A] hover:bg-[#F4F7FB]"
                     >
-                      <ChevronRight size={16} />
+                      <XCircle size={14} />
+                      Xóa lọc
                     </button>
-                  </div>
+                  ) : (
+                    <div />
+                  )}
                 </div>
+                {processed.length ? (
+                  <>
+                    <div className="divide-y divide-[#EDF2F5] p-2">
+                      {pagedProcessed.map(request => (
+                        <ProcessedRequestRow key={request.id} request={request} />
+                      ))}
+                    </div>
+                    <div className="flex flex-col gap-3 border-t border-[#E7EEF3] bg-[#FBFCFD] px-3 py-3 sm:flex-row sm:items-center sm:justify-between">
+                      <span className="text-xs font-semibold text-[#60758A]">
+                        Hiển thị{" "}
+                        {(activeProcessedPage - 1) * processedPageSize + 1}–
+                        {Math.min(
+                          activeProcessedPage * processedPageSize,
+                          processed.length
+                        )}{" "}
+                        / {processed.length} kết quả
+                      </span>
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          aria-label="Trang yêu cầu hoàn trả đã xử lý trước"
+                          disabled={activeProcessedPage <= 1}
+                          onClick={() => {
+                            setExpandedProcessedRequestId(null);
+                            setProcessedPage(page => Math.max(1, page - 1));
+                          }}
+                          className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-[#DDE7F0] bg-white text-[#60758A] transition hover:border-[#8BCDC6] hover:text-[#087A6A] disabled:cursor-not-allowed disabled:opacity-40"
+                        >
+                          <ChevronLeft size={16} />
+                        </button>
+                        <span className="min-w-[82px] text-center text-xs font-bold text-[#193B57]">
+                          Trang {activeProcessedPage}/{processedPageCount}
+                        </span>
+                        <button
+                          type="button"
+                          aria-label="Trang yêu cầu hoàn trả đã xử lý sau"
+                          disabled={activeProcessedPage >= processedPageCount}
+                          onClick={() => {
+                            setExpandedProcessedRequestId(null);
+                            setProcessedPage(page =>
+                              Math.min(processedPageCount, page + 1)
+                            );
+                          }}
+                          className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-[#DDE7F0] bg-white text-[#60758A] transition hover:border-[#8BCDC6] hover:text-[#087A6A] disabled:cursor-not-allowed disabled:opacity-40"
+                        >
+                          <ChevronRight size={16} />
+                        </button>
+                      </div>
+                    </div>
+                  </>
+                ) : (
+                  <div className="px-4 py-10 text-center">
+                    <Search size={22} className="mx-auto text-[#9BAEC0]" />
+                    <div className="mt-2 text-xs font-extrabold text-[#526779]">
+                      Không tìm thấy yêu cầu phù hợp
+                    </div>
+                    <p className="mt-1 text-[11px] text-[#8AA0B6]">
+                      Hãy thử từ khóa hoặc tình trạng kiểm đếm khác.
+                    </p>
+                  </div>
+                )}
               </div>
             ) : null}
           </div>
