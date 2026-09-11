@@ -1,10 +1,11 @@
-import { Box, CalendarDays, CheckCircle2, CircleHelp, CircleUserRound, Clock3, History, LogOut, PackageCheck, PackagePlus, RotateCcw, Send, ShieldCheck, X, XCircle } from "lucide-react";
+import { Box, CalendarDays, CheckCircle2, CircleHelp, CircleUserRound, Clock3, Download, History, LogOut, PackageCheck, PackagePlus, RotateCcw, Send, ShieldCheck, X, XCircle } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { trpc } from "@/lib/trpc";
 import { UserHelpDialog } from "./HelpCenter";
 import { EmployeeSupplyRequests } from "@/components/EmployeeSupplyRequests";
 import { EmployeeNotificationBell } from "@/components/EmployeeNotificationBell";
+import { openSupplyReturnReceiptPdf } from "@/lib/supplyReturnReceiptPdf";
 
 type CurrentUser = { name: string | null; email: string | null; role: "user" | "admin"; isActive: boolean; lastSignedIn: Date | string };
 type CompanyBrand = { name: string; websiteTitle: string; logoUrl: string; brandColor: string };
@@ -389,16 +390,63 @@ function UserSupplyHistorySection({
                     <div
                       className={`mt-3 rounded-lg px-3 py-2 text-[11px] ${latestRequest.status === "rejected" ? "bg-[#FFF4F4] text-[#B44545]" : latestRequest.status === "approved" ? "bg-[#ECF8F7] text-[#087A6A]" : "bg-[#F7FAFC] text-[#71869A]"}`}
                     >
-                      <b>
-                        {latestRequest.status === "approved"
-                          ? "Đã duyệt hoàn trả"
-                          : latestRequest.status === "rejected"
-                            ? "Hoàn trả bị từ chối"
-                            : "Yêu cầu đã hủy"}
-                      </b>
-                      {latestRequest.reviewNote
-                        ? `: ${latestRequest.reviewNote}`
-                        : ""}
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <div>
+                          <b>
+                            {latestRequest.status === "approved"
+                              ? "Đã duyệt hoàn trả"
+                              : latestRequest.status === "rejected"
+                                ? "Hoàn trả bị từ chối"
+                                : "Yêu cầu đã hủy"}
+                          </b>
+                          {latestRequest.reviewNote
+                            ? `: ${latestRequest.reviewNote}`
+                            : ""}
+                          {latestRequest.returnReceiptCode ? (
+                            <div className="mt-1 font-mono text-[10px] font-extrabold">
+                              {latestRequest.returnReceiptCode}
+                            </div>
+                          ) : null}
+                        </div>
+                        {latestRequest.status === "approved" &&
+                        latestRequest.returnReceiptCode ? (
+                          <button
+                            type="button"
+                            onClick={() =>
+                              void openSupplyReturnReceiptPdf(
+                                latestRequest,
+                                latestRequest.items
+                              ).catch(error =>
+                                toast.error(
+                                  error instanceof Error
+                                    ? error.message
+                                    : "Không thể mở biên bản hoàn trả."
+                                )
+                              )
+                            }
+                            className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-[#B8E9DD] bg-white px-3 text-[10px] font-extrabold text-[#087A6A]"
+                          >
+                            <Download size={13} />
+                            Biên bản PDF
+                          </button>
+                        ) : null}
+                      </div>
+                      {latestRequest.status === "approved" ? (
+                        <div className="mt-2 space-y-1 border-t border-[#CDE5E5] pt-2">
+                          {latestRequest.items.map((item: any) => (
+                            <div
+                              key={item.id}
+                              className="flex flex-wrap gap-x-3 gap-y-1 text-[10px]"
+                            >
+                              <b>{item.supplyName}:</b>
+                              <span>Tốt {numberText(item.goodQuantity)}</span>
+                              <span>Hỏng {numberText(item.damagedQuantity)}</span>
+                              <span>Thiếu {numberText(item.missingQuantity)}</span>
+                              <span>Cần sửa {numberText(item.repairQuantity)}</span>
+                            </div>
+                          ))}
+                        </div>
+                      ) : null}
                     </div>
                   ) : null}
                 </article>
