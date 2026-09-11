@@ -7,6 +7,7 @@ import {
   Clock3,
   FilePlus2,
   PackageSearch,
+  Search,
   X,
   XCircle,
 } from "lucide-react";
@@ -57,6 +58,15 @@ function numberText(value: number | string) {
   }).format(Number(value));
 }
 
+function normalizeSearch(value: unknown) {
+  return String(value || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/đ/g, "d")
+    .replace(/Đ/g, "D")
+    .toLocaleLowerCase("vi-VN");
+}
+
 export function SupplyRequestQueue() {
   const utils = trpc.useUtils();
   const requestsQuery = trpc.supplies.adminRequests.useQuery(undefined, {
@@ -71,6 +81,7 @@ export function SupplyRequestQueue() {
   const [rejectNote, setRejectNote] = useState("");
   const [showProcessed, setShowProcessed] = useState(false);
   const [processedPage, setProcessedPage] = useState(1);
+  const [processedSearch, setProcessedSearch] = useState("");
   const [expandedProcessedRequestId, setExpandedProcessedRequestId] =
     useState<number | null>(null);
   const [highlightedRequestId, setHighlightedRequestId] = useState<number | null>(null);
@@ -107,7 +118,18 @@ export function SupplyRequestQueue() {
 
   const requests = requestsQuery.data || [];
   const pending = requests.filter(request => request.status === "pending");
-  const processed = requests.filter(request => request.status !== "pending");
+  const allProcessed = requests.filter(request => request.status !== "pending");
+  const normalizedProcessedSearch = normalizeSearch(processedSearch.trim());
+  const processed = allProcessed.filter(request => {
+    if (!normalizedProcessedSearch) return true;
+    return [
+      request.requestCode,
+      request.requesterName,
+      ...request.items.flatMap(item => [item.supplyName, item.supplyCode]),
+    ]
+      .map(normalizeSearch)
+      .some(value => value.includes(normalizedProcessedSearch));
+  });
   const processedPageSize = 5;
   const processedPageCount = Math.max(
     1,
@@ -124,6 +146,11 @@ export function SupplyRequestQueue() {
   }, [processedPageCount]);
 
   useEffect(() => {
+    setProcessedPage(1);
+    setExpandedProcessedRequestId(null);
+  }, [processedSearch]);
+
+  useEffect(() => {
     const storedId = Number(
       sessionStorage.getItem("assetmaster-open-supply-request-id")
     );
@@ -133,7 +160,10 @@ export function SupplyRequestQueue() {
     sessionStorage.removeItem("assetmaster-open-supply-request-id");
     if (!target) return;
     if (target.status !== "pending") {
-      const targetIndex = processed.findIndex(request => request.id === storedId);
+      setProcessedSearch("");
+      const targetIndex = allProcessed.findIndex(
+        request => request.id === storedId
+      );
       setShowProcessed(true);
       setProcessedPage(
         Math.max(1, Math.floor(targetIndex / processedPageSize) + 1)
@@ -485,7 +515,7 @@ export function SupplyRequestQueue() {
           )}
         </div>
 
-        {!!processed.length && (
+        {!!allProcessed.length && (
           <div className="mt-4 border-t border-[#DCEBE9] pt-4">
             <button
               type="button"
@@ -495,57 +525,91 @@ export function SupplyRequestQueue() {
               <CheckCircle2 size={14} />
               {showProcessed
                 ? "Ẩn yêu cầu đã xử lý"
-                : `Xem ${processed.length} yêu cầu đã xử lý`}
+                : `Xem ${allProcessed.length} yêu cầu đã xử lý`}
             </button>
             {showProcessed && (
               <div className="mt-3 overflow-hidden rounded-xl border border-[#DCEBE9] bg-white">
-                <div className="divide-y divide-[#EDF2F5] p-2">
-                  {pagedProcessed.map(request => (
-                    <ProcessedRequestRow key={request.id} request={request} />
-                  ))}
+                <div className="border-b border-[#E7EEF3] bg-[#F8FBFC] p-3">
+                  <label className="relative block">
+                    <span className="sr-only">Tìm trong lịch sử duyệt cấp</span>
+                    <Search
+                      size={15}
+                      className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[#8AA0B6]"
+                    />
+                    <input
+                      type="search"
+                      value={processedSearch}
+                      onChange={event => setProcessedSearch(event.target.value)}
+                      placeholder="Mã yêu cầu, nhân viên hoặc phụ kiện..."
+                      className="h-9 w-full rounded-lg border border-[#DDE7F0] bg-white pl-9 pr-9 text-xs text-[#193B57] outline-none transition placeholder:text-[#9BAEC0] focus:border-[#8BCDC6] focus:ring-2 focus:ring-[#8BCDC6]/20"
+                    />
+                    {processedSearch && (
+                      <button
+                        type="button"
+                        onClick={() => setProcessedSearch("")}
+                        aria-label="Xóa nội dung tìm kiếm lịch sử duyệt cấp"
+                        className="absolute right-2 top-1/2 inline-flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-md text-[#8AA0B6] hover:bg-[#EEF5F7] hover:text-[#087A6A]"
+                      >
+                        <XCircle size={14} />
+                      </button>
+                    )}
+                  </label>
                 </div>
-                <div className="flex flex-col gap-3 border-t border-[#E7EEF3] bg-[#FBFCFD] px-3 py-3 sm:flex-row sm:items-center sm:justify-between">
-                  <span className="text-xs font-semibold text-[#60758A]">
-                    Hiển thị{" "}
-                    {(activeProcessedPage - 1) * processedPageSize + 1}–
-                    {Math.min(
-                      activeProcessedPage * processedPageSize,
-                      processed.length
-                    )}{" "}
-                    / {processed.length} yêu cầu
-                  </span>
-                  <div className="flex items-center gap-2">
-                    <button
-                      type="button"
-                      aria-label="Trang yêu cầu đã xử lý trước"
-                      disabled={activeProcessedPage <= 1}
-                      onClick={() => {
-                        setExpandedProcessedRequestId(null);
-                        setProcessedPage(page => Math.max(1, page - 1));
-                      }}
-                      className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-[#DDE7F0] bg-white text-[#60758A] transition hover:border-[#8BCDC6] hover:text-[#087A6A] disabled:cursor-not-allowed disabled:opacity-40"
-                    >
-                      <ChevronLeft size={16} />
-                    </button>
-                    <span className="min-w-[82px] text-center text-xs font-bold text-[#193B57]">
-                      Trang {activeProcessedPage}/{processedPageCount}
-                    </span>
-                    <button
-                      type="button"
-                      aria-label="Trang yêu cầu đã xử lý sau"
-                      disabled={activeProcessedPage >= processedPageCount}
-                      onClick={() => {
-                        setExpandedProcessedRequestId(null);
-                        setProcessedPage(page =>
-                          Math.min(processedPageCount, page + 1)
-                        );
-                      }}
-                      className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-[#DDE7F0] bg-white text-[#60758A] transition hover:border-[#8BCDC6] hover:text-[#087A6A] disabled:cursor-not-allowed disabled:opacity-40"
-                    >
-                      <ChevronRight size={16} />
-                    </button>
+                {processed.length ? (
+                  <>
+                    <div className="divide-y divide-[#EDF2F5] p-2">
+                      {pagedProcessed.map(request => (
+                        <ProcessedRequestRow key={request.id} request={request} />
+                      ))}
+                    </div>
+                    <div className="flex flex-col gap-3 border-t border-[#E7EEF3] bg-[#FBFCFD] px-3 py-3 sm:flex-row sm:items-center sm:justify-between">
+                      <span className="text-xs font-semibold text-[#60758A]">
+                        Hiển thị{" "}
+                        {(activeProcessedPage - 1) * processedPageSize + 1}–
+                        {Math.min(
+                          activeProcessedPage * processedPageSize,
+                          processed.length
+                        )}{" "}
+                        / {processed.length} yêu cầu
+                      </span>
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          aria-label="Trang yêu cầu đã xử lý trước"
+                          disabled={activeProcessedPage <= 1}
+                          onClick={() => {
+                            setExpandedProcessedRequestId(null);
+                            setProcessedPage(page => Math.max(1, page - 1));
+                          }}
+                          className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-[#DDE7F0] bg-white text-[#60758A] transition hover:border-[#8BCDC6] hover:text-[#087A6A] disabled:cursor-not-allowed disabled:opacity-40"
+                        >
+                          <ChevronLeft size={16} />
+                        </button>
+                        <span className="min-w-[82px] text-center text-xs font-bold text-[#193B57]">
+                          Trang {activeProcessedPage}/{processedPageCount}
+                        </span>
+                        <button
+                          type="button"
+                          aria-label="Trang yêu cầu đã xử lý sau"
+                          disabled={activeProcessedPage >= processedPageCount}
+                          onClick={() => {
+                            setExpandedProcessedRequestId(null);
+                            setProcessedPage(page =>
+                              Math.min(processedPageCount, page + 1)
+                            );
+                          }}
+                          className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-[#DDE7F0] bg-white text-[#60758A] transition hover:border-[#8BCDC6] hover:text-[#087A6A] disabled:cursor-not-allowed disabled:opacity-40"
+                        >
+                          <ChevronRight size={16} />
+                        </button>
+                      </div>
+                    </div>
+                  </>
+                ) : (
+                  <div className="px-4 py-8 text-center text-xs font-bold text-[#71869A]">
+                    Không tìm thấy yêu cầu phù hợp.
                   </div>
-                </div>
+                )}
               </div>
             )}
           </div>
