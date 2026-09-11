@@ -120,6 +120,12 @@ describe("employee supply request workflow", () => {
     expect(queue).toContain("Xác nhận duyệt & tạo phiếu");
     expect(queue).toContain("Số lượng thực cấp");
     expect(queue).toContain("Xác nhận cấp một phần");
+    expect(queue).toContain("const processedPageSize = 10");
+    expect(queue).toContain("pagedProcessed.map");
+    expect(queue).toContain("ProcessedRequestRow");
+    expect(queue).toContain("Trang {activeProcessedPage}/{processedPageCount}");
+    expect(queue).toContain("expandedProcessedRequestId");
+    expect(queue).not.toContain("processed.slice(0, 20)");
     expect(portal).toContain("Thực cấp");
     expect(queue).not.toContain("window.confirm");
     expect(dashboard).toContain(
