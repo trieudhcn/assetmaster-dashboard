@@ -108,7 +108,7 @@ export function SupplyRequestQueue() {
   const requests = requestsQuery.data || [];
   const pending = requests.filter(request => request.status === "pending");
   const processed = requests.filter(request => request.status !== "pending");
-  const processedPageSize = 10;
+  const processedPageSize = 5;
   const processedPageCount = Math.max(
     1,
     Math.ceil(processed.length / processedPageSize)
