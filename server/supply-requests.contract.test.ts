@@ -162,4 +162,65 @@ describe("employee supply request workflow", () => {
     expect(queue).toContain("data-supply-request-id");
     expect(manager).toContain("<SupplyRequestQueue />");
   });
+
+  it("persists employee accessory-return requests and their source lines", async () => {
+    const [schema, migration, journal] = await Promise.all([
+      source("drizzle/schema.ts"),
+      source("drizzle/0065_supply_return_requests.sql"),
+      source("drizzle/meta/_journal.json"),
+    ]);
+
+    expect(schema).toContain("export const supplyReturnRequests = mysqlTable(");
+    expect(schema).toContain("export const supplyReturnRequestItems = mysqlTable(");
+    expect(schema).toContain('"issue_slip"');
+    expect(schema).toContain('"handover"');
+    expect(migration).toContain("CREATE TABLE \`supplyReturnRequests\`");
+    expect(migration).toContain("CREATE TABLE \`supplyReturnRequestItems\`");
+    expect(migration).toContain("supply_return_request_source_status_idx");
+    expect(journal).toContain('"tag": "0065_supply_return_requests"');
+  });
+
+  it("lets employees request accessory returns and only restores stock after admin approval", async () => {
+    const [router, database, dashboard, manager, returnQueue] =
+      await Promise.all([
+        source("server/routers.ts"),
+        source("server/db.ts"),
+        source("client/src/pages/UserDashboard.tsx"),
+        source("client/src/components/SupplyIssueSlipManager.tsx"),
+        source("client/src/components/SupplyReturnRequestQueue.tsx"),
+      ]);
+
+    const suppliesRouter = router.slice(router.indexOf("supplies: router({"));
+    expect(suppliesRouter).toContain("myReturnRequests: protectedProcedure");
+    expect(suppliesRouter).toContain("createReturnRequest: protectedProcedure");
+    expect(suppliesRouter).toContain("cancelReturnRequest: protectedProcedure");
+    expect(suppliesRouter).toContain("adminReturnRequests: adminProcedure");
+    expect(suppliesRouter).toContain("rejectReturnRequest: adminProcedure");
+    expect(suppliesRouter).toContain("approveReturnRequest: adminProcedure");
+    expect(suppliesRouter).toContain("runInventoryTransaction");
+    expect(suppliesRouter).toContain("incrementInventorySupplyStock");
+    expect(suppliesRouter).toContain(
+      "incrementSupplyIssueSlipItemReturnedQuantity"
+    );
+    expect(suppliesRouter).toContain(
+      "incrementHandoverSupplyItemReturnedQuantity"
+    );
+    expect(database).toContain(
+      "export async function incrementInventorySupplyStock"
+    );
+    expect(database).toContain(
+      "export async function incrementSupplyIssueSlipItemReturnedQuantity"
+    );
+    expect(database).toContain(
+      "export async function incrementHandoverSupplyItemReturnedQuantity"
+    );
+    expect(dashboard).toContain("const totalOutstanding = slips.reduce");
+    expect(dashboard).toContain("trpc.supplies.createReturnRequest");
+    expect(dashboard).toContain("trpc.supplies.cancelReturnRequest");
+    expect(dashboard).toContain("Yêu cầu hoàn trả");
+    expect(returnQueue).toContain("trpc.supplies.approveReturnRequest");
+    expect(returnQueue).toContain("trpc.supplies.rejectReturnRequest");
+    expect(returnQueue).toContain("<AlertDialog");
+    expect(manager).toContain("<SupplyReturnRequestQueue />");
+  });
 });
