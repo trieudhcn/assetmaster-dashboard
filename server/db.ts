@@ -1663,6 +1663,116 @@ export async function listInventorySupplies() {
   }));
 }
 
+export async function listInventorySupplyHolders(supplyId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  const [issueSlipRows, handoverRows, directIssueRows] = await Promise.all([
+    db
+      .select({
+        recipientUserId: supplyIssueSlips.recipientUserId,
+        recipientName: supplyIssueSlips.recipientName,
+        referenceCode: supplyIssueSlips.referenceCode,
+        issuedAt: supplyIssueSlips.issuedAt,
+        heldQuantity: sql<string>`greatest(${supplyIssueSlipItems.issuedQuantity} - ${supplyIssueSlipItems.returnedQuantity}, 0)`,
+      })
+      .from(supplyIssueSlipItems)
+      .innerJoin(
+        supplyIssueSlips,
+        eq(supplyIssueSlipItems.issueSlipId, supplyIssueSlips.id)
+      )
+      .where(
+        and(
+          eq(supplyIssueSlipItems.supplyId, supplyId),
+          sql`${supplyIssueSlipItems.issuedQuantity} - ${supplyIssueSlipItems.returnedQuantity} > 0`
+        )
+      ),
+    db
+      .select({
+        recipientUserId: handovers.recipientUserId,
+        recipientName: handovers.recipientName,
+        referenceCode: handovers.referenceCode,
+        issuedAt: handovers.handedOverAt,
+        heldQuantity: sql<string>`greatest(${handoverSupplyItems.issuedQuantity} - ${handoverSupplyItems.returnedQuantity}, 0)`,
+      })
+      .from(handoverSupplyItems)
+      .innerJoin(handovers, eq(handoverSupplyItems.handoverId, handovers.id))
+      .where(
+        and(
+          eq(handoverSupplyItems.supplyId, supplyId),
+          inArray(handovers.status, ["active", "returned"]),
+          sql`${handoverSupplyItems.issuedQuantity} - ${handoverSupplyItems.returnedQuantity} > 0`
+        )
+      ),
+    db
+      .select({
+        recipientUserId: inventoryMovements.recipientUserId,
+        recipientName: inventoryMovements.recipientName,
+        referenceCode: sql<string>`concat('XK-', ${inventoryMovements.id})`,
+        issuedAt: inventoryMovements.createdAt,
+        heldQuantity: sql<string>`abs(${inventoryMovements.quantity})`,
+      })
+      .from(inventoryMovements)
+      .where(
+        and(
+          eq(inventoryMovements.supplyId, supplyId),
+          eq(inventoryMovements.movementType, "issue"),
+          isNull(inventoryMovements.issueSlipId),
+          isNull(inventoryMovements.handoverId)
+        )
+      ),
+  ]);
+  type HoldingRow = {
+    recipientUserId: number | null;
+    recipientName: string | null;
+    referenceCode: string;
+    issuedAt: Date;
+    heldQuantity: string;
+  };
+  const holders = new Map<
+    string,
+    {
+      recipientUserId: number | null;
+      recipientName: string;
+      heldQuantity: number;
+      sourceReferences: string[];
+      latestIssuedAt: Date;
+    }
+  >();
+  const addRows = (rows: HoldingRow[]) => {
+    rows.forEach(row => {
+      const recipientName = row.recipientName?.trim() || "Người nhận khác";
+      const key = row.recipientUserId
+        ? `user:${row.recipientUserId}`
+        : `name:${recipientName.toLocaleLowerCase("vi-VN")}`;
+      const existing = holders.get(key);
+      const heldQuantity = Number(row.heldQuantity || 0);
+      if (existing) {
+        existing.heldQuantity += heldQuantity;
+        if (!existing.sourceReferences.includes(row.referenceCode))
+          existing.sourceReferences.push(row.referenceCode);
+        if (row.issuedAt > existing.latestIssuedAt)
+          existing.latestIssuedAt = row.issuedAt;
+        return;
+      }
+      holders.set(key, {
+        recipientUserId: row.recipientUserId,
+        recipientName,
+        heldQuantity,
+        sourceReferences: [row.referenceCode],
+        latestIssuedAt: row.issuedAt,
+      });
+    });
+  };
+  addRows(issueSlipRows);
+  addRows(handoverRows);
+  addRows(directIssueRows);
+  return [...holders.values()].sort(
+    (left, right) =>
+      right.heldQuantity - left.heldQuantity ||
+      left.recipientName.localeCompare(right.recipientName, "vi")
+  );
+}
+
 export async function getInventorySupplyById(id: number, executor?: any) {
   const db = executor ?? await getDb();
   if (!db) return undefined;
