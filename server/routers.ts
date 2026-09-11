@@ -5611,7 +5611,13 @@ export const appRouter = router({
     myRequests: protectedProcedure.query(({ ctx }) =>
       listSupplyRequests(ctx.user.id)
     ),
+    myReturnRequests: protectedProcedure.query(({ ctx }) =>
+      listSupplyReturnRequests(ctx.user.id)
+    ),
     adminRequests: adminProcedure.query(() => listSupplyRequests()),
+    adminReturnRequests: adminProcedure.query(() =>
+      listSupplyReturnRequests()
+    ),
     createRequest: protectedProcedure
       .input(
         z
