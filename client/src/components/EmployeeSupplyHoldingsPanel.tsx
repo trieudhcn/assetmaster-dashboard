@@ -21,6 +21,12 @@ type EmployeeSupplyHoldingsPanelProps = {
   onRetry: () => void;
 };
 
+type SupplyReturnDialogRow = {
+  item: any;
+  quantity: number;
+  valid: boolean;
+};
+
 function formatDate(value: Date | string | null | undefined) {
   return value ? new Date(value).toLocaleDateString("vi-VN") : "Chưa cập nhật";
 }
@@ -186,7 +192,7 @@ function SupplyReturnRequestDialog({ slip, pending, onClose, onSubmit }: { slip:
   const returnableItems = slip.items.filter((item: any) => Number.isInteger(item.sourceItemId));
   const [quantities, setQuantities] = useState<Record<number, string>>(() => Object.fromEntries(returnableItems.map((item: any) => [item.sourceItemId, String(item.outstanding)])));
   const [note, setNote] = useState("");
-  const rows = returnableItems.map((item: any) => {
+  const rows: SupplyReturnDialogRow[] = returnableItems.map((item: any) => {
     const quantity = Number(quantities[item.sourceItemId] || 0);
     return { item, quantity, valid: Number.isFinite(quantity) && quantity >= 0 && quantity <= item.outstanding };
   });
