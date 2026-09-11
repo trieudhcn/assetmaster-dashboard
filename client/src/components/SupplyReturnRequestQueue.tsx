@@ -656,6 +656,9 @@ export function SupplyReturnRequestQueue() {
                 if (!approveTarget || !canApprove) return;
                 approve.mutate({
                   id: approveTarget.id,
+                  deliveredByName: approveTarget.requesterName,
+                  receivedByName:
+                    user?.name || user?.email || "Quản trị viên",
                   reviewNote: reviewNote.trim() || null,
                   items: inspectionRows.map(row => ({
                     requestItemId: row.item.id,
