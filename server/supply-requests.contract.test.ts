@@ -121,6 +121,13 @@ describe("employee supply request workflow", () => {
     expect(queue).toContain("Số lượng thực cấp");
     expect(queue).toContain("Xác nhận cấp một phần");
     expect(queue).toContain("const processedPageSize = 5");
+    expect(queue).toContain("processedSearch");
+    expect(queue).toContain("request.requestCode");
+    expect(queue).toContain("request.requesterName");
+    expect(queue).toContain("item.supplyName");
+    expect(queue).toContain("item.supplyCode");
+    expect(queue).toContain("Mã yêu cầu, nhân viên hoặc phụ kiện...");
+    expect(queue).toContain("Không tìm thấy yêu cầu phù hợp");
     expect(queue).toContain("pagedProcessed.map");
     expect(queue).toContain("ProcessedRequestRow");
     expect(queue).toContain("Trang {activeProcessedPage}/{processedPageCount}");
@@ -261,6 +268,11 @@ describe("employee supply request workflow", () => {
     expect(returnQueue).toContain("Có hàng hỏng");
     expect(returnQueue).toContain("Có hàng thiếu");
     expect(returnQueue).toContain("Có hàng cần sửa");
+    expect(returnQueue).toContain("<SearchableSelect");
+    expect(returnQueue).toContain('searchPlaceholder="Tìm tình trạng kiểm đếm..."');
+    expect(returnQueue).not.toContain(
+      "event.target.value as ReturnConditionFilter"
+    );
     expect(returnQueue).toContain("Không tìm thấy yêu cầu phù hợp");
     expect(manager).toContain("<SupplyReturnRequestQueue />");
   });
@@ -312,7 +324,15 @@ describe("employee supply request workflow", () => {
     expect(queue).toContain(
       "shrink-0 border-t border-[#E7EEF3] bg-white"
     );
+    expect(inventory).toContain("Tổng nhập");
+    expect(inventory).toContain("Đã xuất");
     expect(inventory).toContain("Tồn khả dụng");
+    expect(inventory).toContain("item.totalReceivedQuantity");
+    expect(inventory).toContain("item.totalIssuedQuantity");
+    expect(inventory).toContain("colSpan={9}");
+    expect(database).toContain("totalReceivedQuantity");
+    expect(database).toContain("totalIssuedQuantity");
+    expect(database).toContain("inventoryMovements.movementType");
     expect(inventory).toContain("selectedSupply.damagedQuantity");
     expect(pdf).toContain("BIÊN BẢN HOÀN TRẢ PHỤ KIỆN");
     expect(pdf).toContain("openPdfPreview");
