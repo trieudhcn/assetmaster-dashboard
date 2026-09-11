@@ -463,6 +463,13 @@
       "when": 1789113600000,
       "tag": "0065_supply_return_requests",
       "breakpoints": true
+    },
+    {
+      "idx": 66,
+      "version": "5",
+      "when": 1789117200000,
+      "tag": "0066_supply_return_inspection_receipts",
+      "breakpoints": true
     }
   ]
 }
