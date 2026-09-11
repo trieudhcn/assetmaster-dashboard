@@ -275,6 +275,9 @@ describe("employee supply request workflow", () => {
     );
     expect(returnQueue).toContain("Không tìm thấy yêu cầu phù hợp");
     expect(manager).toContain("<SupplyReturnRequestQueue />");
+    expect(manager).toContain("Loại phụ kiện");
+    expect(manager).toContain("slip.supplyNames");
+    expect(manager).toContain("colSpan={6}");
   });
 
   it("classifies returned accessories, isolates unusable stock and creates a PDF receipt", async () => {
@@ -325,14 +328,16 @@ describe("employee supply request workflow", () => {
       "shrink-0 border-t border-[#E7EEF3] bg-white"
     );
     expect(inventory).toContain("Tổng nhập");
-    expect(inventory).toContain("Đã xuất");
+    expect(inventory).toContain("Đang giữ");
     expect(inventory).toContain("Tồn khả dụng");
     expect(inventory).toContain("item.totalReceivedQuantity");
-    expect(inventory).toContain("item.totalIssuedQuantity");
+    expect(inventory).toContain("item.heldQuantity");
     expect(inventory).toContain("colSpan={9}");
     expect(database).toContain("totalReceivedQuantity");
-    expect(database).toContain("totalIssuedQuantity");
-    expect(database).toContain("inventoryMovements.movementType");
+    expect(database).toContain("holdingBySupplyId");
+    expect(database).toContain("issueSlipHoldings");
+    expect(database).toContain("handoverHoldings");
+    expect(database).toContain("directIssueHoldings");
     expect(inventory).toContain("selectedSupply.damagedQuantity");
     expect(pdf).toContain("BIÊN BẢN HOÀN TRẢ PHỤ KIỆN");
     expect(pdf).toContain("openPdfPreview");
