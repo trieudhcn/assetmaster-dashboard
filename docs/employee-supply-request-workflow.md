@@ -46,3 +46,31 @@ Nhân viên có thể chọn phụ kiện đang hoạt động và còn tồn kh
 9. Thử nhập số lượng vượt yêu cầu hoặc vượt tồn; xác nhận modal không cho gửi.
 10. Tạo yêu cầu rồi làm giảm tồn kho bằng giao dịch khác trước khi duyệt; xác nhận hệ thống rollback toàn bộ khi số lượng thực cấp không còn đủ tồn.
 11. Kiểm tra `/readyz` sau khi migration `0064_partial_supply_request_fulfillment` hoàn tất.
+
+
+## Luồng hoàn trả phụ kiện về kho
+
+Nhân viên có thể tạo yêu cầu hoàn trả theo từng phiếu đang giữ. Hệ thống hỗ trợ cả phụ kiện từ phiếu cấp phát và phụ kiện đi kèm biên bản bàn giao tài sản.
+
+- Chỉ số **Đang giữ** là tổng số lượng còn giữ của tất cả dòng phụ kiện, không phải số phiếu.
+- Portal hiển thị danh sách loại phụ kiện và tổng số lượng đang giữ theo từng loại.
+- Nhân viên chọn số lượng hoàn trả trên từng dòng; tổng số lượng phải lớn hơn 0 và không vượt số lượng còn giữ.
+- Mỗi nguồn chỉ có một yêu cầu hoàn trả ở trạng thái chờ duyệt.
+- Nhân viên có thể hủy yêu cầu khi còn chờ duyệt.
+- Admin có thể duyệt hoặc từ chối kèm phản hồi trong **Phụ kiện → Phiếu cấp phát**.
+- Khi duyệt, hệ thống kiểm tra lại quyền sở hữu, nguồn cấp phát và số lượng còn giữ trong transaction.
+- Chỉ sau khi duyệt, số lượng đã trả mới được ghi nhận, tồn kho mới được cộng lại và lịch sử nhập kho mới được tạo.
+- Nếu dữ liệu đã thay đổi hoặc số lượng không còn hợp lệ, toàn bộ thao tác được rollback.
+- Các dòng xuất kho cũ không có liên kết nguồn vẫn được hiển thị để đối soát nhưng không thể tự động tạo yêu cầu hoàn trả.
+
+### UAT hoàn trả
+
+1. Cấp nhiều hơn một đơn vị phụ kiện cho nhân viên và xác nhận **Đang giữ** bằng tổng số lượng còn giữ.
+2. Kiểm tra phần tóm tắt hiển thị đúng tên và số lượng từng loại phụ kiện.
+3. Từ một phiếu cấp phụ kiện, tạo yêu cầu trả một phần và xác nhận tồn kho chưa thay đổi khi yêu cầu còn chờ.
+4. Hủy yêu cầu đang chờ và xác nhận admin không thể duyệt yêu cầu đó.
+5. Tạo lại yêu cầu, đăng nhập admin và từ chối kèm lý do; xác nhận portal hiển thị phản hồi.
+6. Tạo yêu cầu khác và duyệt; xác nhận tồn kho tăng đúng, số lượng còn giữ giảm đúng và có dòng lịch sử nhập kho.
+7. Lặp lại với phụ kiện đi kèm biên bản bàn giao tài sản.
+8. Thử tạo hai yêu cầu chờ cho cùng một phiếu, trả vượt số lượng còn giữ hoặc duyệt sau khi dữ liệu nguồn đã thay đổi; xác nhận hệ thống chặn và không cập nhật dở dang.
+9. Kiểm tra `/readyz` sau khi migration `0065_supply_return_requests` hoàn tất.
