@@ -16,6 +16,7 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { trpc } from "@/lib/trpc";
+import { SearchableSelect } from "@/components/SearchableSelect";
 import { openSupplyReturnReceiptPdf } from "@/lib/supplyReturnReceiptPdf";
 import {
   AlertDialog,
@@ -61,6 +62,14 @@ type ReturnConditionFilter =
   | "damaged"
   | "missing"
   | "repair";
+
+const returnConditionFilterOptions = [
+  { value: "all", label: "Tất cả tình trạng" },
+  { value: "good", label: "Có hàng tốt", searchText: "tot dat" },
+  { value: "damaged", label: "Có hàng hỏng", searchText: "hong loi" },
+  { value: "missing", label: "Có hàng thiếu", searchText: "thieu mat" },
+  { value: "repair", label: "Có hàng cần sửa", searchText: "sua chua" },
+];
 
 function numberText(value: number | string) {
   return Number(value).toLocaleString("vi-VN", {
@@ -678,24 +687,21 @@ export function SupplyReturnRequestQueue() {
                       className="h-9 w-full rounded-lg border border-[#DDE7F0] bg-white pl-9 pr-3 text-xs text-[#193B57] outline-none transition placeholder:text-[#9BAEC0] focus:border-[#8BCDC6] focus:ring-2 focus:ring-[#8BCDC6]/20"
                     />
                   </label>
-                  <label>
+                  <div className="min-w-0">
                     <span className="sr-only">Lọc theo kết quả kiểm đếm</span>
-                    <select
+                    <SearchableSelect
                       value={processedConditionFilter}
-                      onChange={event =>
+                      onChange={value =>
                         setProcessedConditionFilter(
-                          event.target.value as ReturnConditionFilter
+                          value as ReturnConditionFilter
                         )
                       }
-                      className="h-9 w-full rounded-lg border border-[#DDE7F0] bg-white px-3 text-xs font-bold text-[#526779] outline-none transition focus:border-[#8BCDC6] focus:ring-2 focus:ring-[#8BCDC6]/20"
-                    >
-                      <option value="all">Tất cả tình trạng</option>
-                      <option value="good">Có hàng tốt</option>
-                      <option value="damaged">Có hàng hỏng</option>
-                      <option value="missing">Có hàng thiếu</option>
-                      <option value="repair">Có hàng cần sửa</option>
-                    </select>
-                  </label>
+                      options={returnConditionFilterOptions}
+                      placeholder="Lọc tình trạng"
+                      searchPlaceholder="Tìm tình trạng kiểm đếm..."
+                      emptyText="Không tìm thấy tình trạng"
+                    />
+                  </div>
                   {processedSearch || processedConditionFilter !== "all" ? (
                     <button
                       type="button"
