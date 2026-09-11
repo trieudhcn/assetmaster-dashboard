@@ -10,5 +10,13 @@ describe("Docker migration runner", () => {
     expect(migrate).toContain('readSecret("MYSQL_APP_PASSWORD")');
     expect(migrate).toContain("MYSQL_APP_PASSWORD_FILE");
     expect(migrate).toContain("encodeURIComponent(password)");
+    expect(migrate).toContain("ensureSupplyReturnInspectionSchema");
+    expect(migrate).toContain("information_schema.COLUMNS");
+    expect(migrate).toContain("information_schema.STATISTICS");
+    expect(migrate).toContain("returnReceiptCode");
+    expect(migrate).toContain("conditionNote");
+    expect(migrate).toContain(
+      "database migrations and schema are up to date"
+    );
   });
 });
