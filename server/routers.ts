@@ -229,6 +229,7 @@ import {
   listHandoverSupplyItems,
   listInventoryMovements,
   listInventorySupplies,
+  listInventorySupplyHolders,
   listRequestableInventorySupplies,
   listInventoryMovementReport,
   listActiveHandoverSupplyHoldingsByRecipientUserId,
@@ -6102,6 +6103,9 @@ export const appRouter = router({
         });
       }),
     list: adminProcedure.query(() => listInventorySupplies()),
+    supplyHolders: adminProcedure
+      .input(z.object({ supplyId: z.number().int().positive() }))
+      .query(({ input }) => listInventorySupplyHolders(input.supplyId)),
     history: adminProcedure
       .input(
         z.object({
