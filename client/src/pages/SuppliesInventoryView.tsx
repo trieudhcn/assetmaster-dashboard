@@ -97,6 +97,8 @@ export function SuppliesInventoryView({ canEditSectionLabels = false }: { canEdi
       (total, holder) => total + Number(holder.heldQuantity),
       0
     );
+    setHoldingSupplyId(null);
+    await new Promise<void>(resolve => window.setTimeout(resolve, 200));
     await writeBrandedWorkbook(workbook, {
       documentTitle: "DANH SÁCH NGƯỜI ĐANG GIỮ PHỤ KIỆN",
       fileName: `nguoi-dang-giu-${selectedHoldingSupply.code}-${new Date().toISOString().slice(0, 10)}.xlsx`,
