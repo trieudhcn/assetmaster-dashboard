@@ -1,5 +1,8 @@
 import {
   CheckCircle2,
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
   ClipboardCheck,
   Clock3,
   FilePlus2,
@@ -67,6 +70,9 @@ export function SupplyRequestQueue() {
   const [rejectTargetId, setRejectTargetId] = useState<number | null>(null);
   const [rejectNote, setRejectNote] = useState("");
   const [showProcessed, setShowProcessed] = useState(false);
+  const [processedPage, setProcessedPage] = useState(1);
+  const [expandedProcessedRequestId, setExpandedProcessedRequestId] =
+    useState<number | null>(null);
   const [highlightedRequestId, setHighlightedRequestId] = useState<number | null>(null);
 
   const fulfill = trpc.supplies.fulfillRequest.useMutation({
@@ -102,6 +108,21 @@ export function SupplyRequestQueue() {
   const requests = requestsQuery.data || [];
   const pending = requests.filter(request => request.status === "pending");
   const processed = requests.filter(request => request.status !== "pending");
+  const processedPageSize = 10;
+  const processedPageCount = Math.max(
+    1,
+    Math.ceil(processed.length / processedPageSize)
+  );
+  const activeProcessedPage = Math.min(processedPage, processedPageCount);
+  const pagedProcessed = processed.slice(
+    (activeProcessedPage - 1) * processedPageSize,
+    activeProcessedPage * processedPageSize
+  );
+
+  useEffect(() => {
+    setProcessedPage(page => Math.min(page, processedPageCount));
+  }, [processedPageCount]);
+
   useEffect(() => {
     const storedId = Number(
       sessionStorage.getItem("assetmaster-open-supply-request-id")
@@ -111,22 +132,29 @@ export function SupplyRequestQueue() {
     const target = requests.find(request => request.id === storedId);
     sessionStorage.removeItem("assetmaster-open-supply-request-id");
     if (!target) return;
-    if (target.status !== "pending") setShowProcessed(true);
+    if (target.status !== "pending") {
+      const targetIndex = processed.findIndex(request => request.id === storedId);
+      setShowProcessed(true);
+      setProcessedPage(
+        Math.max(1, Math.floor(targetIndex / processedPageSize) + 1)
+      );
+      setExpandedProcessedRequestId(storedId);
+    }
     setHighlightedRequestId(storedId);
-    const frame = window.requestAnimationFrame(() => {
+    const scrollTimer = window.setTimeout(() => {
       document
         .querySelector<HTMLElement>(
           `[data-supply-request-id="${storedId}"]`
         )
         ?.scrollIntoView({ behavior: "smooth", block: "center" });
-    });
-    const timer = window.setTimeout(
+    }, 0);
+    const highlightTimer = window.setTimeout(
       () => setHighlightedRequestId(null),
       3_500
     );
     return () => {
-      window.cancelAnimationFrame(frame);
-      window.clearTimeout(timer);
+      window.clearTimeout(scrollTimer);
+      window.clearTimeout(highlightTimer);
     };
   }, [requests]);
   const stockBySupplyId = useMemo(
@@ -163,6 +191,113 @@ export function SupplyRequestQueue() {
   const isPartialFulfillment =
     canFulfill &&
     fulfillmentRows.some(row => row.approved < row.requested);
+
+  const ProcessedRequestRow = ({
+    request,
+  }: {
+    request: (typeof requests)[number];
+  }) => {
+    const presentation =
+      statusPresentation[request.status as keyof typeof statusPresentation];
+    const expanded = expandedProcessedRequestId === request.id;
+    const completed =
+      request.status === "fulfilled" ||
+      request.status === "partially_fulfilled";
+    const itemSummary = request.items
+      .slice(0, 2)
+      .map(item => item.supplyName)
+      .join(", ");
+    const remainingItems = Math.max(0, request.items.length - 2);
+    return (
+      <article
+        data-supply-request-id={request.id}
+        tabIndex={-1}
+        className={`overflow-hidden rounded-lg border bg-white outline-none transition ${highlightedRequestId === request.id ? "border-[#0F8C8C] ring-2 ring-[#8BCDC6]/60" : "border-[#E3EDF2]"}`}
+      >
+        <button
+          type="button"
+          aria-expanded={expanded}
+          aria-controls={`processed-supply-request-${request.id}`}
+          onClick={() =>
+            setExpandedProcessedRequestId(current =>
+              current === request.id ? null : request.id
+            )
+          }
+          className="grid w-full gap-2 px-3 py-3 text-left transition hover:bg-[#F8FBFC] sm:grid-cols-[150px_minmax(120px,.65fr)_minmax(0,1fr)_auto_24px] sm:items-center"
+        >
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="font-mono text-[11px] font-extrabold text-[#193B57]">
+              {request.requestCode}
+            </span>
+            <span
+              className={`rounded-full border px-2 py-0.5 text-[9px] font-extrabold ${presentation.className}`}
+            >
+              {presentation.label}
+            </span>
+          </div>
+          <div className="truncate text-[11px] font-bold text-[#526779]">
+            {request.requesterName}
+          </div>
+          <div className="truncate text-[10px] text-[#71869A]">
+            {itemSummary}
+            {remainingItems ? ` và ${remainingItems} loại khác` : ""}
+          </div>
+          <div className="text-[10px] text-[#8AA0B6] sm:text-right">
+            {new Date(request.reviewedAt || request.createdAt).toLocaleString(
+              "vi-VN"
+            )}
+          </div>
+          <ChevronDown
+            size={15}
+            className={`text-[#8AA0B6] transition-transform ${expanded ? "rotate-180" : ""}`}
+          />
+        </button>
+        {expanded ? (
+          <div
+            id={`processed-supply-request-${request.id}`}
+            className="border-t border-[#EDF2F5] bg-[#FBFDFE] px-3 py-3"
+          >
+            <div className="grid gap-2 md:grid-cols-2">
+              {request.items.map(item => (
+                <div
+                  key={item.id}
+                  className="rounded-lg border border-[#EDF2F5] bg-white px-3 py-2"
+                >
+                  <div className="truncate text-xs font-bold text-[#193B57]">
+                    {item.supplyName}
+                  </div>
+                  <div className="mt-1 flex flex-wrap justify-between gap-2 text-[10px]">
+                    <span className="text-[#71869A]">{item.supplyCode}</span>
+                    <span className="font-extrabold text-[#087A6A]">
+                      {completed
+                        ? `Thực cấp ${numberText(item.approvedQuantity ?? 0)} / yêu cầu ${numberText(item.requestedQuantity)} ${item.unit}`
+                        : `Yêu cầu ${numberText(item.requestedQuantity)} ${item.unit}`}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="mt-3 grid gap-2 text-[11px] leading-5 text-[#60758A] md:grid-cols-2">
+              <p>
+                <b className="text-[#526779]">Mục đích:</b> {request.reason}
+              </p>
+              {request.reviewNote ? (
+                <p>
+                  <b className="text-[#526779]">Phản hồi:</b>{" "}
+                  {request.reviewNote}
+                </p>
+              ) : null}
+            </div>
+            {request.issueSlipId ? (
+              <p className="mt-2 text-[11px] font-extrabold text-[#087A6A]">
+                Phiếu cấp phát liên kết: #{request.issueSlipId}
+              </p>
+            ) : null}
+          </div>
+        ) : null}
+      </article>
+    );
+  };
 
   const RequestCard = ({
     request,
@@ -363,14 +498,54 @@ export function SupplyRequestQueue() {
                 : `Xem ${processed.length} yêu cầu đã xử lý`}
             </button>
             {showProcessed && (
-              <div className="mt-3 space-y-3">
-                {processed.slice(0, 20).map(request => (
-                  <RequestCard
-                    key={request.id}
-                    request={request}
-                    actionable={false}
-                  />
-                ))}
+              <div className="mt-3 overflow-hidden rounded-xl border border-[#DCEBE9] bg-white">
+                <div className="divide-y divide-[#EDF2F5] p-2">
+                  {pagedProcessed.map(request => (
+                    <ProcessedRequestRow key={request.id} request={request} />
+                  ))}
+                </div>
+                <div className="flex flex-col gap-3 border-t border-[#E7EEF3] bg-[#FBFCFD] px-3 py-3 sm:flex-row sm:items-center sm:justify-between">
+                  <span className="text-xs font-semibold text-[#60758A]">
+                    Hiển thị{" "}
+                    {(activeProcessedPage - 1) * processedPageSize + 1}–
+                    {Math.min(
+                      activeProcessedPage * processedPageSize,
+                      processed.length
+                    )}{" "}
+                    / {processed.length} yêu cầu
+                  </span>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      aria-label="Trang yêu cầu đã xử lý trước"
+                      disabled={activeProcessedPage <= 1}
+                      onClick={() => {
+                        setExpandedProcessedRequestId(null);
+                        setProcessedPage(page => Math.max(1, page - 1));
+                      }}
+                      className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-[#DDE7F0] bg-white text-[#60758A] transition hover:border-[#8BCDC6] hover:text-[#087A6A] disabled:cursor-not-allowed disabled:opacity-40"
+                    >
+                      <ChevronLeft size={16} />
+                    </button>
+                    <span className="min-w-[82px] text-center text-xs font-bold text-[#193B57]">
+                      Trang {activeProcessedPage}/{processedPageCount}
+                    </span>
+                    <button
+                      type="button"
+                      aria-label="Trang yêu cầu đã xử lý sau"
+                      disabled={activeProcessedPage >= processedPageCount}
+                      onClick={() => {
+                        setExpandedProcessedRequestId(null);
+                        setProcessedPage(page =>
+                          Math.min(processedPageCount, page + 1)
+                        );
+                      }}
+                      className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-[#DDE7F0] bg-white text-[#60758A] transition hover:border-[#8BCDC6] hover:text-[#087A6A] disabled:cursor-not-allowed disabled:opacity-40"
+                    >
+                      <ChevronRight size={16} />
+                    </button>
+                  </div>
+                </div>
               </div>
             )}
           </div>
