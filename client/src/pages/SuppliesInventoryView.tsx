@@ -10,6 +10,7 @@ import { usePersistedState } from "@/hooks/usePersistedState";
 import { SupplyIssueSlipManager } from "@/components/SupplyIssueSlipManager";
 import { EditableSectionLabel } from "@/components/EditableSectionLabel";
 import { formatVndInput, isInvalidVndInput, normalizeVndIntegerInput, numberToVietnameseWords, parseVndAmount } from "@/lib/formatters";
+import { writeBrandedWorkbook } from "@/lib/brandedWorkbook";
 import { openSupplyIssueSlipPdf } from "@/lib/supplyIssueSlipPdf";
 import { buildSupplyImportTemplate, resolveActiveSupplyImportCatalog, standardSupplyUnits } from "@/lib/supplyImportTemplate";
 import { isInvalidWholeQuantity } from "@shared/quantity";
@@ -67,6 +68,42 @@ export function SuppliesInventoryView({ canEditSectionLabels = false }: { canEdi
     { supplyId: holdingSupplyId || 0 },
     { enabled: holdingSupplyId !== null }
   );
+  const exportSupplyHolders = async () => {
+    if (!selectedHoldingSupply) return;
+    const result = await holdersQuery.refetch();
+    const holders = result.data || [];
+    if (!holders.length) {
+      toast.message("Phụ kiện này hiện không có người đang giữ.");
+      return;
+    }
+    const workbook = XLSX.utils.book_new();
+    const sheet = XLSX.utils.json_to_sheet(
+      holders.map((holder, index) => ({
+        STT: index + 1,
+        "Mã phụ kiện": selectedHoldingSupply.code,
+        "Tên phụ kiện": selectedHoldingSupply.name,
+        "Người đang giữ": holder.recipientName,
+        "Số lượng đang giữ": Number(holder.heldQuantity),
+        "Đơn vị": selectedHoldingSupply.unit,
+        "Mã phiếu / biên bản": holder.sourceReferences.join(", "),
+        "Thời điểm cấp gần nhất": new Date(
+          holder.latestIssuedAt
+        ).toLocaleString("vi-VN"),
+      }))
+    );
+    sheet["!cols"] = [7, 18, 32, 28, 20, 12, 36, 24].map(wch => ({ wch }));
+    XLSX.utils.book_append_sheet(workbook, sheet, "Người đang giữ");
+    const totalHeld = holders.reduce(
+      (total, holder) => total + Number(holder.heldQuantity),
+      0
+    );
+    await writeBrandedWorkbook(workbook, {
+      documentTitle: "DANH SÁCH NGƯỜI ĐANG GIỮ PHỤ KIỆN",
+      fileName: `nguoi-dang-giu-${selectedHoldingSupply.code}-${new Date().toISOString().slice(0, 10)}.xlsx`,
+      description: `${selectedHoldingSupply.code} · ${selectedHoldingSupply.name} · Tổng đang giữ ${quantity(totalHeld)} ${selectedHoldingSupply.unit}`,
+    });
+    toast.success("Đã tạo file Excel danh sách người đang giữ.");
+  };
   const editingSupply = supplies.find((item) => item.id === editingId) || null;
   const projectedStockAfterIssue = selectedSupply ? Math.max(0, Number(selectedSupply.stockQuantity) - Math.max(0, Number(movementQuantity || 0))) : 0;
   const issueDropsBelowMinimum = selectedSupply ? projectedStockAfterIssue < Number(selectedSupply.minimumQuantity) : false;
@@ -332,8 +369,21 @@ export function SuppliesInventoryView({ canEditSectionLabels = false }: { canEdi
             </div>
           )}
         </div>
-        <div className="shrink-0 border-t border-[#E7EEF3] bg-[#FBFCFD] px-5 py-3 text-xs font-semibold text-[#60758A]">
-          Hiển thị {(holdersQuery.data || []).length} người đang giữ
+        <div className="flex shrink-0 flex-col gap-2 border-t border-[#E7EEF3] bg-[#FBFCFD] px-5 py-3 sm:flex-row sm:items-center sm:justify-between">
+          <span className="text-xs font-semibold text-[#60758A]">
+            Hiển thị {(holdersQuery.data || []).length} người đang giữ
+          </span>
+          <button
+            type="button"
+            onClick={() => void exportSupplyHolders()}
+            disabled={
+              holdersQuery.isFetching || !(holdersQuery.data || []).length
+            }
+            className="inline-flex h-9 items-center justify-center gap-1.5 rounded-lg border border-[#CDE5E5] bg-white px-3 text-xs font-extrabold text-[#087A6A] transition hover:bg-[#ECF8F7] disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            <Download size={14} />
+            {holdersQuery.isFetching ? "Đang xuất..." : "Xuất Excel"}
+          </button>
         </div>
       </DialogContent>
     </Dialog>
