@@ -1644,6 +1644,28 @@ export async function decrementInventorySupplyStock(
   return Number(result[0].affectedRows) > 0;
 }
 
+export async function incrementInventorySupplyStock(
+  id: number,
+  quantity: number,
+  executor?: any
+) {
+  const db = executor ?? (await getDb());
+  if (!db) throw new Error("Database unavailable");
+  const amount = String(quantity);
+  const result = await db
+    .update(inventorySupplies)
+    .set({
+      stockQuantity: sql`${inventorySupplies.stockQuantity} + ${amount}`,
+    })
+    .where(
+      and(
+        eq(inventorySupplies.id, id),
+        eq(inventorySupplies.isActive, true)
+      )
+    );
+  return Number(result[0].affectedRows) > 0;
+}
+
 export async function createInventoryMovement(data: typeof inventoryMovements.$inferInsert, executor?: any) {
   const db = executor ?? await getDb();
   if (!db) throw new Error("Database unavailable");
