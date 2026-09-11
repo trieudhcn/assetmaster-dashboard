@@ -1497,6 +1497,88 @@ export const supplyIssueSlipItems = mysqlTable(
   ]
 );
 
+export const supplyReturnRequests = mysqlTable(
+  "supplyReturnRequests",
+  {
+    id: int("id").autoincrement().primaryKey(),
+    requestCode: varchar("requestCode", { length: 64 }).notNull().unique(),
+    requesterUserId: int("requesterUserId")
+      .notNull()
+      .references(() => users.id, {
+        onDelete: "restrict",
+        onUpdate: "cascade",
+      }),
+    requesterName: varchar("requesterName", { length: 160 }).notNull(),
+    sourceType: mysqlEnum("sourceType", ["issue_slip", "handover"]).notNull(),
+    sourceId: int("sourceId").notNull(),
+    sourceReferenceCode: varchar("sourceReferenceCode", {
+      length: 64,
+    }).notNull(),
+    status: mysqlEnum("status", [
+      "pending",
+      "approved",
+      "rejected",
+      "cancelled",
+    ])
+      .default("pending")
+      .notNull(),
+    note: text("note"),
+    reviewNote: text("reviewNote"),
+    reviewedByUserId: int("reviewedByUserId").references(() => users.id, {
+      onDelete: "set null",
+      onUpdate: "cascade",
+    }),
+    reviewedByName: varchar("reviewedByName", { length: 160 }),
+    reviewedAt: timestamp("reviewedAt"),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+    updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  },
+  table => [
+    index("supply_return_requests_requester_idx").on(table.requesterUserId),
+    index("supply_return_requests_status_idx").on(table.status),
+    index("supply_return_requests_source_idx").on(
+      table.sourceType,
+      table.sourceId
+    ),
+  ]
+);
+
+export const supplyReturnRequestItems = mysqlTable(
+  "supplyReturnRequestItems",
+  {
+    id: int("id").autoincrement().primaryKey(),
+    requestId: int("requestId")
+      .notNull()
+      .references(() => supplyReturnRequests.id, {
+        onDelete: "restrict",
+        onUpdate: "cascade",
+      }),
+    sourceItemId: int("sourceItemId").notNull(),
+    supplyId: int("supplyId")
+      .notNull()
+      .references(() => inventorySupplies.id, {
+        onDelete: "restrict",
+        onUpdate: "cascade",
+      }),
+    supplyCode: varchar("supplyCode", { length: 64 }).notNull(),
+    supplyName: varchar("supplyName", { length: 255 }).notNull(),
+    unit: varchar("unit", { length: 32 }).notNull(),
+    requestedQuantity: decimal("requestedQuantity", {
+      precision: 15,
+      scale: 2,
+    }).notNull(),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+  },
+  table => [
+    index("supply_return_request_items_request_idx").on(table.requestId),
+    index("supply_return_request_items_supply_idx").on(table.supplyId),
+    uniqueIndex("supply_return_request_items_source_unique").on(
+      table.requestId,
+      table.sourceItemId
+    ),
+  ]
+);
+
 export const supplyRequests = mysqlTable(
   "supplyRequests",
   {
