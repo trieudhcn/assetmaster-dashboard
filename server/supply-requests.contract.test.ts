@@ -163,6 +163,31 @@ describe("employee supply request workflow", () => {
     expect(manager).toContain("<SupplyRequestQueue />");
   });
 
+  it("persists employee notification reads and groups portal data into tabs", async () => {
+    const [bell, dashboard, assetPanel, supplyPanel] = await Promise.all([
+      source("client/src/components/EmployeeNotificationBell.tsx"),
+      source("client/src/pages/UserDashboard.tsx"),
+      source("client/src/components/EmployeeAssetPanel.tsx"),
+      source("client/src/components/EmployeeSupplyHoldingsPanel.tsx"),
+    ]);
+
+    expect(bell).toContain(
+      "trpc.notifications.dashboardAlertStates.useQuery"
+    );
+    expect(bell).toContain(
+      "trpc.notifications.dismissDashboardAlerts.useMutation"
+    );
+    expect(bell).toContain("readStateQuery.isLoading");
+    expect(dashboard).toContain("<EmployeeAssetPanel");
+    expect(dashboard).toContain("<EmployeeSupplyHoldingsPanel");
+    expect(assetPanel).toContain('role="tablist"');
+    expect(assetPanel).toContain("Tài sản của bạn");
+    expect(assetPanel).toContain("Đã hoàn trả");
+    expect(supplyPanel).toContain('role="tablist"');
+    expect(supplyPanel).toContain("Phụ kiện của bạn");
+    expect(supplyPanel).toContain("trpc.supplies.myReturnRequests");
+  });
+
   it("persists employee accessory-return requests and their source lines", async () => {
     const [schema, migration, journal] = await Promise.all([
       source("drizzle/schema.ts"),
@@ -181,11 +206,11 @@ describe("employee supply request workflow", () => {
   });
 
   it("lets employees request accessory returns and only restores stock after admin approval", async () => {
-    const [router, database, dashboard, manager, returnQueue] =
+    const [router, database, supplyPanel, manager, returnQueue] =
       await Promise.all([
         source("server/routers.ts"),
         source("server/db.ts"),
-        source("client/src/pages/UserDashboard.tsx"),
+        source("client/src/components/EmployeeSupplyHoldingsPanel.tsx"),
         source("client/src/components/SupplyIssueSlipManager.tsx"),
         source("client/src/components/SupplyReturnRequestQueue.tsx"),
       ]);
@@ -214,10 +239,10 @@ describe("employee supply request workflow", () => {
     expect(database).toContain(
       "export async function incrementHandoverSupplyItemReturnedQuantity"
     );
-    expect(dashboard).toContain("const totalOutstanding = slips.reduce");
-    expect(dashboard).toContain("trpc.supplies.createReturnRequest");
-    expect(dashboard).toContain("trpc.supplies.cancelReturnRequest");
-    expect(dashboard).toContain("Yêu cầu hoàn trả");
+    expect(supplyPanel).toContain("const totalOutstanding = slips.reduce");
+    expect(supplyPanel).toContain("trpc.supplies.createReturnRequest");
+    expect(supplyPanel).toContain("trpc.supplies.cancelReturnRequest");
+    expect(supplyPanel).toContain("Yêu cầu hoàn trả");
     expect(returnQueue).toContain("trpc.supplies.approveReturnRequest");
     expect(returnQueue).toContain("trpc.supplies.rejectReturnRequest");
     expect(returnQueue).toContain("<AlertDialog");
