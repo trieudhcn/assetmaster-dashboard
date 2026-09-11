@@ -50,17 +50,27 @@ export function EmployeeNotificationBell({
   const requestsQuery = trpc.supplies.myRequests.useQuery(undefined, {
     refetchInterval: 30_000,
   });
+  const utils = trpc.useUtils();
+  const readStateQuery = trpc.notifications.dashboardAlertStates.useQuery(
+    undefined,
+    { staleTime: 30_000 }
+  );
   const storageKey = `assetmaster-user-read-notification-ids:${userKey}`;
   const [open, setOpen] = useState(false);
-  const [readIds, setReadIds] = useState<string[]>(() => {
-    try {
-      const stored = localStorage.getItem(storageKey);
-      return stored ? JSON.parse(stored) : [];
-    } catch {
-      return [];
-    }
-  });
+  const [optimisticReadIds, setOptimisticReadIds] = useState<string[]>([]);
   const rootRef = useRef<HTMLDivElement>(null);
+  const migratedLegacyState = useRef(false);
+  const dismissReadMutation =
+    trpc.notifications.dismissDashboardAlerts.useMutation({
+      onSuccess: () =>
+        void utils.notifications.dashboardAlertStates.invalidate(),
+      onError: (_error, variables) => {
+        setOptimisticReadIds(current =>
+          current.filter(id => !variables.alertIds.includes(id))
+        );
+        void utils.notifications.dashboardAlertStates.invalidate();
+      },
+    });
 
   useEffect(() => {
     const closeOutside = (event: PointerEvent) => {
@@ -69,6 +79,26 @@ export function EmployeeNotificationBell({
     document.addEventListener("pointerdown", closeOutside);
     return () => document.removeEventListener("pointerdown", closeOutside);
   }, []);
+
+  useEffect(() => {
+    if (readStateQuery.isLoading || migratedLegacyState.current) return;
+    migratedLegacyState.current = true;
+    try {
+      const parsed = JSON.parse(localStorage.getItem(storageKey) || "[]");
+      const legacyIds = Array.isArray(parsed)
+        ? parsed.filter((id): id is string => typeof id === "string")
+        : [];
+      const serverIds = new Set(readStateQuery.data?.alertIds || []);
+      const idsToMigrate = legacyIds.filter(id => !serverIds.has(id));
+      if (!idsToMigrate.length) return;
+      setOptimisticReadIds(current =>
+        Array.from(new Set([...current, ...idsToMigrate]))
+      );
+      dismissReadMutation.mutate({ alertIds: idsToMigrate.slice(0, 100) });
+    } catch {
+      localStorage.removeItem(storageKey);
+    }
+  }, [readStateQuery.isLoading, readStateQuery.data, storageKey]);
 
   const notifications = useMemo<EmployeeNotification[]>(() => {
     const cutoff = Date.now() - recentNotificationWindow;
@@ -163,18 +193,42 @@ export function EmployeeNotificationBell({
       .slice(0, 20);
   }, [historyQuery.data, requestsQuery.data]);
 
-  const unread = notifications.filter(item => !readIds.includes(item.id));
+  const readIds = useMemo(
+    () =>
+      new Set([
+        ...(readStateQuery.data?.alertIds || []),
+        ...optimisticReadIds,
+      ]),
+    [readStateQuery.data, optimisticReadIds]
+  );
+  const unread = readStateQuery.isLoading
+    ? []
+    : notifications.filter(item => !readIds.has(item.id));
 
-  const persistReadIds = (next: string[]) => {
-    setReadIds(next);
-    localStorage.setItem(storageKey, JSON.stringify(next));
+  const persistReadIds = (ids: string[]) => {
+    const nextIds = Array.from(new Set(ids)).slice(0, 100);
+    if (!nextIds.length) return;
+    setOptimisticReadIds(current =>
+      Array.from(new Set([...current, ...nextIds]))
+    );
+    try {
+      const parsed = JSON.parse(localStorage.getItem(storageKey) || "[]");
+      const localIds = Array.isArray(parsed) ? parsed : [];
+      localStorage.setItem(
+        storageKey,
+        JSON.stringify(Array.from(new Set([...localIds, ...nextIds])))
+      );
+    } catch {
+      localStorage.setItem(storageKey, JSON.stringify(nextIds));
+    }
+    dismissReadMutation.mutate({ alertIds: nextIds });
   };
   const markRead = (id: string) => {
-    if (readIds.includes(id)) return;
-    persistReadIds([...readIds, id]);
+    if (readIds.has(id)) return;
+    persistReadIds([id]);
   };
   const markAllRead = () => {
-    persistReadIds(Array.from(new Set([...readIds, ...unread.map(item => item.id)])));
+    persistReadIds(unread.map(item => item.id));
   };
   const openTarget = (notification: EmployeeNotification) => {
     markRead(notification.id);
