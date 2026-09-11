@@ -53,6 +53,8 @@ import {
   supplyIssueSlips,
   supplyRequestItems,
   supplyRequests,
+  supplyReturnRequestItems,
+  supplyReturnRequests,
   technologyServices,
   technologyVendorContractDocuments,
   technologyVendorContracts,
@@ -1822,6 +1824,156 @@ export async function transitionSupplyRequestStatus(
   return Number(result[0].affectedRows) > 0;
 }
 
+export async function getNextSupplyReturnRequestSequence(
+  requestYear: number,
+  executor?: any
+) {
+  const db = executor ?? (await getDb());
+  if (!db) throw new Error("Database unavailable");
+  const rows: Array<{ requestCode: string }> = await db
+    .select({ requestCode: supplyReturnRequests.requestCode })
+    .from(supplyReturnRequests)
+    .where(
+      like(supplyReturnRequests.requestCode, `YCTPK-${requestYear}-%`)
+    );
+  const maxSequence = rows.reduce((maximum: number, row) => {
+    const match = row.requestCode.match(
+      new RegExp(`^YCTPK-${requestYear}-(\\\\d+)$`)
+    );
+    return Math.max(maximum, match ? Number(match[1]) : 0);
+  }, 0);
+  return maxSequence + 1;
+}
+
+export async function createSupplyReturnRequest(
+  data: typeof supplyReturnRequests.$inferInsert,
+  executor?: any
+) {
+  const db = executor ?? (await getDb());
+  if (!db) throw new Error("Database unavailable");
+  const result = await db.insert(supplyReturnRequests).values(data);
+  return Number(result[0].insertId);
+}
+
+export async function createSupplyReturnRequestItem(
+  data: typeof supplyReturnRequestItems.$inferInsert,
+  executor?: any
+) {
+  const db = executor ?? (await getDb());
+  if (!db) throw new Error("Database unavailable");
+  const result = await db.insert(supplyReturnRequestItems).values(data);
+  return Number(result[0].insertId);
+}
+
+export async function getSupplyReturnRequestById(
+  id: number,
+  executor?: any
+) {
+  const db = executor ?? (await getDb());
+  if (!db) return undefined;
+  return (
+    await db
+      .select()
+      .from(supplyReturnRequests)
+      .where(eq(supplyReturnRequests.id, id))
+      .limit(1)
+  )[0];
+}
+
+export async function listSupplyReturnRequestItems(
+  requestId: number,
+  executor?: any
+) {
+  const db = executor ?? (await getDb());
+  if (!db) return [];
+  return db
+    .select()
+    .from(supplyReturnRequestItems)
+    .where(eq(supplyReturnRequestItems.requestId, requestId))
+    .orderBy(asc(supplyReturnRequestItems.id));
+}
+
+export async function findPendingSupplyReturnRequest(
+  sourceType: "issue_slip" | "handover",
+  sourceId: number,
+  requesterUserId: number,
+  executor?: any
+) {
+  const db = executor ?? (await getDb());
+  if (!db) return undefined;
+  return (
+    await db
+      .select()
+      .from(supplyReturnRequests)
+      .where(
+        and(
+          eq(supplyReturnRequests.sourceType, sourceType),
+          eq(supplyReturnRequests.sourceId, sourceId),
+          eq(supplyReturnRequests.requesterUserId, requesterUserId),
+          eq(supplyReturnRequests.status, "pending")
+        )
+      )
+      .limit(1)
+  )[0];
+}
+
+export async function listSupplyReturnRequests(requesterUserId?: number) {
+  const db = await getDb();
+  if (!db) return [];
+  const requests =
+    requesterUserId === undefined
+      ? await db
+          .select()
+          .from(supplyReturnRequests)
+          .orderBy(desc(supplyReturnRequests.createdAt))
+      : await db
+          .select()
+          .from(supplyReturnRequests)
+          .where(eq(supplyReturnRequests.requesterUserId, requesterUserId))
+          .orderBy(desc(supplyReturnRequests.createdAt));
+  if (!requests.length) return [];
+  const items = await db
+    .select()
+    .from(supplyReturnRequestItems)
+    .where(
+      inArray(
+        supplyReturnRequestItems.requestId,
+        requests.map(request => request.id)
+      )
+    )
+    .orderBy(asc(supplyReturnRequestItems.id));
+  const itemsByRequest = new Map<number, typeof items>();
+  for (const item of items) {
+    const requestItems = itemsByRequest.get(item.requestId) ?? [];
+    requestItems.push(item);
+    itemsByRequest.set(item.requestId, requestItems);
+  }
+  return requests.map(request => ({
+    ...request,
+    items: itemsByRequest.get(request.id) ?? [],
+  }));
+}
+
+export async function transitionSupplyReturnRequestStatus(
+  id: number,
+  expectedStatus: "pending" | "approved" | "rejected" | "cancelled",
+  data: Partial<typeof supplyReturnRequests.$inferInsert>,
+  executor?: any
+) {
+  const db = executor ?? (await getDb());
+  if (!db) throw new Error("Database unavailable");
+  const result = await db
+    .update(supplyReturnRequests)
+    .set(data)
+    .where(
+      and(
+        eq(supplyReturnRequests.id, id),
+        eq(supplyReturnRequests.status, expectedStatus)
+      )
+    );
+  return Number(result[0].affectedRows) > 0;
+}
+
 export async function getNextSupplyIssueSequence(issueYear: number, executor?: any) {
   const db = executor ?? await getDb();
   if (!db) throw new Error("Database unavailable");
@@ -1878,6 +2030,8 @@ export async function listSupplyIssueHistoryByRecipientUserId(recipientUserId: n
     issuedAt: supplyIssueSlips.issuedAt,
     returnedAt: supplyIssueSlips.returnedAt,
     note: supplyIssueSlips.note,
+    sourceItemId: supplyIssueSlipItems.id,
+    supplyId: supplyIssueSlipItems.supplyId,
     supplyCode: supplyIssueSlipItems.supplyCode,
     supplyName: supplyIssueSlipItems.supplyName,
     unit: supplyIssueSlipItems.unit,
@@ -1894,6 +2048,8 @@ export async function listSupplyIssueHistoryByRecipientUserId(recipientUserId: n
     issuedAt: handovers.handedOverAt,
     returnedAt: handovers.returnedAt,
     note: handovers.note,
+    sourceItemId: handoverSupplyItems.id,
+    supplyId: handoverSupplyItems.supplyId,
     supplyCode: handoverSupplyItems.supplyCode,
     supplyName: handoverSupplyItems.supplyName,
     unit: handoverSupplyItems.unit,
@@ -1910,6 +2066,8 @@ export async function listSupplyIssueHistoryByRecipientUserId(recipientUserId: n
     issuedAt: inventoryMovements.createdAt,
     returnedAt: sql<Date | null>`null`,
     note: inventoryMovements.note,
+    sourceItemId: sql<number | null>`null`,
+    supplyId: inventorySupplies.id,
     supplyCode: inventorySupplies.code,
     supplyName: inventorySupplies.name,
     unit: inventorySupplies.unit,
@@ -2287,6 +2445,12 @@ export async function listHandoverSupplyItems(handoverId: number, executor?: any
   const db = executor ?? await getDb();
   if (!db) return [];
   return db.select().from(handoverSupplyItems).where(eq(handoverSupplyItems.handoverId, handoverId));
+}
+
+export async function getHandoverSupplyItemById(id: number, executor?: any) {
+  const db = executor ?? await getDb();
+  if (!db) return undefined;
+  return (await db.select().from(handoverSupplyItems).where(eq(handoverSupplyItems.id, id)).limit(1))[0];
 }
 
 export async function updateHandoverSupplyItem(id: number, data: Partial<typeof handoverSupplyItems.$inferInsert>, executor?: any) {
