@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import * as XLSX from "xlsx";
-import { BarChart3, Building2, ChevronDown, ChevronLeft, ChevronRight, Download, FileText, Loader2, Printer, RotateCcw, UsersRound, X } from "lucide-react";
+import { BarChart3, Building2, ChevronDown, ChevronLeft, ChevronRight, Download, FileText, Loader2, Printer, RotateCcw, Search, UsersRound, X } from "lucide-react";
 import { toast } from "sonner";
 import { trpc } from "@/lib/trpc";
 import { writeBrandedWorkbook } from "@/lib/brandedWorkbook";
@@ -14,6 +14,18 @@ import { SupplyReturnRequestQueue } from "@/components/SupplyReturnRequestQueue"
 
 const numberText = (value: string | number | null | undefined) => Number(value || 0).toLocaleString("vi-VN", { maximumFractionDigits: 2 });
 const handoverPdfFileNameStorageKey = (referenceCode: string) => `assetmaster-pdf-filename:bg:${referenceCode}`;
+const issueSlipStatusOptions = [
+  { value: "all", label: "Tất cả trạng thái" },
+  { value: "active", label: "Đang cấp phát", searchText: "dang cap phat" },
+  { value: "returned", label: "Đã hoàn trả", searchText: "da hoan tra" },
+];
+const normalizeSearch = (value: unknown) =>
+  String(value || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/đ/g, "d")
+    .replace(/Đ/g, "D")
+    .toLocaleLowerCase("vi-VN");
 
 export function SupplyIssueSlipManager() {
   const utils = trpc.useUtils();
@@ -26,8 +38,25 @@ export function SupplyIssueSlipManager() {
   const [returnNote, setReturnNote] = useState("");
   const [isPreparingPdf, setIsPreparingPdf] = useState(false);
   const [slipPage, setSlipPage] = useState(1);
+  const [slipSearch, setSlipSearch] = useState("");
+  const [slipStatusFilter, setSlipStatusFilter] = useState("all");
   const itemsQuery = trpc.supplies.issueSlipItems.useQuery({ issueSlipId: selectedSlipId || 0 }, { enabled: selectedSlipId !== null });
-  const slips = slipsQuery.data || [];
+  const allSlips = slipsQuery.data || [];
+  const normalizedSlipSearch = normalizeSearch(slipSearch.trim());
+  const slips = allSlips.filter(slip => {
+    const matchesStatus =
+      slipStatusFilter === "all" || slip.status === slipStatusFilter;
+    const matchesSearch =
+      !normalizedSlipSearch ||
+      [
+        slip.referenceCode,
+        slip.recipientName,
+        ...slip.supplyNames,
+      ]
+        .map(normalizeSearch)
+        .some(value => value.includes(normalizedSlipSearch));
+    return matchesStatus && matchesSearch;
+  });
   const slipsPageSize = 10;
   const slipsPageCount = Math.max(1, Math.ceil(slips.length / slipsPageSize));
   const activeSlipPage = Math.min(slipPage, slipsPageCount);
@@ -147,7 +176,47 @@ export function SupplyIssueSlipManager() {
     <SupplyRequestQueue />
     <SupplyReturnRequestQueue />
     <SupplyIssueAnalytics rows={analyticsQuery.data || []} loading={analyticsQuery.isLoading} />
-    <div className="mt-5 overflow-x-auto"><table className="w-full min-w-[900px] text-left text-xs"><thead className="border-y border-[#E7EEF3] bg-[#F8FBFC] text-[10px] uppercase tracking-[.09em] text-[#8AA0B6]"><tr><th className="px-3 py-3">Mã phiếu</th><th className="px-3 py-3">Người nhận</th><th className="px-3 py-3">Thời gian cấp</th><th className="px-3 py-3">Loại phụ kiện</th><th className="px-3 py-3">Trạng thái</th><th className="px-3 py-3 text-right">Thao tác</th></tr></thead><tbody>{slipsQuery.isLoading ? <tr><td colSpan={6} className="px-3 py-8 text-center text-[#71869A]">Đang tải phiếu cấp phát...</td></tr> : pagedSlips.map((slip) => <tr key={slip.id} className="border-b border-[#EDF2F5]"><td className="px-3 py-3 font-mono font-extrabold text-[#193B57]">{slip.referenceCode}</td><td className="px-3 py-3 text-[#60758A]">{slip.recipientName}</td><td className="px-3 py-3 text-[#60758A]">{new Date(slip.issuedAt).toLocaleString("vi-VN")}</td><td className="px-3 py-3 text-[#60758A]"><div className="max-w-[280px] truncate font-semibold text-[#193B57]" title={slip.supplyNames.join(", ")}>{slip.supplyNames.length ? slip.supplyNames.slice(0, 2).join(", ") : "—"}{slip.supplyNames.length > 2 ? ` +${slip.supplyNames.length - 2} loại` : ""}</div></td><td className="px-3 py-3"><span className={`inline-flex rounded-full border px-2 py-1 text-[10px] font-extrabold ${slip.status === "returned" ? "border-[#C7DDF8] bg-[#EAF3FF] text-[#2666A8]" : "border-[#CDE5E5] bg-[#ECF8F7] text-[#087A6A]"}`}>{slip.status === "returned" ? "Đã hoàn trả" : "Đang cấp phát"}</span></td><td className="px-3 py-3 text-right"><button type="button" onClick={() => setSelectedSlipId(slip.id)} className="rounded-lg border border-[#DDE7F0] px-3 py-1.5 font-extrabold text-[#60758A] hover:bg-[#F7FAFC]">Chi tiết</button></td></tr>)}{!slipsQuery.isLoading && !slips.length && <tr><td colSpan={6} className="px-3 py-8 text-center text-[#8AA0B6]">Chưa có phiếu cấp phát. Tạo phiếu từ thao tác Xuất/Cấp phát của phụ kiện.</td></tr>}</tbody></table></div>
+    <div className="mt-5 grid gap-2 rounded-xl border border-[#DCEBE9] bg-[#F8FBFC] p-3 sm:grid-cols-[minmax(0,1fr)_240px_auto]">
+      <label className="relative block">
+        <span className="sr-only">Tìm phiếu cấp phát phụ kiện</span>
+        <Search size={15} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[#8AA0B6]" />
+        <input
+          type="search"
+          value={slipSearch}
+          onChange={event => {
+            setSlipSearch(event.target.value);
+            setSlipPage(1);
+          }}
+          placeholder="Mã phiếu, người nhận hoặc phụ kiện..."
+          className="h-10 w-full rounded-lg border border-[#DDE7F0] bg-white pl-9 pr-3 text-xs text-[#193B57] outline-none transition placeholder:text-[#9BAEC0] focus:border-[#8BCDC6] focus:ring-2 focus:ring-[#8BCDC6]/20"
+        />
+      </label>
+      <SearchableSelect
+        value={slipStatusFilter}
+        onChange={value => {
+          setSlipStatusFilter(value);
+          setSlipPage(1);
+        }}
+        options={issueSlipStatusOptions}
+        placeholder="Lọc trạng thái"
+        searchPlaceholder="Tìm trạng thái phiếu..."
+        emptyText="Không tìm thấy trạng thái"
+      />
+      {slipSearch || slipStatusFilter !== "all" ? (
+        <button
+          type="button"
+          onClick={() => {
+            setSlipSearch("");
+            setSlipStatusFilter("all");
+            setSlipPage(1);
+          }}
+          className="inline-flex h-10 items-center justify-center gap-1.5 rounded-lg border border-[#DDE7F0] bg-white px-3 text-[11px] font-extrabold text-[#60758A] hover:bg-[#F4F7FB]"
+        >
+          <RotateCcw size={14} /> Đặt lại
+        </button>
+      ) : <div />}
+    </div>
+    <div className="mt-3 overflow-x-auto"><table className="w-full min-w-[900px] text-left text-xs"><thead className="border-y border-[#E7EEF3] bg-[#F8FBFC] text-[10px] uppercase tracking-[.09em] text-[#8AA0B6]"><tr><th className="px-3 py-3">Mã phiếu</th><th className="px-3 py-3">Người nhận</th><th className="px-3 py-3">Thời gian cấp</th><th className="px-3 py-3">Loại phụ kiện</th><th className="px-3 py-3">Trạng thái</th><th className="px-3 py-3 text-right">Thao tác</th></tr></thead><tbody>{slipsQuery.isLoading ? <tr><td colSpan={6} className="px-3 py-8 text-center text-[#71869A]">Đang tải phiếu cấp phát...</td></tr> : pagedSlips.map((slip) => <tr key={slip.id} className="border-b border-[#EDF2F5]"><td className="px-3 py-3 font-mono font-extrabold text-[#193B57]">{slip.referenceCode}</td><td className="px-3 py-3 text-[#60758A]">{slip.recipientName}</td><td className="px-3 py-3 text-[#60758A]">{new Date(slip.issuedAt).toLocaleString("vi-VN")}</td><td className="px-3 py-3 text-[#60758A]"><div className="max-w-[280px] truncate font-semibold text-[#193B57]" title={slip.supplyNames.join(", ")}>{slip.supplyNames.length ? slip.supplyNames.slice(0, 2).join(", ") : "—"}{slip.supplyNames.length > 2 ? ` +${slip.supplyNames.length - 2} loại` : ""}</div></td><td className="px-3 py-3"><span className={`inline-flex rounded-full border px-2 py-1 text-[10px] font-extrabold ${slip.status === "returned" ? "border-[#C7DDF8] bg-[#EAF3FF] text-[#2666A8]" : "border-[#CDE5E5] bg-[#ECF8F7] text-[#087A6A]"}`}>{slip.status === "returned" ? "Đã hoàn trả" : "Đang cấp phát"}</span></td><td className="px-3 py-3 text-right"><button type="button" onClick={() => setSelectedSlipId(slip.id)} className="rounded-lg border border-[#DDE7F0] px-3 py-1.5 font-extrabold text-[#60758A] hover:bg-[#F7FAFC]">Chi tiết</button></td></tr>)}{!slipsQuery.isLoading && !slips.length && <tr><td colSpan={6} className="px-3 py-8 text-center text-[#8AA0B6]">{allSlips.length ? "Không tìm thấy phiếu phù hợp." : "Chưa có phiếu cấp phát. Tạo phiếu từ thao tác Xuất/Cấp phát của phụ kiện."}</td></tr>}</tbody></table></div>
     {!slipsQuery.isLoading && slips.length > 0 && <div className="flex flex-col gap-3 border-t border-[#E7EEF3] bg-[#FBFCFD] px-3 py-3 sm:flex-row sm:items-center sm:justify-between"><span className="text-xs font-semibold text-[#60758A]">Hiển thị {(activeSlipPage - 1) * slipsPageSize + 1}–{Math.min(activeSlipPage * slipsPageSize, slips.length)} / {slips.length} phiếu</span><div className="flex items-center gap-2"><button type="button" aria-label="Trang phiếu cấp phát trước" disabled={activeSlipPage <= 1} onClick={() => setSlipPage((page) => Math.max(1, page - 1))} className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-[#DDE7F0] bg-white text-[#60758A] transition hover:border-[#8BCDC6] hover:text-[#087A6A] disabled:cursor-not-allowed disabled:opacity-40"><ChevronLeft size={16} /></button><span className="min-w-[82px] text-center text-xs font-bold text-[#193B57]">Trang {activeSlipPage}/{slipsPageCount}</span><button type="button" aria-label="Trang phiếu cấp phát sau" disabled={activeSlipPage >= slipsPageCount} onClick={() => setSlipPage((page) => Math.min(slipsPageCount, page + 1))} className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-[#DDE7F0] bg-white text-[#60758A] transition hover:border-[#8BCDC6] hover:text-[#087A6A] disabled:cursor-not-allowed disabled:opacity-40"><ChevronRight size={16} /></button></div></div>}
     {issueSlipDrawer}
     {returnDialog}
