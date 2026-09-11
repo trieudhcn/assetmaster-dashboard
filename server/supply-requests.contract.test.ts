@@ -261,6 +261,16 @@ describe("employee supply request workflow", () => {
     expect(queue).toContain("Kiểm đếm & duyệt");
     expect(queue).toContain("Duyệt & lập biên bản");
     expect(queue).toContain("openSupplyReturnReceiptPdf");
+    expect(queue).toContain('aria-readonly="true"');
+    expect(queue).not.toContain("setDeliveredByName");
+    expect(queue).not.toContain("setReceivedByName");
+    expect(queue).toContain("String(Number(item.requestedQuantity))");
+    expect(queue).toContain(
+      "min-h-0 flex-1 space-y-4 overflow-y-auto"
+    );
+    expect(queue).toContain(
+      "shrink-0 border-t border-[#E7EEF3] bg-white"
+    );
     expect(inventory).toContain("Tồn khả dụng");
     expect(inventory).toContain("selectedSupply.damagedQuantity");
     expect(pdf).toContain("BIÊN BẢN HOÀN TRẢ PHỤ KIỆN");
