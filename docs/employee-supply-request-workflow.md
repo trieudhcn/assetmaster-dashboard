@@ -74,3 +74,30 @@ Nhân viên có thể tạo yêu cầu hoàn trả theo từng phiếu đang gi�
 7. Lặp lại với phụ kiện đi kèm biên bản bàn giao tài sản.
 8. Thử tạo hai yêu cầu chờ cho cùng một phiếu, trả vượt số lượng còn giữ hoặc duyệt sau khi dữ liệu nguồn đã thay đổi; xác nhận hệ thống chặn và không cập nhật dở dang.
 9. Kiểm tra `/readyz` sau khi migration `0065_supply_return_requests` hoàn tất.
+
+
+## Kiểm đếm tình trạng và biên bản hoàn trả
+
+Khi admin mở yêu cầu từ chuông thông báo hoặc hàng đợi hoàn trả, từng dòng phải được phân loại đầy đủ trước khi duyệt:
+
+| Phân loại | Ảnh hưởng tồn kho |
+| --- | --- |
+| Tốt | Cộng vào tồn khả dụng và có thể cấp phát lại |
+| Hỏng | Cộng vào tồn hư hỏng/cách ly, không được cấp phát |
+| Thiếu | Ghi nhận chênh lệch trên biên bản, không cộng vào kho |
+| Cần sửa | Cộng vào tồn chờ sửa chữa, không được cấp phát |
+
+Tổng bốn loại trên mỗi dòng phải bằng số lượng nhân viên đề nghị hoàn. Nếu có số lượng hỏng, thiếu hoặc cần sửa, admin bắt buộc ghi chú tình trạng. Việc giảm số lượng nhân viên đang giữ, cập nhật các vùng tồn và tạo biên bản được thực hiện trong cùng transaction.
+
+Sau khi duyệt, hệ thống sinh mã biên bản `BBHTPK-NĂM-ID`, lưu người giao, người nhận/kiểm đếm, thời gian, kết quả từng dòng và cho phép mở bản xem trước để in hoặc tải PDF. Nhân viên cũng có thể mở PDF từ lịch sử trên portal.
+
+### UAT kiểm đếm và PDF
+
+1. Tạo yêu cầu hoàn trả và xác nhận chuông admin xuất hiện thông báo chưa đọc.
+2. Mở thông báo và xác nhận hệ thống điều hướng, cuộn đến đúng yêu cầu hoàn trả.
+3. Kiểm đếm toàn bộ là hàng tốt; xác nhận tồn khả dụng tăng đúng.
+4. Kiểm đếm hỗn hợp tốt, hỏng, thiếu và cần sửa; xác nhận tổng phân loại bắt buộc bằng số lượng yêu cầu.
+5. Bỏ trống ghi chú khi có hàng bất thường; xác nhận hệ thống không cho duyệt.
+6. Duyệt yêu cầu; xác nhận tồn tốt, tồn hỏng và tồn cần sửa tăng đúng, còn số thiếu không làm tăng kho.
+7. Mở danh mục phụ kiện; xác nhận tồn hỏng/cần sửa hiển thị riêng và không được tính vào tồn khả dụng.
+8. Mở biên bản PDF từ admin và portal nhân viên; kiểm tra mã biên bản, người giao nhận, bảng kiểm đếm và vùng ký tên.
