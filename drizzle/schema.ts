@@ -1360,6 +1360,12 @@ export const inventorySupplies = mysqlTable(
     stockQuantity: decimal("stockQuantity", { precision: 15, scale: 2 })
       .default("0")
       .notNull(),
+    damagedQuantity: decimal("damagedQuantity", { precision: 15, scale: 2 })
+      .default("0")
+      .notNull(),
+    repairQuantity: decimal("repairQuantity", { precision: 15, scale: 2 })
+      .default("0")
+      .notNull(),
     minimumQuantity: decimal("minimumQuantity", { precision: 15, scale: 2 })
       .default("0")
       .notNull(),
@@ -1514,6 +1520,10 @@ export const supplyReturnRequests = mysqlTable(
     sourceReferenceCode: varchar("sourceReferenceCode", {
       length: 64,
     }).notNull(),
+    returnReceiptCode: varchar("returnReceiptCode", { length: 64 }).unique(),
+    deliveredByName: varchar("deliveredByName", { length: 160 }),
+    receivedByName: varchar("receivedByName", { length: 160 }),
+    receiptCreatedAt: timestamp("receiptCreatedAt"),
     status: mysqlEnum("status", [
       "pending",
       "approved",
@@ -1567,6 +1577,19 @@ export const supplyReturnRequestItems = mysqlTable(
       precision: 15,
       scale: 2,
     }).notNull(),
+    goodQuantity: decimal("goodQuantity", { precision: 15, scale: 2 })
+      .default("0")
+      .notNull(),
+    damagedQuantity: decimal("damagedQuantity", { precision: 15, scale: 2 })
+      .default("0")
+      .notNull(),
+    missingQuantity: decimal("missingQuantity", { precision: 15, scale: 2 })
+      .default("0")
+      .notNull(),
+    repairQuantity: decimal("repairQuantity", { precision: 15, scale: 2 })
+      .default("0")
+      .notNull(),
+    conditionNote: text("conditionNote"),
     createdAt: timestamp("createdAt").defaultNow().notNull(),
   },
   table => [
