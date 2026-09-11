@@ -253,6 +253,15 @@ describe("employee supply request workflow", () => {
     expect(returnQueue).toContain("Hiển thị");
     expect(returnQueue).toContain("<CheckCircle2");
     expect(returnQueue).toContain("Ẩn yêu cầu đã xử lý");
+    expect(returnQueue).toContain("processedSearch");
+    expect(returnQueue).toContain("processedConditionFilter");
+    expect(returnQueue).toContain("request.returnReceiptCode");
+    expect(returnQueue).toContain("request.requesterName");
+    expect(returnQueue).toContain("Có hàng tốt");
+    expect(returnQueue).toContain("Có hàng hỏng");
+    expect(returnQueue).toContain("Có hàng thiếu");
+    expect(returnQueue).toContain("Có hàng cần sửa");
+    expect(returnQueue).toContain("Không tìm thấy yêu cầu phù hợp");
     expect(manager).toContain("<SupplyReturnRequestQueue />");
   });
 
