@@ -1582,7 +1582,36 @@ export async function listAssetsByCodes(assetCodes: string[]) {
 export async function listInventorySupplies() {
   const db = await getDb();
   if (!db) return [];
-  return db.select().from(inventorySupplies).orderBy(desc(inventorySupplies.updatedAt));
+  const [supplies, movementTotals] = await Promise.all([
+    db
+      .select()
+      .from(inventorySupplies)
+      .orderBy(desc(inventorySupplies.updatedAt)),
+    db
+      .select({
+        supplyId: inventoryMovements.supplyId,
+        totalReceivedQuantity: sql<string>`coalesce(sum(case when ${inventoryMovements.movementType} = 'receipt' then abs(${inventoryMovements.quantity}) else 0 end), 0)`,
+        totalIssuedQuantity: sql<string>`coalesce(sum(case when ${inventoryMovements.movementType} = 'issue' then abs(${inventoryMovements.quantity}) else 0 end), 0)`,
+      })
+      .from(inventoryMovements)
+      .groupBy(inventoryMovements.supplyId),
+  ]);
+  const totalsBySupplyId = new Map(
+    movementTotals.map(row => [
+      row.supplyId,
+      {
+        totalReceivedQuantity: Number(row.totalReceivedQuantity || 0),
+        totalIssuedQuantity: Number(row.totalIssuedQuantity || 0),
+      },
+    ])
+  );
+  return supplies.map(supply => ({
+    ...supply,
+    ...(totalsBySupplyId.get(supply.id) ?? {
+      totalReceivedQuantity: 0,
+      totalIssuedQuantity: 0,
+    }),
+  }));
 }
 
 export async function getInventorySupplyById(id: number, executor?: any) {
