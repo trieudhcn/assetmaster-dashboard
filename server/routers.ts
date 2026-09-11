@@ -289,6 +289,7 @@ import {
   updateSupplyRequestItem,
   transitionSupplyRequestStatus,
   transitionSupplyReturnRequestStatus,
+  updateSupplyReturnRequestItem,
   findPendingSupplyReturnRequest,
   updateSupplyUnit,
   updateMaintenanceTicket,
@@ -323,6 +324,7 @@ import {
   deleteSupplyUnit,
   decrementInventorySupplyStock,
   incrementInventorySupplyStock,
+  incrementInventorySupplyConditionQuantity,
   incrementSupplyIssueSlipItemReturnedQuantity,
   incrementHandoverSupplyItemReturnedQuantity,
 } from "./db";
@@ -6591,10 +6593,55 @@ export const appRouter = router({
       }),
     approveReturnRequest: adminProcedure
       .input(
-        z.object({
-          id: z.number().int().positive(),
-          reviewNote: nullableText,
-        })
+        z
+          .object({
+            id: z.number().int().positive(),
+            reviewNote: nullableText,
+            deliveredByName: z.string().trim().min(2).max(160),
+            receivedByName: z.string().trim().min(2).max(160),
+            items: z
+              .array(
+                z.object({
+                  requestItemId: z.number().int().positive(),
+                  goodQuantity: z.number().finite().min(0).max(1_000_000),
+                  damagedQuantity: z.number().finite().min(0).max(1_000_000),
+                  missingQuantity: z.number().finite().min(0).max(1_000_000),
+                  repairQuantity: z.number().finite().min(0).max(1_000_000),
+                  conditionNote: nullableText,
+                })
+              )
+              .min(1)
+              .max(20),
+          })
+          .superRefine((input, issue) => {
+            if (
+              new Set(input.items.map(item => item.requestItemId)).size !==
+              input.items.length
+            )
+              issue.addIssue({
+                code: z.ZodIssueCode.custom,
+                path: ["items"],
+                message: "Mỗi dòng phụ kiện chỉ được kiểm đếm một lần.",
+              });
+            input.items.forEach((item, index) => {
+              const quantities = [
+                item.goodQuantity,
+                item.damagedQuantity,
+                item.missingQuantity,
+                item.repairQuantity,
+              ];
+              if (
+                quantities.some(
+                  value => !Number.isInteger(Math.round(value * 100))
+                )
+              )
+                issue.addIssue({
+                  code: z.ZodIssueCode.custom,
+                  path: ["items", index],
+                  message: "Số lượng kiểm đếm tối đa 2 chữ số thập phân.",
+                });
+            });
+          })
       )
       .mutation(async ({ input, ctx }) =>
         runInventoryTransaction(async transaction => {
@@ -6611,6 +6658,7 @@ export const appRouter = router({
             request.id,
             transaction
           )) as Array<{
+            id: number;
             sourceItemId: number;
             supplyId: number;
             supplyName: string;
@@ -6622,15 +6670,80 @@ export const appRouter = router({
               code: "BAD_REQUEST",
               message: "Yêu cầu không có phụ kiện để hoàn trả.",
             });
+          if (requestItems.length !== input.items.length)
+            throw new TRPCError({
+              code: "BAD_REQUEST",
+              message: "Vui lòng kiểm đếm đầy đủ tất cả phụ kiện trong yêu cầu.",
+            });
+
+          const inspectedItems = requestItems.map(requestItem => {
+            const inspection = input.items.find(
+              item => item.requestItemId === requestItem.id
+            );
+            if (!inspection)
+              throw new TRPCError({
+                code: "BAD_REQUEST",
+                message: `Chưa kiểm đếm ${requestItem.supplyName}.`,
+              });
+            const requested = Number(requestItem.requestedQuantity);
+            const classified =
+              inspection.goodQuantity +
+              inspection.damagedQuantity +
+              inspection.missingQuantity +
+              inspection.repairQuantity;
+            if (Math.abs(classified - requested) > 0.001)
+              throw new TRPCError({
+                code: "BAD_REQUEST",
+                message: `Tổng phân loại của ${requestItem.supplyName} phải bằng ${requested} ${requestItem.unit}.`,
+              });
+            requireWholeQuantity(
+              requestItem.unit,
+              inspection.goodQuantity,
+              "Số lượng tốt"
+            );
+            requireWholeQuantity(
+              requestItem.unit,
+              inspection.damagedQuantity,
+              "Số lượng hỏng"
+            );
+            requireWholeQuantity(
+              requestItem.unit,
+              inspection.missingQuantity,
+              "Số lượng thiếu"
+            );
+            requireWholeQuantity(
+              requestItem.unit,
+              inspection.repairQuantity,
+              "Số lượng cần sửa"
+            );
+            if (
+              (inspection.damagedQuantity > 0 ||
+                inspection.missingQuantity > 0 ||
+                inspection.repairQuantity > 0) &&
+              !inspection.conditionNote?.trim()
+            )
+              throw new TRPCError({
+                code: "BAD_REQUEST",
+                message: `Vui lòng ghi chú tình trạng của ${requestItem.supplyName}.`,
+              });
+            return { requestItem, inspection, requested };
+          });
+
+          const now = new Date();
+          const receiptCode = `BBHTPK-${now.getFullYear()}-${String(request.id).padStart(6, "0")}`;
           const claimed = await transitionSupplyReturnRequestStatus(
             request.id,
             "pending",
             {
               status: "approved",
+              returnReceiptCode: receiptCode,
+              deliveredByName: input.deliveredByName,
+              receivedByName: input.receivedByName,
+              receiptCreatedAt: now,
               reviewNote: input.reviewNote || null,
               reviewedByUserId: ctx.user!.id,
               reviewedByName: ctx.user!.name || "Quản trị viên",
-              reviewedAt: new Date(),
+              reviewedAt: now,
             },
             transaction
           );
@@ -6640,8 +6753,7 @@ export const appRouter = router({
               message: "Yêu cầu này đã được xử lý.",
             });
 
-          for (const requestItem of requestItems) {
-            const quantity = Number(requestItem.requestedQuantity);
+          for (const { requestItem, inspection, requested } of inspectedItems) {
             const sourceItem =
               request.sourceType === "issue_slip"
                 ? await getSupplyIssueSlipItemById(
@@ -6662,21 +6774,16 @@ export const appRouter = router({
                 code: "BAD_REQUEST",
                 message: `${requestItem.supplyName} không còn thuộc phiếu gốc.`,
               });
-            requireWholeQuantity(
-              sourceItem.unit,
-              quantity,
-              "Số lượng hoàn trả"
-            );
             const quantityUpdated =
               request.sourceType === "issue_slip"
                 ? await incrementSupplyIssueSlipItemReturnedQuantity(
                     sourceItem.id,
-                    quantity,
+                    requested,
                     transaction
                   )
                 : await incrementHandoverSupplyItemReturnedQuantity(
                     sourceItem.id,
-                    quantity,
+                    requested,
                     transaction
                   );
             if (!quantityUpdated)
@@ -6684,53 +6791,94 @@ export const appRouter = router({
                 code: "CONFLICT",
                 message: `Số lượng ${requestItem.supplyName} đang giữ đã thay đổi. Vui lòng kiểm tra lại yêu cầu.`,
               });
-            const stockUpdated = await incrementInventorySupplyStock(
-              requestItem.supplyId,
-              quantity,
+
+            await updateSupplyReturnRequestItem(
+              requestItem.id,
+              {
+                goodQuantity: String(inspection.goodQuantity),
+                damagedQuantity: String(inspection.damagedQuantity),
+                missingQuantity: String(inspection.missingQuantity),
+                repairQuantity: String(inspection.repairQuantity),
+                conditionNote: inspection.conditionNote || null,
+              },
               transaction
             );
-            if (!stockUpdated)
+
+            const supply = await getInventorySupplyById(
+              requestItem.supplyId,
+              transaction
+            );
+            if (!supply || !supply.isActive)
               throw new TRPCError({
                 code: "NOT_FOUND",
                 message: `${requestItem.supplyName} không còn hoạt động trong kho.`,
               });
-            const updatedSupply = await getInventorySupplyById(
-              requestItem.supplyId,
-              transaction
-            );
-            if (!updatedSupply)
-              throw new TRPCError({
-                code: "NOT_FOUND",
-                message: "Không tìm thấy phụ kiện sau khi cập nhật kho.",
-              });
-            const quantityAfter = Number(updatedSupply.stockQuantity);
-            await createInventoryMovement(
-              {
-                supplyId: requestItem.supplyId,
-                movementType: "return",
-                quantity: String(quantity),
-                quantityBefore: String(quantityAfter - quantity),
-                quantityAfter: String(quantityAfter),
-                handoverId:
-                  request.sourceType === "handover"
-                    ? request.sourceId
-                    : null,
-                issueSlipId:
-                  request.sourceType === "issue_slip"
-                    ? request.sourceId
-                    : null,
-                issueSlipItemId:
-                  request.sourceType === "issue_slip"
-                    ? requestItem.sourceItemId
-                    : null,
-                recipientUserId: request.requesterUserId,
-                recipientName: request.requesterName,
-                note: `Duyệt ${request.requestCode}${request.note ? `: ${request.note}` : ""}`,
-                createdByUserId: ctx.user!.id,
-                createdByName: ctx.user!.name || "Quản trị viên",
-              },
-              transaction
-            );
+
+            if (inspection.goodQuantity > 0) {
+              const stockUpdated = await incrementInventorySupplyStock(
+                requestItem.supplyId,
+                inspection.goodQuantity,
+                transaction
+              );
+              if (!stockUpdated)
+                throw new TRPCError({
+                  code: "CONFLICT",
+                  message: `Không thể nhập kho ${requestItem.supplyName}.`,
+                });
+              const updatedSupply = await getInventorySupplyById(
+                requestItem.supplyId,
+                transaction
+              );
+              if (!updatedSupply)
+                throw new TRPCError({
+                  code: "NOT_FOUND",
+                  message: "Không tìm thấy phụ kiện sau khi cập nhật kho.",
+                });
+              const quantityAfter = Number(updatedSupply.stockQuantity);
+              await createInventoryMovement(
+                {
+                  supplyId: requestItem.supplyId,
+                  movementType: "return",
+                  quantity: String(inspection.goodQuantity),
+                  quantityBefore: String(
+                    quantityAfter - inspection.goodQuantity
+                  ),
+                  quantityAfter: String(quantityAfter),
+                  handoverId:
+                    request.sourceType === "handover"
+                      ? request.sourceId
+                      : null,
+                  issueSlipId:
+                    request.sourceType === "issue_slip"
+                      ? request.sourceId
+                      : null,
+                  issueSlipItemId:
+                    request.sourceType === "issue_slip"
+                      ? requestItem.sourceItemId
+                      : null,
+                  recipientUserId: request.requesterUserId,
+                  recipientName: request.requesterName,
+                  note: `${receiptCode} · Nhập lại hàng tốt${request.note ? `: ${request.note}` : ""}`,
+                  createdByUserId: ctx.user!.id,
+                  createdByName: ctx.user!.name || "Quản trị viên",
+                },
+                transaction
+              );
+            }
+            if (inspection.damagedQuantity > 0)
+              await incrementInventorySupplyConditionQuantity(
+                requestItem.supplyId,
+                "damaged",
+                inspection.damagedQuantity,
+                transaction
+              );
+            if (inspection.repairQuantity > 0)
+              await incrementInventorySupplyConditionQuantity(
+                requestItem.supplyId,
+                "repair",
+                inspection.repairQuantity,
+                transaction
+              );
           }
 
           if (request.sourceType === "issue_slip") {
@@ -6748,21 +6896,25 @@ export const appRouter = router({
             if (fullyReturned)
               await updateSupplyIssueSlip(
                 request.sourceId,
-                { status: "returned", returnedAt: new Date() },
+                { status: "returned", returnedAt: now },
                 transaction
               );
           }
-          await recordActivity({
-            entityType: "supply_return_request",
-            entityId: request.id,
-            action: "approved",
-            actorUserId: ctx.user!.id,
-            actorName: ctx.user!.name,
-            summary: `Duyệt yêu cầu hoàn phụ kiện ${request.requestCode}`,
-          });
+          await recordActivity(
+            {
+              entityType: "supply_return_request",
+              entityId: request.id,
+              action: "approved",
+              actorUserId: ctx.user!.id,
+              actorName: ctx.user!.name,
+              summary: `Duyệt yêu cầu ${request.requestCode}, tạo biên bản ${receiptCode}`,
+            },
+            transaction
+          );
           return {
             success: true,
             requestCode: request.requestCode,
+            receiptCode,
             status: "approved" as const,
           };
         })
