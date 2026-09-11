@@ -1666,6 +1666,35 @@ export async function incrementInventorySupplyStock(
   return Number(result[0].affectedRows) > 0;
 }
 
+export async function incrementInventorySupplyConditionQuantity(
+  id: number,
+  condition: "damaged" | "repair",
+  quantity: number,
+  executor?: any
+) {
+  const db = executor ?? (await getDb());
+  if (!db) throw new Error("Database unavailable");
+  const amount = String(quantity);
+  const update =
+    condition === "damaged"
+      ? {
+          damagedQuantity: sql`${inventorySupplies.damagedQuantity} + ${amount}`,
+        }
+      : {
+          repairQuantity: sql`${inventorySupplies.repairQuantity} + ${amount}`,
+        };
+  const result = await db
+    .update(inventorySupplies)
+    .set(update)
+    .where(
+      and(
+        eq(inventorySupplies.id, id),
+        eq(inventorySupplies.isActive, true)
+      )
+    );
+  return Number(result[0].affectedRows) > 0;
+}
+
 export async function createInventoryMovement(data: typeof inventoryMovements.$inferInsert, executor?: any) {
   const db = executor ?? await getDb();
   if (!db) throw new Error("Database unavailable");
@@ -1885,6 +1914,19 @@ export async function createSupplyReturnRequestItem(
   if (!db) throw new Error("Database unavailable");
   const result = await db.insert(supplyReturnRequestItems).values(data);
   return Number(result[0].insertId);
+}
+
+export async function updateSupplyReturnRequestItem(
+  id: number,
+  data: Partial<typeof supplyReturnRequestItems.$inferInsert>,
+  executor?: any
+) {
+  const db = executor ?? (await getDb());
+  if (!db) throw new Error("Database unavailable");
+  await db
+    .update(supplyReturnRequestItems)
+    .set(data)
+    .where(eq(supplyReturnRequestItems.id, id));
 }
 
 export async function getSupplyReturnRequestById(
