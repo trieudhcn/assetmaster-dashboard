@@ -252,8 +252,8 @@ function UserSupplyHistorySection({
                 Phụ kiện đã cấp cho bạn
               </div>
               <p className="mt-1 text-xs text-[#71869A]">
-                Số lượng còn giữ được tính theo tổng thực cấp trừ tổng đã hoàn
-                trả.
+                Các phụ kiện bạn đang giữ từ phiếu cấp phát hoặc biên bản bàn giao.
+                Số lượng còn giữ được tính theo tổng thực cấp trừ tổng đã hoàn trả.
               </p>
             </div>
             <div className="rounded-xl bg-[#E6F6F2] px-4 py-2 text-center">
