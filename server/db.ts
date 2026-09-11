@@ -2109,6 +2109,28 @@ export async function getSupplyIssueSlipItemById(id: number, executor?: any) {
   return (await db.select().from(supplyIssueSlipItems).where(eq(supplyIssueSlipItems.id, id)).limit(1))[0];
 }
 
+export async function incrementSupplyIssueSlipItemReturnedQuantity(
+  id: number,
+  quantity: number,
+  executor?: any
+) {
+  const db = executor ?? (await getDb());
+  if (!db) throw new Error("Database unavailable");
+  const amount = String(quantity);
+  const result = await db
+    .update(supplyIssueSlipItems)
+    .set({
+      returnedQuantity: sql`${supplyIssueSlipItems.returnedQuantity} + ${amount}`,
+    })
+    .where(
+      and(
+        eq(supplyIssueSlipItems.id, id),
+        sql`${supplyIssueSlipItems.issuedQuantity} - ${supplyIssueSlipItems.returnedQuantity} >= ${amount}`
+      )
+    );
+  return Number(result[0].affectedRows) > 0;
+}
+
 export async function updateSupplyIssueSlip(id: number, data: Partial<typeof supplyIssueSlips.$inferInsert>, executor?: any) {
   const db = executor ?? await getDb();
   if (!db) throw new Error("Database unavailable");
@@ -2473,6 +2495,28 @@ export async function getHandoverSupplyItemById(id: number, executor?: any) {
   const db = executor ?? await getDb();
   if (!db) return undefined;
   return (await db.select().from(handoverSupplyItems).where(eq(handoverSupplyItems.id, id)).limit(1))[0];
+}
+
+export async function incrementHandoverSupplyItemReturnedQuantity(
+  id: number,
+  quantity: number,
+  executor?: any
+) {
+  const db = executor ?? (await getDb());
+  if (!db) throw new Error("Database unavailable");
+  const amount = String(quantity);
+  const result = await db
+    .update(handoverSupplyItems)
+    .set({
+      returnedQuantity: sql`${handoverSupplyItems.returnedQuantity} + ${amount}`,
+    })
+    .where(
+      and(
+        eq(handoverSupplyItems.id, id),
+        sql`${handoverSupplyItems.issuedQuantity} - ${handoverSupplyItems.returnedQuantity} >= ${amount}`
+      )
+    );
+  return Number(result[0].affectedRows) > 0;
 }
 
 export async function updateHandoverSupplyItem(id: number, data: Partial<typeof handoverSupplyItems.$inferInsert>, executor?: any) {
