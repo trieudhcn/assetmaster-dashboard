@@ -2,6 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { drizzle } from "drizzle-orm/mysql2";
 import { migrate } from "drizzle-orm/mysql2/migrator";
+import mysql from "mysql2/promise";
 
 function readSecret(variable) {
   const filePath = process.env[`${variable}_FILE`];
@@ -54,11 +55,119 @@ function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
+const supplyReturnSchemaRequirements = [
+  {
+    table: "inventorySupplies",
+    column: "damagedQuantity",
+    definition:
+      "ALTER TABLE \`inventorySupplies\` ADD \`damagedQuantity\` decimal(15,2) DEFAULT '0' NOT NULL AFTER \`stockQuantity\`",
+  },
+  {
+    table: "inventorySupplies",
+    column: "repairQuantity",
+    definition:
+      "ALTER TABLE \`inventorySupplies\` ADD \`repairQuantity\` decimal(15,2) DEFAULT '0' NOT NULL AFTER \`damagedQuantity\`",
+  },
+  {
+    table: "supplyReturnRequests",
+    column: "returnReceiptCode",
+    definition:
+      "ALTER TABLE \`supplyReturnRequests\` ADD \`returnReceiptCode\` varchar(64) AFTER \`sourceReferenceCode\`",
+  },
+  {
+    table: "supplyReturnRequests",
+    column: "deliveredByName",
+    definition:
+      "ALTER TABLE \`supplyReturnRequests\` ADD \`deliveredByName\` varchar(160) AFTER \`returnReceiptCode\`",
+  },
+  {
+    table: "supplyReturnRequests",
+    column: "receivedByName",
+    definition:
+      "ALTER TABLE \`supplyReturnRequests\` ADD \`receivedByName\` varchar(160) AFTER \`deliveredByName\`",
+  },
+  {
+    table: "supplyReturnRequests",
+    column: "receiptCreatedAt",
+    definition:
+      "ALTER TABLE \`supplyReturnRequests\` ADD \`receiptCreatedAt\` timestamp AFTER \`receivedByName\`",
+  },
+  {
+    table: "supplyReturnRequestItems",
+    column: "goodQuantity",
+    definition:
+      "ALTER TABLE \`supplyReturnRequestItems\` ADD \`goodQuantity\` decimal(15,2) DEFAULT '0' NOT NULL AFTER \`requestedQuantity\`",
+  },
+  {
+    table: "supplyReturnRequestItems",
+    column: "damagedQuantity",
+    definition:
+      "ALTER TABLE \`supplyReturnRequestItems\` ADD \`damagedQuantity\` decimal(15,2) DEFAULT '0' NOT NULL AFTER \`goodQuantity\`",
+  },
+  {
+    table: "supplyReturnRequestItems",
+    column: "missingQuantity",
+    definition:
+      "ALTER TABLE \`supplyReturnRequestItems\` ADD \`missingQuantity\` decimal(15,2) DEFAULT '0' NOT NULL AFTER \`damagedQuantity\`",
+  },
+  {
+    table: "supplyReturnRequestItems",
+    column: "repairQuantity",
+    definition:
+      "ALTER TABLE \`supplyReturnRequestItems\` ADD \`repairQuantity\` decimal(15,2) DEFAULT '0' NOT NULL AFTER \`missingQuantity\`",
+  },
+  {
+    table: "supplyReturnRequestItems",
+    column: "conditionNote",
+    definition:
+      "ALTER TABLE \`supplyReturnRequestItems\` ADD \`conditionNote\` text AFTER \`repairQuantity\`",
+  },
+];
+
+async function ensureSupplyReturnInspectionSchema() {
+  const connection = await mysql.createConnection(databaseUrl);
+  try {
+    for (const requirement of supplyReturnSchemaRequirements) {
+      const [rows] = await connection.execute(
+        "SELECT 1 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND COLUMN_NAME = ? LIMIT 1",
+        [requirement.table, requirement.column]
+      );
+      if (rows.length) continue;
+      try {
+        await connection.query(requirement.definition);
+        console.log(
+          `AssetMaster: repaired missing column ${requirement.table}.${requirement.column}.`
+        );
+      } catch (error) {
+        if (error?.code !== "ER_DUP_FIELDNAME") throw error;
+      }
+    }
+    const [indexRows] = await connection.execute(
+      "SELECT 1 FROM information_schema.STATISTICS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'supplyReturnRequests' AND INDEX_NAME = 'supply_return_requests_receipt_unique' LIMIT 1"
+    );
+    if (!indexRows.length) {
+      try {
+        await connection.query(
+          "CREATE UNIQUE INDEX \`supply_return_requests_receipt_unique\` ON \`supplyReturnRequests\` (\`returnReceiptCode\`)"
+        );
+        console.log(
+          "AssetMaster: repaired missing supply return receipt index."
+        );
+      } catch (error) {
+        if (error?.code !== "ER_DUP_KEYNAME") throw error;
+      }
+    }
+  } finally {
+    await connection.end();
+  }
+}
+
 const database = drizzle(databaseUrl);
 for (let attempt = 1; attempt <= Math.max(1, maxAttempts); attempt += 1) {
   try {
     await migrate(database, { migrationsFolder });
-    console.log("AssetMaster: database migrations are up to date.");
+    await ensureSupplyReturnInspectionSchema();
+    console.log("AssetMaster: database migrations and schema are up to date.");
     process.exit(0);
   } catch (error) {
     const retryable = isRetryableConnectionError(error);
