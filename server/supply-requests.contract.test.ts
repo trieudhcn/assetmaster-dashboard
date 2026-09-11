@@ -351,6 +351,12 @@ describe("employee supply request workflow", () => {
     expect(inventory).toContain("trpc.supplies.supplyHolders.useQuery");
     expect(inventory).toContain("Xem nhân viên đang giữ");
     expect(inventory).toContain("Hiển thị {(holdersQuery.data || []).length} người đang giữ");
+    expect(inventory).toContain("exportSupplyHolders");
+    expect(inventory).toContain("writeBrandedWorkbook");
+    expect(inventory).toContain("DANH SÁCH NGƯỜI ĐANG GIỮ PHỤ KIỆN");
+    expect(inventory).toContain('"Mã phiếu / biên bản"');
+    expect(inventory).toContain('"Số lượng đang giữ"');
+    expect(inventory).toContain("Xuất Excel");
     expect(inventory).toContain("<Dialog");
     expect(inventory).toContain("selectedSupply.damagedQuantity");
     expect(pdf).toContain("BIÊN BẢN HOÀN TRẢ PHỤ KIỆN");
