@@ -73,8 +73,6 @@ export function SupplyReturnRequestQueue() {
   const [approveId, setApproveId] = useState<number | null>(null);
   const [rejectId, setRejectId] = useState<number | null>(null);
   const [reviewNote, setReviewNote] = useState("");
-  const [deliveredByName, setDeliveredByName] = useState("");
-  const [receivedByName, setReceivedByName] = useState("");
   const [inspection, setInspection] = useState<
     Record<number, InspectionDraft>
   >({});
@@ -176,14 +174,12 @@ export function SupplyReturnRequestQueue() {
   const openInspection = (request: (typeof requests)[number]) => {
     setApproveId(request.id);
     setReviewNote("");
-    setDeliveredByName(request.requesterName);
-    setReceivedByName(user?.name || user?.email || "Quản trị viên");
     setInspection(
       Object.fromEntries(
         request.items.map(item => [
           item.id,
           {
-            good: String(item.requestedQuantity),
+            good: String(Number(item.requestedQuantity)),
             damaged: "0",
             missing: "0",
             repair: "0",
@@ -235,8 +231,6 @@ export function SupplyReturnRequestQueue() {
   });
   const canApprove =
     Boolean(approveTarget) &&
-    deliveredByName.trim().length >= 2 &&
-    receivedByName.trim().length >= 2 &&
     inspectionRows.length > 0 &&
     inspectionRows.every(row => row.valid);
 
@@ -521,8 +515,8 @@ export function SupplyReturnRequestQueue() {
           }
         }}
       >
-        <AlertDialogContent className="max-h-[92vh] max-w-4xl overflow-y-auto rounded-2xl border-[#CDE5E5] bg-white p-0">
-          <AlertDialogHeader className="border-b border-[#E7EEF3] px-5 py-5">
+        <AlertDialogContent className="flex max-h-[92vh] max-w-4xl flex-col gap-0 overflow-hidden rounded-2xl border-[#CDE5E5] bg-white p-0">
+          <AlertDialogHeader className="shrink-0 border-b border-[#E7EEF3] px-5 py-4">
             <AlertDialogTitle className="font-display text-lg font-extrabold text-[#193B57]">
               Kiểm đếm {approveTarget?.requestCode}
             </AlertDialogTitle>
@@ -531,26 +525,26 @@ export function SupplyReturnRequestQueue() {
               yêu cầu hoàn trả. Chỉ hàng tốt được cộng vào tồn khả dụng.
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <div className="space-y-4 px-5">
+          <div className="min-h-0 flex-1 space-y-4 overflow-y-auto px-5 py-4">
             <div className="grid gap-3 sm:grid-cols-2">
-              <label>
+              <div>
                 <span className="field-label">Người giao</span>
-                <input
-                  value={deliveredByName}
-                  onChange={event => setDeliveredByName(event.target.value)}
-                  maxLength={160}
-                  className="field-input mt-1"
-                />
-              </label>
-              <label>
+                <div
+                  aria-readonly="true"
+                  className="mt-1 min-h-12 rounded-xl border border-[#DDE7F0] bg-[#F7FAFC] px-4 py-3 text-sm font-extrabold text-[#193B57]"
+                >
+                  {approveTarget?.requesterName || "Nhân viên"}
+                </div>
+              </div>
+              <div>
                 <span className="field-label">Người nhận / kiểm đếm</span>
-                <input
-                  value={receivedByName}
-                  onChange={event => setReceivedByName(event.target.value)}
-                  maxLength={160}
-                  className="field-input mt-1"
-                />
-              </label>
+                <div
+                  aria-readonly="true"
+                  className="mt-1 min-h-12 rounded-xl border border-[#DDE7F0] bg-[#F7FAFC] px-4 py-3 text-sm font-extrabold text-[#193B57]"
+                >
+                  {user?.name || user?.email || "Quản trị viên"}
+                </div>
+              </div>
             </div>
             <div className="space-y-3">
               {inspectionRows.map(row => (
@@ -651,7 +645,7 @@ export function SupplyReturnRequestQueue() {
               khả dụng để cấp phát. Số thiếu được lưu trên biên bản đối soát.
             </div>
           </div>
-          <AlertDialogFooter className="border-t border-[#E7EEF3] px-5 py-4">
+          <AlertDialogFooter className="shrink-0 border-t border-[#E7EEF3] bg-white px-5 py-4">
             <AlertDialogCancel disabled={approve.isPending}>
               Đóng
             </AlertDialogCancel>
@@ -662,8 +656,6 @@ export function SupplyReturnRequestQueue() {
                 if (!approveTarget || !canApprove) return;
                 approve.mutate({
                   id: approveTarget.id,
-                  deliveredByName: deliveredByName.trim(),
-                  receivedByName: receivedByName.trim(),
                   reviewNote: reviewNote.trim() || null,
                   items: inspectionRows.map(row => ({
                     requestItemId: row.item.id,
