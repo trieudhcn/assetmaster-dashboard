@@ -120,7 +120,7 @@ describe("employee supply request workflow", () => {
     expect(queue).toContain("Xác nhận duyệt & tạo phiếu");
     expect(queue).toContain("Số lượng thực cấp");
     expect(queue).toContain("Xác nhận cấp một phần");
-    expect(queue).toContain("const processedPageSize = 10");
+    expect(queue).toContain("const processedPageSize = 5");
     expect(queue).toContain("pagedProcessed.map");
     expect(queue).toContain("ProcessedRequestRow");
     expect(queue).toContain("Trang {activeProcessedPage}/{processedPageCount}");
@@ -246,6 +246,13 @@ describe("employee supply request workflow", () => {
     expect(returnQueue).toContain("trpc.supplies.approveReturnRequest");
     expect(returnQueue).toContain("trpc.supplies.rejectReturnRequest");
     expect(returnQueue).toContain("<AlertDialog");
+    expect(returnQueue).toContain("const processedPageSize = 5");
+    expect(returnQueue).toContain("ProcessedRequestRow");
+    expect(returnQueue).toContain("pagedProcessed.map");
+    expect(returnQueue).toContain("expandedProcessedRequestId");
+    expect(returnQueue).toContain("Hiển thị");
+    expect(returnQueue).toContain("<CheckCircle2");
+    expect(returnQueue).toContain("Ẩn yêu cầu đã xử lý");
     expect(manager).toContain("<SupplyReturnRequestQueue />");
   });
 
