@@ -323,6 +323,8 @@ import {
   deleteSupplyUnit,
   decrementInventorySupplyStock,
   incrementInventorySupplyStock,
+  incrementSupplyIssueSlipItemReturnedQuantity,
+  incrementHandoverSupplyItemReturnedQuantity,
 } from "./db";
 import {
   credentialFingerprint,
