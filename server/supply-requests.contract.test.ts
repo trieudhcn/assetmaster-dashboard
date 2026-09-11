@@ -352,6 +352,14 @@ describe("employee supply request workflow", () => {
     expect(inventory).toContain("Xem nhân viên đang giữ");
     expect(inventory).toContain("Hiển thị {(holdersQuery.data || []).length} người đang giữ");
     expect(inventory).toContain("exportSupplyHolders");
+    const exportStart = inventory.indexOf("const exportSupplyHolders");
+    const exportEnd = inventory.indexOf("const editingSupply", exportStart);
+    const exportHelper = inventory.slice(exportStart, exportEnd);
+    expect(exportHelper).toContain("setHoldingSupplyId(null)");
+    expect(exportHelper.indexOf("setHoldingSupplyId(null)")).toBeLessThan(
+      exportHelper.indexOf("writeBrandedWorkbook")
+    );
+    expect(exportHelper).toContain("window.setTimeout(resolve, 200)");
     expect(inventory).toContain("writeBrandedWorkbook");
     expect(inventory).toContain("DANH SÁCH NGƯỜI ĐANG GIỮ PHỤ KIỆN");
     expect(inventory).toContain('"Mã phiếu / biên bản"');
