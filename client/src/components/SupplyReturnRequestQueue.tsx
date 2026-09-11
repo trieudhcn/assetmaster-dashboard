@@ -1,6 +1,7 @@
 import {
   AlertTriangle,
   CheckCircle2,
+  ChevronDown,
   ChevronLeft,
   ChevronRight,
   ClipboardCheck,
@@ -78,6 +79,8 @@ export function SupplyReturnRequestQueue() {
   >({});
   const [showProcessed, setShowProcessed] = useState(false);
   const [processedPage, setProcessedPage] = useState(1);
+  const [expandedProcessedRequestId, setExpandedProcessedRequestId] =
+    useState<number | null>(null);
   const [highlightedRequestId, setHighlightedRequestId] = useState<
     number | null
   >(null);
@@ -87,7 +90,7 @@ export function SupplyReturnRequestQueue() {
   const requests = requestsQuery.data || [];
   const pending = requests.filter(request => request.status === "pending");
   const processed = requests.filter(request => request.status !== "pending");
-  const processedPageSize = 10;
+  const processedPageSize = 5;
   const processedPageCount = Math.max(
     1,
     Math.ceil(processed.length / processedPageSize)
@@ -119,6 +122,7 @@ export function SupplyReturnRequestQueue() {
       setProcessedPage(
         Math.max(1, Math.floor(targetIndex / processedPageSize) + 1)
       );
+      setExpandedProcessedRequestId(storedId);
     }
     setHighlightedRequestId(storedId);
     const scrollTimer = window.setTimeout(() => {
@@ -270,6 +274,150 @@ export function SupplyReturnRequestQueue() {
     }
   };
 
+  const ProcessedRequestRow = ({
+    request,
+  }: {
+    request: (typeof requests)[number];
+  }) => {
+    const presentation =
+      statusCopy[request.status as keyof typeof statusCopy];
+    const expanded = expandedProcessedRequestId === request.id;
+    const itemSummary = request.items
+      .slice(0, 2)
+      .map(item => item.supplyName)
+      .join(", ");
+    const remainingItems = Math.max(0, request.items.length - 2);
+    return (
+      <article
+        data-supply-return-request-id={request.id}
+        tabIndex={-1}
+        className={`overflow-hidden rounded-lg border bg-white outline-none transition ${highlightedRequestId === request.id ? "border-[#0F8C8C] ring-2 ring-[#8BCDC6]/60" : "border-[#E3EDF2]"}`}
+      >
+        <button
+          type="button"
+          aria-expanded={expanded}
+          aria-controls={`processed-supply-return-request-${request.id}`}
+          onClick={() =>
+            setExpandedProcessedRequestId(current =>
+              current === request.id ? null : request.id
+            )
+          }
+          className="grid w-full gap-2 px-3 py-3 text-left transition hover:bg-[#F8FBFC] sm:grid-cols-[170px_minmax(130px,.7fr)_minmax(0,1fr)_auto_24px] sm:items-center"
+        >
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="font-mono text-[11px] font-extrabold text-[#193B57]">
+              {request.requestCode}
+            </span>
+            <span
+              className={`rounded-full border px-2 py-0.5 text-[9px] font-extrabold ${presentation.className}`}
+            >
+              {presentation.label}
+            </span>
+          </div>
+          <div className="truncate text-[11px] font-bold text-[#526779]">
+            {request.requesterName} · {request.sourceReferenceCode}
+          </div>
+          <div className="truncate text-[10px] text-[#71869A]">
+            {itemSummary}
+            {remainingItems ? ` và ${remainingItems} loại khác` : ""}
+          </div>
+          <div className="text-[10px] text-[#8AA0B6] sm:text-right">
+            {new Date(
+              request.reviewedAt || request.updatedAt || request.createdAt
+            ).toLocaleString("vi-VN")}
+          </div>
+          <ChevronDown
+            size={15}
+            className={`text-[#8AA0B6] transition-transform ${expanded ? "rotate-180" : ""}`}
+          />
+        </button>
+        {expanded ? (
+          <div
+            id={`processed-supply-return-request-${request.id}`}
+            className="border-t border-[#EDF2F5] bg-[#FBFDFE] px-3 py-3"
+          >
+            <div className="grid gap-2 md:grid-cols-2">
+              {request.items.map(item => (
+                <div
+                  key={item.id}
+                  className="rounded-lg border border-[#EDF2F5] bg-white px-3 py-2"
+                >
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <div className="truncate text-xs font-bold text-[#193B57]">
+                      {item.supplyName}
+                    </div>
+                    <span className="text-[10px] font-extrabold text-[#087A6A]">
+                      Yêu cầu {numberText(item.requestedQuantity)} {item.unit}
+                    </span>
+                  </div>
+                  <div className="mt-1 font-mono text-[9px] text-[#71869A]">
+                    {item.supplyCode}
+                  </div>
+                  {request.status === "approved" ? (
+                    <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1 border-t border-[#E5EDF2] pt-2 text-[10px] font-bold">
+                      <span className="text-[#087A6A]">
+                        Tốt {numberText(item.goodQuantity)}
+                      </span>
+                      <span className="text-[#B44545]">
+                        Hỏng {numberText(item.damagedQuantity)}
+                      </span>
+                      <span className="text-[#A86B00]">
+                        Thiếu {numberText(item.missingQuantity)}
+                      </span>
+                      <span className="text-[#3855A6]">
+                        Cần sửa {numberText(item.repairQuantity)}
+                      </span>
+                    </div>
+                  ) : null}
+                  {item.conditionNote ? (
+                    <div className="mt-1 text-[10px] text-[#71869A]">
+                      {item.conditionNote}
+                    </div>
+                  ) : null}
+                </div>
+              ))}
+            </div>
+            <div className="mt-3 grid gap-2 text-[11px] leading-5 text-[#60758A] md:grid-cols-2">
+              {request.note ? (
+                <p>
+                  <b className="text-[#526779]">Lý do:</b> {request.note}
+                </p>
+              ) : null}
+              {request.reviewNote ? (
+                <p>
+                  <b className="text-[#526779]">Phản hồi:</b>{" "}
+                  {request.reviewNote}
+                </p>
+              ) : null}
+            </div>
+            {request.returnReceiptCode ? (
+              <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-[#E5EDF2] pt-3">
+                <div className="text-[10px] text-[#71869A]">
+                  <span className="font-mono font-extrabold text-[#087A6A]">
+                    {request.returnReceiptCode}
+                  </span>
+                  {" · "}Người giao: <b>{request.deliveredByName}</b>
+                  {" · "}Người nhận: <b>{request.receivedByName}</b>
+                </div>
+                <button
+                  type="button"
+                  disabled={preparingReceiptId === request.id}
+                  onClick={() => void previewReceipt(request)}
+                  className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-[#CDE5E5] bg-white px-3 text-[10px] font-extrabold text-[#087A6A] hover:bg-[#ECF8F7] disabled:opacity-50"
+                >
+                  <Download size={13} />
+                  {preparingReceiptId === request.id
+                    ? "Đang tạo PDF..."
+                    : "Biên bản PDF"}
+                </button>
+              </div>
+            ) : null}
+          </div>
+        ) : null}
+      </article>
+    );
+  };
+
   const RequestRow = ({
     request,
     actionable,
@@ -282,9 +430,9 @@ export function SupplyReturnRequestQueue() {
     return (
       <article
         data-supply-return-request-id={request.id}
-        className={`rounded-xl border bg-white p-4 transition ${highlightedRequestId === request.id ? "border-[#0F8C8C] ring-4 ring-[#0F8C8C]/10" : "border-[#E3EDF2]"}`}
+        className={`rounded-xl border bg-white p-3 transition ${highlightedRequestId === request.id ? "border-[#0F8C8C] ring-4 ring-[#0F8C8C]/10" : "border-[#E3EDF2]"}`}
       >
-        <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+        <div className="flex flex-col gap-2 lg:flex-row lg:items-start lg:justify-between">
           <div>
             <div className="flex flex-wrap items-center gap-2">
               <span className="font-mono text-xs font-extrabold text-[#193B57]">
@@ -347,7 +495,7 @@ export function SupplyReturnRequestQueue() {
             ) : null}
           </div>
         </div>
-        <div className="mt-3 grid gap-2 md:grid-cols-2">
+        <div className="mt-2 grid gap-2 md:grid-cols-2">
           {request.items.map(item => (
             <div
               key={item.id}
@@ -455,51 +603,63 @@ export function SupplyReturnRequestQueue() {
             <button
               type="button"
               onClick={() => setShowProcessed(value => !value)}
-              className="text-xs font-extrabold text-[#60758A] hover:text-[#2666A8]"
+              className="inline-flex items-center gap-2 text-xs font-extrabold text-[#60758A] hover:text-[#2666A8]"
             >
+              <CheckCircle2 size={14} />
               {showProcessed
-                ? "Ẩn lịch sử hoàn trả"
+                ? "Ẩn yêu cầu đã xử lý"
                 : `Xem ${processed.length} yêu cầu đã xử lý`}
             </button>
             {showProcessed ? (
-              <>
-                <div className="mt-3 space-y-2">
+              <div className="mt-3 overflow-hidden rounded-xl border border-[#DCEBE9] bg-white">
+                <div className="divide-y divide-[#EDF2F5] p-2">
                   {pagedProcessed.map(request => (
-                    <RequestRow
-                      key={request.id}
-                      request={request}
-                      actionable={false}
-                    />
+                    <ProcessedRequestRow key={request.id} request={request} />
                   ))}
                 </div>
-                {processedPageCount > 1 ? (
-                  <div className="mt-3 flex items-center justify-between border-t border-[#E3EDF2] pt-3 text-[10px] font-bold text-[#71869A]">
-                    <span>
+                <div className="flex flex-col gap-3 border-t border-[#E7EEF3] bg-[#FBFCFD] px-3 py-3 sm:flex-row sm:items-center sm:justify-between">
+                  <span className="text-xs font-semibold text-[#60758A]">
+                    Hiển thị{" "}
+                    {(activeProcessedPage - 1) * processedPageSize + 1}–
+                    {Math.min(
+                      activeProcessedPage * processedPageSize,
+                      processed.length
+                    )}{" "}
+                    / {processed.length} yêu cầu
+                  </span>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      aria-label="Trang yêu cầu hoàn trả đã xử lý trước"
+                      disabled={activeProcessedPage <= 1}
+                      onClick={() => {
+                        setExpandedProcessedRequestId(null);
+                        setProcessedPage(page => Math.max(1, page - 1));
+                      }}
+                      className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-[#DDE7F0] bg-white text-[#60758A] transition hover:border-[#8BCDC6] hover:text-[#087A6A] disabled:cursor-not-allowed disabled:opacity-40"
+                    >
+                      <ChevronLeft size={16} />
+                    </button>
+                    <span className="min-w-[82px] text-center text-xs font-bold text-[#193B57]">
                       Trang {activeProcessedPage}/{processedPageCount}
                     </span>
-                    <div className="flex gap-1">
-                      <button
-                        type="button"
-                        disabled={activeProcessedPage <= 1}
-                        onClick={() => setProcessedPage(page => page - 1)}
-                        className="grid h-8 w-8 place-items-center rounded-lg border border-[#DDE7F0] bg-white disabled:opacity-40"
-                        aria-label="Trang trước"
-                      >
-                        <ChevronLeft size={14} />
-                      </button>
-                      <button
-                        type="button"
-                        disabled={activeProcessedPage >= processedPageCount}
-                        onClick={() => setProcessedPage(page => page + 1)}
-                        className="grid h-8 w-8 place-items-center rounded-lg border border-[#DDE7F0] bg-white disabled:opacity-40"
-                        aria-label="Trang sau"
-                      >
-                        <ChevronRight size={14} />
-                      </button>
-                    </div>
+                    <button
+                      type="button"
+                      aria-label="Trang yêu cầu hoàn trả đã xử lý sau"
+                      disabled={activeProcessedPage >= processedPageCount}
+                      onClick={() => {
+                        setExpandedProcessedRequestId(null);
+                        setProcessedPage(page =>
+                          Math.min(processedPageCount, page + 1)
+                        );
+                      }}
+                      className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-[#DDE7F0] bg-white text-[#60758A] transition hover:border-[#8BCDC6] hover:text-[#087A6A] disabled:cursor-not-allowed disabled:opacity-40"
+                    >
+                      <ChevronRight size={16} />
+                    </button>
                   </div>
-                ) : null}
-              </>
+                </div>
+              </div>
             ) : null}
           </div>
         ) : null}
