@@ -471,6 +471,7 @@ export default function Home() {
   const dashboardInvoicesQuery = trpc.purchaseInvoices.list.useQuery(undefined, { enabled: isAuthenticated && isAdmin });
   const suppliesQuery = trpc.supplies.list.useQuery(undefined, { enabled: isAuthenticated && isAdmin });
   const supplyRequestNotificationsQuery = trpc.supplies.adminRequests.useQuery(undefined, { enabled: isAuthenticated && isAdmin, refetchInterval: 20_000 });
+  const supplyReturnRequestNotificationsQuery = trpc.supplies.adminReturnRequests.useQuery(undefined, { enabled: isAuthenticated && isAdmin, refetchInterval: 20_000 });
   const dashboardSoftwareLicensesQuery = trpc.softwareLicenses.list.useQuery(undefined, { enabled: isAuthenticated && isAdmin });
   const assetLicenseAssignmentsQuery = trpc.softwareLicenses.assignments.useQuery(undefined, { enabled: isAuthenticated && isAdmin });
   const dashboardSoftwareLicenseCapacityQuery = trpc.softwareLicenses.capacity.useQuery(undefined, { enabled: isAuthenticated && isAdmin });
@@ -1049,6 +1050,18 @@ export default function Home() {
         target: { type: "handover" as const, handoverId: handover.id },
       };
     }) : [];
+    const supplyReturnRequestNotifications = notificationPreferences.returnRequestEnabled ? (supplyReturnRequestNotificationsQuery.data || []).filter((request) => request.status === "pending").map((request) => {
+      const itemNames = request.items.slice(0, 2).map((item) => item.supplyName).join(", ");
+      const remainingItems = Math.max(0, request.items.length - 2);
+      return {
+        id: `supply-return-request-${request.id}`,
+        title: `${request.requestCode} chờ kiểm đếm hoàn trả`,
+        description: `${request.requesterName} hoàn ${request.items.length} loại phụ kiện: ${itemNames}${remainingItems ? ` và ${remainingItems} loại khác` : ""}.`,
+        createdAt: request.createdAt,
+        kind: "return" as const,
+        target: { type: "supplyReturnRequest" as const, requestId: request.id },
+      };
+    }) : [];
     const supplyRequestNotifications = notificationPreferences.handoverEnabled ? (supplyRequestNotificationsQuery.data || []).filter((request) => request.status === "pending").map((request) => {
       const itemNames = request.items.slice(0, 2).map((item) => item.supplyName).join(", ");
       const remainingItems = Math.max(0, request.items.length - 2);
@@ -1072,8 +1085,8 @@ export default function Home() {
         target: { type: "maintenance" as const, ticketId: ticket.id },
       };
     }) : [];
-    return [...supplyRequestNotifications, ...warrantyExpiryNotifications, ...returnRequestNotifications, ...maintenanceRequestNotifications, ...maintenanceNotifications, ...handoverNotifications].sort((left, right) => right.createdAt.getTime() - left.createdAt.getTime());
-  }, [assetQuery.data, assetRows, maintenanceTicketsQuery.data, notificationHandoversQuery.data, notificationPreferences, supplyRequestNotificationsQuery.data]);
+    return [...supplyReturnRequestNotifications, ...supplyRequestNotifications, ...warrantyExpiryNotifications, ...returnRequestNotifications, ...maintenanceRequestNotifications, ...maintenanceNotifications, ...handoverNotifications].sort((left, right) => right.createdAt.getTime() - left.createdAt.getTime());
+  }, [assetQuery.data, assetRows, maintenanceTicketsQuery.data, notificationHandoversQuery.data, notificationPreferences, supplyRequestNotificationsQuery.data, supplyReturnRequestNotificationsQuery.data]);
   const unreadNotifications = headerNotifications.filter((notification) => !readNotificationIds.includes(notification.id));
   const hasUnreadNotifications = unreadNotifications.length > 0;
   const markNotificationRead = (notificationId: string) => {
