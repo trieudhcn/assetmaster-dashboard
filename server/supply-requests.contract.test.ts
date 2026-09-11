@@ -278,6 +278,11 @@ describe("employee supply request workflow", () => {
     expect(manager).toContain("Loại phụ kiện");
     expect(manager).toContain("slip.supplyNames");
     expect(manager).toContain("colSpan={6}");
+    expect(manager).toContain("slipSearch");
+    expect(manager).toContain("slipStatusFilter");
+    expect(manager).toContain("Mã phiếu, người nhận hoặc phụ kiện...");
+    expect(manager).toContain("<SearchableSelect");
+    expect(manager).toContain('searchPlaceholder="Tìm trạng thái phiếu..."');
   });
 
   it("classifies returned accessories, isolates unusable stock and creates a PDF receipt", async () => {
@@ -338,6 +343,15 @@ describe("employee supply request workflow", () => {
     expect(database).toContain("issueSlipHoldings");
     expect(database).toContain("handoverHoldings");
     expect(database).toContain("directIssueHoldings");
+    expect(database).toContain(
+      "export async function listInventorySupplyHolders"
+    );
+    expect(database).toContain("sourceReferences");
+    expect(router).toContain("supplyHolders: adminProcedure");
+    expect(inventory).toContain("trpc.supplies.supplyHolders.useQuery");
+    expect(inventory).toContain("Xem nhân viên đang giữ");
+    expect(inventory).toContain("Hiển thị {(holdersQuery.data || []).length} người đang giữ");
+    expect(inventory).toContain("<Dialog");
     expect(inventory).toContain("selectedSupply.damagedQuantity");
     expect(pdf).toContain("BIÊN BẢN HOÀN TRẢ PHỤ KIỆN");
     expect(pdf).toContain("openPdfPreview");
