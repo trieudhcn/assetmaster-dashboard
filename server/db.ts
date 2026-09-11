@@ -1582,7 +1582,13 @@ export async function listAssetsByCodes(assetCodes: string[]) {
 export async function listInventorySupplies() {
   const db = await getDb();
   if (!db) return [];
-  const [supplies, movementTotals] = await Promise.all([
+  const [
+    supplies,
+    receiptTotals,
+    issueSlipHoldings,
+    handoverHoldings,
+    directIssueHoldings,
+  ] = await Promise.all([
     db
       .select()
       .from(inventorySupplies)
@@ -1590,27 +1596,70 @@ export async function listInventorySupplies() {
     db
       .select({
         supplyId: inventoryMovements.supplyId,
-        totalReceivedQuantity: sql<string>`coalesce(sum(case when ${inventoryMovements.movementType} = 'receipt' then abs(${inventoryMovements.quantity}) else 0 end), 0)`,
-        totalIssuedQuantity: sql<string>`coalesce(sum(case when ${inventoryMovements.movementType} = 'issue' then abs(${inventoryMovements.quantity}) else 0 end), 0)`,
+        totalReceivedQuantity: sql<string>`coalesce(sum(abs(${inventoryMovements.quantity})), 0)`,
       })
       .from(inventoryMovements)
+      .where(eq(inventoryMovements.movementType, "receipt"))
+      .groupBy(inventoryMovements.supplyId),
+    db
+      .select({
+        supplyId: supplyIssueSlipItems.supplyId,
+        heldQuantity: sql<string>`coalesce(sum(greatest(${supplyIssueSlipItems.issuedQuantity} - ${supplyIssueSlipItems.returnedQuantity}, 0)), 0)`,
+      })
+      .from(supplyIssueSlipItems)
+      .groupBy(supplyIssueSlipItems.supplyId),
+    db
+      .select({
+        supplyId: handoverSupplyItems.supplyId,
+        heldQuantity: sql<string>`coalesce(sum(greatest(${handoverSupplyItems.issuedQuantity} - ${handoverSupplyItems.returnedQuantity}, 0)), 0)`,
+      })
+      .from(handoverSupplyItems)
+      .innerJoin(
+        handovers,
+        eq(handoverSupplyItems.handoverId, handovers.id)
+      )
+      .where(inArray(handovers.status, ["active", "returned"]))
+      .groupBy(handoverSupplyItems.supplyId),
+    db
+      .select({
+        supplyId: inventoryMovements.supplyId,
+        heldQuantity: sql<string>`coalesce(sum(abs(${inventoryMovements.quantity})), 0)`,
+      })
+      .from(inventoryMovements)
+      .where(
+        and(
+          eq(inventoryMovements.movementType, "issue"),
+          isNull(inventoryMovements.issueSlipId),
+          isNull(inventoryMovements.handoverId)
+        )
+      )
       .groupBy(inventoryMovements.supplyId),
   ]);
-  const totalsBySupplyId = new Map(
-    movementTotals.map(row => [
+  const receivedBySupplyId = new Map(
+    receiptTotals.map(row => [
       row.supplyId,
-      {
-        totalReceivedQuantity: Number(row.totalReceivedQuantity || 0),
-        totalIssuedQuantity: Number(row.totalIssuedQuantity || 0),
-      },
+      Number(row.totalReceivedQuantity || 0),
     ])
   );
+  const holdingBySupplyId = new Map<number, number>();
+  const addHoldings = (
+    rows: Array<{ supplyId: number; heldQuantity: string }>
+  ) => {
+    rows.forEach(row => {
+      holdingBySupplyId.set(
+        row.supplyId,
+        (holdingBySupplyId.get(row.supplyId) || 0) +
+          Number(row.heldQuantity || 0)
+      );
+    });
+  };
+  addHoldings(issueSlipHoldings);
+  addHoldings(handoverHoldings);
+  addHoldings(directIssueHoldings);
   return supplies.map(supply => ({
     ...supply,
-    ...(totalsBySupplyId.get(supply.id) ?? {
-      totalReceivedQuantity: 0,
-      totalIssuedQuantity: 0,
-    }),
+    totalReceivedQuantity: receivedBySupplyId.get(supply.id) || 0,
+    heldQuantity: holdingBySupplyId.get(supply.id) || 0,
   }));
 }
 
@@ -2101,7 +2150,29 @@ export async function getSupplyIssueSlipById(id: number, executor?: any) {
 export async function listSupplyIssueSlips() {
   const db = await getDb();
   if (!db) return [];
-  return db.select().from(supplyIssueSlips).orderBy(desc(supplyIssueSlips.issuedAt));
+  const [slips, itemRows] = await Promise.all([
+    db
+      .select()
+      .from(supplyIssueSlips)
+      .orderBy(desc(supplyIssueSlips.issuedAt)),
+    db
+      .select({
+        issueSlipId: supplyIssueSlipItems.issueSlipId,
+        supplyName: supplyIssueSlipItems.supplyName,
+      })
+      .from(supplyIssueSlipItems)
+      .orderBy(asc(supplyIssueSlipItems.id)),
+  ]);
+  const supplyNamesBySlipId = new Map<number, string[]>();
+  itemRows.forEach(item => {
+    const names = supplyNamesBySlipId.get(item.issueSlipId) || [];
+    if (!names.includes(item.supplyName)) names.push(item.supplyName);
+    supplyNamesBySlipId.set(item.issueSlipId, names);
+  });
+  return slips.map(slip => ({
+    ...slip,
+    supplyNames: supplyNamesBySlipId.get(slip.id) || [],
+  }));
 }
 
 export async function listSupplyIssueSlipItems(issueSlipId: number, executor?: any) {
