@@ -1,11 +1,33 @@
+import fs from "node:fs";
 import path from "node:path";
 import { drizzle } from "drizzle-orm/mysql2";
 import { migrate } from "drizzle-orm/mysql2/migrator";
 
-const databaseUrl = process.env.DATABASE_URL;
-if (!databaseUrl) {
-  throw new Error("DATABASE_URL is required to run self-hosted migrations");
+function readSecret(variable) {
+  const filePath = process.env[`${variable}_FILE`];
+  if (!filePath) return process.env[variable] || "";
+  try {
+    return fs.readFileSync(filePath, "utf8").trim();
+  } catch {
+    throw new Error(`Cannot read Docker secret for ${variable}`);
+  }
 }
+
+function resolveDatabaseUrl() {
+  if (process.env.DATABASE_URL) return process.env.DATABASE_URL;
+  const password = readSecret("MYSQL_APP_PASSWORD");
+  if (!password)
+    throw new Error(
+      "DATABASE_URL or MYSQL_APP_PASSWORD_FILE is required to run self-hosted migrations"
+    );
+  const host = process.env.ASSETMASTER_DB_HOST || "mysql";
+  const port = process.env.ASSETMASTER_DB_PORT || "3306";
+  const name = process.env.ASSETMASTER_DB_NAME || "assetmaster";
+  const user = process.env.ASSETMASTER_DB_USER || "assetmaster";
+  return `mysql://${encodeURIComponent(user)}:${encodeURIComponent(password)}@${host}:${port}/${encodeURIComponent(name)}`;
+}
+
+const databaseUrl = resolveDatabaseUrl();
 
 const migrationsFolder = path.resolve(process.cwd(), "drizzle");
 const maxAttempts = Number.parseInt(process.env.ASSETMASTER_MIGRATION_ATTEMPTS || "12", 10);
