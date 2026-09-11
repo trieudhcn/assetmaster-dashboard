@@ -223,4 +223,69 @@ describe("employee supply request workflow", () => {
     expect(returnQueue).toContain("<AlertDialog");
     expect(manager).toContain("<SupplyReturnRequestQueue />");
   });
+
+  it("classifies returned accessories, isolates unusable stock and creates a PDF receipt", async () => {
+    const [schema, migration, journal, router, database, queue, inventory, pdf] =
+      await Promise.all([
+        source("drizzle/schema.ts"),
+        source("drizzle/0066_supply_return_inspection_receipts.sql"),
+        source("drizzle/meta/_journal.json"),
+        source("server/routers.ts"),
+        source("server/db.ts"),
+        source("client/src/components/SupplyReturnRequestQueue.tsx"),
+        source("client/src/pages/SuppliesInventoryView.tsx"),
+        source("client/src/lib/supplyReturnReceiptPdf.ts"),
+      ]);
+
+    expect(schema).toContain("damagedQuantity");
+    expect(schema).toContain("repairQuantity");
+    expect(schema).toContain("returnReceiptCode");
+    expect(schema).toContain("missingQuantity");
+    expect(migration).toContain("supply_return_requests_receipt_unique");
+    expect(journal).toContain(
+      '"tag": "0066_supply_return_inspection_receipts"'
+    );
+    expect(router).toContain("deliveredByName: z.string()");
+    expect(router).toContain("receivedByName: z.string()");
+    expect(router).toContain("goodQuantity: z.number()");
+    expect(router).toContain("incrementInventorySupplyConditionQuantity");
+    expect(router).toContain(
+      'const receiptCode = `BBHTPK-${now.getFullYear()}-'
+    );
+    expect(database).toContain(
+      "export async function updateSupplyReturnRequestItem"
+    );
+    expect(database).toContain(
+      "export async function incrementInventorySupplyConditionQuantity"
+    );
+    expect(queue).toContain("Kiểm đếm & duyệt");
+    expect(queue).toContain("Duyệt & lập biên bản");
+    expect(queue).toContain("openSupplyReturnReceiptPdf");
+    expect(inventory).toContain("Tồn khả dụng");
+    expect(inventory).toContain("selectedSupply.damagedQuantity");
+    expect(pdf).toContain("BIÊN BẢN HOÀN TRẢ PHỤ KIỆN");
+    expect(pdf).toContain("openPdfPreview");
+  });
+
+  it("shows pending accessory returns in the admin notification bell", async () => {
+    const [home, notificationLinks, queue] = await Promise.all([
+      source("client/src/pages/Home.tsx"),
+      source("client/src/lib/notificationLinks.ts"),
+      source("client/src/components/SupplyReturnRequestQueue.tsx"),
+    ]);
+
+    expect(home).toContain("supplyReturnRequestNotificationsQuery");
+    expect(home).toContain("supplyReturnRequestNotifications");
+    expect(home).toContain('type: "supplyReturnRequest" as const');
+    expect(notificationLinks).toContain(
+      'type: "supplyReturnRequest"; requestId: number'
+    );
+    expect(notificationLinks).toContain(
+      '"assetmaster-open-supply-return-request-id"'
+    );
+    expect(queue).toContain(
+      '"assetmaster-open-supply-return-request-id"'
+    );
+    expect(queue).toContain("data-supply-return-request-id");
+  });
 });
