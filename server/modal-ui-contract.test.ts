@@ -2804,7 +2804,7 @@ describe("maintenance history and filter layout contract", () => {
     expect(operations).toContain("Trạng thái dự kiến");
     expect(operations).toContain("Trạng thái thực tế");
     expect(operations).toContain("auditAssetStatusLabel(item.expectedStatus)");
-    expect(operations).toContain("overflow-x-auto md:overflow-hidden");
+    expect(operations).toContain("mobile-table-scroll overflow-x-auto");
   });
 
   it("keeps audit detail dropdowns above the card and constrains the asset picker", () => {
