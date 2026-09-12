@@ -3409,3 +3409,21 @@ it("keeps the audit action column usable without clipping the inventory table", 
   expect(operations).toContain('className="min-h-[70px] w-full resize-y');
   expect(operations).toContain("whitespace-nowrap rounded-md bg-[#0F8C8C]");
 });
+
+it("supports keyboard quick edit and prioritizes audit discrepancy rows", () => {
+  const operations = readProjectFile("client/src/pages/OperationsModules.tsx");
+
+  expect(operations).toContain("auditKeyboardMode");
+  expect(operations).toContain("data-audit-quick-row");
+  expect(operations).toContain('event.key === "1"');
+  expect(operations).toContain('event.key === "2"');
+  expect(operations).toContain('event.key === "3"');
+  expect(operations).toContain('event.key === "Enter"');
+  expect(operations).toContain('event.key === "ArrowDown"');
+  expect(operations).toContain("prioritizedAuditItems");
+  expect(operations).toContain("auditPriority");
+  expect(operations).toContain("Ưu tiên · Không tìm thấy");
+  expect(operations).toContain("Ưu tiên · Chênh lệch");
+  expect(operations).toContain('sticky left-0 z-30 w-[210px]');
+  expect(operations).toContain('sticky left-0 z-10 w-[210px]');
+});
