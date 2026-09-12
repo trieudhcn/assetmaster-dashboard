@@ -3427,3 +3427,17 @@ it("supports keyboard quick edit and prioritizes audit discrepancy rows", () => 
   expect(operations).toContain('sticky left-0 z-30 w-[210px]');
   expect(operations).toContain('sticky left-0 z-10 w-[210px]');
 });
+
+it("provides a focused fullscreen workspace for large inventory audits", () => {
+  const operations = readProjectFile("client/src/pages/OperationsModules.tsx");
+
+  expect(operations).toContain("isAuditFullscreen");
+  expect(operations).toContain("Kiểm kê toàn màn hình");
+  expect(operations).toContain("Thoát toàn màn hình");
+  expect(operations).toContain('event.key === "Escape"');
+  expect(operations).toContain('document.body.style.overflow = "hidden"');
+  expect(operations).toContain('fixed inset-0 z-[100]');
+  expect(operations).toContain('sticky top-0 z-50');
+  expect(operations).toContain('isAuditFullscreen ? "hidden" : ""');
+  expect(operations).toContain('role={isAuditFullscreen ? "dialog" : undefined}');
+});
