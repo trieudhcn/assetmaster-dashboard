@@ -3396,3 +3396,16 @@ it("closes modal layers before opening Excel or PDF previews", () => {
   expect(home).toContain("onClose();\n    const pdf = kind");
   expect(home).toContain("dismiss();\n      const company = retirementCompanyQuery.data");
 });
+
+
+it("keeps the audit action column usable without clipping the inventory table", () => {
+  const operations = readProjectFile("client/src/pages/OperationsModules.tsx");
+
+  expect(operations).toContain('mobile-table-scroll overflow-x-auto"><table className="w-full min-w-[1460px] table-fixed');
+  expect(operations).not.toContain("overflow-x-auto md:overflow-hidden");
+  expect(operations).toContain('<col className="w-[180px]" />');
+  expect(operations).toContain('sticky right-0 z-20 w-[180px]');
+  expect(operations).toContain('sticky right-0 z-10 w-[180px] min-w-[180px]');
+  expect(operations).toContain('className="min-h-[70px] w-full resize-y');
+  expect(operations).toContain("whitespace-nowrap rounded-md bg-[#0F8C8C]");
+});
