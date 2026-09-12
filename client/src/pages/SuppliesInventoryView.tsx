@@ -98,7 +98,6 @@ export function SuppliesInventoryView({ canEditSectionLabels = false }: { canEdi
       0
     );
     setHoldingSupplyId(null);
-    await new Promise<void>(resolve => window.setTimeout(resolve, 200));
     await writeBrandedWorkbook(workbook, {
       documentTitle: "DANH SÁCH NGƯỜI ĐANG GIỮ PHỤ KIỆN",
       fileName: `nguoi-dang-giu-${selectedHoldingSupply.code}-${new Date().toISOString().slice(0, 10)}.xlsx`,
@@ -130,6 +129,8 @@ export function SuppliesInventoryView({ canEditSectionLabels = false }: { canEdi
   const updateSupply = trpc.supplies.update.useMutation({ onSuccess: () => { toast.success("Đã cập nhật phụ kiện."); setEditingId(null); void utils.supplies.list.invalidate(); }, onError: (error) => toast.error(error.message || "Không thể cập nhật phụ kiện.") });
   const moveSupply = trpc.supplies.move.useMutation({ onSuccess: (result) => { toast.success(result.isLowStock ? "Đã ghi nhận giao dịch · tồn kho thấp." : "Đã ghi nhận giao dịch."); setMovementQuantity(""); setRecipientUserId(""); setRecipientName(""); setRecipientDepartmentId(""); setMovementNote(""); void utils.supplies.list.invalidate(); void utils.supplies.history.invalidate(); }, onError: (error) => toast.error(error.message || "Không thể ghi nhận giao dịch.") });
   const previewIssueSlipPdf = async (slip: CreatedIssueSlipPdf) => {
+    setSelectedId(null);
+    setIssueConfirmationOpen(false);
     try {
       await openSupplyIssueSlipPdf({ referenceCode: slip.referenceCode, recipientName: slip.recipientName, issuedByName: null, issuedAt: slip.issuedAt, note: slip.note }, slip.items);
       toast.success("Đã mở xem trước PDF.");

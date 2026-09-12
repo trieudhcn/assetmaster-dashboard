@@ -2,12 +2,30 @@ import * as React from "react";
 import * as AlertDialogPrimitive from "@radix-ui/react-alert-dialog";
 
 import { cn } from "@/lib/utils";
+import { exportPreviewOpeningEvent } from "@/lib/exportPreviewLifecycle";
 import { buttonVariants } from "@/components/ui/button";
 
 function AlertDialog({
+  open: controlledOpen,
+  defaultOpen,
+  onOpenChange,
   ...props
 }: React.ComponentProps<typeof AlertDialogPrimitive.Root>) {
-  return <AlertDialogPrimitive.Root data-slot="alert-dialog" {...props} />;
+  const [uncontrolledOpen, setUncontrolledOpen] = React.useState(Boolean(defaultOpen));
+  const open = controlledOpen ?? uncontrolledOpen;
+  const setOpen = React.useCallback((nextOpen: boolean) => {
+    if (controlledOpen === undefined) setUncontrolledOpen(nextOpen);
+    onOpenChange?.(nextOpen);
+  }, [controlledOpen, onOpenChange]);
+
+  React.useEffect(() => {
+    if (!open) return;
+    const closeBeforeExport = () => setOpen(false);
+    window.addEventListener(exportPreviewOpeningEvent, closeBeforeExport);
+    return () => window.removeEventListener(exportPreviewOpeningEvent, closeBeforeExport);
+  }, [open, setOpen]);
+
+  return <AlertDialogPrimitive.Root data-slot="alert-dialog" open={open} onOpenChange={setOpen} {...props} />;
 }
 
 function AlertDialogTrigger({

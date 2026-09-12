@@ -49,8 +49,8 @@ export function QuickServiceTicketPreview({ ticket, asset, assigneeName, currenc
 
       <div className="flex flex-col-reverse gap-2 border-t border-[#E7EEF3] bg-white px-4 py-3 sm:flex-row sm:items-center sm:justify-end sm:px-5 sm:py-4">
         <button type="button" onClick={onClose} className="modal-close-action">Đóng</button>
-        <button type="button" disabled={pdfPreparing !== null} onClick={onPrint} className="inline-flex items-center justify-center gap-2 rounded-lg border border-[#C7DDF8] bg-[#EFF7FF] px-4 py-2 text-xs font-bold text-[#2666A8] hover:bg-[#EAF3FF] disabled:cursor-wait disabled:opacity-60"><Printer size={15} />{pdfPreparing === "print" ? "Đang chuẩn bị in..." : "In"}</button>
-        <button type="button" disabled={pdfPreparing !== null} onClick={onExportPdf} className="inline-flex items-center justify-center gap-2 rounded-lg bg-[#0F8C8C] px-4 py-2 text-xs font-bold text-white hover:bg-[#087A6A] disabled:cursor-wait disabled:opacity-60"><Download size={15} />{pdfPreparing === "preview" ? "Đang chuẩn bị PDF..." : "Xuất PDF"}</button>
+        <button type="button" disabled={pdfPreparing !== null} onClick={() => { onClose(); onPrint(); }} className="inline-flex items-center justify-center gap-2 rounded-lg border border-[#C7DDF8] bg-[#EFF7FF] px-4 py-2 text-xs font-bold text-[#2666A8] hover:bg-[#EAF3FF] disabled:cursor-wait disabled:opacity-60"><Printer size={15} />{pdfPreparing === "print" ? "Đang chuẩn bị in..." : "In"}</button>
+        <button type="button" disabled={pdfPreparing !== null} onClick={() => { onClose(); onExportPdf(); }} className="inline-flex items-center justify-center gap-2 rounded-lg bg-[#0F8C8C] px-4 py-2 text-xs font-bold text-white hover:bg-[#087A6A] disabled:cursor-wait disabled:opacity-60"><Download size={15} />{pdfPreparing === "preview" ? "Đang chuẩn bị PDF..." : "Xuất PDF"}</button>
       </div>
     </section>
   </div>;

@@ -3364,3 +3364,35 @@ it("phân trang lịch sử biến động Phụ kiện để drawer không kéo
   expect(supplies).toContain('aria-label="Trang lịch sử trước"');
   expect(supplies).toContain('aria-label="Trang lịch sử sau"');
 });
+
+
+it("closes modal layers before opening Excel or PDF previews", () => {
+  const lifecycle = readProjectFile("client/src/lib/exportPreviewLifecycle.ts");
+  const previewHost = readProjectFile("client/src/components/ExportPreviewHost.tsx");
+  const dialog = readProjectFile("client/src/components/ui/dialog.tsx");
+  const drawer = readProjectFile("client/src/components/ui/drawer.tsx");
+  const alertDialog = readProjectFile("client/src/components/ui/alert-dialog.tsx");
+  const importModal = readProjectFile("client/src/components/AssetImportModal.tsx");
+  const serviceTicket = readProjectFile("client/src/components/QuickServiceTicketPreview.tsx");
+  const issueSlips = readProjectFile("client/src/components/SupplyIssueSlipManager.tsx");
+  const employees = readProjectFile("client/src/pages/EmployeeManagementView.tsx");
+  const home = readProjectFile("client/src/pages/Home.tsx");
+
+  expect(lifecycle).toContain('exportPreviewOpeningEvent = "assetmaster:export-preview-opening"');
+  expect(lifecycle).toContain("exportPreviewOpenDelayMs = 200");
+  expect(previewHost).toContain("new Event(exportPreviewOpeningEvent)");
+  expect(previewHost).toContain("window.setTimeout");
+  [dialog, drawer, alertDialog].forEach((component) => {
+    expect(component).toContain("exportPreviewOpeningEvent");
+    expect(component).toContain("closeBeforeExport");
+    expect(component).toContain("setOpen(false)");
+  });
+  expect(importModal.match(/downloadDirect: true/g)).toHaveLength(2);
+  expect(serviceTicket).toContain("onClose(); onPrint();");
+  expect(serviceTicket).toContain("onClose(); onExportPdf();");
+  expect(issueSlips).toContain("setSelectedSlipId(null)");
+  expect(issueSlips).toContain("onClose();\n      await openHandoverAssetPdf");
+  expect(employees).toContain("useCloseOnExportPreview(Boolean(selectedEmployee), closeDrawer)");
+  expect(home).toContain("onClose();\n    const pdf = kind");
+  expect(home).toContain("dismiss();\n      const company = retirementCompanyQuery.data");
+});

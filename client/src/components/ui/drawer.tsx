@@ -2,11 +2,29 @@ import * as React from "react";
 import { Drawer as DrawerPrimitive } from "vaul";
 
 import { cn } from "@/lib/utils";
+import { exportPreviewOpeningEvent } from "@/lib/exportPreviewLifecycle";
 
 function Drawer({
+  open: controlledOpen,
+  defaultOpen,
+  onOpenChange,
   ...props
 }: React.ComponentProps<typeof DrawerPrimitive.Root>) {
-  return <DrawerPrimitive.Root data-slot="drawer" {...props} />;
+  const [uncontrolledOpen, setUncontrolledOpen] = React.useState(Boolean(defaultOpen));
+  const open = controlledOpen ?? uncontrolledOpen;
+  const setOpen = React.useCallback((nextOpen: boolean) => {
+    if (controlledOpen === undefined) setUncontrolledOpen(nextOpen);
+    onOpenChange?.(nextOpen);
+  }, [controlledOpen, onOpenChange]);
+
+  React.useEffect(() => {
+    if (!open) return;
+    const closeBeforeExport = () => setOpen(false);
+    window.addEventListener(exportPreviewOpeningEvent, closeBeforeExport);
+    return () => window.removeEventListener(exportPreviewOpeningEvent, closeBeforeExport);
+  }, [open, setOpen]);
+
+  return <DrawerPrimitive.Root data-slot="drawer" open={open} onOpenChange={setOpen} {...props} />;
 }
 
 function DrawerTrigger({

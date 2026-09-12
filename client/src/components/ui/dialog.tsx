@@ -1,4 +1,5 @@
 import { cn } from "@/lib/utils";
+import { exportPreviewOpeningEvent } from "@/lib/exportPreviewLifecycle";
 import * as DialogPrimitive from "@radix-ui/react-dialog";
 import * as AlertDialogPrimitive from "@radix-ui/react-alert-dialog";
 import { XIcon } from "lucide-react";
@@ -21,8 +22,17 @@ export const useDialogComposition = () =>
   React.useContext(DialogCompositionContext);
 
 function Dialog({
+  open: controlledOpen,
+  defaultOpen,
+  onOpenChange,
   ...props
 }: React.ComponentProps<typeof DialogPrimitive.Root>) {
+  const [uncontrolledOpen, setUncontrolledOpen] = React.useState(Boolean(defaultOpen));
+  const open = controlledOpen ?? uncontrolledOpen;
+  const setOpen = React.useCallback((nextOpen: boolean) => {
+    if (controlledOpen === undefined) setUncontrolledOpen(nextOpen);
+    onOpenChange?.(nextOpen);
+  }, [controlledOpen, onOpenChange]);
   const composingRef = React.useRef(false);
   const justEndedRef = React.useRef(false);
   const endTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -47,9 +57,16 @@ function Dialog({
     []
   );
 
+  React.useEffect(() => {
+    if (!open) return;
+    const closeBeforeExport = () => setOpen(false);
+    window.addEventListener(exportPreviewOpeningEvent, closeBeforeExport);
+    return () => window.removeEventListener(exportPreviewOpeningEvent, closeBeforeExport);
+  }, [open, setOpen]);
+
   return (
     <DialogCompositionContext.Provider value={contextValue}>
-      <DialogPrimitive.Root data-slot="dialog" {...props} />
+      <DialogPrimitive.Root data-slot="dialog" open={open} onOpenChange={setOpen} {...props} />
     </DialogCompositionContext.Provider>
   );
 }

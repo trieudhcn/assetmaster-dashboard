@@ -12,6 +12,7 @@ import { EditableSectionLabel } from "@/components/EditableSectionLabel";
 import { ActiveDirectoryPreviewDialog } from "@/components/ActiveDirectoryPreviewDialog";
 import { DatePickerField } from "@/components/DatePickerField";
 import { usePersistedState } from "@/hooks/usePersistedState";
+import { useCloseOnExportPreview } from "@/lib/exportPreviewLifecycle";
 import { EmployeeAssetHistorySection, EmployeeDirectoryProfileSection } from "@/components/EmployeeDirectoryProfileSection";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 
@@ -72,6 +73,7 @@ export function EmployeeManagementView() {
   const updateDirectoryProfile = trpc.employees.updateDirectoryProfile.useMutation({ onSuccess: () => { void utils.employees.list.invalidate(); toast.success("Đã lưu Mã nhân viên và Chức vụ."); }, onError: (error) => toast.error(error.message || "Không thể cập nhật hồ sơ Nhân sự.") });
   const updateActiveStatus = trpc.employees.updateActiveStatus.useMutation({ onSuccess: (result) => { void utils.employees.list.invalidate(); void utils.employees.activeLicenseAssignments.invalidate(); setAccountStatusDialogOpen(false); toast.success(result.revokedLicenseCount ? `Đã khóa tài khoản và thu hồi ${result.revokedLicenseCount} Bản quyền về kho.` : "Đã cập nhật trạng thái tài khoản."); }, onError: (error) => toast.error(error.message || "Không thể cập nhật trạng thái tài khoản.") });
   const closeDrawer = () => { setPendingRoleChange(null); setAccountStatusDialogOpen(false); setSelectedEmployeeId(null); };
+  useCloseOnExportPreview(Boolean(selectedEmployee), closeDrawer);
 
   if (authLoading) return <div className="min-h-screen bg-[#F4F7FB] p-8 text-sm text-[#71869A]">Đang kiểm tra quyền truy cập...</div>;
   if (!isAdmin) return <AccessNotice title="Không có quyền truy cập" description="Chỉ quản trị viên mới được phân bổ nhân sự theo Phòng Ban và Bộ Phận." />;

@@ -403,6 +403,7 @@ export function AssetImportModal({
             documentTitle: "DANH SÁCH DÒNG LỖI IMPORT TÀI SẢN",
             fileName: `AssetMaster-Loi-Import-${new Date().toISOString().slice(0, 10)}.xlsx`,
             description: `${rows.length} dòng cần chỉnh sửa trước khi nhập lại vào hệ thống.`,
+            downloadDirect: true,
           });
           toast.success(`Đã xuất ${rows.length} dòng lỗi ra Excel.`, {
             id: loadingToast,

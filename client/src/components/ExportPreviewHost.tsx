@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import * as XLSX from "xlsx";
 import { ChevronLeft, ChevronRight, Download, FileSpreadsheet, FileText, Printer, X } from "lucide-react";
+import { exportPreviewOpenDelayMs, exportPreviewOpeningEvent } from "@/lib/exportPreviewLifecycle";
 
 export type ExportPreviewPayload = {
   blob: Blob;
@@ -13,7 +14,10 @@ export type ExportPreviewPayload = {
 const exportPreviewEvent = "assetmaster:preview-export";
 
 export function openExportPreview(payload: ExportPreviewPayload) {
-  window.dispatchEvent(new CustomEvent<ExportPreviewPayload>(exportPreviewEvent, { detail: payload }));
+  window.dispatchEvent(new Event(exportPreviewOpeningEvent));
+  window.setTimeout(() => {
+    window.dispatchEvent(new CustomEvent<ExportPreviewPayload>(exportPreviewEvent, { detail: payload }));
+  }, exportPreviewOpenDelayMs);
 }
 
 function downloadPreviewFile(payload: ExportPreviewPayload) {

@@ -83,6 +83,7 @@ export function SupplyIssueSlipManager() {
     if (itemsQuery.isLoading) return toast.message("Đang tải danh sách phụ kiện trong phiếu.");
     if (!itemsQuery.data?.length) return toast.error("Phiếu cấp phát chưa có phụ kiện để xuất PDF.");
     setIsPreparingPdf(true);
+    setSelectedSlipId(null);
     try {
       await openSupplyIssueSlipPdf(selectedSlip, itemsQuery.data);
       toast.success("Đã tạo bản xem trước PDF. Chọn In để ký nhận bản cứng.");
@@ -374,6 +375,7 @@ export function InlineHandoverPreviewDialog({ handoverId, onClose }: { handoverI
     try {
       const company = companyQuery.data;
       if (typeof window !== "undefined") window.localStorage.setItem(handoverPdfFileNameStorageKey(handover.referenceCode), fileBaseName);
+      onClose();
       await openHandoverAssetPdf({ referenceCode: handover.referenceCode, assetCode: handover.assetCode, assetName: handover.assetName, branchName, recipientName: handover.recipientName, recipientDepartmentName: handover.recipientDepartmentName, handoverByName: handover.handoverByName, handedOverAt: handover.handedOverAt, conditionOut: handover.conditionOut, accessories: handover.accessories, note: handover.note, status: handover.status, supplyItems }, { name: company?.name, address: company?.address, taxCode: company?.taxCode, phone: company?.phone, email: branchEmail || company?.email, websiteUrl: company?.websiteUrl, logoUrl: company?.logoUrl }, { autoPrint, fileName: fileBaseName });
       toast.success(autoPrint ? "Đã mở bản in biên bản." : "Đã mở bản xem trước PDF.");
     } catch { toast.error("Không thể tạo PDF biên bản. Vui lòng thử lại."); } finally { setPreparingPdf(null); }

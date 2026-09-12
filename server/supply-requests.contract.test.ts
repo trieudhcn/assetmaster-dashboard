@@ -359,7 +359,8 @@ describe("employee supply request workflow", () => {
     expect(exportHelper.indexOf("setHoldingSupplyId(null)")).toBeLessThan(
       exportHelper.indexOf("writeBrandedWorkbook")
     );
-    expect(exportHelper).toContain("window.setTimeout(resolve, 200)");
+    expect(exportHelper).not.toContain("window.setTimeout(resolve, 200)");
+    expect(inventory).toContain("setIssueConfirmationOpen(false);");
     expect(inventory).toContain("writeBrandedWorkbook");
     expect(inventory).toContain("DANH SÁCH NGƯỜI ĐANG GIỮ PHỤ KIỆN");
     expect(inventory).toContain('"Mã phiếu / biên bản"');
