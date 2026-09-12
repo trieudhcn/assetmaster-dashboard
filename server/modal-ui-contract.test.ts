@@ -3401,7 +3401,8 @@ it("closes modal layers before opening Excel or PDF previews", () => {
 it("keeps the audit action column usable without clipping the inventory table", () => {
   const operations = readProjectFile("client/src/pages/OperationsModules.tsx");
 
-  expect(operations).toContain('mobile-table-scroll overflow-x-auto"><table className="w-full min-w-[1460px] table-fixed');
+  expect(operations).toContain("mobile-table-scroll overflow-x-auto");
+  expect(operations).toContain('min-w-[1460px]');
   expect(operations).not.toContain("overflow-x-auto md:overflow-hidden");
   expect(operations).toContain('<col className="w-[180px]" />');
   expect(operations).toContain('sticky right-0 z-20 w-[180px]');
@@ -3440,4 +3441,21 @@ it("provides a focused fullscreen workspace for large inventory audits", () => {
   expect(operations).toContain('sticky top-0 z-50');
   expect(operations).toContain('isAuditFullscreen ? "hidden" : ""');
   expect(operations).toContain('role={isAuditFullscreen ? "dialog" : undefined}');
+});
+
+it("advances keyboard focus after save and provides tablet and scanner audit modes", () => {
+  const operations = readProjectFile("client/src/pages/OperationsModules.tsx");
+
+  expect(operations).toContain("auditNextFocusIdRef");
+  expect(operations).toContain("data-audit-item-id");
+  expect(operations).toContain("nextQuickRow");
+  expect(operations).toContain("window.requestAnimationFrame");
+  expect(operations).toContain("auditCompletionPercentage");
+  expect(operations).toContain("Tiến độ kiểm kê");
+  expect(operations).toContain('auditDeviceMode === "tablet"');
+  expect(operations).toContain('auditDeviceMode === "scanner"');
+  expect(operations).toContain("Máy tính bảng");
+  expect(operations).toContain("Chế độ máy quét cầm tay");
+  expect(operations).toContain('setIsQrScanOpen(true)');
+  expect(operations).toContain('min-w-[1080px]');
 });
