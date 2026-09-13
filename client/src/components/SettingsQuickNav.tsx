@@ -18,6 +18,7 @@ type SettingLink = {
 
 const settingLinks: readonly SettingLink[] = [
   { href: "#settings-brand", label: "Thương hiệu", icon: Palette },
+  { href: "#settings-enhancements", label: "Nhận diện mở rộng", icon: Tags },
   { href: "#settings-directory", label: "Directory", icon: Network },
   {
     href: "#self-hosted-service-status",
@@ -39,7 +40,6 @@ const settingLinks: readonly SettingLink[] = [
   },
   { href: "#settings-branches", label: "Chi nhánh", icon: Building2 },
   { href: "#settings-menu", label: "Thứ tự menu", icon: GripVertical },
-  { href: "#settings-enhancements", label: "Nhận diện", icon: Tags },
 ] as const;
 
 function SettingLinks({
@@ -110,7 +110,7 @@ export function SettingsQuickNav() {
         <SettingLinks compact />
       </nav>
       <aside
-        className="fixed right-1 top-24 z-10 hidden w-11 rounded-xl border border-[#DFE9F0] bg-white/95 p-1 shadow-[0_12px_28px_rgba(16,42,67,.09)] backdrop-blur xl:block"
+        className="fixed right-4 top-24 z-10 hidden w-11 rounded-xl border border-[#DFE9F0] bg-white/95 p-1 shadow-[0_12px_28px_rgba(16,42,67,.09)] backdrop-blur xl:block"
         aria-label="Điều hướng nhanh Cài đặt"
       >
         <div className="flex flex-col items-center gap-1">
