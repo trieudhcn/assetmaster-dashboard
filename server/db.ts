@@ -18,6 +18,8 @@ import {
   departments,
   directorySettingAudits,
   directorySettings,
+  entraSettingAudits,
+  entraSettings,
   fileStorageSettings,
   divisions,
   handovers,
@@ -342,6 +344,255 @@ export async function setDirectoryStatus(status: "active" | "disabled", actor: {
   await db.update(directorySettings).set({ status, updatedByUserId: actor.userId }).where(eq(directorySettings.id, 1));
   await db.insert(directorySettingAudits).values({ directorySettingsId: 1, version: current.version, action: status === "active" ? "activated" : "disabled", summary: status === "active" ? "Kích hoạt xác thực LDAP/LDAPS" : "Tắt xác thực LDAP/LDAPS", snapshot: directorySnapshot(current), actorUserId: actor.userId, actorName: actor.name });
   return getDirectorySettings();
+}
+
+export type EntraSettingsInput = {
+  tenantId: string;
+  clientId: string;
+  redirectUri: string;
+  clientSecretRef: string | null;
+  adminAppRole: string;
+  userAppRole: string;
+};
+
+function entraSnapshot(settings: EntraSettingsInput) {
+  return {
+    tenantId: settings.tenantId,
+    clientId: settings.clientId,
+    redirectUri: settings.redirectUri,
+    clientSecretRef: settings.clientSecretRef,
+    adminAppRole: settings.adminAppRole,
+    userAppRole: settings.userAppRole,
+  };
+}
+
+export async function getEntraSettings() {
+  const db = await getDb();
+  if (!db) return undefined;
+  return (
+    await db
+      .select()
+      .from(entraSettings)
+      .where(eq(entraSettings.id, 1))
+      .limit(1)
+  )[0];
+}
+
+export async function listEntraSettingAudits(limit = 12) {
+  const db = await getDb();
+  if (!db) return [];
+  return db
+    .select()
+    .from(entraSettingAudits)
+    .where(eq(entraSettingAudits.entraSettingsId, 1))
+    .orderBy(desc(entraSettingAudits.createdAt))
+    .limit(limit);
+}
+
+export async function saveEntraSettings(
+  input: EntraSettingsInput,
+  actor: { userId: number; name: string | null }
+) {
+  const db = await getDb();
+  if (!db) throw new Error("Database unavailable");
+  const existing = await getEntraSettings();
+  const version = (existing?.version ?? 0) + 1;
+  const values = {
+    id: 1,
+    version,
+    status:
+      existing?.status === "active"
+        ? ("disabled" as const)
+        : existing?.status ?? ("draft" as const),
+    ...input,
+    lastTestStatus: "not_tested" as const,
+    lastTestMessage: null,
+    lastTestedAt: null,
+    createdByUserId: existing?.createdByUserId ?? actor.userId,
+    updatedByUserId: actor.userId,
+  };
+  await db
+    .insert(entraSettings)
+    .values(values)
+    .onDuplicateKeyUpdate({
+      set: { ...values, createdAt: existing?.createdAt },
+    });
+  await db.insert(entraSettingAudits).values({
+    entraSettingsId: 1,
+    version,
+    action: "saved",
+    summary: "Lưu bản nháp cấu hình Microsoft Entra ID",
+    snapshot: entraSnapshot(input),
+    actorUserId: actor.userId,
+    actorName: actor.name,
+  });
+  return getEntraSettings();
+}
+
+export async function updateEntraTestResult(input: {
+  status: "success" | "failed";
+  message: string;
+  actor: { userId: number; name: string | null };
+}) {
+  const db = await getDb();
+  if (!db) throw new Error("Database unavailable");
+  const current = await getEntraSettings();
+  if (!current) throw new Error("Chưa có cấu hình Microsoft Entra ID.");
+  await db
+    .update(entraSettings)
+    .set({
+      lastTestStatus: input.status,
+      lastTestMessage: input.message.slice(0, 500),
+      lastTestedAt: new Date(),
+      updatedByUserId: input.actor.userId,
+    })
+    .where(eq(entraSettings.id, 1));
+  await db.insert(entraSettingAudits).values({
+    entraSettingsId: 1,
+    version: current.version,
+    action: "tested",
+    summary: input.message.slice(0, 500),
+    snapshot: entraSnapshot(current),
+    actorUserId: input.actor.userId,
+    actorName: input.actor.name,
+  });
+  return getEntraSettings();
+}
+
+export async function setEntraStatus(
+  status: "active" | "disabled",
+  actor: { userId: number; name: string | null }
+) {
+  const db = await getDb();
+  if (!db) throw new Error("Database unavailable");
+  const current = await getEntraSettings();
+  if (!current) throw new Error("Chưa có cấu hình Microsoft Entra ID.");
+  await db
+    .update(entraSettings)
+    .set({ status, updatedByUserId: actor.userId })
+    .where(eq(entraSettings.id, 1));
+  await db.insert(entraSettingAudits).values({
+    entraSettingsId: 1,
+    version: current.version,
+    action: status === "active" ? "activated" : "disabled",
+    summary:
+      status === "active"
+        ? "Kích hoạt đăng nhập Microsoft Entra ID"
+        : "Tắt đăng nhập Microsoft Entra ID",
+    snapshot: entraSnapshot(current),
+    actorUserId: actor.userId,
+    actorName: actor.name,
+  });
+  return getEntraSettings();
+}
+
+export async function updateEntraSyncResult(input: {
+  status: "success" | "partial" | "failed";
+  message: string;
+  actor: { userId: number; name: string | null };
+}) {
+  const db = await getDb();
+  if (!db) throw new Error("Database unavailable");
+  const current = await getEntraSettings();
+  if (!current) throw new Error("Chưa có cấu hình Microsoft Entra ID.");
+  await db
+    .update(entraSettings)
+    .set({
+      lastSyncStatus: input.status,
+      lastSyncMessage: input.message.slice(0, 500),
+      lastSyncedAt: new Date(),
+      updatedByUserId: input.actor.userId,
+    })
+    .where(eq(entraSettings.id, 1));
+  await db.insert(entraSettingAudits).values({
+    entraSettingsId: 1,
+    version: current.version,
+    action: "users_synced",
+    summary: input.message.slice(0, 500),
+    snapshot: entraSnapshot(current),
+    actorUserId: input.actor.userId,
+    actorName: input.actor.name,
+  });
+  return getEntraSettings();
+}
+
+export async function listEntraGraphSyncTargets(limit = 500) {
+  const db = await getDb();
+  if (!db) return [];
+  return db
+    .select({
+      id: users.id,
+      email: users.email,
+      entraObjectId: users.entraObjectId,
+    })
+    .from(users)
+    .orderBy(asc(users.id))
+    .limit(limit);
+}
+
+export type EntraGraphProfile = {
+  objectId: string;
+  email: string;
+  name: string | null;
+  department: string | null;
+  jobTitle: string | null;
+  groupNames: string[];
+};
+
+export async function applyEntraGraphProfiles(profiles: EntraGraphProfile[]) {
+  const db = await getDb();
+  if (!db) throw new Error("Database unavailable");
+  const userRows = await db.select().from(users);
+  const departmentRows = await listAllDepartments();
+  const byObjectId = new Map(
+    userRows
+      .filter(user => user.entraObjectId)
+      .map(user => [user.entraObjectId!, user])
+  );
+  const byEmail = new Map(
+    userRows
+      .filter(user => user.email)
+      .map(user => [user.email!.trim().toLocaleLowerCase("en-US"), user])
+  );
+  const results: Array<{
+    email: string;
+    status: "synced" | "skipped";
+    reason?: string;
+  }> = [];
+
+  for (const profile of profiles) {
+    const current =
+      byObjectId.get(profile.objectId) ??
+      byEmail.get(profile.email.trim().toLocaleLowerCase("en-US"));
+    if (!current) {
+      results.push({
+        email: profile.email,
+        status: "skipped",
+        reason: "Chưa có tài khoản AssetMaster tương ứng.",
+      });
+      continue;
+    }
+    const departmentId =
+      resolveDirectoryDepartmentId(profile.department, departmentRows) ??
+      current.departmentId ??
+      null;
+    await db
+      .update(users)
+      .set({
+        name: profile.name || current.name,
+        email: profile.email,
+        entraObjectId: profile.objectId,
+        directoryDepartment:
+          profile.department || current.directoryDepartment || null,
+        departmentId,
+        jobTitle: profile.jobTitle || current.jobTitle || null,
+        entraGroupNames: profile.groupNames,
+        lastEntraSyncAt: new Date(),
+      })
+      .where(eq(users.id, current.id));
+    results.push({ email: profile.email, status: "synced" });
+  }
+  return results;
 }
 
 export async function getDepartmentIdByDirectoryName(
