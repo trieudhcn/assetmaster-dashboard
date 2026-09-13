@@ -98,7 +98,7 @@ export function EmployeeManagementView() {
 }
 
 function RoleBadge({ role }: { role: "admin" | "user" }) { return <span className={`rounded-full px-2 py-0.5 text-[10px] font-extrabold ${role === "admin" ? "bg-[#EEE8FF] text-[#6841C6]" : "bg-[#E6F6F2] text-[#087A6A]"}`}>{role === "admin" ? "QTV" : "NV"}</span>; }
-function AuthSourceBadge({ source }: { source?: "manus" | "bootstrap_local" | "ldap" | null }) { const details = source === "ldap" ? ["LDAP", "bg-[#EAF3FF] text-[#2666A8]"] : source === "bootstrap_local" ? ["Cục bộ", "bg-[#FFF5DC] text-[#8F5A00]"] : ["Hiện hữu", "bg-[#F1F4F7] text-[#71869A]"]; return <span title="Nguồn xác thực" className={`rounded-full px-2 py-0.5 text-[9px] font-extrabold ${details[1]}`}>{details[0]}</span>; }
+function AuthSourceBadge({ source }: { source?: "manus" | "bootstrap_local" | "ldap" | "entra" | null }) { const details = source === "entra" ? ["Entra", "bg-[#E8F0FF] text-[#315FAD]"] : source === "ldap" ? ["LDAP", "bg-[#EAF3FF] text-[#2666A8]"] : source === "bootstrap_local" ? ["Cục bộ", "bg-[#FFF5DC] text-[#8F5A00]"] : ["Hiện hữu", "bg-[#F1F4F7] text-[#71869A]"]; return <span title="Nguồn xác thực" className={`rounded-full px-2 py-0.5 text-[9px] font-extrabold ${details[1]}`}>{details[0]}</span>; }
 function EmployeeBranchAllocation({ employees, branches, isLoading, isError, isSaving, onRetry, onChange }: any) {
   const activeBranches = branches.filter((branch: any) => branch.isActive);
   const unassignedEmployees = employees.filter((employee: any) => !employee.branchId);
