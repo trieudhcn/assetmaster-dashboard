@@ -1,3 +1,14 @@
+# AssetMaster — Sửa logo trang đăng nhập self-hosted
+
+## Current Session — Logo và ảnh nền công khai có kiểm soát
+
+- [x] Xác định logo bị lỗi do đường dẫn `/api/files/*` yêu cầu phiên đăng nhập.
+- [x] Ánh xạ logo và ảnh nền đang được cấu hình sang route công khai dành riêng cho trang đăng nhập.
+- [x] Giữ nguyên xác thực cho toàn bộ kho tệp dùng chung và chặn truy cập tệp tùy ý.
+- [x] Hiển thị biểu tượng dự phòng thay vì ảnh lỗi khi logo không còn tồn tại.
+- [x] Bổ sung kiểm thử hồi quy cho ánh xạ URL, ranh giới truy cập và fallback giao diện.
+- [ ] UAT trên Docker Desktop: đăng xuất, mở trang đăng nhập và xác nhận logo tải thành công.
+
 # AssetMaster — Asset Catalog Expansion
 
 ## Current Session — Cảnh báo hết hạn và modal Dịch vụ
