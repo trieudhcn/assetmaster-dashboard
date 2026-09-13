@@ -34,7 +34,9 @@ export function LoginGateway({ onLogin }: { onLogin: () => void }) {
   const logoUrl = brand?.logoUrl || "/manus-storage/assetmaster-logo_f5d79b06.png";
   const [logoFailed, setLogoFailed] = useState(false);
   useEffect(() => setLogoFailed(false), [logoUrl]);
-  const loginSurfaceStyle = loginBackgroundUrl ? { backgroundImage: `${loginBackgroundOverlay === "dark" ? "linear-gradient(120deg, rgba(16,42,67,.84), rgba(16,42,67,.48))" : "linear-gradient(120deg, rgba(244,247,251,.87), rgba(244,247,251,.52))"}, url(${loginBackgroundUrl})` } : undefined;
+  const loginSurfaceStyle = loginBackgroundUrl
+    ? { backgroundImage: `url(${JSON.stringify(loginBackgroundUrl)})` }
+    : undefined;
   const selfHosted = directoryQuery.data?.selfHosted === true;
   const directoryEnabled = directoryQuery.data?.enabled === true;
   const isSubmitting = localLogin.isPending || directoryLogin.isPending;
@@ -52,7 +54,8 @@ export function LoginGateway({ onLogin }: { onLogin: () => void }) {
     directoryLogin.mutate({ email, password }, { onSuccess: completeLogin, onError: (error) => { const nextIssue = directoryIssue(error); setIssue(nextIssue); toast.error(nextIssue.title); } });
   };
 
-  return <main style={loginSurfaceStyle} className="relative grid min-h-screen overflow-hidden bg-[#F4F7FB] bg-cover bg-center px-5 py-8 lg:grid-cols-[1.1fr_.9fr] lg:p-8">
+  return <main style={loginSurfaceStyle} data-login-background-overlay={loginBackgroundOverlay} className="relative grid min-h-screen overflow-hidden bg-[#F4F7FB] bg-cover bg-center px-5 py-8 lg:grid-cols-[1.1fr_.9fr] lg:p-8">
+    {loginBackgroundUrl ? <div aria-hidden="true" className={`pointer-events-none absolute inset-0 transition-colors ${loginBackgroundOverlay === "dark" ? "bg-[#102A43]/75" : "bg-white/55"}`} /> : null}
     <div className="pointer-events-none absolute -left-24 top-[-150px] h-[420px] w-[420px] rounded-full bg-[#BDE7E2]/60 blur-3xl" />
     <div className="pointer-events-none absolute bottom-[-180px] right-[-140px] h-[460px] w-[460px] rounded-full bg-[#D7E7F8]/75 blur-3xl" />
     <section className="relative z-10 flex flex-col justify-between rounded-3xl bg-[#102A43]/95 p-7 text-white shadow-[0_22px_60px_rgba(16,42,67,.2)] backdrop-blur-[2px] sm:p-10">
