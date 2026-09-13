@@ -396,7 +396,7 @@ export async function upsertEntraUser(input: {
   if (!current && !input.assertedRole)
     throw new Error("Tài khoản chưa được gán App Role AssetMaster trong Entra ID.");
 
-  const role =
+  const role: "admin" | "user" =
     current?.role === "admin" || input.assertedRole === "admin"
       ? "admin"
       : input.assertedRole ?? current?.role ?? "user";
