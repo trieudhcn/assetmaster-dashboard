@@ -14,8 +14,13 @@ describe("settings quick navigation", () => {
     expect(navigation).toContain('href: "#settings-brand"');
     expect(navigation).toContain('href: "#settings-branches"');
     expect(navigation).toContain('href: "#settings-menu"');
+    expect(navigation).toContain('href: "#settings-login-identity"');
     expect(navigation).toContain('href: "#settings-enhancements"');
+    expect(navigation).toContain("ImageUp");
     expect(navigation.indexOf('href: "#settings-brand"')).toBeLessThan(
+      navigation.indexOf('href: "#settings-login-identity"')
+    );
+    expect(navigation.indexOf('href: "#settings-login-identity"')).toBeLessThan(
       navigation.indexOf('href: "#settings-enhancements"')
     );
     expect(navigation.indexOf('href: "#settings-enhancements"')).toBeLessThan(
