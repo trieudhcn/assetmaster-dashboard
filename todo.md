@@ -4063,3 +4063,16 @@
 - [x] Giữ LDAPS và Admin cục bộ làm phương thức đăng nhập dự phòng.
 - [x] Bổ sung migration, cấu hình Docker, hướng dẫn UAT/rollback và kiểm thử hồi quy.
 - [ ] UAT với App Registration và tenant Microsoft Entra ID thực tế của doanh nghiệp.
+
+
+## Current Session — Cấu hình Entra ID và đồng bộ Microsoft Graph
+
+- [x] Thêm panel Microsoft Entra ID mặc định ẩn trong Cài đặt hệ thống.
+- [x] Thêm icon Cloud trên menu nhanh bên phải để mở và cuộn đến panel Entra.
+- [x] Cho phép lưu nháp Tenant ID, Client ID, Redirect URI, App Roles và đường dẫn secret an toàn.
+- [x] Thêm kiểm tra kết nối app-only tới Microsoft Graph trước khi kích hoạt.
+- [x] Đồng bộ tên, email, phòng ban, chức danh và nhóm Entra vào tài khoản AssetMaster đã tồn tại.
+- [x] Không tự tạo tài khoản từ Graph, không đổi vai trò và không kích hoạt lại tài khoản bị khóa.
+- [x] Hiển thị nguồn Entra, nhóm và thời gian đồng bộ trong hồ sơ nhân viên.
+- [x] Bổ sung migration `0068_entra_graph_settings.sql`, tài liệu và regression; CI type-check/test/build đạt.
+- [ ] UAT với tenant, App Registration, Graph permissions và dữ liệu người dùng thực tế.
