@@ -38,12 +38,18 @@ export const users = mysqlTable(
     employeeCode: varchar("employeeCode", { length: 64 }).unique(),
     jobTitle: varchar("jobTitle", { length: 160 }),
     loginMethod: varchar("loginMethod", { length: 64 }),
-    authSource: mysqlEnum("authSource", ["manus", "bootstrap_local", "ldap"])
+    authSource: mysqlEnum("authSource", [
+      "manus",
+      "bootstrap_local",
+      "ldap",
+      "entra",
+    ])
       .default("manus")
       .notNull(),
     passwordHash: varchar("passwordHash", { length: 512 }),
     mustChangePassword: boolean("mustChangePassword").default(false).notNull(),
     directoryObjectId: varchar("directoryObjectId", { length: 192 }).unique(),
+    entraObjectId: varchar("entraObjectId", { length: 192 }).unique(),
     directoryUsername: varchar("directoryUsername", { length: 320 }),
     lastDirectorySyncAt: timestamp("lastDirectorySyncAt"),
     role: mysqlEnum("role", ["user", "admin"]).default("user").notNull(),
@@ -66,6 +72,7 @@ export const users = mysqlTable(
     index("users_branch_idx").on(table.branchId),
     index("users_division_idx").on(table.divisionId),
     index("users_auth_source_idx").on(table.authSource),
+    index("users_entra_object_id_idx").on(table.entraObjectId),
     index("users_directory_username_idx").on(table.directoryUsername),
   ]
 );
