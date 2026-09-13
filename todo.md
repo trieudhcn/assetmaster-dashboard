@@ -1,3 +1,15 @@
+# AssetMaster — Sửa màu chủ đạo
+
+## Current Session — Áp dụng và đặt lại màu thương hiệu
+
+- [x] Xác định biến `--assetmaster-brand` được gán nhưng chưa được CSS giao diện sử dụng.
+- [x] Kết nối màu cấu hình với nút, chữ, viền, trạng thái và component dùng màu chính.
+- [x] Khôi phục màu đã lưu khi tải dashboard và trang đăng nhập.
+- [x] Đồng bộ ô chọn màu khi dữ liệu công ty được tải lại.
+- [x] Thêm nút đặt lại màu mặc định `#0F8C8C`.
+- [x] Bổ sung kiểm thử hồi quy cho áp dụng, tải lại và đặt lại màu.
+- [ ] UAT Docker Desktop: đổi màu, tải lại, đăng xuất và đặt lại mặc định.
+
 # AssetMaster — Sửa lớp phủ ảnh nền đăng nhập
 
 ## Current Session — Lớp phủ sáng/tối
