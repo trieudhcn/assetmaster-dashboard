@@ -807,6 +807,10 @@ export default function Home() {
   }, [companyQuery.data]);
 
   useEffect(() => {
+    document.documentElement.style.setProperty("--assetmaster-brand", companyInfo.brandColor || "#0F8C8C");
+  }, [companyInfo.brandColor]);
+
+  useEffect(() => {
     document.title = companyInfo.websiteTitle;
     if (!companyInfo.faviconUrl) return;
     const favicon = document.querySelector<HTMLLinkElement>('link[rel="icon"]') || Object.assign(document.createElement("link"), { rel: "icon", type: "image/png" });
