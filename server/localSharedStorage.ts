@@ -1,6 +1,7 @@
 import type { Express, Request, Response } from "express";
 import { promises as fs } from "node:fs";
 import path from "node:path";
+import { getCompany } from "./db";
 import { getSelfHostedUser, selfHostedAuthEnabled } from "./selfHostedAuth";
 
 function sharedStorageRoot() {
@@ -54,6 +55,36 @@ export async function testSharedDirectory(relativeDirectory: string) {
 }
 
 export function registerSharedStorageRoutes(app: Express) {
+  app.get("/api/public-brand/:asset", async (req: Request, res: Response) => {
+    if (!selfHostedAuthEnabled()) return res.status(404).end();
+
+    try {
+      const company = await getCompany();
+      const configuredUrl =
+        req.params.asset === "logo"
+          ? company?.logoUrl
+          : req.params.asset === "login-background"
+            ? company?.loginBackgroundUrl
+            : null;
+      if (!configuredUrl?.startsWith("/api/files/")) return res.status(404).end();
+
+      const root = sharedStorageRoot();
+      if (!root) return res.status(503).json({ error: "shared_storage_unavailable" });
+
+      const relativePath = configuredUrl.slice("/api/files/".length);
+      const filePath = resolveSharedPath(root, relativePath);
+      res.setHeader("Cache-Control", "public, no-cache, must-revalidate");
+      res.setHeader("X-Content-Type-Options", "nosniff");
+      res.sendFile(filePath, error => {
+        if (!error || res.headersSent) return;
+        if ((error as NodeJS.ErrnoException).code === "ENOENT") res.status(404).json({ error: "file_not_found" });
+        else res.status(500).json({ error: "file_read_failed" });
+      });
+    } catch {
+      res.status(500).json({ error: "brand_asset_read_failed" });
+    }
+  });
+
   app.get("/api/files/*", async (req: Request, res: Response) => {
     if (!selfHostedAuthEnabled()) return res.status(404).end();
     const user = await getSelfHostedUser(req);
