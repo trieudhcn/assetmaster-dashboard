@@ -73,6 +73,10 @@ describe("Microsoft Entra authentication", () => {
     expect(panel).toContain('id="settings-entra"');
     expect(panel).toContain("data-entra-settings-anchor");
     expect(panel).toContain("setIsVisible(false)");
+    expect(panel).toContain("Xem hướng dẫn cấu hình");
+    expect(panel).toContain("huong-dan-entra-id-microsoft-graph.md");
+    expect(panel).toContain('target="_blank"');
+    expect(panel).toContain('rel="noopener noreferrer"');
     expect(quickNav).toContain('event: "assetmaster:open-entra-settings"');
   });
 

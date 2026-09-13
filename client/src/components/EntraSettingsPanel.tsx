@@ -1,9 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
 import {
+  BookOpenText,
   CheckCircle2,
   CircleAlert,
   Cloud,
   DatabaseZap,
+  ExternalLink,
   FileKey2,
   Loader2,
   RefreshCw,
@@ -23,6 +25,9 @@ type EntraDraft = {
   adminAppRole: string;
   userAppRole: string;
 };
+
+const ENTRA_CONFIGURATION_GUIDE_URL =
+  "https://github.com/trieudhcn/assetmaster-dashboard/blob/codex/employee-supply-requests/docs/huong-dan-entra-id-microsoft-graph.md";
 
 const initialDraft: EntraDraft = {
   tenantId: "",
@@ -208,7 +213,18 @@ export function EntraSettingsPanel({
             </p>
           </div>
         </div>
-        <div className="flex items-center gap-2 self-end lg:self-start">
+        <div className="flex flex-wrap items-center justify-end gap-2 self-end lg:self-start">
+          <a
+            href={ENTRA_CONFIGURATION_GUIDE_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex h-9 items-center gap-2 rounded-lg border border-[#B8D2EF] bg-white px-3 text-[10px] font-extrabold text-[#2666A8] shadow-[0_3px_10px_rgba(38,102,168,.08)] transition hover:border-[#8FB8E3] hover:bg-[#F4F9FF] focus:outline-none focus:ring-2 focus:ring-[#C9DDF5]"
+            aria-label="Xem hướng dẫn cấu hình Microsoft Entra ID (mở trong tab mới)"
+          >
+            <BookOpenText size={15} />
+            <span>Xem hướng dẫn cấu hình</span>
+            <ExternalLink size={12} aria-hidden="true" />
+          </a>
           <StatusPill status={settings?.status} />
           <button
             type="button"
