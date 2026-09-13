@@ -21,6 +21,7 @@ import {
   fileStorageSettings,
   divisions,
   handovers,
+  handoverAssetItems,
   handoverSupplyItems,
   helpGuides,
   helpGuideVersions,
@@ -2648,7 +2649,16 @@ export async function listHelpGuideVersions(guideKey: string) {
 export async function listHandovers() {
   const db = await getDb();
   if (!db) return [];
-  return db.select().from(handovers).orderBy(desc(handovers.handedOverAt));
+  const rows = await db.select().from(handovers).orderBy(desc(handovers.handedOverAt));
+  if (!rows.length) return [];
+  const assetItems = await db
+    .select()
+    .from(handoverAssetItems)
+    .where(inArray(handoverAssetItems.handoverId, rows.map(item => item.id)));
+  return rows.map(item => ({
+    ...item,
+    assetItems: assetItems.filter(assetItem => assetItem.handoverId === item.id),
+  }));
 }
 
 export async function getHandoverById(id: number, executor?: any) {
@@ -2701,7 +2711,16 @@ export async function getHandoverById(id: number, executor?: any) {
 export async function listHandoversByRecipient(recipientUserId: number) {
   const db = await getDb();
   if (!db) return [];
-  return db.select({ id: handovers.id, referenceCode: handovers.referenceCode, assetId: handovers.assetId, assetCode: assets.assetCode, assetName: assets.name, status: handovers.status, handedOverAt: handovers.handedOverAt, returnedAt: handovers.returnedAt, dueBackAt: handovers.dueBackAt, returnRequestStatus: handovers.returnRequestStatus, returnRequestedAt: handovers.returnRequestedAt, returnRequestNote: handovers.returnRequestNote, returnRequestResolvedAt: handovers.returnRequestResolvedAt, returnRequestResolution: handovers.returnRequestResolution, returnFollowUpNote: handovers.returnFollowUpNote, returnFollowUpAt: handovers.returnFollowUpAt, returnResultSeenAt: handovers.returnResultSeenAt, returnConditionPhotoUrl: handovers.returnConditionPhotoUrl, returnConditionPhotoName: handovers.returnConditionPhotoName, conditionOut: handovers.conditionOut, conditionIn: handovers.conditionIn }).from(handovers).innerJoin(assets, eq(handovers.assetId, assets.id)).where(eq(handovers.recipientUserId, recipientUserId)).orderBy(desc(handovers.handedOverAt));
+  const rows = await db.select({ id: handovers.id, referenceCode: handovers.referenceCode, assetId: handovers.assetId, assetCode: assets.assetCode, assetName: assets.name, status: handovers.status, handedOverAt: handovers.handedOverAt, returnedAt: handovers.returnedAt, dueBackAt: handovers.dueBackAt, returnRequestStatus: handovers.returnRequestStatus, returnRequestedAt: handovers.returnRequestedAt, returnRequestNote: handovers.returnRequestNote, returnRequestResolvedAt: handovers.returnRequestResolvedAt, returnRequestResolution: handovers.returnRequestResolution, returnFollowUpNote: handovers.returnFollowUpNote, returnFollowUpAt: handovers.returnFollowUpAt, returnResultSeenAt: handovers.returnResultSeenAt, returnConditionPhotoUrl: handovers.returnConditionPhotoUrl, returnConditionPhotoName: handovers.returnConditionPhotoName, conditionOut: handovers.conditionOut, conditionIn: handovers.conditionIn }).from(handovers).innerJoin(assets, eq(handovers.assetId, assets.id)).where(eq(handovers.recipientUserId, recipientUserId)).orderBy(desc(handovers.handedOverAt));
+  if (!rows.length) return [];
+  const assetItems = await db
+    .select()
+    .from(handoverAssetItems)
+    .where(inArray(handoverAssetItems.handoverId, rows.map(item => item.id)));
+  return rows.map(item => ({
+    ...item,
+    assetItems: assetItems.filter(assetItem => assetItem.handoverId === item.id),
+  }));
 }
 
 export async function getNextHandoverSequence(handoverYear: number) {
@@ -2728,6 +2747,23 @@ export async function createHandover(data: typeof handovers.$inferInsert, execut
   if (!db) throw new Error("Database unavailable");
   const result = await db.insert(handovers).values(data);
   return Number(result[0].insertId);
+}
+
+export async function createHandoverAssetItem(data: typeof handoverAssetItems.$inferInsert, executor?: any) {
+  const db = executor ?? await getDb();
+  if (!db) throw new Error("Database unavailable");
+  const result = await db.insert(handoverAssetItems).values(data);
+  return Number(result[0].insertId);
+}
+
+export async function listHandoverAssetItems(handoverId: number, executor?: any) {
+  const db = executor ?? await getDb();
+  if (!db) return [];
+  return db
+    .select()
+    .from(handoverAssetItems)
+    .where(eq(handoverAssetItems.handoverId, handoverId))
+    .orderBy(asc(handoverAssetItems.id));
 }
 
 export async function createHandoverSupplyItem(data: typeof handoverSupplyItems.$inferInsert, executor?: any) {
@@ -2798,6 +2834,13 @@ export async function transitionHandoverStatus(
     const recipient = existing.recipientUserId
       ? (await tx.select({ branchId: users.branchId }).from(users).where(eq(users.id, existing.recipientUserId)).limit(1))[0]
       : undefined;
+    const linkedAssetItems = await tx
+      .select({ assetId: handoverAssetItems.assetId })
+      .from(handoverAssetItems)
+      .where(eq(handoverAssetItems.handoverId, id));
+    const linkedAssetIds = Array.from(
+      new Set([existing.assetId, ...linkedAssetItems.map((item: { assetId: number }) => item.assetId)])
+    );
 
     const handoverChanges: Partial<typeof handovers.$inferInsert> = { ...changes, status };
     if (status === "active") handoverChanges.signedAt = changes.signedAt ?? new Date();
@@ -2805,13 +2848,15 @@ export async function transitionHandoverStatus(
     await tx.update(handovers).set(handoverChanges).where(eq(handovers.id, id));
 
     if (status === "active") {
-      await tx.update(assets).set({
+      const result = await tx.update(assets).set({
         status: "assigned",
         holderUserId: existing.recipientUserId,
         holderName: existing.recipientName,
         departmentId: existing.recipientDepartmentId,
         ...(recipient?.branchId ? { branchId: recipient.branchId } : {}),
-      }).where(eq(assets.id, existing.assetId));
+      }).where(and(inArray(assets.id, linkedAssetIds), eq(assets.status, "available")));
+      if (Number(result[0].affectedRows) !== linkedAssetIds.length)
+        throw new Error("Một hoặc nhiều tài sản không còn ở trạng thái sẵn có.");
     }
 
     if (status === "returned" || status === "cancelled") {
@@ -2820,7 +2865,7 @@ export async function transitionHandoverStatus(
         holderUserId: null,
         holderName: null,
         departmentId: null,
-      }).where(eq(assets.id, existing.assetId));
+      }).where(inArray(assets.id, linkedAssetIds));
     }
 
     return existing;
