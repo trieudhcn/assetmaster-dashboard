@@ -4053,3 +4053,13 @@
 - [x] Đưa QR vào Bàn giao & Cấp phát, kiểm tra tài sản sẵn sàng và mở form với tài sản điền sẵn.
 - [x] Bổ sung kiểm thử QR riêng; type-check, test và production build trên CI đều đạt.
 - [ ] UAT bằng tem QR, camera và máy quét HID thực tế trên môi trường HTTPS.
+
+
+## Current Session — Đăng nhập Microsoft Entra ID hybrid
+
+- [x] Tích hợp OpenID Connect Authorization Code + PKCE cho Microsoft Entra ID, mặc định tắt.
+- [x] Liên kết người dùng Active Directory hiện có theo email và Entra Object ID, không tạo bản ghi trùng.
+- [x] Ánh xạ App Roles `AssetMaster.User` / `AssetMaster.Admin`, giữ kiểm soát tài khoản bị vô hiệu hóa.
+- [x] Giữ LDAPS và Admin cục bộ làm phương thức đăng nhập dự phòng.
+- [x] Bổ sung migration, cấu hình Docker, hướng dẫn UAT/rollback và kiểm thử hồi quy.
+- [ ] UAT với App Registration và tenant Microsoft Entra ID thực tế của doanh nghiệp.
