@@ -1,32 +1,10 @@
 import { useEffect, useRef, useState } from "react";
 import { BrowserQRCodeReader } from "@zxing/browser";
 import { QrCode, Search, Video, VideoOff } from "lucide-react";
+import { normalizeAssetQrValue } from "@/lib/assetQr";
 
-export function normalizeAssetQrValue(rawValue: string) {
-  return rawValue.trim().replace(/^ASSETMASTER\|/i, "");
-}
-
-export type QrScannableAsset = {
-  assetCode: string;
-  name: string;
-  qrToken?: string | null;
-  status?: string | null;
-};
-
-export function findAssetByQrValue<T extends QrScannableAsset>(
-  assets: T[],
-  rawValue: string
-): T | null {
-  const candidate = normalizeAssetQrValue(rawValue);
-  if (!candidate) return null;
-  return (
-    assets.find(
-      (asset) =>
-        asset.qrToken === candidate ||
-        asset.assetCode.toLowerCase() === candidate.toLowerCase()
-    ) || null
-  );
-}
+export { findAssetByQrValue, normalizeAssetQrValue } from "@/lib/assetQr";
+export type { QrScannableAsset } from "@/lib/assetQr";
 
 type AssetQrCaptureProps = {
   value: string;
