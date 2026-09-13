@@ -24,6 +24,18 @@ describe("public login brand assets", () => {
     expect(sharedStorage).toContain('error: "authentication_required"');
   });
 
+  it("previews, saves and renders the selected background overlay explicitly", () => {
+    const brandSettings = readFileSync(resolve(import.meta.dirname, "../client/src/components/CompanyBrandSettings.tsx"), "utf8");
+
+    expect(brandSettings).toContain("data-login-background-preview");
+    expect(brandSettings).toContain('data-overlay={draft.loginBackgroundOverlay}');
+    expect(brandSettings).toContain('aria-pressed={draft.loginBackgroundOverlay === "dark"}');
+    expect(brandSettings).toContain("Áp dụng nhận diện đăng nhập");
+    expect(brandSettings).toContain('draft.loginBackgroundOverlay === "dark" ? "bg-[#102A43]/75" : "bg-white/55"');
+    expect(loginGateway).toContain("data-login-background-overlay={loginBackgroundOverlay}");
+    expect(loginGateway).toContain('loginBackgroundOverlay === "dark" ? "bg-[#102A43]/75" : "bg-white/55"');
+  });
+
   it("replaces an unavailable logo with a non-broken fallback", () => {
     expect(loginGateway).toContain("const [logoFailed, setLogoFailed] = useState(false)");
     expect(loginGateway).toContain("useEffect(() => setLogoFailed(false), [logoUrl])");
