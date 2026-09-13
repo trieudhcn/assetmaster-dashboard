@@ -1,5 +1,6 @@
 import {
   Building2,
+  Cloud,
   FolderCog,
   GripVertical,
   ImageUp,
@@ -22,6 +23,12 @@ const settingLinks: readonly SettingLink[] = [
   { href: "#settings-login-identity", label: "Màn hình đăng nhập", icon: ImageUp },
   { href: "#settings-enhancements", label: "Nhận diện mở rộng", icon: Tags },
   { href: "#settings-directory", label: "Directory", icon: Network },
+  {
+    href: "#settings-entra",
+    label: "Microsoft Entra",
+    icon: Cloud,
+    event: "assetmaster:open-entra-settings",
+  },
   {
     href: "#self-hosted-service-status",
     label: "Hạ tầng",
