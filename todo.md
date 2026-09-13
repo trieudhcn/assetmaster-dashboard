@@ -3984,3 +3984,12 @@
 - [x] Đối chiếu procedure `directoryLogin` với payload từ `LoginGateway`.
 - [x] Phân biệt lỗi tìm user, nhóm quyền và bind mật khẩu người dùng trong runtime.
 - [x] Sửa luồng đăng nhập nếu cần, bổ sung regression và hướng dẫn rebuild Docker.
+
+
+## Current Session — QR dùng chung và bàn giao
+
+- [x] Tạo bộ quét QR dùng chung hỗ trợ camera trình duyệt và máy quét keyboard/HID gửi Enter.
+- [x] Dùng lại bộ quét trong tra cứu tài sản và kiểm kê QR liên tục.
+- [x] Đưa QR vào Bàn giao & Cấp phát, kiểm tra tài sản sẵn sàng và mở form với tài sản điền sẵn.
+- [x] Bổ sung kiểm thử QR riêng; type-check, test và production build trên CI đều đạt.
+- [ ] UAT bằng tem QR, camera và máy quét HID thực tế trên môi trường HTTPS.
