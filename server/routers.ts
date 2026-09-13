@@ -1497,9 +1497,13 @@ export const appRouter = router({
       return {
         name: company.name,
         websiteTitle: company.websiteTitle,
-        logoUrl: company.logoUrl,
+        logoUrl: company.logoUrl?.startsWith("/api/files/")
+          ? "/api/public-brand/logo"
+          : company.logoUrl,
         brandColor: company.brandColor,
-        loginBackgroundUrl: company.loginBackgroundUrl,
+        loginBackgroundUrl: company.loginBackgroundUrl?.startsWith("/api/files/")
+          ? "/api/public-brand/login-background"
+          : company.loginBackgroundUrl,
         loginGreeting: company.loginGreeting,
         loginBackgroundOverlay: company.loginBackgroundOverlay,
       };
