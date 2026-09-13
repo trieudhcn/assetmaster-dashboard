@@ -36,6 +36,15 @@ describe("public login brand assets", () => {
     expect(loginGateway).toContain('loginBackgroundOverlay === "dark" ? "bg-[#102A43]/75" : "bg-white/55"');
   });
 
+  it("presents login methods as a clear accessible segmented control", () => {
+    expect(loginGateway).toContain('role="tablist"');
+    expect(loginGateway).toContain('aria-label="Phương thức đăng nhập"');
+    expect(loginGateway).toContain('aria-selected={mode === "directory"}');
+    expect(loginGateway).toContain('aria-selected={mode === "local"}');
+    expect(loginGateway).toContain('"border-[#0F8C8C] bg-[#0F8C8C] text-white');
+    expect(loginGateway).toContain('"border-[#D3DFE8] bg-white text-[#526779]');
+  });
+
   it("replaces an unavailable logo with a non-broken fallback", () => {
     expect(loginGateway).toContain("const [logoFailed, setLogoFailed] = useState(false)");
     expect(loginGateway).toContain("useEffect(() => setLogoFailed(false), [logoUrl])");
