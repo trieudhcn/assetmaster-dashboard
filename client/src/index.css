@@ -1043,3 +1043,39 @@ input[type="date"] {
     transform: translate(-50%, -50%) !important;
   }
 }
+
+
+/* Runtime bridge for the configurable AssetMaster primary color. */
+:root {
+  --assetmaster-brand: #0F8C8C;
+  --assetmaster-brand-strong: color-mix(in srgb, var(--assetmaster-brand) 82%, #003B34);
+  --assetmaster-brand-soft: color-mix(in srgb, var(--assetmaster-brand) 10%, #FFFFFF);
+  --assetmaster-brand-border: color-mix(in srgb, var(--assetmaster-brand) 32%, #FFFFFF);
+  --primary: var(--assetmaster-brand);
+  --ring: var(--assetmaster-brand);
+}
+
+[class~="bg-[#0F8C8C]"] { background-color: var(--assetmaster-brand) !important; }
+[class~="text-[#0F8C8C]"] { color: var(--assetmaster-brand) !important; }
+[class~="border-[#0F8C8C]"] { border-color: var(--assetmaster-brand) !important; }
+[class~="text-[#087A6A]"] { color: var(--assetmaster-brand-strong) !important; }
+[class~="bg-[#087A6A]"] { background-color: var(--assetmaster-brand-strong) !important; }
+[class~="hover:bg-[#087A6A]"]:hover { background-color: var(--assetmaster-brand-strong) !important; }
+[class~="hover:text-[#087A6A]"]:hover { color: var(--assetmaster-brand-strong) !important; }
+[class~="bg-[#E6F6F2]"],
+[class~="bg-[#ECF8F7]"],
+[class~="bg-[#F4FBFA]"] { background-color: var(--assetmaster-brand-soft) !important; }
+[class~="border-[#8BCDC6]"],
+[class~="border-[#9ADBD3]"],
+[class~="border-[#B7D8D4]"],
+[class~="border-[#CDE5E5]"] { border-color: var(--assetmaster-brand-border) !important; }
+[class~="ring-[#B8E9DD]"] { --tw-ring-color: var(--assetmaster-brand-border) !important; }
+[class~="accent-[#0F8C8C]"] { accent-color: var(--assetmaster-brand) !important; }
+[class~="focus:border-[#0F8C8C]"]:focus { border-color: var(--assetmaster-brand) !important; }
+
+.primary-action { background-color: var(--assetmaster-brand); }
+.primary-action:hover { background-color: var(--assetmaster-brand-strong); }
+.field-input:focus {
+  border-color: var(--assetmaster-brand);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--assetmaster-brand) 11%, transparent);
+}
