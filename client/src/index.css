@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@source "../../node_modules/streamdown/dist/*.js";
 @import "tw-animate-css";
 
 /* Corporate Clarity: Swiss enterprise information design with calm near-white surfaces,
@@ -1078,4 +1079,130 @@ input[type="date"] {
 .field-input:focus {
   border-color: var(--assetmaster-brand);
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--assetmaster-brand) 11%, transparent);
+}
+
+
+/* Shared modal header rhythm: descriptions stay clear of the body divider. */
+.assetmaster-modal-header {
+  flex-shrink: 0;
+}
+
+.assetmaster-modal-header > :first-child {
+  min-width: 0;
+}
+
+.assetmaster-modal-header p {
+  margin-top: 0.5rem;
+  padding-bottom: 0.25rem;
+  line-height: 1.25rem;
+}
+
+.configuration-guide-markdown {
+  color: #526779;
+  font-size: 0.8125rem;
+  line-height: 1.65;
+}
+
+.configuration-guide-markdown h1,
+.configuration-guide-markdown h2,
+.configuration-guide-markdown h3 {
+  scroll-margin-top: 1rem;
+  color: #102a43;
+  font-family: var(--font-display, inherit);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.configuration-guide-markdown h1 {
+  margin: 0 0 1.25rem;
+  font-size: 1.5rem;
+}
+
+.configuration-guide-markdown h2 {
+  margin: 2rem 0 0.75rem;
+  border-top: 1px solid #e7eef3;
+  padding-top: 1.25rem;
+  font-size: 1.125rem;
+}
+
+.configuration-guide-markdown h3 {
+  margin: 1.25rem 0 0.5rem;
+  font-size: 0.9375rem;
+}
+
+.configuration-guide-markdown p,
+.configuration-guide-markdown ul,
+.configuration-guide-markdown ol,
+.configuration-guide-markdown blockquote {
+  margin: 0.75rem 0;
+}
+
+.configuration-guide-markdown ul,
+.configuration-guide-markdown ol {
+  padding-left: 1.35rem;
+}
+
+.configuration-guide-markdown li {
+  margin: 0.3rem 0;
+}
+
+.configuration-guide-markdown blockquote {
+  border-left: 3px solid var(--assetmaster-brand, #0f8c8c);
+  border-radius: 0 0.5rem 0.5rem 0;
+  background: #f2fbf8;
+  padding: 0.75rem 1rem;
+}
+
+.configuration-guide-markdown code {
+  border-radius: 0.3rem;
+  background: #eef3f6;
+  padding: 0.1rem 0.3rem;
+  color: #193b57;
+  font-size: 0.75rem;
+}
+
+.configuration-guide-markdown pre {
+  margin: 0.9rem 0;
+  overflow-x: auto;
+  border: 1px solid #dce7ee;
+  border-radius: 0.75rem;
+  background: #102a43;
+  padding: 1rem;
+  color: #edf7ff;
+}
+
+.configuration-guide-markdown pre code {
+  background: transparent;
+  padding: 0;
+  color: inherit;
+}
+
+.configuration-guide-markdown table {
+  display: block;
+  width: 100%;
+  overflow-x: auto;
+  border-collapse: collapse;
+  white-space: normal;
+}
+
+.configuration-guide-markdown th,
+.configuration-guide-markdown td {
+  min-width: 9rem;
+  border: 1px solid #dce7ee;
+  padding: 0.55rem 0.7rem;
+  text-align: left;
+  vertical-align: top;
+}
+
+.configuration-guide-markdown th {
+  background: #f4f8fb;
+  color: #193b57;
+  font-weight: 800;
+}
+
+.configuration-guide-markdown a {
+  color: #2666a8;
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 2px;
 }

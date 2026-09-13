@@ -150,7 +150,52 @@ function vitePluginManusDebugCollector(): Plugin {
   };
 }
 
-const plugins = [react(), tailwindcss(), jsxLocPlugin(), vitePluginManusRuntime(), vitePluginManusDebugCollector()];
+const CONFIGURATION_GUIDES_MODULE_ID =
+  "virtual:assetmaster-configuration-guides";
+const RESOLVED_CONFIGURATION_GUIDES_MODULE_ID =
+  "\0virtual:assetmaster-configuration-guides";
+
+function vitePluginConfigurationGuides(): Plugin {
+  const guideFiles = {
+    entra: path.join(
+      PROJECT_ROOT,
+      "docs",
+      "huong-dan-entra-id-microsoft-graph.md"
+    ),
+    ldaps: path.join(
+      PROJECT_ROOT,
+      "docs",
+      "docker-desktop-ldaps-ad-windows-server-2022.md"
+    ),
+  };
+
+  return {
+    name: "assetmaster-configuration-guides",
+    resolveId(id) {
+      return id === CONFIGURATION_GUIDES_MODULE_ID
+        ? RESOLVED_CONFIGURATION_GUIDES_MODULE_ID
+        : undefined;
+    },
+    load(id) {
+      if (id !== RESOLVED_CONFIGURATION_GUIDES_MODULE_ID) return undefined;
+      const entraGuideMarkdown = fs.readFileSync(guideFiles.entra, "utf8");
+      const ldapsGuideMarkdown = fs.readFileSync(guideFiles.ldaps, "utf8");
+      return [
+        `export const entraGuideMarkdown = ${JSON.stringify(entraGuideMarkdown)};`,
+        `export const ldapsGuideMarkdown = ${JSON.stringify(ldapsGuideMarkdown)};`,
+      ].join("\n");
+    },
+  };
+}
+
+const plugins = [
+  react(),
+  tailwindcss(),
+  vitePluginConfigurationGuides(),
+  jsxLocPlugin(),
+  vitePluginManusRuntime(),
+  vitePluginManusDebugCollector(),
+];
 
 export default defineConfig({
   plugins,

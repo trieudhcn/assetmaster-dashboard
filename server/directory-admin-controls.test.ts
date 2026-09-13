@@ -50,8 +50,10 @@ describe("Directory admin controls", () => {
     expect(source).toContain(
       "docker-desktop-ldaps-ad-windows-server-2022.md"
     );
-    expect(source).toContain('target="_blank"');
-    expect(source).toContain('rel="noopener noreferrer"');
+    expect(source).toContain('guide="ldaps"');
+    expect(source).toContain("setGuideOpen(true)");
+    expect(source).toContain("ConfigurationGuideDialog");
+    expect(source).not.toContain("github.com");
     expect(guide).toContain("Tắt hoặc rollback an toàn");
     expect(guide).toContain("Admin cục bộ");
     expect(guide).toContain("Không xóa migration");

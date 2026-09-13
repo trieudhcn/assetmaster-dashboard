@@ -22,7 +22,7 @@ export function QuickServiceTicketPreview({ ticket, asset, assigneeName, currenc
 
   return <div className="fixed inset-0 z-[180] flex items-end justify-center bg-[#102A43]/45 p-0 backdrop-blur-[2px] sm:items-center sm:p-4" role="presentation" onMouseDown={closeOnBackdrop}>
     <section className="grid h-[100dvh] max-h-[100dvh] w-full max-w-3xl grid-rows-[auto_minmax(0,1fr)_auto] overflow-hidden rounded-none bg-white shadow-[0_24px_60px_rgba(16,42,67,0.28)] sm:h-auto sm:max-h-[92vh] sm:rounded-2xl" role="dialog" aria-modal="true" aria-label={`Xem nhanh phiếu ${ticket.ticketCode}`}>
-      <div className="flex items-start justify-between gap-4 border-b border-[#E7EEF3] px-4 py-3 sm:px-5 sm:py-4">
+      <div className="assetmaster-modal-header flex shrink-0 items-start justify-between gap-4 border-b border-[#E7EEF3] px-4 pt-3 pb-4 sm:px-5 sm:pt-4 sm:pb-5">
         <div>
           <div className={`inline-flex rounded-full px-2.5 py-1 text-[10px] font-extrabold ${warranty ? "bg-[#EAF3FB] text-[#2666A8]" : "bg-[#FFF4DE] text-[#A86B00]"}`}>{warranty ? "Bảo hành" : "Sửa chữa"}</div>
           <div className="mt-2 font-mono text-xs font-extrabold text-[#0F8C8C]">{ticket.ticketCode}</div>

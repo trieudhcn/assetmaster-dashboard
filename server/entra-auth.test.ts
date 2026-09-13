@@ -75,8 +75,10 @@ describe("Microsoft Entra authentication", () => {
     expect(panel).toContain("setIsVisible(false)");
     expect(panel).toContain("Xem hướng dẫn cấu hình");
     expect(panel).toContain("huong-dan-entra-id-microsoft-graph.md");
-    expect(panel).toContain('target="_blank"');
-    expect(panel).toContain('rel="noopener noreferrer"');
+    expect(panel).toContain('guide="entra"');
+    expect(panel).toContain("setGuideOpen(true)");
+    expect(panel).toContain("ConfigurationGuideDialog");
+    expect(panel).not.toContain("github.com");
     expect(quickNav).toContain('event: "assetmaster:open-entra-settings"');
   });
 

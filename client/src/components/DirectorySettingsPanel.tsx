@@ -4,7 +4,6 @@ import {
   CheckCircle2,
   CircleAlert,
   DatabaseZap,
-  ExternalLink,
   FileKey2,
   Loader2,
   Network,
@@ -16,6 +15,7 @@ import {
 import { toast } from "sonner";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { trpc } from "@/lib/trpc";
+import { ConfigurationGuideDialog } from "@/components/ConfigurationGuideDialog";
 
 type DirectoryDraft = {
   ldapUrl: string;
@@ -34,9 +34,6 @@ type DirectoryDraft = {
   allowNestedGroups: boolean;
   caCertificatePem: string;
 };
-
-const LDAPS_CONFIGURATION_GUIDE_URL =
-  "https://github.com/trieudhcn/assetmaster-dashboard/blob/codex/employee-supply-requests/docs/docker-desktop-ldaps-ad-windows-server-2022.md";
 
 const initialDraft: DirectoryDraft = {
   ldapUrl: "",
@@ -145,6 +142,7 @@ export function DirectorySettingsPanel({
   const [draft, setDraft] = useState<DirectoryDraft>(initialDraft);
   const [dirty, setDirty] = useState(false);
   const [isVisible, setIsVisible] = useState(false);
+  const [guideOpen, setGuideOpen] = useState(false);
   const [groupSearch, setGroupSearch] = useState("");
   const [groupResults, setGroupResults] = useState<
     Array<{ dn: string; name: string; description: string | null }>
@@ -338,7 +336,13 @@ export function DirectorySettingsPanel({
     );
 
   return (
-    <section
+    <>
+      <ConfigurationGuideDialog
+        guide="ldaps"
+        open={guideOpen}
+        onOpenChange={setGuideOpen}
+      />
+      <section
       id="settings-directory"
       data-directory-settings
       className="mx-auto mt-5 w-[calc(100%-2rem)] max-w-[1100px] rounded-xl border border-[#CDE5E5] bg-white shadow-[0_8px_24px_rgba(16,42,67,0.045)]"
@@ -366,17 +370,15 @@ export function DirectorySettingsPanel({
           </p>
         </div>
         <div className="flex flex-wrap items-start justify-end gap-2">
-          <a
-            href={LDAPS_CONFIGURATION_GUIDE_URL}
-            target="_blank"
-            rel="noopener noreferrer"
+          <button
+            type="button"
+            onClick={() => setGuideOpen(true)}
             className="inline-flex h-9 items-center gap-2 rounded-lg border border-[#A9D8D2] bg-white px-3 text-[10px] font-extrabold text-[#087A6A] shadow-[0_3px_10px_rgba(15,140,140,.08)] transition hover:border-[#78C0B7] hover:bg-[#F6FCFB] focus:outline-none focus:ring-2 focus:ring-[#CDE5E5]"
-            aria-label="Xem hướng dẫn cấu hình LDAPS (mở trong tab mới)"
+            aria-label="Mở hướng dẫn cấu hình LDAPS trong AssetMaster"
           >
             <BookOpenText size={15} />
             <span>Xem hướng dẫn cấu hình</span>
-            <ExternalLink size={12} aria-hidden="true" />
-          </a>
+          </button>
           <div className="rounded-xl border border-[#DCEDEA] bg-white px-3 py-2.5 text-right shadow-sm">
             <div className="text-[10px] font-extrabold uppercase tracking-[.1em] text-[#8AA0B6]">
               Trạng thái môi trường
@@ -919,7 +921,8 @@ export function DirectorySettingsPanel({
           </div>
         </footer>
       </div>
-    </section>
+      </section>
+    </>
   );
 }
 

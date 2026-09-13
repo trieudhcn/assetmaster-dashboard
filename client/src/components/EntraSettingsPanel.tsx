@@ -5,7 +5,6 @@ import {
   CircleAlert,
   Cloud,
   DatabaseZap,
-  ExternalLink,
   FileKey2,
   Loader2,
   RefreshCw,
@@ -16,6 +15,7 @@ import {
 import { toast } from "sonner";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { trpc } from "@/lib/trpc";
+import { ConfigurationGuideDialog } from "@/components/ConfigurationGuideDialog";
 
 type EntraDraft = {
   tenantId: string;
@@ -25,9 +25,6 @@ type EntraDraft = {
   adminAppRole: string;
   userAppRole: string;
 };
-
-const ENTRA_CONFIGURATION_GUIDE_URL =
-  "https://github.com/trieudhcn/assetmaster-dashboard/blob/codex/employee-supply-requests/docs/huong-dan-entra-id-microsoft-graph.md";
 
 const initialDraft: EntraDraft = {
   tenantId: "",
@@ -96,6 +93,7 @@ export function EntraSettingsPanel({
   const [draft, setDraft] = useState(initialDraft);
   const [dirty, setDirty] = useState(false);
   const [isVisible, setIsVisible] = useState(false);
+  const [guideOpen, setGuideOpen] = useState(false);
   const [syncResult, setSyncResult] = useState<{
     scanned: number;
     matched: number;
@@ -190,7 +188,13 @@ export function EntraSettingsPanel({
     return <div id="settings-entra" data-entra-settings-anchor aria-hidden="true" />;
 
   return (
-    <section
+    <>
+      <ConfigurationGuideDialog
+        guide="entra"
+        open={guideOpen}
+        onOpenChange={setGuideOpen}
+      />
+      <section
       id="settings-entra"
       data-entra-settings
       className="mx-auto mt-5 w-[calc(100%-2rem)] max-w-[1100px] rounded-xl border border-[#C9DDF5] bg-white shadow-[0_8px_24px_rgba(16,42,67,0.045)]"
@@ -214,17 +218,15 @@ export function EntraSettingsPanel({
           </div>
         </div>
         <div className="flex flex-wrap items-center justify-end gap-2 self-end lg:self-start">
-          <a
-            href={ENTRA_CONFIGURATION_GUIDE_URL}
-            target="_blank"
-            rel="noopener noreferrer"
+          <button
+            type="button"
+            onClick={() => setGuideOpen(true)}
             className="inline-flex h-9 items-center gap-2 rounded-lg border border-[#B8D2EF] bg-white px-3 text-[10px] font-extrabold text-[#2666A8] shadow-[0_3px_10px_rgba(38,102,168,.08)] transition hover:border-[#8FB8E3] hover:bg-[#F4F9FF] focus:outline-none focus:ring-2 focus:ring-[#C9DDF5]"
-            aria-label="Xem hướng dẫn cấu hình Microsoft Entra ID (mở trong tab mới)"
+            aria-label="Mở hướng dẫn cấu hình Microsoft Entra ID trong AssetMaster"
           >
             <BookOpenText size={15} />
             <span>Xem hướng dẫn cấu hình</span>
-            <ExternalLink size={12} aria-hidden="true" />
-          </a>
+          </button>
           <StatusPill status={settings?.status} />
           <button
             type="button"
@@ -492,7 +494,8 @@ export function EntraSettingsPanel({
           </div>
         </footer>
       </div>
-    </section>
+      </section>
+    </>
   );
 }
 
