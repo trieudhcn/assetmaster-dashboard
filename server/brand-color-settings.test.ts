@@ -12,7 +12,9 @@ describe("configurable primary brand color", () => {
     expect(enhancements).toContain('const DEFAULT_BRAND_COLOR = "#0F8C8C"');
     expect(enhancements).toContain("const applyColor = (nextColor: string, message: string)");
     expect(enhancements).toContain('applyColor(DEFAULT_BRAND_COLOR, "Đã đặt lại màu chủ đạo mặc định.")');
-    expect(enhancements).toContain("<RotateCcw size={14} />Mặc định");
+    expect(enhancements).toContain('<div className="mt-3 grid grid-cols-2 gap-2">');
+    expect(enhancements).toContain("<Save size={13} />Áp dụng");
+    expect(enhancements).toContain("<RotateCcw size={13} />Đặt lại");
     expect(enhancements).toContain("useEffect(() => setColor(info.brandColor || DEFAULT_BRAND_COLOR), [info.brandColor])");
   });
 
