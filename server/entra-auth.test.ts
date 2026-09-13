@@ -1,0 +1,67 @@
+import { describe, expect, it } from "vitest";
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
+import { resolveEntraRole } from "./entraAuth";
+
+describe("Microsoft Entra authentication", () => {
+  const auth = readFileSync(resolve(import.meta.dirname, "entraAuth.ts"), "utf8");
+  const db = readFileSync(resolve(import.meta.dirname, "db.ts"), "utf8");
+  const schema = readFileSync(resolve(import.meta.dirname, "../drizzle/schema.ts"), "utf8");
+  const migration = readFileSync(resolve(import.meta.dirname, "../drizzle/0067_entra_identity.sql"), "utf8");
+  const server = readFileSync(resolve(import.meta.dirname, "_core/index.ts"), "utf8");
+  const routers = readFileSync(resolve(import.meta.dirname, "routers.ts"), "utf8");
+  const login = readFileSync(resolve(import.meta.dirname, "../client/src/pages/LoginGateway.tsx"), "utf8");
+  const compose = readFileSync(resolve(import.meta.dirname, "../docker-compose.yml"), "utf8");
+  const guide = readFileSync(resolve(import.meta.dirname, "../docs/entra-id-authentication.md"), "utf8");
+
+  it("maps configured Entra App Roles without granting an implicit role", () => {
+    expect(resolveEntraRole(["AssetMaster.User"], "AssetMaster.Admin", "AssetMaster.User")).toBe("user");
+    expect(resolveEntraRole(["AssetMaster.Admin"], "AssetMaster.Admin", "AssetMaster.User")).toBe("admin");
+    expect(resolveEntraRole([], "AssetMaster.Admin", "AssetMaster.User")).toBeNull();
+  });
+
+  it("uses authorization code flow with PKCE and validates the callback token", () => {
+    expect(auth).toContain('app.get("/api/auth/entra/start"');
+    expect(auth).toContain('app.get("/api/auth/entra/callback"');
+    expect(auth).toContain('authorizationUrl.searchParams.set("code_challenge_method", "S256")');
+    expect(auth).toContain("crypto.timingSafeEqual");
+    expect(auth).toContain("createRemoteJWKSet");
+    expect(auth).toContain("jwtVerify(tokenPayload.id_token");
+    expect(auth).toContain("issuer,");
+    expect(auth).toContain("audience: config.clientId");
+    expect(auth).toContain('algorithms: ["RS256"]');
+    expect(auth).toContain("Entra nonce mismatch");
+    expect(auth).toContain("Entra tenant mismatch");
+    expect(server).toContain("registerEntraAuthRoutes(app)");
+  });
+
+  it("links existing users safely and only provisions new users with an App Role", () => {
+    expect(db).toContain("export async function upsertEntraUser");
+    expect(db).toContain("eq(users.entraObjectId, input.objectId)");
+    expect(db).toContain("await getUserByEmail(input.email)");
+    expect(db).toContain("if (current && !current.isActive)");
+    expect(db).toContain("if (!current && !input.assertedRole)");
+    expect(db).toContain("Tài khoản chưa được gán App Role AssetMaster");
+    expect(schema).toContain('"entra",');
+    expect(schema).toContain('entraObjectId: varchar("entraObjectId"');
+    expect(migration).toContain("0067");
+  });
+
+  it("keeps the feature disabled by default and exposes it only when configured", () => {
+    expect(compose).toContain('ENTRA_AUTH_ENABLED: "${ENTRA_AUTH_ENABLED:-false}"');
+    expect(compose).toContain("ENTRA_TENANT_ID");
+    expect(compose).toContain("ENTRA_CLIENT_ID");
+    expect(routers).toContain("entraEnabled: entraAuthEnabled()");
+    expect(login).toContain('href="/api/auth/entra/start"');
+    expect(login).toContain("Đăng nhập bằng Microsoft");
+    expect(login).toContain("Đăng nhập dự phòng");
+  });
+
+  it("documents App Registration, roles, secret handling and rollback", () => {
+    expect(guide).toContain("AssetMaster.User");
+    expect(guide).toContain("AssetMaster.Admin");
+    expect(guide).toContain("ENTRA_CLIENT_SECRET_FILE");
+    expect(guide).toContain("0067_entra_identity.sql");
+    expect(guide).toContain("ENTRA_AUTH_ENABLED=false");
+  });
+});
