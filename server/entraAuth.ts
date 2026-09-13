@@ -4,16 +4,22 @@ import type { Express, Request, Response } from "express";
 import { parse as parseCookieHeader } from "cookie";
 import { createRemoteJWKSet, jwtVerify } from "jose";
 import { createSelfHostedLogin, selfHostedAuthEnabled } from "./selfHostedAuth";
-import { upsertEntraUser } from "./db";
+import {
+  applyEntraGraphProfiles,
+  getEntraSettings,
+  listEntraGraphSyncTargets,
+  upsertEntraUser,
+} from "./db";
 
 const ENTRA_STATE_COOKIE = "assetmaster_entra_state";
 const ENTRA_NONCE_COOKIE = "assetmaster_entra_nonce";
 const ENTRA_VERIFIER_COOKIE = "assetmaster_entra_verifier";
 const AUTH_REQUEST_TTL_MS = 10 * 60 * 1000;
+const GRAPH_REQUEST_TIMEOUT_MS = 15_000;
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const entraJwks = new Map<string, ReturnType<typeof createRemoteJWKSet>>();
 
-type EntraConfig = {
+export type EntraRuntimeConfig = {
   tenantId: string;
   clientId: string;
   clientSecret: string;
@@ -22,11 +28,36 @@ type EntraConfig = {
   userRole: string;
 };
 
-function configuredRedirectUri() {
-  const raw = process.env.ENTRA_REDIRECT_URI?.trim();
-  if (!raw) return null;
+type EntraConfigMetadata = Omit<EntraRuntimeConfig, "clientSecret"> & {
+  enabled: boolean;
+  secretRef: string | null;
+  secretConfigured: boolean;
+  source: "database" | "environment";
+};
+
+type GraphUser = {
+  id?: string;
+  displayName?: string | null;
+  mail?: string | null;
+  userPrincipalName?: string | null;
+  department?: string | null;
+  jobTitle?: string | null;
+};
+
+type GraphGroup = {
+  id?: string;
+  displayName?: string | null;
+};
+
+type GraphCollection<T> = {
+  value?: T[];
+  "@odata.nextLink"?: string;
+};
+
+function normalizeRedirectUri(raw: string | undefined | null) {
+  if (!raw?.trim()) return null;
   try {
-    const url = new URL(raw);
+    const url = new URL(raw.trim());
     const localHttp =
       url.protocol === "http:" &&
       (url.hostname === "localhost" || url.hostname === "127.0.0.1");
@@ -37,57 +68,129 @@ function configuredRedirectUri() {
   }
 }
 
-function configuredSecretReference() {
-  return process.env.ENTRA_CLIENT_SECRET_FILE?.trim() || null;
-}
-
-export function entraAuthEnabled() {
-  return (
-    selfHostedAuthEnabled() &&
-    process.env.ENTRA_AUTH_ENABLED === "true" &&
-    UUID_PATTERN.test(process.env.ENTRA_TENANT_ID?.trim() || "") &&
-    UUID_PATTERN.test(process.env.ENTRA_CLIENT_ID?.trim() || "") &&
-    Boolean(configuredRedirectUri()) &&
-    Boolean(process.env.ENTRA_CLIENT_SECRET?.trim() || configuredSecretReference())
+async function getEntraConfigMetadata(): Promise<EntraConfigMetadata> {
+  const settings = await getEntraSettings();
+  const source = settings ? "database" : "environment";
+  const tenantId = settings?.tenantId || process.env.ENTRA_TENANT_ID?.trim() || "";
+  const clientId = settings?.clientId || process.env.ENTRA_CLIENT_ID?.trim() || "";
+  const redirectUri = normalizeRedirectUri(
+    settings?.redirectUri || process.env.ENTRA_REDIRECT_URI
   );
+  const secretRef =
+    settings?.clientSecretRef || process.env.ENTRA_CLIENT_SECRET_FILE?.trim() || null;
+  const secretConfigured = Boolean(
+    process.env.ENTRA_CLIENT_SECRET?.trim() || secretRef
+  );
+  const enabled = settings
+    ? settings.status === "active" && settings.lastTestStatus === "success"
+    : process.env.ENTRA_AUTH_ENABLED === "true";
+
+  if (!UUID_PATTERN.test(tenantId))
+    throw new Error("Tenant ID Microsoft Entra không hợp lệ.");
+  if (!UUID_PATTERN.test(clientId))
+    throw new Error("Client ID Microsoft Entra không hợp lệ.");
+  if (!redirectUri)
+    throw new Error("Redirect URI phải dùng HTTPS hoặc localhost.");
+  if (!secretConfigured)
+    throw new Error("Chưa cấu hình Client Secret Microsoft Entra.");
+
+  return {
+    tenantId,
+    clientId,
+    redirectUri,
+    secretRef,
+    secretConfigured,
+    enabled,
+    source,
+    adminRole:
+      settings?.adminAppRole ||
+      process.env.ENTRA_ADMIN_APP_ROLE?.trim() ||
+      "AssetMaster.Admin",
+    userRole:
+      settings?.userAppRole ||
+      process.env.ENTRA_USER_APP_ROLE?.trim() ||
+      "AssetMaster.User",
+  };
 }
 
-async function readClientSecret() {
+async function readClientSecret(secretRef: string | null) {
   const direct = process.env.ENTRA_CLIENT_SECRET?.trim();
   if (direct) return direct;
 
-  const secretPath = configuredSecretReference();
   if (
-    !secretPath ||
+    !secretRef ||
     !/^\/(?:run\/secrets|etc\/assetmaster\/secrets)\/[A-Za-z0-9._-]{1,128}$/.test(
-      secretPath
+      secretRef
     )
   )
     throw new Error("Tham chiếu secret Entra không hợp lệ.");
 
-  const details = await lstat(secretPath);
-  if (
-    !details.isFile() ||
-    details.isSymbolicLink() ||
-    (details.mode & 0o022) !== 0
-  )
+  const details = await lstat(secretRef);
+  if (!details.isFile() || details.isSymbolicLink() || (details.mode & 0o022) !== 0)
     throw new Error("Tệp secret Entra không an toàn.");
 
-  const value = (await readFile(secretPath, "utf8")).trim();
+  const value = (await readFile(secretRef, "utf8")).trim();
   if (!value) throw new Error("Tệp secret Entra trống.");
   return value;
 }
 
-async function getEntraConfig(): Promise<EntraConfig> {
-  if (!entraAuthEnabled()) throw new Error("Đăng nhập Entra ID chưa được cấu hình đầy đủ.");
+export async function getEntraRuntimeConfig(
+  options: { requireActive?: boolean } = {}
+): Promise<EntraRuntimeConfig> {
+  if (!selfHostedAuthEnabled())
+    throw new Error("Entra ID chỉ khả dụng khi xác thực self-hosted được bật.");
+  const metadata = await getEntraConfigMetadata();
+  if (options.requireActive !== false && !metadata.enabled)
+    throw new Error("Đăng nhập Entra ID chưa được kích hoạt.");
   return {
-    tenantId: process.env.ENTRA_TENANT_ID!.trim(),
-    clientId: process.env.ENTRA_CLIENT_ID!.trim(),
-    clientSecret: await readClientSecret(),
-    redirectUri: configuredRedirectUri()!,
-    adminRole: process.env.ENTRA_ADMIN_APP_ROLE?.trim() || "AssetMaster.Admin",
-    userRole: process.env.ENTRA_USER_APP_ROLE?.trim() || "AssetMaster.User",
+    tenantId: metadata.tenantId,
+    clientId: metadata.clientId,
+    clientSecret: await readClientSecret(metadata.secretRef),
+    redirectUri: metadata.redirectUri,
+    adminRole: metadata.adminRole,
+    userRole: metadata.userRole,
   };
+}
+
+export async function entraAuthEnabled() {
+  if (!selfHostedAuthEnabled()) return false;
+  try {
+    const metadata = await getEntraConfigMetadata();
+    return metadata.enabled;
+  } catch {
+    return false;
+  }
+}
+
+export async function getEntraConfigurationStatus() {
+  const settings = await getEntraSettings();
+  try {
+    const metadata = await getEntraConfigMetadata();
+    return {
+      selfHosted: selfHostedAuthEnabled(),
+      configured: true,
+      enabled: selfHostedAuthEnabled() && metadata.enabled,
+      source: metadata.source,
+      secretConfigured: metadata.secretConfigured,
+      settings,
+      error: null,
+    } as const;
+  } catch (error) {
+    return {
+      selfHosted: selfHostedAuthEnabled(),
+      configured: Boolean(settings),
+      enabled: false,
+      source: settings ? ("database" as const) : ("environment" as const),
+      secretConfigured: Boolean(
+        process.env.ENTRA_CLIENT_SECRET?.trim() ||
+          settings?.clientSecretRef ||
+          process.env.ENTRA_CLIENT_SECRET_FILE?.trim()
+      ),
+      settings,
+      error:
+        error instanceof Error ? error.message : "Cấu hình Entra ID chưa hợp lệ.",
+    } as const;
+  }
 }
 
 function transientCookieOptions(req: Request) {
@@ -142,16 +245,182 @@ function entraEndpoint(tenantId: string, endpoint: "authorize" | "token" | "keys
   return `${base}/oauth2/v2.0/${endpoint}`;
 }
 
+async function requestGraphAccessToken(config: EntraRuntimeConfig) {
+  const response = await fetch(entraEndpoint(config.tenantId, "token"), {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: new URLSearchParams({
+      client_id: config.clientId,
+      client_secret: config.clientSecret,
+      scope: "https://graph.microsoft.com/.default",
+      grant_type: "client_credentials",
+    }),
+    signal: AbortSignal.timeout(GRAPH_REQUEST_TIMEOUT_MS),
+  });
+  const payload = (await response.json()) as {
+    access_token?: string;
+    error?: string;
+    error_description?: string;
+  };
+  if (!response.ok || !payload.access_token)
+    throw new Error(
+      payload.error_description || payload.error || "Không lấy được Graph access token."
+    );
+  return payload.access_token;
+}
+
+function normalizeGraphUrl(value: string) {
+  const url = new URL(value, "https://graph.microsoft.com");
+  if (url.protocol !== "https:" || url.hostname !== "graph.microsoft.com")
+    throw new Error("Microsoft Graph trả về URL phân trang không hợp lệ.");
+  return url;
+}
+
+async function graphGet<T>(url: string, accessToken: string): Promise<T> {
+  const target = normalizeGraphUrl(url);
+  const response = await fetch(target, {
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      Accept: "application/json",
+    },
+    signal: AbortSignal.timeout(GRAPH_REQUEST_TIMEOUT_MS),
+  });
+  const payload = (await response.json()) as T & {
+    error?: { code?: string; message?: string };
+  };
+  if (!response.ok)
+    throw new Error(
+      payload.error?.message ||
+        payload.error?.code ||
+        `Microsoft Graph trả về HTTP ${response.status}.`
+    );
+  return payload;
+}
+
+async function graphCollection<T>(
+  initialUrl: string,
+  accessToken: string,
+  limit: number
+) {
+  const output: T[] = [];
+  let nextUrl: string | undefined = initialUrl;
+  while (nextUrl && output.length < limit) {
+    const page: GraphCollection<T> = await graphGet(nextUrl, accessToken);
+    output.push(...(Array.isArray(page.value) ? page.value : []));
+    nextUrl = page["@odata.nextLink"];
+  }
+  return output.slice(0, limit);
+}
+
+export async function testEntraConnection() {
+  const config = await getEntraRuntimeConfig({ requireActive: false });
+  const accessToken = await requestGraphAccessToken(config);
+  await graphGet<GraphCollection<{ id?: string }>>(
+    "https://graph.microsoft.com/v1.0/users?$select=id&$top=1",
+    accessToken
+  );
+  await graphGet<GraphCollection<{ id?: string }>>(
+    "https://graph.microsoft.com/v1.0/groups?$select=id&$top=1",
+    accessToken
+  );
+  return "Kết nối Microsoft Entra ID và Microsoft Graph thành công.";
+}
+
+async function getGraphGroupNames(objectId: string, accessToken: string) {
+  const groups = await graphCollection<GraphGroup>(
+    `https://graph.microsoft.com/v1.0/users/${encodeURIComponent(objectId)}/transitiveMemberOf/microsoft.graph.group?$select=id,displayName&$top=100`,
+    accessToken,
+    500
+  );
+  return [...new Set(groups.map(group => group.displayName?.trim()).filter((name): name is string => Boolean(name)))].sort((left, right) =>
+    left.localeCompare(right, "vi")
+  );
+}
+
+async function mapWithConcurrency<T, R>(
+  items: T[],
+  concurrency: number,
+  mapper: (item: T) => Promise<R>
+) {
+  const results = new Array<R>(items.length);
+  let cursor = 0;
+  const workers = Array.from(
+    { length: Math.min(concurrency, items.length) },
+    async () => {
+      while (cursor < items.length) {
+        const index = cursor++;
+        results[index] = await mapper(items[index]);
+      }
+    }
+  );
+  await Promise.all(workers);
+  return results;
+}
+
+export async function syncEntraGraphUsers(limit = 500) {
+  const config = await getEntraRuntimeConfig();
+  const accessToken = await requestGraphAccessToken(config);
+  const targets = await listEntraGraphSyncTargets(limit);
+  const targetObjectIds = new Set(
+    targets.map(target => target.entraObjectId).filter((id): id is string => Boolean(id))
+  );
+  const targetEmails = new Set(
+    targets
+      .map(target => target.email?.trim().toLocaleLowerCase("en-US"))
+      .filter((email): email is string => Boolean(email))
+  );
+  const graphUsers = await graphCollection<GraphUser>(
+    "https://graph.microsoft.com/v1.0/users?$select=id,displayName,mail,userPrincipalName,department,jobTitle&$top=100",
+    accessToken,
+    limit
+  );
+  const matched = graphUsers.filter(user => {
+    const email = (user.mail || user.userPrincipalName || "")
+      .trim()
+      .toLocaleLowerCase("en-US");
+    return Boolean(
+      user.id &&
+        email &&
+        (targetObjectIds.has(user.id) || targetEmails.has(email))
+    );
+  });
+  const profiles = await mapWithConcurrency(matched, 5, async user => {
+    const objectId = user.id!;
+    const email = (user.mail || user.userPrincipalName || "")
+      .trim()
+      .toLocaleLowerCase("en-US");
+    return {
+      objectId,
+      email,
+      name: user.displayName?.trim() || null,
+      department: user.department?.trim() || null,
+      jobTitle: user.jobTitle?.trim() || null,
+      groupNames: await getGraphGroupNames(objectId, accessToken),
+    };
+  });
+  const results = await applyEntraGraphProfiles(profiles);
+  const synced = results.filter(result => result.status === "synced").length;
+  const skipped = results.length - synced;
+  return {
+    scanned: graphUsers.length,
+    matched: matched.length,
+    synced,
+    skipped,
+    reachedLimit: graphUsers.length >= limit,
+    users: results,
+  };
+}
+
 function redirectWithError(res: Response, code: string) {
   res.redirect(302, `/?entra_error=${encodeURIComponent(code)}`);
 }
 
 export function registerEntraAuthRoutes(app: Express) {
   app.get("/api/auth/entra/start", async (req: Request, res: Response) => {
-    if (!entraAuthEnabled()) return res.status(404).end();
+    if (!(await entraAuthEnabled())) return res.status(404).end();
 
     try {
-      const config = await getEntraConfig();
+      const config = await getEntraRuntimeConfig();
       const state = crypto.randomBytes(32).toString("base64url");
       const nonce = crypto.randomBytes(32).toString("base64url");
       const verifier = crypto.randomBytes(48).toString("base64url");
@@ -180,7 +449,7 @@ export function registerEntraAuthRoutes(app: Express) {
   });
 
   app.get("/api/auth/entra/callback", async (req: Request, res: Response) => {
-    if (!entraAuthEnabled()) return res.status(404).end();
+    if (!(await entraAuthEnabled())) return res.status(404).end();
 
     const cookies = parseCookieHeader(req.headers.cookie || "");
     const code = typeof req.query.code === "string" ? req.query.code : undefined;
@@ -197,7 +466,7 @@ export function registerEntraAuthRoutes(app: Express) {
       return redirectWithError(res, "invalid_response");
 
     try {
-      const config = await getEntraConfig();
+      const config = await getEntraRuntimeConfig();
       const tokenResponse = await fetch(entraEndpoint(config.tenantId, "token"), {
         method: "POST",
         headers: { "Content-Type": "application/x-www-form-urlencoded" },
@@ -214,7 +483,6 @@ export function registerEntraAuthRoutes(app: Express) {
       const tokenPayload = (await tokenResponse.json()) as {
         id_token?: string;
         error?: string;
-        error_description?: string;
       };
       if (!tokenResponse.ok || !tokenPayload.id_token)
         throw new Error(tokenPayload.error || "Entra token exchange failed");
@@ -230,10 +498,14 @@ export function registerEntraAuthRoutes(app: Express) {
         audience: config.clientId,
         algorithms: ["RS256"],
       });
-      if (!safeEqual(typeof payload.nonce === "string" ? payload.nonce : undefined, expectedNonce))
+      if (
+        !safeEqual(
+          typeof payload.nonce === "string" ? payload.nonce : undefined,
+          expectedNonce
+        )
+      )
         throw new Error("Entra nonce mismatch");
-      if (payload.tid !== config.tenantId)
-        throw new Error("Entra tenant mismatch");
+      if (payload.tid !== config.tenantId) throw new Error("Entra tenant mismatch");
 
       const objectId = typeof payload.oid === "string" ? payload.oid : "";
       const emailClaim =
@@ -249,11 +521,7 @@ export function registerEntraAuthRoutes(app: Express) {
       const roles = Array.isArray(payload.roles)
         ? payload.roles.filter((role): role is string => typeof role === "string")
         : [];
-      const assertedRole = resolveEntraRole(
-        roles,
-        config.adminRole,
-        config.userRole
-      );
+      const assertedRole = resolveEntraRole(roles, config.adminRole, config.userRole);
       const user = await upsertEntraUser({
         tenantId: config.tenantId,
         objectId,
