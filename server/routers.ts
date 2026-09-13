@@ -21,7 +21,12 @@ import {
   testLdapsDirectory,
   testLdapsDirectoryDraft,
 } from "./selfHostedAuth";
-import { entraAuthEnabled } from "./entraAuth";
+import {
+  entraAuthEnabled,
+  getEntraConfigurationStatus,
+  syncEntraGraphUsers,
+  testEntraConnection,
+} from "./entraAuth";
 import { getSelfHostedServiceHealth } from "./selfHostedServiceHealth";
 import { isSharedFileStorageEnabled, testSharedDirectory } from "./localSharedStorage";
 import {
@@ -122,6 +127,7 @@ import {
   getDivisionByCode,
   getCompany,
   getDirectorySettings,
+  getEntraSettings,
   getFileStorageSettings,
   getHandoverById,
   getInventorySupplyByCode,
@@ -224,6 +230,7 @@ import {
   listAllDivisions,
   listDepartments,
   listDirectorySettingAudits,
+  listEntraSettingAudits,
   listDivisions,
   listHandovers,
   listHandoversByRecipient,
@@ -268,6 +275,7 @@ import {
   runPurchaseInvoiceTransaction,
   saveCompany,
   saveDirectorySettings,
+  saveEntraSettings,
   saveFileStorageSettings,
   saveMaintenanceMonthlyBudget,
   saveHelpGuide,
@@ -319,7 +327,10 @@ import {
   updateUserDepartment,
   updateUserDivision,
   updateDirectoryTestResult,
+  updateEntraSyncResult,
+  updateEntraTestResult,
   setDirectoryStatus,
+  setEntraStatus,
   updateAuditItem,
   updateAuditSession,
   transitionHandoverStatus,
@@ -405,6 +416,36 @@ const directorySettingsInput = z.object({
   allowNestedGroups: z.boolean(),
   caCertificatePem: z.string().trim().max(32_000).optional().nullable(),
 });
+const entraSettingsInput = z.object({
+  tenantId: z.string().trim().uuid("Tenant ID phải là UUID hợp lệ."),
+  clientId: z.string().trim().uuid("Client ID phải là UUID hợp lệ."),
+  redirectUri: z
+    .string()
+    .trim()
+    .url("Redirect URI không hợp lệ.")
+    .max(500)
+    .refine(value => {
+      const url = new URL(value);
+      return (
+        url.protocol === "https:" ||
+        (url.protocol === "http:" &&
+          (url.hostname === "localhost" || url.hostname === "127.0.0.1"))
+      );
+    }, "Redirect URI phải dùng HTTPS hoặc localhost."),
+  clientSecretRef: z
+    .string()
+    .trim()
+    .max(255)
+    .regex(
+      /^\/(?:run\/secrets|etc\/assetmaster\/secrets)\/[A-Za-z0-9._-]{1,128}$/,
+      "Secret phải nằm trong /run/secrets hoặc /etc/assetmaster/secrets."
+    )
+    .optional()
+    .nullable(),
+  adminAppRole: z.string().trim().min(3).max(160),
+  userAppRole: z.string().trim().min(3).max(160),
+});
+
 const sidebarMenuLabels = [
   "Tổng quan",
   "Danh mục tài sản",
@@ -1149,12 +1190,162 @@ export const appRouter = router({
       return { success: true } as const;
     }),
   }),
+  entra: router({
+    publicStatus: publicProcedure.query(async () => ({
+      selfHosted: selfHostedAuthEnabled(),
+      enabled: await entraAuthEnabled(),
+    })),
+    get: adminProcedure.query(() => getEntraConfigurationStatus()),
+    audit: adminProcedure
+      .input(z.object({ limit: z.number().int().min(1).max(50).default(12) }))
+      .query(({ input }) => listEntraSettingAudits(input.limit)),
+    save: adminProcedure
+      .input(entraSettingsInput)
+      .mutation(async ({ input, ctx }) => {
+        const settings = await saveEntraSettings(
+          {
+            ...input,
+            clientSecretRef: input.clientSecretRef ?? null,
+          },
+          { userId: ctx.user.id, name: ctx.user.name }
+        );
+        await recordActivity({
+          entityType: "entra_setting",
+          entityId: 1,
+          action: "saved",
+          actorUserId: ctx.user.id,
+          actorName: ctx.user.name,
+          summary: "Lưu cấu hình Microsoft Entra ID",
+        });
+        return settings;
+      }),
+    test: adminProcedure.mutation(async ({ ctx }) => {
+      if (!selfHostedAuthEnabled())
+        throw new TRPCError({
+          code: "PRECONDITION_FAILED",
+          message:
+            "Chỉ kiểm tra Entra ID khi SELF_HOSTED_AUTH_ENABLED=true.",
+        });
+      try {
+        const message = await testEntraConnection();
+        await updateEntraTestResult({
+          status: "success",
+          message,
+          actor: { userId: ctx.user.id, name: ctx.user.name },
+        });
+        await recordActivity({
+          entityType: "entra_setting",
+          entityId: 1,
+          action: "tested",
+          actorUserId: ctx.user.id,
+          actorName: ctx.user.name,
+          summary: "Kiểm tra Microsoft Entra ID và Graph thành công",
+        });
+        return { success: true, message };
+      } catch (error) {
+        const message =
+          error instanceof Error
+            ? error.message
+            : "Không thể kiểm tra Microsoft Entra ID.";
+        await updateEntraTestResult({
+          status: "failed",
+          message,
+          actor: { userId: ctx.user.id, name: ctx.user.name },
+        }).catch(() => undefined);
+        return { success: false, message };
+      }
+    }),
+    setStatus: adminProcedure
+      .input(z.object({ status: z.enum(["active", "disabled"]) }))
+      .mutation(async ({ input, ctx }) => {
+        const settings = await getEntraSettings();
+        if (!selfHostedAuthEnabled())
+          throw new TRPCError({
+            code: "PRECONDITION_FAILED",
+            message: "Chỉ kích hoạt Entra ID trên máy chủ self-hosted.",
+          });
+        if (!settings)
+          throw new TRPCError({
+            code: "PRECONDITION_FAILED",
+            message: "Hãy lưu cấu hình Entra ID trước khi kích hoạt.",
+          });
+        if (input.status === "active" && settings.lastTestStatus !== "success")
+          throw new TRPCError({
+            code: "PRECONDITION_FAILED",
+            message:
+              "Hãy kiểm tra kết nối Entra ID thành công trước khi kích hoạt.",
+          });
+        const saved = await setEntraStatus(input.status, {
+          userId: ctx.user.id,
+          name: ctx.user.name,
+        });
+        await recordActivity({
+          entityType: "entra_setting",
+          entityId: 1,
+          action: input.status,
+          actorUserId: ctx.user.id,
+          actorName: ctx.user.name,
+          summary:
+            input.status === "active"
+              ? "Kích hoạt đăng nhập Microsoft Entra ID"
+              : "Tắt đăng nhập Microsoft Entra ID",
+        });
+        return saved;
+      }),
+    syncUsers: adminProcedure
+      .input(z.object({ limit: z.number().int().min(1).max(500).default(500) }))
+      .mutation(async ({ input, ctx }) => {
+        const settings = await getEntraSettings();
+        if (
+          settings?.status !== "active" ||
+          settings.lastTestStatus !== "success"
+        )
+          throw new TRPCError({
+            code: "PRECONDITION_FAILED",
+            message:
+              "Cần kiểm tra và kích hoạt Entra ID trước khi đồng bộ Graph.",
+          });
+        try {
+          const result = await syncEntraGraphUsers(input.limit);
+          const status =
+            result.matched === 0 || result.skipped > 0
+              ? ("partial" as const)
+              : ("success" as const);
+          const message = `Microsoft Graph: quét ${result.scanned}, khớp ${result.matched}, đồng bộ ${result.synced}, bỏ qua ${result.skipped}.`;
+          await updateEntraSyncResult({
+            status,
+            message,
+            actor: { userId: ctx.user.id, name: ctx.user.name },
+          });
+          await recordActivity({
+            entityType: "entra_setting",
+            entityId: 1,
+            action: "users_synced",
+            actorUserId: ctx.user.id,
+            actorName: ctx.user.name,
+            summary: message,
+          });
+          return result;
+        } catch (error) {
+          const message =
+            error instanceof Error
+              ? error.message
+              : "Không thể đồng bộ Microsoft Graph.";
+          await updateEntraSyncResult({
+            status: "failed",
+            message,
+            actor: { userId: ctx.user.id, name: ctx.user.name },
+          }).catch(() => undefined);
+          throw new TRPCError({ code: "BAD_REQUEST", message });
+        }
+      }),
+  }),
   directory: router({
     publicStatus: publicProcedure.query(async () => {
       const settings = await getDirectorySettings();
       return {
         selfHosted: selfHostedAuthEnabled(),
-        entraEnabled: entraAuthEnabled(),
+        entraEnabled: await entraAuthEnabled(),
         configured: Boolean(settings),
         enabled:
           selfHostedAuthEnabled() &&
