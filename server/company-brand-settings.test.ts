@@ -27,6 +27,8 @@ describe("company brand contact actions", () => {
     expect(settings).toContain("Đã căn giữa logo theo tỷ lệ chuẩn");
     expect(settings).toContain('grid gap-4 lg:grid-cols-2');
     expect(settings).toContain('id="settings-brand"');
+    expect(settings).toContain('id="settings-login-identity"');
+    expect(settings).toContain("scroll-mt-24");
     expect(settings).toContain('min-h-11 resize-y pr-10');
     expect(settings).toContain('order-first lg:col-span-2');
     expect(settings).toContain('Hiển thị trong các tài liệu xuất, trừ khi bạn bật tùy chọn mẫu nội bộ.');
