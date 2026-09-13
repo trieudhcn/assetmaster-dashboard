@@ -1,3 +1,16 @@
+# AssetMaster — Điều hướng nhận diện đăng nhập
+
+## Current Session — Lối tắt và bộ chuyển đăng nhập
+
+- [x] Thêm mốc cuộn riêng cho khối Nhận diện màn hình đăng nhập.
+- [x] Thêm biểu tượng menu nhanh theo thứ tự Thương hiệu → Màn hình đăng nhập → Nhận diện mở rộng.
+- [x] Tăng độ tương phản cho bộ chuyển Email nội bộ/Admin cục bộ.
+- [x] Dùng màu chủ đạo và shadow cho trạng thái đang chọn.
+- [x] Giữ nền trắng, viền và hover rõ ràng cho trạng thái chưa chọn.
+- [x] Bổ sung semantics tab và trạng thái `aria-selected` cho bàn phím/trình đọc màn hình.
+- [x] Bổ sung kiểm thử hồi quy cho anchor, thứ tự menu và bộ chuyển đăng nhập.
+- [ ] UAT Docker Desktop trên trang Cài đặt và trang đăng nhập.
+
 # AssetMaster — Gom nhóm nhận diện công ty
 
 ## Current Session — Bố cục nhận diện và menu nhanh
