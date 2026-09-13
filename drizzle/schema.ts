@@ -50,6 +50,8 @@ export const users = mysqlTable(
     mustChangePassword: boolean("mustChangePassword").default(false).notNull(),
     directoryObjectId: varchar("directoryObjectId", { length: 192 }).unique(),
     entraObjectId: varchar("entraObjectId", { length: 192 }).unique(),
+    entraGroupNames: json("entraGroupNames"),
+    lastEntraSyncAt: timestamp("lastEntraSyncAt"),
     directoryUsername: varchar("directoryUsername", { length: 320 }),
     lastDirectorySyncAt: timestamp("lastDirectorySyncAt"),
     role: mysqlEnum("role", ["user", "admin"]).default("user").notNull(),
@@ -166,6 +168,92 @@ export const directorySettingAudits = mysqlTable(
   table => [
     index("directory_setting_audits_setting_created_idx").on(
       table.directorySettingsId,
+      table.createdAt
+    ),
+  ]
+);
+
+export const entraSettings = mysqlTable(
+  "entraSettings",
+  {
+    id: int("id").primaryKey(),
+    version: int("version").default(1).notNull(),
+    status: mysqlEnum("status", ["draft", "active", "disabled"])
+      .default("draft")
+      .notNull(),
+    tenantId: varchar("tenantId", { length: 64 }).notNull(),
+    clientId: varchar("clientId", { length: 64 }).notNull(),
+    redirectUri: varchar("redirectUri", { length: 500 }).notNull(),
+    clientSecretRef: varchar("clientSecretRef", { length: 255 }),
+    adminAppRole: varchar("adminAppRole", { length: 160 })
+      .default("AssetMaster.Admin")
+      .notNull(),
+    userAppRole: varchar("userAppRole", { length: 160 })
+      .default("AssetMaster.User")
+      .notNull(),
+    lastTestStatus: mysqlEnum("lastTestStatus", [
+      "not_tested",
+      "success",
+      "failed",
+    ])
+      .default("not_tested")
+      .notNull(),
+    lastTestMessage: varchar("lastTestMessage", { length: 500 }),
+    lastTestedAt: timestamp("lastTestedAt"),
+    lastSyncStatus: mysqlEnum("lastSyncStatus", [
+      "not_run",
+      "success",
+      "partial",
+      "failed",
+    ])
+      .default("not_run")
+      .notNull(),
+    lastSyncMessage: varchar("lastSyncMessage", { length: 500 }),
+    lastSyncedAt: timestamp("lastSyncedAt"),
+    createdByUserId: int("createdByUserId").references(() => users.id, {
+      onDelete: "set null",
+      onUpdate: "cascade",
+    }),
+    updatedByUserId: int("updatedByUserId").references(() => users.id, {
+      onDelete: "set null",
+      onUpdate: "cascade",
+    }),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+    updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  },
+  table => [index("entra_settings_status_idx").on(table.status)]
+);
+
+export const entraSettingAudits = mysqlTable(
+  "entraSettingAudits",
+  {
+    id: int("id").autoincrement().primaryKey(),
+    entraSettingsId: int("entraSettingsId")
+      .notNull()
+      .references(() => entraSettings.id, {
+        onDelete: "cascade",
+        onUpdate: "cascade",
+      }),
+    version: int("version").notNull(),
+    action: mysqlEnum("action", [
+      "saved",
+      "activated",
+      "disabled",
+      "tested",
+      "users_synced",
+    ]).notNull(),
+    summary: varchar("summary", { length: 500 }).notNull(),
+    snapshot: json("snapshot").notNull(),
+    actorUserId: int("actorUserId").references(() => users.id, {
+      onDelete: "set null",
+      onUpdate: "cascade",
+    }),
+    actorName: varchar("actorName", { length: 160 }),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+  },
+  table => [
+    index("entra_setting_audits_setting_created_idx").on(
+      table.entraSettingsId,
       table.createdAt
     ),
   ]
