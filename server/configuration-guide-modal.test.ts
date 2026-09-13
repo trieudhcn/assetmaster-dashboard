@@ -72,10 +72,10 @@ describe("in-app configuration guides and modal layout", () => {
     expect(styles).toContain(
       'code[data-guide-inline-copy][data-copy-status="copied"]'
     );
-    expect(entraGuide.match(/^##\\s+/gm)?.length).toBeGreaterThan(10);
-    expect(ldapsGuide.match(/^##\\s+/gm)?.length).toBeGreaterThan(10);
-    expect(entraGuide).toContain("\`\`\`powershell");
-    expect(ldapsGuide).toContain("\`\`\`powershell");
+    expect(entraGuide.match(/^##\s+/gm)?.length).toBeGreaterThan(10);
+    expect(ldapsGuide.match(/^##\s+/gm)?.length).toBeGreaterThan(10);
+    expect(entraGuide).toContain("```powershell");
+    expect(ldapsGuide).toContain("```powershell");
   });
 
   it("keeps modal descriptions clear of body dividers across modal groups", () => {
