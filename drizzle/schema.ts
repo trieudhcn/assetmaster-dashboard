@@ -1916,6 +1916,39 @@ export const handovers = mysqlTable(
   ]
 );
 
+export const handoverAssetItems = mysqlTable(
+  "handoverAssetItems",
+  {
+    id: int("id").autoincrement().primaryKey(),
+    handoverId: int("handoverId")
+      .notNull()
+      .references(() => handovers.id, {
+        onDelete: "restrict",
+        onUpdate: "cascade",
+      }),
+    assetId: int("assetId")
+      .notNull()
+      .references(() => assets.id, {
+        onDelete: "restrict",
+        onUpdate: "cascade",
+      }),
+    assetCode: varchar("assetCode", { length: 64 }).notNull(),
+    assetName: varchar("assetName", { length: 255 }).notNull(),
+    conditionOut: varchar("conditionOut", { length: 120 }),
+    conditionIn: varchar("conditionIn", { length: 120 }),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+    updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  },
+  table => [
+    index("handover_asset_items_handover_idx").on(table.handoverId),
+    index("handover_asset_items_asset_idx").on(table.assetId),
+    uniqueIndex("handover_asset_items_unique").on(
+      table.handoverId,
+      table.assetId
+    ),
+  ]
+);
+
 export const handoverSupplyItems = mysqlTable(
   "handoverSupplyItems",
   {
