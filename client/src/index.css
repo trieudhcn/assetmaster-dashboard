@@ -1206,3 +1206,98 @@ input[type="date"] {
   text-decoration: underline;
   text-underline-offset: 2px;
 }
+
+/* Điều hướng và thao tác sao chép trong hướng dẫn cấu hình nội bộ. */
+.configuration-guide-markdown [data-guide-section-heading]:focus {
+  outline: none;
+}
+
+.configuration-guide-markdown [data-code-block-header] {
+  border-bottom: 1px solid #dce7ee;
+  background: #f4f8fb;
+}
+
+.configuration-guide-markdown [data-guide-code-copy] {
+  display: inline-flex;
+  min-height: 1.875rem;
+  align-items: center;
+  gap: 0.35rem;
+  border: 1px solid #c9dde8;
+  border-radius: 0.5rem;
+  background: #fff;
+  padding: 0.35rem 0.6rem;
+  color: #193b57;
+  font-size: 0.6875rem;
+  font-weight: 800;
+}
+
+.configuration-guide-markdown [data-guide-code-copy]::after {
+  content: "Sao chép";
+}
+
+.configuration-guide-markdown [data-guide-code-copy]:hover,
+.configuration-guide-markdown [data-guide-code-copy]:focus-visible {
+  border-color: var(--assetmaster-brand, #0f8c8c);
+  color: var(--assetmaster-brand-dark, #087a6a);
+  outline: none;
+}
+
+.configuration-guide-markdown code[data-guide-inline-copy] {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  border: 1px solid #d7e5ed;
+  cursor: pointer;
+  transition:
+    border-color 150ms ease,
+    background-color 150ms ease,
+    color 150ms ease;
+}
+
+.configuration-guide-markdown code[data-guide-inline-copy]::after {
+  content: "⧉";
+  color: #60758a;
+  font-family: sans-serif;
+  font-size: 0.65rem;
+  font-weight: 800;
+}
+
+.configuration-guide-markdown code[data-guide-inline-copy]:hover,
+.configuration-guide-markdown code[data-guide-inline-copy]:focus-visible {
+  border-color: var(--assetmaster-brand, #0f8c8c);
+  background: #eaf7f5;
+  color: #087a6a;
+  outline: 2px solid rgba(15, 140, 140, 0.18);
+  outline-offset: 1px;
+}
+
+.configuration-guide-markdown [data-copy-status="copied"] {
+  border-color: #78b9a9;
+  background: #e6f6f2;
+  color: #087a6a;
+}
+
+.configuration-guide-markdown [data-guide-code-copy][data-copy-status="copied"]::after {
+  content: "Đã sao chép";
+}
+
+.configuration-guide-markdown code[data-guide-inline-copy][data-copy-status="copied"]::after {
+  content: "✓";
+  color: #087a6a;
+}
+
+.configuration-guide-markdown [data-copy-status="error"] {
+  border-color: #e3a4a4;
+  background: #fff3f3;
+  color: #a33f3f;
+}
+
+.configuration-guide-markdown [data-guide-code-copy][data-copy-status="error"]::after {
+  content: "Không thể sao chép";
+}
+
+.configuration-guide-markdown code[data-guide-inline-copy][data-copy-status="error"]::after {
+  content: "!";
+  color: #a33f3f;
+}
+

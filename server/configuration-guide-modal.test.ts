@@ -42,6 +42,42 @@ describe("in-app configuration guides and modal layout", () => {
     expect(directoryPanel).not.toContain("github.com");
   });
 
+  it("adds clickable guide navigation and copy controls", () => {
+    const dialog = source(
+      "client/src/components/ConfigurationGuideDialog.tsx"
+    );
+    const styles = source("client/src/index.css");
+    const entraGuide = source(
+      "docs/huong-dan-entra-id-microsoft-graph.md"
+    );
+    const ldapsGuide = source(
+      "docs/docker-desktop-ldaps-ad-windows-server-2022.md"
+    );
+
+    expect(dialog).toContain("getGuideSections");
+    expect(dialog).toContain("data-guide-toc");
+    expect(dialog).toContain("scrollToSection");
+    expect(dialog).toContain("data-guide-section-heading");
+    expect(dialog).toContain("data-guide-code-copy");
+    expect(dialog).toContain("data-guide-inline-copy");
+    expect(dialog).toContain("navigator.clipboard.writeText");
+    expect(dialog).toContain('document.execCommand("copy")');
+    expect(dialog).toContain("Đã sao chép");
+    expect(dialog).toContain(
+      "controls={{ code: true, table: true, mermaid: true }}"
+    );
+    expect(styles).toContain(
+      '[data-guide-code-copy][data-copy-status="copied"]'
+    );
+    expect(styles).toContain(
+      'code[data-guide-inline-copy][data-copy-status="copied"]'
+    );
+    expect(entraGuide.match(/^##\\s+/gm)?.length).toBeGreaterThan(10);
+    expect(ldapsGuide.match(/^##\\s+/gm)?.length).toBeGreaterThan(10);
+    expect(entraGuide).toContain("\`\`\`powershell");
+    expect(ldapsGuide).toContain("\`\`\`powershell");
+  });
+
   it("keeps modal descriptions clear of body dividers across modal groups", () => {
     const styles = source("client/src/index.css");
     const sharedDialog = source("client/src/components/ui/dialog.tsx");
