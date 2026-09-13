@@ -1,5 +1,7 @@
 # Microsoft Entra ID authentication
 
+Vietnamese step-by-step guide: [`huong-dan-entra-id-microsoft-graph.md`](./huong-dan-entra-id-microsoft-graph.md).
+
 AssetMaster supports Microsoft Entra ID sign-in for self-hosted deployments that use hybrid Active Directory. The feature is disabled by default and keeps LDAPS plus the local bootstrap administrator available as fallback methods.
 
 ## Authentication model
