@@ -1,3 +1,14 @@
+# AssetMaster — Sửa lớp phủ ảnh nền đăng nhập
+
+## Current Session — Lớp phủ sáng/tối
+
+- [x] Xác định lựa chọn lớp phủ chỉ thay đổi bản nháp và thiếu thao tác lưu ngay trong khối nhận diện đăng nhập.
+- [x] Thêm bản xem trước lớp phủ HTML rõ ràng cho chế độ Sáng/Tối.
+- [x] Thêm nút áp dụng ngay trong khối nhận diện đăng nhập và trạng thái truy cập `aria-pressed`.
+- [x] Áp dụng lớp phủ HTML riêng trên trang đăng nhập thay cho gradient ghép trong `background-image`.
+- [x] Bổ sung kiểm thử hồi quy cho thao tác chọn, lưu, xem trước và render trang đăng nhập.
+- [ ] UAT Docker Desktop: chọn Tối, áp dụng, đăng xuất và xác nhận lớp phủ tối được giữ sau khi tải lại.
+
 # AssetMaster — Sửa logo trang đăng nhập self-hosted
 
 ## Current Session — Logo và ảnh nền công khai có kiểm soát
