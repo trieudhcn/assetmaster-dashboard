@@ -51,6 +51,7 @@ import {
   createDepartment,
   createDivision,
   createHandover,
+  createHandoverAssetItem,
   createHandoverSupplyItem,
   createInventoryMovement,
   createInventorySupply,
@@ -226,6 +227,7 @@ import {
   listDivisions,
   listHandovers,
   listHandoversByRecipient,
+  listHandoverAssetItems,
   listHandoverSupplyItems,
   listInventoryMovements,
   listInventorySupplies,
@@ -572,11 +574,30 @@ async function restoreHandoverAccessories(
           if (returnedQuantityAfter < Number(item.issuedQuantity))
             outstandingAccessoryCount += 1;
         }
+        const assetItems = await listHandoverAssetItems(
+          handover.id,
+          transaction
+        );
+        const handoverAssetIds = Array.from(
+          new Set([handover.assetId, ...assetItems.map(item => item.assetId)])
+        );
         const returnedLicenseAssignments = handover.recipientUserId
-          ? await listActiveSoftwareLicenseAssignmentsForHandover(
-              handover.assetId,
-              handover.recipientUserId,
-              transaction
+          ? Array.from(
+              new Map(
+                (
+                  await Promise.all(
+                    handoverAssetIds.map(assetId =>
+                      listActiveSoftwareLicenseAssignmentsForHandover(
+                        assetId,
+                        handover.recipientUserId!,
+                        transaction
+                      )
+                    )
+                  )
+                )
+                  .flat()
+                  .map(assignment => [assignment.id, assignment])
+              ).values()
             )
           : [];
         for (const assignment of returnedLicenseAssignments) {
@@ -594,7 +615,7 @@ async function restoreHandoverAccessories(
               action: "revoked_with_handover",
               actorUserId: actor.id,
               actorName: actor.name ?? "Quản trị viên",
-              summary: `Thu hồi ${assignment.productName} khi hoàn trả tài sản ${handover.assetCode} · Phiếu ${handover.referenceCode}`,
+              summary: `Thu hồi ${assignment.productName} khi hoàn trả phiếu ${handover.referenceCode}`,
             },
             transaction
           );
@@ -9253,6 +9274,7 @@ export const appRouter = router({
           });
         return {
           ...handover,
+          assetItems: await listHandoverAssetItems(input.id),
           supplyItems: await listHandoverSupplyItems(input.id),
         };
       }),
@@ -9481,6 +9503,11 @@ export const appRouter = router({
       .input(
         z.object({
           assetId: z.number().int().positive(),
+          assetIds: z
+            .array(z.number().int().positive())
+            .min(1)
+            .max(50)
+            .optional(),
           recipientUserId: z.number().int().positive().optional().nullable(),
           recipientName: z.string().trim().min(2).max(160),
           recipientDepartmentId: z
@@ -9510,17 +9537,32 @@ export const appRouter = router({
         })
       )
       .mutation(async ({ input, ctx }) => {
-        const asset = await getAssetById(input.assetId);
-        if (!asset || asset.isArchived)
+        const requestedAssetIds = Array.from(
+          new Set(input.assetIds?.length ? input.assetIds : [input.assetId])
+        );
+        const selectedAssets = await Promise.all(
+          requestedAssetIds.map(assetId => getAssetById(assetId))
+        );
+        const missingAssetIndex = selectedAssets.findIndex(
+          assetItem => !assetItem || assetItem.isArchived
+        );
+        if (missingAssetIndex >= 0)
           throw new TRPCError({
             code: "NOT_FOUND",
-            message: "Tài sản được chọn không tồn tại hoặc đã lưu trữ.",
+            message: `Tài sản #${requestedAssetIds[missingAssetIndex]} không tồn tại hoặc đã lưu trữ.`,
           });
-        if (asset.status !== "available")
+        const unavailableAsset = selectedAssets.find(
+          assetItem => assetItem?.status !== "available"
+        );
+        if (unavailableAsset)
           throw new TRPCError({
             code: "BAD_REQUEST",
-            message: "Chỉ có thể lập phiếu cho tài sản đang sẵn có.",
+            message: `Tài sản ${unavailableAsset.assetCode} không còn ở trạng thái sẵn có.`,
           });
+        const assetsForHandover = selectedAssets.filter(
+          (assetItem): assetItem is NonNullable<typeof assetItem> => Boolean(assetItem)
+        );
+        const asset = assetsForHandover[0];
         const handoverYear = input.handedOverAt.getFullYear();
         const normalizedSupplyItems = Array.from(
           input.supplyItems
@@ -9578,6 +9620,8 @@ export const appRouter = router({
               }
               const {
                 supplyItems: _supplyItems,
+                assetIds: _assetIds,
+                assetId: _assetId,
                 accessories: manualAccessories,
                 ...handoverInput
               } = input;
@@ -9590,6 +9634,7 @@ export const appRouter = router({
               const handoverId = await createHandover(
                 {
                   ...handoverInput,
+                  assetId: asset.id,
                   accessories: combinedAccessories,
                   referenceCode,
                   handoverByUserId: ctx.user!.id,
@@ -9598,6 +9643,18 @@ export const appRouter = router({
                 },
                 transaction
               );
+              for (const handoverAsset of assetsForHandover) {
+                await createHandoverAssetItem(
+                  {
+                    handoverId,
+                    assetId: handoverAsset.id,
+                    assetCode: handoverAsset.assetCode,
+                    assetName: handoverAsset.name,
+                    conditionOut: input.conditionOut || null,
+                  },
+                  transaction
+                );
+              }
               for (const movement of movements) {
                 await updateInventorySupply(
                   movement.supplyId,
@@ -9636,7 +9693,7 @@ export const appRouter = router({
                     recipientUserId: input.recipientUserId || null,
                     recipientName: input.recipientName,
                     recipientDepartmentId: input.recipientDepartmentId || null,
-                    note: `Cấp phát kèm tài sản ${asset.assetCode} · Phiếu ${referenceCode}`,
+                    note: `Cấp phát kèm ${assetsForHandover.length} tài sản · Phiếu ${referenceCode}`,
                     createdByUserId: ctx.user!.id,
                     createdByName: ctx.user!.name ?? "Quản trị viên",
                   },
@@ -9674,9 +9731,13 @@ export const appRouter = router({
           action: "created",
           actorUserId: ctx.user!.id,
           actorName: ctx.user!.name,
-          summary: `Tạo phiếu bàn giao cho ${input.recipientName}`,
+          summary: `Tạo phiếu bàn giao ${assetsForHandover.length} tài sản cho ${input.recipientName}`,
         });
-        return { id, issuedAccessoryCount: normalizedSupplyItems.length };
+        return {
+          id,
+          assetCount: assetsForHandover.length,
+          issuedAccessoryCount: normalizedSupplyItems.length,
+        };
       }),
     updateStatus: adminProcedure
       .input(
