@@ -72,7 +72,6 @@ export const users = mysqlTable(
     index("users_branch_idx").on(table.branchId),
     index("users_division_idx").on(table.divisionId),
     index("users_auth_source_idx").on(table.authSource),
-    index("users_entra_object_id_idx").on(table.entraObjectId),
     index("users_directory_username_idx").on(table.directoryUsername),
   ]
 );
