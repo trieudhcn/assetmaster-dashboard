@@ -5,6 +5,7 @@ import { resolve } from "node:path";
 describe("company brand contact actions", () => {
   it("exposes accessible copy actions for populated company phone and email values", () => {
     const settings = readFileSync(resolve(import.meta.dirname, "../client/src/components/CompanyBrandSettings.tsx"), "utf8");
+    const home = readFileSync(resolve(import.meta.dirname, "../client/src/pages/Home.tsx"), "utf8");
 
     expect(settings).toContain('import { Building2, CheckCircle2, CircleHelp, Copy');
     expect(settings).toContain("const copyContact = async");
@@ -32,5 +33,10 @@ describe("company brand contact actions", () => {
     expect(settings).toContain('CircleHelp');
     expect(settings).toContain('group absolute right-3 top-1/2');
     expect(settings).toContain('Ẩn Website trên các tài liệu xuất dùng trong nội bộ.');
+    expect(settings).toContain('import { BrandEnhancementsPanel } from "./BrandEnhancementsPanel"');
+    expect(settings).toContain("<BrandEnhancementsPanel info={draft}");
+    expect(settings).toContain("embedded />");
+    expect(home).not.toContain('import { BrandEnhancementsPanel } from "@/components/BrandEnhancementsPanel"');
+    expect(home).not.toContain("<BrandEnhancementsPanel info={companyInfo}");
   });
 });
