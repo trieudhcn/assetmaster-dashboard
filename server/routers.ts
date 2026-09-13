@@ -21,6 +21,7 @@ import {
   testLdapsDirectory,
   testLdapsDirectoryDraft,
 } from "./selfHostedAuth";
+import { entraAuthEnabled } from "./entraAuth";
 import { getSelfHostedServiceHealth } from "./selfHostedServiceHealth";
 import { isSharedFileStorageEnabled, testSharedDirectory } from "./localSharedStorage";
 import {
@@ -1153,6 +1154,7 @@ export const appRouter = router({
       const settings = await getDirectorySettings();
       return {
         selfHosted: selfHostedAuthEnabled(),
+        entraEnabled: entraAuthEnabled(),
         configured: Boolean(settings),
         enabled:
           selfHostedAuthEnabled() &&
