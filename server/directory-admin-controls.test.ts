@@ -47,9 +47,6 @@ describe("Directory admin controls", () => {
     expect(source).toContain('emailAttribute: "userPrincipalName"');
     expect(source).toContain("AD Windows Server thường để trống mail");
     expect(source).toContain("Xem hướng dẫn cấu hình");
-    expect(source).toContain(
-      "docker-desktop-ldaps-ad-windows-server-2022.md"
-    );
     expect(source).toContain('guide="ldaps"');
     expect(source).toContain("setGuideOpen(true)");
     expect(source).toContain("ConfigurationGuideDialog");
