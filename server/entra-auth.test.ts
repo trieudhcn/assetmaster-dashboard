@@ -14,6 +14,7 @@ describe("Microsoft Entra authentication", () => {
   const login = readFileSync(resolve(import.meta.dirname, "../client/src/pages/LoginGateway.tsx"), "utf8");
   const compose = readFileSync(resolve(import.meta.dirname, "../docker-compose.yml"), "utf8");
   const guide = readFileSync(resolve(import.meta.dirname, "../docs/entra-id-authentication.md"), "utf8");
+  const vietnameseGuide = readFileSync(resolve(import.meta.dirname, "../docs/huong-dan-entra-id-microsoft-graph.md"), "utf8");
   const panel = readFileSync(resolve(import.meta.dirname, "../client/src/components/EntraSettingsPanel.tsx"), "utf8");
   const quickNav = readFileSync(resolve(import.meta.dirname, "../client/src/components/SettingsQuickNav.tsx"), "utf8");
   const employeeProfile = readFileSync(resolve(import.meta.dirname, "../client/src/components/EmployeeDirectoryProfileSection.tsx"), "utf8");
@@ -102,5 +103,12 @@ describe("Microsoft Entra authentication", () => {
     expect(guide).toContain("User.Read.All");
     expect(guide).toContain("Group.Read.All");
     expect(guide).toContain("ENTRA_AUTH_ENABLED=false");
+    expect(guide).toContain("huong-dan-entra-id-microsoft-graph.md");
+    expect(vietnameseGuide).toContain("Kích hoạt Entra ID");
+    expect(vietnameseGuide).toContain("Đồng bộ Microsoft Graph");
+    expect(vietnameseGuide).toContain("User.Read.All");
+    expect(vietnameseGuide).toContain("Group.Read.All");
+    expect(vietnameseGuide).toContain("AADSTS50011");
+    expect(vietnameseGuide).toContain("Không commit file `.env`");
   });
 });
