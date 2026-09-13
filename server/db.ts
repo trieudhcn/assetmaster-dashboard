@@ -372,6 +372,60 @@ export async function upsertDirectoryUser(input: { openId: string; directoryObje
   return (await db.select().from(users).where(eq(users.id, id)).limit(1))[0]!;
 }
 
+export async function upsertEntraUser(input: {
+  tenantId: string;
+  objectId: string;
+  email: string;
+  name: string | null;
+  assertedRole: "admin" | "user" | null;
+}) {
+  const db = await getDb();
+  if (!db) throw new Error("Database unavailable");
+  const byObjectId = (
+    await db
+      .select()
+      .from(users)
+      .where(eq(users.entraObjectId, input.objectId))
+      .limit(1)
+  )[0];
+  const byEmail = byObjectId ? undefined : await getUserByEmail(input.email);
+  const current = byObjectId ?? byEmail;
+
+  if (current && !current.isActive)
+    throw new Error("Tài khoản AssetMaster đã bị vô hiệu hóa.");
+  if (!current && !input.assertedRole)
+    throw new Error("Tài khoản chưa được gán App Role AssetMaster trong Entra ID.");
+
+  const role =
+    current?.role === "admin" || input.assertedRole === "admin"
+      ? "admin"
+      : input.assertedRole ?? current?.role ?? "user";
+  const values = {
+    name: input.name || current?.name || input.email,
+    email: input.email,
+    entraObjectId: input.objectId,
+    authSource: current?.authSource ?? ("entra" as const),
+    loginMethod: "entra",
+    lastSignedIn: new Date(),
+    role,
+  };
+
+  if (current) {
+    await db.update(users).set(values).where(eq(users.id, current.id));
+    return { ...current, ...values };
+  }
+
+  const openId = `entra:${createHash("sha256")
+    .update(`${input.tenantId}:${input.objectId}`)
+    .digest("hex")
+    .slice(0, 58)}`;
+  const result = await db
+    .insert(users)
+    .values({ openId, ...values, isActive: true });
+  const id = Number(result[0].insertId);
+  return (await db.select().from(users).where(eq(users.id, id)).limit(1))[0]!;
+}
+
 export async function getUserMenuPreference(userId: number) {
   const db = await getDb();
   if (!db) return undefined;
