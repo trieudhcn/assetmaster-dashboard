@@ -3428,7 +3428,7 @@ function HandoverQrScannerModal({ assets, onClose, onSelect }: { assets: Handove
     }
     if (asset.status !== "available") {
       const statusLabel = asset.status === "assigned" ? "Đang cấp phát" : asset.status === "maintenance" ? "Bảo hành/Sửa chữa" : asset.status === "returned_to_vendor" ? "Trả nhà cung cấp" : asset.status === "retired" ? "Khấu hao/Thanh lý" : asset.status;
-      setMessage(`Tài sản ${asset.assetCode} đang ở trạng thái “${statusLabel}”, không thể thêm vào phiếu bàn NCC.`.replace("bàn NCC", "bàn giao"));
+      setMessage(`Tài sản ${asset.assetCode} đang ở trạng thái “${statusLabel}”, không thể thêm vào phiếu bàn giao.`);
       return;
     }
     setMessage("");
