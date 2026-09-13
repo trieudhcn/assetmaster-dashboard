@@ -1,3 +1,16 @@
+# AssetMaster — Gom nhóm nhận diện công ty
+
+## Current Session — Bố cục nhận diện và menu nhanh
+
+- [x] Nhúng khối Nhận diện mở rộng vào Cài đặt thương hiệu.
+- [x] Đặt Nhận diện mở rộng ngay dưới Nhận diện màn hình đăng nhập.
+- [x] Loại bỏ phiên bản rời của khối Nhận diện mở rộng khỏi trang Cài đặt.
+- [x] Chuyển lối tắt Nhận diện mở rộng lên ngay sau Thương hiệu.
+- [x] Điều chỉnh khoảng cách thanh menu nhanh với mép phải.
+- [x] Thu gọn nút màu thành Áp dụng/Đặt lại và giữ trên cùng một hàng.
+- [x] Bổ sung kiểm thử hồi quy cho thứ tự, vị trí và cấu trúc nhúng.
+- [ ] UAT Docker Desktop trên desktop và màn hình hẹp.
+
 # AssetMaster — Sửa màu chủ đạo
 
 ## Current Session — Áp dụng và đặt lại màu thương hiệu
