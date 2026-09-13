@@ -44,7 +44,8 @@ describe("Microsoft Entra authentication", () => {
     expect(db).toContain("Tài khoản chưa được gán App Role AssetMaster");
     expect(schema).toContain('"entra",');
     expect(schema).toContain('entraObjectId: varchar("entraObjectId"');
-    expect(migration).toContain("0067");
+    expect(migration).toContain("enum('manus','bootstrap_local','ldap','entra')");
+    expect(migration).toContain("users_entraObjectId_unique");
   });
 
   it("keeps the feature disabled by default and exposes it only when configured", () => {
