@@ -2,6 +2,7 @@ import {
   Building2,
   FolderCog,
   GripVertical,
+  ImageUp,
   Network,
   Palette,
   ServerCog,
@@ -18,6 +19,7 @@ type SettingLink = {
 
 const settingLinks: readonly SettingLink[] = [
   { href: "#settings-brand", label: "Thương hiệu", icon: Palette },
+  { href: "#settings-login-identity", label: "Màn hình đăng nhập", icon: ImageUp },
   { href: "#settings-enhancements", label: "Nhận diện mở rộng", icon: Tags },
   { href: "#settings-directory", label: "Directory", icon: Network },
   {
