@@ -60,15 +60,34 @@ export function AssetQrCapture({
   const videoRef = useRef<HTMLVideoElement>(null);
   const scannerControlsRef = useRef<{ stop: () => void } | null>(null);
   const onScanRef = useRef(onScan);
+  const onValueChangeRef = useRef(onValueChange);
+  const disabledRef = useRef(disabled);
+  const pendingRef = useRef(pending);
+  const processingRef = useRef(false);
   const lastCameraScanRef = useRef({ value: "", at: 0 });
 
   useEffect(() => {
     onScanRef.current = onScan;
-  }, [onScan]);
+    onValueChangeRef.current = onValueChange;
+    disabledRef.current = disabled;
+    pendingRef.current = pending;
+  }, [disabled, onScan, onValueChange, pending]);
 
   const submitValue = async (rawValue = value) => {
-    if (disabled || pending || !normalizeAssetQrValue(rawValue)) return;
-    await onScanRef.current(rawValue);
+    if (
+      disabledRef.current ||
+      pendingRef.current ||
+      processingRef.current ||
+      !normalizeAssetQrValue(rawValue)
+    ) {
+      return;
+    }
+    processingRef.current = true;
+    try {
+      await onScanRef.current(rawValue);
+    } finally {
+      processingRef.current = false;
+    }
   };
 
   useEffect(() => {
@@ -107,7 +126,7 @@ export function AssetQrCapture({
               return;
             }
             lastCameraScanRef.current = { value: scannedValue, at: now };
-            onValueChange(scannedValue);
+            onValueChangeRef.current(scannedValue);
             void submitValue(scannedValue);
             if (!continuousCamera) {
               scannerControlsRef.current?.stop();
@@ -140,7 +159,7 @@ export function AssetQrCapture({
       scannerControlsRef.current?.stop();
       scannerControlsRef.current = null;
     };
-  }, [cameraOpen, continuousCamera, disabled, onValueChange]);
+  }, [cameraOpen, continuousCamera, disabled]);
 
   return (
     <div data-asset-qr-capture>
