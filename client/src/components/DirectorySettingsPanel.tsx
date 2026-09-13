@@ -1,8 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
 import {
+  BookOpenText,
   CheckCircle2,
   CircleAlert,
   DatabaseZap,
+  ExternalLink,
   FileKey2,
   Loader2,
   Network,
@@ -32,6 +34,9 @@ type DirectoryDraft = {
   allowNestedGroups: boolean;
   caCertificatePem: string;
 };
+
+const LDAPS_CONFIGURATION_GUIDE_URL =
+  "https://github.com/trieudhcn/assetmaster-dashboard/blob/codex/employee-supply-requests/docs/docker-desktop-ldaps-ad-windows-server-2022.md";
 
 const initialDraft: DirectoryDraft = {
   ldapUrl: "",
@@ -360,7 +365,18 @@ export function DirectorySettingsPanel({
             bind được đọc từ Docker secret hoặc tệp secret Linux giới hạn quyền.
           </p>
         </div>
-        <div className="flex items-start gap-2">
+        <div className="flex flex-wrap items-start justify-end gap-2">
+          <a
+            href={LDAPS_CONFIGURATION_GUIDE_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex h-9 items-center gap-2 rounded-lg border border-[#A9D8D2] bg-white px-3 text-[10px] font-extrabold text-[#087A6A] shadow-[0_3px_10px_rgba(15,140,140,.08)] transition hover:border-[#78C0B7] hover:bg-[#F6FCFB] focus:outline-none focus:ring-2 focus:ring-[#CDE5E5]"
+            aria-label="Xem hướng dẫn cấu hình LDAPS (mở trong tab mới)"
+          >
+            <BookOpenText size={15} />
+            <span>Xem hướng dẫn cấu hình</span>
+            <ExternalLink size={12} aria-hidden="true" />
+          </a>
           <div className="rounded-xl border border-[#DCEDEA] bg-white px-3 py-2.5 text-right shadow-sm">
             <div className="text-[10px] font-extrabold uppercase tracking-[.1em] text-[#8AA0B6]">
               Trạng thái môi trường

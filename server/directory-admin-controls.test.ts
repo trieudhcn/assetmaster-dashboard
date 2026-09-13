@@ -25,7 +25,19 @@ describe("Directory admin controls", () => {
   });
 
   it("hiển thị rõ kiểm tra nháp, tìm nhóm và đồng bộ mà không đề nghị đồng bộ mật khẩu", async () => {
-    const source = await readFile(path.join(root, "client/src/components/DirectorySettingsPanel.tsx"), "utf8");
+    const [source, guide] = await Promise.all([
+      readFile(
+        path.join(root, "client/src/components/DirectorySettingsPanel.tsx"),
+        "utf8"
+      ),
+      readFile(
+        path.join(
+          root,
+          "docs/docker-desktop-ldaps-ad-windows-server-2022.md"
+        ),
+        "utf8"
+      ),
+    ]);
     expect(source).toContain("Kiểm tra bản nháp");
     expect(source).toContain("Tìm tên nhóm LDAPS");
     expect(source).toContain("Đồng bộ 500 tài khoản");
@@ -34,5 +46,14 @@ describe("Directory admin controls", () => {
     expect(source).toContain("không lưu mật khẩu");
     expect(source).toContain('emailAttribute: "userPrincipalName"');
     expect(source).toContain("AD Windows Server thường để trống mail");
+    expect(source).toContain("Xem hướng dẫn cấu hình");
+    expect(source).toContain(
+      "docker-desktop-ldaps-ad-windows-server-2022.md"
+    );
+    expect(source).toContain('target="_blank"');
+    expect(source).toContain('rel="noopener noreferrer"');
+    expect(guide).toContain("Tắt hoặc rollback an toàn");
+    expect(guide).toContain("Admin cục bộ");
+    expect(guide).toContain("Không xóa migration");
   });
 });

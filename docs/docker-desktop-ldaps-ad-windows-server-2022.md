@@ -4,6 +4,8 @@
 
 > **Phạm vi.** Docker Desktop phù hợp cho UAT, máy quản trị hoặc triển khai nội bộ quy mô nhỏ. Với hệ thống chạy liên tục, nên chuyển stack sang Ubuntu Server + Docker Engine + Nginx theo [runbook self-hosted chính](./huong-dan-trien-khai-noi-bo.md). Không cài Docker Desktop trên Windows Server để biến Windows Server thành máy chủ production; Windows Server 2022 trong tài liệu này là **máy Domain Controller/AD riêng**.
 
+> **Mở nhanh trong ứng dụng.** Đăng nhập bằng Admin cục bộ, mở **Cài đặt hệ thống**, dùng biểu tượng Directory trên menu nhanh bên phải rồi nhấn **Xem hướng dẫn cấu hình** trong panel **Directory LDAP / Active Directory**. Tài liệu mở ở tab mới để có thể đối chiếu trong lúc nhập cấu hình.
+
 ## 1. Mô hình kết nối
 
 Trong mô hình phổ biến, Docker Desktop chạy trên máy Windows client, còn Domain Controller Windows Server 2022 nằm trong cùng LAN hoặc có thể truy cập qua VPN. Container `app` kết nối trực tiếp tới FQDN của Domain Controller trên TCP 636. MySQL và Redis chỉ nằm trong mạng backend nội bộ của Compose.
@@ -379,7 +381,30 @@ Không chạy `down -v`, không xóa `.assetmaster-data`, `.assetmaster-files` h
 | App không thấy secret sau khi đổi file | Container cũ chưa được recreate | Chạy `up -d --force-recreate app`, không cần xóa data |
 | `/setup` mở lại sau cài đặt | `ASSETMASTER_SETUP_ENABLED` vẫn true | Đổi thành false và recreate app; không để setup public |
 
-## 11. Checklist nghiệm thu
+## 12. Tắt hoặc rollback an toàn
+
+### Tắt LDAPS nhưng giữ hệ thống hoạt động
+
+1. Đăng nhập bằng **Admin cục bộ**.
+2. Mở **Cài đặt hệ thống → Directory LDAP/AD**.
+3. Nhấn **Tắt LDAPS**.
+4. Mở cửa sổ ẩn danh và xác nhận đăng nhập Directory không còn được kích hoạt.
+5. Đăng nhập lại bằng Admin cục bộ để xác nhận đường truy cập khẩn cấp vẫn hoạt động.
+
+Việc tắt LDAPS không xóa người dùng đã đồng bộ, lịch sử cấu hình hoặc liên kết `directoryObjectId`. Không xóa migration và không sửa trực tiếp database chỉ để tắt xác thực Directory.
+
+### Quay lại cấu hình LDAPS gần nhất
+
+1. Nếu vừa sửa form nhưng chưa lưu, nhấn **Hoàn tác nháp**.
+2. Nếu đã lưu cấu hình mới, nhập lại thông số trước đó rồi nhấn **Lưu nháp**.
+3. Khôi phục tệp bind secret hoặc CA certificate trước đó theo quy trình quản lý secret/chứng chỉ của doanh nghiệp.
+4. Recreate riêng container app nếu tệp secret đã thay đổi.
+5. Chạy lại **Kiểm tra bản nháp** và **Kiểm tra LDAPS**.
+6. Chỉ nhấn **Kích hoạt LDAPS** sau khi tài khoản pilot và Admin cục bộ đều được kiểm thử.
+
+Không chạy `docker compose down -v`, không xóa thư mục dữ liệu và không ghi mật khẩu bind vào log. Nếu sự cố nằm ở AD, DNS, VPN hoặc certificate, giữ LDAPS ở trạng thái tắt cho đến khi đội hạ tầng xử lý xong.
+
+## 13. Checklist nghiệm thu
 
 Trước khi bàn giao cho người dùng, Admin nên xác nhận từng mục sau:
 
