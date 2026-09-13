@@ -31,9 +31,13 @@ export function LoginGateway({ onLogin }: { onLogin: () => void }) {
   const loginGreeting = brand?.loginGreeting?.trim() || defaultBrand.loginGreeting;
   const loginBackgroundUrl = brand?.loginBackgroundUrl || "";
   const loginBackgroundOverlay = brand?.loginBackgroundOverlay === "dark" ? "dark" : "light";
+  const brandColor = /^#[0-9a-fA-F]{6}$/.test(brand?.brandColor || "") ? brand!.brandColor! : "#0F8C8C";
   const logoUrl = brand?.logoUrl || "/manus-storage/assetmaster-logo_f5d79b06.png";
   const [logoFailed, setLogoFailed] = useState(false);
   useEffect(() => setLogoFailed(false), [logoUrl]);
+  useEffect(() => {
+    document.documentElement.style.setProperty("--assetmaster-brand", brandColor);
+  }, [brandColor]);
   const loginSurfaceStyle = loginBackgroundUrl
     ? { backgroundImage: `url(${JSON.stringify(loginBackgroundUrl)})` }
     : undefined;
