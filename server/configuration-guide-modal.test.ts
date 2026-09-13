@@ -29,6 +29,13 @@ describe("in-app configuration guides and modal layout", () => {
     expect(dialog).toContain('import { Streamdown } from "streamdown"');
     expect(dialog).toContain("không cần đăng nhập hoặc truy cập GitHub");
     expect(dialog).toContain("data-configuration-guide-dialog");
+    expect(dialog).toContain("max-w-5xl flex-col gap-0");
+    expect(dialog).toContain(
+      "min-h-0 flex-1 overflow-y-auto overscroll-contain"
+    );
+    expect(dialog).not.toContain(
+      "grid-rows-[auto_minmax(0,1fr)_auto]"
+    );
     expect(entraPanel).toContain('guide="entra"');
     expect(directoryPanel).toContain('guide="ldaps"');
     expect(entraPanel).not.toContain("github.com");
