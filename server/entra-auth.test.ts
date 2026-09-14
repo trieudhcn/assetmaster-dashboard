@@ -152,5 +152,10 @@ describe("Microsoft Entra authentication", () => {
     expect(vietnameseGuide).toContain("Group.Read.All");
     expect(vietnameseGuide).toContain("AADSTS50011");
     expect(vietnameseGuide).toContain("Không commit file `.env`");
+    expect(vietnameseGuide).toContain(
+      "Chạy preflight Nginx, TLS, DNS và Redirect URI"
+    );
+    expect(vietnameseGuide).toContain("/api/auth/entra/callback");
+    expect(vietnameseGuide).toContain("Nginx /readyz");
   });
 });
