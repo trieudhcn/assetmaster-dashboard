@@ -22,28 +22,25 @@ describe("Ubuntu Docker deployment", () => {
     expect(desktop).not.toContain("entra_client_secret");
   });
 
-  it(
-    "prepares persistent paths and validates production secrets before startup",
-    () => {
-      const installer = source("scripts/install-ubuntu.sh");
-      const guide = source("docs/ubuntu-docker-deployment.md");
+  it("prepares persistent paths and validates production secrets before startup", () => {
+    const installer = source("scripts/install-ubuntu.sh");
+    const guide = source("docs/ubuntu-docker-deployment.md");
 
-      expect(installer).toContain("/srv/assetmaster/data");
-      expect(installer).toContain("/etc/assetmaster/secrets");
-      expect(installer).toContain("mysql_root_password");
-      expect(installer).toContain("ldap_bind_password");
-      expect(installer).toContain("entra_client_secret");
-      expect(installer).toContain("docker-compose.linux.yml");
-      expect(installer).toContain("/readyz");
-      expect(installer).toContain("mysqladmin ping");
-      expect(installer).toContain("redis-cli --no-auth-warning");
-      expect(installer).not.toContain("down -v");
-      expect(guide).toContain("docker-compose.desktop.yml");
-      expect(guide).toContain("docker-compose.linux.yml");
-      expect(guide).toContain("/run/secrets/ldap_bind_password");
-      expect(guide).toContain("/run/secrets/entra_client_secret");
-    }
-  );
+    expect(installer).toContain("/srv/assetmaster/data");
+    expect(installer).toContain("/etc/assetmaster/secrets");
+    expect(installer).toContain("mysql_root_password");
+    expect(installer).toContain("ldap_bind_password");
+    expect(installer).toContain("entra_client_secret");
+    expect(installer).toContain("docker-compose.linux.yml");
+    expect(installer).toContain("/readyz");
+    expect(installer).toContain("mysqladmin ping");
+    expect(installer).toContain("redis-cli --no-auth-warning");
+    expect(installer).not.toContain("down -v");
+    expect(guide).toContain("docker-compose.desktop.yml");
+    expect(guide).toContain("docker-compose.linux.yml");
+    expect(guide).toContain("/run/secrets/ldap_bind_password");
+    expect(guide).toContain("/run/secrets/entra_client_secret");
+  });
 
   it("starts and probes the complete Linux stack in CI", () => {
     const workflow = source(".github/workflows/ci.yml");
