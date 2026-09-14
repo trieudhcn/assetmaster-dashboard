@@ -92,9 +92,10 @@ export function SearchableSelect({ value, onChange, options, placeholder = "Chá»
       const width = Math.min(280, Math.max(240, rect.width));
       const viewportWidth = Math.max(180, window.innerWidth - 16);
       const boundedWidth = Math.min(width, viewportWidth);
-      const estimatedMenuHeight = compact ? Math.min(240, presentedOptions.length * 38 + 16) : 340;
+      const estimatedMenuHeight = 340;
+      const effectiveMenuHeight = compact ? Math.min(240, presentedOptions.length * 38 + 16) : estimatedMenuHeight;
       const alignRight = rect.right + boundedWidth > window.innerWidth - 12;
-      const openUpward = rect.bottom + 6 + estimatedMenuHeight > window.innerHeight - 8 && rect.top > estimatedMenuHeight;
+      const openUpward = rect.bottom + 6 + effectiveMenuHeight > window.innerHeight - 8 && rect.top > effectiveMenuHeight;
       const rawLeft = alignRight ? rect.right - boundedWidth : rect.left;
       const left = Math.min(Math.max(8, rawLeft), Math.max(8, window.innerWidth - boundedWidth - 8));
       setMenuAlign(alignRight ? "right" : "left");
