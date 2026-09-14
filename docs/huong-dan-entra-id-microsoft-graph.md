@@ -200,6 +200,35 @@ Sau khi lưu nháp:
 
 Không kích hoạt nếu kiểm tra báo lỗi. LDAPS và Admin cục bộ vẫn hoạt động độc lập.
 
+### 11.1. Chạy preflight Nginx, TLS, DNS và Redirect URI
+
+Trong panel **Microsoft Entra ID & Graph**, nhập Redirect URI dự kiến rồi nhấn
+**Chạy preflight**. Không cần nhập hoặc hiển thị Client Secret cho bước này.
+
+AssetMaster kiểm tra lần lượt:
+
+1. **Entra Redirect URI**: chỉ chấp nhận HTTPS cho production, không có
+   username/password, query string hoặc fragment và phải kết thúc chính xác bằng
+   `/api/auth/entra/callback`. HTTP chỉ được chấp nhận với
+   `localhost`/`127.0.0.1` để UAT.
+2. **DNS**: phân giải hostname từ chính container ứng dụng.
+3. **TLS certificate**: bắt tay TLS, kiểm tra chuỗi CA tin cậy, hostname và thời
+   hạn chứng chỉ.
+4. **Nginx /readyz**: gọi `<origin>/readyz` qua reverse proxy và yêu cầu HTTP
+   200.
+
+Mỗi bước hiển thị **Đạt**, **Chưa đạt** hoặc **Bỏ qua** kèm nguyên nhân. Khi sửa
+Redirect URI, kết quả cũ được xóa để tránh hiểu nhầm.
+
+> Preflight xác minh cấu trúc và khả năng truy cập từ container, nhưng không thể
+> đọc cấu hình Redirect URI trong Entra Portal nếu App Registration chưa được
+> cấp quyền đọc ứng dụng. Quản trị viên vẫn phải sao chép URI hiển thị và đối
+> chiếu tuyệt đối trong **Authentication → Web → Redirect URIs**.
+
+Nút **Kiểm tra kết nối** tiếp tục là cổng trước khi kích hoạt Entra: hệ thống
+chạy lại preflight trên cấu hình đã lưu, sau đó mới xin app-only token và kiểm
+tra quyền `User.Read.All`/`Group.Read.All`.
+
 ## 12. Đồng bộ Microsoft Graph
 
 Sau khi Entra ID đã được kiểm tra và kích hoạt:
@@ -285,7 +314,8 @@ Sau đó recreate container app. Không cần xóa migration hoặc dữ liệu 
 ## 17. Checklist trước production
 
 - [ ] AssetMaster chạy qua HTTPS.
-- [ ] Redirect URI production đã khai báo chính xác.
+- [ ] Preflight Redirect URI, DNS, TLS và Nginx `/readyz` đều đạt.
+- [ ] Redirect URI production đã khai báo chính xác trong Entra Portal.
 - [ ] `Assignment required` đã bật.
 - [ ] Người dùng/nhóm đã được gán đúng App Role.
 - [ ] `User.Read.All` và `Group.Read.All` đã được admin consent.
