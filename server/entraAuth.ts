@@ -130,10 +130,16 @@ async function probeTls(hostname: string, port: number) {
     );
     socket.once("error", error => finish(error));
     socket.once("secureConnect", () => {
-      if (!socket.authorized)
+      if (!socket.authorized) {
+        const reason = socket.authorizationError;
         return finish(
-          new Error(socket.authorizationError || "Chứng chỉ TLS không được tin cậy.")
+          new Error(
+            reason instanceof Error
+              ? reason.message
+              : reason || "Chứng chỉ TLS không được tin cậy."
+          )
         );
+      }
       const certificate = socket.getPeerCertificate();
       const validTo = certificate.valid_to ? Date.parse(certificate.valid_to) : NaN;
       if (Number.isFinite(validTo) && validTo <= Date.now())
