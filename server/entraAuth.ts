@@ -1,5 +1,8 @@
 import crypto from "node:crypto";
+import { lookup } from "node:dns/promises";
 import { lstat, readFile } from "node:fs/promises";
+import { isIP } from "node:net";
+import { connect as connectTls } from "node:tls";
 import type { Express, Request, Response } from "express";
 import { parse as parseCookieHeader } from "cookie";
 import { createRemoteJWKSet, jwtVerify } from "jose";
@@ -16,6 +19,8 @@ const ENTRA_NONCE_COOKIE = "assetmaster_entra_nonce";
 const ENTRA_VERIFIER_COOKIE = "assetmaster_entra_verifier";
 const AUTH_REQUEST_TTL_MS = 10 * 60 * 1000;
 const GRAPH_REQUEST_TIMEOUT_MS = 15_000;
+const PREFLIGHT_TIMEOUT_MS = 7_000;
+const ENTRA_CALLBACK_PATH = "/api/auth/entra/callback";
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const entraJwks = new Map<string, ReturnType<typeof createRemoteJWKSet>>();
 
@@ -54,18 +59,235 @@ type GraphCollection<T> = {
   "@odata.nextLink"?: string;
 };
 
-function normalizeRedirectUri(raw: string | undefined | null) {
-  if (!raw?.trim()) return null;
+export type EntraPreflightStep = {
+  key: "redirect_uri" | "dns" | "tls" | "nginx";
+  label: string;
+  status: "success" | "failed" | "skipped";
+  message: string;
+};
+
+export function validateEntraRedirectUri(raw: string | undefined | null) {
+  if (!raw?.trim())
+    return { ok: false as const, message: "Chưa nhập Redirect URI." };
   try {
     const url = new URL(raw.trim());
     const localHttp =
       url.protocol === "http:" &&
       (url.hostname === "localhost" || url.hostname === "127.0.0.1");
-    if (url.protocol !== "https:" && !localHttp) return null;
-    return url.toString();
+    if (url.protocol !== "https:" && !localHttp)
+      return {
+        ok: false as const,
+        message: "Redirect URI production phải dùng HTTPS.",
+      };
+    if (url.username || url.password)
+      return {
+        ok: false as const,
+        message: "Redirect URI không được chứa thông tin đăng nhập.",
+      };
+    if (url.search || url.hash)
+      return {
+        ok: false as const,
+        message: "Redirect URI không được chứa query string hoặc fragment.",
+      };
+    if (url.pathname !== ENTRA_CALLBACK_PATH)
+      return {
+        ok: false as const,
+        message: `Đường dẫn callback phải là ${ENTRA_CALLBACK_PATH}.`,
+      };
+    return { ok: true as const, url };
   } catch {
-    return null;
+    return { ok: false as const, message: "Redirect URI không hợp lệ." };
   }
+}
+
+function normalizeRedirectUri(raw: string | undefined | null) {
+  const result = validateEntraRedirectUri(raw);
+  return result.ok ? result.url.toString() : null;
+}
+
+function preflightError(error: unknown) {
+  return error instanceof Error ? error.message : "Lỗi không xác định.";
+}
+
+async function probeTls(hostname: string, port: number) {
+  return new Promise<string>((resolve, reject) => {
+    const socket = connectTls({
+      host: hostname,
+      port,
+      servername: isIP(hostname) ? undefined : hostname,
+      rejectUnauthorized: true,
+    });
+    let settled = false;
+    const finish = (error?: Error, message?: string) => {
+      if (settled) return;
+      settled = true;
+      socket.destroy();
+      if (error) reject(error);
+      else resolve(message || "TLS hợp lệ.");
+    };
+    socket.setTimeout(PREFLIGHT_TIMEOUT_MS, () =>
+      finish(new Error(`TLS timeout sau ${PREFLIGHT_TIMEOUT_MS / 1000} giây.`))
+    );
+    socket.once("error", error => finish(error));
+    socket.once("secureConnect", () => {
+      if (!socket.authorized)
+        return finish(
+          new Error(socket.authorizationError || "Chứng chỉ TLS không được tin cậy.")
+        );
+      const certificate = socket.getPeerCertificate();
+      const validTo = certificate.valid_to ? Date.parse(certificate.valid_to) : NaN;
+      if (Number.isFinite(validTo) && validTo <= Date.now())
+        return finish(new Error("Chứng chỉ TLS đã hết hạn."));
+      const expiry = Number.isFinite(validTo)
+        ? new Intl.DateTimeFormat("vi-VN", { dateStyle: "medium" }).format(validTo)
+        : "không xác định";
+      finish(
+        undefined,
+        `${socket.getProtocol() || "TLS"}; chứng chỉ hợp lệ đến ${expiry}.`
+      );
+    });
+  });
+}
+
+export async function preflightEntraEndpoint(rawRedirectUri: string) {
+  const steps: EntraPreflightStep[] = [];
+  const validation = validateEntraRedirectUri(rawRedirectUri);
+  if (!validation.ok) {
+    steps.push({
+      key: "redirect_uri",
+      label: "Entra Redirect URI",
+      status: "failed",
+      message: validation.message,
+    });
+    for (const [key, label] of [
+      ["dns", "DNS"],
+      ["tls", "TLS certificate"],
+      ["nginx", "Nginx /readyz"],
+    ] as const)
+      steps.push({
+        key,
+        label,
+        status: "skipped",
+        message: "Bỏ qua vì Redirect URI chưa hợp lệ.",
+      });
+    return { success: false, origin: null, redirectUri: null, steps };
+  }
+
+  const url = validation.url;
+  const normalizedRedirectUri = url.toString();
+  steps.push({
+    key: "redirect_uri",
+    label: "Entra Redirect URI",
+    status: "success",
+    message:
+      "Đúng HTTPS/localhost và đúng đường dẫn callback AssetMaster; vẫn cần khai báo URI này giống hệt trong Entra Portal.",
+  });
+
+  try {
+    const addresses = await lookup(url.hostname, { all: true, verbatim: true });
+    const unique = [...new Set(addresses.map(item => item.address))];
+    if (!unique.length) throw new Error("DNS không trả về địa chỉ IP.");
+    steps.push({
+      key: "dns",
+      label: "DNS",
+      status: "success",
+      message: `Phân giải ${url.hostname} thành ${unique.join(", ")}.`,
+    });
+  } catch (error) {
+    steps.push({
+      key: "dns",
+      label: "DNS",
+      status: "failed",
+      message: preflightError(error),
+    });
+    steps.push({
+      key: "tls",
+      label: "TLS certificate",
+      status: "skipped",
+      message: "Bỏ qua vì DNS chưa sẵn sàng.",
+    });
+    steps.push({
+      key: "nginx",
+      label: "Nginx /readyz",
+      status: "skipped",
+      message: "Bỏ qua vì DNS chưa sẵn sàng.",
+    });
+    return {
+      success: false,
+      origin: url.origin,
+      redirectUri: normalizedRedirectUri,
+      steps,
+    };
+  }
+
+  if (url.protocol === "https:") {
+    try {
+      const message = await probeTls(url.hostname, Number(url.port || 443));
+      steps.push({
+        key: "tls",
+        label: "TLS certificate",
+        status: "success",
+        message,
+      });
+    } catch (error) {
+      steps.push({
+        key: "tls",
+        label: "TLS certificate",
+        status: "failed",
+        message: preflightError(error),
+      });
+      steps.push({
+        key: "nginx",
+        label: "Nginx /readyz",
+        status: "skipped",
+        message: "Bỏ qua vì TLS chưa sẵn sàng.",
+      });
+      return {
+        success: false,
+        origin: url.origin,
+        redirectUri: normalizedRedirectUri,
+        steps,
+      };
+    }
+  } else {
+    steps.push({
+      key: "tls",
+      label: "TLS certificate",
+      status: "skipped",
+      message: "Localhost HTTP chỉ dành cho UAT; production phải dùng HTTPS.",
+    });
+  }
+
+  try {
+    const response = await fetch(new URL("/readyz", url.origin), {
+      method: "GET",
+      redirect: "manual",
+      signal: AbortSignal.timeout(PREFLIGHT_TIMEOUT_MS),
+      headers: { "User-Agent": "AssetMaster-Entra-Preflight/1.0" },
+    });
+    if (response.status !== 200)
+      throw new Error(`Reverse proxy trả HTTP ${response.status}, cần HTTP 200.`);
+    steps.push({
+      key: "nginx",
+      label: "Nginx /readyz",
+      status: "success",
+      message: `${url.origin}/readyz trả HTTP 200.`,
+    });
+  } catch (error) {
+    steps.push({
+      key: "nginx",
+      label: "Nginx /readyz",
+      status: "failed",
+      message: preflightError(error),
+    });
+  }
+
+  return {
+    success: steps.every(step => step.status !== "failed"),
+    origin: url.origin,
+    redirectUri: normalizedRedirectUri,
+    steps,
+  };
 }
 
 async function getEntraConfigMetadata(): Promise<EntraConfigMetadata> {
@@ -314,6 +536,13 @@ async function graphCollection<T>(
 
 export async function testEntraConnection() {
   const config = await getEntraRuntimeConfig({ requireActive: false });
+  const preflight = await preflightEntraEndpoint(config.redirectUri);
+  if (!preflight.success) {
+    const failed = preflight.steps.find(step => step.status === "failed");
+    throw new Error(
+      `Preflight Nginx/TLS/DNS chưa đạt: ${failed?.message || "Lỗi không xác định."}`
+    );
+  }
   const accessToken = await requestGraphAccessToken(config);
   await graphGet<GraphCollection<{ id?: string }>>(
     "https://graph.microsoft.com/v1.0/users?$select=id&$top=1",
