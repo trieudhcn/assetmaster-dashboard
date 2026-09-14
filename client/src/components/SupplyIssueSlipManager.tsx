@@ -200,7 +200,7 @@ export function SupplyIssueSlipManager() {
         }}
         options={issueSlipStatusOptions}
         placeholder="Lọc trạng thái"
-        searchPlaceholder="Tìm trạng thái phiếu..."
+        variant="compact"
         emptyText="Không tìm thấy trạng thái"
       />
       {slipSearch || slipStatusFilter !== "all" ? (
