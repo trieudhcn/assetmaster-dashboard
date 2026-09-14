@@ -318,6 +318,21 @@ cd /opt/assetmaster/app
 sudo ./scripts/install-ubuntu.sh --env-file .env
 ```
 
+### 11.1. Preflight điểm truy cập Entra
+
+Trước khi nhấn **Kiểm tra kết nối** hoặc **Kích hoạt Entra ID**, nhập Redirect
+URI production và nhấn **Chạy preflight**. Kết quả phải đạt cho:
+
+- Callback chính xác `/api/auth/entra/callback` và dùng HTTPS.
+- DNS hostname phân giải được từ container `app`.
+- Bắt tay TLS thành công; CA, hostname và hạn chứng chỉ hợp lệ.
+- Nginx/reverse proxy trả HTTP 200 tại `<origin>/readyz`.
+
+Preflight không đọc Client Secret và không gửi secret ra endpoint công khai. Nó
+cũng không thay thế việc đối chiếu Redirect URI trong Entra Portal. Sau khi
+preflight đạt, **Kiểm tra kết nối** sẽ chạy lại các bước này rồi mới kiểm tra
+token và quyền Microsoft Graph.
+
 ## 12. Backup và khôi phục
 
 Tạo thư mục backup có quyền hạn chế:
@@ -436,6 +451,7 @@ khi restart lặp lại.
 - [ ] HTTPS hợp lệ và HTTP chuyển sang HTTPS.
 - [ ] Admin cục bộ break-glass đã được kiểm thử.
 - [ ] Setup đã tắt bằng `ASSETMASTER_SETUP_ENABLED=false`.
+- [ ] Preflight DNS, TLS, Nginx và Entra Redirect URI đều đạt.
 - [ ] LDAPS và/hoặc Entra ID đã qua kiểm tra kết nối và UAT.
 - [ ] Có backup database, files và secrets mã hóa.
 - [ ] Restore và rollback đã được thử trên staging.
