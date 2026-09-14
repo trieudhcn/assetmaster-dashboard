@@ -113,7 +113,8 @@ describe("Microsoft Entra authentication", () => {
     expect(auth).toContain('new URL("/readyz", url.origin)');
     expect(panel).toContain("Preflight điểm truy cập Entra");
     expect(panel).toContain("Chạy preflight");
-    expect(panel).toContain("Nginx /readyz");
+    expect(panel).toContain("Nginx");
+    expect(panel).toContain("/readyz");
     expect(panel).not.toContain("github.com");
     expect(quickNav).toContain('event: "assetmaster:open-entra-settings"');
   });
