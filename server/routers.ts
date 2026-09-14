@@ -1197,14 +1197,6 @@ export const appRouter = router({
       enabled: await entraAuthEnabled(),
     })),
     get: adminProcedure.query(() => getEntraConfigurationStatus()),
-    secretStatus: adminProcedure
-      .input(
-        z.object({
-          bindDn: z.string().trim().max(2_000).nullable(),
-          bindSecretRef: z.string().trim().max(255).nullable(),
-        })
-      )
-      .query(({ input }) => inspectDirectoryBindSecret(input)),
     audit: adminProcedure
       .input(z.object({ limit: z.number().int().min(1).max(50).default(12) }))
       .query(({ input }) => listEntraSettingAudits(input.limit)),
@@ -1371,6 +1363,14 @@ export const appRouter = router({
         caCertificatePem: settings.caCertificatePem || null,
       };
     }),
+    secretStatus: adminProcedure
+      .input(
+        z.object({
+          bindDn: z.string().trim().max(2_000).nullable(),
+          bindSecretRef: z.string().trim().max(255).nullable(),
+        })
+      )
+      .query(({ input }) => inspectDirectoryBindSecret(input)),
     audit: adminProcedure
       .input(z.object({ limit: z.number().int().min(1).max(50).default(12) }))
       .query(({ input }) => listDirectorySettingAudits(input.limit)),
