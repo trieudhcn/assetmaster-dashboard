@@ -160,7 +160,7 @@ Tạo file `secrets\ldap_bind_password.txt` bằng password manager hoặc trìn
 
 ```
 icacls .\secrets\ldap_bind_password.txt /inheritance:r
-icacls .\secrets\ldap_bind_password.txt /grant:r "$env:USERNAME:(R,W)"
+icacls .\secrets\ldap_bind_password.txt /grant:r "$($env:USERNAME):R"
 ```
 
 Bảo đảm `.gitignore` không theo dõi `secrets/`. Không đặt mật khẩu bind trong `.env`, trong `docker-compose.yml`, trong source frontend hoặc trong trường nhập của trình duyệt.
