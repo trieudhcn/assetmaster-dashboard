@@ -15,11 +15,12 @@ import {
   authenticateBootstrapAdmin,
   authenticateDirectoryUser,
   clearSelfHostedLogin,
+  diagnoseLdapsDirectory,
+  diagnoseLdapsDirectoryDraft,
+  inspectDirectoryBindSecret,
   searchLdapsGroups,
   selfHostedAuthEnabled,
   syncLdapsUsers,
-  testLdapsDirectory,
-  testLdapsDirectoryDraft,
 } from "./selfHostedAuth";
 import {
   entraAuthEnabled,
@@ -1196,6 +1197,14 @@ export const appRouter = router({
       enabled: await entraAuthEnabled(),
     })),
     get: adminProcedure.query(() => getEntraConfigurationStatus()),
+    secretStatus: adminProcedure
+      .input(
+        z.object({
+          bindDn: z.string().trim().max(2_000).nullable(),
+          bindSecretRef: z.string().trim().max(255).nullable(),
+        })
+      )
+      .query(({ input }) => inspectDirectoryBindSecret(input)),
     audit: adminProcedure
       .input(z.object({ limit: z.number().int().min(1).max(50).default(12) }))
       .query(({ input }) => listEntraSettingAudits(input.limit)),
@@ -1400,17 +1409,19 @@ export const appRouter = router({
               "Chỉ kiểm tra LDAPS từ máy chủ self-hosted đã bật SELF_HOSTED_AUTH_ENABLED=true.",
           });
         try {
+          const diagnostics = await diagnoseLdapsDirectoryDraft({
+            ...input,
+            groupsDn: input.groupsDn ?? null,
+            bindDn: input.bindDn ?? null,
+            bindSecretRef: input.bindSecretRef ?? null,
+            adminGroupDn: input.adminGroupDn ?? null,
+            userGroupDn: input.userGroupDn ?? null,
+            caCertificatePem: input.caCertificatePem ?? null,
+          });
           return {
-            success: true,
-            message: await testLdapsDirectoryDraft({
-              ...input,
-              groupsDn: input.groupsDn ?? null,
-              bindDn: input.bindDn ?? null,
-              bindSecretRef: input.bindSecretRef ?? null,
-              adminGroupDn: input.adminGroupDn ?? null,
-              userGroupDn: input.userGroupDn ?? null,
-              caCertificatePem: input.caCertificatePem ?? null,
-            }),
+            success: diagnostics.ready,
+            message: diagnostics.summary,
+            diagnostics,
           };
         } catch (error) {
           return {
@@ -1419,6 +1430,7 @@ export const appRouter = router({
               error instanceof Error
                 ? error.message
                 : "Không thể kiểm tra LDAPS.",
+            diagnostics: null,
           };
         }
       }),
@@ -1466,21 +1478,27 @@ export const appRouter = router({
             "Chỉ kiểm tra LDAPS từ máy chủ self-hosted đã bật SELF_HOSTED_AUTH_ENABLED=true.",
         });
       try {
-        const message = await testLdapsDirectory();
+        const diagnostics = await diagnoseLdapsDirectory();
+        const message = diagnostics.summary;
         await updateDirectoryTestResult({
-          status: "success",
+          status: diagnostics.ready ? "success" : "failed",
           message,
           actor: { userId: ctx.user.id, name: ctx.user.name },
         });
-        await recordActivity({
-          entityType: "directory_setting",
-          entityId: 1,
-          action: "tested",
-          actorUserId: ctx.user.id,
-          actorName: ctx.user.name,
-          summary: "Kiểm tra kết nối LDAPS thành công",
-        });
-        return { success: true, message };
+        if (diagnostics.ready)
+          await recordActivity({
+            entityType: "directory_setting",
+            entityId: 1,
+            action: "tested",
+            actorUserId: ctx.user.id,
+            actorName: ctx.user.name,
+            summary: "Kiểm tra toàn diện LDAPS thành công",
+          });
+        return {
+          success: diagnostics.ready,
+          message,
+          diagnostics,
+        };
       } catch (error) {
         const message =
           error instanceof Error ? error.message : "Không thể kiểm tra LDAPS.";
@@ -1489,7 +1507,7 @@ export const appRouter = router({
           message,
           actor: { userId: ctx.user.id, name: ctx.user.name },
         }).catch(() => undefined);
-        return { success: false, message };
+        return { success: false, message, diagnostics: null };
       }
     }),
     setStatus: adminProcedure
