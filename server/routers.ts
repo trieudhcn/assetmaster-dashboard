@@ -1094,28 +1094,6 @@ export const appRouter = router({
       if (!selfHostedAuthEnabled()) throw new TRPCError({ code: "FORBIDDEN", message: "Chỉ khả dụng trong môi trường self-hosted." });
       return saveFileStorageSettings({ relativeDirectory: input.relativeDirectory.replace(/^\/+|\/+$/g, ""), actor: { userId: ctx.user!.id, name: ctx.user!.name } });
     }),
-    preflight: adminProcedure
-      .input(z.object({ redirectUri: z.string().trim().min(1).max(500) }))
-      .mutation(async ({ input, ctx }) => {
-        if (!selfHostedAuthEnabled())
-          throw new TRPCError({
-            code: "PRECONDITION_FAILED",
-            message:
-              "Chỉ chạy preflight Entra ID khi SELF_HOSTED_AUTH_ENABLED=true.",
-          });
-        const result = await preflightEntraEndpoint(input.redirectUri);
-        await recordActivity({
-          entityType: "entra_setting",
-          entityId: 1,
-          action: result.success ? "preflight_succeeded" : "preflight_failed",
-          actorUserId: ctx.user.id,
-          actorName: ctx.user.name,
-          summary: result.success
-            ? "Preflight Nginx, TLS, DNS và Entra Redirect URI thành công"
-            : "Preflight Nginx, TLS, DNS và Entra Redirect URI chưa đạt",
-        });
-        return result;
-      }),
     test: adminProcedure.mutation(async ({ ctx }) => {
       if (!selfHostedAuthEnabled()) throw new TRPCError({ code: "FORBIDDEN", message: "Chỉ khả dụng trong môi trường self-hosted." });
       const settings = await getFileStorageSettings();
@@ -1240,6 +1218,28 @@ export const appRouter = router({
           summary: "Lưu cấu hình Microsoft Entra ID",
         });
         return settings;
+      }),
+    preflight: adminProcedure
+      .input(z.object({ redirectUri: z.string().trim().min(1).max(500) }))
+      .mutation(async ({ input, ctx }) => {
+        if (!selfHostedAuthEnabled())
+          throw new TRPCError({
+            code: "PRECONDITION_FAILED",
+            message:
+              "Chỉ chạy preflight Entra ID khi SELF_HOSTED_AUTH_ENABLED=true.",
+          });
+        const result = await preflightEntraEndpoint(input.redirectUri);
+        await recordActivity({
+          entityType: "entra_setting",
+          entityId: 1,
+          action: result.success ? "preflight_succeeded" : "preflight_failed",
+          actorUserId: ctx.user.id,
+          actorName: ctx.user.name,
+          summary: result.success
+            ? "Preflight Nginx, TLS, DNS và Entra Redirect URI thành công"
+            : "Preflight Nginx, TLS, DNS và Entra Redirect URI chưa đạt",
+        });
+        return result;
       }),
     test: adminProcedure.mutation(async ({ ctx }) => {
       if (!selfHostedAuthEnabled())
