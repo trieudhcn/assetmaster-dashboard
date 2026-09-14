@@ -6,6 +6,7 @@ import {
   Cloud,
   DatabaseZap,
   FileKey2,
+  Globe2,
   Loader2,
   RefreshCw,
   ShieldCheck,
@@ -137,6 +138,15 @@ export function EntraSettingsPanel({
     },
     onError: error => toast.error(error.message || "Không thể lưu Entra ID."),
   });
+  const preflightMutation = trpc.entra.preflight.useMutation({
+    onSuccess: result => {
+      result.success
+        ? toast.success("Preflight Nginx, TLS, DNS và Redirect URI đã đạt.")
+        : toast.error("Preflight còn bước chưa sẵn sàng.");
+    },
+    onError: error =>
+      toast.error(error.message || "Không thể chạy preflight Entra ID."),
+  });
   const testMutation = trpc.entra.test.useMutation({
     onSuccess: result => {
       refresh();
@@ -180,6 +190,7 @@ export function EntraSettingsPanel({
   );
   const update = <K extends keyof EntraDraft>(key: K, value: EntraDraft[K]) => {
     setDirty(true);
+    if (key === "redirectUri") preflightMutation.reset();
     setDraft(current => ({ ...current, [key]: value }));
   };
 
@@ -276,6 +287,107 @@ export function EntraSettingsPanel({
                 />
               </div>
             </fieldset>
+
+            <section
+              data-entra-preflight
+              className="rounded-xl border border-[#C9DDF5] bg-[#F7FAFF] p-4"
+            >
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                <div className="flex items-start gap-2">
+                  <Globe2 className="mt-0.5 shrink-0 text-[#2666A8]" size={18} />
+                  <div>
+                    <h3 className="text-xs font-extrabold text-[#193B57]">
+                      Preflight điểm truy cập Entra
+                    </h3>
+                    <p className="mt-1 text-[11px] leading-5 text-[#60758A]">
+                      Kiểm tra Redirect URI, DNS, chứng chỉ TLS và Nginx
+                      <code className="mx-1 rounded bg-white px-1 py-0.5 text-[10px]">
+                        /readyz
+                      </code>
+                      từ chính container ứng dụng.
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() =>
+                    preflightMutation.mutate({
+                      redirectUri: draft.redirectUri.trim(),
+                    })
+                  }
+                  disabled={
+                    !isSelfHosted ||
+                    !draft.redirectUri.trim() ||
+                    preflightMutation.isPending
+                  }
+                  className="inline-flex shrink-0 items-center justify-center gap-2 rounded-lg bg-[#193B57] px-3 py-2 text-[10px] font-extrabold text-white shadow-[0_5px_12px_rgba(25,59,87,.16)] disabled:opacity-50"
+                >
+                  {preflightMutation.isPending ? (
+                    <Loader2 className="animate-spin" size={13} />
+                  ) : (
+                    <Globe2 size={13} />
+                  )}
+                  Chạy preflight
+                </button>
+              </div>
+
+              {preflightMutation.data && (
+                <div className="mt-3 space-y-2 border-t border-[#DCE8F5] pt-3">
+                  {preflightMutation.data.steps.map(step => {
+                    const success = step.status === "success";
+                    const skipped = step.status === "skipped";
+                    return (
+                      <div
+                        key={step.key}
+                        className="rounded-lg border border-[#E0E9EF] bg-white p-2.5"
+                      >
+                        <div className="flex items-center gap-2">
+                          {success ? (
+                            <CheckCircle2
+                              size={14}
+                              className="shrink-0 text-[#087A6A]"
+                            />
+                          ) : (
+                            <CircleAlert
+                              size={14}
+                              className={
+                                skipped
+                                  ? "shrink-0 text-[#8AA0B6]"
+                                  : "shrink-0 text-[#B44545]"
+                              }
+                            />
+                          )}
+                          <b
+                            className={
+                              success
+                                ? "text-[10px] text-[#087A6A]"
+                                : skipped
+                                  ? "text-[10px] text-[#71869A]"
+                                  : "text-[10px] text-[#B44545]"
+                            }
+                          >
+                            {step.label} ·{" "}
+                            {success
+                              ? "Đạt"
+                              : skipped
+                                ? "Bỏ qua"
+                                : "Chưa đạt"}
+                          </b>
+                        </div>
+                        <p className="mt-1 pl-[22px] text-[10px] leading-4 text-[#60758A]">
+                          {step.message}
+                        </p>
+                      </div>
+                    );
+                  })}
+                  <p className="text-[9px] leading-4 text-[#71869A]">
+                    Preflight xác minh cấu trúc và khả năng truy cập URI nhưng
+                    không thể xác nhận URI đã được lưu trong Entra Portal. Hãy
+                    đối chiếu chính xác trước khi kích hoạt.
+                  </p>
+                </div>
+              )}
+            </section>
 
             <fieldset className="rounded-xl border border-[#E0E9EF] p-4">
               <legend className="px-1 text-xs font-extrabold text-[#193B57]">
