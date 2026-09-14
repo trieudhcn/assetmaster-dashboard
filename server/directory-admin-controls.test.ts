@@ -11,6 +11,10 @@ describe("Directory admin controls", () => {
       readFile(path.join(root, "server/routers.ts"), "utf8"),
     ]);
     expect(auth).toContain("testLdapsDirectoryDraft");
+    expect(auth).toContain("diagnoseLdapsDirectoryDraft");
+    expect(auth).toContain("inspectDirectoryBindSecret");
+    expect(auth).toContain('from "node:dns/promises"');
+    expect(auth).toContain('from "node:net"');
     expect(auth).toContain("searchLdapsGroups");
     expect(auth).toContain("syncLdapsUsers(limit = 200)");
     expect(auth).toContain("searchPaginated");
@@ -19,6 +23,8 @@ describe("Directory admin controls", () => {
     expect(auth).toContain('DIRECTORY_EMAIL_FALLBACK_ATTRIBUTE = "userPrincipalName"');
     expect(auth).toContain("resolveDirectoryEmail");
     expect(router).toContain("testDraft:");
+    expect(router).toContain("secretStatus:");
+    expect(router).toContain("diagnoseLdapsDirectory");
     expect(router).toContain("searchGroups:");
     expect(router).toContain("syncUsers:");
     expect(router).toContain("max(500)");
@@ -38,7 +44,12 @@ describe("Directory admin controls", () => {
         "utf8"
       ),
     ]);
-    expect(source).toContain("Kiểm tra bản nháp");
+    expect(source).toContain("Kiểm tra sẵn sàng LDAPS");
+    expect(source).toContain("Chạy kiểm tra");
+    expect(source).toContain("Đã mount");
+    expect(source).toContain("Chưa mount");
+    expect(source).toContain("TCP 636");
+    expect(source).toContain("CA certificate");
     expect(source).toContain("Tìm tên nhóm LDAPS");
     expect(source).toContain("Đồng bộ 500 tài khoản");
     expect(source).toContain("Tải thêm 20 tài khoản");
@@ -51,6 +62,9 @@ describe("Directory admin controls", () => {
     expect(source).toContain("setGuideOpen(true)");
     expect(source).toContain("ConfigurationGuideDialog");
     expect(source).not.toContain("github.com");
+    expect(guide).toContain("Kiểm tra sẵn sàng LDAPS");
+    expect(guide).toContain("Đã mount");
+    expect(guide).toContain("TCP 636");
     expect(guide).toContain("Tắt hoặc rollback an toàn");
     expect(guide).toContain("Admin cục bộ");
     expect(guide).toContain("Không xóa migration");
