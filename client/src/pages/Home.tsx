@@ -2102,7 +2102,7 @@ function AssignmentsPage({ showComingSoon, companyInfo }: { showComingSoon: (lab
     control.dataset.handoverLicenseFilter = "true";
     control.className = "min-w-[184px] shrink-0";
     const root = createRoot(control);
-    root.render(<SearchableSelect value={handoverLicenseFilter} onChange={setHandoverLicenseFilter} className="w-full" placeholder="Tất cả Bản quyền" searchPlaceholder="Tìm trạng thái Bản quyền..." options={[{ value: "Tất cả Bản quyền", label: "Tất cả Bản quyền" }, { value: "Có Bản quyền đang cấp", label: "Có Bản quyền đang cấp" }, { value: "Không có Bản quyền đang cấp", label: "Không có Bản quyền đang cấp" }]} />);
+    root.render(<SearchableSelect value={handoverLicenseFilter} onChange={setHandoverLicenseFilter} className="w-full" placeholder="Tất cả Bản quyền" variant="compact" options={[{ value: "Tất cả Bản quyền", label: "Tất cả Bản quyền" }, { value: "Có Bản quyền đang cấp", label: "Có Bản quyền đang cấp" }, { value: "Không có Bản quyền đang cấp", label: "Không có Bản quyền đang cấp" }]} />);
     host.insertBefore(control, resetButton || null);
     return () => { queueMicrotask(() => root.unmount()); control.remove(); };
   }, [handoverLicenseFilter]);
