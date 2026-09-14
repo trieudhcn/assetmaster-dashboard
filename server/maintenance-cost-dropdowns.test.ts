@@ -16,6 +16,9 @@ describe("maintenance monthly cost dropdowns", () => {
     expect(home).toContain("sortDropdownRoot.render(");
     expect(home).toContain('ariaLabel="Chọn năm chi phí Bảo hành/Sửa chữa"');
     expect(home).toContain('ariaLabel="Sắp xếp phiếu theo chi phí"');
+    expect((home.match(/variant="compact"/g) || []).length).toBe(2);
+    expect(home).not.toContain('searchPlaceholder="Tìm năm..."');
+    expect(home).not.toContain('searchPlaceholder="Tìm cách sắp xếp..."');
     expect(home).toContain('{ value: "desc", label: "Chi phí cao → thấp" }');
     expect(home).toContain('{ value: "asc", label: "Chi phí thấp → cao" }');
   });
@@ -34,5 +37,8 @@ describe("maintenance monthly cost dropdowns", () => {
   it("provides an accessible label on the shared dropdown trigger", () => {
     expect(systemDropdown).toContain("ariaLabel?: string");
     expect(systemDropdown).toContain("aria-label={ariaLabel}");
+    expect(systemDropdown).toContain('variant?: "default" | "compact"');
+    expect(systemDropdown).toContain('{!compact && <div className="border-b');
+    expect(systemDropdown).toContain('compact ? "h-10 min-h-10 py-0 text-xs"');
   });
 });
