@@ -68,6 +68,15 @@ describe("in-app configuration guides and modal layout", () => {
 
     expect(dialog).toContain("getGuideSections");
     expect(dialog).toContain("data-guide-toc");
+    expect(dialog).toContain("data-guide-toc-collapse");
+    expect(dialog).toContain("data-guide-toc-expand");
+    expect(dialog).toContain("data-toc-collapsed");
+    expect(dialog).toContain("isTocCollapsed");
+    expect(dialog).toContain("Thu gọn mục lục");
+    expect(dialog).toContain("Mở mục lục");
+    expect(dialog).toContain("lg:grid-cols-1");
+    expect(dialog).toContain("lg:grid-cols-[15rem_minmax(0,1fr)]");
+    expect(dialog).toContain('aria-controls="configuration-guide-toc"');
     expect(dialog).toContain("scrollToSection");
     expect(dialog).toContain("data-guide-section-heading");
     expect(dialog).toContain("data-guide-code-copy");

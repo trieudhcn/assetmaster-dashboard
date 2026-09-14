@@ -4,6 +4,8 @@ import {
   Cloud,
   List,
   Network,
+  PanelLeftClose,
+  PanelLeftOpen,
   X,
 } from "lucide-react";
 import {
@@ -140,11 +142,13 @@ function GuideTableOfContents({
   sections,
   activeSection,
   onSelect,
+  onCollapse,
   collapsible = false,
 }: {
   sections: GuideSection[];
   activeSection: string | null;
   onSelect: (section: GuideSection) => void;
+  onCollapse?: () => void;
   collapsible?: boolean;
 }) {
   const links = (
@@ -189,13 +193,28 @@ function GuideTableOfContents({
 
   return (
     <nav
+      id="configuration-guide-toc"
       data-guide-toc
       aria-label="Mục lục hướng dẫn cấu hình"
-      className="sticky top-0 hidden max-h-[calc(92dvh-15rem)] overflow-y-auto rounded-xl border border-[#D7E5ED] bg-white p-3 lg:block"
+      className="sticky top-0 hidden max-h-[calc(100dvh-12rem)] overflow-y-auto rounded-xl border border-[#D7E5ED] bg-white p-3 lg:block"
     >
-      <div className="mb-3 flex items-center gap-2 border-b border-[#E7EEF3] pb-3 text-xs font-extrabold text-[#193B57]">
-        <List size={15} className="text-[#0F8C8C]" aria-hidden="true" />
-        Mục lục
+      <div className="mb-3 flex items-center justify-between gap-2 border-b border-[#E7EEF3] pb-3">
+        <div className="flex items-center gap-2 text-xs font-extrabold text-[#193B57]">
+          <List size={15} className="text-[#0F8C8C]" aria-hidden="true" />
+          Mục lục
+        </div>
+        <button
+          type="button"
+          data-guide-toc-collapse
+          onClick={onCollapse}
+          aria-label="Thu gọn mục lục"
+          aria-controls="configuration-guide-toc"
+          aria-expanded="true"
+          title="Thu gọn mục lục"
+          className="grid h-8 w-8 shrink-0 place-items-center rounded-lg border border-[#D7E5ED] bg-[#F7FAFC] text-[#60758A] transition hover:border-[#9FCACA] hover:bg-[#E6F6F2] hover:text-[#087A6A] focus:outline-none focus:ring-2 focus:ring-[#9FCACA]"
+        >
+          <PanelLeftClose size={15} aria-hidden="true" />
+        </button>
       </div>
       {links}
     </nav>
@@ -258,6 +277,7 @@ export function ConfigurationGuideDialog({
   const [activeSection, setActiveSection] = useState<string | null>(
     sections[0]?.id ?? null
   );
+  const [isTocCollapsed, setIsTocCollapsed] = useState(false);
 
   useEffect(() => {
     setActiveSection(sections[0]?.id ?? null);
@@ -450,13 +470,40 @@ export function ConfigurationGuideDialog({
             Tài liệu này đã được đóng gói trong AssetMaster và có thể xem trong
             mạng nội bộ mà không cần đăng nhập hoặc truy cập GitHub.
           </div>
-          <div className="grid items-start gap-4 lg:grid-cols-[15rem_minmax(0,1fr)] lg:gap-5">
-            <GuideTableOfContents
-              sections={sections}
-              activeSection={activeSection}
-              onSelect={scrollToSection}
-            />
+          <div
+            data-guide-toc-layout
+            data-toc-collapsed={isTocCollapsed ? "true" : "false"}
+            className={`grid items-start gap-4 lg:gap-5 ${
+              isTocCollapsed
+                ? "lg:grid-cols-1"
+                : "lg:grid-cols-[15rem_minmax(0,1fr)]"
+            }`}
+          >
+            {!isTocCollapsed && (
+              <GuideTableOfContents
+                sections={sections}
+                activeSection={activeSection}
+                onSelect={scrollToSection}
+                onCollapse={() => setIsTocCollapsed(true)}
+              />
+            )}
             <div className="min-w-0">
+              {isTocCollapsed && (
+                <div className="mb-4 hidden lg:flex">
+                  <button
+                    type="button"
+                    data-guide-toc-expand
+                    onClick={() => setIsTocCollapsed(false)}
+                    aria-label="Mở mục lục"
+                    aria-controls="configuration-guide-toc"
+                    aria-expanded="false"
+                    className="inline-flex items-center gap-2 rounded-lg border border-[#C9DDE8] bg-white px-3 py-2 text-xs font-extrabold text-[#193B57] shadow-[0_3px_10px_rgba(16,42,67,.06)] transition hover:border-[#9FCACA] hover:bg-[#E6F6F2] hover:text-[#087A6A] focus:outline-none focus:ring-2 focus:ring-[#9FCACA]"
+                  >
+                    <PanelLeftOpen size={15} aria-hidden="true" />
+                    Mở mục lục
+                  </button>
+                </div>
+              )}
               <GuideTableOfContents
                 sections={sections}
                 activeSection={activeSection}
