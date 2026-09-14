@@ -13,6 +13,8 @@ describe("Directory admin controls", () => {
     expect(auth).toContain("testLdapsDirectoryDraft");
     expect(auth).toContain("diagnoseLdapsDirectoryDraft");
     expect(auth).toContain("inspectDirectoryBindSecret");
+    expect(auth).toContain('"Đã mount"');
+    expect(auth).toContain('"Chưa mount"');
     expect(auth).toContain('from "node:dns/promises"');
     expect(auth).toContain('from "node:net"');
     expect(auth).toContain("searchLdapsGroups");
@@ -46,7 +48,6 @@ describe("Directory admin controls", () => {
     ]);
     expect(source).toContain("Kiểm tra sẵn sàng LDAPS");
     expect(source).toContain("Chạy kiểm tra");
-    expect(source).toContain("Đã mount");
     expect(source).toContain("Chưa mount");
     expect(source).toContain("TCP 636");
     expect(source).toContain("CA certificate");
