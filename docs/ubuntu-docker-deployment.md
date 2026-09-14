@@ -5,6 +5,65 @@ Docker Desktop tiếp tục dùng `docker-compose.yml` kết hợp
 `docker-compose.desktop.yml`; Ubuntu dùng `docker-compose.yml` kết hợp
 `docker-compose.linux.yml`.
 
+## 0. Từ máy Ubuntu mới đến mã nguồn
+
+### 0.1. Chuẩn bị hệ điều hành
+
+Đăng nhập bằng tài khoản có quyền `sudo`, đồng bộ thời gian và cài các gói nền:
+
+```bash
+sudo apt update
+sudo apt install -y ca-certificates curl git openssl
+sudo timedatectl set-ntp true
+timedatectl status
+```
+
+### 0.2. Cài Docker Engine và Compose plugin
+
+Dùng repository APT chính thức của Docker:
+
+```bash
+sudo install -m 0755 -d /etc/apt/keyrings
+sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg \
+  -o /etc/apt/keyrings/docker.asc
+sudo chmod a+r /etc/apt/keyrings/docker.asc
+
+. /etc/os-release
+echo "Types: deb
+URIs: https://download.docker.com/linux/ubuntu
+Suites: ${UBUNTU_CODENAME:-$VERSION_CODENAME}
+Components: stable
+Signed-By: /etc/apt/keyrings/docker.asc" | \
+  sudo tee /etc/apt/sources.list.d/docker.sources > /dev/null
+
+sudo apt update
+sudo apt install -y docker-ce docker-ce-cli containerd.io \
+  docker-buildx-plugin docker-compose-plugin
+sudo systemctl enable --now docker
+sudo docker version
+sudo docker compose version
+sudo docker run --rm hello-world
+```
+
+Không bắt buộc thêm tài khoản vận hành vào nhóm `docker`; thành viên nhóm này
+có quyền tương đương root. Các lệnh production trong tài liệu dùng `sudo`.
+
+### 0.3. Lấy mã nguồn
+
+```bash
+sudo install -d -m 0755 /opt/assetmaster
+sudo chown "$USER:$USER" /opt/assetmaster
+git clone https://github.com/trieudhcn/assetmaster-dashboard.git \
+  /opt/assetmaster/app
+cd /opt/assetmaster/app
+git fetch origin
+git switch codex/employee-supply-requests
+git pull --ff-only origin codex/employee-supply-requests
+```
+
+Production nên checkout một tag hoặc commit đã nghiệm thu thay vì tự động theo
+nhánh đang phát triển.
+
 ## 1. Chuẩn bị
 
 - Ubuntu Server 22.04/24.04 LTS 64-bit.
