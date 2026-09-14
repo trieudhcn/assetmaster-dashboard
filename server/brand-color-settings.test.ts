@@ -5,6 +5,7 @@ import { resolve } from "node:path";
 describe("configurable primary brand color", () => {
   const enhancements = readFileSync(resolve(import.meta.dirname, "../client/src/components/BrandEnhancementsPanel.tsx"), "utf8");
   const home = readFileSync(resolve(import.meta.dirname, "../client/src/pages/Home.tsx"), "utf8");
+  const vendorBrands = readFileSync(resolve(import.meta.dirname, "../client/src/pages/VendorBrandManagementPage.tsx"), "utf8");
   const login = readFileSync(resolve(import.meta.dirname, "../client/src/pages/LoginGateway.tsx"), "utf8");
   const styles = readFileSync(resolve(import.meta.dirname, "../client/src/index.css"), "utf8");
 
@@ -30,5 +31,18 @@ describe("configurable primary brand color", () => {
     expect(styles).toContain('[class~="text-[#0F8C8C]"]');
     expect(styles).toContain('[class~="hover:bg-[#087A6A]"]:hover');
     expect(styles).toContain(".primary-action { background-color: var(--assetmaster-brand); }");
+  });
+
+  it("uses the system primary action for brands and localizes workspace labels", () => {
+    expect(vendorBrands).toContain(
+      'className="primary-action shrink-0 px-4"><Plus size={15} />'
+    );
+    expect(vendorBrands).not.toContain(
+      'bg-[#2666A8] px-4 text-xs font-extrabold text-white disabled:opacity-60"><Plus size={15} />'
+    );
+    expect(home).toContain("Không gian làm việc");
+    expect(home).toContain("Thiết lập không gian làm việc");
+    expect(home).not.toContain(">Workspace</");
+    expect(home).not.toContain("Workspace settings");
   });
 });
