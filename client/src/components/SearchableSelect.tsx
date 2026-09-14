@@ -30,11 +30,12 @@ type SearchableSelectProps = {
   emptyText?: string;
   emptyActionLabel?: string;
   onEmptyAction?: (query: string) => void;
+  ariaLabel?: string;
   /** Render the menu at document level when an ancestor clips overflow, such as a scrollable data table. */
   menuPortal?: boolean;
 };
 
-export function SearchableSelect({ value, onChange, options, placeholder = "Chọn một giá trị", searchPlaceholder = "Tìm trong danh sách...", disabled = false, loading = false, className = "", optionLabels, emptyText = "Không tìm thấy kết quả", emptyActionLabel, onEmptyAction, menuPortal = true }: SearchableSelectProps) {
+export function SearchableSelect({ value, onChange, options, placeholder = "Chọn một giá trị", searchPlaceholder = "Tìm trong danh sách...", disabled = false, loading = false, className = "", optionLabels, emptyText = "Không tìm thấy kết quả", emptyActionLabel, onEmptyAction, ariaLabel, menuPortal = true }: SearchableSelectProps) {
   const rootRef = useRef<HTMLDivElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
   const [open, setOpen] = useState(false);
@@ -135,7 +136,7 @@ export function SearchableSelect({ value, onChange, options, placeholder = "Ch�
 
   return <>
     <div ref={rootRef} className={`relative min-w-0 ${open ? "z-[96]" : "z-0"} ${className}`}>
-      <button type="button" disabled={disabled || loading} aria-busy={loading} aria-haspopup="listbox" aria-expanded={open} onClick={() => open ? closeMenu() : openMenu()} className="field-input flex w-full items-center justify-between gap-2 text-left disabled:cursor-not-allowed disabled:opacity-60">
+      <button type="button" disabled={disabled || loading} aria-label={ariaLabel} aria-busy={loading} aria-haspopup="listbox" aria-expanded={open} onClick={() => open ? closeMenu() : openMenu()} className="field-input flex w-full items-center justify-between gap-2 text-left disabled:cursor-not-allowed disabled:opacity-60">
         <span className={`truncate ${selected ? "text-[#60758A]" : "text-[#8AA0B6]"}`}>{loading ? "Đang tải..." : selected?.label || placeholder}</span>
         {loading ? <Loader2 size={16} className="shrink-0 animate-spin text-[#0F8C8C]" /> : <ChevronDown size={16} className={`shrink-0 text-[#9BAEC0] transition-transform ${open ? "rotate-180" : ""}`} />}
       </button>
