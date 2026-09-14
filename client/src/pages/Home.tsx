@@ -604,19 +604,27 @@ export default function Home() {
     const chart = document.createElement("section");
     chart.dataset.maintenanceMonthlyCostChart = "true";
     chart.className = "mt-5 rounded-xl border border-[#DFE9F0] bg-white p-5 shadow-[0_8px_24px_rgba(16,42,67,0.045)]";
-    chart.innerHTML = `<div class="flex flex-wrap items-start justify-between gap-3"><div><div class="flex items-center gap-2 text-sm font-extrabold text-[#193B57]"><span class="grid h-7 w-7 place-items-center rounded-lg bg-[#FFF5DC] text-[#A86B00]">₫</span>Chi phí Bảo hành/Sửa chữa theo tháng</div><p class="mt-1 text-xs text-[#71869A]">Cột xếp chồng hiển thị riêng hai Kênh xử lý; nhấp tháng để xem phiếu chi tiết và thiết lập ngân sách.</p></div><div class="flex items-center gap-2"><label class="sr-only" for="maintenance-chart-year">Chọn năm</label><select id="maintenance-chart-year" class="h-9 rounded-lg border border-[#D7E3EB] bg-white px-3 text-xs font-extrabold text-[#193B57] focus:border-[#0F8C8C] focus:outline-none"></select><div class="rounded-lg bg-[#FFF9EB] px-3 py-2 text-right"><div class="text-[10px] font-extrabold uppercase tracking-[.1em] text-[#8F6A31]">Tổng năm ${maintenanceChartYear}</div><div class="mt-1 text-sm font-extrabold text-[#A86B00]">${formatVnd(total)} VNĐ</div><div class="mt-1 flex justify-end gap-2 text-[10px] font-bold"><span class="text-[#087A6A]">BH ${formatVnd(warrantyTotal)}</span><span class="text-[#3855A6]">SC ${formatVnd(repairTotal)}</span></div></div></div></div><div class="mt-4 flex flex-wrap items-center gap-x-3 gap-y-1 text-[10px] text-[#71869A]"><span class="inline-flex items-center gap-1"><span class="h-2.5 w-2.5 rounded-sm bg-[#0F8C8C]"></span>Bảo hành</span><span class="inline-flex items-center gap-1"><span class="h-2.5 w-2.5 rounded-sm bg-[#3855A6]"></span>Sửa chữa</span><span class="inline-flex items-center gap-1"><span class="h-2.5 w-2.5 rounded-sm border-2 border-[#B44545]"></span>Vượt ngân sách</span><span class="inline-flex items-center gap-1"><span class="h-px w-4 border-t border-dashed border-[#A86B00]"></span>Mức ngân sách</span></div><div class="mt-4 grid h-48 grid-cols-6 items-end gap-2 sm:gap-3 lg:grid-cols-12" aria-label="Biểu đồ chi phí Bảo hành và Sửa chữa theo tháng"></div>`;
-    const yearSelect = chart.querySelector<HTMLSelectElement>("#maintenance-chart-year");
-    maintenanceChartYears.forEach((year) => {
-      const option = document.createElement("option");
-      option.value = String(year);
-      option.textContent = `Năm ${year}`;
-      option.selected = year === maintenanceChartYear;
-      yearSelect?.append(option);
-    });
-    yearSelect?.addEventListener("change", () => {
-      setMaintenanceChartYear(Number(yearSelect.value));
-      setSelectedMaintenanceChartMonth(null);
-    });
+    chart.innerHTML = `<div class="flex flex-wrap items-start justify-between gap-3"><div><div class="flex items-center gap-2 text-sm font-extrabold text-[#193B57]"><span class="grid h-7 w-7 place-items-center rounded-lg bg-[#FFF5DC] text-[#A86B00]">₫</span>Chi phí Bảo hành/Sửa chữa theo tháng</div><p class="mt-1 text-xs text-[#71869A]">Cột xếp chồng hiển thị riêng hai Kênh xử lý; nhấp tháng để xem phiếu chi tiết và thiết lập ngân sách.</p></div><div class="flex items-center gap-2"><div id="maintenance-chart-year" class="w-40"></div><div class="rounded-lg bg-[#FFF9EB] px-3 py-2 text-right"><div class="text-[10px] font-extrabold uppercase tracking-[.1em] text-[#8F6A31]">Tổng năm ${maintenanceChartYear}</div><div class="mt-1 text-sm font-extrabold text-[#A86B00]">${formatVnd(total)} VNĐ</div><div class="mt-1 flex justify-end gap-2 text-[10px] font-bold"><span class="text-[#087A6A]">BH ${formatVnd(warrantyTotal)}</span><span class="text-[#3855A6]">SC ${formatVnd(repairTotal)}</span></div></div></div></div><div class="mt-4 flex flex-wrap items-center gap-x-3 gap-y-1 text-[10px] text-[#71869A]"><span class="inline-flex items-center gap-1"><span class="h-2.5 w-2.5 rounded-sm bg-[#0F8C8C]"></span>Bảo hành</span><span class="inline-flex items-center gap-1"><span class="h-2.5 w-2.5 rounded-sm bg-[#3855A6]"></span>Sửa chữa</span><span class="inline-flex items-center gap-1"><span class="h-2.5 w-2.5 rounded-sm border-2 border-[#B44545]"></span>Vượt ngân sách</span><span class="inline-flex items-center gap-1"><span class="h-px w-4 border-t border-dashed border-[#A86B00]"></span>Mức ngân sách</span></div><div class="mt-4 grid h-48 grid-cols-6 items-end gap-2 sm:gap-3 lg:grid-cols-12" aria-label="Biểu đồ chi phí Bảo hành và Sửa chữa theo tháng"></div>`;
+    const yearControl = chart.querySelector<HTMLElement>("#maintenance-chart-year");
+    const yearDropdownRoot = yearControl ? createRoot(yearControl) : null;
+    yearDropdownRoot?.render(
+      <SearchableSelect
+        value={String(maintenanceChartYear)}
+        onChange={(value) => {
+          setMaintenanceChartYear(Number(value));
+          setSelectedMaintenanceChartMonth(null);
+        }}
+        options={maintenanceChartYears.map((year) => ({
+          value: String(year),
+          label: `Năm ${year}`,
+        }))}
+        placeholder="Chọn năm"
+        searchPlaceholder="Tìm năm..."
+        ariaLabel="Chọn năm chi phí Bảo hành/Sửa chữa"
+        className="w-full"
+      />
+    );
+    let sortDropdownRoot: ReturnType<typeof createRoot> | null = null;
     const bars = chart.querySelector("[aria-label]");
     monthlyMaintenanceCosts.forEach((item) => {
       const isOverBudget = item.budget !== null && item.total > item.budget;
@@ -675,18 +683,31 @@ export default function Home() {
       titleBlock.append(title, summary);
       const detailActions = document.createElement("div");
       detailActions.className = "flex items-center gap-2";
-      const sortSelect = document.createElement("select");
-      sortSelect.className = "h-8 rounded-md border border-[#D7E3EB] bg-white px-2 text-[11px] font-bold text-[#60758A] outline-none focus:border-[#0F8C8C]";
-      sortSelect.setAttribute("aria-label", "Sắp xếp phiếu theo chi phí");
-      sortSelect.innerHTML = '<option value="desc">Chi phí cao → thấp</option><option value="asc">Chi phí thấp → cao</option>';
-      sortSelect.value = maintenanceTicketCostSort;
-      sortSelect.addEventListener("change", () => setMaintenanceTicketCostSort(sortSelect.value === "asc" ? "asc" : "desc"));
+      const sortControl = document.createElement("div");
+      sortControl.className = "w-[196px]";
+      sortDropdownRoot = createRoot(sortControl);
+      sortDropdownRoot.render(
+        <SearchableSelect
+          value={maintenanceTicketCostSort}
+          onChange={(value) =>
+            setMaintenanceTicketCostSort(value === "asc" ? "asc" : "desc")
+          }
+          options={[
+            { value: "desc", label: "Chi phí cao → thấp" },
+            { value: "asc", label: "Chi phí thấp → cao" },
+          ]}
+          placeholder="Sắp xếp chi phí"
+          searchPlaceholder="Tìm cách sắp xếp..."
+          ariaLabel="Sắp xếp phiếu theo chi phí"
+          className="w-full"
+        />
+      );
       const close = document.createElement("button");
       close.type = "button";
       close.className = "rounded-md px-2 py-1 text-xs font-bold text-[#60758A] hover:bg-white";
       close.textContent = "Đóng";
       close.addEventListener("click", () => setSelectedMaintenanceChartMonth(null));
-      detailActions.append(sortSelect, close);
+      detailActions.append(sortControl, close);
       detailsHeader.append(titleBlock, detailActions);
       const budgetForm = document.createElement("div");
       budgetForm.className = "mt-4 grid gap-2 rounded-lg border border-[#E1EAEE] bg-white p-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end";
@@ -755,7 +776,13 @@ export default function Home() {
       chart.append(details);
     }
     anchor.insertAdjacentElement("afterend", chart);
-    return () => chart.remove();
+    return () => {
+      queueMicrotask(() => {
+        yearDropdownRoot?.unmount();
+        sortDropdownRoot?.unmount();
+        chart.remove();
+      });
+    };
   }, [isAuthenticated, isAdmin, maintenanceChartYear, maintenanceChartYears, maintenanceTicketCostSort, monthlyMaintenanceCosts, saveMaintenanceBudgetMutation, selectedMaintenanceChartMonth]);
 
   useEffect(() => {
