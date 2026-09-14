@@ -16,6 +16,10 @@ import { toast } from "sonner";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { trpc } from "@/lib/trpc";
 import { ConfigurationGuideDialog } from "@/components/ConfigurationGuideDialog";
+import {
+  DEFAULT_LDAP_BIND_SECRET_REF,
+  normalizeLdapBindSecretRef,
+} from "@shared/directorySecrets";
 
 type DirectoryDraft = {
   ldapUrl: string;
@@ -40,7 +44,7 @@ const initialDraft: DirectoryDraft = {
   usersDn: "",
   groupsDn: "",
   bindDn: "",
-  bindSecretRef: "/run/secrets/ldap_bind_password",
+  bindSecretRef: DEFAULT_LDAP_BIND_SECRET_REF,
   loginAttribute: "userPrincipalName",
   emailAttribute: "userPrincipalName",
   displayNameAttribute: "displayName",
@@ -61,7 +65,8 @@ function normalizeSettings(value: any): DirectoryDraft {
     groupsDn: value.groupsDn || "",
     bindDn: value.bindDn || "",
     bindSecretRef:
-      value.bindSecretRef || "/run/secrets/ldap_bind_password",
+      normalizeLdapBindSecretRef(value.bindSecretRef) ||
+      DEFAULT_LDAP_BIND_SECRET_REF,
     loginAttribute: value.loginAttribute || "userPrincipalName",
     emailAttribute: value.emailAttribute || "userPrincipalName",
     displayNameAttribute: value.displayNameAttribute || "displayName",
