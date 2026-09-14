@@ -282,7 +282,8 @@ describe("employee supply request workflow", () => {
     expect(manager).toContain("slipStatusFilter");
     expect(manager).toContain("Mã phiếu, người nhận hoặc phụ kiện...");
     expect(manager).toContain("<SearchableSelect");
-    expect(manager).toContain('searchPlaceholder="Tìm trạng thái phiếu..."');
+    expect(manager).toContain('placeholder="Lọc trạng thái"\n        variant="compact"');
+    expect(manager).not.toContain('searchPlaceholder="Tìm trạng thái phiếu..."');
   });
 
   it("classifies returned accessories, isolates unusable stock and creates a PDF receipt", async () => {
