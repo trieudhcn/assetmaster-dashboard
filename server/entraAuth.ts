@@ -109,6 +109,33 @@ function preflightError(error: unknown) {
   return error instanceof Error ? error.message : "Lỗi không xác định.";
 }
 
+async function withPreflightTimeout<T>(
+  promise: Promise<T>,
+  label: string
+): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const timer = setTimeout(
+      () =>
+        reject(
+          new Error(
+            `${label} timeout sau ${PREFLIGHT_TIMEOUT_MS / 1000} giây.`
+          )
+        ),
+      PREFLIGHT_TIMEOUT_MS
+    );
+    promise.then(
+      value => {
+        clearTimeout(timer);
+        resolve(value);
+      },
+      error => {
+        clearTimeout(timer);
+        reject(error);
+      }
+    );
+  });
+}
+
 async function probeTls(hostname: string, port: number) {
   return new Promise<string>((resolve, reject) => {
     const socket = connectTls({
@@ -190,7 +217,10 @@ export async function preflightEntraEndpoint(rawRedirectUri: string) {
   });
 
   try {
-    const addresses = await lookup(url.hostname, { all: true, verbatim: true });
+    const addresses = await withPreflightTimeout(
+      lookup(url.hostname, { all: true, verbatim: true }),
+      "DNS"
+    );
     const unique = [...new Set(addresses.map(item => item.address))];
     if (!unique.length) throw new Error("DNS không trả về địa chỉ IP.");
     steps.push({
@@ -271,8 +301,10 @@ export async function preflightEntraEndpoint(rawRedirectUri: string) {
       signal: AbortSignal.timeout(PREFLIGHT_TIMEOUT_MS),
       headers: { "User-Agent": "AssetMaster-Entra-Preflight/1.0" },
     });
-    if (response.status !== 200)
-      throw new Error(`Reverse proxy trả HTTP ${response.status}, cần HTTP 200.`);
+    const status = response.status;
+    await response.body?.cancel();
+    if (status !== 200)
+      throw new Error(`Reverse proxy trả HTTP ${status}, cần HTTP 200.`);
     steps.push({
       key: "nginx",
       label: "Nginx /readyz",
