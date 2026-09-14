@@ -308,6 +308,29 @@ Sau khi một tài khoản AD đăng nhập thành công, AssetMaster tự độ
 
 Không dán mật khẩu bind vào form. Form chỉ nhận **đường dẫn secret**; mật khẩu được đọc server-side từ file `/run/secrets/ldap_bind_password` và bị kiểm tra là file thường, không phải symlink, không cho group/other ghi.
 
+### Kiểm tra sẵn sàng LDAPS trước khi kích hoạt
+
+Trong panel **Directory LDAP / Active Directory**, AssetMaster hiển thị trạng thái
+tệp secret ngay dưới đường dẫn:
+
+- **Đã mount**: tệp tồn tại trong container. Thông báo đi kèm xác nhận container
+  có quyền đọc hoặc cảnh báo quyền truy cập.
+- **Chưa mount**: không tìm thấy tệp tại đường dẫn đã cấu hình. Kiểm tra lại tên
+  secret và phần mount trong Docker Compose.
+- AssetMaster không hiển thị, gửi về trình duyệt hoặc ghi log nội dung mật khẩu
+  bind.
+
+Nhấn **Chạy kiểm tra** để kiểm tra toàn diện thông số đang nhập mà không lưu:
+
+1. Tệp secret tồn tại, là tệp thường, không phải symlink và có quyền an toàn.
+2. Container phân giải được DNS của Domain Controller.
+3. Container kết nối được cổng TCP 636.
+4. CA certificate đúng định dạng, còn hạn hoặc kho CA hệ thống dùng được.
+5. Bắt tay TLS, bind account và Users Base DN hoạt động.
+
+Sau khi lưu cấu hình, nhấn **Kiểm tra LDAPS** ở cuối panel. Chỉ khi toàn bộ kiểm
+tra thành công, nút **Kích hoạt LDAPS** mới khả dụng.
+
 ## 8. Kiểm thử đăng nhập với tài khoản pilot
 
 Tạo hoặc chọn một tài khoản test trong AD, thêm tài khoản đó vào `AssetMaster-Users`, sau đó mở trang đăng nhập AssetMaster ở cửa sổ ẩn danh. Nhập Login theo lựa chọn ở trên và mật khẩu AD.
