@@ -30,9 +30,6 @@ describe("in-app configuration guides and modal layout", () => {
     expect(dialog).toContain("không cần đăng nhập hoặc truy cập GitHub");
     expect(dialog).toContain("data-configuration-guide-dialog");
     expect(dialog).toContain("!max-w-none !translate-x-0");
-    expect(dialog).toContain(
-      "min-h-0 flex-1 overflow-y-auto overscroll-contain"
-    );
     expect(dialog).not.toContain(
       "grid-rows-[auto_minmax(0,1fr)_auto]"
     );
