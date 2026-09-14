@@ -40,6 +40,14 @@ describe("Ubuntu Docker deployment", () => {
     expect(guide).toContain("docker-compose.linux.yml");
     expect(guide).toContain("/run/secrets/ldap_bind_password");
     expect(guide).toContain("/run/secrets/entra_client_secret");
+    expect(guide).toContain("docker-ce docker-ce-cli containerd.io");
+    expect(guide).toContain("docker-compose-plugin");
+    expect(guide).toContain("/opt/assetmaster/app");
+    expect(guide).toContain("proxy_pass http://127.0.0.1:3000");
+    expect(guide).toContain("mysqldump");
+    expect(guide).toContain("ASSETMASTER_SETUP_ENABLED=false");
+    expect(guide).toContain("Backup và khôi phục");
+    expect(guide).toContain("docker compose down -v");
   });
 
   it("starts and probes the complete Linux stack in CI", () => {
