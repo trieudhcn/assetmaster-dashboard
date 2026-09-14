@@ -90,7 +90,9 @@ export const directorySettings = mysqlTable(
     usersDn: text("usersDn").notNull(),
     groupsDn: text("groupsDn"),
     bindDn: text("bindDn"),
-    bindSecretRef: varchar("bindSecretRef", { length: 255 }),
+    bindSecretRef: varchar("bindSecretRef", { length: 255 }).default(
+      "/run/secrets/ldap_bind_password"
+    ),
     loginAttribute: varchar("loginAttribute", { length: 64 })
       .default("userPrincipalName")
       .notNull(),
