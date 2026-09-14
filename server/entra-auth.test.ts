@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
-import { resolveEntraRole } from "./entraAuth";
+import { resolveEntraRole, validateEntraRedirectUri } from "./entraAuth";
 
 describe("Microsoft Entra authentication", () => {
   const auth = readFileSync(resolve(import.meta.dirname, "entraAuth.ts"), "utf8");
@@ -23,6 +23,35 @@ describe("Microsoft Entra authentication", () => {
     expect(resolveEntraRole(["AssetMaster.User"], "AssetMaster.Admin", "AssetMaster.User")).toBe("user");
     expect(resolveEntraRole(["AssetMaster.Admin"], "AssetMaster.Admin", "AssetMaster.User")).toBe("admin");
     expect(resolveEntraRole([], "AssetMaster.Admin", "AssetMaster.User")).toBeNull();
+  });
+
+  it("accepts only the exact AssetMaster callback over HTTPS or localhost", () => {
+    const production = validateEntraRedirectUri(
+      "https://assetmaster.example.com/api/auth/entra/callback"
+    );
+    expect(production.ok).toBe(true);
+    if (production.ok)
+      expect(production.url.origin).toBe("https://assetmaster.example.com");
+
+    expect(
+      validateEntraRedirectUri(
+        "http://assetmaster.example.com/api/auth/entra/callback"
+      ).ok
+    ).toBe(false);
+    expect(
+      validateEntraRedirectUri("https://assetmaster.example.com/wrong-callback")
+        .ok
+    ).toBe(false);
+    expect(
+      validateEntraRedirectUri(
+        "https://assetmaster.example.com/api/auth/entra/callback?source=test"
+      ).ok
+    ).toBe(false);
+    expect(
+      validateEntraRedirectUri(
+        "http://localhost:3000/api/auth/entra/callback"
+      ).ok
+    ).toBe(true);
   });
 
   it("uses authorization code flow with PKCE and validates the callback token", () => {
@@ -77,6 +106,14 @@ describe("Microsoft Entra authentication", () => {
     expect(panel).toContain('guide="entra"');
     expect(panel).toContain("setGuideOpen(true)");
     expect(panel).toContain("ConfigurationGuideDialog");
+    expect(routers).toContain("preflight: adminProcedure");
+    expect(auth).toContain("preflightEntraEndpoint");
+    expect(auth).toContain('from "node:dns/promises"');
+    expect(auth).toContain('from "node:tls"');
+    expect(auth).toContain('new URL("/readyz", url.origin)');
+    expect(panel).toContain("Preflight điểm truy cập Entra");
+    expect(panel).toContain("Chạy preflight");
+    expect(panel).toContain("Nginx /readyz");
     expect(panel).not.toContain("github.com");
     expect(quickNav).toContain('event: "assetmaster:open-entra-settings"');
   });
