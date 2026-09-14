@@ -619,7 +619,7 @@ export default function Home() {
           label: `Năm ${year}`,
         }))}
         placeholder="Chọn năm"
-        searchPlaceholder="Tìm năm..."
+        variant="compact"
         ariaLabel="Chọn năm chi phí Bảo hành/Sửa chữa"
         className="w-full"
       />
@@ -697,7 +697,7 @@ export default function Home() {
             { value: "asc", label: "Chi phí thấp → cao" },
           ]}
           placeholder="Sắp xếp chi phí"
-          searchPlaceholder="Tìm cách sắp xếp..."
+          variant="compact"
           ariaLabel="Sắp xếp phiếu theo chi phí"
           className="w-full"
         />
