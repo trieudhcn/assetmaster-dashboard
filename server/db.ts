@@ -76,6 +76,7 @@ import {
   normalizeDirectoryProfile,
   resolveDirectoryDepartmentId,
 } from "../shared/directoryProfile";
+import { normalizeLdapBindSecretRef } from "../shared/directorySecrets";
 
 let database: ReturnType<typeof drizzle> | null = null;
 
@@ -295,7 +296,18 @@ function directorySnapshot(settings: DirectorySettingsInput) {
 export async function getDirectorySettings() {
   const db = await getDb();
   if (!db) return undefined;
-  return (await db.select().from(directorySettings).where(eq(directorySettings.id, 1)).limit(1))[0];
+  const settings = (
+    await db
+      .select()
+      .from(directorySettings)
+      .where(eq(directorySettings.id, 1))
+      .limit(1)
+  )[0];
+  if (!settings) return undefined;
+  return {
+    ...settings,
+    bindSecretRef: normalizeLdapBindSecretRef(settings.bindSecretRef),
+  };
 }
 
 export async function listDirectorySettingAudits(limit = 12) {
@@ -308,13 +320,17 @@ export async function saveDirectorySettings(input: DirectorySettingsInput, actor
   const db = await getDb();
   if (!db) throw new Error("Database unavailable");
   const existing = await getDirectorySettings();
+  const normalizedInput: DirectorySettingsInput = {
+    ...input,
+    bindSecretRef: normalizeLdapBindSecretRef(input.bindSecretRef),
+  };
   const version = (existing?.version ?? 0) + 1;
   const values = {
     id: 1,
     version,
     status: existing?.status === "active" ? "disabled" as const : existing?.status ?? "draft" as const,
-    ...input,
-    bindSecretConfigured: Boolean(input.bindSecretRef),
+    ...normalizedInput,
+    bindSecretConfigured: Boolean(normalizedInput.bindSecretRef),
     lastTestStatus: "not_tested" as const,
     lastTestMessage: null,
     lastTestedAt: null,
@@ -322,7 +338,7 @@ export async function saveDirectorySettings(input: DirectorySettingsInput, actor
     updatedByUserId: actor.userId,
   };
   await db.insert(directorySettings).values(values).onDuplicateKeyUpdate({ set: { ...values, createdAt: existing?.createdAt } });
-  await db.insert(directorySettingAudits).values({ directorySettingsId: 1, version, action: "saved", summary: "Lưu bản nháp cấu hình Directory LDAP/AD", snapshot: directorySnapshot(input), actorUserId: actor.userId, actorName: actor.name });
+  await db.insert(directorySettingAudits).values({ directorySettingsId: 1, version, action: "saved", summary: "Lưu bản nháp cấu hình Directory LDAP/AD", snapshot: directorySnapshot(normalizedInput), actorUserId: actor.userId, actorName: actor.name });
   return getDirectorySettings();
 }
 
