@@ -36,6 +36,21 @@ describe("in-app configuration guides and modal layout", () => {
     expect(dialog).not.toContain(
       "grid-rows-[auto_minmax(0,1fr)_auto]"
     );
+    expect(dialog).toContain(
+      "!inset-0 !top-0 !left-0 !z-[140] !h-dvh !w-full !max-w-none"
+    );
+    expect(dialog).toContain(
+      "!translate-x-0 !translate-y-0 flex flex-col"
+    );
+    expect(dialog).toContain(
+      "overflow-x-hidden overflow-y-auto overscroll-contain"
+    );
+    expect(dialog).toContain(
+      "rounded-none border-0 bg-white p-0 shadow-none"
+    );
+    expect(dialog).toContain("sm:!max-w-none");
+    expect(dialog).not.toContain("max-w-5xl");
+    expect(dialog).not.toContain("h-[min(92dvh,900px)]");
     expect(entraPanel).toContain('guide="entra"');
     expect(directoryPanel).toContain('guide="ldaps"');
     expect(entraPanel).not.toContain("github.com");

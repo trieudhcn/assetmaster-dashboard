@@ -411,7 +411,7 @@ export function ConfigurationGuideDialog({
       <DialogContent
         showCloseButton={false}
         data-configuration-guide-dialog={guide}
-        className="!fixed !z-[140] flex h-[min(92dvh,900px)] w-[calc(100vw-1.5rem)] max-w-5xl flex-col gap-0 overflow-hidden rounded-2xl border-[#C9DDE8] bg-white p-0 shadow-[0_28px_80px_rgba(16,42,67,.28)]"
+        className="!fixed !inset-0 !top-0 !left-0 !z-[140] !h-dvh !w-full !max-w-none !translate-x-0 !translate-y-0 flex flex-col gap-0 overflow-hidden rounded-none border-0 bg-white p-0 shadow-none sm:!max-w-none"
       >
         <header className="assetmaster-modal-header flex shrink-0 items-start justify-between gap-4 border-b border-[#DDE7F0] bg-[linear-gradient(120deg,#F6FAFD_0%,#FFFFFF_76%)] px-5 pt-5 pb-6 sm:px-7">
           <DialogHeader className="min-w-0 flex-1 text-left">
@@ -445,7 +445,7 @@ export function ConfigurationGuideDialog({
           </button>
         </header>
 
-        <div ref={scrollContainerRef} className="min-h-0 flex-1 overflow-y-auto overscroll-contain bg-[#F8FAFC] px-4 py-5 sm:px-7 sm:py-6">
+        <div ref={scrollContainerRef} className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-contain bg-[#F8FAFC] px-4 py-5 sm:px-7 sm:py-6">
           <div className="mb-4 rounded-xl border border-[#CDE5E5] bg-[#F2FBF8] px-4 py-3 text-xs leading-5 text-[#526779]">
             Tài liệu này đã được đóng gói trong AssetMaster và có thể xem trong
             mạng nội bộ mà không cần đăng nhập hoặc truy cập GitHub.
