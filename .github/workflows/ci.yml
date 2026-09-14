@@ -40,10 +40,15 @@ jobs:
           pnpm exec prettier --check
           .github/workflows/ci.yml
           docker-compose.yml
+          docker-compose.linux.yml
           docs/production-readiness-checklist.md
           server/_core/healthRoutes.ts
           server/_core/index.ts
           server/healthRoutes.test.ts
+          server/linux-deployment.contract.test.ts
+
+      - name: Check Ubuntu installer syntax
+        run: bash -n scripts/install-ubuntu.sh
 
       - name: Install PDF test dependency
         run: |
@@ -83,3 +88,135 @@ jobs:
 
       - name: Build production bundle
         run: pnpm run build
+
+  compose-linux:
+    name: Linux Compose integration
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Prepare isolated Linux data and secrets
+        id: linux-paths
+        shell: bash
+        run: |
+          ci_root="$(mktemp -d /tmp/assetmaster-ci.XXXXXX)"
+          sudo install -d -m 0700 -o root -g root "${ci_root}/secrets" "${ci_root}/certs"
+
+          for name in mysql_root_password mysql_app_password redis_password jwt_secret setup_token ldap_bind_password entra_client_secret; do
+            value="$(openssl rand -base64 48 | tr -d '\r\n')"
+            printf '%s\n' "${value}" | sudo tee "${ci_root}/secrets/${name}.txt" > /dev/null
+          done
+          sudo cp /etc/ssl/certs/ca-certificates.crt "${ci_root}/certs/company-ca.pem"
+
+          echo "ci_root=${ci_root}" >> "${GITHUB_OUTPUT}"
+
+      - name: Validate Docker Desktop composition remains independent
+        env:
+          CI_ROOT: ${{ steps.linux-paths.outputs.ci_root }}
+        run: |
+          cp /etc/ssl/certs/ca-certificates.crt ca.cer
+          sudo env \
+            ASSETMASTER_DESKTOP_DATA_DIR="${CI_ROOT}/desktop-data" \
+            ASSETMASTER_DESKTOP_FILES_DIR="${CI_ROOT}/desktop-files" \
+            ASSETMASTER_DESKTOP_SECRETS_DIR="${CI_ROOT}/secrets" \
+            docker compose \
+              -f docker-compose.yml \
+              -f docker-compose.desktop.yml \
+              config --quiet
+          rm -f -- ca.cer
+
+      - name: Build and start the Ubuntu stack
+        env:
+          CI_ROOT: ${{ steps.linux-paths.outputs.ci_root }}
+        run: |
+          sudo env \
+            ASSETMASTER_DATA_DIR="${CI_ROOT}/data" \
+            ASSETMASTER_FILES_DIR="${CI_ROOT}/files" \
+            ASSETMASTER_SECRETS_DIR="${CI_ROOT}/secrets" \
+            ASSETMASTER_CA_FILE="${CI_ROOT}/certs/company-ca.pem" \
+            ASSETMASTER_APP_MEMORY_LIMIT=1024m \
+            ASSETMASTER_MYSQL_MEMORY_LIMIT=1024m \
+            ASSETMASTER_MYSQL_BUFFER_POOL=256M \
+            ./scripts/install-ubuntu.sh --env-file docker/linux.env.example
+
+      - name: Verify readiness, MySQL and Redis
+        env:
+          CI_ROOT: ${{ steps.linux-paths.outputs.ci_root }}
+        run: |
+          curl --fail --silent --show-error http://127.0.0.1:3000/readyz | tee readyz.json
+
+          compose=(
+            sudo env
+            ASSETMASTER_DATA_DIR="${CI_ROOT}/data"
+            ASSETMASTER_FILES_DIR="${CI_ROOT}/files"
+            ASSETMASTER_SECRETS_DIR="${CI_ROOT}/secrets"
+            ASSETMASTER_CA_FILE="${CI_ROOT}/certs/company-ca.pem"
+            docker compose
+            --env-file docker/linux.env.example
+            -f docker-compose.yml
+            -f docker-compose.linux.yml
+          )
+          "${compose[@]}" exec -T mysql sh -ec \
+            'mysqladmin ping -h 127.0.0.1 -u root -p"$(cat /run/secrets/mysql_root_password)" --silent'
+          "${compose[@]}" exec -T redis sh -ec \
+            'redis-cli --no-auth-warning -a "$(cat /run/secrets/redis_password)" ping | grep -qx PONG'
+
+          for service in app mysql redis; do
+            container_id="$("${compose[@]}" ps -q "${service}")"
+            test -n "${container_id}"
+            test "$(sudo docker inspect --format '{{.State.Health.Status}}' "${container_id}")" = healthy
+          done
+
+      - name: Collect Linux Compose logs
+        if: always()
+        env:
+          CI_ROOT: ${{ steps.linux-paths.outputs.ci_root }}
+        run: |
+          if [ -n "${CI_ROOT}" ] && [ -d "${CI_ROOT}" ]; then
+            sudo env \
+              ASSETMASTER_DATA_DIR="${CI_ROOT}/data" \
+              ASSETMASTER_FILES_DIR="${CI_ROOT}/files" \
+              ASSETMASTER_SECRETS_DIR="${CI_ROOT}/secrets" \
+              ASSETMASTER_CA_FILE="${CI_ROOT}/certs/company-ca.pem" \
+              docker compose \
+                --env-file docker/linux.env.example \
+                -f docker-compose.yml \
+                -f docker-compose.linux.yml \
+                logs --no-color > compose-linux.log 2>&1 || true
+          fi
+
+      - name: Upload Linux Compose evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-compose-evidence
+          path: |
+            compose-linux.log
+            readyz.json
+          if-no-files-found: ignore
+          retention-days: 7
+
+      - name: Stop isolated Linux stack
+        if: always()
+        env:
+          CI_ROOT: ${{ steps.linux-paths.outputs.ci_root }}
+        run: |
+          if [ -n "${CI_ROOT}" ] && [ -d "${CI_ROOT}" ]; then
+            sudo env \
+              ASSETMASTER_DATA_DIR="${CI_ROOT}/data" \
+              ASSETMASTER_FILES_DIR="${CI_ROOT}/files" \
+              ASSETMASTER_SECRETS_DIR="${CI_ROOT}/secrets" \
+              ASSETMASTER_CA_FILE="${CI_ROOT}/certs/company-ca.pem" \
+              docker compose \
+                --env-file docker/linux.env.example \
+                -f docker-compose.yml \
+                -f docker-compose.linux.yml \
+                down --remove-orphans || true
+            case "${CI_ROOT}" in
+              /tmp/assetmaster-ci.*) sudo rm -rf -- "${CI_ROOT}" ;;
+            esac
+          fi
+          rm -f -- ca.cer
