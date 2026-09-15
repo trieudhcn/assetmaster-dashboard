@@ -1,3 +1,63 @@
+# AssetMaster — Điều hướng nhận diện đăng nhập
+
+## Current Session — Lối tắt và bộ chuyển đăng nhập
+
+- [x] Thêm mốc cuộn riêng cho khối Nhận diện màn hình đăng nhập.
+- [x] Thêm biểu tượng menu nhanh theo thứ tự Thương hiệu → Màn hình đăng nhập → Nhận diện mở rộng.
+- [x] Tăng độ tương phản cho bộ chuyển Email nội bộ/Admin cục bộ.
+- [x] Dùng màu chủ đạo và shadow cho trạng thái đang chọn.
+- [x] Giữ nền trắng, viền và hover rõ ràng cho trạng thái chưa chọn.
+- [x] Bổ sung semantics tab và trạng thái `aria-selected` cho bàn phím/trình đọc màn hình.
+- [x] Bổ sung kiểm thử hồi quy cho anchor, thứ tự menu và bộ chuyển đăng nhập.
+- [ ] UAT Docker Desktop trên trang Cài đặt và trang đăng nhập.
+
+# AssetMaster — Gom nhóm nhận diện công ty
+
+## Current Session — Bố cục nhận diện và menu nhanh
+
+- [x] Nhúng khối Nhận diện mở rộng vào Cài đặt thương hiệu.
+- [x] Đặt Nhận diện mở rộng ngay dưới Nhận diện màn hình đăng nhập.
+- [x] Loại bỏ phiên bản rời của khối Nhận diện mở rộng khỏi trang Cài đặt.
+- [x] Chuyển lối tắt Nhận diện mở rộng lên ngay sau Thương hiệu.
+- [x] Điều chỉnh khoảng cách thanh menu nhanh với mép phải.
+- [x] Thu gọn nút màu thành Áp dụng/Đặt lại và giữ trên cùng một hàng.
+- [x] Bổ sung kiểm thử hồi quy cho thứ tự, vị trí và cấu trúc nhúng.
+- [ ] UAT Docker Desktop trên desktop và màn hình hẹp.
+
+# AssetMaster — Sửa màu chủ đạo
+
+## Current Session — Áp dụng và đặt lại màu thương hiệu
+
+- [x] Xác định biến `--assetmaster-brand` được gán nhưng chưa được CSS giao diện sử dụng.
+- [x] Kết nối màu cấu hình với nút, chữ, viền, trạng thái và component dùng màu chính.
+- [x] Khôi phục màu đã lưu khi tải dashboard và trang đăng nhập.
+- [x] Đồng bộ ô chọn màu khi dữ liệu công ty được tải lại.
+- [x] Thêm nút đặt lại màu mặc định `#0F8C8C`.
+- [x] Bổ sung kiểm thử hồi quy cho áp dụng, tải lại và đặt lại màu.
+- [ ] UAT Docker Desktop: đổi màu, tải lại, đăng xuất và đặt lại mặc định.
+
+# AssetMaster — Sửa lớp phủ ảnh nền đăng nhập
+
+## Current Session — Lớp phủ sáng/tối
+
+- [x] Xác định lựa chọn lớp phủ chỉ thay đổi bản nháp và thiếu thao tác lưu ngay trong khối nhận diện đăng nhập.
+- [x] Thêm bản xem trước lớp phủ HTML rõ ràng cho chế độ Sáng/Tối.
+- [x] Thêm nút áp dụng ngay trong khối nhận diện đăng nhập và trạng thái truy cập `aria-pressed`.
+- [x] Áp dụng lớp phủ HTML riêng trên trang đăng nhập thay cho gradient ghép trong `background-image`.
+- [x] Bổ sung kiểm thử hồi quy cho thao tác chọn, lưu, xem trước và render trang đăng nhập.
+- [ ] UAT Docker Desktop: chọn Tối, áp dụng, đăng xuất và xác nhận lớp phủ tối được giữ sau khi tải lại.
+
+# AssetMaster — Sửa logo trang đăng nhập self-hosted
+
+## Current Session — Logo và ảnh nền công khai có kiểm soát
+
+- [x] Xác định logo bị lỗi do đường dẫn `/api/files/*` yêu cầu phiên đăng nhập.
+- [x] Ánh xạ logo và ảnh nền đang được cấu hình sang route công khai dành riêng cho trang đăng nhập.
+- [x] Giữ nguyên xác thực cho toàn bộ kho tệp dùng chung và chặn truy cập tệp tùy ý.
+- [x] Hiển thị biểu tượng dự phòng thay vì ảnh lỗi khi logo không còn tồn tại.
+- [x] Bổ sung kiểm thử hồi quy cho ánh xạ URL, ranh giới truy cập và fallback giao diện.
+- [ ] UAT trên Docker Desktop: đăng xuất, mở trang đăng nhập và xác nhận logo tải thành công.
+
 # AssetMaster — Asset Catalog Expansion
 
 ## Current Session — Cảnh báo hết hạn và modal Dịch vụ
@@ -3984,3 +4044,35 @@
 - [x] Đối chiếu procedure `directoryLogin` với payload từ `LoginGateway`.
 - [x] Phân biệt lỗi tìm user, nhóm quyền và bind mật khẩu người dùng trong runtime.
 - [x] Sửa luồng đăng nhập nếu cần, bổ sung regression và hướng dẫn rebuild Docker.
+
+
+## Current Session — QR dùng chung và bàn giao
+
+- [x] Tạo bộ quét QR dùng chung hỗ trợ camera trình duyệt và máy quét keyboard/HID gửi Enter.
+- [x] Dùng lại bộ quét trong tra cứu tài sản và kiểm kê QR liên tục.
+- [x] Đưa QR vào Bàn giao & Cấp phát, kiểm tra tài sản sẵn sàng và mở form với tài sản điền sẵn.
+- [x] Bổ sung kiểm thử QR riêng; type-check, test và production build trên CI đều đạt.
+- [ ] UAT bằng tem QR, camera và máy quét HID thực tế trên môi trường HTTPS.
+
+
+## Current Session — Đăng nhập Microsoft Entra ID hybrid
+
+- [x] Tích hợp OpenID Connect Authorization Code + PKCE cho Microsoft Entra ID, mặc định tắt.
+- [x] Liên kết người dùng Active Directory hiện có theo email và Entra Object ID, không tạo bản ghi trùng.
+- [x] Ánh xạ App Roles `AssetMaster.User` / `AssetMaster.Admin`, giữ kiểm soát tài khoản bị vô hiệu hóa.
+- [x] Giữ LDAPS và Admin cục bộ làm phương thức đăng nhập dự phòng.
+- [x] Bổ sung migration, cấu hình Docker, hướng dẫn UAT/rollback và kiểm thử hồi quy.
+- [ ] UAT với App Registration và tenant Microsoft Entra ID thực tế của doanh nghiệp.
+
+
+## Current Session — Cấu hình Entra ID và đồng bộ Microsoft Graph
+
+- [x] Thêm panel Microsoft Entra ID mặc định ẩn trong Cài đặt hệ thống.
+- [x] Thêm icon Cloud trên menu nhanh bên phải để mở và cuộn đến panel Entra.
+- [x] Cho phép lưu nháp Tenant ID, Client ID, Redirect URI, App Roles và đường dẫn secret an toàn.
+- [x] Thêm kiểm tra kết nối app-only tới Microsoft Graph trước khi kích hoạt.
+- [x] Đồng bộ tên, email, phòng ban, chức danh và nhóm Entra vào tài khoản AssetMaster đã tồn tại.
+- [x] Không tự tạo tài khoản từ Graph, không đổi vai trò và không kích hoạt lại tài khoản bị khóa.
+- [x] Hiển thị nguồn Entra, nhóm và thời gian đồng bộ trong hồ sơ nhân viên.
+- [x] Bổ sung migration `0068_entra_graph_settings.sql`, tài liệu và regression; CI type-check/test/build đạt.
+- [ ] UAT với tenant, App Registration, Graph permissions và dữ liệu người dùng thực tế.

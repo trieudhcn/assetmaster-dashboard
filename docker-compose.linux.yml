@@ -1,0 +1,21 @@
+services:
+  app:
+    environment:
+      # Production never reads the Entra client secret from a plain environment value.
+      ENTRA_CLIENT_SECRET: ""
+      ENTRA_CLIENT_SECRET_FILE: /run/secrets/entra_client_secret
+      NODE_EXTRA_CA_CERTS: /etc/ssl/certs/assetmaster-company-ca.pem
+    secrets:
+      - ldap_bind_password
+      - entra_client_secret
+    volumes:
+      - type: bind
+        source: ${ASSETMASTER_CA_FILE:-/etc/assetmaster/certs/company-ca.pem}
+        target: /etc/ssl/certs/assetmaster-company-ca.pem
+        read_only: true
+
+secrets:
+  ldap_bind_password:
+    file: ${ASSETMASTER_SECRETS_DIR:-/etc/assetmaster/secrets}/ldap_bind_password.txt
+  entra_client_secret:
+    file: ${ASSETMASTER_SECRETS_DIR:-/etc/assetmaster/secrets}/entra_client_secret.txt

@@ -403,6 +403,7 @@ export function AssetImportModal({
             documentTitle: "DANH SÁCH DÒNG LỖI IMPORT TÀI SẢN",
             fileName: `AssetMaster-Loi-Import-${new Date().toISOString().slice(0, 10)}.xlsx`,
             description: `${rows.length} dòng cần chỉnh sửa trước khi nhập lại vào hệ thống.`,
+            downloadDirect: true,
           });
           toast.success(`Đã xuất ${rows.length} dòng lỗi ra Excel.`, {
             id: loadingToast,
@@ -434,7 +435,7 @@ export function AssetImportModal({
       aria-label="Import tài sản từ Excel"
     >
       <div className="max-h-[92vh] w-full max-w-6xl overflow-y-auto rounded-2xl border border-[#DDE7F0] bg-white shadow-[0_24px_70px_rgba(16,42,67,0.24)]">
-        <header className="flex items-start justify-between border-b border-[#E7EEF3] px-6 py-5">
+        <header className="assetmaster-modal-header flex shrink-0 items-start justify-between border-b border-[#E7EEF3] px-6 pt-5 pb-6">
           <div>
             <div className="flex items-center gap-2 text-[10px] font-extrabold uppercase tracking-[.16em] text-[#087A6A]">
               <FileSpreadsheet size={14} />

@@ -30,11 +30,15 @@ type SearchableSelectProps = {
   emptyText?: string;
   emptyActionLabel?: string;
   onEmptyAction?: (query: string) => void;
+  ariaLabel?: string;
+  /** Compact controls omit search and use reduced trigger/menu spacing for short option lists. */
+  variant?: "default" | "compact";
   /** Render the menu at document level when an ancestor clips overflow, such as a scrollable data table. */
   menuPortal?: boolean;
 };
 
-export function SearchableSelect({ value, onChange, options, placeholder = "Chọn một giá trị", searchPlaceholder = "Tìm trong danh sách...", disabled = false, loading = false, className = "", optionLabels, emptyText = "Không tìm thấy kết quả", emptyActionLabel, onEmptyAction, menuPortal = true }: SearchableSelectProps) {
+export function SearchableSelect({ value, onChange, options, placeholder = "Chọn một giá trị", searchPlaceholder = "Tìm trong danh sách...", disabled = false, loading = false, className = "", optionLabels, emptyText = "Không tìm thấy kết quả", emptyActionLabel, onEmptyAction, ariaLabel, variant = "default", menuPortal = true }: SearchableSelectProps) {
+  const compact = variant === "compact";
   const rootRef = useRef<HTMLDivElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
   const [open, setOpen] = useState(false);
@@ -89,8 +93,9 @@ export function SearchableSelect({ value, onChange, options, placeholder = "Ch�
       const viewportWidth = Math.max(180, window.innerWidth - 16);
       const boundedWidth = Math.min(width, viewportWidth);
       const estimatedMenuHeight = 340;
+      const effectiveMenuHeight = compact ? Math.min(240, presentedOptions.length * 38 + 16) : estimatedMenuHeight;
       const alignRight = rect.right + boundedWidth > window.innerWidth - 12;
-      const openUpward = rect.bottom + 6 + estimatedMenuHeight > window.innerHeight - 8 && rect.top > estimatedMenuHeight;
+      const openUpward = rect.bottom + 6 + effectiveMenuHeight > window.innerHeight - 8 && rect.top > effectiveMenuHeight;
       const rawLeft = alignRight ? rect.right - boundedWidth : rect.left;
       const left = Math.min(Math.max(8, rawLeft), Math.max(8, window.innerWidth - boundedWidth - 8));
       setMenuAlign(alignRight ? "right" : "left");
@@ -98,7 +103,7 @@ export function SearchableSelect({ value, onChange, options, placeholder = "Ch�
       setMenuPosition({ top: openUpward ? rect.top - 6 : rect.bottom + 6, left, width: boundedWidth });
       setMenuReady(true);
     };
-    requestAnimationFrame(() => { measureMenu(); searchInputRef.current?.focus(); });
+    requestAnimationFrame(() => { measureMenu(); if (!compact) searchInputRef.current?.focus(); });
     window.addEventListener("resize", measureMenu);
     window.addEventListener("scroll", measureMenu, true);
     const closeOnOutside = (event: PointerEvent) => {
@@ -116,15 +121,15 @@ export function SearchableSelect({ value, onChange, options, placeholder = "Ch�
   const portalOpensUpward = menuPortal && menuPlacement === "top";
   const menuMotion = open ? (portalOpensUpward ? "-translate-y-full scale-100 opacity-100" : "translate-y-0 scale-100 opacity-100") : (portalOpensUpward ? "pointer-events-none -translate-y-[calc(100%+0.25rem)] scale-[0.98] opacity-0" : "pointer-events-none -translate-y-1 scale-[0.98] opacity-0");
   const menu = menuMounted && menuReady ? <div ref={menuRef} style={menuPortal ? { top: menuPosition.top, left: menuPosition.left, width: menuPosition.width } : undefined} className={`${menuPortal ? "fixed z-[9999]" : `absolute ${menuAlign === "right" ? "right-0 left-auto" : "left-0 right-auto"} top-[calc(100%+0.35rem)] z-[95] w-[min(280px,calc(100vw-1rem))]`} min-w-0 overflow-hidden rounded-xl border border-[#CDE5E5] bg-white shadow-[0_16px_36px_rgba(16,42,67,0.18)] transition-[opacity,transform] duration-180 ease-[cubic-bezier(0.23,1,0.32,1)] ${menuMotion}`} role="listbox">
-    <div className="border-b border-[#E7EEF3] p-2">
+    {!compact && <div className="border-b border-[#E7EEF3] p-2">
       <div className="relative">
         <Search size={15} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[#8AA0B6]" />
         <input ref={searchInputRef} value={query} onChange={(event) => { setQuery(event.target.value); setHighlightedIndex(0); }} onKeyDown={(event) => { if (event.key === "ArrowDown") { event.preventDefault(); setHighlightedIndex((current) => filteredOptions.length ? (current + 1) % filteredOptions.length : 0); } else if (event.key === "ArrowUp") { event.preventDefault(); setHighlightedIndex((current) => filteredOptions.length ? (current - 1 + filteredOptions.length) % filteredOptions.length : 0); } else if (event.key === "Enter") { event.preventDefault(); selectHighlighted(highlightedIndex); } else if (event.key === "Escape") { event.preventDefault(); closeMenu(); } }} placeholder={searchPlaceholder} aria-label={searchPlaceholder} aria-activedescendant={filteredOptions[highlightedIndex] ? `searchable-option-${filteredOptions[highlightedIndex].value}` : undefined} className="h-9 w-full rounded-lg border border-[#DDE7F0] bg-[#FBFCFD] pl-9 pr-9 text-xs font-semibold text-[#193B57] outline-none focus:border-[#0F8C8C]" />
         {query && <button type="button" aria-label="Xóa tìm kiếm trong dropdown" onClick={() => setQuery("")} className="absolute right-2 top-1/2 grid h-6 w-6 -translate-y-1/2 place-items-center rounded-md text-[#8AA0B6] hover:bg-[#ECF8F7] hover:text-[#087A6A]"><X size={14} /></button>}
       </div>
-    </div>
-    <div className="max-h-64 overflow-y-auto p-1">
-      {filteredOptions.map((option, index) => <button type="button" role="option" id={`searchable-option-${option.value}`} aria-selected={option.value === value} key={option.value} onMouseEnter={() => setHighlightedIndex(index)} onClick={() => selectHighlighted(index)} className={`flex w-full items-center justify-between gap-3 rounded-lg px-3 py-2.5 text-left text-xs font-semibold text-[#193B57] transition ${index === highlightedIndex ? "bg-[#ECF8F7]" : "hover:bg-[#ECF8F7]"} aria-selected:bg-[#E6F6F2]`}>
+    </div>}
+    <div className={`${compact ? "max-h-56" : "max-h-64"} overflow-y-auto p-1`}>
+      {filteredOptions.map((option, index) => <button type="button" role="option" id={`searchable-option-${option.value}`} aria-selected={option.value === value} key={option.value} onMouseEnter={() => setHighlightedIndex(index)} onClick={() => selectHighlighted(index)} className={`flex w-full items-center justify-between gap-3 rounded-lg px-3 ${compact ? "py-2" : "py-2.5"} text-left text-xs font-semibold text-[#193B57] transition ${index === highlightedIndex ? "bg-[#ECF8F7]" : "hover:bg-[#ECF8F7]"} aria-selected:bg-[#E6F6F2]`}>
         <span className="min-w-0 truncate"><HighlightedLabel text={option.label} query={query} /></span>
         {option.value === value && <Check size={15} className="shrink-0 text-[#0F8C8C]" />}
       </button>)}
@@ -135,7 +140,7 @@ export function SearchableSelect({ value, onChange, options, placeholder = "Ch�
 
   return <>
     <div ref={rootRef} className={`relative min-w-0 ${open ? "z-[96]" : "z-0"} ${className}`}>
-      <button type="button" disabled={disabled || loading} aria-busy={loading} aria-haspopup="listbox" aria-expanded={open} onClick={() => open ? closeMenu() : openMenu()} className="field-input flex w-full items-center justify-between gap-2 text-left disabled:cursor-not-allowed disabled:opacity-60">
+      <button type="button" disabled={disabled || loading} aria-label={ariaLabel} aria-busy={loading} aria-haspopup="listbox" aria-expanded={open} onClick={() => open ? closeMenu() : openMenu()} className={`field-input flex w-full items-center justify-between gap-2 text-left disabled:cursor-not-allowed disabled:opacity-60 ${compact ? "h-10 min-h-10 py-0 text-xs" : ""}`}>
         <span className={`truncate ${selected ? "text-[#60758A]" : "text-[#8AA0B6]"}`}>{loading ? "Đang tải..." : selected?.label || placeholder}</span>
         {loading ? <Loader2 size={16} className="shrink-0 animate-spin text-[#0F8C8C]" /> : <ChevronDown size={16} className={`shrink-0 text-[#9BAEC0] transition-transform ${open ? "rotate-180" : ""}`} />}
       </button>

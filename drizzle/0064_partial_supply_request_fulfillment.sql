@@ -1,0 +1,2 @@
+ALTER TABLE `supplyRequests` MODIFY COLUMN `status` enum('pending','approved','rejected','fulfilled','partially_fulfilled','cancelled') NOT NULL DEFAULT 'pending';--> statement-breakpoint
+ALTER TABLE `supplyRequestItems` ADD `approvedQuantity` decimal(15,2);

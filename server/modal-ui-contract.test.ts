@@ -2804,7 +2804,7 @@ describe("maintenance history and filter layout contract", () => {
     expect(operations).toContain("Trạng thái dự kiến");
     expect(operations).toContain("Trạng thái thực tế");
     expect(operations).toContain("auditAssetStatusLabel(item.expectedStatus)");
-    expect(operations).toContain("overflow-x-auto md:overflow-hidden");
+    expect(operations).toContain("mobile-table-scroll overflow-x-auto");
   });
 
   it("keeps audit detail dropdowns above the card and constrains the asset picker", () => {
@@ -3215,14 +3215,18 @@ it("cung cấp trung tâm hướng dẫn theo vai trò và nút hướng dẫn r
 
 it("hiển thị phụ kiện đã cấp cho chính nhân viên trên Cổng nhân viên", () => {
   const userDashboard = readProjectFile("client/src/pages/UserDashboard.tsx");
+  const supplyPanel = readProjectFile(
+    "client/src/components/EmployeeSupplyHoldingsPanel.tsx"
+  );
   const routers = readProjectFile("server/routers.ts");
   const db = readProjectFile("server/db.ts");
 
   expect(userDashboard).toContain("trpc.employees.mySupplyHistory.useQuery");
-  expect(userDashboard).toContain("Phụ kiện đã cấp cho bạn");
-  expect(userDashboard).toContain("UserSupplyHistorySection");
-  expect(userDashboard).toContain(
-    "Các phụ kiện bạn đang giữ từ phiếu cấp phát hoặc biên bản bàn giao."
+  expect(userDashboard).toContain("<EmployeeSupplyHoldingsPanel");
+  expect(supplyPanel).toContain("Phụ kiện của bạn");
+  expect(supplyPanel).toContain('role="tablist"');
+  expect(supplyPanel).toContain(
+    "Theo dõi số lượng đang giữ và toàn bộ yêu cầu hoàn trả"
   );
   expect(routers).toContain("mySupplyHistory: protectedProcedure");
   expect(routers).toContain(
@@ -3359,4 +3363,99 @@ it("phân trang lịch sử biến động Phụ kiện để drawer không kéo
   expect(supplies).toContain("Hiển thị {from}–{to} / {total} biến động");
   expect(supplies).toContain('aria-label="Trang lịch sử trước"');
   expect(supplies).toContain('aria-label="Trang lịch sử sau"');
+});
+
+
+it("closes modal layers before opening Excel or PDF previews", () => {
+  const lifecycle = readProjectFile("client/src/lib/exportPreviewLifecycle.ts");
+  const previewHost = readProjectFile("client/src/components/ExportPreviewHost.tsx");
+  const dialog = readProjectFile("client/src/components/ui/dialog.tsx");
+  const drawer = readProjectFile("client/src/components/ui/drawer.tsx");
+  const alertDialog = readProjectFile("client/src/components/ui/alert-dialog.tsx");
+  const importModal = readProjectFile("client/src/components/AssetImportModal.tsx");
+  const serviceTicket = readProjectFile("client/src/components/QuickServiceTicketPreview.tsx");
+  const issueSlips = readProjectFile("client/src/components/SupplyIssueSlipManager.tsx");
+  const employees = readProjectFile("client/src/pages/EmployeeManagementView.tsx");
+  const home = readProjectFile("client/src/pages/Home.tsx");
+
+  expect(lifecycle).toContain('exportPreviewOpeningEvent = "assetmaster:export-preview-opening"');
+  expect(lifecycle).toContain("exportPreviewOpenDelayMs = 200");
+  expect(previewHost).toContain("new Event(exportPreviewOpeningEvent)");
+  expect(previewHost).toContain("window.setTimeout");
+  [dialog, drawer, alertDialog].forEach((component) => {
+    expect(component).toContain("exportPreviewOpeningEvent");
+    expect(component).toContain("closeBeforeExport");
+    expect(component).toContain("setOpen(false)");
+  });
+  expect(importModal.match(/downloadDirect: true/g)).toHaveLength(2);
+  expect(serviceTicket).toContain("onClose(); onPrint();");
+  expect(serviceTicket).toContain("onClose(); onExportPdf();");
+  expect(issueSlips).toContain("setSelectedSlipId(null)");
+  expect(issueSlips).toContain("onClose();\n      await openHandoverAssetPdf");
+  expect(employees).toContain("useCloseOnExportPreview(Boolean(selectedEmployee), closeDrawer)");
+  expect(home).toContain("onClose();\n    const pdf = kind");
+  expect(home).toContain("dismiss();\n      const company = retirementCompanyQuery.data");
+});
+
+
+it("keeps the audit action column usable without clipping the inventory table", () => {
+  const operations = readProjectFile("client/src/pages/OperationsModules.tsx");
+
+  expect(operations).toContain("mobile-table-scroll overflow-x-auto");
+  expect(operations).toContain('min-w-[1460px]');
+  expect(operations).not.toContain("overflow-x-auto md:overflow-hidden");
+  expect(operations).toContain('<col className="w-[180px]" />');
+  expect(operations).toContain('sticky right-0 z-20 w-[180px]');
+  expect(operations).toContain('sticky right-0 z-10 w-[180px] min-w-[180px]');
+  expect(operations).toContain('className="min-h-[70px] w-full resize-y');
+  expect(operations).toContain("whitespace-nowrap rounded-md bg-[#0F8C8C]");
+});
+
+it("supports keyboard quick edit and prioritizes audit discrepancy rows", () => {
+  const operations = readProjectFile("client/src/pages/OperationsModules.tsx");
+
+  expect(operations).toContain("auditKeyboardMode");
+  expect(operations).toContain("data-audit-quick-row");
+  expect(operations).toContain('event.key === "1"');
+  expect(operations).toContain('event.key === "2"');
+  expect(operations).toContain('event.key === "3"');
+  expect(operations).toContain('event.key === "Enter"');
+  expect(operations).toContain('event.key === "ArrowDown"');
+  expect(operations).toContain("prioritizedAuditItems");
+  expect(operations).toContain("auditPriority");
+  expect(operations).toContain("Ưu tiên · Không tìm thấy");
+  expect(operations).toContain("Ưu tiên · Chênh lệch");
+  expect(operations).toContain('sticky left-0 z-30 w-[210px]');
+  expect(operations).toContain('sticky left-0 z-10 w-[210px]');
+});
+
+it("provides a focused fullscreen workspace for large inventory audits", () => {
+  const operations = readProjectFile("client/src/pages/OperationsModules.tsx");
+
+  expect(operations).toContain("isAuditFullscreen");
+  expect(operations).toContain("Kiểm kê toàn màn hình");
+  expect(operations).toContain("Thoát toàn màn hình");
+  expect(operations).toContain('event.key === "Escape"');
+  expect(operations).toContain('document.body.style.overflow = "hidden"');
+  expect(operations).toContain('fixed inset-0 z-[100]');
+  expect(operations).toContain('sticky top-0 z-50');
+  expect(operations).toContain('isAuditFullscreen ? "hidden" : ""');
+  expect(operations).toContain('role={isAuditFullscreen ? "dialog" : undefined}');
+});
+
+it("advances keyboard focus after save and provides tablet and scanner audit modes", () => {
+  const operations = readProjectFile("client/src/pages/OperationsModules.tsx");
+
+  expect(operations).toContain("auditNextFocusIdRef");
+  expect(operations).toContain("data-audit-item-id");
+  expect(operations).toContain("nextQuickRow");
+  expect(operations).toContain("window.requestAnimationFrame");
+  expect(operations).toContain("auditCompletionPercentage");
+  expect(operations).toContain("Tiến độ kiểm kê");
+  expect(operations).toContain('auditDeviceMode === "tablet"');
+  expect(operations).toContain('auditDeviceMode === "scanner"');
+  expect(operations).toContain("Máy tính bảng");
+  expect(operations).toContain("Chế độ máy quét cầm tay");
+  expect(operations).toContain('setIsQrScanOpen(true)');
+  expect(operations).toContain('min-w-[1080px]');
 });

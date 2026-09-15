@@ -8,6 +8,7 @@ import { registerStorageProxy } from "./storageProxy";
 import { appRouter } from "../routers";
 import { createContext } from "./context";
 import { registerSharedStorageRoutes } from "../localSharedStorage";
+import { registerEntraAuthRoutes } from "../entraAuth";
 import { selfHostedAuthEnabled } from "../selfHostedAuth";
 import { serveStatic, setupVite } from "./vite";
 
@@ -64,6 +65,7 @@ async function startServer() {
   app.use(express.urlencoded({ limit: "50mb", extended: true }));
   registerStorageProxy(app);
   registerSharedStorageRoutes(app);
+  registerEntraAuthRoutes(app);
   if (!selfHostedAuthEnabled()) {
     const { registerOAuthRoutes } = await import("./oauth");
     registerOAuthRoutes(app);

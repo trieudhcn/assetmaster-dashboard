@@ -38,12 +38,20 @@ export const users = mysqlTable(
     employeeCode: varchar("employeeCode", { length: 64 }).unique(),
     jobTitle: varchar("jobTitle", { length: 160 }),
     loginMethod: varchar("loginMethod", { length: 64 }),
-    authSource: mysqlEnum("authSource", ["manus", "bootstrap_local", "ldap"])
+    authSource: mysqlEnum("authSource", [
+      "manus",
+      "bootstrap_local",
+      "ldap",
+      "entra",
+    ])
       .default("manus")
       .notNull(),
     passwordHash: varchar("passwordHash", { length: 512 }),
     mustChangePassword: boolean("mustChangePassword").default(false).notNull(),
     directoryObjectId: varchar("directoryObjectId", { length: 192 }).unique(),
+    entraObjectId: varchar("entraObjectId", { length: 192 }).unique(),
+    entraGroupNames: json("entraGroupNames"),
+    lastEntraSyncAt: timestamp("lastEntraSyncAt"),
     directoryUsername: varchar("directoryUsername", { length: 320 }),
     lastDirectorySyncAt: timestamp("lastDirectorySyncAt"),
     role: mysqlEnum("role", ["user", "admin"]).default("user").notNull(),
@@ -82,7 +90,9 @@ export const directorySettings = mysqlTable(
     usersDn: text("usersDn").notNull(),
     groupsDn: text("groupsDn"),
     bindDn: text("bindDn"),
-    bindSecretRef: varchar("bindSecretRef", { length: 255 }),
+    bindSecretRef: varchar("bindSecretRef", { length: 255 }).default(
+      "/run/secrets/ldap_bind_password"
+    ),
     loginAttribute: varchar("loginAttribute", { length: 64 })
       .default("userPrincipalName")
       .notNull(),
@@ -160,6 +170,92 @@ export const directorySettingAudits = mysqlTable(
   table => [
     index("directory_setting_audits_setting_created_idx").on(
       table.directorySettingsId,
+      table.createdAt
+    ),
+  ]
+);
+
+export const entraSettings = mysqlTable(
+  "entraSettings",
+  {
+    id: int("id").primaryKey(),
+    version: int("version").default(1).notNull(),
+    status: mysqlEnum("status", ["draft", "active", "disabled"])
+      .default("draft")
+      .notNull(),
+    tenantId: varchar("tenantId", { length: 64 }).notNull(),
+    clientId: varchar("clientId", { length: 64 }).notNull(),
+    redirectUri: varchar("redirectUri", { length: 500 }).notNull(),
+    clientSecretRef: varchar("clientSecretRef", { length: 255 }),
+    adminAppRole: varchar("adminAppRole", { length: 160 })
+      .default("AssetMaster.Admin")
+      .notNull(),
+    userAppRole: varchar("userAppRole", { length: 160 })
+      .default("AssetMaster.User")
+      .notNull(),
+    lastTestStatus: mysqlEnum("lastTestStatus", [
+      "not_tested",
+      "success",
+      "failed",
+    ])
+      .default("not_tested")
+      .notNull(),
+    lastTestMessage: varchar("lastTestMessage", { length: 500 }),
+    lastTestedAt: timestamp("lastTestedAt"),
+    lastSyncStatus: mysqlEnum("lastSyncStatus", [
+      "not_run",
+      "success",
+      "partial",
+      "failed",
+    ])
+      .default("not_run")
+      .notNull(),
+    lastSyncMessage: varchar("lastSyncMessage", { length: 500 }),
+    lastSyncedAt: timestamp("lastSyncedAt"),
+    createdByUserId: int("createdByUserId").references(() => users.id, {
+      onDelete: "set null",
+      onUpdate: "cascade",
+    }),
+    updatedByUserId: int("updatedByUserId").references(() => users.id, {
+      onDelete: "set null",
+      onUpdate: "cascade",
+    }),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+    updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  },
+  table => [index("entra_settings_status_idx").on(table.status)]
+);
+
+export const entraSettingAudits = mysqlTable(
+  "entraSettingAudits",
+  {
+    id: int("id").autoincrement().primaryKey(),
+    entraSettingsId: int("entraSettingsId")
+      .notNull()
+      .references(() => entraSettings.id, {
+        onDelete: "cascade",
+        onUpdate: "cascade",
+      }),
+    version: int("version").notNull(),
+    action: mysqlEnum("action", [
+      "saved",
+      "activated",
+      "disabled",
+      "tested",
+      "users_synced",
+    ]).notNull(),
+    summary: varchar("summary", { length: 500 }).notNull(),
+    snapshot: json("snapshot").notNull(),
+    actorUserId: int("actorUserId").references(() => users.id, {
+      onDelete: "set null",
+      onUpdate: "cascade",
+    }),
+    actorName: varchar("actorName", { length: 160 }),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+  },
+  table => [
+    index("entra_setting_audits_setting_created_idx").on(
+      table.entraSettingsId,
       table.createdAt
     ),
   ]
@@ -1360,6 +1456,12 @@ export const inventorySupplies = mysqlTable(
     stockQuantity: decimal("stockQuantity", { precision: 15, scale: 2 })
       .default("0")
       .notNull(),
+    damagedQuantity: decimal("damagedQuantity", { precision: 15, scale: 2 })
+      .default("0")
+      .notNull(),
+    repairQuantity: decimal("repairQuantity", { precision: 15, scale: 2 })
+      .default("0")
+      .notNull(),
     minimumQuantity: decimal("minimumQuantity", { precision: 15, scale: 2 })
       .default("0")
       .notNull(),
@@ -1494,6 +1596,196 @@ export const supplyIssueSlipItems = mysqlTable(
   table => [
     index("supply_issue_slip_items_slip_idx").on(table.issueSlipId),
     index("supply_issue_slip_items_supply_idx").on(table.supplyId),
+  ]
+);
+
+export const supplyReturnRequests = mysqlTable(
+  "supplyReturnRequests",
+  {
+    id: int("id").autoincrement().primaryKey(),
+    requestCode: varchar("requestCode", { length: 64 }).notNull().unique(),
+    requesterUserId: int("requesterUserId")
+      .notNull()
+      .references(() => users.id, {
+        onDelete: "restrict",
+        onUpdate: "cascade",
+      }),
+    requesterName: varchar("requesterName", { length: 160 }).notNull(),
+    sourceType: mysqlEnum("sourceType", ["issue_slip", "handover"]).notNull(),
+    sourceId: int("sourceId").notNull(),
+    sourceReferenceCode: varchar("sourceReferenceCode", {
+      length: 64,
+    }).notNull(),
+    returnReceiptCode: varchar("returnReceiptCode", { length: 64 }).unique(),
+    deliveredByName: varchar("deliveredByName", { length: 160 }),
+    receivedByName: varchar("receivedByName", { length: 160 }),
+    receiptCreatedAt: timestamp("receiptCreatedAt"),
+    status: mysqlEnum("status", [
+      "pending",
+      "approved",
+      "rejected",
+      "cancelled",
+    ])
+      .default("pending")
+      .notNull(),
+    note: text("note"),
+    reviewNote: text("reviewNote"),
+    reviewedByUserId: int("reviewedByUserId").references(() => users.id, {
+      onDelete: "set null",
+      onUpdate: "cascade",
+    }),
+    reviewedByName: varchar("reviewedByName", { length: 160 }),
+    reviewedAt: timestamp("reviewedAt"),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+    updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  },
+  table => [
+    index("supply_return_requests_requester_idx").on(table.requesterUserId),
+    index("supply_return_requests_status_idx").on(table.status),
+    index("supply_return_requests_source_idx").on(
+      table.sourceType,
+      table.sourceId
+    ),
+  ]
+);
+
+export const supplyReturnRequestItems = mysqlTable(
+  "supplyReturnRequestItems",
+  {
+    id: int("id").autoincrement().primaryKey(),
+    requestId: int("requestId")
+      .notNull()
+      .references(() => supplyReturnRequests.id, {
+        onDelete: "restrict",
+        onUpdate: "cascade",
+      }),
+    sourceItemId: int("sourceItemId").notNull(),
+    supplyId: int("supplyId")
+      .notNull()
+      .references(() => inventorySupplies.id, {
+        onDelete: "restrict",
+        onUpdate: "cascade",
+      }),
+    supplyCode: varchar("supplyCode", { length: 64 }).notNull(),
+    supplyName: varchar("supplyName", { length: 255 }).notNull(),
+    unit: varchar("unit", { length: 32 }).notNull(),
+    requestedQuantity: decimal("requestedQuantity", {
+      precision: 15,
+      scale: 2,
+    }).notNull(),
+    goodQuantity: decimal("goodQuantity", { precision: 15, scale: 2 })
+      .default("0")
+      .notNull(),
+    damagedQuantity: decimal("damagedQuantity", { precision: 15, scale: 2 })
+      .default("0")
+      .notNull(),
+    missingQuantity: decimal("missingQuantity", { precision: 15, scale: 2 })
+      .default("0")
+      .notNull(),
+    repairQuantity: decimal("repairQuantity", { precision: 15, scale: 2 })
+      .default("0")
+      .notNull(),
+    conditionNote: text("conditionNote"),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+  },
+  table => [
+    index("supply_return_request_items_request_idx").on(table.requestId),
+    index("supply_return_request_items_supply_idx").on(table.supplyId),
+    uniqueIndex("supply_return_request_items_source_unique").on(
+      table.requestId,
+      table.sourceItemId
+    ),
+  ]
+);
+
+export const supplyRequests = mysqlTable(
+  "supplyRequests",
+  {
+    id: int("id").autoincrement().primaryKey(),
+    requestCode: varchar("requestCode", { length: 64 }).notNull().unique(),
+    requesterUserId: int("requesterUserId")
+      .notNull()
+      .references(() => users.id, {
+        onDelete: "restrict",
+        onUpdate: "cascade",
+      }),
+    requesterName: varchar("requesterName", { length: 160 }).notNull(),
+    requesterDepartmentId: int("requesterDepartmentId").references(
+      () => departments.id,
+      { onDelete: "set null", onUpdate: "cascade" }
+    ),
+    status: mysqlEnum("status", [
+      "pending",
+      "approved",
+      "rejected",
+      "fulfilled",
+      "partially_fulfilled",
+      "cancelled",
+    ])
+      .default("pending")
+      .notNull(),
+    reason: text("reason").notNull(),
+    reviewNote: text("reviewNote"),
+    reviewedByUserId: int("reviewedByUserId").references(() => users.id, {
+      onDelete: "set null",
+      onUpdate: "cascade",
+    }),
+    reviewedByName: varchar("reviewedByName", { length: 160 }),
+    reviewedAt: timestamp("reviewedAt"),
+    issueSlipId: int("issueSlipId").references(() => supplyIssueSlips.id, {
+      onDelete: "set null",
+      onUpdate: "cascade",
+    }),
+    fulfilledAt: timestamp("fulfilledAt"),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+    updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  },
+  table => [
+    index("supply_requests_status_idx").on(table.status),
+    index("supply_requests_requester_created_idx").on(
+      table.requesterUserId,
+      table.createdAt
+    ),
+    uniqueIndex("supply_requests_issue_slip_unique").on(table.issueSlipId),
+  ]
+);
+
+export const supplyRequestItems = mysqlTable(
+  "supplyRequestItems",
+  {
+    id: int("id").autoincrement().primaryKey(),
+    requestId: int("requestId")
+      .notNull()
+      .references(() => supplyRequests.id, {
+        onDelete: "cascade",
+        onUpdate: "cascade",
+      }),
+    supplyId: int("supplyId")
+      .notNull()
+      .references(() => inventorySupplies.id, {
+        onDelete: "restrict",
+        onUpdate: "cascade",
+      }),
+    supplyCode: varchar("supplyCode", { length: 64 }).notNull(),
+    supplyName: varchar("supplyName", { length: 255 }).notNull(),
+    unit: varchar("unit", { length: 32 }).notNull(),
+    requestedQuantity: decimal("requestedQuantity", {
+      precision: 15,
+      scale: 2,
+    }).notNull(),
+    approvedQuantity: decimal("approvedQuantity", {
+      precision: 15,
+      scale: 2,
+    }),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+  },
+  table => [
+    index("supply_request_items_request_idx").on(table.requestId),
+    index("supply_request_items_supply_idx").on(table.supplyId),
+    uniqueIndex("supply_request_items_request_supply_unique").on(
+      table.requestId,
+      table.supplyId
+    ),
   ]
 );
 

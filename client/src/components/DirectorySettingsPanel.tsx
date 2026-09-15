@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import {
+  BookOpenText,
   CheckCircle2,
   CircleAlert,
   DatabaseZap,
@@ -14,6 +15,11 @@ import {
 import { toast } from "sonner";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { trpc } from "@/lib/trpc";
+import { ConfigurationGuideDialog } from "@/components/ConfigurationGuideDialog";
+import {
+  DEFAULT_LDAP_BIND_SECRET_REF,
+  normalizeLdapBindSecretRef,
+} from "@shared/directorySecrets";
 
 type DirectoryDraft = {
   ldapUrl: string;
@@ -33,12 +39,26 @@ type DirectoryDraft = {
   caCertificatePem: string;
 };
 
+type DirectoryDiagnosticCheck = {
+  id: "secret" | "dns" | "tcp" | "ca" | "ldaps";
+  label: string;
+  status: "success" | "warning" | "error";
+  message: string;
+};
+
+type DirectoryDiagnosticReport = {
+  ready: boolean;
+  summary: string;
+  checkedAt: string;
+  checks: DirectoryDiagnosticCheck[];
+};
+
 const initialDraft: DirectoryDraft = {
   ldapUrl: "",
   usersDn: "",
   groupsDn: "",
   bindDn: "",
-  bindSecretRef: "/run/secrets/ldap_bind_password",
+  bindSecretRef: DEFAULT_LDAP_BIND_SECRET_REF,
   loginAttribute: "userPrincipalName",
   emailAttribute: "userPrincipalName",
   displayNameAttribute: "displayName",
@@ -59,7 +79,8 @@ function normalizeSettings(value: any): DirectoryDraft {
     groupsDn: value.groupsDn || "",
     bindDn: value.bindDn || "",
     bindSecretRef:
-      value.bindSecretRef || "/run/secrets/ldap_bind_password",
+      normalizeLdapBindSecretRef(value.bindSecretRef) ||
+      DEFAULT_LDAP_BIND_SECRET_REF,
     loginAttribute: value.loginAttribute || "userPrincipalName",
     emailAttribute: value.emailAttribute || "userPrincipalName",
     displayNameAttribute: value.displayNameAttribute || "displayName",
@@ -121,6 +142,32 @@ function TestPill({
   );
 }
 
+function DiagnosticCheckRow({
+  check,
+}: {
+  check: DirectoryDiagnosticCheck;
+}) {
+  const style =
+    check.status === "success"
+      ? "border-[#CDE5E5] bg-[#F6FCFB] text-[#087A6A]"
+      : check.status === "warning"
+        ? "border-[#F2D596] bg-[#FFF9EB] text-[#8F5A00]"
+        : "border-[#F0CACA] bg-[#FFF6F6] text-[#B44545]";
+  return (
+    <div className={`rounded-lg border p-2.5 ${style}`}>
+      <div className="flex items-center gap-2 text-[10px] font-extrabold">
+        {check.status === "success" ? (
+          <CheckCircle2 size={14} />
+        ) : (
+          <CircleAlert size={14} />
+        )}
+        <span>{check.label}</span>
+      </div>
+      <p className="mt-1 text-[10px] font-medium leading-4">{check.message}</p>
+    </div>
+  );
+}
+
 export function DirectorySettingsPanel({
   onOpenUsers,
 }: {
@@ -140,6 +187,7 @@ export function DirectorySettingsPanel({
   const [draft, setDraft] = useState<DirectoryDraft>(initialDraft);
   const [dirty, setDirty] = useState(false);
   const [isVisible, setIsVisible] = useState(false);
+  const [guideOpen, setGuideOpen] = useState(false);
   const [groupSearch, setGroupSearch] = useState("");
   const [groupResults, setGroupResults] = useState<
     Array<{ dn: string; name: string; description: string | null }>
@@ -161,6 +209,8 @@ export function DirectorySettingsPanel({
   const [operationSteps, setOperationSteps] = useState<
     Array<{ label: string; state: "waiting" | "active" | "done" | "error" }>
   >([]);
+  const [diagnosticReport, setDiagnosticReport] =
+    useState<DirectoryDiagnosticReport | null>(null);
 
   useEffect(() => {
     const openDirectory = () => {
@@ -195,6 +245,8 @@ export function DirectorySettingsPanel({
       void utils.directory.get.invalidate();
       void utils.directory.audit.invalidate();
       void utils.directory.publicStatus.invalidate();
+      void utils.directory.secretStatus.invalidate();
+      setDiagnosticReport(null);
       toast.success("Đã lưu bản nháp Directory LDAP/AD.");
     },
     onError: error =>
@@ -205,6 +257,7 @@ export function DirectorySettingsPanel({
       void utils.directory.get.invalidate();
       void utils.directory.audit.invalidate();
       void utils.directory.publicStatus.invalidate();
+      setDiagnosticReport(result.diagnostics);
       result.success
         ? toast.success(result.message)
         : toast.error(result.message);
@@ -220,6 +273,7 @@ export function DirectorySettingsPanel({
         { label: "Kiểm tra Users Base DN", state: "waiting" },
       ]),
     onSuccess: result => {
+      setDiagnosticReport(result.diagnostics);
       setOperationSteps(
         result.success
           ? [
@@ -302,6 +356,17 @@ export function DirectorySettingsPanel({
   });
 
   const isSelfHosted = statusQuery.data?.selfHosted === true;
+  const secretStatusQuery = trpc.directory.secretStatus.useQuery(
+    {
+      bindDn: draft.bindDn || null,
+      bindSecretRef: draft.bindSecretRef || null,
+    },
+    {
+      enabled: isAdmin && isSelfHosted && Boolean(draft.bindSecretRef),
+      retry: false,
+      refetchOnWindowFocus: false,
+    }
+  );
   const settings = settingsQuery.data;
   const lastTest = useMemo(
     () =>
@@ -318,6 +383,7 @@ export function DirectorySettingsPanel({
     value: DirectoryDraft[K]
   ) => {
     setDirty(true);
+    setDiagnosticReport(null);
     setDraft(current => ({ ...current, [key]: value }));
   };
 
@@ -333,7 +399,13 @@ export function DirectorySettingsPanel({
     );
 
   return (
-    <section
+    <>
+      <ConfigurationGuideDialog
+        guide="ldaps"
+        open={guideOpen}
+        onOpenChange={setGuideOpen}
+      />
+      <section
       id="settings-directory"
       data-directory-settings
       className="mx-auto mt-5 w-[calc(100%-2rem)] max-w-[1100px] rounded-xl border border-[#CDE5E5] bg-white shadow-[0_8px_24px_rgba(16,42,67,0.045)]"
@@ -360,7 +432,16 @@ export function DirectorySettingsPanel({
             bind được đọc từ Docker secret hoặc tệp secret Linux giới hạn quyền.
           </p>
         </div>
-        <div className="flex items-start gap-2">
+        <div className="flex flex-wrap items-start justify-end gap-2">
+          <button
+            type="button"
+            onClick={() => setGuideOpen(true)}
+            className="inline-flex h-9 items-center gap-2 rounded-lg border border-[#A9D8D2] bg-white px-3 text-[10px] font-extrabold text-[#087A6A] shadow-[0_3px_10px_rgba(15,140,140,.08)] transition hover:border-[#78C0B7] hover:bg-[#F6FCFB] focus:outline-none focus:ring-2 focus:ring-[#CDE5E5]"
+            aria-label="Mở hướng dẫn cấu hình LDAPS trong AssetMaster"
+          >
+            <BookOpenText size={15} />
+            <span>Xem hướng dẫn cấu hình</span>
+          </button>
           <div className="rounded-xl border border-[#DCEDEA] bg-white px-3 py-2.5 text-right shadow-sm">
             <div className="text-[10px] font-extrabold uppercase tracking-[.1em] text-[#8AA0B6]">
               Trạng thái môi trường
@@ -458,6 +539,39 @@ export function DirectorySettingsPanel({
                   className="sm:col-span-2"
                   help="Chỉ chấp nhận Docker /run/secrets/ hoặc Linux native /etc/assetmaster/secrets/."
                 />
+                {draft.bindSecretRef && (
+                  <div
+                    className={`sm:col-span-2 rounded-lg border px-3 py-2.5 ${
+                      secretStatusQuery.data?.readable
+                        ? "border-[#CDE5E5] bg-[#F6FCFB] text-[#087A6A]"
+                        : "border-[#F0CACA] bg-[#FFF6F6] text-[#B44545]"
+                    }`}
+                    role="status"
+                    aria-live="polite"
+                  >
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="inline-flex items-center gap-2 text-[10px] font-extrabold uppercase tracking-[.08em]">
+                        {secretStatusQuery.data?.readable ? (
+                          <CheckCircle2 size={14} />
+                        ) : (
+                          <CircleAlert size={14} />
+                        )}
+                        Trạng thái tệp secret
+                      </span>
+                      <span className="rounded-full bg-white/80 px-2 py-0.5 text-[10px] font-extrabold">
+                        {secretStatusQuery.isFetching
+                          ? "Đang kiểm tra"
+                          : secretStatusQuery.data?.label || "Chưa mount"}
+                      </span>
+                    </div>
+                    <p className="mt-1 text-[10px] font-medium leading-4">
+                      {secretStatusQuery.isFetching
+                        ? "AssetMaster đang kiểm tra tệp bên trong container."
+                        : secretStatusQuery.data?.message ||
+                          "Chưa thể xác nhận tệp secret trong container."}
+                    </p>
+                  </div>
+                )}
                 <TextAreaField
                   label="CA certificate PEM"
                   value={draft.caCertificatePem}
@@ -609,15 +723,18 @@ export function DirectorySettingsPanel({
                 )}
               </div>
             </section>
-            <section className="rounded-xl border border-[#E0E9EF] p-4">
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <h3 className="text-xs font-extrabold text-[#193B57]">
-                    Kiểm tra và tìm nhóm
-                  </h3>
+            <section className="rounded-xl border border-[#BFDCD8] bg-[#F9FDFC] p-4 shadow-[0_5px_16px_rgba(15,140,140,.06)]">
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2">
+                    <ShieldCheck size={17} className="text-[#087A6A]" />
+                    <h3 className="text-xs font-extrabold text-[#193B57]">
+                      Kiểm tra sẵn sàng LDAPS
+                    </h3>
+                  </div>
                   <p className="mt-1 text-[11px] leading-5 text-[#71869A]">
-                    Dùng chính thông số đang nhập, không lưu bản nháp khi kiểm
-                    tra.
+                    Kiểm tra đồng thời secret, DNS, TCP 636, CA certificate,
+                    TLS, tài khoản bind và Users Base DN trước khi kích hoạt.
                   </p>
                 </div>
                 <button
@@ -629,13 +746,48 @@ export function DirectorySettingsPanel({
                       ? "Chỉ khả dụng trên server self-hosted"
                       : undefined
                   }
-                  className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-[#CDE5E5] bg-white px-3 py-2 text-[10px] font-extrabold text-[#087A6A] disabled:opacity-50"
+                  className="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-[#0F8C8C] px-3 py-2 text-[10px] font-extrabold text-white shadow-[0_5px_12px_rgba(15,140,140,.18)] disabled:opacity-50"
                 >
-                  {testDraftMutation.isPending && (
+                  {testDraftMutation.isPending ? (
                     <Loader2 className="animate-spin" size={13} />
+                  ) : (
+                    <RefreshCw size={13} />
                   )}
-                  Kiểm tra bản nháp
+                  Chạy kiểm tra
                 </button>
+              </div>
+              {diagnosticReport ? (
+                <>
+                  <div className="mt-3 grid gap-2">
+                    {diagnosticReport.checks.map(check => (
+                      <DiagnosticCheckRow key={check.id} check={check} />
+                    ))}
+                  </div>
+                  <p
+                    className={`mt-3 rounded-lg px-3 py-2.5 text-[10px] font-bold leading-4 ${
+                      diagnosticReport.ready
+                        ? "bg-[#E6F6F2] text-[#087A6A]"
+                        : "bg-[#FDEDEE] text-[#B44545]"
+                    }`}
+                  >
+                    {diagnosticReport.summary}
+                  </p>
+                </>
+              ) : (
+                <p className="mt-3 rounded-lg border border-dashed border-[#CDE5E5] bg-white px-3 py-3 text-[10px] leading-4 text-[#71869A]">
+                  Chưa chạy kiểm tra toàn diện cho thông số đang nhập.
+                </p>
+              )}
+            </section>
+            <section className="rounded-xl border border-[#E0E9EF] p-4">
+              <div>
+                <h3 className="text-xs font-extrabold text-[#193B57]">
+                  Tìm và ánh xạ nhóm
+                </h3>
+                <p className="mt-1 text-[11px] leading-5 text-[#71869A]">
+                  Tìm nhóm bằng chính thông số đang nhập sau khi kiểm tra kết
+                  nối thành công.
+                </p>
               </div>
               <div className="mt-3 flex gap-2">
                 <input
@@ -892,7 +1044,7 @@ export function DirectorySettingsPanel({
                 }
                 title={
                   settings?.lastTestStatus !== "success"
-                    ? "Cần kiểm tra LDAPS thành công trước"
+                    ? "Cần chạy kiểm tra LDAPS toàn diện thành công trước"
                     : undefined
                 }
                 className="rounded-lg bg-[#193B57] px-3.5 py-2 text-xs font-extrabold text-white hover:bg-[#102A43] disabled:cursor-not-allowed disabled:opacity-50"
@@ -903,7 +1055,8 @@ export function DirectorySettingsPanel({
           </div>
         </footer>
       </div>
-    </section>
+      </section>
+    </>
   );
 }
 

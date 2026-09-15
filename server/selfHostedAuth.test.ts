@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it } from "vitest";
 import {
+  inspectDirectoryCaCertificate,
   normalizeLoginEmail,
   resolveDirectoryEmail,
   safeDirectoryMessage,
@@ -52,6 +53,25 @@ describe("self-hosted directory authentication safeguards", () => {
         bindSecretRef: "/etc/assetmaster/ldap-bind-password",
       })
     ).toContain("/etc/assetmaster/secrets/");
+    expect(
+      validateDirectorySettings({
+        ...validSettings,
+        ldapUrl: "ldaps://dc01.congty.local:1636",
+      })
+    ).toContain("636");
+  });
+
+  it("kiểm tra CA mà không trả nội dung chứng chỉ ra kết quả", () => {
+    const systemCa = inspectDirectoryCaCertificate(null);
+    expect(systemCa.status).toBe("warning");
+    expect(systemCa.message).toContain("CA hệ thống");
+    expect(systemCa).not.toHaveProperty("certificate");
+
+    const invalidCa = inspectDirectoryCaCertificate(
+      "-----BEGIN CERTIFICATE-----\nkhong-hop-le\n-----END CERTIFICATE-----"
+    );
+    expect(invalidCa.status).toBe("error");
+    expect(invalidCa.message).not.toContain("khong-hop-le");
   });
 
   it("chuẩn hóa email nội bộ trước khi tra cứu Directory", () => {
