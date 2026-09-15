@@ -101,7 +101,7 @@ describe("Bản quyền & Dịch vụ", () => {
     expect(view).not.toContain("<select");
     expect(view).toContain("Tìm trạng thái...");
     expect(view).toContain("Tìm thời hạn...");
-    expect(view).toContain("Tìm cách sắp xếp...");
+    expect(view).not.toContain("Tìm cách sắp xếp...");
     expect(view).toContain("Hết hạn trong 7 ngày");
     expect(view).toContain("Hạn gần nhất trước");
     expect(view).toContain("Mọi nhà cung cấp");
