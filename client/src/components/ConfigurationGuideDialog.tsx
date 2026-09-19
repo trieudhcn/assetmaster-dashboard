@@ -3,6 +3,7 @@ import {
   ChevronRight,
   Cloud,
   List,
+  Mail,
   Network,
   PanelLeftClose,
   PanelLeftOpen,
@@ -21,6 +22,7 @@ import {
 } from "react";
 import { Streamdown } from "streamdown";
 import {
+  emailGuideMarkdown,
   entraGuideMarkdown,
   ldapsGuideMarkdown,
 } from "virtual:assetmaster-configuration-guides";
@@ -32,7 +34,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 
-export type ConfigurationGuideKind = "entra" | "ldaps";
+export type ConfigurationGuideKind = "entra" | "ldaps" | "email";
 
 
 type GuideSection = {
@@ -239,6 +241,15 @@ const guideDetails = {
     content: ldapsGuideMarkdown,
     icon: Network,
     tone: "text-[#087A6A] bg-[#E6F6F2]",
+  },
+  email: {
+    eyebrow: "Kênh thông báo",
+    title: "Hướng dẫn Email Microsoft 365",
+    description:
+      "UAT mô phỏng, chỉnh template thương hiệu, cấu hình Microsoft Graph, Docker secret, gửi thử và xử lý sự cố.",
+    content: emailGuideMarkdown,
+    icon: Mail,
+    tone: "text-[#8F5A00] bg-[#FFF5DC]",
   },
 } satisfies Record<
   ConfigurationGuideKind,

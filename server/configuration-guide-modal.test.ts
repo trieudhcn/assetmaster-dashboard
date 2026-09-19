@@ -9,7 +9,7 @@ function source(path: string) {
 }
 
 describe("in-app configuration guides and modal layout", () => {
-  it("bundles both guides into AssetMaster without a GitHub dependency", () => {
+  it("bundles all configuration guides into AssetMaster without a GitHub dependency", () => {
     const vite = source("vite.config.ts");
     const dialog = source(
       "client/src/components/ConfigurationGuideDialog.tsx"
@@ -20,12 +20,16 @@ describe("in-app configuration guides and modal layout", () => {
     const directoryPanel = source(
       "client/src/components/DirectorySettingsPanel.tsx"
     );
+    const emailPanel = source(
+      "client/src/components/EmailNotificationSettingsPanel.tsx"
+    );
 
     expect(vite).toContain("virtual:assetmaster-configuration-guides");
     expect(vite).toContain("huong-dan-entra-id-microsoft-graph.md");
     expect(vite).toContain(
       "docker-desktop-ldaps-ad-windows-server-2022.md"
     );
+    expect(vite).toContain("microsoft-365-email-notifications.md");
     expect(dialog).toContain('import { Streamdown } from "streamdown"');
     expect(dialog).toContain("không cần đăng nhập hoặc truy cập GitHub");
     expect(dialog).toContain("data-configuration-guide-dialog");
@@ -50,8 +54,11 @@ describe("in-app configuration guides and modal layout", () => {
     expect(dialog).not.toContain("h-[min(92dvh,900px)]");
     expect(entraPanel).toContain('guide="entra"');
     expect(directoryPanel).toContain('guide="ldaps"');
+    expect(emailPanel).toContain('guide="email"');
+    expect(emailPanel).toContain("Xem hướng dẫn cấu hình");
     expect(entraPanel).not.toContain("github.com");
     expect(directoryPanel).not.toContain("github.com");
+    expect(emailPanel).not.toContain("github.com");
   });
 
   it("adds clickable guide navigation and copy controls", () => {
@@ -64,6 +71,9 @@ describe("in-app configuration guides and modal layout", () => {
     );
     const ldapsGuide = source(
       "docs/docker-desktop-ldaps-ad-windows-server-2022.md"
+    );
+    const emailGuide = source(
+      "docs/microsoft-365-email-notifications.md"
     );
 
     expect(dialog).toContain("getGuideSections");
@@ -97,6 +107,8 @@ describe("in-app configuration guides and modal layout", () => {
     expect(ldapsGuide.match(/^##\s+/gm)?.length).toBeGreaterThan(10);
     expect(entraGuide).toContain("```powershell");
     expect(ldapsGuide).toContain("```powershell");
+    expect(emailGuide.match(/^##\s+/gm)?.length).toBeGreaterThan(5);
+    expect(emailGuide).toContain("```powershell");
   });
 
   it("keeps modal descriptions clear of body dividers across modal groups", () => {

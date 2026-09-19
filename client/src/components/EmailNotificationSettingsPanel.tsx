@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import {
+  BookOpenText,
   CheckCircle2,
   Clock3,
   Cloud,
@@ -20,6 +21,7 @@ import {
   EmailTemplateEditor,
   type EmailTemplateDesign,
 } from "./EmailTemplateEditor";
+import { ConfigurationGuideDialog } from "./ConfigurationGuideDialog";
 
 type Draft = EmailTemplateDesign & {
   provider: "mock" | "microsoft_graph";
@@ -100,6 +102,7 @@ export function EmailNotificationSettingsPanel() {
   const isAdmin = user?.role === "admin";
   const utils = trpc.useUtils();
   const [visible, setVisible] = useState(false);
+  const [guideOpen, setGuideOpen] = useState(false);
   const [dirty, setDirty] = useState(false);
   const [draft, setDraft] = useState(initialDraft);
   const settingsQuery = trpc.emailNotifications.get.useQuery(undefined, {
@@ -214,7 +217,13 @@ export function EmailNotificationSettingsPanel() {
     dispatchMutation.isPending;
 
   return (
-    <section
+    <>
+      <ConfigurationGuideDialog
+        guide="email"
+        open={guideOpen}
+        onOpenChange={setGuideOpen}
+      />
+      <section
       id="settings-email-notifications"
       data-email-notification-settings
       className="mx-auto mt-5 w-[calc(100%-2rem)] max-w-[1100px] scroll-mt-24 overflow-hidden rounded-xl border border-[#C9DDF5] bg-white shadow-[0_8px_24px_rgba(16,42,67,.045)]"
@@ -237,7 +246,16 @@ export function EmailNotificationSettingsPanel() {
             </p>
           </div>
         </div>
-        <div className="flex items-center gap-2 self-end lg:self-start">
+        <div className="flex flex-wrap items-center justify-end gap-2 self-end lg:self-start">
+          <button
+            type="button"
+            onClick={() => setGuideOpen(true)}
+            className="inline-flex h-9 items-center gap-2 rounded-lg border border-[#E4C77A] bg-white px-3 text-[10px] font-extrabold text-[#8F5A00] shadow-[0_3px_10px_rgba(143,90,0,.08)] transition hover:border-[#D8B24F] hover:bg-[#FFF9EA] focus:outline-none focus:ring-2 focus:ring-[#F0D89A]"
+            aria-label="Mở hướng dẫn cấu hình Email Microsoft 365 trong AssetMaster"
+          >
+            <BookOpenText size={15} />
+            <span>Xem hướng dẫn cấu hình</span>
+          </button>
           <span
             className={`rounded-full px-2.5 py-1 text-[10px] font-extrabold ${settings?.status === "active" ? "bg-[#E6F6F2] text-[#087A6A]" : settings?.status === "disabled" ? "bg-[#F4F7F9] text-[#60758A]" : "bg-[#FFF5DC] text-[#A86B00]"}`}
           >
@@ -527,7 +545,8 @@ export function EmailNotificationSettingsPanel() {
           }}
         />
       </div>
-    </section>
+      </section>
+    </>
   );
 }
 

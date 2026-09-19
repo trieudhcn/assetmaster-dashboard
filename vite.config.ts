@@ -167,6 +167,11 @@ function vitePluginConfigurationGuides(): Plugin {
       "docs",
       "docker-desktop-ldaps-ad-windows-server-2022.md"
     ),
+    email: path.join(
+      PROJECT_ROOT,
+      "docs",
+      "microsoft-365-email-notifications.md"
+    ),
   };
 
   return {
@@ -180,9 +185,11 @@ function vitePluginConfigurationGuides(): Plugin {
       if (id !== RESOLVED_CONFIGURATION_GUIDES_MODULE_ID) return undefined;
       const entraGuideMarkdown = fs.readFileSync(guideFiles.entra, "utf8");
       const ldapsGuideMarkdown = fs.readFileSync(guideFiles.ldaps, "utf8");
+      const emailGuideMarkdown = fs.readFileSync(guideFiles.email, "utf8");
       return [
         `export const entraGuideMarkdown = ${JSON.stringify(entraGuideMarkdown)};`,
         `export const ldapsGuideMarkdown = ${JSON.stringify(ldapsGuideMarkdown)};`,
+        `export const emailGuideMarkdown = ${JSON.stringify(emailGuideMarkdown)};`,
       ].join("\n");
     },
   };
