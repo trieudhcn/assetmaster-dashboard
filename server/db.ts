@@ -141,6 +141,19 @@ export type EmailNotificationSettingsInput = {
   senderEmail: string | null;
   senderName: string;
   applicationUrl: string | null;
+  brandName: string;
+  brandColor: string;
+  logoUrl: string | null;
+  footerText: string;
+  templateOverrides: Record<
+    string,
+    {
+      subject?: string;
+      title?: string;
+      intro?: string;
+      actionLabel?: string;
+    }
+  >;
   handoverEnabled: boolean;
   supplyRequestEnabled: boolean;
   supplyReturnEnabled: boolean;

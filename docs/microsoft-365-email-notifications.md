@@ -15,6 +15,27 @@ Outbox sử dụng `eventKey` duy nhất để tránh gửi trùng. Worker xử 
 
 ## 2. UAT ngay khi chưa cấu hình Entra ID
 
+### Cập nhật source và rebuild Docker Desktop
+
+Mở PowerShell tại thư mục dự án. Nếu `git status --short` không có thay đổi chưa commit, chạy:
+
+```powershell
+git fetch origin
+git switch codex/employee-supply-requests
+git pull --ff-only origin codex/employee-supply-requests
+docker compose -f docker-compose.yml -f docker-compose.desktop.yml up -d --build --force-recreate app
+Invoke-RestMethod http://127.0.0.1:3000/readyz
+```
+
+Có thể kiểm tra trạng thái và log bằng:
+
+```powershell
+docker compose -f docker-compose.yml -f docker-compose.desktop.yml ps
+docker compose -f docker-compose.yml -f docker-compose.desktop.yml logs --tail=200 app
+```
+
+### UAT chế độ mô phỏng
+
 1. Đăng nhập bằng tài khoản Admin.
 2. Mở **Cài đặt → Email Microsoft 365**.
 3. Chọn **Mô phỏng – không gửi ra ngoài**.
@@ -24,7 +45,20 @@ Outbox sử dụng `eventKey` duy nhất để tránh gửi trùng. Worker xử 
 7. Thực hiện một luồng bàn giao hoặc cấp phụ kiện, chờ tối đa 30 giây hoặc bấm **Gửi ngay**.
 8. Xác nhận bản ghi chuyển từ **Chờ gửi** sang **Đã gửi**. Chế độ này không gọi Microsoft Graph và không gửi thư ra ngoài.
 
-## 3. Chuẩn bị Microsoft 365 để gửi thật
+## 3. Chỉnh template và thương hiệu email
+
+Trong **Cài đặt → Email Microsoft 365 → Template và thương hiệu email**:
+
+1. Bấm **Dùng thương hiệu công ty** để lấy tên, màu và logo đang cấu hình trong AssetMaster.
+2. Chọn từng loại thông báo, ví dụ bàn giao tài sản hoặc cấp phát phụ kiện.
+3. Chỉnh tiêu đề email, tiêu đề nội dung, đoạn giới thiệu và nhãn nút hành động.
+4. Chọn trường cần sửa rồi bấm biến như `{{assetCode}}`, `{{requestCode}}` hoặc `{{recipientName}}` để chèn dữ liệu nghiệp vụ.
+5. Bấm **Xem trước**. Preview dùng cùng renderer phía server với email thật; nội dung do quản trị viên nhập được escape và không cho chèn HTML tùy ý.
+6. Bấm **Lưu cấu hình**, chạy **Kiểm tra** lại và **Kích hoạt**. Mỗi lần lưu thiết kế hoặc cấu hình, module quay về trạng thái bản nháp để tránh phát hành mẫu chưa kiểm tra.
+
+Nút **Khôi phục mẫu** chỉ xóa phần tùy chỉnh của template đang chọn và đưa nó về nội dung mặc định. Logo dạng đường dẫn nội bộ chỉ hiển thị trong email khi đã cấu hình URL AssetMaster, để hệ thống chuyển logo thành URL tuyệt đối mà Microsoft 365 và trình đọc email có thể tải được.
+
+## 4. Chuẩn bị Microsoft 365 để gửi thật
 
 Nên dùng một App Registration riêng cho email nền của AssetMaster, không dùng chung App Registration đăng nhập.
 
@@ -40,7 +74,7 @@ Tài liệu Microsoft:
 - [Client credentials flow](https://learn.microsoft.com/entra/identity-platform/v2-oauth2-client-creds-grant-flow)
 - [Exchange Online Application RBAC](https://learn.microsoft.com/exchange/permissions-exo/application-rbac)
 
-## 4. Mount Client Secret vào Docker
+## 5. Mount Client Secret vào Docker
 
 Không nhập giá trị Client Secret vào giao diện, Git, `.env`, chat hoặc email. Giao diện chỉ lưu đường dẫn tới tệp secret.
 
@@ -66,7 +100,7 @@ curl --fail --silent --show-error http://127.0.0.1:3000/readyz
 
 Không chạy `docker compose down -v` và không xóa thư mục dữ liệu khi chỉ bổ sung hoặc xoay secret email.
 
-## 5. Kích hoạt Microsoft Graph trong AssetMaster
+## 6. Kích hoạt Microsoft Graph trong AssetMaster
 
 1. Mở **Cài đặt → Email Microsoft 365**.
 2. Chọn **Microsoft Graph – gửi thật**.
@@ -76,9 +110,10 @@ Không chạy `docker compose down -v` và không xóa thư mục dữ liệu kh
 6. Bấm **Kiểm tra**. Microsoft Graph phải trả về HTTP 202 và mailbox người quản trị phải nhận được email thử.
 7. Bấm **Kích hoạt** rồi thực hiện UAT nghiệp vụ.
 
-## 6. Checklist UAT gửi thật
+## 7. Checklist UAT gửi thật
 
 - [ ] Email thử tới đúng tài khoản Admin và hiển thị tiếng Việt đúng.
+- [ ] Màu, tên thương hiệu, logo, footer và nội dung template đúng với bản preview đã duyệt.
 - [ ] Mailbox người gửi đúng với mailbox đã giới hạn bằng Exchange App RBAC.
 - [ ] Xác nhận bàn giao tạo đúng một email dù thao tác/API bị gọi lặp.
 - [ ] Cấp phụ kiện đầy đủ và một phần có nội dung khác nhau.
@@ -88,7 +123,7 @@ Không chạy `docker compose down -v` và không xóa thư mục dữ liệu kh
 - [ ] Thu hồi quyền/đổi secret thử nghiệm, xác nhận retry và trạng thái **Thất bại**, sau đó khôi phục secret và bấm **Gửi lại**.
 - [ ] Tắt module, xác nhận nghiệp vụ vẫn hoạt động nhưng không tạo email mới.
 
-## 7. Vận hành và xử lý sự cố
+## 8. Vận hành và xử lý sự cố
 
 | Hiện tượng | Nguyên nhân thường gặp | Cách xử lý |
 | --- | --- | --- |

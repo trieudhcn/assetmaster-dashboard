@@ -357,7 +357,7 @@ import {
   maskLicenseKey,
 } from "./licenseCredentials";
 import { storagePut } from "./storage";
-import { buildLifecycleEmail, dispatchEmailOutboxBatch, queueLifecycleEmail, testEmailNotificationConfiguration } from "./emailNotifications";
+import { EMAIL_TEMPLATE_KEYS, buildLifecycleEmail, dispatchEmailOutboxBatch, getEmailTemplateCatalog, previewEmailTemplate, queueLifecycleEmail, testEmailNotificationConfiguration } from "./emailNotifications";
 
 const nullableText = z.string().trim().max(1000).optional().nullable();
 const nullableEmail = z.string().trim().email().max(320).optional().nullable();
@@ -452,6 +452,34 @@ const entraSettingsInput = z.object({
   adminAppRole: z.string().trim().min(3).max(160),
   userAppRole: z.string().trim().min(3).max(160),
 });
+const emailTemplateKeyInput = z.enum(EMAIL_TEMPLATE_KEYS);
+const emailTemplateOverrideInput = z.object({
+  subject: z.string().trim().min(1).max(500).optional(),
+  title: z.string().trim().min(1).max(200).optional(),
+  intro: z.string().trim().min(1).max(1200).optional(),
+  actionLabel: z.string().trim().min(1).max(100).optional(),
+});
+const emailTemplateOverridesInput = z.record(z.string(), emailTemplateOverrideInput).superRefine((value, ctx) => {
+  const allowed = new Set<string>(EMAIL_TEMPLATE_KEYS);
+  for (const key of Object.keys(value))
+    if (!allowed.has(key)) ctx.addIssue({ code: z.ZodIssueCode.custom, path: [key], message: "Mẫu email không được hỗ trợ." });
+});
+const emailLogoUrlInput = z.string().trim().max(1000).refine(value => {
+  if (value.startsWith("/")) return true;
+  try {
+    const url = new URL(value);
+    return url.protocol === "https:" || (url.protocol === "http:" && (url.hostname === "localhost" || url.hostname === "127.0.0.1"));
+  } catch {
+    return false;
+  }
+}, "Logo email phải là đường dẫn nội bộ hoặc URL HTTPS.").optional().nullable();
+const emailTemplateDesignShape = {
+  brandName: z.string().trim().min(2).max(160),
+  brandColor: z.string().trim().regex(/^#[0-9A-F]{6}$/i, "Màu thương hiệu phải ở dạng #RRGGBB."),
+  logoUrl: emailLogoUrlInput,
+  footerText: z.string().trim().min(3).max(500),
+  templateOverrides: emailTemplateOverridesInput,
+};
 const emailNotificationSettingsInput = z.object({
   provider: z.enum(["mock", "microsoft_graph"]),
   tenantId: z.string().trim().uuid().optional().nullable(),
@@ -465,6 +493,7 @@ const emailNotificationSettingsInput = z.object({
     const localHttp = url.protocol === "http:" && (url.hostname === "localhost" || url.hostname === "127.0.0.1");
     if (url.protocol !== "https:" && !localHttp) ctx.addIssue({ code: z.ZodIssueCode.custom, message: "URL production phải dùng HTTPS." });
   }),
+  ...emailTemplateDesignShape,
   handoverEnabled: z.boolean(),
   supplyRequestEnabled: z.boolean(),
   supplyReturnEnabled: z.boolean(),
@@ -473,6 +502,11 @@ const emailNotificationSettingsInput = z.object({
   if (input.provider !== "microsoft_graph") return;
   for (const [key, label] of [["tenantId", "Tenant ID"], ["clientId", "Client ID"], ["clientSecretRef", "Tệp Client Secret"], ["senderEmail", "Mailbox gửi"]] as const)
     if (!input[key]) ctx.addIssue({ code: z.ZodIssueCode.custom, path: [key], message: `${label} là bắt buộc khi dùng Microsoft Graph.` });
+});
+const emailTemplatePreviewInput = z.object({
+  templateKey: emailTemplateKeyInput,
+  applicationUrl: z.string().trim().max(500).url().optional().nullable(),
+  ...emailTemplateDesignShape,
 });
 
 const sidebarMenuLabels = [
@@ -1393,9 +1427,11 @@ export const appRouter = router({
   }),
   emailNotifications: router({
     get: adminProcedure.query(() => getEmailNotificationSettings()),
+    templates: adminProcedure.query(() => getEmailTemplateCatalog()),
+    preview: adminProcedure.input(emailTemplatePreviewInput).mutation(({ input }) => previewEmailTemplate({ ...input, logoUrl: input.logoUrl || null, applicationUrl: input.applicationUrl || null })),
     outbox: adminProcedure.input(z.object({ limit: z.number().int().min(1).max(200).default(50) })).query(({ input }) => listEmailOutbox(input.limit)),
     save: adminProcedure.input(emailNotificationSettingsInput).mutation(async ({ input, ctx }) => {
-      const settings = await saveEmailNotificationSettings({ ...input, tenantId: input.tenantId || null, clientId: input.clientId || null, clientSecretRef: input.clientSecretRef || null, senderEmail: input.senderEmail || null, applicationUrl: input.applicationUrl || null }, { userId: ctx.user.id, name: ctx.user.name });
+      const settings = await saveEmailNotificationSettings({ ...input, tenantId: input.tenantId || null, clientId: input.clientId || null, clientSecretRef: input.clientSecretRef || null, senderEmail: input.senderEmail || null, applicationUrl: input.applicationUrl || null, logoUrl: input.logoUrl || null }, { userId: ctx.user.id, name: ctx.user.name });
       await recordActivity({ entityType: "email_notification_setting", entityId: 1, action: "saved", actorUserId: ctx.user.id, actorName: ctx.user.name, summary: `Lưu cấu hình email ${input.provider === "mock" ? "mô phỏng" : "Microsoft Graph"}` });
       return settings;
     }),

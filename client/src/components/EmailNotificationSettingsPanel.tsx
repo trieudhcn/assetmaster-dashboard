@@ -16,8 +16,12 @@ import {
 import { toast } from "sonner";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { trpc } from "@/lib/trpc";
+import {
+  EmailTemplateEditor,
+  type EmailTemplateDesign,
+} from "./EmailTemplateEditor";
 
-type Draft = {
+type Draft = EmailTemplateDesign & {
   provider: "mock" | "microsoft_graph";
   tenantId: string;
   clientId: string;
@@ -39,27 +43,39 @@ const initialDraft: Draft = {
   senderEmail: "",
   senderName: "AssetMaster",
   applicationUrl: "",
+  brandName: "AssetMaster",
+  brandColor: "#0F8C8C",
+  logoUrl: "",
+  footerText:
+    "Đây là email tự động từ AssetMaster. Vui lòng không trả lời email này.",
+  templateOverrides: {},
   handoverEnabled: true,
   supplyRequestEnabled: true,
   supplyReturnEnabled: true,
   maxAttempts: 5,
 };
 
-function normalizeSettings(value: any): Draft {
-  if (!value) return initialDraft;
+function normalizeSettings(value: any, company?: any): Draft {
   return {
-    provider: value.provider || "mock",
-    tenantId: value.tenantId || "",
-    clientId: value.clientId || "",
+    provider: value?.provider || "mock",
+    tenantId: value?.tenantId || "",
+    clientId: value?.clientId || "",
     clientSecretRef:
-      value.clientSecretRef || "/run/secrets/m365_mail_client_secret",
-    senderEmail: value.senderEmail || "",
-    senderName: value.senderName || "AssetMaster",
-    applicationUrl: value.applicationUrl || "",
-    handoverEnabled: value.handoverEnabled !== false,
-    supplyRequestEnabled: value.supplyRequestEnabled !== false,
-    supplyReturnEnabled: value.supplyReturnEnabled !== false,
-    maxAttempts: Number(value.maxAttempts || 5),
+      value?.clientSecretRef || "/run/secrets/m365_mail_client_secret",
+    senderEmail: value?.senderEmail || "",
+    senderName: value?.senderName || "AssetMaster",
+    applicationUrl: value?.applicationUrl || "",
+    brandName: value?.brandName || company?.name || "AssetMaster",
+    brandColor: value?.brandColor || company?.brandColor || "#0F8C8C",
+    logoUrl: value?.logoUrl || company?.logoUrl || "",
+    footerText:
+      value?.footerText ||
+      "Đây là email tự động từ AssetMaster. Vui lòng không trả lời email này.",
+    templateOverrides: value?.templateOverrides || {},
+    handoverEnabled: value?.handoverEnabled !== false,
+    supplyRequestEnabled: value?.supplyRequestEnabled !== false,
+    supplyReturnEnabled: value?.supplyReturnEnabled !== false,
+    maxAttempts: Number(value?.maxAttempts || 5),
   };
 }
 
@@ -89,6 +105,9 @@ export function EmailNotificationSettingsPanel() {
   const settingsQuery = trpc.emailNotifications.get.useQuery(undefined, {
     enabled: isAdmin,
   });
+  const companyQuery = trpc.company.get.useQuery(undefined, {
+    enabled: isAdmin,
+  });
   const outboxQuery = trpc.emailNotifications.outbox.useQuery(
     { limit: 30 },
     { enabled: isAdmin && visible, refetchInterval: visible ? 30_000 : false }
@@ -109,8 +128,9 @@ export function EmailNotificationSettingsPanel() {
   }, []);
 
   useEffect(() => {
-    if (!dirty) setDraft(normalizeSettings(settingsQuery.data));
-  }, [dirty, settingsQuery.data]);
+    if (!dirty)
+      setDraft(normalizeSettings(settingsQuery.data, companyQuery.data));
+  }, [companyQuery.data, dirty, settingsQuery.data]);
 
   const refresh = () => {
     void utils.emailNotifications.get.invalidate();
@@ -359,6 +379,7 @@ export function EmailNotificationSettingsPanel() {
                   clientSecretRef: draft.clientSecretRef || null,
                   senderEmail: draft.senderEmail || null,
                   applicationUrl: draft.applicationUrl || null,
+                  logoUrl: draft.logoUrl || null,
                 })
               }
             >
@@ -490,6 +511,21 @@ export function EmailNotificationSettingsPanel() {
             </div>
           </section>
         </aside>
+        <EmailTemplateEditor
+          design={{
+            brandName: draft.brandName,
+            brandColor: draft.brandColor,
+            logoUrl: draft.logoUrl,
+            footerText: draft.footerText,
+            templateOverrides: draft.templateOverrides,
+          }}
+          applicationUrl={draft.applicationUrl}
+          companyBrand={companyQuery.data}
+          onChange={design => {
+            setDirty(true);
+            setDraft(current => ({ ...current, ...design }));
+          }}
+        />
       </div>
     </section>
   );

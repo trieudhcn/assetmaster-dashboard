@@ -498,6 +498,13 @@
       "when": 1789523353442,
       "tag": "0070_handy_senator_kelly",
       "breakpoints": true
+    },
+    {
+      "idx": 71,
+      "version": "5",
+      "when": 1789807133725,
+      "tag": "0071_dashing_jasper_sitwell",
+      "breakpoints": true
     }
   ]
 }

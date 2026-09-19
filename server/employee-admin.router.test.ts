@@ -255,8 +255,20 @@ vi.mock("./db", () => ({
 
 vi.mock("./storage", () => ({ storagePut: mocks.storagePut }));
 vi.mock("./emailNotifications", () => ({
+  EMAIL_TEMPLATE_KEYS: [
+    "handover_activated",
+    "handover_returned",
+    "handover_return_decision",
+    "supply_request_rejected",
+    "supply_request_fulfilled",
+    "supply_return_rejected",
+    "supply_return_approved",
+    "system_test",
+  ],
   buildLifecycleEmail: vi.fn(() => ({ subject: "Test", textBody: "Test", htmlBody: "<p>Test</p>" })),
   dispatchEmailOutboxBatch: vi.fn(),
+  getEmailTemplateCatalog: vi.fn(() => []),
+  previewEmailTemplate: vi.fn(),
   queueLifecycleEmail: vi.fn().mockResolvedValue({ queued: false, reason: "disabled" }),
   testEmailNotificationConfiguration: vi.fn(),
 }));

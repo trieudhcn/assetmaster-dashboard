@@ -24,10 +24,52 @@ export type EmailNotificationCategory =
   | "supply_return"
   | "system_test";
 
+export const EMAIL_TEMPLATE_KEYS = [
+  "handover_activated",
+  "handover_returned",
+  "handover_return_decision",
+  "supply_request_rejected",
+  "supply_request_fulfilled",
+  "supply_return_rejected",
+  "supply_return_approved",
+  "system_test",
+] as const;
+
+export type EmailTemplateKey = (typeof EMAIL_TEMPLATE_KEYS)[number];
+
+export type EmailTemplateOverride = {
+  subject?: string;
+  title?: string;
+  intro?: string;
+  actionLabel?: string;
+};
+
+export type EmailBranding = {
+  brandName: string;
+  brandColor: string;
+  logoUrl?: string | null;
+  footerText: string;
+};
+
+export type LifecycleEmailInput = {
+  title: string;
+  greetingName?: string | null;
+  intro: string;
+  details: Array<{
+    label: string;
+    value: string | number | null | undefined;
+  }>;
+  note?: string | null;
+  applicationUrl?: string | null;
+  actionLabel?: string;
+  variables?: Record<string, string | number | null | undefined>;
+};
+
 export type EmailMessage = {
   subject: string;
   textBody: string;
   htmlBody: string;
+  source?: LifecycleEmailInput;
 };
 
 type EmailSettings = NonNullable<
@@ -62,18 +104,97 @@ function normalizedApplicationUrl(value: string | null | undefined) {
   }
 }
 
-export function buildLifecycleEmail(input: {
-  title: string;
-  greetingName?: string | null;
-  intro: string;
-  details: Array<{ label: string; value: string | number | null | undefined }>;
-  note?: string | null;
-  applicationUrl?: string | null;
-  actionLabel?: string;
-}): EmailMessage {
+function interpolateTemplate(
+  value: string,
+  variables: Record<string, string | number | null | undefined>
+) {
+  return value.replace(/{{\s*([A-Za-z0-9_]+)\s*}}/g, (token, key) => {
+    const replacement = variables[key];
+    return replacement === null || replacement === undefined
+      ? token
+      : String(replacement);
+  });
+}
+
+function normalizedBrandColor(value: string | null | undefined) {
+  return /^#[0-9A-F]{6}$/i.test(value || "") ? value! : "#0F8C8C";
+}
+
+function normalizedLogoUrl(
+  value: string | null | undefined,
+  applicationUrl: string | null
+) {
+  if (!value?.trim()) return null;
+  const candidate = value.trim();
+  if (candidate.startsWith("/") && applicationUrl)
+    return `${applicationUrl}${candidate}`;
+  try {
+    const url = new URL(candidate);
+    const localHttp =
+      url.protocol === "http:" &&
+      (url.hostname === "localhost" || url.hostname === "127.0.0.1");
+    if (url.protocol !== "https:" && !localHttp) return null;
+    return url.toString();
+  } catch {
+    return null;
+  }
+}
+
+export function buildLifecycleEmail(
+  input: LifecycleEmailInput & {
+    template?: EmailTemplateOverride | null;
+    branding?: Partial<EmailBranding> | null;
+  }
+): EmailMessage {
+  const brandName = input.branding?.brandName?.trim() || "AssetMaster";
   const details = input.details.filter(
     detail =>
       detail.value !== null && detail.value !== undefined && detail.value !== ""
+  );
+  const detailVariableKeys: Record<string, string> = {
+    "Phiếu bàn giao": "referenceCode",
+    "Mã tài sản": "assetCode",
+    "Tên tài sản": "assetName",
+    "Mã yêu cầu": "requestCode",
+    "Phiếu cấp phát": "issueSlipCode",
+    "Phiếu nguồn": "sourceReferenceCode",
+    "Biên bản hoàn trả": "receiptCode",
+    "Kết quả": "result",
+    "Người xử lý": "actorName",
+    "Người tiếp nhận": "actorName",
+  };
+  const detailVariables = Object.fromEntries(
+    details
+      .map(detail => [detailVariableKeys[detail.label], detail.value] as const)
+      .filter(([key]) => Boolean(key))
+  );
+  const variables = {
+    recipientName: input.greetingName || "",
+    brandName,
+    ...detailVariables,
+    ...(input.variables || {}),
+  };
+  const brandColor = normalizedBrandColor(input.branding?.brandColor);
+  const footerText =
+    input.branding?.footerText?.trim() ||
+    "Đây là email tự động từ AssetMaster. Vui lòng không trả lời email này.";
+  const title = interpolateTemplate(
+    input.template?.title?.trim() || input.title,
+    variables
+  );
+  const intro = interpolateTemplate(
+    input.template?.intro?.trim() || input.intro,
+    variables
+  );
+  const actionLabel = interpolateTemplate(
+    input.template?.actionLabel?.trim() ||
+      input.actionLabel ||
+      "Mở AssetMaster",
+    variables
+  );
+  const subject = interpolateTemplate(
+    input.template?.subject?.trim() || `[${brandName}] ${title}`,
+    variables
   );
   const greeting = input.greetingName?.trim()
     ? `Xin chào ${input.greetingName.trim()},`
@@ -81,21 +202,15 @@ export function buildLifecycleEmail(input: {
   const textLines = [
     greeting,
     "",
-    input.intro,
+    intro,
     "",
     ...details.map(detail => `${detail.label}: ${detail.value}`),
     ...(input.note?.trim() ? ["", `Ghi chú: ${input.note.trim()}`] : []),
   ];
   const applicationUrl = normalizedApplicationUrl(input.applicationUrl);
   if (applicationUrl)
-    textLines.push(
-      "",
-      `${input.actionLabel || "Mở AssetMaster"}: ${applicationUrl}`
-    );
-  textLines.push(
-    "",
-    "Đây là email tự động từ AssetMaster. Vui lòng không trả lời email này."
-  );
+    textLines.push("", `${actionLabel}: ${applicationUrl}`);
+  textLines.push("", footerText);
 
   const detailRows = details
     .map(
@@ -104,17 +219,361 @@ export function buildLifecycleEmail(input: {
     )
     .join("");
   const action = applicationUrl
-    ? `<p style="margin:24px 0 4px"><a href="${escapeHtml(applicationUrl)}" style="display:inline-block;background:#0F8C8C;color:#fff;text-decoration:none;font-weight:700;padding:11px 18px;border-radius:8px">${escapeHtml(input.actionLabel || "Mở AssetMaster")}</a></p>`
+    ? `<p style="margin:24px 0 4px"><a href="${escapeHtml(applicationUrl)}" style="display:inline-block;background:${brandColor};color:#fff;text-decoration:none;font-weight:700;padding:11px 18px;border-radius:8px">${escapeHtml(actionLabel)}</a></p>`
     : "";
   const note = input.note?.trim()
     ? `<div style="margin-top:16px;padding:12px 14px;background:#FFF8E7;border:1px solid #F2D38B;border-radius:8px;color:#72510A"><strong>Ghi chú:</strong> ${escapeHtml(input.note.trim())}</div>`
     : "";
+  const logoUrl = normalizedLogoUrl(input.branding?.logoUrl, applicationUrl);
+  const logo = logoUrl
+    ? `<img src="${escapeHtml(logoUrl)}" alt="${escapeHtml(brandName)}" style="display:block;max-width:132px;max-height:42px;margin:0 0 10px;object-fit:contain" />`
+    : "";
 
   return {
-    subject: `[AssetMaster] ${input.title}`,
+    subject,
     textBody: textLines.join("\n"),
-    htmlBody: `<!doctype html><html lang="vi"><body style="margin:0;background:#F4F7F9;font-family:Arial,sans-serif;color:#193B57"><div style="max-width:640px;margin:0 auto;padding:24px"><div style="background:#fff;border:1px solid #DFE9F0;border-radius:14px;overflow:hidden"><div style="background:#0F8C8C;color:#fff;padding:18px 22px"><div style="font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase">AssetMaster</div><h1 style="font-size:20px;margin:5px 0 0">${escapeHtml(input.title)}</h1></div><div style="padding:22px"><p style="margin-top:0">${escapeHtml(greeting)}</p><p style="line-height:1.6">${escapeHtml(input.intro)}</p><table role="presentation" style="width:100%;border-collapse:collapse;border:1px solid #E7EEF3;border-radius:8px">${detailRows}</table>${note}${action}<p style="margin:24px 0 0;color:#8AA0B6;font-size:12px;line-height:1.5">Đây là email tự động từ AssetMaster. Vui lòng không trả lời email này.</p></div></div></div></body></html>`,
+    htmlBody: `<!doctype html><html lang="vi"><body style="margin:0;background:#F4F7F9;font-family:Arial,sans-serif;color:#193B57"><div style="max-width:640px;margin:0 auto;padding:24px"><div style="background:#fff;border:1px solid #DFE9F0;border-radius:14px;overflow:hidden"><div style="background:${brandColor};color:#fff;padding:18px 22px">${logo}<div style="font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase">${escapeHtml(brandName)}</div><h1 style="font-size:20px;margin:5px 0 0">${escapeHtml(title)}</h1></div><div style="padding:22px"><p style="margin-top:0">${escapeHtml(greeting)}</p><p style="line-height:1.6">${escapeHtml(intro)}</p><table role="presentation" style="width:100%;border-collapse:collapse;border:1px solid #E7EEF3;border-radius:8px">${detailRows}</table>${note}${action}<p style="margin:24px 0 0;color:#8AA0B6;font-size:12px;line-height:1.5">${escapeHtml(footerText)}</p></div></div></div></body></html>`,
+    source: {
+      title: input.title,
+      greetingName: input.greetingName,
+      intro: input.intro,
+      details: input.details,
+      note: input.note,
+      applicationUrl: input.applicationUrl,
+      actionLabel: input.actionLabel,
+      variables: input.variables,
+    },
   };
+}
+
+type EmailTemplateCatalogItem = {
+  key: EmailTemplateKey;
+  label: string;
+  category: EmailNotificationCategory;
+  variables: Array<{ key: string; label: string; sample: string }>;
+  defaults: Required<EmailTemplateOverride>;
+  sample: LifecycleEmailInput;
+};
+
+const EMAIL_TEMPLATE_CATALOG: EmailTemplateCatalogItem[] = [
+  {
+    key: "handover_activated",
+    label: "Bàn giao tài sản có hiệu lực",
+    category: "handover",
+    variables: [
+      { key: "recipientName", label: "Tên người nhận", sample: "Nguyễn Văn An" },
+      { key: "assetCode", label: "Mã tài sản", sample: "LT-00128" },
+      { key: "assetName", label: "Tên tài sản", sample: "Laptop Dell Latitude" },
+      { key: "referenceCode", label: "Mã phiếu", sample: "BG-2026-0088" },
+    ],
+    defaults: {
+      subject: "[{{brandName}}] Bàn giao tài sản {{assetCode}}",
+      title: "Bàn giao tài sản {{assetCode}}",
+      intro: "Phiếu bàn giao tài sản của bạn đã được xác nhận và có hiệu lực.",
+      actionLabel: "Xem phiếu bàn giao",
+    },
+    sample: {
+      title: "Bàn giao tài sản LT-00128",
+      greetingName: "Nguyễn Văn An",
+      intro: "Phiếu bàn giao tài sản của bạn đã được xác nhận và có hiệu lực.",
+      details: [
+        { label: "Phiếu bàn giao", value: "BG-2026-0088" },
+        { label: "Mã tài sản", value: "LT-00128" },
+        { label: "Tên tài sản", value: "Laptop Dell Latitude" },
+        { label: "Ngày bàn giao", value: "19 thg 9, 2026" },
+      ],
+      actionLabel: "Xem phiếu bàn giao",
+      variables: {
+        assetCode: "LT-00128",
+        assetName: "Laptop Dell Latitude",
+        referenceCode: "BG-2026-0088",
+      },
+    },
+  },
+  {
+    key: "handover_returned",
+    label: "Hoàn tất hoàn trả tài sản",
+    category: "handover",
+    variables: [
+      { key: "recipientName", label: "Tên người nhận", sample: "Nguyễn Văn An" },
+      { key: "assetCode", label: "Mã tài sản", sample: "LT-00128" },
+      { key: "assetName", label: "Tên tài sản", sample: "Laptop Dell Latitude" },
+      { key: "referenceCode", label: "Mã phiếu", sample: "BG-2026-0088" },
+    ],
+    defaults: {
+      subject: "[{{brandName}}] Đã hoàn trả tài sản {{assetCode}}",
+      title: "Đã hoàn trả tài sản {{assetCode}}",
+      intro: "Hệ thống đã ghi nhận hoàn tất việc hoàn trả tài sản.",
+      actionLabel: "Xem phiếu bàn giao",
+    },
+    sample: {
+      title: "Đã hoàn trả tài sản LT-00128",
+      greetingName: "Nguyễn Văn An",
+      intro: "Hệ thống đã ghi nhận hoàn tất việc hoàn trả tài sản.",
+      details: [
+        { label: "Phiếu bàn giao", value: "BG-2026-0088" },
+        { label: "Mã tài sản", value: "LT-00128" },
+        { label: "Tên tài sản", value: "Laptop Dell Latitude" },
+        { label: "Ngày hoàn trả", value: "19 thg 9, 2026" },
+      ],
+      actionLabel: "Xem phiếu bàn giao",
+      variables: {
+        assetCode: "LT-00128",
+        assetName: "Laptop Dell Latitude",
+        referenceCode: "BG-2026-0088",
+      },
+    },
+  },
+  {
+    key: "handover_return_decision",
+    label: "Kết quả yêu cầu hoàn trả tài sản",
+    category: "handover",
+    variables: [
+      { key: "recipientName", label: "Tên người nhận", sample: "Nguyễn Văn An" },
+      { key: "assetCode", label: "Mã tài sản", sample: "LT-00128" },
+      { key: "referenceCode", label: "Mã phiếu", sample: "BG-2026-0088" },
+      { key: "result", label: "Kết quả", sample: "Đã duyệt" },
+    ],
+    defaults: {
+      subject: "[{{brandName}}] Yêu cầu hoàn trả {{referenceCode}} đã được xử lý",
+      title: "Yêu cầu hoàn trả {{referenceCode}} đã được xử lý",
+      intro: "Yêu cầu hoàn trả tài sản của bạn đã được quản trị viên xử lý.",
+      actionLabel: "Xem kết quả hoàn trả",
+    },
+    sample: {
+      title: "Yêu cầu hoàn trả BG-2026-0088 đã được xử lý",
+      greetingName: "Nguyễn Văn An",
+      intro: "Yêu cầu hoàn trả tài sản của bạn đã được quản trị viên xử lý.",
+      details: [
+        { label: "Phiếu bàn giao", value: "BG-2026-0088" },
+        { label: "Mã tài sản", value: "LT-00128" },
+        { label: "Kết quả", value: "Đã duyệt" },
+      ],
+      note: "Thiết bị được tiếp nhận tại phòng IT.",
+      actionLabel: "Xem kết quả hoàn trả",
+      variables: {
+        assetCode: "LT-00128",
+        referenceCode: "BG-2026-0088",
+        result: "Đã duyệt",
+      },
+    },
+  },
+  {
+    key: "supply_request_rejected",
+    label: "Từ chối yêu cầu phụ kiện",
+    category: "supply_request",
+    variables: [
+      { key: "recipientName", label: "Tên người nhận", sample: "Nguyễn Văn An" },
+      { key: "requestCode", label: "Mã yêu cầu", sample: "YC-2026-0042" },
+      { key: "result", label: "Kết quả", sample: "Từ chối" },
+      { key: "actorName", label: "Người xử lý", sample: "Quản trị viên IT" },
+    ],
+    defaults: {
+      subject: "[{{brandName}}] Yêu cầu {{requestCode}} đã bị từ chối",
+      title: "Yêu cầu {{requestCode}} đã bị từ chối",
+      intro: "Yêu cầu cấp phụ kiện của bạn đã được quản trị viên xử lý.",
+      actionLabel: "Xem yêu cầu",
+    },
+    sample: {
+      title: "Yêu cầu YC-2026-0042 đã bị từ chối",
+      greetingName: "Nguyễn Văn An",
+      intro: "Yêu cầu cấp phụ kiện của bạn đã được quản trị viên xử lý.",
+      details: [
+        { label: "Mã yêu cầu", value: "YC-2026-0042" },
+        { label: "Kết quả", value: "Từ chối" },
+        { label: "Người xử lý", value: "Quản trị viên IT" },
+      ],
+      note: "Phụ kiện tạm thời chưa còn trong kho.",
+      actionLabel: "Xem yêu cầu",
+      variables: {
+        requestCode: "YC-2026-0042",
+        result: "Từ chối",
+        actorName: "Quản trị viên IT",
+      },
+    },
+  },
+  {
+    key: "supply_request_fulfilled",
+    label: "Cấp phát phụ kiện",
+    category: "supply_request",
+    variables: [
+      { key: "recipientName", label: "Tên người nhận", sample: "Nguyễn Văn An" },
+      { key: "requestCode", label: "Mã yêu cầu", sample: "YC-2026-0042" },
+      { key: "issueSlipCode", label: "Mã phiếu cấp", sample: "PX-2026-0031" },
+      { key: "result", label: "Kết quả", sample: "Đã cấp đầy đủ" },
+    ],
+    defaults: {
+      subject: "[{{brandName}}] Yêu cầu {{requestCode}} đã được cấp phát",
+      title: "Yêu cầu {{requestCode}} đã được cấp phát",
+      intro: "Yêu cầu phụ kiện của bạn đã được duyệt và cấp phát.",
+      actionLabel: "Xem phiếu cấp phát",
+    },
+    sample: {
+      title: "Yêu cầu YC-2026-0042 đã được cấp phát",
+      greetingName: "Nguyễn Văn An",
+      intro: "Yêu cầu phụ kiện của bạn đã được duyệt và cấp phát.",
+      details: [
+        { label: "Mã yêu cầu", value: "YC-2026-0042" },
+        { label: "Phiếu cấp phát", value: "PX-2026-0031" },
+        { label: "Kết quả", value: "Đã cấp đầy đủ" },
+      ],
+      actionLabel: "Xem phiếu cấp phát",
+      variables: {
+        requestCode: "YC-2026-0042",
+        issueSlipCode: "PX-2026-0031",
+        result: "Đã cấp đầy đủ",
+      },
+    },
+  },
+  {
+    key: "supply_return_rejected",
+    label: "Từ chối hoàn trả phụ kiện",
+    category: "supply_return",
+    variables: [
+      { key: "recipientName", label: "Tên người nhận", sample: "Nguyễn Văn An" },
+      { key: "requestCode", label: "Mã yêu cầu", sample: "HT-2026-0014" },
+      { key: "sourceReferenceCode", label: "Phiếu nguồn", sample: "PX-2026-0031" },
+      { key: "result", label: "Kết quả", sample: "Từ chối" },
+    ],
+    defaults: {
+      subject: "[{{brandName}}] Yêu cầu hoàn trả {{requestCode}} đã bị từ chối",
+      title: "Yêu cầu hoàn trả {{requestCode}} đã bị từ chối",
+      intro: "Yêu cầu hoàn trả phụ kiện của bạn đã được xử lý.",
+      actionLabel: "Xem yêu cầu hoàn trả",
+    },
+    sample: {
+      title: "Yêu cầu hoàn trả HT-2026-0014 đã bị từ chối",
+      greetingName: "Nguyễn Văn An",
+      intro: "Yêu cầu hoàn trả phụ kiện của bạn đã được xử lý.",
+      details: [
+        { label: "Mã yêu cầu", value: "HT-2026-0014" },
+        { label: "Phiếu nguồn", value: "PX-2026-0031" },
+        { label: "Kết quả", value: "Từ chối" },
+      ],
+      actionLabel: "Xem yêu cầu hoàn trả",
+      variables: {
+        requestCode: "HT-2026-0014",
+        sourceReferenceCode: "PX-2026-0031",
+        result: "Từ chối",
+      },
+    },
+  },
+  {
+    key: "supply_return_approved",
+    label: "Tiếp nhận hoàn trả phụ kiện",
+    category: "supply_return",
+    variables: [
+      { key: "recipientName", label: "Tên người nhận", sample: "Nguyễn Văn An" },
+      { key: "requestCode", label: "Mã yêu cầu", sample: "HT-2026-0014" },
+      { key: "receiptCode", label: "Mã biên bản", sample: "BBHT-2026-0009" },
+      { key: "actorName", label: "Người tiếp nhận", sample: "Quản trị viên IT" },
+    ],
+    defaults: {
+      subject: "[{{brandName}}] Đã tiếp nhận hoàn trả {{requestCode}}",
+      title: "Đã tiếp nhận hoàn trả {{requestCode}}",
+      intro: "Yêu cầu hoàn trả phụ kiện của bạn đã được duyệt và lập biên bản.",
+      actionLabel: "Xem biên bản hoàn trả",
+    },
+    sample: {
+      title: "Đã tiếp nhận hoàn trả HT-2026-0014",
+      greetingName: "Nguyễn Văn An",
+      intro: "Yêu cầu hoàn trả phụ kiện của bạn đã được duyệt và lập biên bản.",
+      details: [
+        { label: "Mã yêu cầu", value: "HT-2026-0014" },
+        { label: "Biên bản hoàn trả", value: "BBHT-2026-0009" },
+        { label: "Người tiếp nhận", value: "Quản trị viên IT" },
+      ],
+      actionLabel: "Xem biên bản hoàn trả",
+      variables: {
+        requestCode: "HT-2026-0014",
+        receiptCode: "BBHT-2026-0009",
+        actorName: "Quản trị viên IT",
+      },
+    },
+  },
+  {
+    key: "system_test",
+    label: "Email kiểm tra hệ thống",
+    category: "system_test",
+    variables: [
+      { key: "recipientName", label: "Tên người nhận", sample: "Quản trị viên" },
+      { key: "brandName", label: "Tên thương hiệu", sample: "AssetMaster" },
+    ],
+    defaults: {
+      subject: "[{{brandName}}] Kiểm tra kết nối email Microsoft 365",
+      title: "Kiểm tra kết nối email Microsoft 365",
+      intro: "Hệ thống đã kiểm tra thành công cấu hình gửi thông báo email.",
+      actionLabel: "Mở AssetMaster",
+    },
+    sample: {
+      title: "Kiểm tra kết nối email Microsoft 365",
+      greetingName: "Quản trị viên",
+      intro: "Hệ thống đã kiểm tra thành công cấu hình gửi thông báo email.",
+      details: [
+        { label: "Chế độ", value: "Mô phỏng" },
+        { label: "Thời điểm", value: "19/09/2026 15:00" },
+      ],
+      actionLabel: "Mở AssetMaster",
+    },
+  },
+];
+
+function templateOverridesFromSettings(settings: EmailSettings) {
+  return (settings.templateOverrides || {}) as Record<
+    string,
+    EmailTemplateOverride
+  >;
+}
+
+function brandingFromSettings(settings: EmailSettings): EmailBranding {
+  return {
+    brandName: settings.brandName || "AssetMaster",
+    brandColor: settings.brandColor || "#0F8C8C",
+    logoUrl: settings.logoUrl,
+    footerText:
+      settings.footerText ||
+      "Đây là email tự động từ AssetMaster. Vui lòng không trả lời email này.",
+  };
+}
+
+export function getEmailTemplateCatalog() {
+  return EMAIL_TEMPLATE_CATALOG.map(({ sample: _sample, ...definition }) =>
+    definition
+  );
+}
+
+export function renderConfiguredLifecycleEmail(
+  settings: EmailSettings,
+  templateKey: string,
+  message: EmailMessage
+) {
+  if (!message.source) return message;
+  return buildLifecycleEmail({
+    ...message.source,
+    template: templateOverridesFromSettings(settings)[templateKey],
+    branding: brandingFromSettings(settings),
+  });
+}
+
+export function previewEmailTemplate(input: {
+  templateKey: EmailTemplateKey;
+  brandName: string;
+  brandColor: string;
+  logoUrl: string | null;
+  footerText: string;
+  applicationUrl: string | null;
+  templateOverrides: Record<string, EmailTemplateOverride>;
+}) {
+  const definition = EMAIL_TEMPLATE_CATALOG.find(
+    item => item.key === input.templateKey
+  );
+  if (!definition) throw new Error("Mẫu email không tồn tại.");
+  return buildLifecycleEmail({
+    ...definition.sample,
+    applicationUrl: input.applicationUrl,
+    template: input.templateOverrides[input.templateKey],
+    branding: input,
+  });
 }
 
 function categoryEnabled(
@@ -152,6 +611,11 @@ export async function queueLifecycleEmail(
   const recipientEmail = recipient?.email?.trim().toLocaleLowerCase("en-US");
   if (!recipientEmail)
     return { queued: false as const, reason: "missing_email" as const };
+  const renderedMessage = renderConfiguredLifecycleEmail(
+    settings,
+    input.templateKey,
+    input.message
+  );
   const outbox = await createEmailOutboxItem(
     {
       eventKey: input.eventKey,
@@ -161,9 +625,9 @@ export async function queueLifecycleEmail(
       entityId: input.entityId,
       recipientEmail,
       recipientName: input.recipientName || recipient?.name || null,
-      subject: input.message.subject,
-      textBody: input.message.textBody,
-      htmlBody: input.message.htmlBody,
+      subject: renderedMessage.subject,
+      textBody: renderedMessage.textBody,
+      htmlBody: renderedMessage.htmlBody,
       payload: input.payload ?? null,
       status: "pending",
       attemptCount: 0,
@@ -313,7 +777,7 @@ export async function testEmailNotificationConfiguration(
 ) {
   const settings = await getEmailNotificationSettings();
   if (!settings) throw new Error("Hãy lưu cấu hình thông báo email trước.");
-  const message = buildLifecycleEmail({
+  const message = renderConfiguredLifecycleEmail(settings, "system_test", buildLifecycleEmail({
     title: "Kiểm tra kết nối email Microsoft 365",
     greetingName: "Quản trị viên",
     intro: "AssetMaster đã kiểm tra thành công cấu hình gửi thông báo email.",
@@ -335,7 +799,7 @@ export async function testEmailNotificationConfiguration(
       },
     ],
     applicationUrl: settings.applicationUrl,
-  });
+  }));
   const requestId = await deliverEmail(settings, {
     id: 0,
     recipientEmail,

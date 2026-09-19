@@ -411,6 +411,19 @@ export const emailNotificationSettings = mysqlTable(
       .default("AssetMaster")
       .notNull(),
     applicationUrl: varchar("applicationUrl", { length: 500 }),
+    brandName: varchar("brandName", { length: 160 })
+      .default("AssetMaster")
+      .notNull(),
+    brandColor: varchar("brandColor", { length: 9 })
+      .default("#0F8C8C")
+      .notNull(),
+    logoUrl: text("logoUrl"),
+    footerText: varchar("footerText", { length: 500 })
+      .default(
+        "Đây là email tự động từ AssetMaster. Vui lòng không trả lời email này."
+      )
+      .notNull(),
+    templateOverrides: json("templateOverrides"),
     handoverEnabled: boolean("handoverEnabled").default(true).notNull(),
     supplyRequestEnabled: boolean("supplyRequestEnabled")
       .default(true)
