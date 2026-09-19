@@ -130,6 +130,7 @@ import {
   getDivisionByCode,
   getCompany,
   getDirectorySettings,
+  getEmailNotificationSettings,
   getEntraSettings,
   getFileStorageSettings,
   getHandoverById,
@@ -233,6 +234,7 @@ import {
   listAllDivisions,
   listDepartments,
   listDirectorySettingAudits,
+  listEmailOutbox,
   listEntraSettingAudits,
   listDivisions,
   listHandovers,
@@ -278,6 +280,7 @@ import {
   runPurchaseInvoiceTransaction,
   saveCompany,
   saveDirectorySettings,
+  saveEmailNotificationSettings,
   saveEntraSettings,
   saveFileStorageSettings,
   saveMaintenanceMonthlyBudget,
@@ -330,9 +333,11 @@ import {
   updateUserDepartment,
   updateUserDivision,
   updateDirectoryTestResult,
+  updateEmailNotificationTestResult,
   updateEntraSyncResult,
   updateEntraTestResult,
   setDirectoryStatus,
+  setEmailNotificationStatus,
   setEntraStatus,
   updateAuditItem,
   updateAuditSession,
@@ -343,6 +348,7 @@ import {
   incrementInventorySupplyConditionQuantity,
   incrementSupplyIssueSlipItemReturnedQuantity,
   incrementHandoverSupplyItemReturnedQuantity,
+  retryEmailOutboxItem,
 } from "./db";
 import {
   credentialFingerprint,
@@ -351,6 +357,7 @@ import {
   maskLicenseKey,
 } from "./licenseCredentials";
 import { storagePut } from "./storage";
+import { buildLifecycleEmail, dispatchEmailOutboxBatch, queueLifecycleEmail, testEmailNotificationConfiguration } from "./emailNotifications";
 
 const nullableText = z.string().trim().max(1000).optional().nullable();
 const nullableEmail = z.string().trim().email().max(320).optional().nullable();
@@ -444,6 +451,28 @@ const entraSettingsInput = z.object({
     .nullable(),
   adminAppRole: z.string().trim().min(3).max(160),
   userAppRole: z.string().trim().min(3).max(160),
+});
+const emailNotificationSettingsInput = z.object({
+  provider: z.enum(["mock", "microsoft_graph"]),
+  tenantId: z.string().trim().uuid().optional().nullable(),
+  clientId: z.string().trim().uuid().optional().nullable(),
+  clientSecretRef: z.string().trim().max(255).regex(/^\/(?:run\/secrets|etc\/assetmaster\/secrets)\/[A-Za-z0-9._-]{1,128}$/, "Secret email phải nằm trong /run/secrets hoặc /etc/assetmaster/secrets.").optional().nullable(),
+  senderEmail: nullableEmail,
+  senderName: z.string().trim().min(2).max(160),
+  applicationUrl: z.string().trim().max(500).url("URL AssetMaster không hợp lệ.").optional().nullable().superRefine((value, ctx) => {
+    if (!value) return;
+    const url = new URL(value);
+    const localHttp = url.protocol === "http:" && (url.hostname === "localhost" || url.hostname === "127.0.0.1");
+    if (url.protocol !== "https:" && !localHttp) ctx.addIssue({ code: z.ZodIssueCode.custom, message: "URL production phải dùng HTTPS." });
+  }),
+  handoverEnabled: z.boolean(),
+  supplyRequestEnabled: z.boolean(),
+  supplyReturnEnabled: z.boolean(),
+  maxAttempts: z.number().int().min(1).max(10),
+}).superRefine((input, ctx) => {
+  if (input.provider !== "microsoft_graph") return;
+  for (const [key, label] of [["tenantId", "Tenant ID"], ["clientId", "Client ID"], ["clientSecretRef", "Tệp Client Secret"], ["senderEmail", "Mailbox gửi"]] as const)
+    if (!input[key]) ctx.addIssue({ code: z.ZodIssueCode.custom, path: [key], message: `${label} là bắt buộc khi dùng Microsoft Graph.` });
 });
 
 const sidebarMenuLabels = [
@@ -1361,6 +1390,46 @@ export const appRouter = router({
           throw new TRPCError({ code: "BAD_REQUEST", message });
         }
       }),
+  }),
+  emailNotifications: router({
+    get: adminProcedure.query(() => getEmailNotificationSettings()),
+    outbox: adminProcedure.input(z.object({ limit: z.number().int().min(1).max(200).default(50) })).query(({ input }) => listEmailOutbox(input.limit)),
+    save: adminProcedure.input(emailNotificationSettingsInput).mutation(async ({ input, ctx }) => {
+      const settings = await saveEmailNotificationSettings({ ...input, tenantId: input.tenantId || null, clientId: input.clientId || null, clientSecretRef: input.clientSecretRef || null, senderEmail: input.senderEmail || null, applicationUrl: input.applicationUrl || null }, { userId: ctx.user.id, name: ctx.user.name });
+      await recordActivity({ entityType: "email_notification_setting", entityId: 1, action: "saved", actorUserId: ctx.user.id, actorName: ctx.user.name, summary: `Lưu cấu hình email ${input.provider === "mock" ? "mô phỏng" : "Microsoft Graph"}` });
+      return settings;
+    }),
+    test: adminProcedure.mutation(async ({ ctx }) => {
+      if (!ctx.user.email) throw new TRPCError({ code: "PRECONDITION_FAILED", message: "Tài khoản quản trị cần có email để nhận thư kiểm tra." });
+      try {
+        const result = await testEmailNotificationConfiguration(ctx.user.email);
+        await updateEmailNotificationTestResult({ status: "success", message: result.message, actor: { userId: ctx.user.id, name: ctx.user.name } });
+        await recordActivity({ entityType: "email_notification_setting", entityId: 1, action: "tested", actorUserId: ctx.user.id, actorName: ctx.user.name, summary: result.message });
+        return { success: true, ...result };
+      } catch (error) {
+        const message = error instanceof Error ? error.message : "Không thể kiểm tra email.";
+        await updateEmailNotificationTestResult({ status: "failed", message, actor: { userId: ctx.user.id, name: ctx.user.name } }).catch(() => undefined);
+        return { success: false, message, requestId: null };
+      }
+    }),
+    setStatus: adminProcedure.input(z.object({ status: z.enum(["active", "disabled"]) })).mutation(async ({ input, ctx }) => {
+      const settings = await getEmailNotificationSettings();
+      if (!settings) throw new TRPCError({ code: "PRECONDITION_FAILED", message: "Hãy lưu cấu hình thông báo email trước." });
+      if (input.status === "active" && settings.lastTestStatus !== "success") throw new TRPCError({ code: "PRECONDITION_FAILED", message: "Hãy kiểm tra cấu hình email thành công trước khi kích hoạt." });
+      const saved = await setEmailNotificationStatus(input.status, { userId: ctx.user.id, name: ctx.user.name });
+      await recordActivity({ entityType: "email_notification_setting", entityId: 1, action: input.status, actorUserId: ctx.user.id, actorName: ctx.user.name, summary: input.status === "active" ? "Kích hoạt thông báo email AssetMaster" : "Tắt thông báo email AssetMaster" });
+      return saved;
+    }),
+    dispatch: adminProcedure.mutation(async ({ ctx }) => {
+      const result = await dispatchEmailOutboxBatch(25);
+      await recordActivity({ entityType: "email_notification_setting", entityId: 1, action: "outbox_dispatched", actorUserId: ctx.user.id, actorName: ctx.user.name, summary: `Xử lý outbox email: ${result.sent} thành công, ${result.failed} lỗi` });
+      return result;
+    }),
+    retry: adminProcedure.input(z.object({ id: z.number().int().positive() })).mutation(async ({ input, ctx }) => {
+      if (!(await retryEmailOutboxItem(input.id))) throw new TRPCError({ code: "CONFLICT", message: "Chỉ có thể gửi lại email đang ở trạng thái thất bại." });
+      await recordActivity({ entityType: "email_outbox", entityId: input.id, action: "retried", actorUserId: ctx.user.id, actorName: ctx.user.name, summary: `Đưa email #${input.id} trở lại hàng đợi` });
+      return { success: true };
+    }),
   }),
   directory: router({
     publicStatus: publicProcedure.query(async () => {
@@ -6049,6 +6118,8 @@ export const appRouter = router({
             },
             transaction
           );
+          const emailSettings = await getEmailNotificationSettings(transaction);
+          await queueLifecycleEmail({ eventKey: `supply-request:${request.id}:rejected`, category: "supply_request", templateKey: "supply_request_rejected", entityType: "supply_request", entityId: request.id, recipientUserId: request.requesterUserId, recipientName: request.requesterName, message: buildLifecycleEmail({ title: `Yêu cầu ${request.requestCode} đã bị từ chối`, greetingName: request.requesterName, intro: "Yêu cầu cấp phụ kiện của bạn đã được quản trị viên xử lý.", details: [{ label: "Mã yêu cầu", value: request.requestCode }, { label: "Kết quả", value: "Từ chối" }, { label: "Người xử lý", value: ctx.user!.name || "Quản trị viên" }], note: input.reviewNote, applicationUrl: emailSettings?.applicationUrl, actionLabel: "Xem yêu cầu" }), payload: { status: "rejected" } }, transaction);
           return { success: true };
         })
       ),
@@ -6317,6 +6388,8 @@ export const appRouter = router({
                 },
                 transaction
               );
+              const emailSettings = await getEmailNotificationSettings(transaction);
+              await queueLifecycleEmail({ eventKey: `supply-request:${request.id}:${finalStatus}`, category: "supply_request", templateKey: "supply_request_fulfilled", entityType: "supply_request", entityId: request.id, recipientUserId: request.requesterUserId, recipientName: request.requesterName, message: buildLifecycleEmail({ title: `Yêu cầu ${request.requestCode} đã được cấp phát`, greetingName: request.requesterName, intro: isPartial ? "Yêu cầu phụ kiện của bạn đã được cấp một phần." : "Yêu cầu phụ kiện của bạn đã được duyệt và cấp phát.", details: [{ label: "Mã yêu cầu", value: request.requestCode }, { label: "Phiếu cấp phát", value: referenceCode }, { label: "Kết quả", value: isPartial ? "Cấp một phần" : "Đã cấp đầy đủ" }], note: input.reviewNote, applicationUrl: emailSettings?.applicationUrl, actionLabel: "Xem phiếu cấp phát" }), payload: { status: finalStatus, issueSlipId, referenceCode } }, transaction);
               return {
                 id: issueSlipId,
                 referenceCode,
@@ -6829,6 +6902,8 @@ export const appRouter = router({
           actorName: ctx.user!.name,
           summary: `Từ chối yêu cầu hoàn phụ kiện ${request.requestCode}`,
         });
+        const emailSettings = await getEmailNotificationSettings();
+        await queueLifecycleEmail({ eventKey: `supply-return:${request.id}:rejected`, category: "supply_return", templateKey: "supply_return_rejected", entityType: "supply_return_request", entityId: request.id, recipientUserId: request.requesterUserId, recipientName: request.requesterName, message: buildLifecycleEmail({ title: `Yêu cầu hoàn trả ${request.requestCode} đã bị từ chối`, greetingName: request.requesterName, intro: "Yêu cầu hoàn trả phụ kiện của bạn đã được xử lý.", details: [{ label: "Mã yêu cầu", value: request.requestCode }, { label: "Phiếu nguồn", value: request.sourceReferenceCode }, { label: "Kết quả", value: "Từ chối" }], note: input.reviewNote, applicationUrl: emailSettings?.applicationUrl, actionLabel: "Xem yêu cầu hoàn trả" }), payload: { status: "rejected" } });
         return { success: true };
       }),
     approveReturnRequest: adminProcedure
@@ -7151,6 +7226,8 @@ export const appRouter = router({
             },
             transaction
           );
+          const emailSettings = await getEmailNotificationSettings(transaction);
+          await queueLifecycleEmail({ eventKey: `supply-return:${request.id}:approved`, category: "supply_return", templateKey: "supply_return_approved", entityType: "supply_return_request", entityId: request.id, recipientUserId: request.requesterUserId, recipientName: request.requesterName, message: buildLifecycleEmail({ title: `Đã tiếp nhận hoàn trả ${request.requestCode}`, greetingName: request.requesterName, intro: "Yêu cầu hoàn trả phụ kiện của bạn đã được duyệt và lập biên bản.", details: [{ label: "Mã yêu cầu", value: request.requestCode }, { label: "Biên bản hoàn trả", value: receiptCode }, { label: "Người tiếp nhận", value: input.receivedByName }], note: input.reviewNote, applicationUrl: emailSettings?.applicationUrl, actionLabel: "Xem biên bản hoàn trả" }), payload: { status: "approved", receiptCode } }, transaction);
           return {
             success: true,
             requestCode: request.requestCode,
@@ -9711,6 +9788,8 @@ export const appRouter = router({
           actorName: ctx.user.name,
           summary: `${input.decision === "approved" ? "Duyệt" : "Từ chối"} yêu cầu hoàn trả ${handover.assetCode}`,
         });
+        const emailSettings = await getEmailNotificationSettings();
+        await queueLifecycleEmail({ eventKey: `handover:${handover.id}:return-${input.decision}`, category: "handover", templateKey: "handover_return_decision", entityType: "handover", entityId: handover.id, recipientUserId: handover.recipientUserId, recipientName: handover.recipientName, message: buildLifecycleEmail({ title: `Yêu cầu hoàn trả ${handover.referenceCode} đã được xử lý`, greetingName: handover.recipientName, intro: input.decision === "approved" ? "Yêu cầu hoàn trả tài sản của bạn đã được duyệt." : "Yêu cầu hoàn trả tài sản của bạn chưa được chấp thuận.", details: [{ label: "Phiếu bàn giao", value: handover.referenceCode }, { label: "Mã tài sản", value: handover.assetCode }, { label: "Kết quả", value: input.decision === "approved" ? "Đã duyệt" : "Từ chối" }, { label: "Tình trạng tiếp nhận", value: input.conditionIn }], note: input.resolution, applicationUrl: emailSettings?.applicationUrl, actionLabel: "Xem kết quả hoàn trả" }), payload: { decision: input.decision } });
         return { success: true, ...returnSummary };
       }),
     create: adminProcedure
@@ -9969,6 +10048,11 @@ export const appRouter = router({
           actorName: ctx.user!.name,
           summary: `Cập nhật trạng thái phiếu: ${input.status}`,
         });
+        if (input.status === "active" || input.status === "returned") {
+          const emailSettings = await getEmailNotificationSettings();
+          const activated = input.status === "active";
+          await queueLifecycleEmail({ eventKey: `handover:${existing.id}:status-${input.status}`, category: "handover", templateKey: activated ? "handover_activated" : "handover_returned", entityType: "handover", entityId: existing.id, recipientUserId: existing.recipientUserId, recipientName: existing.recipientName, message: buildLifecycleEmail({ title: activated ? `Bàn giao tài sản ${existing.assetCode}` : `Đã hoàn trả tài sản ${existing.assetCode}`, greetingName: existing.recipientName, intro: activated ? "Phiếu bàn giao tài sản của bạn đã được xác nhận và có hiệu lực." : "AssetMaster đã ghi nhận hoàn tất việc hoàn trả tài sản.", details: [{ label: "Phiếu bàn giao", value: existing.referenceCode }, { label: "Mã tài sản", value: existing.assetCode }, { label: "Tên tài sản", value: existing.assetName }, { label: activated ? "Ngày bàn giao" : "Ngày hoàn trả", value: new Intl.DateTimeFormat("vi-VN", { dateStyle: "medium" }).format(activated ? new Date(existing.handedOverAt) : new Date()) }, { label: "Hạn hoàn trả", value: existing.dueBackAt ? new Intl.DateTimeFormat("vi-VN", { dateStyle: "medium" }).format(new Date(existing.dueBackAt)) : null }], note: existing.note, applicationUrl: emailSettings?.applicationUrl, actionLabel: "Xem phiếu bàn giao" }), payload: { status: input.status } });
+        }
         return { success: true, ...returnSummary };
       }),
     saveRecipientSignature: adminProcedure

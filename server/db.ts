@@ -1,4 +1,4 @@
-import { and, asc, count, desc, eq, gt, inArray, isNull, like, sql } from "drizzle-orm";
+import { and, asc, count, desc, eq, gt, inArray, isNull, like, lte, sql } from "drizzle-orm";
 import { createHash } from "node:crypto";
 import { drizzle } from "drizzle-orm/mysql2";
 import {
@@ -18,6 +18,8 @@ import {
   departments,
   directorySettingAudits,
   directorySettings,
+  emailNotificationSettings,
+  emailOutbox,
   entraSettingAudits,
   entraSettings,
   fileStorageSettings,
@@ -131,6 +133,117 @@ export async function updateFileStorageTestResult(input: { status: "success" | "
   return getFileStorageSettings();
 }
 
+export type EmailNotificationSettingsInput = {
+  provider: "mock" | "microsoft_graph";
+  tenantId: string | null;
+  clientId: string | null;
+  clientSecretRef: string | null;
+  senderEmail: string | null;
+  senderName: string;
+  applicationUrl: string | null;
+  handoverEnabled: boolean;
+  supplyRequestEnabled: boolean;
+  supplyReturnEnabled: boolean;
+  maxAttempts: number;
+};
+
+export async function getEmailNotificationSettings(executor?: any) {
+  const db = executor ?? (await getDb());
+  if (!db) return null;
+  return (await db.select().from(emailNotificationSettings).where(eq(emailNotificationSettings.id, 1)).limit(1))[0] ?? null;
+}
+
+export async function saveEmailNotificationSettings(input: EmailNotificationSettingsInput, actor: { userId: number; name: string | null }) {
+  const db = await getDb();
+  if (!db) throw new Error("Không thể kết nối cơ sở dữ liệu của AssetMaster.");
+  const existing = await getEmailNotificationSettings();
+  const values = {
+    id: 1,
+    version: (existing?.version ?? 0) + 1,
+    status: "draft" as const,
+    ...input,
+    lastTestStatus: "not_tested" as const,
+    lastTestMessage: null,
+    lastTestedAt: null,
+    createdByUserId: existing?.createdByUserId ?? actor.userId,
+    updatedByUserId: actor.userId,
+  };
+  await db.insert(emailNotificationSettings).values(values).onDuplicateKeyUpdate({ set: { ...values, createdAt: existing?.createdAt, lastDispatchedAt: existing?.lastDispatchedAt ?? null } });
+  return getEmailNotificationSettings();
+}
+
+export async function updateEmailNotificationTestResult(input: { status: "success" | "failed"; message: string; actor: { userId: number; name: string | null } }) {
+  const db = await getDb();
+  if (!db) throw new Error("Không thể kết nối cơ sở dữ liệu của AssetMaster.");
+  await db.update(emailNotificationSettings).set({ lastTestStatus: input.status, lastTestMessage: input.message.slice(0, 500), lastTestedAt: new Date(), updatedByUserId: input.actor.userId }).where(eq(emailNotificationSettings.id, 1));
+  return getEmailNotificationSettings();
+}
+
+export async function setEmailNotificationStatus(status: "active" | "disabled", actor: { userId: number; name: string | null }) {
+  const db = await getDb();
+  if (!db) throw new Error("Không thể kết nối cơ sở dữ liệu của AssetMaster.");
+  await db.update(emailNotificationSettings).set({ status, updatedByUserId: actor.userId }).where(eq(emailNotificationSettings.id, 1));
+  return getEmailNotificationSettings();
+}
+
+export async function createEmailOutboxItem(data: typeof emailOutbox.$inferInsert, executor?: any) {
+  const db = executor ?? (await getDb());
+  if (!db) throw new Error("Database unavailable");
+  await db.insert(emailOutbox).values(data).onDuplicateKeyUpdate({ set: { eventKey: data.eventKey } });
+  return (await db.select().from(emailOutbox).where(eq(emailOutbox.eventKey, data.eventKey)).limit(1))[0];
+}
+
+export async function listEmailOutbox(limit = 50) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(emailOutbox).orderBy(desc(emailOutbox.createdAt)).limit(limit);
+}
+
+export async function listDueEmailOutbox(limit = 10) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(emailOutbox).where(and(eq(emailOutbox.status, "pending"), lte(emailOutbox.nextAttemptAt, new Date()), sql`${emailOutbox.attemptCount} < ${emailOutbox.maxAttempts}`)).orderBy(asc(emailOutbox.nextAttemptAt), asc(emailOutbox.id)).limit(limit);
+}
+
+export async function claimEmailOutboxItem(id: number) {
+  const db = await getDb();
+  if (!db) return false;
+  const result = await db.update(emailOutbox).set({ status: "processing", lastAttemptAt: new Date() }).where(and(eq(emailOutbox.id, id), eq(emailOutbox.status, "pending"), lte(emailOutbox.nextAttemptAt, new Date())));
+  return Number(result[0].affectedRows) > 0;
+}
+
+export async function completeEmailOutboxItem(id: number, providerRequestId: string | null) {
+  const db = await getDb();
+  if (!db) throw new Error("Database unavailable");
+  const now = new Date();
+  await db.update(emailOutbox).set({ status: "sent", attemptCount: sql`${emailOutbox.attemptCount} + 1`, sentAt: now, providerRequestId, lastError: null }).where(eq(emailOutbox.id, id));
+  await db.update(emailNotificationSettings).set({ lastDispatchedAt: now }).where(eq(emailNotificationSettings.id, 1));
+}
+
+export async function failEmailOutboxItem(id: number, currentAttemptCount: number, maxAttempts: number, error: string) {
+  const db = await getDb();
+  if (!db) throw new Error("Database unavailable");
+  const attemptCount = currentAttemptCount + 1;
+  const terminal = attemptCount >= maxAttempts;
+  const delayMinutes = Math.min(60, 2 ** Math.max(0, attemptCount - 1));
+  await db.update(emailOutbox).set({ status: terminal ? "failed" : "pending", attemptCount, nextAttemptAt: new Date(Date.now() + delayMinutes * 60_000), lastError: error.slice(0, 4_000) }).where(eq(emailOutbox.id, id));
+}
+
+export async function retryEmailOutboxItem(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database unavailable");
+  const result = await db.update(emailOutbox).set({ status: "pending", attemptCount: 0, nextAttemptAt: new Date(), lastAttemptAt: null, lastError: null, providerRequestId: null, sentAt: null }).where(and(eq(emailOutbox.id, id), eq(emailOutbox.status, "failed")));
+  return Number(result[0].affectedRows) > 0;
+}
+
+export async function recoverStaleEmailOutboxItems() {
+  const db = await getDb();
+  if (!db) return 0;
+  const cutoff = new Date(Date.now() - 10 * 60_000);
+  const result = await db.update(emailOutbox).set({ status: "pending", nextAttemptAt: new Date(), lastError: "Tác vụ gửi trước đó bị gián đoạn; hệ thống đã tự phục hồi." }).where(and(eq(emailOutbox.status, "processing"), lte(emailOutbox.lastAttemptAt, cutoff)));
+  return Number(result[0].affectedRows);
+}
+
 export async function listBackupRecords(limit = 20) {
   const db = await getDb();
   if (!db) return [];
@@ -225,6 +338,12 @@ export async function getUserByEmail(email: string) {
   const db = await getDb();
   if (!db) return undefined;
   return (await db.select().from(users).where(eq(users.email, email)).limit(1))[0];
+}
+
+export async function getUserById(id: number, executor?: any) {
+  const db = executor ?? (await getDb());
+  if (!db) return undefined;
+  return (await db.select().from(users).where(eq(users.id, id)).limit(1))[0];
 }
 
 export async function getBootstrapUserByEmail(email: string) {

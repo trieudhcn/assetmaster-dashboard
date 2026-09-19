@@ -1,5 +1,7 @@
 # Hướng dẫn triển khai AssetMaster nội bộ: Local đến Docker Compose
 
+> Thông báo email Microsoft 365, cấu hình Graph, Docker secret và checklist UAT được hướng dẫn tại [Thông báo email Microsoft 365 trong AssetMaster](./microsoft-365-email-notifications.md).
+
 > **Tài liệu chính thức.** Đây là runbook duy nhất dùng để triển khai AssetMaster trong LAN/VPN doanh nghiệp, từ chạy local có kiểm soát đến Docker Compose production. Không dùng tài liệu này cho bản AssetMaster đang được hosting managed. Chỉ Nginx được nhận kết nối từ LAN/VPN; MySQL, Redis, thư mục dữ liệu, Docker secret và LDAPS không được công bố trực tiếp ra Internet.
 
 Để chạy thử trên **Docker Desktop Windows/macOS**, xem hướng dẫn từng bước riêng tại [Docker Desktop: Windows và macOS](./docker-desktop-step-by-step.md). Để triển khai vận hành trên **Ubuntu Server**, dùng [hướng dẫn Linux Server từng bước](./linux-server-step-by-step.md). Docker Desktop phù hợp UAT/đào tạo; Ubuntu Server + Docker Engine vẫn là phương án chạy nội bộ liên tục được khuyến nghị.

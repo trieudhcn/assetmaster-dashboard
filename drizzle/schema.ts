@@ -294,12 +294,25 @@ export const installationSettings = mysqlTable("installationSettings", {
 
 export const fileStorageSettings = mysqlTable("fileStorageSettings", {
   id: int("id").primaryKey(),
-  mode: mysqlEnum("mode", ["shared_directory"]).default("shared_directory").notNull(),
-  relativeDirectory: varchar("relativeDirectory", { length: 160 }).default("attachments").notNull(),
-  lastTestStatus: mysqlEnum("lastTestStatus", ["not_tested", "success", "failed"]).default("not_tested").notNull(),
+  mode: mysqlEnum("mode", ["shared_directory"])
+    .default("shared_directory")
+    .notNull(),
+  relativeDirectory: varchar("relativeDirectory", { length: 160 })
+    .default("attachments")
+    .notNull(),
+  lastTestStatus: mysqlEnum("lastTestStatus", [
+    "not_tested",
+    "success",
+    "failed",
+  ])
+    .default("not_tested")
+    .notNull(),
   lastTestMessage: varchar("lastTestMessage", { length: 300 }),
   lastTestedAt: timestamp("lastTestedAt"),
-  updatedByUserId: int("updatedByUserId").references(() => users.id, { onDelete: "set null", onUpdate: "cascade" }),
+  updatedByUserId: int("updatedByUserId").references(() => users.id, {
+    onDelete: "set null",
+    onUpdate: "cascade",
+  }),
   updatedByName: varchar("updatedByName", { length: 160 }),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
@@ -375,6 +388,103 @@ export const userNotificationPreferences = mysqlTable(
       .notNull(),
     updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
   }
+);
+
+export const emailNotificationSettings = mysqlTable(
+  "emailNotificationSettings",
+  {
+    id: int("id").primaryKey(),
+    version: int("version").default(1).notNull(),
+    status: mysqlEnum("status", ["draft", "active", "disabled"])
+      .default("draft")
+      .notNull(),
+    provider: mysqlEnum("provider", ["mock", "microsoft_graph"])
+      .default("mock")
+      .notNull(),
+    tenantId: varchar("tenantId", { length: 64 }),
+    clientId: varchar("clientId", { length: 64 }),
+    clientSecretRef: varchar("clientSecretRef", { length: 255 }).default(
+      "/run/secrets/m365_mail_client_secret"
+    ),
+    senderEmail: varchar("senderEmail", { length: 320 }),
+    senderName: varchar("senderName", { length: 160 })
+      .default("AssetMaster")
+      .notNull(),
+    applicationUrl: varchar("applicationUrl", { length: 500 }),
+    handoverEnabled: boolean("handoverEnabled").default(true).notNull(),
+    supplyRequestEnabled: boolean("supplyRequestEnabled")
+      .default(true)
+      .notNull(),
+    supplyReturnEnabled: boolean("supplyReturnEnabled").default(true).notNull(),
+    maxAttempts: int("maxAttempts").default(5).notNull(),
+    lastTestStatus: mysqlEnum("lastTestStatus", [
+      "not_tested",
+      "success",
+      "failed",
+    ])
+      .default("not_tested")
+      .notNull(),
+    lastTestMessage: varchar("lastTestMessage", { length: 500 }),
+    lastTestedAt: timestamp("lastTestedAt"),
+    lastDispatchedAt: timestamp("lastDispatchedAt"),
+    createdByUserId: int("createdByUserId").references(() => users.id, {
+      onDelete: "set null",
+      onUpdate: "cascade",
+    }),
+    updatedByUserId: int("updatedByUserId").references(() => users.id, {
+      onDelete: "set null",
+      onUpdate: "cascade",
+    }),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+    updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  },
+  table => [index("email_notification_settings_status_idx").on(table.status)]
+);
+
+export const emailOutbox = mysqlTable(
+  "emailOutbox",
+  {
+    id: int("id").autoincrement().primaryKey(),
+    eventKey: varchar("eventKey", { length: 190 }).notNull().unique(),
+    category: mysqlEnum("category", [
+      "handover",
+      "supply_request",
+      "supply_return",
+      "system_test",
+    ]).notNull(),
+    templateKey: varchar("templateKey", { length: 120 }).notNull(),
+    entityType: varchar("entityType", { length: 80 }),
+    entityId: int("entityId"),
+    recipientEmail: varchar("recipientEmail", { length: 320 }).notNull(),
+    recipientName: varchar("recipientName", { length: 160 }),
+    subject: varchar("subject", { length: 500 }).notNull(),
+    textBody: text("textBody").notNull(),
+    htmlBody: text("htmlBody").notNull(),
+    payload: json("payload"),
+    status: mysqlEnum("status", [
+      "pending",
+      "processing",
+      "sent",
+      "failed",
+      "cancelled",
+    ])
+      .default("pending")
+      .notNull(),
+    attemptCount: int("attemptCount").default(0).notNull(),
+    maxAttempts: int("maxAttempts").default(5).notNull(),
+    nextAttemptAt: timestamp("nextAttemptAt").defaultNow().notNull(),
+    lastAttemptAt: timestamp("lastAttemptAt"),
+    sentAt: timestamp("sentAt"),
+    providerRequestId: varchar("providerRequestId", { length: 255 }),
+    lastError: text("lastError"),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+    updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  },
+  table => [
+    index("email_outbox_dispatch_idx").on(table.status, table.nextAttemptAt),
+    index("email_outbox_entity_idx").on(table.entityType, table.entityId),
+    index("email_outbox_created_idx").on(table.createdAt),
+  ]
 );
 
 export const userMenuPreferences = mysqlTable("userMenuPreferences", {

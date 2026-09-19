@@ -4,6 +4,7 @@ import {
   FolderCog,
   GripVertical,
   ImageUp,
+  Mail,
   Network,
   Palette,
   ServerCog,
@@ -20,7 +21,11 @@ type SettingLink = {
 
 const settingLinks: readonly SettingLink[] = [
   { href: "#settings-brand", label: "Thương hiệu", icon: Palette },
-  { href: "#settings-login-identity", label: "Màn hình đăng nhập", icon: ImageUp },
+  {
+    href: "#settings-login-identity",
+    label: "Màn hình đăng nhập",
+    icon: ImageUp,
+  },
   { href: "#settings-enhancements", label: "Nhận diện mở rộng", icon: Tags },
   { href: "#settings-directory", label: "Directory", icon: Network },
   {
@@ -28,6 +33,12 @@ const settingLinks: readonly SettingLink[] = [
     label: "Microsoft Entra",
     icon: Cloud,
     event: "assetmaster:open-entra-settings",
+  },
+  {
+    href: "#settings-email-notifications",
+    label: "Email Microsoft 365",
+    icon: Mail,
+    event: "assetmaster:open-email-settings",
   },
   {
     href: "#self-hosted-service-status",
