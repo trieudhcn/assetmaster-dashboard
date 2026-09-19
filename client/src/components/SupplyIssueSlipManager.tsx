@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import * as XLSX from "xlsx";
-import { BarChart3, Building2, ChevronDown, ChevronLeft, ChevronRight, Download, FileText, Loader2, Printer, RotateCcw, UsersRound, X } from "lucide-react";
+import { BarChart3, Building2, ChevronDown, ChevronLeft, ChevronRight, Download, FileText, Loader2, Printer, RotateCcw, Search, UsersRound, X } from "lucide-react";
 import { toast } from "sonner";
 import { trpc } from "@/lib/trpc";
 import { writeBrandedWorkbook } from "@/lib/brandedWorkbook";
@@ -9,9 +9,23 @@ import { openSupplyIssueSlipPdf } from "@/lib/supplyIssueSlipPdf";
 import { openHandoverAssetPdf } from "@/lib/handoverAssetPdf";
 import { SearchableSelect } from "@/components/SearchableSelect";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { SupplyRequestQueue } from "@/components/SupplyRequestQueue";
+import { SupplyReturnRequestQueue } from "@/components/SupplyReturnRequestQueue";
 
 const numberText = (value: string | number | null | undefined) => Number(value || 0).toLocaleString("vi-VN", { maximumFractionDigits: 2 });
 const handoverPdfFileNameStorageKey = (referenceCode: string) => `assetmaster-pdf-filename:bg:${referenceCode}`;
+const issueSlipStatusOptions = [
+  { value: "all", label: "Tất cả trạng thái" },
+  { value: "active", label: "Đang cấp phát", searchText: "dang cap phat" },
+  { value: "returned", label: "Đã hoàn trả", searchText: "da hoan tra" },
+];
+const normalizeSearch = (value: unknown) =>
+  String(value || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/đ/g, "d")
+    .replace(/Đ/g, "D")
+    .toLocaleLowerCase("vi-VN");
 
 export function SupplyIssueSlipManager() {
   const utils = trpc.useUtils();
@@ -24,8 +38,25 @@ export function SupplyIssueSlipManager() {
   const [returnNote, setReturnNote] = useState("");
   const [isPreparingPdf, setIsPreparingPdf] = useState(false);
   const [slipPage, setSlipPage] = useState(1);
+  const [slipSearch, setSlipSearch] = useState("");
+  const [slipStatusFilter, setSlipStatusFilter] = useState("all");
   const itemsQuery = trpc.supplies.issueSlipItems.useQuery({ issueSlipId: selectedSlipId || 0 }, { enabled: selectedSlipId !== null });
-  const slips = slipsQuery.data || [];
+  const allSlips = slipsQuery.data || [];
+  const normalizedSlipSearch = normalizeSearch(slipSearch.trim());
+  const slips = allSlips.filter(slip => {
+    const matchesStatus =
+      slipStatusFilter === "all" || slip.status === slipStatusFilter;
+    const matchesSearch =
+      !normalizedSlipSearch ||
+      [
+        slip.referenceCode,
+        slip.recipientName,
+        ...slip.supplyNames,
+      ]
+        .map(normalizeSearch)
+        .some(value => value.includes(normalizedSlipSearch));
+    return matchesStatus && matchesSearch;
+  });
   const slipsPageSize = 10;
   const slipsPageCount = Math.max(1, Math.ceil(slips.length / slipsPageSize));
   const activeSlipPage = Math.min(slipPage, slipsPageCount);
@@ -52,6 +83,7 @@ export function SupplyIssueSlipManager() {
     if (itemsQuery.isLoading) return toast.message("Đang tải danh sách phụ kiện trong phiếu.");
     if (!itemsQuery.data?.length) return toast.error("Phiếu cấp phát chưa có phụ kiện để xuất PDF.");
     setIsPreparingPdf(true);
+    setSelectedSlipId(null);
     try {
       await openSupplyIssueSlipPdf(selectedSlip, itemsQuery.data);
       toast.success("Đã tạo bản xem trước PDF. Chọn In để ký nhận bản cứng.");
@@ -142,8 +174,50 @@ export function SupplyIssueSlipManager() {
       <div><div className="flex items-center gap-2 text-[10px] font-extrabold uppercase tracking-[.14em] text-[#0F8C8C]"><FileText size={14} />Cấp phát & hoàn trả</div><h2 className="mt-1 font-display text-lg font-extrabold text-[#193B57]">Phiếu cấp phát phụ kiện</h2><p className="mt-1 text-xs text-[#71869A]">Theo dõi mã PK-NĂM-001, số lượng đã cấp và phần hoàn trả về kho.</p></div>
       <button type="button" onClick={() => void exportReport()} disabled={reportQuery.isFetching} className="inline-flex h-10 shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-lg border border-[#CDE5E5] bg-[#F4FBFA] px-3 text-xs font-extrabold text-[#087A6A] disabled:opacity-50"><Download size={15} />{reportQuery.isFetching ? "Đang xuất..." : "Xuất Excel lịch sử"}</button>
     </div>
+    <SupplyRequestQueue />
+    <SupplyReturnRequestQueue />
     <SupplyIssueAnalytics rows={analyticsQuery.data || []} loading={analyticsQuery.isLoading} />
-    <div className="mt-5 overflow-x-auto"><table className="w-full min-w-[720px] text-left text-xs"><thead className="border-y border-[#E7EEF3] bg-[#F8FBFC] text-[10px] uppercase tracking-[.09em] text-[#8AA0B6]"><tr><th className="px-3 py-3">Mã phiếu</th><th className="px-3 py-3">Người nhận</th><th className="px-3 py-3">Thời gian cấp</th><th className="px-3 py-3">Trạng thái</th><th className="px-3 py-3 text-right">Thao tác</th></tr></thead><tbody>{slipsQuery.isLoading ? <tr><td colSpan={5} className="px-3 py-8 text-center text-[#71869A]">Đang tải phiếu cấp phát...</td></tr> : pagedSlips.map((slip) => <tr key={slip.id} className="border-b border-[#EDF2F5]"><td className="px-3 py-3 font-mono font-extrabold text-[#193B57]">{slip.referenceCode}</td><td className="px-3 py-3 text-[#60758A]">{slip.recipientName}</td><td className="px-3 py-3 text-[#60758A]">{new Date(slip.issuedAt).toLocaleString("vi-VN")}</td><td className="px-3 py-3"><span className={`inline-flex rounded-full border px-2 py-1 text-[10px] font-extrabold ${slip.status === "returned" ? "border-[#C7DDF8] bg-[#EAF3FF] text-[#2666A8]" : "border-[#CDE5E5] bg-[#ECF8F7] text-[#087A6A]"}`}>{slip.status === "returned" ? "Đã hoàn trả" : "Đang cấp phát"}</span></td><td className="px-3 py-3 text-right"><button type="button" onClick={() => setSelectedSlipId(slip.id)} className="rounded-lg border border-[#DDE7F0] px-3 py-1.5 font-extrabold text-[#60758A] hover:bg-[#F7FAFC]">Chi tiết</button></td></tr>)}{!slipsQuery.isLoading && !slips.length && <tr><td colSpan={5} className="px-3 py-8 text-center text-[#8AA0B6]">Chưa có phiếu cấp phát. Tạo phiếu từ thao tác Xuất/Cấp phát của phụ kiện.</td></tr>}</tbody></table></div>
+    <div className="mt-5 grid gap-2 rounded-xl border border-[#DCEBE9] bg-[#F8FBFC] p-3 sm:grid-cols-[minmax(0,1fr)_240px_auto]">
+      <label className="relative block">
+        <span className="sr-only">Tìm phiếu cấp phát phụ kiện</span>
+        <Search size={15} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[#8AA0B6]" />
+        <input
+          type="search"
+          value={slipSearch}
+          onChange={event => {
+            setSlipSearch(event.target.value);
+            setSlipPage(1);
+          }}
+          placeholder="Mã phiếu, người nhận hoặc phụ kiện..."
+          className="h-10 w-full rounded-lg border border-[#DDE7F0] bg-white pl-9 pr-3 text-xs text-[#193B57] outline-none transition placeholder:text-[#9BAEC0] focus:border-[#8BCDC6] focus:ring-2 focus:ring-[#8BCDC6]/20"
+        />
+      </label>
+      <SearchableSelect
+        value={slipStatusFilter}
+        onChange={value => {
+          setSlipStatusFilter(value);
+          setSlipPage(1);
+        }}
+        options={issueSlipStatusOptions}
+        placeholder="Lọc trạng thái"
+        variant="compact"
+        emptyText="Không tìm thấy trạng thái"
+      />
+      {slipSearch || slipStatusFilter !== "all" ? (
+        <button
+          type="button"
+          onClick={() => {
+            setSlipSearch("");
+            setSlipStatusFilter("all");
+            setSlipPage(1);
+          }}
+          className="inline-flex h-10 items-center justify-center gap-1.5 rounded-lg border border-[#DDE7F0] bg-white px-3 text-[11px] font-extrabold text-[#60758A] hover:bg-[#F4F7FB]"
+        >
+          <RotateCcw size={14} /> Đặt lại
+        </button>
+      ) : <div />}
+    </div>
+    <div className="mt-3 overflow-x-auto"><table className="w-full min-w-[900px] text-left text-xs"><thead className="border-y border-[#E7EEF3] bg-[#F8FBFC] text-[10px] uppercase tracking-[.09em] text-[#8AA0B6]"><tr><th className="px-3 py-3">Mã phiếu</th><th className="px-3 py-3">Người nhận</th><th className="px-3 py-3">Thời gian cấp</th><th className="px-3 py-3">Loại phụ kiện</th><th className="px-3 py-3">Trạng thái</th><th className="px-3 py-3 text-right">Thao tác</th></tr></thead><tbody>{slipsQuery.isLoading ? <tr><td colSpan={6} className="px-3 py-8 text-center text-[#71869A]">Đang tải phiếu cấp phát...</td></tr> : pagedSlips.map((slip) => <tr key={slip.id} className="border-b border-[#EDF2F5]"><td className="px-3 py-3 font-mono font-extrabold text-[#193B57]">{slip.referenceCode}</td><td className="px-3 py-3 text-[#60758A]">{slip.recipientName}</td><td className="px-3 py-3 text-[#60758A]">{new Date(slip.issuedAt).toLocaleString("vi-VN")}</td><td className="px-3 py-3 text-[#60758A]"><div className="max-w-[280px] truncate font-semibold text-[#193B57]" title={slip.supplyNames.join(", ")}>{slip.supplyNames.length ? slip.supplyNames.slice(0, 2).join(", ") : "—"}{slip.supplyNames.length > 2 ? ` +${slip.supplyNames.length - 2} loại` : ""}</div></td><td className="px-3 py-3"><span className={`inline-flex rounded-full border px-2 py-1 text-[10px] font-extrabold ${slip.status === "returned" ? "border-[#C7DDF8] bg-[#EAF3FF] text-[#2666A8]" : "border-[#CDE5E5] bg-[#ECF8F7] text-[#087A6A]"}`}>{slip.status === "returned" ? "Đã hoàn trả" : "Đang cấp phát"}</span></td><td className="px-3 py-3 text-right"><button type="button" onClick={() => setSelectedSlipId(slip.id)} className="rounded-lg border border-[#DDE7F0] px-3 py-1.5 font-extrabold text-[#60758A] hover:bg-[#F7FAFC]">Chi tiết</button></td></tr>)}{!slipsQuery.isLoading && !slips.length && <tr><td colSpan={6} className="px-3 py-8 text-center text-[#8AA0B6]">{allSlips.length ? "Không tìm thấy phiếu phù hợp." : "Chưa có phiếu cấp phát. Tạo phiếu từ thao tác Xuất/Cấp phát của phụ kiện."}</td></tr>}</tbody></table></div>
     {!slipsQuery.isLoading && slips.length > 0 && <div className="flex flex-col gap-3 border-t border-[#E7EEF3] bg-[#FBFCFD] px-3 py-3 sm:flex-row sm:items-center sm:justify-between"><span className="text-xs font-semibold text-[#60758A]">Hiển thị {(activeSlipPage - 1) * slipsPageSize + 1}–{Math.min(activeSlipPage * slipsPageSize, slips.length)} / {slips.length} phiếu</span><div className="flex items-center gap-2"><button type="button" aria-label="Trang phiếu cấp phát trước" disabled={activeSlipPage <= 1} onClick={() => setSlipPage((page) => Math.max(1, page - 1))} className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-[#DDE7F0] bg-white text-[#60758A] transition hover:border-[#8BCDC6] hover:text-[#087A6A] disabled:cursor-not-allowed disabled:opacity-40"><ChevronLeft size={16} /></button><span className="min-w-[82px] text-center text-xs font-bold text-[#193B57]">Trang {activeSlipPage}/{slipsPageCount}</span><button type="button" aria-label="Trang phiếu cấp phát sau" disabled={activeSlipPage >= slipsPageCount} onClick={() => setSlipPage((page) => Math.min(slipsPageCount, page + 1))} className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-[#DDE7F0] bg-white text-[#60758A] transition hover:border-[#8BCDC6] hover:text-[#087A6A] disabled:cursor-not-allowed disabled:opacity-40"><ChevronRight size={16} /></button></div></div>}
     {issueSlipDrawer}
     {returnDialog}
@@ -301,6 +375,7 @@ export function InlineHandoverPreviewDialog({ handoverId, onClose }: { handoverI
     try {
       const company = companyQuery.data;
       if (typeof window !== "undefined") window.localStorage.setItem(handoverPdfFileNameStorageKey(handover.referenceCode), fileBaseName);
+      onClose();
       await openHandoverAssetPdf({ referenceCode: handover.referenceCode, assetCode: handover.assetCode, assetName: handover.assetName, branchName, recipientName: handover.recipientName, recipientDepartmentName: handover.recipientDepartmentName, handoverByName: handover.handoverByName, handedOverAt: handover.handedOverAt, conditionOut: handover.conditionOut, accessories: handover.accessories, note: handover.note, status: handover.status, supplyItems }, { name: company?.name, address: company?.address, taxCode: company?.taxCode, phone: company?.phone, email: branchEmail || company?.email, websiteUrl: company?.websiteUrl, logoUrl: company?.logoUrl }, { autoPrint, fileName: fileBaseName });
       toast.success(autoPrint ? "Đã mở bản in biên bản." : "Đã mở bản xem trước PDF.");
     } catch { toast.error("Không thể tạo PDF biên bản. Vui lòng thử lại."); } finally { setPreparingPdf(null); }
@@ -311,7 +386,7 @@ export function InlineHandoverPreviewDialog({ handoverId, onClose }: { handoverI
   return createPortal(
     <div className="bg-handover-preview-overlay fixed inset-0 z-[320] flex min-h-dvh items-center justify-center bg-[#102A43]/55 p-4 backdrop-blur-sm" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}>
       <section className="bg-handover-preview-panel flex max-h-[calc(100dvh-2rem)] w-[min(45rem,calc(100vw-2rem))] flex-col overflow-hidden rounded-2xl border border-[#D7E5EC] bg-white shadow-[0_26px_70px_rgba(16,42,67,0.32)]" role="dialog" aria-modal="true" aria-label={handover ? `Biên bản bàn giao ${handover.referenceCode}` : "Biên bản bàn giao"}>
-        <header className="flex shrink-0 items-start justify-between gap-4 border-b border-[#E7EEF3] px-5 py-4 sm:px-6"><div className="min-w-0"><h2 className="font-display text-lg font-extrabold text-[#193B57]">{handover ? `Biên bản bàn giao ${handover.referenceCode}` : "Biên bản bàn giao"}</h2><p className="mt-1 text-xs text-[#71869A]">Xem nhanh thông tin phiếu, sau đó đặt tên file trước khi lưu hoặc in.</p></div><button type="button" onClick={onClose} className="inline-grid h-9 w-9 shrink-0 place-items-center rounded-lg border border-[#DDE7F0] text-lg text-[#60758A] transition hover:border-[#8BCDC6] hover:bg-[#E6F6F2] hover:text-[#087A6A]" aria-label="Đóng biên bản bàn giao" title="Đóng">×</button></header>
+        <header className="assetmaster-modal-header flex shrink-0 items-start justify-between gap-4 border-b border-[#E7EEF3] px-5 pt-4 pb-5 sm:px-6"><div className="min-w-0"><h2 className="font-display text-lg font-extrabold text-[#193B57]">{handover ? `Biên bản bàn giao ${handover.referenceCode}` : "Biên bản bàn giao"}</h2><p className="mt-1 text-xs text-[#71869A]">Xem nhanh thông tin phiếu, sau đó đặt tên file trước khi lưu hoặc in.</p></div><button type="button" onClick={onClose} className="inline-grid h-9 w-9 shrink-0 place-items-center rounded-lg border border-[#DDE7F0] text-lg text-[#60758A] transition hover:border-[#8BCDC6] hover:bg-[#E6F6F2] hover:text-[#087A6A]" aria-label="Đóng biên bản bàn giao" title="Đóng">×</button></header>
         {handoverQuery.isLoading ? <div className="flex min-h-[280px] flex-col items-center justify-center gap-3 px-5 py-12 text-center" role="status" aria-live="polite"><span className="grid h-10 w-10 place-items-center rounded-full bg-[#E6F6F2] text-[#087A6A]"><Loader2 size={20} className="animate-spin" /></span><div><p className="text-sm font-extrabold text-[#193B57]">Đang mở biên bản...</p><p className="mt-1 text-xs text-[#71869A]">Đang tải thông tin phiếu bàn giao.</p></div></div> : handover ? <div className="min-h-0 flex-1 overflow-y-auto p-5 sm:p-6"><div className="space-y-4"><div className="rounded-xl border border-[#DCEBE9] bg-[#F4FBFA] p-3"><label className="block text-[10px] font-extrabold uppercase tracking-[.1em] text-[#498C87]">Tên file PDF</label><div className="mt-2 flex items-center rounded-lg border border-[#CDE5E5] bg-white px-3"><input value={fileBaseName} onChange={(event) => setFileNames((current) => ({ ...current, [handover.id]: event.target.value }))} className="h-9 min-w-0 flex-1 bg-transparent text-xs font-bold text-[#193B57] outline-none" aria-label="Tên file PDF" /><span className="shrink-0 text-xs font-bold text-[#8AA0B6]">.pdf</span></div><p className="mt-1.5 text-[10px] text-[#71869A]">Tên không hợp lệ sẽ được hệ thống tự làm sạch khi tạo file.</p></div><div className="rounded-xl bg-[#102A43] p-4 text-white"><div className="text-[10px] font-extrabold uppercase tracking-[.12em] text-[#A5C3D2]">Tài sản bàn giao</div><div className="mt-1 text-base font-extrabold">{handover.assetName}</div><div className="mt-1 font-mono text-[11px] text-[#71D6CE]">{handover.assetCode}</div></div><div className="grid gap-3 sm:grid-cols-2"><div className="rounded-xl border border-[#E7EEF3] p-3"><div className="text-[10px] font-extrabold uppercase tracking-[.1em] text-[#71869A]">Người nhận</div><div className="mt-1 text-sm font-bold text-[#193B57]">{handover.recipientName}</div><div className="mt-1 text-xs text-[#71869A]">{handover.recipientDepartmentName || "Chưa gán phòng ban"}</div></div><div className="rounded-xl border border-[#E7EEF3] p-3"><div className="text-[10px] font-extrabold uppercase tracking-[.1em] text-[#71869A]">Thông tin bàn giao</div><div className="mt-1 text-sm font-bold text-[#193B57]">{new Date(handover.handedOverAt).toLocaleDateString("vi-VN")}</div><div className="mt-1 text-xs text-[#71869A]">Người lập: {handover.handoverByName || "Quản trị viên"}</div><div className="mt-1 text-[11px] text-[#71869A]">Cập nhật lần cuối: {new Date(handover.updatedAt).toLocaleString("vi-VN", { dateStyle: "short", timeStyle: "short" })}</div></div></div><div className="rounded-xl border border-[#E7EEF3] p-3"><div className="text-[10px] font-extrabold uppercase tracking-[.1em] text-[#71869A]">Phụ kiện còn theo biên bản</div><div className="mt-2 space-y-2">{supplyItems.filter((item) => Number(item.issuedQuantity) - Number(item.returnedQuantity || 0) > 0).map((item) => <div key={item.id} className="flex items-center justify-between gap-3 text-xs"><span className="font-bold text-[#193B57]">{item.supplyName} <span className="font-mono text-[10px] text-[#8AA0B6]">{item.supplyCode}</span></span><span className="shrink-0 font-extrabold text-[#087A6A]">Còn {numberText(Number(item.issuedQuantity) - Number(item.returnedQuantity || 0))} {item.unit}</span></div>)}</div></div>{handover.note && <div className="rounded-xl border border-[#E7EEF3] p-3"><div className="text-[10px] font-extrabold uppercase tracking-[.1em] text-[#71869A]">Ghi chú</div><p className="mt-1 text-xs leading-5 text-[#526779]">{handover.note}</p></div>}</div></div> : <p className="px-5 py-12 text-center text-xs text-[#71869A]">Không thể tải biên bản bàn giao.</p>}
         {handover && <footer className="flex shrink-0 flex-wrap justify-end gap-2 border-t border-[#E7EEF3] bg-white px-5 py-3 sm:px-6"><button type="button" onClick={onClose} className="modal-close-action">Đóng</button><button disabled={preparingPdf !== null} onClick={() => void createPdf(true)} className="inline-flex h-9 items-center gap-1 rounded-md border border-[#CDE5E5] bg-white px-3 text-[10px] font-extrabold text-[#087A6A] disabled:opacity-55"><Printer size={13} />{preparingPdf === "print" ? "Đang chuẩn bị..." : "In"}</button><button disabled={preparingPdf !== null} onClick={() => void createPdf(false)} className="inline-flex h-9 items-center gap-1 rounded-md bg-[#0F8C8C] px-3 text-[10px] font-extrabold text-white disabled:opacity-55"><Download size={13} />{preparingPdf === "export" ? "Đang tạo..." : "Xuất PDF"}</button></footer>}
       </section>

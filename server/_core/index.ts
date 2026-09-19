@@ -8,6 +8,8 @@ import { registerStorageProxy } from "./storageProxy";
 import { appRouter } from "../routers";
 import { createContext } from "./context";
 import { registerSharedStorageRoutes } from "../localSharedStorage";
+import { registerEntraAuthRoutes } from "../entraAuth";
+import { startEmailOutboxWorker } from "../emailNotifications";
 import { selfHostedAuthEnabled } from "../selfHostedAuth";
 import { serveStatic, setupVite } from "./vite";
 
@@ -64,6 +66,7 @@ async function startServer() {
   app.use(express.urlencoded({ limit: "50mb", extended: true }));
   registerStorageProxy(app);
   registerSharedStorageRoutes(app);
+  registerEntraAuthRoutes(app);
   if (!selfHostedAuthEnabled()) {
     const { registerOAuthRoutes } = await import("./oauth");
     registerOAuthRoutes(app);
@@ -91,9 +94,11 @@ async function startServer() {
   }
 
   let shuttingDown = false;
+  const stopEmailOutboxWorker = startEmailOutboxWorker();
   const shutdown = (signal: NodeJS.Signals) => {
     if (shuttingDown) return;
     shuttingDown = true;
+    stopEmailOutboxWorker();
     console.log(`Received ${signal}; stopping AssetMaster gracefully`);
 
     const forceExit = setTimeout(() => {

@@ -6,12 +6,13 @@ const root = path.resolve(import.meta.dirname, "..");
 const read = (relativePath: string) => fs.readFileSync(path.join(root, relativePath), "utf8");
 
 describe("Đồng bộ giao diện License", () => {
-  it("dùng bộ lọc Bản quyền tìm kiếm thay cho select native", () => {
+  it("dùng bộ lọc Bản quyền compact thay cho select native", () => {
     const home = read("client/src/pages/Home.tsx");
     expect(home).toContain('control.dataset.handoverLicenseFilter = "true"');
     expect(home).toContain('createRoot(control)');
     expect(home).toContain('<SearchableSelect value={handoverLicenseFilter}');
-    expect(home).toContain('searchPlaceholder="Tìm trạng thái Bản quyền..."');
+    expect(home).toContain('placeholder="Tất cả Bản quyền" variant="compact"');
+    expect(home).not.toContain('searchPlaceholder="Tìm trạng thái Bản quyền..."');
     expect(home).not.toContain('const select = existing?.querySelector<HTMLSelectElement>("select")');
   });
 

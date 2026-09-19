@@ -1,5 +1,7 @@
 import crypto from "node:crypto";
+import { lookup } from "node:dns/promises";
 import { lstat, readFile } from "node:fs/promises";
+import net from "node:net";
 import type { Request, Response } from "express";
 import argon2 from "argon2";
 import { Client, escapeFilter } from "ldapts";
@@ -83,7 +85,8 @@ export function validateDirectorySettings(
     !url.hostname ||
     url.username ||
     url.password ||
-    !["", "/"].includes(url.pathname)
+    !["", "/"].includes(url.pathname) ||
+    (url.port && url.port !== "636")
   )
     return "Chỉ chấp nhận URL LDAPS dạng ldaps://host:636.";
   if (!settings.usersDn.trim()) return "Cần khai báo DN tìm kiếm người dùng.";
@@ -200,25 +203,119 @@ export async function clearSelfHostedLogin(
   response.clearCookie(SELF_HOSTED_SESSION_COOKIE, clearOptions);
 }
 
-async function readBindSecret(
+export type DirectorySecretInspection = {
+  mounted: boolean;
+  readable: boolean;
+  label: "Đã mount" | "Chưa mount";
+  status: "success" | "error";
+  message: string;
+};
+
+function filesystemErrorCode(error: unknown) {
+  return typeof error === "object" &&
+    error !== null &&
+    "code" in error &&
+    typeof error.code === "string"
+    ? error.code
+    : null;
+}
+
+export async function inspectDirectoryBindSecret(
   settings: Pick<DirectorySettings, "bindDn" | "bindSecretRef">
-) {
-  if (!settings.bindDn || !settings.bindSecretRef) return null;
+): Promise<DirectorySecretInspection> {
+  if (!settings.bindDn || !settings.bindSecretRef)
+    return {
+      mounted: false,
+      readable: false,
+      label: "Chưa mount",
+      status: "error",
+      message:
+        "Chưa cấu hình Bind DN hoặc đường dẫn tệp secret LDAP trong AssetMaster.",
+    };
   if (!isDirectorySecretPath(settings.bindSecretRef))
-    throw new Error("Tham chiếu secret LDAP không hợp lệ.");
-  const details = await lstat(settings.bindSecretRef);
+    return {
+      mounted: false,
+      readable: false,
+      label: "Chưa mount",
+      status: "error",
+      message:
+        "Đường dẫn secret chỉ được phép ở /run/secrets/ hoặc /etc/assetmaster/secrets/.",
+    };
+
+  let details;
+  try {
+    details = await lstat(settings.bindSecretRef);
+  } catch (error) {
+    const code = filesystemErrorCode(error);
+    return {
+      mounted: code !== "ENOENT",
+      readable: false,
+      label: code === "ENOENT" ? "Chưa mount" : "Đã mount",
+      status: "error",
+      message:
+        code === "ENOENT"
+          ? "Không tìm thấy tệp secret trong container. Hãy kiểm tra tên Docker secret và cấu hình mount."
+          : code === "EACCES" || code === "EPERM"
+            ? "Container nhìn thấy đường dẫn nhưng không có quyền kiểm tra tệp secret."
+            : "Không thể kiểm tra tệp secret LDAP trong container.",
+    };
+  }
+
   if (
     !details.isFile() ||
     details.isSymbolicLink() ||
     (details.mode & 0o022) !== 0
-  ) {
-    throw new Error(
-      "Tệp secret LDAP phải là tệp thường, không là symlink và không được cho phép ghi bởi group/other."
-    );
+  )
+    return {
+      mounted: true,
+      readable: false,
+      label: "Đã mount",
+      status: "error",
+      message:
+        "Tệp đã mount nhưng phải là tệp thường, không là symlink và không được cho phép ghi bởi group/other.",
+    };
+
+  try {
+    const secret = (await readFile(settings.bindSecretRef, "utf8")).trim();
+    if (!secret)
+      return {
+        mounted: true,
+        readable: false,
+        label: "Đã mount",
+        status: "error",
+        message: "Tệp secret đã mount nhưng đang trống.",
+      };
+  } catch (error) {
+    const code = filesystemErrorCode(error);
+    return {
+      mounted: true,
+      readable: false,
+      label: "Đã mount",
+      status: "error",
+      message:
+        code === "EACCES" || code === "EPERM"
+          ? "Tệp secret đã mount nhưng container không có quyền đọc."
+          : "Tệp secret đã mount nhưng không thể đọc.",
+    };
   }
-  const secret = (await readFile(settings.bindSecretRef, "utf8")).trim();
-  if (!secret) throw new Error("Tệp secret LDAP trống.");
-  return secret;
+
+  return {
+    mounted: true,
+    readable: true,
+    label: "Đã mount",
+    status: "success",
+    message:
+      "Tệp secret tồn tại, là tệp thường và container có quyền đọc. Nội dung không được hiển thị hoặc ghi log.",
+  };
+}
+
+async function readBindSecret(
+  settings: Pick<DirectorySettings, "bindDn" | "bindSecretRef">
+) {
+  if (!settings.bindDn || !settings.bindSecretRef) return null;
+  const inspection = await inspectDirectoryBindSecret(settings);
+  if (!inspection.readable) throw new Error(inspection.message);
+  return (await readFile(settings.bindSecretRef, "utf8")).trim();
 }
 
 function entryValue(entry: Record<string, unknown>, attribute: string) {
@@ -355,6 +452,229 @@ function ldapClient(
   });
 }
 
+export type DirectoryDiagnosticCheck = {
+  id: "secret" | "dns" | "tcp" | "ca" | "ldaps";
+  label: string;
+  status: "success" | "warning" | "error";
+  message: string;
+};
+
+export type DirectoryDiagnosticReport = {
+  ready: boolean;
+  summary: string;
+  checkedAt: string;
+  checks: DirectoryDiagnosticCheck[];
+};
+
+export function inspectDirectoryCaCertificate(
+  caCertificatePem: string | null | undefined
+): DirectoryDiagnosticCheck {
+  if (!caCertificatePem?.trim())
+    return {
+      id: "ca",
+      label: "CA certificate",
+      status: "warning",
+      message:
+        "Chưa cấu hình CA riêng; kết nối TLS sẽ dùng kho CA hệ thống của container.",
+    };
+
+  const certificatePem = caCertificatePem.match(
+    /-----BEGIN CERTIFICATE-----[\s\S]+?-----END CERTIFICATE-----/
+  )?.[0];
+  if (!certificatePem)
+    return {
+      id: "ca",
+      label: "CA certificate",
+      status: "error",
+      message: "Nội dung CA không đúng định dạng PEM.",
+    };
+
+  try {
+    const certificate = new crypto.X509Certificate(certificatePem);
+    const now = Date.now();
+    if (Date.parse(certificate.validFrom) > now)
+      return {
+        id: "ca",
+        label: "CA certificate",
+        status: "error",
+        message: "CA certificate chưa đến thời gian có hiệu lực.",
+      };
+    if (Date.parse(certificate.validTo) <= now)
+      return {
+        id: "ca",
+        label: "CA certificate",
+        status: "error",
+        message: "CA certificate đã hết hạn.",
+      };
+    return {
+      id: "ca",
+      label: "CA certificate",
+      status: "success",
+      message:
+        "CA certificate đúng định dạng và còn hiệu lực; chuỗi tin cậy sẽ được xác nhận ở bước TLS.",
+    };
+  } catch {
+    return {
+      id: "ca",
+      label: "CA certificate",
+      status: "error",
+      message: "Không thể đọc CA certificate đã nhập.",
+    };
+  }
+}
+
+async function testDirectoryTcpPort(hostname: string, port: number) {
+  await new Promise<void>((resolve, reject) => {
+    const socket = net.createConnection({ host: hostname, port });
+    const finish = (error?: Error) => {
+      socket.removeAllListeners();
+      socket.destroy();
+      if (error) reject(error);
+      else resolve();
+    };
+    socket.setTimeout(5_000);
+    socket.once("connect", () => finish());
+    socket.once("timeout", () =>
+      finish(new Error("Hết thời gian chờ kết nối TCP."))
+    );
+    socket.once("error", error => finish(error));
+  });
+}
+
+export async function diagnoseLdapsDirectoryDraft(
+  settings: DirectoryConnectionInput
+): Promise<DirectoryDiagnosticReport> {
+  const checks: DirectoryDiagnosticCheck[] = [];
+  const secret = await inspectDirectoryBindSecret(settings);
+  checks.push({
+    id: "secret",
+    label: "Tệp secret LDAP",
+    status: secret.status,
+    message: secret.message,
+  });
+
+  let url: URL | null = null;
+  try {
+    url = new URL(settings.ldapUrl);
+  } catch {
+    url = null;
+  }
+
+  let dnsReady = false;
+  if (url?.protocol === "ldaps:" && url.hostname) {
+    try {
+      const addresses = await lookup(url.hostname, {
+        all: true,
+        verbatim: true,
+      });
+      dnsReady = addresses.length > 0;
+      checks.push({
+        id: "dns",
+        label: "Phân giải DNS",
+        status: dnsReady ? "success" : "error",
+        message: dnsReady
+          ? `Đã phân giải tên máy chủ qua DNS (${addresses.length} địa chỉ).`
+          : "DNS không trả về địa chỉ cho máy chủ LDAPS.",
+      });
+    } catch {
+      checks.push({
+        id: "dns",
+        label: "Phân giải DNS",
+        status: "error",
+        message:
+          "Container không phân giải được tên máy chủ LDAPS. Hãy kiểm tra DNS của Docker.",
+      });
+    }
+  } else {
+    checks.push({
+      id: "dns",
+      label: "Phân giải DNS",
+      status: "error",
+      message: "URL LDAPS chưa hợp lệ nên chưa thể kiểm tra DNS.",
+    });
+  }
+
+  const usesStandardPort = Boolean(
+    url && (url.port === "" || url.port === "636")
+  );
+  if (url && dnsReady && usesStandardPort) {
+    try {
+      await testDirectoryTcpPort(url.hostname, 636);
+      checks.push({
+        id: "tcp",
+        label: "Cổng TCP 636",
+        status: "success",
+        message: "Container kết nối được tới cổng TCP 636 của máy chủ LDAPS.",
+      });
+    } catch {
+      checks.push({
+        id: "tcp",
+        label: "Cổng TCP 636",
+        status: "error",
+        message:
+          "Không kết nối được TCP 636. Hãy kiểm tra firewall, routing và dịch vụ LDAPS.",
+      });
+    }
+  } else {
+    checks.push({
+      id: "tcp",
+      label: "Cổng TCP 636",
+      status: "error",
+      message: usesStandardPort
+        ? "Chưa thể kiểm tra TCP 636 vì bước DNS chưa thành công."
+        : "URL LDAPS phải sử dụng cổng TCP 636.",
+    });
+  }
+
+  const ca = inspectDirectoryCaCertificate(settings.caCertificatePem);
+  checks.push(ca);
+
+  const validation = validateDirectorySettings(settings);
+  const blockingCheck = checks.find(check => check.status === "error");
+  if (!validation && !blockingCheck) {
+    try {
+      await testDirectoryConnection(settings);
+      checks.push({
+        id: "ldaps",
+        label: "LDAPS và tài khoản bind",
+        status: "success",
+        message:
+          "Bắt tay TLS, tài khoản bind và Users Base DN đều hợp lệ.",
+      });
+    } catch (error) {
+      checks.push({
+        id: "ldaps",
+        label: "LDAPS và tài khoản bind",
+        status: "error",
+        message:
+          error instanceof Error
+            ? error.message
+            : "Không thể hoàn tất kiểm tra LDAPS.",
+      });
+    }
+  } else {
+    checks.push({
+      id: "ldaps",
+      label: "LDAPS và tài khoản bind",
+      status: "error",
+      message:
+        validation ||
+        "Chưa chạy bước LDAPS vì secret, DNS, TCP hoặc CA chưa đạt.",
+    });
+  }
+
+  const firstError = checks.find(check => check.status === "error");
+  const ready = !firstError;
+  return {
+    ready,
+    summary: ready
+      ? "Secret, DNS, TCP 636, CA/TLS và tài khoản bind đã sẵn sàng để kích hoạt LDAPS."
+      : `Chưa sẵn sàng: ${firstError?.label} — ${firstError?.message}`,
+    checkedAt: new Date().toISOString(),
+    checks,
+  };
+}
+
 async function testDirectoryConnection(settings: DirectoryConnectionInput) {
   const validation = validateDirectorySettings(settings);
   if (validation) throw new Error(validation);
@@ -387,6 +707,12 @@ export async function testLdapsDirectoryDraft(
   settings: DirectoryConnectionInput
 ) {
   return testDirectoryConnection(settings);
+}
+
+export async function diagnoseLdapsDirectory() {
+  const settings = await getDirectorySettings();
+  if (!settings) throw new Error("Chưa có cấu hình Directory LDAP/AD.");
+  return diagnoseLdapsDirectoryDraft(settings);
 }
 
 export async function testLdapsDirectory() {

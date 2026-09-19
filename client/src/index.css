@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@source "../../node_modules/streamdown/dist/*.js";
 @import "tw-animate-css";
 
 /* Corporate Clarity: Swiss enterprise information design with calm near-white surfaces,
@@ -1043,3 +1044,260 @@ input[type="date"] {
     transform: translate(-50%, -50%) !important;
   }
 }
+
+
+/* Runtime bridge for the configurable AssetMaster primary color. */
+:root {
+  --assetmaster-brand: #0F8C8C;
+  --assetmaster-brand-strong: color-mix(in srgb, var(--assetmaster-brand) 82%, #003B34);
+  --assetmaster-brand-soft: color-mix(in srgb, var(--assetmaster-brand) 10%, #FFFFFF);
+  --assetmaster-brand-border: color-mix(in srgb, var(--assetmaster-brand) 32%, #FFFFFF);
+  --primary: var(--assetmaster-brand);
+  --ring: var(--assetmaster-brand);
+}
+
+[class~="bg-[#0F8C8C]"] { background-color: var(--assetmaster-brand) !important; }
+[class~="text-[#0F8C8C]"] { color: var(--assetmaster-brand) !important; }
+[class~="border-[#0F8C8C]"] { border-color: var(--assetmaster-brand) !important; }
+[class~="text-[#087A6A]"] { color: var(--assetmaster-brand-strong) !important; }
+[class~="bg-[#087A6A]"] { background-color: var(--assetmaster-brand-strong) !important; }
+[class~="hover:bg-[#087A6A]"]:hover { background-color: var(--assetmaster-brand-strong) !important; }
+[class~="hover:text-[#087A6A]"]:hover { color: var(--assetmaster-brand-strong) !important; }
+[class~="bg-[#E6F6F2]"],
+[class~="bg-[#ECF8F7]"],
+[class~="bg-[#F4FBFA]"] { background-color: var(--assetmaster-brand-soft) !important; }
+[class~="border-[#8BCDC6]"],
+[class~="border-[#9ADBD3]"],
+[class~="border-[#B7D8D4]"],
+[class~="border-[#CDE5E5]"] { border-color: var(--assetmaster-brand-border) !important; }
+[class~="ring-[#B8E9DD]"] { --tw-ring-color: var(--assetmaster-brand-border) !important; }
+[class~="accent-[#0F8C8C]"] { accent-color: var(--assetmaster-brand) !important; }
+[class~="focus:border-[#0F8C8C]"]:focus { border-color: var(--assetmaster-brand) !important; }
+
+.primary-action { background-color: var(--assetmaster-brand); }
+.primary-action:hover { background-color: var(--assetmaster-brand-strong); }
+.field-input:focus {
+  border-color: var(--assetmaster-brand);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--assetmaster-brand) 11%, transparent);
+}
+
+
+/* Shared modal header rhythm: descriptions stay clear of the body divider. */
+.assetmaster-modal-header {
+  flex-shrink: 0;
+}
+
+.assetmaster-modal-header > :first-child {
+  min-width: 0;
+}
+
+.assetmaster-modal-header p {
+  margin-top: 0.5rem;
+  padding-bottom: 0.25rem;
+  line-height: 1.25rem;
+}
+
+.configuration-guide-markdown {
+  color: #526779;
+  font-size: 0.8125rem;
+  line-height: 1.65;
+}
+
+.configuration-guide-markdown h1,
+.configuration-guide-markdown h2,
+.configuration-guide-markdown h3 {
+  scroll-margin-top: 1rem;
+  color: #102a43;
+  font-family: var(--font-display, inherit);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.configuration-guide-markdown h1 {
+  margin: 0 0 1.25rem;
+  font-size: 1.5rem;
+}
+
+.configuration-guide-markdown h2 {
+  margin: 2rem 0 0.75rem;
+  border-top: 1px solid #e7eef3;
+  padding-top: 1.25rem;
+  font-size: 1.125rem;
+}
+
+.configuration-guide-markdown h3 {
+  margin: 1.25rem 0 0.5rem;
+  font-size: 0.9375rem;
+}
+
+.configuration-guide-markdown p,
+.configuration-guide-markdown ul,
+.configuration-guide-markdown ol,
+.configuration-guide-markdown blockquote {
+  margin: 0.75rem 0;
+}
+
+.configuration-guide-markdown ul,
+.configuration-guide-markdown ol {
+  padding-left: 1.35rem;
+}
+
+.configuration-guide-markdown li {
+  margin: 0.3rem 0;
+}
+
+.configuration-guide-markdown blockquote {
+  border-left: 3px solid var(--assetmaster-brand, #0f8c8c);
+  border-radius: 0 0.5rem 0.5rem 0;
+  background: #f2fbf8;
+  padding: 0.75rem 1rem;
+}
+
+.configuration-guide-markdown code {
+  border-radius: 0.3rem;
+  background: #eef3f6;
+  padding: 0.1rem 0.3rem;
+  color: #193b57;
+  font-size: 0.75rem;
+}
+
+.configuration-guide-markdown pre {
+  margin: 0.9rem 0;
+  overflow-x: auto;
+  border: 1px solid #dce7ee;
+  border-radius: 0.75rem;
+  background: #102a43;
+  padding: 1rem;
+  color: #edf7ff;
+}
+
+.configuration-guide-markdown pre code {
+  background: transparent;
+  padding: 0;
+  color: inherit;
+}
+
+.configuration-guide-markdown table {
+  display: block;
+  width: 100%;
+  overflow-x: auto;
+  border-collapse: collapse;
+  white-space: normal;
+}
+
+.configuration-guide-markdown th,
+.configuration-guide-markdown td {
+  min-width: 9rem;
+  border: 1px solid #dce7ee;
+  padding: 0.55rem 0.7rem;
+  text-align: left;
+  vertical-align: top;
+}
+
+.configuration-guide-markdown th {
+  background: #f4f8fb;
+  color: #193b57;
+  font-weight: 800;
+}
+
+.configuration-guide-markdown a {
+  color: #2666a8;
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+/* Điều hướng và thao tác sao chép trong hướng dẫn cấu hình nội bộ. */
+.configuration-guide-markdown [data-guide-section-heading]:focus {
+  outline: none;
+}
+
+.configuration-guide-markdown [data-code-block-header] {
+  border-bottom: 1px solid #dce7ee;
+  background: #f4f8fb;
+}
+
+.configuration-guide-markdown [data-guide-code-copy] {
+  display: inline-flex;
+  min-height: 1.875rem;
+  align-items: center;
+  gap: 0.35rem;
+  border: 1px solid #c9dde8;
+  border-radius: 0.5rem;
+  background: #fff;
+  padding: 0.35rem 0.6rem;
+  color: #193b57;
+  font-size: 0.6875rem;
+  font-weight: 800;
+}
+
+.configuration-guide-markdown [data-guide-code-copy]::after {
+  content: "Sao chép";
+}
+
+.configuration-guide-markdown [data-guide-code-copy]:hover,
+.configuration-guide-markdown [data-guide-code-copy]:focus-visible {
+  border-color: var(--assetmaster-brand, #0f8c8c);
+  color: var(--assetmaster-brand-dark, #087a6a);
+  outline: none;
+}
+
+.configuration-guide-markdown code[data-guide-inline-copy] {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  border: 1px solid #d7e5ed;
+  cursor: pointer;
+  transition:
+    border-color 150ms ease,
+    background-color 150ms ease,
+    color 150ms ease;
+}
+
+.configuration-guide-markdown code[data-guide-inline-copy]::after {
+  content: "⧉";
+  color: #60758a;
+  font-family: sans-serif;
+  font-size: 0.65rem;
+  font-weight: 800;
+}
+
+.configuration-guide-markdown code[data-guide-inline-copy]:hover,
+.configuration-guide-markdown code[data-guide-inline-copy]:focus-visible {
+  border-color: var(--assetmaster-brand, #0f8c8c);
+  background: #eaf7f5;
+  color: #087a6a;
+  outline: 2px solid rgba(15, 140, 140, 0.18);
+  outline-offset: 1px;
+}
+
+.configuration-guide-markdown [data-copy-status="copied"] {
+  border-color: #78b9a9;
+  background: #e6f6f2;
+  color: #087a6a;
+}
+
+.configuration-guide-markdown [data-guide-code-copy][data-copy-status="copied"]::after {
+  content: "Đã sao chép";
+}
+
+.configuration-guide-markdown code[data-guide-inline-copy][data-copy-status="copied"]::after {
+  content: "✓";
+  color: #087a6a;
+}
+
+.configuration-guide-markdown [data-copy-status="error"] {
+  border-color: #e3a4a4;
+  background: #fff3f3;
+  color: #a33f3f;
+}
+
+.configuration-guide-markdown [data-guide-code-copy][data-copy-status="error"]::after {
+  content: "Không thể sao chép";
+}
+
+.configuration-guide-markdown code[data-guide-inline-copy][data-copy-status="error"]::after {
+  content: "!";
+  color: #a33f3f;
+}
+

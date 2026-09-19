@@ -442,6 +442,69 @@
       "when": 1788481640091,
       "tag": "0062_overrated_wind_dancer",
       "breakpoints": true
+    },
+    {
+      "idx": 63,
+      "version": "5",
+      "when": 1789031410000,
+      "tag": "0063_supply_requests",
+      "breakpoints": true
+    },
+    {
+      "idx": 64,
+      "version": "5",
+      "when": 1789035000000,
+      "tag": "0064_partial_supply_request_fulfillment",
+      "breakpoints": true
+    },
+    {
+      "idx": 65,
+      "version": "5",
+      "when": 1789113600000,
+      "tag": "0065_supply_return_requests",
+      "breakpoints": true
+    },
+    {
+      "idx": 66,
+      "version": "5",
+      "when": 1789117200000,
+      "tag": "0066_supply_return_inspection_receipts",
+      "breakpoints": true
+    },
+    {
+      "idx": 67,
+      "version": "5",
+      "when": 1789286400000,
+      "tag": "0067_entra_identity",
+      "breakpoints": true
+    },
+    {
+      "idx": 68,
+      "version": "5",
+      "when": 1789372800000,
+      "tag": "0068_entra_graph_settings",
+      "breakpoints": true
+    },
+    {
+      "idx": 69,
+      "version": "5",
+      "when": 1789459200000,
+      "tag": "0069_canonical_ldap_secret_ref",
+      "breakpoints": true
+    },
+    {
+      "idx": 70,
+      "version": "5",
+      "when": 1789523353442,
+      "tag": "0070_handy_senator_kelly",
+      "breakpoints": true
+    },
+    {
+      "idx": 71,
+      "version": "5",
+      "when": 1789807133725,
+      "tag": "0071_dashing_jasper_sitwell",
+      "breakpoints": true
     }
   ]
 }

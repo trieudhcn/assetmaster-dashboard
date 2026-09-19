@@ -1,0 +1,1015 @@
+import {
+  AlertTriangle,
+  CheckCircle2,
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  ClipboardCheck,
+  Clock3,
+  Download,
+  RotateCcw,
+  Search,
+  Wrench,
+  XCircle,
+} from "lucide-react";
+import { useEffect, useState } from "react";
+import { toast } from "sonner";
+import { useAuth } from "@/_core/hooks/useAuth";
+import { trpc } from "@/lib/trpc";
+import { SearchableSelect } from "@/components/SearchableSelect";
+import { openSupplyReturnReceiptPdf } from "@/lib/supplyReturnReceiptPdf";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+
+const statusCopy = {
+  pending: {
+    label: "Chờ duyệt",
+    className: "border-[#F0DCA4] bg-[#FFF7E2] text-[#9A6800]",
+  },
+  approved: {
+    label: "Đã lập biên bản",
+    className: "border-[#B8E9DD] bg-[#ECF8F7] text-[#087A6A]",
+  },
+  rejected: {
+    label: "Đã từ chối",
+    className: "border-[#F2B7B7] bg-[#FDEDEE] text-[#B44545]",
+  },
+  cancelled: {
+    label: "Nhân viên đã hủy",
+    className: "border-[#DDE7F0] bg-[#F7FAFC] text-[#71869A]",
+  },
+} as const;
+
+type InspectionDraft = {
+  good: string;
+  damaged: string;
+  missing: string;
+  repair: string;
+  note: string;
+};
+
+type ReturnConditionFilter =
+  | "all"
+  | "good"
+  | "damaged"
+  | "missing"
+  | "repair";
+
+const returnConditionFilterOptions = [
+  { value: "all", label: "Tất cả tình trạng" },
+  { value: "good", label: "Có hàng tốt", searchText: "tot dat" },
+  { value: "damaged", label: "Có hàng hỏng", searchText: "hong loi" },
+  { value: "missing", label: "Có hàng thiếu", searchText: "thieu mat" },
+  { value: "repair", label: "Có hàng cần sửa", searchText: "sua chua" },
+];
+
+function numberText(value: number | string) {
+  return Number(value).toLocaleString("vi-VN", {
+    maximumFractionDigits: 2,
+  });
+}
+
+function quantity(value: string) {
+  if (value.trim() === "") return Number.NaN;
+  return Number(value);
+}
+
+function normalizeSearch(value: unknown) {
+  return String(value || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/đ/g, "d")
+    .replace(/Đ/g, "D")
+    .toLocaleLowerCase("vi-VN");
+}
+
+export function SupplyReturnRequestQueue() {
+  const { user } = useAuth();
+  const utils = trpc.useUtils();
+  const requestsQuery = trpc.supplies.adminReturnRequests.useQuery(undefined, {
+    refetchInterval: 20_000,
+  });
+  const [approveId, setApproveId] = useState<number | null>(null);
+  const [rejectId, setRejectId] = useState<number | null>(null);
+  const [reviewNote, setReviewNote] = useState("");
+  const [inspection, setInspection] = useState<
+    Record<number, InspectionDraft>
+  >({});
+  const [showProcessed, setShowProcessed] = useState(false);
+  const [processedPage, setProcessedPage] = useState(1);
+  const [processedSearch, setProcessedSearch] = useState("");
+  const [processedConditionFilter, setProcessedConditionFilter] =
+    useState<ReturnConditionFilter>("all");
+  const [expandedProcessedRequestId, setExpandedProcessedRequestId] =
+    useState<number | null>(null);
+  const [highlightedRequestId, setHighlightedRequestId] = useState<
+    number | null
+  >(null);
+  const [preparingReceiptId, setPreparingReceiptId] = useState<number | null>(
+    null
+  );
+  const requests = requestsQuery.data || [];
+  const pending = requests.filter(request => request.status === "pending");
+  const allProcessed = requests.filter(request => request.status !== "pending");
+  const normalizedProcessedSearch = normalizeSearch(processedSearch.trim());
+  const processed = allProcessed.filter(request => {
+    const matchesSearch =
+      !normalizedProcessedSearch ||
+      [request.requestCode, request.returnReceiptCode, request.requesterName]
+        .map(normalizeSearch)
+        .some(value => value.includes(normalizedProcessedSearch));
+    const matchesCondition =
+      processedConditionFilter === "all" ||
+      request.items.some(item => {
+        if (processedConditionFilter === "good")
+          return Number(item.goodQuantity) > 0;
+        if (processedConditionFilter === "damaged")
+          return Number(item.damagedQuantity) > 0;
+        if (processedConditionFilter === "missing")
+          return Number(item.missingQuantity) > 0;
+        return Number(item.repairQuantity) > 0;
+      });
+    return matchesSearch && matchesCondition;
+  });
+  const processedPageSize = 5;
+  const processedPageCount = Math.max(
+    1,
+    Math.ceil(processed.length / processedPageSize)
+  );
+  const activeProcessedPage = Math.min(processedPage, processedPageCount);
+  const pagedProcessed = processed.slice(
+    (activeProcessedPage - 1) * processedPageSize,
+    activeProcessedPage * processedPageSize
+  );
+  const approveTarget = requests.find(request => request.id === approveId);
+  const rejectTarget = requests.find(request => request.id === rejectId);
+
+  useEffect(() => {
+    setProcessedPage(page => Math.min(page, processedPageCount));
+  }, [processedPageCount]);
+
+  useEffect(() => {
+    setProcessedPage(1);
+    setExpandedProcessedRequestId(null);
+  }, [processedSearch, processedConditionFilter]);
+
+  useEffect(() => {
+    const storedId = Number(
+      sessionStorage.getItem("assetmaster-open-supply-return-request-id")
+    );
+    if (!Number.isInteger(storedId) || storedId <= 0 || !requests.length)
+      return;
+    const target = requests.find(request => request.id === storedId);
+    sessionStorage.removeItem("assetmaster-open-supply-return-request-id");
+    if (!target) return;
+    if (target.status !== "pending") {
+      setProcessedSearch("");
+      setProcessedConditionFilter("all");
+      const targetIndex = allProcessed.findIndex(
+        request => request.id === storedId
+      );
+      setShowProcessed(true);
+      setProcessedPage(
+        Math.max(1, Math.floor(targetIndex / processedPageSize) + 1)
+      );
+      setExpandedProcessedRequestId(storedId);
+    }
+    setHighlightedRequestId(storedId);
+    const scrollTimer = window.setTimeout(() => {
+      document
+        .querySelector<HTMLElement>(
+          `[data-supply-return-request-id="${storedId}"]`
+        )
+        ?.scrollIntoView({ behavior: "smooth", block: "center" });
+    }, 0);
+    const highlightTimer = window.setTimeout(
+      () => setHighlightedRequestId(null),
+      3_500
+    );
+    return () => {
+      window.clearTimeout(scrollTimer);
+      window.clearTimeout(highlightTimer);
+    };
+  }, [requests]);
+
+  const refresh = () => {
+    void utils.supplies.adminReturnRequests.invalidate();
+    void utils.supplies.list.invalidate();
+    void utils.supplies.issueSlips.invalidate();
+    void utils.supplies.issueSlipItems.invalidate();
+    void utils.supplies.issueAnalytics.invalidate();
+    void utils.supplies.historyReport.invalidate();
+  };
+
+  const approve = trpc.supplies.approveReturnRequest.useMutation({
+    onSuccess: result => {
+      toast.success(
+        `Đã duyệt ${result.requestCode} và tạo biên bản ${result.receiptCode}.`
+      );
+      setApproveId(null);
+      setReviewNote("");
+      setInspection({});
+      refresh();
+    },
+    onError: error =>
+      toast.error(error.message || "Không thể duyệt yêu cầu hoàn trả."),
+  });
+  const reject = trpc.supplies.rejectReturnRequest.useMutation({
+    onSuccess: () => {
+      toast.success("Đã từ chối yêu cầu hoàn trả phụ kiện.");
+      setRejectId(null);
+      setReviewNote("");
+      refresh();
+    },
+    onError: error =>
+      toast.error(error.message || "Không thể từ chối yêu cầu hoàn trả."),
+  });
+
+  const openInspection = (request: (typeof requests)[number]) => {
+    setApproveId(request.id);
+    setReviewNote("");
+    setInspection(
+      Object.fromEntries(
+        request.items.map(item => [
+          item.id,
+          {
+            good: String(Number(item.requestedQuantity)),
+            damaged: "0",
+            missing: "0",
+            repair: "0",
+            note: "",
+          },
+        ])
+      )
+    );
+  };
+
+  const inspectionRows = (approveTarget?.items || []).map(item => {
+    const draft = inspection[item.id] || {
+      good: "",
+      damaged: "",
+      missing: "",
+      repair: "",
+      note: "",
+    };
+    const good = quantity(draft.good);
+    const damaged = quantity(draft.damaged);
+    const missing = quantity(draft.missing);
+    const repair = quantity(draft.repair);
+    const requested = Number(item.requestedQuantity);
+    const values = [good, damaged, missing, repair];
+    const total = values.reduce((sum, value) => sum + value, 0);
+    const quantitiesValid =
+      values.every(
+        value =>
+          Number.isFinite(value) &&
+          value >= 0 &&
+          Number.isInteger(value * 100)
+      ) && Math.abs(total - requested) <= 0.001;
+    const exceptionTotal = damaged + missing + repair;
+    const noteValid =
+      !Number.isFinite(exceptionTotal) ||
+      exceptionTotal <= 0 ||
+      draft.note.trim().length >= 2;
+    return {
+      item,
+      draft,
+      good,
+      damaged,
+      missing,
+      repair,
+      total,
+      requested,
+      valid: quantitiesValid && noteValid,
+    };
+  });
+  const canApprove =
+    Boolean(approveTarget) &&
+    inspectionRows.length > 0 &&
+    inspectionRows.every(row => row.valid);
+
+  const setInspectionField = (
+    itemId: number,
+    field: keyof InspectionDraft,
+    value: string
+  ) =>
+    setInspection(current => ({
+      ...current,
+      [itemId]: {
+        ...(current[itemId] || {
+          good: "0",
+          damaged: "0",
+          missing: "0",
+          repair: "0",
+          note: "",
+        }),
+        [field]: value,
+      },
+    }));
+
+  const previewReceipt = async (request: (typeof requests)[number]) => {
+    if (!request.returnReceiptCode) return;
+    setPreparingReceiptId(request.id);
+    try {
+      await openSupplyReturnReceiptPdf(request, request.items);
+      toast.success("Đã mở bản xem trước biên bản hoàn trả.");
+    } catch (error) {
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Không thể tạo PDF biên bản hoàn trả."
+      );
+    } finally {
+      setPreparingReceiptId(null);
+    }
+  };
+
+  const ProcessedRequestRow = ({
+    request,
+  }: {
+    request: (typeof requests)[number];
+  }) => {
+    const presentation =
+      statusCopy[request.status as keyof typeof statusCopy];
+    const expanded = expandedProcessedRequestId === request.id;
+    const itemSummary = request.items
+      .slice(0, 2)
+      .map(item => item.supplyName)
+      .join(", ");
+    const remainingItems = Math.max(0, request.items.length - 2);
+    return (
+      <article
+        data-supply-return-request-id={request.id}
+        tabIndex={-1}
+        className={`overflow-hidden rounded-lg border bg-white outline-none transition ${highlightedRequestId === request.id ? "border-[#0F8C8C] ring-2 ring-[#8BCDC6]/60" : "border-[#E3EDF2]"}`}
+      >
+        <button
+          type="button"
+          aria-expanded={expanded}
+          aria-controls={`processed-supply-return-request-${request.id}`}
+          onClick={() =>
+            setExpandedProcessedRequestId(current =>
+              current === request.id ? null : request.id
+            )
+          }
+          className="grid w-full gap-2 px-3 py-3 text-left transition hover:bg-[#F8FBFC] sm:grid-cols-[170px_minmax(130px,.7fr)_minmax(0,1fr)_auto_24px] sm:items-center"
+        >
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="font-mono text-[11px] font-extrabold text-[#193B57]">
+              {request.requestCode}
+            </span>
+            <span
+              className={`rounded-full border px-2 py-0.5 text-[9px] font-extrabold ${presentation.className}`}
+            >
+              {presentation.label}
+            </span>
+          </div>
+          <div className="truncate text-[11px] font-bold text-[#526779]">
+            {request.requesterName} · {request.sourceReferenceCode}
+          </div>
+          <div className="truncate text-[10px] text-[#71869A]">
+            {itemSummary}
+            {remainingItems ? ` và ${remainingItems} loại khác` : ""}
+          </div>
+          <div className="text-[10px] text-[#8AA0B6] sm:text-right">
+            {new Date(
+              request.reviewedAt || request.updatedAt || request.createdAt
+            ).toLocaleString("vi-VN")}
+          </div>
+          <ChevronDown
+            size={15}
+            className={`text-[#8AA0B6] transition-transform ${expanded ? "rotate-180" : ""}`}
+          />
+        </button>
+        {expanded ? (
+          <div
+            id={`processed-supply-return-request-${request.id}`}
+            className="border-t border-[#EDF2F5] bg-[#FBFDFE] px-3 py-3"
+          >
+            <div className="grid gap-2 md:grid-cols-2">
+              {request.items.map(item => (
+                <div
+                  key={item.id}
+                  className="rounded-lg border border-[#EDF2F5] bg-white px-3 py-2"
+                >
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <div className="truncate text-xs font-bold text-[#193B57]">
+                      {item.supplyName}
+                    </div>
+                    <span className="text-[10px] font-extrabold text-[#087A6A]">
+                      Yêu cầu {numberText(item.requestedQuantity)} {item.unit}
+                    </span>
+                  </div>
+                  <div className="mt-1 font-mono text-[9px] text-[#71869A]">
+                    {item.supplyCode}
+                  </div>
+                  {request.status === "approved" ? (
+                    <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1 border-t border-[#E5EDF2] pt-2 text-[10px] font-bold">
+                      <span className="text-[#087A6A]">
+                        Tốt {numberText(item.goodQuantity)}
+                      </span>
+                      <span className="text-[#B44545]">
+                        Hỏng {numberText(item.damagedQuantity)}
+                      </span>
+                      <span className="text-[#A86B00]">
+                        Thiếu {numberText(item.missingQuantity)}
+                      </span>
+                      <span className="text-[#3855A6]">
+                        Cần sửa {numberText(item.repairQuantity)}
+                      </span>
+                    </div>
+                  ) : null}
+                  {item.conditionNote ? (
+                    <div className="mt-1 text-[10px] text-[#71869A]">
+                      {item.conditionNote}
+                    </div>
+                  ) : null}
+                </div>
+              ))}
+            </div>
+            <div className="mt-3 grid gap-2 text-[11px] leading-5 text-[#60758A] md:grid-cols-2">
+              {request.note ? (
+                <p>
+                  <b className="text-[#526779]">Lý do:</b> {request.note}
+                </p>
+              ) : null}
+              {request.reviewNote ? (
+                <p>
+                  <b className="text-[#526779]">Phản hồi:</b>{" "}
+                  {request.reviewNote}
+                </p>
+              ) : null}
+            </div>
+            {request.returnReceiptCode ? (
+              <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-[#E5EDF2] pt-3">
+                <div className="text-[10px] text-[#71869A]">
+                  <span className="font-mono font-extrabold text-[#087A6A]">
+                    {request.returnReceiptCode}
+                  </span>
+                  {" · "}Người giao: <b>{request.deliveredByName}</b>
+                  {" · "}Người nhận: <b>{request.receivedByName}</b>
+                </div>
+                <button
+                  type="button"
+                  disabled={preparingReceiptId === request.id}
+                  onClick={() => void previewReceipt(request)}
+                  className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-[#CDE5E5] bg-white px-3 text-[10px] font-extrabold text-[#087A6A] hover:bg-[#ECF8F7] disabled:opacity-50"
+                >
+                  <Download size={13} />
+                  {preparingReceiptId === request.id
+                    ? "Đang tạo PDF..."
+                    : "Biên bản PDF"}
+                </button>
+              </div>
+            ) : null}
+          </div>
+        ) : null}
+      </article>
+    );
+  };
+
+  const RequestRow = ({
+    request,
+    actionable,
+  }: {
+    request: (typeof requests)[number];
+    actionable: boolean;
+  }) => {
+    const presentation =
+      statusCopy[request.status as keyof typeof statusCopy];
+    return (
+      <article
+        data-supply-return-request-id={request.id}
+        className={`rounded-xl border bg-white p-3 transition ${highlightedRequestId === request.id ? "border-[#0F8C8C] ring-4 ring-[#0F8C8C]/10" : "border-[#E3EDF2]"}`}
+      >
+        <div className="flex flex-col gap-2 lg:flex-row lg:items-start lg:justify-between">
+          <div>
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="font-mono text-xs font-extrabold text-[#193B57]">
+                {request.requestCode}
+              </span>
+              <span
+                className={`rounded-full border px-2.5 py-1 text-[10px] font-extrabold ${presentation.className}`}
+              >
+                {presentation.label}
+              </span>
+              {request.returnReceiptCode ? (
+                <span className="font-mono text-[10px] font-extrabold text-[#087A6A]">
+                  {request.returnReceiptCode}
+                </span>
+              ) : null}
+            </div>
+            <div className="mt-1 text-xs font-extrabold text-[#526779]">
+              {request.requesterName} · {request.sourceReferenceCode}
+            </div>
+            <div className="mt-1 text-[10px] text-[#8AA0B6]">
+              Gửi lúc {new Date(request.createdAt).toLocaleString("vi-VN")}
+            </div>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {request.status === "approved" && request.returnReceiptCode ? (
+              <button
+                type="button"
+                disabled={preparingReceiptId === request.id}
+                onClick={() => void previewReceipt(request)}
+                className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-[#CDE5E5] bg-white px-3 text-[11px] font-extrabold text-[#087A6A] hover:bg-[#ECF8F7] disabled:opacity-50"
+              >
+                <Download size={14} />
+                {preparingReceiptId === request.id
+                  ? "Đang tạo PDF..."
+                  : "Biên bản PDF"}
+              </button>
+            ) : null}
+            {actionable ? (
+              <>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setRejectId(request.id);
+                    setReviewNote("");
+                  }}
+                  className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-[#F1CCCC] bg-white px-3 text-[11px] font-extrabold text-[#B44545] hover:bg-[#FFF4F4]"
+                >
+                  <XCircle size={14} />
+                  Từ chối
+                </button>
+                <button
+                  type="button"
+                  onClick={() => openInspection(request)}
+                  className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-[#0F8C8C] px-3 text-[11px] font-extrabold text-white hover:bg-[#087A6A]"
+                >
+                  <ClipboardCheck size={14} />
+                  Kiểm đếm & duyệt
+                </button>
+              </>
+            ) : null}
+          </div>
+        </div>
+        <div className="mt-2 grid gap-2 md:grid-cols-2">
+          {request.items.map(item => (
+            <div
+              key={item.id}
+              className="rounded-lg bg-[#F7FAFC] px-3 py-2 text-xs"
+            >
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <div className="font-extrabold text-[#193B57]">
+                    {item.supplyName}
+                  </div>
+                  <div className="mt-0.5 font-mono text-[10px] text-[#71869A]">
+                    {item.supplyCode}
+                  </div>
+                </div>
+                <div className="shrink-0 font-extrabold text-[#087A6A]">
+                  {numberText(item.requestedQuantity)} {item.unit}
+                </div>
+              </div>
+              {request.status === "approved" ? (
+                <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1 border-t border-[#E5EDF2] pt-2 text-[10px] font-bold">
+                  <span className="text-[#087A6A]">
+                    Tốt {numberText(item.goodQuantity)}
+                  </span>
+                  <span className="text-[#B44545]">
+                    Hỏng {numberText(item.damagedQuantity)}
+                  </span>
+                  <span className="text-[#A86B00]">
+                    Thiếu {numberText(item.missingQuantity)}
+                  </span>
+                  <span className="text-[#3855A6]">
+                    Cần sửa {numberText(item.repairQuantity)}
+                  </span>
+                </div>
+              ) : null}
+              {item.conditionNote ? (
+                <div className="mt-1 text-[10px] text-[#71869A]">
+                  {item.conditionNote}
+                </div>
+              ) : null}
+            </div>
+          ))}
+        </div>
+        {request.note ? (
+          <p className="mt-3 text-xs leading-5 text-[#60758A]">
+            <b>Lý do:</b> {request.note}
+          </p>
+        ) : null}
+        {request.reviewNote ? (
+          <p className="mt-2 rounded-lg bg-[#F4F7FB] px-3 py-2 text-xs text-[#60758A]">
+            <b>Phản hồi:</b> {request.reviewNote}
+          </p>
+        ) : null}
+        {request.returnReceiptCode ? (
+          <div className="mt-2 text-[10px] text-[#71869A]">
+            Người giao: <b>{request.deliveredByName}</b> · Người nhận:{" "}
+            <b>{request.receivedByName}</b>
+          </div>
+        ) : null}
+      </article>
+    );
+  };
+
+  return (
+    <>
+      <section className="mt-5 rounded-xl border border-[#D7E4F1] bg-[#F8FBFE] p-4">
+        <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-start">
+          <div>
+            <div className="flex items-center gap-2 text-[10px] font-extrabold uppercase tracking-[.13em] text-[#2666A8]">
+              <RotateCcw size={14} />
+              Hoàn trả từ portal
+            </div>
+            <h3 className="mt-1 font-display text-base font-extrabold text-[#193B57]">
+              Kiểm đếm và duyệt hoàn trả phụ kiện
+            </h3>
+            <p className="mt-1 text-xs text-[#71869A]">
+              Hàng tốt nhập kho khả dụng; hàng hỏng và cần sửa được đưa vào tồn
+              cách ly riêng.
+            </p>
+          </div>
+          <span className="inline-flex h-9 items-center gap-2 rounded-lg bg-[#FFF1C7] px-3 text-xs font-extrabold text-[#8A5C00]">
+            <Clock3 size={14} />
+            {pending.length} chờ duyệt
+          </span>
+        </div>
+        <div className="mt-4 space-y-3">
+          {requestsQuery.isLoading ? (
+            <p className="py-5 text-center text-xs text-[#71869A]">
+              Đang tải yêu cầu hoàn trả...
+            </p>
+          ) : null}
+          {pending.map(request => (
+            <RequestRow key={request.id} request={request} actionable />
+          ))}
+          {!requestsQuery.isLoading && !pending.length ? (
+            <div className="rounded-xl border border-dashed border-[#D7E4F1] bg-white px-4 py-6 text-center">
+              <ClipboardCheck size={24} className="mx-auto text-[#94B6D8]" />
+              <p className="mt-2 text-xs font-bold text-[#60758A]">
+                Không có yêu cầu hoàn trả phụ kiện đang chờ duyệt.
+              </p>
+            </div>
+          ) : null}
+        </div>
+        {allProcessed.length ? (
+          <div className="mt-4 border-t border-[#DDE7F0] pt-4">
+            <button
+              type="button"
+              onClick={() => setShowProcessed(value => !value)}
+              className="inline-flex items-center gap-2 text-xs font-extrabold text-[#60758A] hover:text-[#2666A8]"
+            >
+              <CheckCircle2 size={14} />
+              {showProcessed
+                ? "Ẩn yêu cầu đã xử lý"
+                : `Xem ${allProcessed.length} yêu cầu đã xử lý`}
+            </button>
+            {showProcessed ? (
+              <div className="mt-3 overflow-hidden rounded-xl border border-[#DCEBE9] bg-white">
+                <div className="grid gap-2 border-b border-[#E7EEF3] bg-[#FBFCFD] p-3 md:grid-cols-[minmax(0,1fr)_220px_auto]">
+                  <label className="relative block">
+                    <span className="sr-only">
+                      Tìm theo mã yêu cầu, mã biên bản hoặc tên nhân viên
+                    </span>
+                    <Search
+                      size={15}
+                      className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[#8AA0B6]"
+                    />
+                    <input
+                      type="search"
+                      value={processedSearch}
+                      onChange={event => setProcessedSearch(event.target.value)}
+                      placeholder="Mã yêu cầu, biên bản hoặc nhân viên..."
+                      className="h-9 w-full rounded-lg border border-[#DDE7F0] bg-white pl-9 pr-3 text-xs text-[#193B57] outline-none transition placeholder:text-[#9BAEC0] focus:border-[#8BCDC6] focus:ring-2 focus:ring-[#8BCDC6]/20"
+                    />
+                  </label>
+                  <div className="min-w-0">
+                    <span className="sr-only">Lọc theo kết quả kiểm đếm</span>
+                    <SearchableSelect
+                      value={processedConditionFilter}
+                      onChange={value =>
+                        setProcessedConditionFilter(
+                          value as ReturnConditionFilter
+                        )
+                      }
+                      options={returnConditionFilterOptions}
+                      placeholder="Lọc tình trạng"
+                      searchPlaceholder="Tìm tình trạng kiểm đếm..."
+                      emptyText="Không tìm thấy tình trạng"
+                    />
+                  </div>
+                  {processedSearch || processedConditionFilter !== "all" ? (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setProcessedSearch("");
+                        setProcessedConditionFilter("all");
+                      }}
+                      className="inline-flex h-9 items-center justify-center gap-1.5 rounded-lg border border-[#DDE7F0] bg-white px-3 text-[11px] font-extrabold text-[#60758A] hover:bg-[#F4F7FB]"
+                    >
+                      <XCircle size={14} />
+                      Xóa lọc
+                    </button>
+                  ) : (
+                    <div />
+                  )}
+                </div>
+                {processed.length ? (
+                  <>
+                    <div className="divide-y divide-[#EDF2F5] p-2">
+                      {pagedProcessed.map(request => (
+                        <ProcessedRequestRow key={request.id} request={request} />
+                      ))}
+                    </div>
+                    <div className="flex flex-col gap-3 border-t border-[#E7EEF3] bg-[#FBFCFD] px-3 py-3 sm:flex-row sm:items-center sm:justify-between">
+                      <span className="text-xs font-semibold text-[#60758A]">
+                        Hiển thị{" "}
+                        {(activeProcessedPage - 1) * processedPageSize + 1}–
+                        {Math.min(
+                          activeProcessedPage * processedPageSize,
+                          processed.length
+                        )}{" "}
+                        / {processed.length} kết quả
+                      </span>
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          aria-label="Trang yêu cầu hoàn trả đã xử lý trước"
+                          disabled={activeProcessedPage <= 1}
+                          onClick={() => {
+                            setExpandedProcessedRequestId(null);
+                            setProcessedPage(page => Math.max(1, page - 1));
+                          }}
+                          className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-[#DDE7F0] bg-white text-[#60758A] transition hover:border-[#8BCDC6] hover:text-[#087A6A] disabled:cursor-not-allowed disabled:opacity-40"
+                        >
+                          <ChevronLeft size={16} />
+                        </button>
+                        <span className="min-w-[82px] text-center text-xs font-bold text-[#193B57]">
+                          Trang {activeProcessedPage}/{processedPageCount}
+                        </span>
+                        <button
+                          type="button"
+                          aria-label="Trang yêu cầu hoàn trả đã xử lý sau"
+                          disabled={activeProcessedPage >= processedPageCount}
+                          onClick={() => {
+                            setExpandedProcessedRequestId(null);
+                            setProcessedPage(page =>
+                              Math.min(processedPageCount, page + 1)
+                            );
+                          }}
+                          className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-[#DDE7F0] bg-white text-[#60758A] transition hover:border-[#8BCDC6] hover:text-[#087A6A] disabled:cursor-not-allowed disabled:opacity-40"
+                        >
+                          <ChevronRight size={16} />
+                        </button>
+                      </div>
+                    </div>
+                  </>
+                ) : (
+                  <div className="px-4 py-10 text-center">
+                    <Search size={22} className="mx-auto text-[#9BAEC0]" />
+                    <div className="mt-2 text-xs font-extrabold text-[#526779]">
+                      Không tìm thấy yêu cầu phù hợp
+                    </div>
+                    <p className="mt-1 text-[11px] text-[#8AA0B6]">
+                      Hãy thử từ khóa hoặc tình trạng kiểm đếm khác.
+                    </p>
+                  </div>
+                )}
+              </div>
+            ) : null}
+          </div>
+        ) : null}
+      </section>
+
+      <AlertDialog
+        open={Boolean(approveTarget)}
+        onOpenChange={open => {
+          if (!open && !approve.isPending) {
+            setApproveId(null);
+            setReviewNote("");
+            setInspection({});
+          }
+        }}
+      >
+        <AlertDialogContent className="flex max-h-[92vh] max-w-4xl flex-col gap-0 overflow-hidden rounded-2xl border-[#CDE5E5] bg-white p-0">
+          <AlertDialogHeader className="shrink-0 border-b border-[#E7EEF3] px-5 py-4">
+            <AlertDialogTitle className="font-display text-lg font-extrabold text-[#193B57]">
+              Kiểm đếm {approveTarget?.requestCode}
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-xs leading-5 text-[#71869A]">
+              Tổng Tốt + Hỏng + Thiếu + Cần sửa của mỗi dòng phải bằng số lượng
+              yêu cầu hoàn trả. Chỉ hàng tốt được cộng vào tồn khả dụng.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="min-h-0 flex-1 space-y-4 overflow-y-auto px-5 py-4">
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div>
+                <span className="field-label">Người giao</span>
+                <div
+                  aria-readonly="true"
+                  className="mt-1 min-h-12 rounded-xl border border-[#DDE7F0] bg-[#F7FAFC] px-4 py-3 text-sm font-extrabold text-[#193B57]"
+                >
+                  {approveTarget?.requesterName || "Nhân viên"}
+                </div>
+              </div>
+              <div>
+                <span className="field-label">Người nhận / kiểm đếm</span>
+                <div
+                  aria-readonly="true"
+                  className="mt-1 min-h-12 rounded-xl border border-[#DDE7F0] bg-[#F7FAFC] px-4 py-3 text-sm font-extrabold text-[#193B57]"
+                >
+                  {user?.name || user?.email || "Quản trị viên"}
+                </div>
+              </div>
+            </div>
+            <div className="space-y-3">
+              {inspectionRows.map(row => (
+                <div
+                  key={row.item.id}
+                  className={`rounded-xl border p-3 ${row.valid ? "border-[#E3EDF2] bg-[#F8FBFC]" : "border-[#F1C9C9] bg-[#FFF9F9]"}`}
+                >
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <div>
+                      <div className="text-xs font-extrabold text-[#193B57]">
+                        {row.item.supplyName}
+                      </div>
+                      <div className="mt-0.5 font-mono text-[10px] text-[#71869A]">
+                        {row.item.supplyCode}
+                      </div>
+                    </div>
+                    <span className="text-[10px] font-bold text-[#60758A]">
+                      Cần kiểm đếm: {numberText(row.requested)} {row.item.unit}
+                    </span>
+                  </div>
+                  <div className="mt-3 grid grid-cols-2 gap-2 lg:grid-cols-4">
+                    {(
+                      [
+                        ["good", "Tốt", "text-[#087A6A]"],
+                        ["damaged", "Hỏng", "text-[#B44545]"],
+                        ["missing", "Thiếu", "text-[#A86B00]"],
+                        ["repair", "Cần sửa", "text-[#3855A6]"],
+                      ] as Array<
+                        [keyof InspectionDraft, string, string]
+                      >
+                    ).map(([field, label, tone]) => (
+                      <label key={field}>
+                        <span className={`text-[10px] font-extrabold ${tone}`}>
+                          {label}
+                        </span>
+                        <input
+                          type="number"
+                          min="0"
+                          step="any"
+                          value={row.draft[field]}
+                          onChange={event =>
+                            setInspectionField(
+                              row.item.id,
+                              field,
+                              event.target.value
+                            )
+                          }
+                          className="field-input mt-1 text-right"
+                        />
+                      </label>
+                    ))}
+                  </div>
+                  <label className="mt-3 block">
+                    <span className="text-[10px] font-bold text-[#60758A]">
+                      Ghi chú tình trạng{" "}
+                      {row.damaged + row.missing + row.repair > 0
+                        ? "(bắt buộc)"
+                        : "(không bắt buộc)"}
+                    </span>
+                    <input
+                      value={row.draft.note}
+                      onChange={event =>
+                        setInspectionField(
+                          row.item.id,
+                          "note",
+                          event.target.value
+                        )
+                      }
+                      maxLength={1000}
+                      placeholder="Ví dụ: Vỡ nút bấm, thiếu đầu thu USB..."
+                      className="field-input mt-1"
+                    />
+                  </label>
+                  {!row.valid ? (
+                    <div className="mt-2 flex items-center gap-1.5 text-[10px] font-bold text-[#B44545]">
+                      <AlertTriangle size={12} />
+                      Tổng phân loại phải bằng {numberText(row.requested)}{" "}
+                      {row.item.unit}; hàng bất thường phải có ghi chú.
+                    </div>
+                  ) : null}
+                </div>
+              ))}
+            </div>
+            <label className="block">
+              <span className="field-label">
+                Kết luận kiểm đếm (không bắt buộc)
+              </span>
+              <textarea
+                value={reviewNote}
+                onChange={event => setReviewNote(event.target.value)}
+                maxLength={1000}
+                className="field-input mt-1 min-h-[80px] resize-y"
+              />
+            </label>
+            <div className="rounded-lg bg-[#F2F6FF] px-3 py-2 text-[10px] leading-5 text-[#3855A6]">
+              <Wrench size={13} className="mr-1 inline" />
+              Hàng hỏng và cần sửa được theo dõi riêng, không xuất hiện trong tồn
+              khả dụng để cấp phát. Số thiếu được lưu trên biên bản đối soát.
+            </div>
+          </div>
+          <AlertDialogFooter className="shrink-0 border-t border-[#E7EEF3] bg-white px-5 py-4">
+            <AlertDialogCancel disabled={approve.isPending}>
+              Đóng
+            </AlertDialogCancel>
+            <AlertDialogAction
+              disabled={!canApprove || approve.isPending}
+              onClick={event => {
+                event.preventDefault();
+                if (!approveTarget || !canApprove) return;
+                approve.mutate({
+                  id: approveTarget.id,
+                  deliveredByName: approveTarget.requesterName,
+                  receivedByName:
+                    user?.name || user?.email || "Quản trị viên",
+                  reviewNote: reviewNote.trim() || null,
+                  items: inspectionRows.map(row => ({
+                    requestItemId: row.item.id,
+                    goodQuantity: row.good,
+                    damagedQuantity: row.damaged,
+                    missingQuantity: row.missing,
+                    repairQuantity: row.repair,
+                    conditionNote: row.draft.note.trim() || null,
+                  })),
+                });
+              }}
+              className="bg-[#0F8C8C] text-white hover:bg-[#087A6A]"
+            >
+              {approve.isPending
+                ? "Đang lập biên bản..."
+                : "Duyệt & lập biên bản"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog
+        open={Boolean(rejectTarget)}
+        onOpenChange={open => {
+          if (!open && !reject.isPending) {
+            setRejectId(null);
+            setReviewNote("");
+          }
+        }}
+      >
+        <AlertDialogContent className="rounded-2xl border-[#F2D2D2] bg-white p-0">
+          <AlertDialogHeader className="border-b border-[#F3E1E1] px-5 py-5">
+            <AlertDialogTitle className="font-display text-lg font-extrabold text-[#193B57]">
+              Từ chối {rejectTarget?.requestCode}
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-xs leading-5 text-[#71869A]">
+              Nêu rõ lý do để nhân viên điều chỉnh và gửi lại yêu cầu.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="px-5">
+            <label className="block">
+              <span className="field-label">Lý do từ chối</span>
+              <textarea
+                value={reviewNote}
+                onChange={event => setReviewNote(event.target.value)}
+                maxLength={1000}
+                className="field-input mt-1 min-h-[90px] resize-y"
+              />
+            </label>
+          </div>
+          <AlertDialogFooter className="border-t border-[#F3E1E1] px-5 py-4">
+            <AlertDialogCancel disabled={reject.isPending}>
+              Đóng
+            </AlertDialogCancel>
+            <AlertDialogAction
+              disabled={reject.isPending || reviewNote.trim().length < 2}
+              onClick={event => {
+                event.preventDefault();
+                if (rejectTarget)
+                  reject.mutate({
+                    id: rejectTarget.id,
+                    reviewNote: reviewNote.trim(),
+                  });
+              }}
+              className="bg-[#B44545] text-white hover:bg-[#933737]"
+            >
+              {reject.isPending ? "Đang xử lý..." : "Xác nhận từ chối"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
+  );
+}

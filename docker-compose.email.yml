@@ -1,0 +1,13 @@
+# Optional override for Microsoft 365 email delivery through Microsoft Graph.
+# Apply this file only after creating m365_mail_client_secret.txt outside Git.
+services:
+  app:
+    environment:
+      M365_MAIL_CLIENT_SECRET: ""
+      M365_MAIL_CLIENT_SECRET_FILE: /run/secrets/m365_mail_client_secret
+    secrets:
+      - m365_mail_client_secret
+
+secrets:
+  m365_mail_client_secret:
+    file: ${ASSETMASTER_SECRETS_DIR:-./secrets}/m365_mail_client_secret.txt

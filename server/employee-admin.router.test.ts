@@ -46,6 +46,7 @@ const mocks = vi.hoisted(() => ({
   getBrandByName: vi.fn(),
   getActiveDepartmentById: vi.fn(),
   getCompany: vi.fn(),
+  getEmailNotificationSettings: vi.fn(),
   getDepartmentById: vi.fn(),
   getDepartmentByCode: vi.fn(),
   getDivisionById: vi.fn(),
@@ -167,6 +168,7 @@ vi.mock("./db", () => ({
   getBrandById: mocks.getBrandById,
   getBrandByName: mocks.getBrandByName,
   getCompany: mocks.getCompany,
+  getEmailNotificationSettings: mocks.getEmailNotificationSettings,
   getDepartmentById: mocks.getDepartmentById,
   getDepartmentByCode: mocks.getDepartmentByCode,
   getDivisionByCode: mocks.getDivisionByCode,
@@ -252,6 +254,24 @@ vi.mock("./db", () => ({
 }));
 
 vi.mock("./storage", () => ({ storagePut: mocks.storagePut }));
+vi.mock("./emailNotifications", () => ({
+  EMAIL_TEMPLATE_KEYS: [
+    "handover_activated",
+    "handover_returned",
+    "handover_return_decision",
+    "supply_request_rejected",
+    "supply_request_fulfilled",
+    "supply_return_rejected",
+    "supply_return_approved",
+    "system_test",
+  ],
+  buildLifecycleEmail: vi.fn(() => ({ subject: "Test", textBody: "Test", htmlBody: "<p>Test</p>" })),
+  dispatchEmailOutboxBatch: vi.fn(),
+  getEmailTemplateCatalog: vi.fn(() => []),
+  previewEmailTemplate: vi.fn(),
+  queueLifecycleEmail: vi.fn().mockResolvedValue({ queued: false, reason: "disabled" }),
+  testEmailNotificationConfiguration: vi.fn(),
+}));
 
 import { appRouter } from "./routers";
 import { reorderMenuItems } from "../client/src/lib/menuOrder";

@@ -1387,7 +1387,7 @@ export function ReportsManagementView() {
                         { value: "repair", label: "Chỉ Sửa chữa" },
                       ]}
                       placeholder="Bảo hành & Sửa chữa"
-                      searchPlaceholder="Tìm kênh xử lý..."
+                      variant="compact"
                     />
                   </div>
                   <div className="w-40">
